@@ -1742,7 +1742,6 @@ struct Demo {
         // the renderpass, no barriers are necessary.
         const vk::AttachmentDescription attachments[2] = {
             vk::AttachmentDescription()
-                .setFlags(vk::AttachmentDescriptionFlagBits::eMayAlias)
                 .setFormat(format)
                 .setSamples(vk::SampleCountFlagBits::e1)
                 .setLoadOp(vk::AttachmentLoadOp::eClear)
@@ -1752,7 +1751,6 @@ struct Demo {
                 .setInitialLayout(vk::ImageLayout::eUndefined)
                 .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
             vk::AttachmentDescription()
-                .setFlags(vk::AttachmentDescriptionFlagBits::eMayAlias)
                 .setFormat(depth.format)
                 .setSamples(vk::SampleCountFlagBits::e1)
                 .setLoadOp(vk::AttachmentLoadOp::eClear)
