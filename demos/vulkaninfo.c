@@ -2912,9 +2912,20 @@ int main(int argc, char **argv) {
 #ifdef _WIN32
     if (ConsoleIsExclusive()) ConsoleEnlarge();
 #endif
+    PFN_vkEnumerateInstanceVersion enumerate_instance_version =
+        (PFN_vkEnumerateInstanceVersion)vkGetInstanceProcAddr(NULL, "vkEnumerateInstanceVersion");
 
-    for (int i = 1; i < argc; ++i) {
-        // Check for html option
+    uint32_t instance_version = VK_API_VERSION_1_0;
+
+    if (enumerate_instance_version != NULL) {
+        enumerate_instance_version(&instance_version);
+    }
+
+    const uint32_t vulkan_major = VK_VERSION_MAJOR(instance_version);
+    const uint32_t vulkan_minor = VK_VERSION_MINOR(instance_version);
+    const uint32_t vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
+
+    for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--html") == 0) {
             out = fopen("vulkaninfo.html", "w");
             human_readable_output = false;
@@ -2923,10 +2934,6 @@ int main(int argc, char **argv) {
         }
         CheckForJsonOption(argv[i]);
     }
-
-    const uint32_t vulkan_major = VK_VERSION_MAJOR(VK_API_VERSION_1_0);
-    const uint32_t vulkan_minor = VK_VERSION_MINOR(VK_API_VERSION_1_0);
-    const uint32_t vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
 
     if (html_output) {
         PrintHtmlHeader(out);
@@ -2937,7 +2944,7 @@ int main(int argc, char **argv) {
         printf("===========\n\n");
     }
     if (html_output || human_readable_output) {
-        fprintf(out, "Vulkan API Version: ");
+        fprintf(out, "Vulkan Instance Version: ");
     }
     if (html_output) {
         fprintf(out, "<div class='val'>%d.%d.%d</div></summary></details>\n", vulkan_major, vulkan_minor, vulkan_patch);
