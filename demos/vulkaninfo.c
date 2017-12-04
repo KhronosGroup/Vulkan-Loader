@@ -96,6 +96,7 @@ static int ConsoleIsExclusive(void) {
 #define APP_SHORT_NAME "vulkaninfo"
 
 static bool html_output;
+static bool json_output = false;
 
 struct VkStructureHeader {
     VkStructureType sType;
@@ -737,6 +738,22 @@ void PrintHtmlFooter(FILE *out) {
     fprintf(out, "</html>");
 }
 
+// Prints opening JSON code for json output file
+void PrintJsonHeader(FILE *out, int vulkan_major, int vulkan_minor, int vulkan_patch) {
+    fprintf(out, "{\n");
+    fprintf(out, "\t\"$schema\": \"https://schema.khronos.org/vulkan/devsim_1_0_0.json#\",\n");
+    fprintf(out, "\t\"comments\": {\n");
+    fprintf(out, "\t\t\"filename\": \"vulkaninfo.json\",\n");
+    fprintf(out, "\t\t\"desc\": \"JSON file describing your \",\n"); // TODO Should report which GPU when this functionality exists
+    fprintf(out, "\t\t\"vulkanApiVersion\": \"%d.%d.%d\"\n", vulkan_major, vulkan_minor, vulkan_patch); //TODO ask Lenny where to 
+    fprintf(out, "\t}");
+}
+
+// Prints closing JSON code for json output file
+void PrintJsonFooter(FILE *out) {
+    fprintf(out, "\n}");
+}
+
 // static void AppCreateInstance(struct AppInstance *inst, int argc, ...) {
 static void AppCreateInstance(struct AppInstance *inst) {
     AppGetInstanceExtensions(inst);
@@ -1178,7 +1195,7 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
     return format_count;
 }
 
-static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
+static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *gpu, FILE *out, FILE *jsout) {
     // Get the list of VkPresentMode's that are supported:
     VkResult U_ASSERT_ONLY err;
     uint32_t present_mode_count = 0;
@@ -1201,7 +1218,9 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
     } else {
         printf("Present Modes:\t\tcount = %d\n", present_mode_count);
     }
-
+    if (json_output) {
+        if (present_mode_count > 0) { fprintf(jsout, "\t\t\"presentModes\": "); }
+    }
     for (uint32_t i = 0; i < present_mode_count; i++) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
@@ -1209,15 +1228,30 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
         } else {
             printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
         }
+        if (json_output) {
+            if (i == 0) {
+                if (present_mode_count > 1) { fprintf(jsout, "[\n\t\t\t"); }
+                fprintf(jsout, "%u", (uint32_t) surf_present_modes[i]);
+            } else {
+                fprintf(jsout, ",\n");
+                fprintf(jsout, "\t\t\t%u", (uint32_t) surf_present_modes[i]);
+            }
+
+        }
     }
-    if (html_output && present_mode_count > 0) fprintf(out, "\t\t\t\t</details>\n");
+    if (html_output && present_mode_count > 0) {
+        fprintf(out, "\t\t\t\t</details>\n");
+    }
+    if (json_output) {
+        if (present_mode_count > 1) { fprintf(jsout, "\n\t\t],"); }
+    }
 
     fflush(out);
     free(surf_present_modes);
     return present_mode_count;
 }
 
-static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
+static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *gpu, FILE *out, FILE *jsout) {
     if (CheckExtensionEnabled(VK_KHR_SURFACE_EXTENSION_NAME, gpu->inst->inst_extensions, gpu->inst->inst_extensions_count)) {
         inst->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu->obj, inst->surface, &inst->surface_capabilities);
 
@@ -1393,6 +1427,20 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT\n"); }
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT\n"); }
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n"); }
+        }
+        if (json_output) {
+            fprintf(jsout, "\n");
+            fprintf(jsout, "\t\t\"maxImageArrayLayers\": %u,\n", inst->surface_capabilities.maxImageArrayLayers);
+            fprintf(jsout, "\t\t\"maxImageCount\": %u,\n", inst->surface_capabilities.maxImageCount);
+            fprintf(jsout, "\t\t\"maxImageExtent\": {\n");
+            fprintf(jsout, "\t\t\t\"height\": %u,\n", inst->surface_capabilities.maxImageExtent.height);
+            fprintf(jsout, "\t\t\t\"width\": %u\n", inst->surface_capabilities.maxImageExtent.width);
+            fprintf(jsout, "\t\t},\n");
+            fprintf(jsout, "\t\t\"minImageCount\": %u,\n", inst->surface_capabilities.minImageCount);
+            fprintf(jsout, "\t\t\"minImageExtent\": {\n");
+            fprintf(jsout, "\t\t\t\"height\": %u,\n", inst->surface_capabilities.minImageExtent.height);
+            fprintf(jsout, "\t\t\t\"width\": %u\n", inst->surface_capabilities.minImageExtent.width);
+            fprintf(jsout, "\t\t}\n");
         }
 
         // Get additional surface capability information from vkGetPhysicalDeviceSurfaceCapabilities2EXT
@@ -2293,21 +2341,34 @@ int main(int argc, char **argv) {
     VkResult err;
     struct AppInstance inst;
     FILE *out = stdout;
+    FILE *jsout = stdout;
+    uint32_t selected_gpu = 0;
 
 #ifdef _WIN32
     if (ConsoleIsExclusive()) ConsoleEnlarge();
 #endif
 
-    vulkan_major = VK_VERSION_MAJOR(VK_API_VERSION_1_0);
-    vulkan_minor = VK_VERSION_MINOR(VK_API_VERSION_1_0);
-    vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
-    for (int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--html") == 0) {
             out = fopen("vulkaninfo.html", "w");
             html_output = true;
             continue;
+        } else if (strncmp("--json", argv[i], 6) == 0 || strcmp(argv[i], "-j") == 0) {
+            if (strlen(argv[i]) > 7 && strncmp("--json=", argv[i], 6) == 0) {
+                uint32_t end = (uint32_t)strlen(argv[i]);
+                for (int j = 7; j < end; ++j) {
+                    selected_gpu *= 10;
+                    selected_gpu += (uint32_t)argv[i][j] - '0';
+                }
+            }
+            json_output = true;
+            continue;
         }
     }
+
+    vulkan_major = VK_VERSION_MAJOR(VK_API_VERSION_1_0);
+    vulkan_minor = VK_VERSION_MINOR(VK_API_VERSION_1_0);
+    vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
 
     if (html_output) {
         PrintHtmlHeader(out);
@@ -2347,6 +2408,17 @@ int main(int argc, char **argv) {
         if (!html_output) printf("\n\n");
     }
 
+    // Check the selected gpu exists
+    if (selected_gpu >= gpu_count) {
+        selected_gpu = 0;
+    }
+    if (json_output) {
+        char filename[20];
+        sprintf(filename, "vulkaninfo-gpu%d.json", selected_gpu);
+        jsout = fopen(filename, "w");
+        PrintJsonHeader(jsout, vulkan_major, vulkan_minor, vulkan_patch);
+    }
+
     //---Layer-Device-Extensions---
     if (html_output) {
         fprintf(out, "\t\t\t<details><summary>Layers: count = <div class='val'>%d</div></summary>", inst.global_layer_count);
@@ -2381,13 +2453,14 @@ int main(int argc, char **argv) {
                               out);
         }
 
-        char *layer_name = inst.global_layers[i].layer_properties.layerName;
-
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary>Devices count = <div class='val'>%d</div></summary>\n", gpu_count);
         } else {
             printf("\tDevices \tcount = %d\n", gpu_count);
         }
+
+        char *layer_name = inst.global_layers[i].layer_properties.layerName;
+
         for (uint32_t j = 0; j < gpu_count; j++) {
             if (html_output) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary>");
@@ -2408,6 +2481,7 @@ int main(int argc, char **argv) {
             }
             free(props);
         }
+
         if (html_output) {
             fprintf(out, "\t\t\t\t</details>\n");
         } else {
@@ -2484,10 +2558,20 @@ int main(int argc, char **argv) {
                 printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
                 printf("Surface type : %s\n", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
             }
+            if (json_output) {
+                fprintf(jsout, ",\n");
+                fprintf(jsout, "\t\"surfacecapabilities\": {\n");
+            }
             format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
-            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out);
-            AppDumpSurfaceCapabilities(&inst, &gpus[i], out);
+            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
+            AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
+            if (json_output && present_mode_count > 0) {
+                fprintf(jsout, ",");
+            }
             AppDestroySurface(&inst);
+            if (json_output) {
+                fprintf(jsout, "\t}");
+            }
         }
         AppDestroyXcbWindow(&inst);
     }
@@ -2551,6 +2635,10 @@ int main(int argc, char **argv) {
     if (html_output) {
         PrintHtmlFooter(out);
         fclose(out);
+    }
+    if (json_output) {
+        PrintJsonFooter(jsout);
+        fclose(jsout);
     }
 
     return 0;
