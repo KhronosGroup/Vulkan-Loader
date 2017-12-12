@@ -295,6 +295,14 @@ vk_ext_debug_report = Extension(name='VK_EXT_debug_report', version=1, guard=Non
     Command(name='DebugReportMessageEXT', dispatch='VkInstance'),
 ])
 
+vk_mvk_ios_surface = Extension(name='VK_MVK_ios_surface', version=1, guard='VK_USE_PLATFORM_IOS_MVK', commands=[
+    Command(name='CreateIOSSurfaceMVK', dispatch='VkInstance'),
+])
+
+vk_mvk_macos_surface = Extension(name='VK_MVK_macos_surface', version=1, guard='VK_USE_PLATFORM_MACOS_MVK', commands=[
+    Command(name='CreateMacOSSurfaceMVK', dispatch='VkInstance'),
+])
+
 extensions = [
     vk_core,
     vk_khr_surface,
@@ -308,6 +316,8 @@ extensions = [
     vk_khr_android_surface,
     vk_khr_win32_surface,
     vk_ext_debug_report,
+    vk_mvk_ios_surface,
+    vk_mvk_macos_surface,
 ]
 
 def generate_header(guard):

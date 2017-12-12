@@ -25,10 +25,12 @@ namespace {
 Game *create_game(const std::vector<std::string> &args) { return new Smoke(args); }
 #endif
 
+#if !defined(VK_USE_PLATFORM_MACOS_MVK)
 Game *create_game(int argc, char **argv) {
     std::vector<std::string> args(argv, argv + argc);
     return new Smoke(args);
 }
+#endif
 
 }  // namespace
 

@@ -51,6 +51,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
     include_directories ("${PROJECT_SOURCE_DIR}/icd/common")
     link_libraries(${API_LOWERCASE} m)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -119,10 +121,40 @@ if(WIN32)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
 endif()
 
+# MacOS setup common to all demos
+if(APPLE)
+    include(macOS/common.cmake)
+endif()
+
+######################################################################################
+# vulkaninfo
+
 add_executable(${API_LOWERCASE}info vulkaninfo.c)
 target_link_libraries(${API_LOWERCASE}info ${LIBRARIES})
+if(APPLE)
+    set_target_properties(${API_LOWERCASE}info PROPERTIES
+        INSTALL_RPATH "@loader_path/../lib"
+    )
+    install(TARGETS ${API_LOWERCASE}info DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
-if(NOT WIN32)
+# Create vulkaninfo application bundle for MacOS
+if(APPLE)
+    include(macOS/vulkaninfo/vulkaninfo.cmake)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    if(INSTALL_LVL_FILES)
+        install(TARGETS ${API_LOWERCASE}info DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+endif()
+
+######################################################################################
+# cube
+
+if(APPLE)
+    include(macOS/cube/cube.cmake)
+elseif(NOT WIN32)
     if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL ${CMAKE_HOST_SYSTEM_PROCESSOR})
         add_executable(cube cube.c ${PROJECT_SOURCE_DIR}/demos/cube.vert ${PROJECT_SOURCE_DIR}/demos/cube.frag cube.vert.inc cube.frag.inc)
         target_link_libraries(cube ${LIBRARIES})
@@ -138,7 +170,12 @@ else()
     target_link_libraries(cube ${LIBRARIES})
 endif()
 
-if(NOT WIN32)
+######################################################################################
+# cubepp
+
+if(APPLE)
+    include(macOS/cubepp/cubepp.cmake)
+elseif(NOT WIN32)
     if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL ${CMAKE_HOST_SYSTEM_PROCESSOR})
         add_executable(cubepp cube.cpp ${PROJECT_SOURCE_DIR}/demos/cube.vert ${PROJECT_SOURCE_DIR}/demos/cube.frag cube.vert.inc cube.frag.inc)
         target_link_libraries(cubepp ${LIBRARIES})
@@ -154,14 +191,13 @@ else()
     target_link_libraries(cubepp ${LIBRARIES})
 endif()
 
+######################################################################################
+# smoke
+
 if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL ${CMAKE_HOST_SYSTEM_PROCESSOR}))
-    if  ((DEMOS_WSI_SELECTION STREQUAL "XCB") OR (DEMOS_WSI_SELECTION STREQUAL "WAYLAND") OR WIN32 OR (CMAKE_SYSTEM_NAME STREQUAL "Android"))
+    if ((DEMOS_WSI_SELECTION STREQUAL "XCB") OR (DEMOS_WSI_SELECTION STREQUAL "WAYLAND") OR WIN32 OR
+        (CMAKE_SYSTEM_NAME STREQUAL "Android") OR (CMAKE_SYSTEM_NAME STREQUAL "Darwin"))
         add_subdirectory(smoke)
     endif()
 endif()
 
-if(UNIX)
-    if(INSTALL_LVL_FILES)
-        install(TARGETS ${API_LOWERCASE}info DESTINATION ${CMAKE_INSTALL_BINDIR})
-    endif()
-endif()

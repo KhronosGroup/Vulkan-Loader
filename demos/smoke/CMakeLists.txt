@@ -52,7 +52,12 @@ set(includes
 set(libraries PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
 if(TARGET vulkan)
-    list(APPEND definitions PRIVATE -DUNINSTALLED_LOADER="$<TARGET_FILE:vulkan>")
+    if(APPLE)
+        # For macOS, the "uninstalled" location is in the bundle
+        list(APPEND definitions PRIVATE -DUNINSTALLED_LOADER="./libvulkan.1.dylib")
+    else()
+        list(APPEND definitions PRIVATE -DUNINSTALLED_LOADER="$<TARGET_FILE:vulkan>")
+    endif()
 endif()
 
 if(WIN32)
@@ -60,7 +65,7 @@ if(WIN32)
     list(APPEND definitions PRIVATE -DWIN32_LEAN_AND_MEAN)
 
     list(APPEND sources ShellWin32.cpp ShellWin32.h)
-else()
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     list(APPEND libraries PRIVATE -ldl -lrt)
 
     if(BUILD_WSI_XCB_SUPPORT AND DEMOS_WSI_SELECTION STREQUAL "XCB")
@@ -78,14 +83,98 @@ else()
         list(APPEND includes PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIR})
         list(APPEND libraries PRIVATE ${WAYLAND_CLIENT_LIBRARIES})
     endif()
+elseif(APPLE)
+    set(LIBRARIES)
+    list(APPEND sources
+        macOS/AppDelegate.h macOS/AppDelegate.m
+        macOS/DemoViewController.h macOS/DemoViewController.mm
+        macOS/main.m macOS/ShellMVK.cpp macOS/ShellMVK.h
+    )
+    list(APPEND includes
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${MOLTENVK_DIR}/MoltenVK/include)
+    list(APPEND libraries
+        "-framework Cocoa -framework QuartzCore")
+    set(smoketest_RESOURCES
+        ${CMAKE_BINARY_DIR}/demos/staging-json/MoltenVK_icd.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/macOS/Resources/LunarGIcon.icns
+        ${CMAKE_CURRENT_SOURCE_DIR}/macOS/Resources/Main.storyboard
+    )
+    set_source_files_properties(${CMAKE_BINARY_DIR}/demos/staging-json/MoltenVK_icd.json PROPERTIES
+        GENERATED TRUE
+    )
+    # Have Xcode handle the Storyboard
+    if(${CMAKE_GENERATOR} MATCHES "^Xcode.*")
+        list(APPEND sources
+            macOS/Resources/Main.storyboard
+        )
+    endif()
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 
-add_executable(smoketest ${sources})
+add_executable(smoketest MACOSX_BUNDLE ${sources} ${smoketest_RESOURCES})
 target_compile_definitions(smoketest ${definitions})
 target_include_directories(smoketest ${includes})
 target_link_libraries(smoketest ${libraries})
+
+if(APPLE)
+    # Handle the Storyboard ourselves
+    if(NOT ${CMAKE_GENERATOR} MATCHES "^Xcode.*")
+        # Compile the storyboard file with the ibtool.
+        add_custom_command(TARGET smoketest POST_BUILD
+            COMMAND ${IBTOOL} --errors --warnings --notices --output-format human-readable-text
+                --compile ${CMAKE_CURRENT_BINARY_DIR}/../smoketest.app/Contents/Resources/Main.storyboardc
+                ${CMAKE_CURRENT_SOURCE_DIR}/macOS/Resources/Main.storyboard
+                COMMENT "Compiling storyboard"
+        )
+    endif()
+
+    add_dependencies(smoketest MoltenVK_icd-staging-json)
+
+    set_target_properties(smoketest PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/macOS/Info.plist
+    )
+    set_source_files_properties(${smoketest_RESOURCES} PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    set_source_files_properties("${CMAKE_BINARY_DIR}/demos/staging-json/MoltenVK_icd.json" PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources/vulkan/icd.d"
+    )
+
+    # Direct the MoltenVK library to the right place.
+    install(FILES "${MOLTENVK_DIR}/MoltenVK/MacOS/libMoltenVK.dylib"
+        DESTINATION "demos/smoketest.app/Contents/Frameworks"
+        COMPONENT Runtime
+    )
+
+    # Xcode projects need some extra help with what would be install steps.
+    # Vulkan lib needs to be copied manually since smoke does not link it.
+    if(${CMAKE_GENERATOR} MATCHES "^Xcode.*")
+        add_custom_command(TARGET smoketest POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:vulkan>"
+                ${CMAKE_CURRENT_BINARY_DIR}/../$<CONFIG>/smoketest.app/Contents/MacOS/libvulkan.1.dylib
+            COMMAND ${CMAKE_COMMAND} -E copy "${MOLTENVK_DIR}/MoltenVK/MacOS/libMoltenVK.dylib"
+                ${CMAKE_CURRENT_BINARY_DIR}/../$<CONFIG>/smoketest.app/Contents/Frameworks/libMoltenVK.dylib
+            DEPENDS vulkan
+        )
+    else()
+        add_custom_command(TARGET smoketest POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:vulkan>"
+                ${CMAKE_CURRENT_BINARY_DIR}/../smoketest.app/Contents/MacOS/libvulkan.1.dylib
+            COMMAND ${CMAKE_COMMAND} -E copy "${MOLTENVK_DIR}/MoltenVK/MacOS/libMoltenVK.dylib"
+                ${CMAKE_CURRENT_BINARY_DIR}/../smoketest.app/Contents/Frameworks/libMoltenVK.dylib
+            DEPENDS vulkan
+        )
+    endif()
+
+    # Fix up the library search path in the executable to find (loader) libraries in the bundle.
+    install(CODE "
+        include(BundleUtilities)
+        fixup_bundle(${CMAKE_INSTALL_PREFIX}/demos/smoketest.app \"\" \"\")
+        " COMPONENT Runtime
+    )
+endif()
 
 if(UNIX)
     if(INSTALL_LVL_FILES)

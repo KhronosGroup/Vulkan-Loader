@@ -292,6 +292,8 @@ struct Demo {
     wl_pointer *pointer;
     wl_keyboard *keyboard;
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
+#elif (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK))
+    void *window;
 #endif
 
     vk::SurfaceKHR surface;
@@ -1105,6 +1107,16 @@ void Demo::init_vk() {
                 platformSurfaceExtFound = 1;
                 extension_names[enabled_extension_count++] = VK_KHR_DISPLAY_EXTENSION_NAME;
             }
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+            if (!strcmp(VK_MVK_IOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+                platformSurfaceExtFound = 1;
+                extension_names[enabled_extension_count++] = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
+            }
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+            if (!strcmp(VK_MVK_MACOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+                platformSurfaceExtFound = 1;
+                extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
+            }
 
 #endif
             assert(enabled_extension_count < 64);
@@ -1150,6 +1162,20 @@ void Demo::init_vk() {
                  " extension.\n\n"
                  "Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
                  "Please look at the Getting Started guide for additional information.\n",
+                 "vkCreateInstance Failure");
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+        ERR_EXIT("vkEnumerateInstanceExtensionProperties failed to find the " VK_MVK_IOS_SURFACE_EXTENSION_NAME
+                 " extension.\n\nDo you have a compatible "
+                 "Vulkan installable client driver (ICD) installed?\nPlease "
+                 "look at the Getting Started guide for additional "
+                 "information.\n",
+                 "vkCreateInstance Failure");
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+        ERR_EXIT("vkEnumerateInstanceExtensionProperties failed to find the " VK_MVK_MACOS_SURFACE_EXTENSION_NAME
+                 " extension.\n\nDo you have a compatible "
+                 "Vulkan installable client driver (ICD) installed?\nPlease "
+                 "look at the Getting Started guide for additional "
+                 "information.\n",
                  "vkCreateInstance Failure");
 #endif
     }
@@ -1281,6 +1307,20 @@ void Demo::init_vk_swapchain() {
         auto const createInfo = vk::XcbSurfaceCreateInfoKHR().setConnection(connection).setWindow(xcb_window);
 
         auto result = inst.createXcbSurfaceKHR(&createInfo, nullptr, &surface);
+        VERIFY(result == vk::Result::eSuccess);
+    }
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    {
+        auto const createInfo = vk::IOSSurfaceCreateInfoMVK().setPView(nullptr);
+
+        auto result = inst.createIOSSurfaceMVK(&createInfo, nullptr, &surface);
+        VERIFY(result == vk::Result::eSuccess);
+    }
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+    {
+        auto const createInfo = vk::MacOSSurfaceCreateInfoMVK().setPView(window);
+
+        auto result = inst.createMacOSSurfaceMVK(&createInfo, nullptr, &surface);
         VERIFY(result == vk::Result::eSuccess);
     }
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
@@ -2261,6 +2301,10 @@ void Demo::update_data_buffer() {
 }
 
 bool Demo::loadTexture(const char *filename, uint8_t *rgba_data, vk::SubresourceLayout *layout, int32_t *width, int32_t *height) {
+#if (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK))
+    filename = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@(filename)].UTF8String;
+#endif
+
     FILE *fPtr = fopen(filename, "rb");
     if (!fPtr) {
         return false;
@@ -2924,6 +2968,28 @@ int main(int argc, char **argv) {
     demo.cleanup();
 
     return validation_error;
+}
+
+#elif defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK)
+
+// Global function invoked from NS or UI views and controllers to create demo
+static void demo_main(struct Demo &demo, void *view) {
+    const char *argv[] = {"CubeSample"};
+    int argc = sizeof(argv) / sizeof(char *);
+
+    demo.init(argc, (char **)argv);
+    demo.window = view;
+    demo.init_vk_swapchain();
+    demo.prepare();
+    demo.spin_angle = 0.4f;
+}
+
+// Global function invoked from NS or UI views and controllers on each demo frame
+static void demo_update_and_draw(struct Demo &demo) {
+    // Wait for work to finish before updating MVP.
+    vkDeviceWaitIdle(demo.device);
+    demo.update_data_buffer();
+    demo.draw();
 }
 
 #else
