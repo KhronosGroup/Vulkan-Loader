@@ -95,8 +95,9 @@ static int ConsoleIsExclusive(void) {
 #define MAX_QUEUE_TYPES 5
 #define APP_SHORT_NAME "vulkaninfo"
 
-static bool html_output;
+static bool html_output = false;
 static bool json_output = false;
+static uint32_t selected_gpu = 0;
 
 struct VkStructureHeader {
     VkStructureType sType;
@@ -745,7 +746,7 @@ void PrintJsonHeader(FILE *out, int vulkan_major, int vulkan_minor, int vulkan_p
     fprintf(out, "\t\"comments\": {\n");
     fprintf(out, "\t\t\"filename\": \"vulkaninfo.json\",\n");
     fprintf(out, "\t\t\"desc\": \"JSON file describing your \",\n"); // TODO Should report which GPU when this functionality exists
-    fprintf(out, "\t\t\"vulkanApiVersion\": \"%d.%d.%d\"\n", vulkan_major, vulkan_minor, vulkan_patch); //TODO ask Lenny where to 
+    fprintf(out, "\t\t\"vulkanApiVersion\": \"%d.%d.%d\"\n", vulkan_major, vulkan_minor, vulkan_patch); //TODO ask Lenny where to
     fprintf(out, "\t}");
 }
 
@@ -1156,7 +1157,7 @@ static void AppDestroyXlibWindow(struct AppInstance *inst) {
 #if defined(VK_USE_PLATFORM_XCB_KHR)     || \
     defined(VK_USE_PLATFORM_XLIB_KHR)    || \
     defined(VK_USE_PLATFORM_WIN32_KHR)
-static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, FILE *out){
+static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, FILE *out, FILE *jsout) {
     // Get the list of VkFormat's that are supported:
     VkResult U_ASSERT_ONLY err;
     uint32_t format_count = 0;
@@ -1179,6 +1180,10 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
     } else {
         printf("Formats:\t\tcount = %d\n", format_count);
     }
+    if (json_output) {
+        fprintf(jsout, ",\n");
+        fprintf(jsout, "\t\t\"surfaceFormats\": [");
+    }
 
     for (uint32_t i = 0; i < format_count; i++) {
         if (html_output) {
@@ -1187,8 +1192,24 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
         } else {
             printf("\t%s\n", VkFormatString(surf_formats[i].format));
         }
+        if (json_output) {
+            if (i > 0) { fprintf(jsout, ","); }
+            fprintf(jsout, "\n");
+            fprintf(jsout, "\t\t\t{\n");
+            fprintf(jsout, "\t\t\t\t\"colorSpace\": %u,\n", surf_formats[i].colorSpace);
+            fprintf(jsout, "\t\t\t\t\"format\": %u\n", surf_formats[i].format);
+            fprintf(jsout, "\t\t\t}");
+        }
     }
-    if (html_output && format_count > 0) fprintf(out, "\t\t\t\t</details>\n");
+    if (html_output && format_count > 0) { fprintf(out, "\t\t\t\t</details>\n"); }
+    if (json_output) {
+        if (0 < format_count) {
+            fprintf(jsout, "\n");
+            fprintf(jsout, "\t\t]");
+        } else {
+            fprintf(jsout, " ]");
+        }
+    }
 
     fflush(out);
     free(surf_formats);
@@ -1219,34 +1240,40 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
         printf("Present Modes:\t\tcount = %d\n", present_mode_count);
     }
     if (json_output) {
-        if (present_mode_count > 0) { fprintf(jsout, "\t\t\"presentModes\": "); }
+        if (present_mode_count > 0) {
+            fprintf(jsout, ",\n");
+            fprintf(jsout, "\t\t\"presentModes\": [");
+        }
     }
+
     for (uint32_t i = 0; i < present_mode_count; i++) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
                     VkPresentModeString(surf_present_modes[i]));
         } else {
             printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
-        }
-        if (json_output) {
-            if (i == 0) {
-                if (present_mode_count > 1) { fprintf(jsout, "[\n\t\t\t"); }
-                fprintf(jsout, "%u", (uint32_t) surf_present_modes[i]);
-            } else {
-                fprintf(jsout, ",\n");
-                fprintf(jsout, "\t\t\t%u", (uint32_t) surf_present_modes[i]);
-            }
+    //     }
+    if (json_output) {
+        if (i > 0) { fprintf(jsout, ","); }
+        fprintf(jsout, "\n");
+        fprintf(jsout, "\t\t\t%u", (uint32_t) surf_present_modes[i]);
+    }
 
         }
     }
-    if (html_output && present_mode_count > 0) {
-        fprintf(out, "\t\t\t\t</details>\n");
-    }
+
+    if (html_output && present_mode_count > 0) { fprintf(out, "\t\t\t\t</details>\n"); }
     if (json_output) {
-        if (present_mode_count > 1) { fprintf(jsout, "\n\t\t],"); }
+        if (0 < present_mode_count) {
+            fprintf(jsout, "\n");
+            fprintf(jsout, "\t\t]");
+        } else {
+            fprintf(jsout, " ]");
+        }
     }
 
     fflush(out);
+    fflush(jsout);
     free(surf_present_modes);
     return present_mode_count;
 }
@@ -1429,7 +1456,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n"); }
         }
         if (json_output) {
-            fprintf(jsout, "\n");
+            fprintf(jsout, ",\n");
             fprintf(jsout, "\t\t\"maxImageArrayLayers\": %u,\n", inst->surface_capabilities.maxImageArrayLayers);
             fprintf(jsout, "\t\t\"maxImageCount\": %u,\n", inst->surface_capabilities.maxImageCount);
             fprintf(jsout, "\t\t\"maxImageExtent\": {\n");
@@ -1440,7 +1467,10 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             fprintf(jsout, "\t\t\"minImageExtent\": {\n");
             fprintf(jsout, "\t\t\t\"height\": %u,\n", inst->surface_capabilities.minImageExtent.height);
             fprintf(jsout, "\t\t\t\"width\": %u\n", inst->surface_capabilities.minImageExtent.width);
-            fprintf(jsout, "\t\t}\n");
+            fprintf(jsout, "\t\t},\n");
+            fprintf(jsout, "\t\t\"supportedCompositeAlpha\": %u,\n", inst->surface_capabilities.supportedCompositeAlpha);
+            fprintf(jsout, "\t\t\"supportedTransforms\": %u,\n", inst->surface_capabilities.supportedTransforms);
+            fprintf(jsout, "\t\t\"supportedUsageFlags\": %u\n", inst->surface_capabilities.supportedUsageFlags);
         }
 
         // Get additional surface capability information from vkGetPhysicalDeviceSurfaceCapabilities2EXT
@@ -1646,7 +1676,7 @@ static void AppDevDump(const struct AppDev *dev, FILE *out) {
 #define PRINTF_SIZE_T_SPECIFIER    "%zu"
 #endif
 
-static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
+static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
     const VkPhysicalDeviceFeatures *features = &gpu->features;
 
     if (html_output) {
@@ -1766,9 +1796,69 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
         printf("\tvariableMultisampleRate                 = %u\n", features->variableMultisampleRate                );
         printf("\tinheritedQueries                        = %u\n", features->inheritedQueries                       );
     }
+    if (json_output) {
+        fprintf(jsout, ",\n");
+        fprintf(jsout, "\t\"VkPhysicalDeviceFeatures\": {\n");
+        fprintf(jsout, "\t\t\"alphaToOne\": %u,\n", features->alphaToOne);
+        fprintf(jsout, "\t\t\"depthBiasClamp\": %u,\n", features->depthBiasClamp);
+        fprintf(jsout, "\t\t\"depthBounds\": %u,\n", features->depthBounds);
+        fprintf(jsout, "\t\t\"depthClamp\": %u,\n", features->depthClamp);
+        fprintf(jsout, "\t\t\"drawIndirectFirstInstance\": %u,\n", features->drawIndirectFirstInstance);
+        fprintf(jsout, "\t\t\"dualSrcBlend\": %u,\n", features->dualSrcBlend);
+        fprintf(jsout, "\t\t\"fillModeNonSolid\": %u,\n", features->fillModeNonSolid);
+        fprintf(jsout, "\t\t\"fragmentStoresAndAtomics\": %u,\n", features->fragmentStoresAndAtomics);
+        fprintf(jsout, "\t\t\"fullDrawIndexUint32\": %u,\n", features->fullDrawIndexUint32);
+        fprintf(jsout, "\t\t\"geometryShader\": %u,\n", features->geometryShader);
+        fprintf(jsout, "\t\t\"imageCubeArray\": %u,\n", features->imageCubeArray);
+        fprintf(jsout, "\t\t\"independentBlend\": %u,\n", features->independentBlend);
+        fprintf(jsout, "\t\t\"inheritedQueries\": %u,\n", features->inheritedQueries);
+        fprintf(jsout, "\t\t\"largePoints\": %u,\n", features->largePoints);
+        fprintf(jsout, "\t\t\"logicOp\": %u,\n", features->logicOp);
+        fprintf(jsout, "\t\t\"multiDrawIndirect\": %u,\n", features->multiDrawIndirect);
+        fprintf(jsout, "\t\t\"multiViewport\": %u,\n", features->multiViewport);
+        fprintf(jsout, "\t\t\"occlusionQueryPrecise\": %u,\n", features->occlusionQueryPrecise);
+        fprintf(jsout, "\t\t\"pipelineStatisticsQuery\": %u,\n", features->pipelineStatisticsQuery);
+        fprintf(jsout, "\t\t\"robustBufferAccess\": %u,\n", features->robustBufferAccess);
+        fprintf(jsout, "\t\t\"samplerAnisotropy\": %u,\n", features->samplerAnisotropy);
+        fprintf(jsout, "\t\t\"sampleRateShading\": %u,\n", features->sampleRateShading);
+        fprintf(jsout, "\t\t\"shaderClipDistance\": %u,\n", features->shaderClipDistance);
+        fprintf(jsout, "\t\t\"shaderCullDistance\": %u,\n", features->shaderCullDistance);
+        fprintf(jsout, "\t\t\"shaderFloat64\": %u,\n", features->shaderFloat64);
+        fprintf(jsout, "\t\t\"shaderImageGatherExtended\": %u,\n", features->shaderImageGatherExtended);
+        fprintf(jsout, "\t\t\"shaderInt16\": %u,\n", features->shaderInt16);
+        fprintf(jsout, "\t\t\"shaderInt64\": %u,\n", features->shaderInt64);
+        fprintf(jsout, "\t\t\"shaderResourceMinLod\": %u,\n", features->shaderResourceMinLod);
+        fprintf(jsout, "\t\t\"shaderResourceResidency\": %u,\n", features->shaderResourceResidency);
+        fprintf(jsout, "\t\t\"shaderSampledImageArrayDynamicIndexing\": %u,\n", features->shaderSampledImageArrayDynamicIndexing);
+        fprintf(jsout, "\t\t\"shaderStorageBufferArrayDynamicIndexing\": %u,\n", features->shaderStorageBufferArrayDynamicIndexing);
+        fprintf(jsout, "\t\t\"shaderStorageImageArrayDynamicIndexing\": %u,\n", features->shaderStorageImageArrayDynamicIndexing);
+        fprintf(jsout, "\t\t\"shaderStorageImageExtendedFormats\": %u,\n", features->shaderStorageImageExtendedFormats);
+        fprintf(jsout, "\t\t\"shaderStorageImageMultisample\": %u,\n", features->shaderStorageImageMultisample);
+        fprintf(jsout, "\t\t\"shaderStorageImageReadWithoutFormat\": %u,\n", features->shaderStorageImageReadWithoutFormat);
+        fprintf(jsout, "\t\t\"shaderStorageImageWriteWithoutFormat\": %u,\n", features->shaderStorageImageWriteWithoutFormat);
+        fprintf(jsout, "\t\t\"shaderTessellationAndGeometryPointSize\": %u,\n", features->shaderTessellationAndGeometryPointSize);
+        fprintf(jsout, "\t\t\"shaderUniformBufferArrayDynamicIndexing\": %u,\n", features->shaderUniformBufferArrayDynamicIndexing);
+        fprintf(jsout, "\t\t\"sparseBinding\": %u,\n", features->sparseBinding);
+        fprintf(jsout, "\t\t\"sparseResidency2Samples\": %u,\n", features->sparseResidency2Samples);
+        fprintf(jsout, "\t\t\"sparseResidency4Samples\": %u,\n", features->sparseResidency4Samples);
+        fprintf(jsout, "\t\t\"sparseResidency8Samples\": %u,\n", features->sparseResidency8Samples);
+        fprintf(jsout, "\t\t\"sparseResidency16Samples\": %u,\n", features->sparseResidency16Samples);
+        fprintf(jsout, "\t\t\"sparseResidencyAliased\": %u,\n", features->sparseResidencyAliased);
+        fprintf(jsout, "\t\t\"sparseResidencyBuffer\": %u,\n", features->sparseResidencyBuffer);
+        fprintf(jsout, "\t\t\"sparseResidencyImage2D\": %u,\n", features->sparseResidencyImage2D);
+        fprintf(jsout, "\t\t\"sparseResidencyImage3D\": %u,\n", features->sparseResidencyImage3D);
+        fprintf(jsout, "\t\t\"tessellationShader\": %u,\n", features->tessellationShader);
+        fprintf(jsout, "\t\t\"textureCompressionASTC_LDR\": %u,\n", features->textureCompressionASTC_LDR);
+        fprintf(jsout, "\t\t\"textureCompressionBC\": %u,\n", features->textureCompressionBC);
+        fprintf(jsout, "\t\t\"textureCompressionETC2\": %u,\n", features->textureCompressionETC2);
+        fprintf(jsout, "\t\t\"variableMultisampleRate\": %u,\n", features->variableMultisampleRate);
+        fprintf(jsout, "\t\t\"vertexPipelineStoresAndAtomics\": %u,\n", features->vertexPipelineStoresAndAtomics);
+        fprintf(jsout, "\t\t\"wideLines\": %u\n", features->wideLines);
+        fprintf(jsout, "\t}");
+    }
 }
 
-static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_props, FILE *out) {
+static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_props, FILE *out, FILE *jsout) {
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceSparseProperties</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>residencyStandard2DBlockShape            = <div class='val'>%u</div></summary></details>\n", sparse_props->residencyStandard2DBlockShape           );
@@ -1786,9 +1876,19 @@ static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_pr
         printf("\t\tresidencyAlignedMipSize                  = %u\n", sparse_props->residencyAlignedMipSize                 );
         printf("\t\tresidencyNonResidentStrict               = %u\n", sparse_props->residencyNonResidentStrict              );
     }
+    if (json_output) {
+        fprintf(jsout, ",\n");
+        fprintf(jsout, "\t\"VkPhysicalDeviceSparseProperties\": {\n");
+        fprintf(jsout, "\t\t\"residencyAlignedMipSize\": %u,\n",                  sparse_props->residencyAlignedMipSize);
+        fprintf(jsout, "\t\t\"residencyNonResidentStrict\": %u,\n",               sparse_props->residencyNonResidentStrict);
+        fprintf(jsout, "\t\t\"residencyStandard2DBlockShape\": %u,\n",            sparse_props->residencyStandard2DBlockShape);
+        fprintf(jsout, "\t\t\"residencyStandard2DMultisampleBlockShape\": %u,\n", sparse_props->residencyStandard2DMultisampleBlockShape);
+        fprintf(jsout, "\t\t\"residencyStandard3DBlockShape\": %u\n",             sparse_props->residencyStandard3DBlockShape);
+        fprintf(jsout, "\t}");
+    }
 }
 
-static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out) {
+static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE *jsout) {
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceLimits</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>maxImageDimension1D                     = <div class='val'>%u</div></summary></details>\n",                 limits->maxImageDimension1D                    );
@@ -2024,9 +2124,140 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out) {
         printf("\t\toptimalBufferCopyRowPitchAlignment      = 0x%" PRIxLEAST64 "\n", limits->optimalBufferCopyRowPitchAlignment     );
         printf("\t\tnonCoherentAtomSize                     = 0x%" PRIxLEAST64 "\n", limits->nonCoherentAtomSize                    );
     }
+    if (json_output) {
+        fprintf(jsout, ",\n");
+        fprintf(jsout, "\t\"VkPhysicalDeviceLimits\": {\n");
+        fprintf(jsout, "\t\t\"bufferImageGranularity\": \"0x%" PRIxLEAST64 "\",\n",             limits->bufferImageGranularity);
+        fprintf(jsout, "\t\t\"discreteQueuePriorities\": %u,\n",                                limits->discreteQueuePriorities);
+        fprintf(jsout, "\t\t\"framebufferColorSampleCounts\": %u,\n",                           limits->framebufferColorSampleCounts);
+        fprintf(jsout, "\t\t\"framebufferDepthSampleCounts\": %u,\n",                           limits->framebufferDepthSampleCounts);
+        fprintf(jsout, "\t\t\"framebufferNoAttachmentsSampleCounts\": %u,\n",                   limits->framebufferNoAttachmentsSampleCounts);
+        fprintf(jsout, "\t\t\"framebufferStencilSampleCounts\": %u,\n",                         limits->framebufferStencilSampleCounts);
+        fprintf(jsout, "\t\t\"lineWidthGranularity\": %f,\n",                                   limits->lineWidthGranularity);
+        fprintf(jsout, "\t\t\"lineWidthRange\": [\n");
+        fprintf(jsout, "\t\t\t%f,\n",                                                           limits->lineWidthRange[0]);
+        fprintf(jsout, "\t\t\t%f\n",                                                            limits->lineWidthRange[1]);
+        fprintf(jsout, "\t\t],\n");
+        fprintf(jsout, "\t\t\"maxBoundDescriptorSets\": %u,\n",                                 limits->maxBoundDescriptorSets);
+        fprintf(jsout, "\t\t\"maxClipDistances\": %u,\n",                                       limits->maxClipDistances);
+        fprintf(jsout, "\t\t\"maxColorAttachments\": %u,\n",                                    limits->maxColorAttachments);
+        fprintf(jsout, "\t\t\"maxCombinedClipAndCullDistances\": %u,\n",                        limits->maxCombinedClipAndCullDistances);
+        fprintf(jsout, "\t\t\"maxComputeSharedMemorySize\": \"0x%" PRIxLEAST32 "\",\n",         limits->maxComputeSharedMemorySize);
+        fprintf(jsout, "\t\t\"maxComputeWorkGroupCount\": [\n");
+        fprintf(jsout, "\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupCount[0]);
+        fprintf(jsout, "\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupCount[1]);
+        fprintf(jsout, "\t\t\t%u\n",                                                            limits->maxComputeWorkGroupCount[2]);
+        fprintf(jsout, "\t\t],\n");
+        fprintf(jsout, "\t\t\"maxComputeWorkGroupInvocations\": %u,\n",                         limits->maxComputeWorkGroupInvocations);
+        fprintf(jsout, "\t\t\"maxComputeWorkGroupSize\": [\n");
+        fprintf(jsout, "\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupSize[0]);
+        fprintf(jsout, "\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupSize[1]);
+        fprintf(jsout, "\t\t\t%u\n",                                                            limits->maxComputeWorkGroupSize[2]);
+        fprintf(jsout, "\t\t],\n");
+        fprintf(jsout, "\t\t\"maxCullDistances\": %u,\n",                                       limits->maxCullDistances);
+        fprintf(jsout, "\t\t\"maxDescriptorSetInputAttachments\": %u,\n",                       limits->maxDescriptorSetInputAttachments);
+        fprintf(jsout, "\t\t\"maxDescriptorSetSampledImages\": %u,\n",                          limits->maxDescriptorSetSampledImages);
+        fprintf(jsout, "\t\t\"maxDescriptorSetSamplers\": %u,\n",                               limits->maxDescriptorSetSamplers);
+        fprintf(jsout, "\t\t\"maxDescriptorSetStorageBuffers\": %u,\n",                         limits->maxDescriptorSetStorageBuffers);
+        fprintf(jsout, "\t\t\"maxDescriptorSetStorageBuffersDynamic\": %u,\n",                  limits->maxDescriptorSetStorageBuffersDynamic);
+        fprintf(jsout, "\t\t\"maxDescriptorSetStorageImages\": %u,\n",                          limits->maxDescriptorSetStorageImages);
+        fprintf(jsout, "\t\t\"maxDescriptorSetUniformBuffers\": %u,\n",                         limits->maxDescriptorSetUniformBuffers);
+        fprintf(jsout, "\t\t\"maxDescriptorSetUniformBuffersDynamic\": %u,\n",                  limits->maxDescriptorSetUniformBuffersDynamic);
+        fprintf(jsout, "\t\t\"maxDrawIndexedIndexValue\": %u,\n",                               limits->maxDrawIndexedIndexValue);
+        fprintf(jsout, "\t\t\"maxDrawIndirectCount\": %u,\n",                                   limits->maxDrawIndirectCount);
+        fprintf(jsout, "\t\t\"maxFragmentCombinedOutputResources\": %u,\n",                     limits->maxFragmentCombinedOutputResources);
+        fprintf(jsout, "\t\t\"maxFragmentDualSrcAttachments\": %u,\n",                          limits->maxFragmentDualSrcAttachments);
+        fprintf(jsout, "\t\t\"maxFragmentInputComponents\": %u,\n",                             limits->maxFragmentInputComponents);
+        fprintf(jsout, "\t\t\"maxFragmentOutputAttachments\": %u,\n",                           limits->maxFragmentOutputAttachments);
+        fprintf(jsout, "\t\t\"maxFramebufferHeight\": %u,\n",                                   limits->maxFramebufferHeight);
+        fprintf(jsout, "\t\t\"maxFramebufferLayers\": %u,\n",                                   limits->maxFramebufferLayers);
+        fprintf(jsout, "\t\t\"maxFramebufferWidth\": %u,\n",                                    limits->maxFramebufferWidth);
+        fprintf(jsout, "\t\t\"maxGeometryInputComponents\": %u,\n",                             limits->maxGeometryInputComponents);
+        fprintf(jsout, "\t\t\"maxGeometryOutputComponents\": %u,\n",                            limits->maxGeometryOutputComponents);
+        fprintf(jsout, "\t\t\"maxGeometryOutputVertices\": %u,\n",                              limits->maxGeometryOutputVertices);
+        fprintf(jsout, "\t\t\"maxGeometryShaderInvocations\": %u,\n",                           limits->maxGeometryShaderInvocations);
+        fprintf(jsout, "\t\t\"maxGeometryTotalOutputComponents\": %u,\n",                       limits->maxGeometryTotalOutputComponents);
+        fprintf(jsout, "\t\t\"maxImageArrayLayers\": %u,\n",                                    limits->maxImageArrayLayers);
+        fprintf(jsout, "\t\t\"maxImageDimension1D\": %u,\n",                                    limits->maxImageDimension1D);
+        fprintf(jsout, "\t\t\"maxImageDimension2D\": %u,\n",                                    limits->maxImageDimension2D);
+        fprintf(jsout, "\t\t\"maxImageDimension3D\": %u,\n",                                    limits->maxImageDimension3D);
+        fprintf(jsout, "\t\t\"maxImageDimensionCube\": %u,\n",                                  limits->maxImageDimensionCube);
+        fprintf(jsout, "\t\t\"maxInterpolationOffset\": %9f,\n",                                limits->maxInterpolationOffset);
+        fprintf(jsout, "\t\t\"maxMemoryAllocationCount\": %u,\n",                               limits->maxMemoryAllocationCount);
+        fprintf(jsout, "\t\t\"maxPerStageDescriptorInputAttachments\": %u,\n",                  limits->maxPerStageDescriptorInputAttachments);
+        fprintf(jsout, "\t\t\"maxPerStageDescriptorSampledImages\": %u,\n",                     limits->maxPerStageDescriptorSampledImages);
+        fprintf(jsout, "\t\t\"maxPerStageDescriptorSamplers\": %u,\n",                          limits->maxPerStageDescriptorSamplers);
+        fprintf(jsout, "\t\t\"maxPerStageDescriptorStorageBuffers\": %u,\n",                    limits->maxPerStageDescriptorStorageBuffers);
+        fprintf(jsout, "\t\t\"maxPerStageDescriptorStorageImages\": %u,\n",                     limits->maxPerStageDescriptorStorageImages);
+        fprintf(jsout, "\t\t\"maxPerStageDescriptorUniformBuffers\": %u,\n",                    limits->maxPerStageDescriptorUniformBuffers);
+        fprintf(jsout, "\t\t\"maxPerStageResources\": %u,\n",                                   limits->maxPerStageResources);
+        fprintf(jsout, "\t\t\"maxPushConstantsSize\": %u,\n",                                   limits->maxPushConstantsSize);
+        fprintf(jsout, "\t\t\"maxSampleMaskWords\": %u,\n",                                     limits->maxSampleMaskWords);
+        fprintf(jsout, "\t\t\"maxSamplerAllocationCount\": %u,\n",                              limits->maxSamplerAllocationCount);
+        fprintf(jsout, "\t\t\"maxSamplerAnisotropy\": %f,\n",                                   limits->maxSamplerAnisotropy);
+        fprintf(jsout, "\t\t\"maxSamplerLodBias\": %f,\n",                                      limits->maxSamplerLodBias);
+        fprintf(jsout, "\t\t\"maxStorageBufferRange\": \"0x%" PRIxLEAST32 "\",\n",              limits->maxStorageBufferRange);
+        fprintf(jsout, "\t\t\"maxTessellationControlPerPatchOutputComponents\": %u,\n",         limits->maxTessellationControlPerPatchOutputComponents);
+        fprintf(jsout, "\t\t\"maxTessellationControlPerVertexInputComponents\": %u,\n",         limits->maxTessellationControlPerVertexInputComponents);
+        fprintf(jsout, "\t\t\"maxTessellationControlPerVertexOutputComponents\": %u,\n",        limits->maxTessellationControlPerVertexOutputComponents);
+        fprintf(jsout, "\t\t\"maxTessellationControlTotalOutputComponents\": %u,\n",            limits->maxTessellationControlTotalOutputComponents);
+        fprintf(jsout, "\t\t\"maxTessellationEvaluationInputComponents\": %u,\n",               limits->maxTessellationEvaluationInputComponents);
+        fprintf(jsout, "\t\t\"maxTessellationEvaluationOutputComponents\": %u,\n",              limits->maxTessellationEvaluationOutputComponents);
+        fprintf(jsout, "\t\t\"maxTessellationGenerationLevel\": %u,\n",                         limits->maxTessellationGenerationLevel);
+        fprintf(jsout, "\t\t\"maxTessellationPatchSize\": %u,\n",                               limits->maxTessellationPatchSize);
+        fprintf(jsout, "\t\t\"maxTexelBufferElements\": \"0x%" PRIxLEAST32 "\",\n",             limits->maxTexelBufferElements);
+        fprintf(jsout, "\t\t\"maxTexelGatherOffset\": %3d,\n",                                  limits->maxTexelGatherOffset);
+        fprintf(jsout, "\t\t\"maxTexelOffset\": %3d,\n",                                        limits->maxTexelOffset);
+        fprintf(jsout, "\t\t\"maxUniformBufferRange\": \"0x%" PRIxLEAST32 "\",\n",              limits->maxUniformBufferRange);
+        fprintf(jsout, "\t\t\"maxVertexInputAttributeOffset\": \"0x%" PRIxLEAST32 "\",\n",      limits->maxVertexInputAttributeOffset);
+        fprintf(jsout, "\t\t\"maxVertexInputAttributes\": %u,\n",                               limits->maxVertexInputAttributes);
+        fprintf(jsout, "\t\t\"maxVertexInputBindings\": %u,\n",                                 limits->maxVertexInputBindings);
+        fprintf(jsout, "\t\t\"maxVertexInputBindingStride\": \"0x%" PRIxLEAST32 "\",\n",        limits->maxVertexInputBindingStride);
+        fprintf(jsout, "\t\t\"maxVertexOutputComponents\": %u,\n",                              limits->maxVertexOutputComponents);
+        fprintf(jsout, "\t\t\"maxViewportDimensions\": [\n");
+        fprintf(jsout, "\t\t\t%u,\n",                                                           limits->maxViewportDimensions[0]);
+        fprintf(jsout, "\t\t\t%u\n",                                                            limits->maxViewportDimensions[1]);
+        fprintf(jsout, "\t\t],\n");
+        fprintf(jsout, "\t\t\"maxViewports\": %u,\n",                                           limits->maxViewports);
+        fprintf(jsout, "\t\t\"minInterpolationOffset\": %9f,\n",                                limits->minInterpolationOffset);
+        fprintf(jsout, "\t\t\"minMemoryMapAlignment\": " PRINTF_SIZE_T_SPECIFIER ",\n",         limits->minMemoryMapAlignment);
+        fprintf(jsout, "\t\t\"minStorageBufferOffsetAlignment\": \"0x%" PRIxLEAST64 "\",\n",    limits->minStorageBufferOffsetAlignment);
+        fprintf(jsout, "\t\t\"minTexelBufferOffsetAlignment\": \"0x%" PRIxLEAST64 "\",\n",      limits->minTexelBufferOffsetAlignment);
+        fprintf(jsout, "\t\t\"minTexelGatherOffset\": %3d,\n",                                  limits->minTexelGatherOffset);
+        fprintf(jsout, "\t\t\"minTexelOffset\": %3d,\n",                                        limits->minTexelOffset);
+        fprintf(jsout, "\t\t\"minUniformBufferOffsetAlignment\": \"0x%" PRIxLEAST64 "\",\n",    limits->minUniformBufferOffsetAlignment);
+        fprintf(jsout, "\t\t\"mipmapPrecisionBits\": %u,\n",                                    limits->mipmapPrecisionBits);
+        fprintf(jsout, "\t\t\"nonCoherentAtomSize\": \"0x%" PRIxLEAST64 "\",\n",                limits->nonCoherentAtomSize);
+        fprintf(jsout, "\t\t\"optimalBufferCopyOffsetAlignment\": \"0x%" PRIxLEAST64 "\",\n",   limits->optimalBufferCopyOffsetAlignment);
+        fprintf(jsout, "\t\t\"optimalBufferCopyRowPitchAlignment\": \"0x%" PRIxLEAST64 "\",\n", limits->optimalBufferCopyRowPitchAlignment);
+        fprintf(jsout, "\t\t\"pointSizeGranularity\": %f,\n",                                   limits->pointSizeGranularity);
+        fprintf(jsout, "\t\t\"pointSizeRange\": [\n");
+        fprintf(jsout, "\t\t\t%f,\n",                                                           limits->pointSizeRange[0]);
+        fprintf(jsout, "\t\t\t%f\n",                                                            limits->pointSizeRange[1]);
+        fprintf(jsout, "\t\t],\n");
+        fprintf(jsout, "\t\t\"sampledImageColorSampleCounts\": %u,\n",                          limits->sampledImageColorSampleCounts);
+        fprintf(jsout, "\t\t\"sampledImageDepthSampleCounts\": %u,\n",                          limits->sampledImageDepthSampleCounts);
+        fprintf(jsout, "\t\t\"sampledImageIntegerSampleCounts\": %u,\n",                        limits->sampledImageIntegerSampleCounts);
+        fprintf(jsout, "\t\t\"sampledImageStencilSampleCounts\": %u,\n",                        limits->sampledImageStencilSampleCounts);
+        fprintf(jsout, "\t\t\"sparseAddressSpaceSize\": \"0x%" PRIxLEAST64 "\",\n",             limits->sparseAddressSpaceSize);
+        fprintf(jsout, "\t\t\"standardSampleLocations\": %u,\n",                                limits->standardSampleLocations);
+        fprintf(jsout, "\t\t\"storageImageSampleCounts\": %u,\n",                               limits->storageImageSampleCounts);
+        fprintf(jsout, "\t\t\"strictLines\": %u,\n",                                            limits->strictLines);
+        fprintf(jsout, "\t\t\"subPixelInterpolationOffsetBits\": %u,\n",                        limits->subPixelInterpolationOffsetBits);
+        fprintf(jsout, "\t\t\"subPixelPrecisionBits\": %u,\n",                                  limits->subPixelPrecisionBits);
+        fprintf(jsout, "\t\t\"subTexelPrecisionBits\": %u,\n",                                  limits->subTexelPrecisionBits);
+        fprintf(jsout, "\t\t\"timestampComputeAndGraphics\": %u,\n",                            limits->timestampComputeAndGraphics);
+        fprintf(jsout, "\t\t\"timestampPeriod\": %f,\n",                                        limits->timestampPeriod);
+        fprintf(jsout, "\t\t\"viewportBoundsRange\": [\n");
+        fprintf(jsout, "\t\t\t%13f,\n",                                                         limits->viewportBoundsRange[0]);
+        fprintf(jsout, "\t\t\t%13f\n",                                                          limits->viewportBoundsRange[1]);
+        fprintf(jsout, "\t\t],\n");
+        fprintf(jsout, "\t\t\"viewportSubPixelBits\": %u\n",                                    limits->viewportSubPixelBits);
+        fprintf(jsout, "\t}");
+    }
 }
 
-static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
+static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
     const VkPhysicalDeviceProperties *props = &gpu->props;
     const uint32_t apiVersion=props->apiVersion;
     const uint32_t major = VK_VERSION_MAJOR(apiVersion);
@@ -2051,19 +2282,30 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
         printf("\tdeviceType     = %s\n", VkPhysicalDeviceTypeString(props->deviceType));
         printf("\tdeviceName     = %s\n", props->deviceName);
     }
+    if (json_output) {
+        fprintf(jsout, ",\n");
+        fprintf(jsout, "\t\"VkPhysicalDeviceProperties\": {\n");
+        fprintf(jsout, "\t\t\"apiVersion\": %u,\n", apiVersion);
+        fprintf(jsout, "\t\t\"deviceID\": %u,\n", props->deviceID);
+        fprintf(jsout, "\t\t\"deviceName\": \"%s\",\n", props->deviceName);
+        fprintf(jsout, "\t\t\"deviceType\": %u,\n", props->deviceType);
+        fprintf(jsout, "\t\t\"driverVersion\": %u\n", props->driverVersion);
+        fprintf(jsout, "\t}");
+    }
     if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
 
-    AppDumpLimits(&gpu->props.limits, out);
-    AppDumpSparseProps(&gpu->props.sparseProperties, out);
+    AppDumpLimits(&gpu->props.limits, out, jsout);
+    AppDumpSparseProps(&gpu->props.sparseProperties, out, jsout);
 
     fflush(out);
+    fflush(jsout);
 }
 
 static void AppDumpExtensions(const char *indent, const char *layer_name, const uint32_t extension_count,
-                              const VkExtensionProperties *extension_properties, FILE *out) {
+                              const VkExtensionProperties *extension_properties, FILE *out, FILE *jsout) {
     uint32_t i;
 
-    if (html_output) fprintf(out, "\t\t\t%s<details><summary>", indent);
+    if (html_output) { fprintf(out, "\t\t\t%s<details><summary>", indent); }
     if (layer_name && (strlen(layer_name) > 0)) {
         if (html_output) {
             fprintf(out, "%s Extensions", layer_name);
@@ -2079,6 +2321,10 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
     } else {
         printf("\tcount = %d\n", extension_count);
     }
+    if (json_output) {
+        fprintf(jsout,",\n");
+        fprintf(jsout,"\t\"ArrayOfVkExtensionProperties\": [");
+    }
 
     for (i = 0; i < extension_count; i++) {
         VkExtensionProperties const *ext_prop = &extension_properties[i];
@@ -2092,6 +2338,14 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
             printf("%s\t", indent);
             printf("%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
         }
+        if (json_output) {
+            if (i > 0) { fprintf(jsout, ","); }
+            fprintf(jsout, "\n");
+            fprintf(jsout,"\t\t{\n");
+            fprintf(jsout,"\t\t\t\"extensionName\": \"%s\",\n", ext_prop->extensionName);
+            fprintf(jsout,"\t\t\t\"specVersion\": %u,\n", ext_prop->specVersion);
+            fprintf(jsout,"\t\t}");
+        }
     }
     if (html_output) {
         if (extension_count > 0) {
@@ -2100,8 +2354,13 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
             fprintf(out, "</details>\n");
         }
     }
+    if (json_output) {
+        if (0 < extension_count) { fprintf(jsout, "\n\t"); }
+        fprintf(jsout, "]");
+    }
 
     fflush(out);
+    fflush(jsout);
 }
 
 static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *out) {
@@ -2272,7 +2531,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
 }
 // clang-format on
 
-static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
+static void AppGpuDump(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
     uint32_t i;
 
     if (html_output) {
@@ -2284,12 +2543,12 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
         printf("GPU%u\n", gpu->id);
     }
 
-    AppGpuDumpProps(gpu, out);
+    AppGpuDumpProps(gpu, out, jsout);
     if (html_output) {
-        AppDumpExtensions("\t\t", "Device", gpu->device_extension_count, gpu->device_extensions, out);
+        AppDumpExtensions("\t\t", "Device", gpu->device_extension_count, gpu->device_extensions, out, jsout);
     } else {
         printf("\n");
-        AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out);
+        AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out, jsout);
         printf("\n");
     }
 
@@ -2299,7 +2558,7 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     }
     AppGpuDumpMemoryProps(gpu, out);
     if (!html_output) printf("\n");
-    AppGpuDumpFeatures(gpu, out);
+    AppGpuDumpFeatures(gpu, out, jsout);
     if (!html_output) printf("\n");
     AppDevDump(&gpu->dev, out);
     if (html_output) {
@@ -2342,7 +2601,6 @@ int main(int argc, char **argv) {
     struct AppInstance inst;
     FILE *out = stdout;
     FILE *jsout = stdout;
-    uint32_t selected_gpu = 0;
 
 #ifdef _WIN32
     if (ConsoleIsExclusive()) ConsoleEnlarge();
@@ -2356,7 +2614,7 @@ int main(int argc, char **argv) {
         } else if (strncmp("--json", argv[i], 6) == 0 || strcmp(argv[i], "-j") == 0) {
             if (strlen(argv[i]) > 7 && strncmp("--json=", argv[i], 6) == 0) {
                 uint32_t end = (uint32_t)strlen(argv[i]);
-                for (int j = 7; j < end; ++j) {
+                for (uint32_t j = 7; j < end; ++j) {
                     selected_gpu *= 10;
                     selected_gpu += (uint32_t)argv[i][j] - '0';
                 }
@@ -2392,7 +2650,7 @@ int main(int argc, char **argv) {
         printf("Instance Extensions:\n");
         printf("====================\n");
     }
-    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions, out);
+    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions, out, jsout);
 
     err = vkEnumeratePhysicalDevices(inst.instance, &gpu_count, NULL);
     if (err) ERR_EXIT(err);
@@ -2413,7 +2671,7 @@ int main(int argc, char **argv) {
         selected_gpu = 0;
     }
     if (json_output) {
-        char filename[20];
+        char filename[30];
         sprintf(filename, "vulkaninfo-gpu%d.json", selected_gpu);
         jsout = fopen(filename, "w");
         PrintJsonHeader(jsout, vulkan_major, vulkan_minor, vulkan_patch);
@@ -2445,12 +2703,12 @@ int main(int argc, char **argv) {
                     (char *)layer_prop->description, spec_version);
             fprintf(out, "layer version <div class='val'>%s</div></summary>\n", layer_version);
             AppDumpExtensions("\t\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
-                              out);
+                              out, jsout);
         } else {
             printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName, (char *)layer_prop->description,
                    spec_version, layer_version);
             AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
-                              out);
+                              out, jsout);
         }
 
         if (html_output) {
@@ -2472,9 +2730,9 @@ int main(int argc, char **argv) {
             VkExtensionProperties *props;
             AppGetPhysicalDeviceLayerExtensions(&gpus[j], layer_name, &count, &props);
             if (html_output) {
-                AppDumpExtensions("\t\t\t", "Layer-Device", count, props, out);
+                AppDumpExtensions("\t\t\t", "Layer-Device", count, props, out, jsout);
             } else {
-                AppDumpExtensions("\t\t", "Layer-Device", count, props, out);
+                AppDumpExtensions("\t\t", "Layer-Device", count, props, out, jsout);
             }
             if (html_output) {
                 fprintf(out, "\t\t\t\t\t</details>\n");
@@ -2559,19 +2817,25 @@ int main(int argc, char **argv) {
                 printf("Surface type : %s\n", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
             }
             if (json_output) {
-                fprintf(jsout, ",\n");
-                fprintf(jsout, "\t\"surfacecapabilities\": {\n");
+                if (selected_gpu == i) {
+                    fprintf(jsout, ",\n");
+                    fprintf(jsout, "\t\"surfaceCapabilities\": {\n");
+                    fprintf(jsout, "\t\t\"surfaceExtension\": \"%s\"", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+                } else {
+                    json_output = false;
+                    format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
+                    present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
+                    AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
+                    AppDestroySurface(&inst);
+                    json_output = true;
+                    continue;
+                }
             }
-            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
+            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
             present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
             AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
-            if (json_output && present_mode_count > 0) {
-                fprintf(jsout, ",");
-            }
             AppDestroySurface(&inst);
-            if (json_output) {
-                fprintf(jsout, "\t}");
-            }
+            if (json_output && selected_gpu == i) { fprintf(jsout, "\t}"); }
         }
         AppDestroyXcbWindow(&inst);
     }
@@ -2617,7 +2881,14 @@ int main(int argc, char **argv) {
     //---------
 
     for (uint32_t i = 0; i < gpu_count; i++) {
-        AppGpuDump(&gpus[i], out);
+        if (json_output && selected_gpu != i) {
+            json_output = false;
+            AppGpuDump(&gpus[i], out, jsout);
+            json_output = true;
+            continue;
+        } else {
+            AppGpuDump(&gpus[i], out, jsout);
+        }
         printf("\n\n");
     }
 
