@@ -743,9 +743,9 @@ void PrintJsonHeader(FILE *out, int vulkan_major, int vulkan_minor, int vulkan_p
     fprintf(out, "{\n");
     fprintf(out, "\t\"$schema\": \"https://schema.khronos.org/vulkan/devsim_1_0_0.json#\",\n");
     fprintf(out, "\t\"comments\": {\n");
-    fprintf(out, "\t\t\"filename\": \"vulkaninfo.json\",\n");
-    fprintf(out, "\t\t\"desc\": \"JSON configuration file describing GPU %d\",\n", selected_gpu);
-    fprintf(out, "\t\t\"vulkanApiVersion\": \"%d.%d.%d\"\n", vulkan_major, vulkan_minor, vulkan_patch); //TODO ask Lenny if I have to use the function pointer to do the thing
+    fprintf(out, "\t\t\"filename\": \"vulkaninfo-gpu%u.json\",\n", selected_gpu);
+    fprintf(out, "\t\t\"desc\": \"JSON configuration file describing GPU %u\",\n", selected_gpu);
+    fprintf(out, "\t\t\"vulkanApiVersion\": \"%d.%d.%d\"\n", vulkan_major, vulkan_minor, vulkan_patch);
     fprintf(out, "\t}");
 }
 
@@ -1165,7 +1165,7 @@ static void AppDestroyXlibWindow(struct AppInstance *inst) {
 #if defined(VK_USE_PLATFORM_XCB_KHR)     || \
     defined(VK_USE_PLATFORM_XLIB_KHR)    || \
     defined(VK_USE_PLATFORM_WIN32_KHR)
-static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, FILE *out, FILE *jsout) {
+static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
     // Get the list of VkFormat's that are supported:
     VkResult U_ASSERT_ONLY err;
     uint32_t format_count = 0;
@@ -1188,10 +1188,6 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
     } else {
         printf("Formats:\t\tcount = %d\n", format_count);
     }
-    if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\t\"surfaceFormats\": [");
-    }
     for (uint32_t i = 0; i < format_count; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
@@ -1199,32 +1195,15 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
         } else {
             printf("\t%s\n", VkFormatString(surf_formats[i].format));
         }
-        if (json_output) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-            fprintf(jsout, "\t\t\t{\n");
-            fprintf(jsout, "\t\t\t\t\"colorSpace\": %u,\n", surf_formats[i].colorSpace);
-            fprintf(jsout, "\t\t\t\t\"format\": %u\n", surf_formats[i].format);
-            fprintf(jsout, "\t\t\t}");
-        }
     }
-    if (format_count > 0) {
-        if (html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
-        if (json_output) {
-            fprintf(jsout, "\n");
-            fprintf(jsout, "\t\t]");
-        }
-    } else if (json_output) {
-            fprintf(jsout, " ]");
-    }
+    if (format_count > 0 && html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
 
     fflush(out);
-    fflush(jsout);
     free(surf_formats);
     return format_count;
 }
 
-static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *gpu, FILE *out, FILE *jsout) {
+static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
     // Get the list of VkPresentMode's that are supported:
     VkResult U_ASSERT_ONLY err;
     uint32_t present_mode_count = 0;
@@ -1247,10 +1226,6 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
     } else {
         printf("Present Modes:\t\tcount = %d\n", present_mode_count);
     }
-    if (json_output) {
-            fprintf(jsout, ",\n");
-            fprintf(jsout, "\t\t\"presentModes\": [");
-    }
     for (uint32_t i = 0; i < present_mode_count; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
@@ -1258,29 +1233,15 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
         } else {
             printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
         }
-        if (json_output) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-            fprintf(jsout, "\t\t\t%u", (uint32_t)surf_present_modes[i]);
-        }
     }
-    if (present_mode_count > 0) {
-        if (html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
-        if (json_output) {
-            fprintf(jsout, "\n");
-            fprintf(jsout, "\t\t]");
-        }
-    } else if (json_output) {
-            fprintf(jsout, " ]");
-    }
+    if (present_mode_count > 0 && html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
 
     fflush(out);
-    fflush(jsout);
     free(surf_present_modes);
     return present_mode_count;
 }
 
-static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *gpu, FILE *out, FILE *jsout) {
+static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
     if (CheckExtensionEnabled(VK_KHR_SURFACE_EXTENSION_NAME, gpu->inst->inst_extensions, gpu->inst->inst_extensions_count)) {
         inst->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu->obj, inst->surface, &inst->surface_capabilities);
 
@@ -1457,23 +1418,6 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT\n"); }
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n"); }
         }
-        if (json_output) {
-            fprintf(jsout, ",\n");
-            fprintf(jsout, "\t\t\"maxImageArrayLayers\": %u,\n", inst->surface_capabilities.maxImageArrayLayers);
-            fprintf(jsout, "\t\t\"maxImageCount\": %u,\n", inst->surface_capabilities.maxImageCount);
-            fprintf(jsout, "\t\t\"maxImageExtent\": {\n");
-            fprintf(jsout, "\t\t\t\"height\": %u,\n", inst->surface_capabilities.maxImageExtent.height);
-            fprintf(jsout, "\t\t\t\"width\": %u\n", inst->surface_capabilities.maxImageExtent.width);
-            fprintf(jsout, "\t\t},\n");
-            fprintf(jsout, "\t\t\"minImageCount\": %u,\n", inst->surface_capabilities.minImageCount);
-            fprintf(jsout, "\t\t\"minImageExtent\": {\n");
-            fprintf(jsout, "\t\t\t\"height\": %u,\n", inst->surface_capabilities.minImageExtent.height);
-            fprintf(jsout, "\t\t\t\"width\": %u\n", inst->surface_capabilities.minImageExtent.width);
-            fprintf(jsout, "\t\t},\n");
-            fprintf(jsout, "\t\t\"supportedCompositeAlpha\": %u,\n", inst->surface_capabilities.supportedCompositeAlpha);
-            fprintf(jsout, "\t\t\"supportedTransforms\": %u,\n", inst->surface_capabilities.supportedTransforms);
-            fprintf(jsout, "\t\t\"supportedUsageFlags\": %u", inst->surface_capabilities.supportedUsageFlags);
-        }
 
         // Get additional surface capability information from vkGetPhysicalDeviceSurfaceCapabilities2EXT
         if (CheckExtensionEnabled(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, gpu->inst->inst_extensions, gpu->inst->inst_extensions_count)) {
@@ -1499,10 +1443,6 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                 if (inst->surface_capabilities2_ext.supportedSurfaceCounters == 0) { printf("\t\tNone\n"); }
                 if (inst->surface_capabilities2_ext.supportedSurfaceCounters & VK_SURFACE_COUNTER_VBLANK_EXT) { printf("\t\tVK_SURFACE_COUNTER_VBLANK_EXT\n"); }
             }
-            if (json_output) {
-                fprintf(jsout, ",\n");
-                fprintf(jsout, "\t\t\"supportedSurfaceCounters\": %u", inst->surface_capabilities2_ext.supportedSurfaceCounters);
-            }
         }
 
         // Get additional surface capability information from vkGetPhysicalDeviceSurfaceCapabilities2KHR
@@ -1525,11 +1465,6 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             inst->vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu->obj, &surface_info, &inst->surface_capabilities2);
 
             void *place = inst->surface_capabilities2.pNext;
-            if (json_output) {
-                fprintf(jsout, ",\n");
-                fprintf(jsout, "\t\t\"sharedPresentSupportedUsageFlags\": [");
-            }
-            uint32_t shared_present_surface_counter = 0;
             while (place) {
                 struct VkStructureHeader* work = (struct VkStructureHeader*) place;
                 if (work->sType == VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR) {
@@ -1578,18 +1513,8 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                         if (shared_surface_capabilities->sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT\n"); }
                         if (shared_surface_capabilities->sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n"); }
                     }
-                    if (json_output) {
-                        if (shared_present_surface_counter > 0) { fprintf(jsout, ","); }
-                        fprintf(jsout, "\n");
-                        fprintf(jsout, "\t\t\t%u", shared_surface_capabilities->sharedPresentSupportedUsageFlags);
-                        ++shared_present_surface_counter;
-                    }
                 }
                 place = work->pNext;
-            }
-            if (json_output) {
-                if (shared_present_surface_counter > 0) { fprintf(jsout, "\n\t\t"); }
-                fprintf(jsout, "]");
             }
         }
         if (html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
@@ -2162,7 +2087,7 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE 
     if (json_output) {
         fprintf(jsout, ",\n");
         fprintf(jsout, "\t\t\"limits\": {\n");
-        fprintf(jsout, "\t\t\t\"bufferImageGranularity\": %lu,\n",                                limits->bufferImageGranularity);
+        fprintf(jsout, "\t\t\t\"bufferImageGranularity\": %llu,\n",                               (unsigned long long)limits->bufferImageGranularity);
         fprintf(jsout, "\t\t\t\"discreteQueuePriorities\": %u,\n",                                limits->discreteQueuePriorities);
         fprintf(jsout, "\t\t\t\"framebufferColorSampleCounts\": %u,\n",                           limits->framebufferColorSampleCounts);
         fprintf(jsout, "\t\t\t\"framebufferDepthSampleCounts\": %u,\n",                           limits->framebufferDepthSampleCounts);
@@ -2255,16 +2180,16 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE 
         fprintf(jsout, "\t\t\t],\n");
         fprintf(jsout, "\t\t\t\"maxViewports\": %u,\n",                                           limits->maxViewports);
         fprintf(jsout, "\t\t\t\"minInterpolationOffset\": %g,\n",                                 limits->minInterpolationOffset);
-        fprintf(jsout, "\t\t\t\"minMemoryMapAlignment\": %lu,\n",                                  limits->minMemoryMapAlignment);
-        fprintf(jsout, "\t\t\t\"minStorageBufferOffsetAlignment\": %lu,\n",                       limits->minStorageBufferOffsetAlignment);
-        fprintf(jsout, "\t\t\t\"minTexelBufferOffsetAlignment\": %lu,\n",                         limits->minTexelBufferOffsetAlignment);
+        fprintf(jsout, "\t\t\t\"minMemoryMapAlignment\": " PRINTF_SIZE_T_SPECIFIER ",\n",         limits->minMemoryMapAlignment);
+        fprintf(jsout, "\t\t\t\"minStorageBufferOffsetAlignment\": %llu,\n",                      (unsigned long long)limits->minStorageBufferOffsetAlignment);
+        fprintf(jsout, "\t\t\t\"minTexelBufferOffsetAlignment\": %llu,\n",                        (unsigned long long)limits->minTexelBufferOffsetAlignment);
         fprintf(jsout, "\t\t\t\"minTexelGatherOffset\": %d,\n",                                   limits->minTexelGatherOffset);
         fprintf(jsout, "\t\t\t\"minTexelOffset\": %d,\n",                                         limits->minTexelOffset);
-        fprintf(jsout, "\t\t\t\"minUniformBufferOffsetAlignment\": %lu,\n",                       limits->minUniformBufferOffsetAlignment);
+        fprintf(jsout, "\t\t\t\"minUniformBufferOffsetAlignment\": %llu,\n",                      (unsigned long long)limits->minUniformBufferOffsetAlignment);
         fprintf(jsout, "\t\t\t\"mipmapPrecisionBits\": %u,\n",                                    limits->mipmapPrecisionBits);
-        fprintf(jsout, "\t\t\t\"nonCoherentAtomSize\": %lu,\n",                                   limits->nonCoherentAtomSize);
-        fprintf(jsout, "\t\t\t\"optimalBufferCopyOffsetAlignment\": %lu,\n",                      limits->optimalBufferCopyOffsetAlignment);
-        fprintf(jsout, "\t\t\t\"optimalBufferCopyRowPitchAlignment\": %lu,\n",                    limits->optimalBufferCopyRowPitchAlignment);
+        fprintf(jsout, "\t\t\t\"nonCoherentAtomSize\": %llu,\n",                                  (unsigned long long)limits->nonCoherentAtomSize);
+        fprintf(jsout, "\t\t\t\"optimalBufferCopyOffsetAlignment\": %llu,\n",                     (unsigned long long)limits->optimalBufferCopyOffsetAlignment);
+        fprintf(jsout, "\t\t\t\"optimalBufferCopyRowPitchAlignment\": %llu,\n",                   (unsigned long long)limits->optimalBufferCopyRowPitchAlignment);
         fprintf(jsout, "\t\t\t\"pointSizeGranularity\": %g,\n",                                   limits->pointSizeGranularity);
         fprintf(jsout, "\t\t\t\"pointSizeRange\": [\n");
         fprintf(jsout, "\t\t\t\t%g,\n",                                                           limits->pointSizeRange[0]);
@@ -2274,7 +2199,7 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE 
         fprintf(jsout, "\t\t\t\"sampledImageDepthSampleCounts\": %u,\n",                          limits->sampledImageDepthSampleCounts);
         fprintf(jsout, "\t\t\t\"sampledImageIntegerSampleCounts\": %u,\n",                        limits->sampledImageIntegerSampleCounts);
         fprintf(jsout, "\t\t\t\"sampledImageStencilSampleCounts\": %u,\n",                        limits->sampledImageStencilSampleCounts);
-        fprintf(jsout, "\t\t\t\"sparseAddressSpaceSize\": %lu,\n",                                limits->sparseAddressSpaceSize);
+        fprintf(jsout, "\t\t\t\"sparseAddressSpaceSize\": %llu,\n",                               (unsigned long long)limits->sparseAddressSpaceSize);
         fprintf(jsout, "\t\t\t\"standardSampleLocations\": %u,\n",                                limits->standardSampleLocations);
         fprintf(jsout, "\t\t\t\"storageImageSampleCounts\": %u,\n",                               limits->storageImageSampleCounts);
         fprintf(jsout, "\t\t\t\"strictLines\": %u,\n",                                            limits->strictLines);
@@ -2469,7 +2394,7 @@ static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *ou
         fprintf(jsout, "\t\t\t},\n");
         fprintf(jsout, "\t\t\t\"queueCount\": %u,\n", props->queueCount);
         fprintf(jsout, "\t\t\t\"queueFlags\": %u,\n", props->queueFlags);
-        fprintf(jsout, "\t\t\t\"timestampValidBits\": %u,\n", props->timestampValidBits);
+        fprintf(jsout, "\t\t\t\"timestampValidBits\": %u\n", props->timestampValidBits);
         fprintf(jsout, "\t\t}");
     }
 
@@ -2549,7 +2474,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
             fprintf(jsout, "\n");
             fprintf(jsout,"\t\t\t{\n");
             fprintf(jsout,"\t\t\t\t\"flags\": %u,\n", heap_flags);
-            fprintf(jsout,"\t\t\t\t\"size\": %lu\n", memSize);
+            fprintf(jsout,"\t\t\t\t\"size\": " PRINTF_SIZE_T_SPECIFIER "\n", (size_t)memSize);
             fprintf(jsout,"\t\t\t}");
         }
     }
@@ -2577,7 +2502,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
     for (uint32_t i = 0; i < props->memoryTypeCount; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t\t\t<details><summary>memoryTypes[<div class='val'>%u</div>]</summary>\n", i);
-            fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>heapIndex = <div class='val'>%u</div></summary></summary></details>\n", props->memoryTypes[i].heapIndex);
+            fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>heapIndex = <div class='val'>%u</div></summary></details>\n", props->memoryTypes[i].heapIndex);
             fprintf(out, "\t\t\t\t\t\t\t\t<details open><summary>propertyFlags = <div class='val'>0x%" PRIxLEAST32 "</div></summary>", props->memoryTypes[i].propertyFlags);
             if (props->memoryTypes[i].propertyFlags == 0) {
                 fprintf(out, "</details>\n");
@@ -2623,7 +2548,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
     }
     if (json_output) {
         if (props->memoryTypeCount > 0) { fprintf(jsout, "\n\t\t"); }
-        fprintf(jsout, "],\n");
+        fprintf(jsout, "]\n");
         fprintf(jsout, "\t}");
     }
 
@@ -2920,27 +2845,10 @@ int main(int argc, char **argv) {
                 printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
                 printf("Surface type : %s\n", VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
             }
-            if (json_output) {
-                if (selected_gpu == i) {
-                    fprintf(jsout, ",\n");
-                    fprintf(jsout, "\t\"surfaceCapabilities\": {\n");
-                    fprintf(jsout, "\t\t\"surfaceExtension\": \"%s\"", VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-                } else {
-                    // Toggle json_output to allow html or std output without json output
-                    json_output = false;
-                    format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
-                    present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
-                    AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
-                    AppDestroySurface(&inst);
-                    json_output = true;
-                    continue;
-                }
-            }
-            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
-            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
-            AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
+            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
+            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out);
+            AppDumpSurfaceCapabilities(&inst, &gpus[i], out);
             AppDestroySurface(&inst);
-            if (json_output && (selected_gpu == i)) { fprintf(jsout, "\n\t}"); }
         }
         AppDestroyWin32Window(&inst);
     }
@@ -2959,27 +2867,10 @@ int main(int argc, char **argv) {
                 printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
                 printf("Surface type : %s\n", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
             }
-            if (json_output) {
-                if (selected_gpu == i) {
-                    fprintf(jsout, ",\n");
-                    fprintf(jsout, "\t\"surfaceCapabilities\": {\n");
-                    fprintf(jsout, "\t\t\"surfaceExtension\": \"%s\"", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-                } else {
-                    // Toggle json_output to allow html or std output without json output
-                    json_output = false;
-                    format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
-                    present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
-                    AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
-                    AppDestroySurface(&inst);
-                    json_output = true;
-                    continue;
-                }
-            }
-            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
-            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
-            AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
+            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
+            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out);
+            AppDumpSurfaceCapabilities(&inst, &gpus[i], out);
             AppDestroySurface(&inst);
-            if (json_output && (selected_gpu == i)) { fprintf(jsout, "\n\t}"); }
         }
         AppDestroyXcbWindow(&inst);
     }
@@ -2999,27 +2890,10 @@ int main(int argc, char **argv) {
                 printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
                 printf("Surface type : %s\n", VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
             }
-            if (json_output) {
-                if (selected_gpu == i) {
-                    fprintf(jsout, ",\n");
-                    fprintf(jsout, "\t\"surfaceCapabilities\": {\n");
-                    fprintf(jsout, "\t\t\"surfaceExtension\": \"%s\"", VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-                } else {
-                    // Toggle json_output to allow html or std output without json output
-                    json_output = false;
-                    format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
-                    present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
-                    AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
-                    AppDestroySurface(&inst);
-                    json_output = true;
-                    continue;
-                }
-            }
-            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out, jsout);
-            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out, jsout);
-            AppDumpSurfaceCapabilities(&inst, &gpus[i], out, jsout);
+            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
+            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out);
+            AppDumpSurfaceCapabilities(&inst, &gpus[i], out);
             AppDestroySurface(&inst);
-            if (json_output && (selected_gpu == i)) { fprintf(jsout, "\n\t}"); }
         }
         AppDestroyXlibWindow(&inst);
     }
@@ -3042,13 +2916,13 @@ int main(int argc, char **argv) {
     //---------
 
     for (uint32_t i = 0; i < gpu_count; ++i) {
-        if (json_output && selected_gpu == i) {
-            AppGpuDump(&gpus[i], out, jsout);
-        } else {
+        if (json_output && selected_gpu != i) {
             // Toggle json_output to allow html or std output without json output
             json_output = false;
             AppGpuDump(&gpus[i], out, jsout);
             json_output = true;
+        } else {
+            AppGpuDump(&gpus[i], out, jsout);
         }
         if (!html_output) { printf("\n\n"); }
     }
@@ -3070,7 +2944,7 @@ int main(int argc, char **argv) {
         fclose(out);
     }
     if (json_output) {
-        fprintf(jsout, "\n}");
+        fprintf(jsout, "\n}\n");
         fclose(jsout);
     }
 
