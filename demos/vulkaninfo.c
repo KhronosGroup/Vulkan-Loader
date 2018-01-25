@@ -96,23 +96,13 @@ static int ConsoleIsExclusive(void) {
 #define APP_SHORT_NAME "vulkaninfo"
 
 static bool html_output = false;
+static bool human_readable_output = true;
 static bool json_output = false;
 static uint32_t selected_gpu = 0;
 
 struct VkStructureHeader {
     VkStructureType sType;
     void *pNext;
-};
-
-struct AppGpu;
-
-struct AppDev {
-    struct AppGpu *gpu; /* point back to the GPU */
-
-    VkDevice obj;
-
-    VkFormatProperties format_props[VK_FORMAT_RANGE_SIZE];
-    VkFormatProperties2KHR format_props2[VK_FORMAT_RANGE_SIZE];
 };
 
 struct LayerExtensionList {
@@ -189,8 +179,6 @@ struct AppGpu {
 
     uint32_t device_extension_count;
     VkExtensionProperties *device_extensions;
-
-    struct AppDev dev;
 };
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DbgCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
@@ -478,24 +466,11 @@ static const char *VkPresentModeString(VkPresentModeKHR mode) {
 
 static bool CheckExtensionEnabled(const char *extension_to_check, const char **extension_list, uint32_t extension_count) {
     for (uint32_t i = 0; i < extension_count; ++i) {
-        if (!strcmp(extension_to_check, extension_list[i])) return true;
-    }
-    return false;
-}
-
-static void AppDevInitFormats(struct AppDev *dev) {
-    VkFormat f;
-    for (f = 0; f < VK_FORMAT_RANGE_SIZE; ++f) {
-        const VkFormat fmt = f;
-        vkGetPhysicalDeviceFormatProperties(dev->gpu->obj, fmt, &dev->format_props[f]);
-
-        if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, dev->gpu->inst->inst_extensions,
-                                  dev->gpu->inst->inst_extensions_count)) {
-            dev->format_props2[f].sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2_KHR;
-            dev->format_props2[f].pNext = NULL;
-            dev->gpu->inst->vkGetPhysicalDeviceFormatProperties2KHR(dev->gpu->obj, fmt, &dev->format_props2[f]);
+        if (!strcmp(extension_to_check, extension_list[i])) {
+            return true;
         }
     }
+    return false;
 }
 
 static void ExtractVersion(uint32_t version, uint32_t *major, uint32_t *minor, uint32_t *patch) {
@@ -515,9 +490,7 @@ static void AppGetPhysicalDeviceLayerExtensions(struct AppGpu *gpu, char *layer_
         err = vkEnumerateDeviceExtensionProperties(gpu->obj, layer_name, &ext_count, NULL);
         assert(!err);
 
-        if (ext_ptr) {
-            free(ext_ptr);
-        }
+        if (ext_ptr) free(ext_ptr);
         ext_ptr = malloc(ext_count * sizeof(VkExtensionProperties));
         err = vkEnumerateDeviceExtensionProperties(gpu->obj, layer_name, &ext_count, ext_ptr);
     } while (err == VK_INCOMPLETE);
@@ -525,43 +498,6 @@ static void AppGetPhysicalDeviceLayerExtensions(struct AppGpu *gpu, char *layer_
 
     *extension_count = ext_count;
     *extension_properties = ext_ptr;
-}
-
-static void AppDevInit(struct AppDev *dev, struct AppGpu *gpu) {
-    VkDeviceCreateInfo info = {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext = NULL,
-        .flags = 0,
-        .queueCreateInfoCount = 0,
-        .pQueueCreateInfos = NULL,
-        .enabledLayerCount = 0,
-        .ppEnabledLayerNames = NULL,
-        .enabledExtensionCount = 0,
-        .ppEnabledExtensionNames = NULL,
-    };
-    VkResult U_ASSERT_ONLY err;
-
-    // Device extensions
-    AppGetPhysicalDeviceLayerExtensions(gpu, NULL, &gpu->device_extension_count, &gpu->device_extensions);
-
-    fflush(stdout);
-
-    /* request all queues */
-    info.queueCreateInfoCount = gpu->queue_count;
-    info.pQueueCreateInfos = gpu->queue_reqs;
-
-    info.enabledLayerCount = 0;
-    info.ppEnabledLayerNames = NULL;
-    info.enabledExtensionCount = 0;
-    info.ppEnabledExtensionNames = NULL;
-    dev->gpu = gpu;
-    err = vkCreateDevice(gpu->obj, &info, NULL, &dev->obj);
-    if (err) ERR_EXIT(err);
-}
-
-static void AppDevDestroy(struct AppDev *dev) {
-    vkDeviceWaitIdle(dev->obj);
-    vkDestroyDevice(dev->obj, NULL);
 }
 
 static void AppGetGlobalLayerExtensions(char *layer_name, uint32_t *extension_count, VkExtensionProperties **extension_properties) {
@@ -739,26 +675,22 @@ void PrintHtmlFooter(FILE *out) {
 }
 
 // Prints opening code for json output file
-void PrintJsonHeader(FILE *out, int vulkan_major, int vulkan_minor, int vulkan_patch) {
-    fprintf(out, "{\n");
-    fprintf(out, "\t\"$schema\": \"https://schema.khronos.org/vulkan/devsim_1_0_0.json#\",\n");
-    fprintf(out, "\t\"comments\": {\n");
-    fprintf(out, "\t\t\"filename\": \"vulkaninfo-gpu%u.json\",\n", selected_gpu);
-    fprintf(out, "\t\t\"desc\": \"JSON configuration file describing GPU %u\",\n", selected_gpu);
-    fprintf(out, "\t\t\"vulkanApiVersion\": \"%d.%d.%d\"\n", vulkan_major, vulkan_minor, vulkan_patch);
-    fprintf(out, "\t}");
+void PrintJsonHeader(int vulkan_major, int vulkan_minor, int vulkan_patch) {
+    printf("{\n");
+    printf("\t\"$schema\": \"https://schema.khronos.org/vulkan/devsim_1_0_0.json#\",\n");
+    printf("\t\"comments\": {\n");
+    printf("\t\t\"desc\": \"JSON configuration file describing GPU %u. Generated using the VulkanInfo program.\",\n", selected_gpu);
+    printf("\t\t\"vulkanApiVersion\": \"%d.%d.%d\"\n", vulkan_major, vulkan_minor, vulkan_patch);
+    printf("\t}");
 }
 
 // Checks if current argument sepcifies json output, interprets/updates gpu selection
 void CheckForJsonOption(const char *arg) {
     if (strncmp("--json", arg, 6) == 0 || strcmp(arg, "-j") == 0) {
         if (strlen(arg) > 7 && strncmp("--json=", arg, 7) == 0) {
-            const uint32_t end = (const uint32_t)strlen(arg);
-            for (uint32_t i = 7; i < end; ++i) {
-                selected_gpu *= 10;
-                selected_gpu += (uint32_t)arg[i] - '0';
-            }
+            selected_gpu = strtol(arg + 7, NULL, 10);
         }
+        human_readable_output = false;
         json_output = true;
     }
 }
@@ -946,12 +878,10 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
         inst->vkGetPhysicalDeviceFeatures2KHR(gpu->obj, &gpu->features2);
     }
 
-    AppDevInit(&gpu->dev, gpu);
-    AppDevInitFormats(&gpu->dev);
+    AppGetPhysicalDeviceLayerExtensions(gpu, NULL, &gpu->device_extension_count, &gpu->device_extensions);
 }
 
 static void AppGpuDestroy(struct AppGpu *gpu) {
-    AppDevDestroy(&gpu->dev);
     free(gpu->device_extensions);
 
     for (uint32_t i = 0; i < gpu->queue_count; ++i) {
@@ -1185,20 +1115,21 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
         } else {
             fprintf(out, "</details>\n");
         }
-    } else {
+    } else if (human_readable_output) {
         printf("Formats:\t\tcount = %d\n", format_count);
     }
     for (uint32_t i = 0; i < format_count; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
                     VkFormatString(surf_formats[i].format));
-        } else {
+        } else if (human_readable_output) {
             printf("\t%s\n", VkFormatString(surf_formats[i].format));
         }
     }
-    if (format_count > 0 && html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
+    if ((format_count > 0) && html_output) fprintf(out, "\t\t\t\t</details>\n");
 
     fflush(out);
+    fflush(stdout);
     free(surf_formats);
     return format_count;
 }
@@ -1223,20 +1154,21 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
         } else {
             fprintf(out, "</details>");
         }
-    } else {
+    } else if (human_readable_output) {
         printf("Present Modes:\t\tcount = %d\n", present_mode_count);
     }
     for (uint32_t i = 0; i < present_mode_count; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
                     VkPresentModeString(surf_present_modes[i]));
-        } else {
+        } else if (human_readable_output) {
             printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
         }
     }
-    if (present_mode_count > 0 && html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
+    if ((present_mode_count > 0) && html_output) fprintf(out, "\t\t\t\t</details>\n");
 
     fflush(out);
+    fflush(stdout);
     free(surf_present_modes);
     return present_mode_count;
 }
@@ -1364,7 +1296,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT</div></summary></details>\n");
             }
             fprintf(out, "\t\t\t\t\t</details>\n");
-        } else {
+        } else if (human_readable_output) {
             printf("\nVkSurfaceCapabilitiesKHR:\n");
             printf("=========================\n");
             printf("\tminImageCount       = %u\n", inst->surface_capabilities.minImageCount);
@@ -1436,13 +1368,13 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                 }
                 fprintf(out, "\t\t\t\t\t\t</details>\n");
                 fprintf(out, "\t\t\t\t\t</details>\n");
-            } else {
+            } else if (human_readable_output) {
                 printf("\nVkSurfaceCapabilities2EXT:\n");
                 printf("==========================\n\n");
                 printf("\tsupportedSurfaceCounters:\n");
                 if (inst->surface_capabilities2_ext.supportedSurfaceCounters == 0) { printf("\t\tNone\n"); }
                 if (inst->surface_capabilities2_ext.supportedSurfaceCounters & VK_SURFACE_COUNTER_VBLANK_EXT) { printf("\t\tVK_SURFACE_COUNTER_VBLANK_EXT\n"); }
-            }
+           }
         }
 
         // Get additional surface capability information from vkGetPhysicalDeviceSurfaceCapabilities2KHR
@@ -1472,7 +1404,9 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                     if (html_output) {
                         fprintf(out, "\t\t\t\t\t<details><summary>VkSharedPresentSurfaceCapabilitiesKHR</summary>\n");
                         fprintf(out, "\t\t\t\t\t\t<details><summary>sharedPresentSupportedUsageFlags</summary>\n");
-                        if (shared_surface_capabilities->sharedPresentSupportedUsageFlags == 0) { fprintf(out, "\t\t\t\t\t\t\t<details><summary>None</summary></details>\n"); }
+                        if (shared_surface_capabilities->sharedPresentSupportedUsageFlags == 0) {
+                            fprintf(out, "\t\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+                        }
                         if (shared_surface_capabilities->sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
                             fprintf(out, "\t\t\t\t\t\t\t<details><summary><div class='type'>VK_IMAGE_USAGE_TRANSFER_SRC_BIT</div></summary></details>\n");
                         }
@@ -1499,7 +1433,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                         }
                         fprintf(out, "\t\t\t\t\t\t</details>\n");
                         fprintf(out, "\t\t\t\t\t</details>\n");
-                    } else {
+                    } else if (human_readable_output) {
                         printf("\nVkSharedPresentSurfaceCapabilitiesKHR:\n");
                         printf("========================================\n");
                         printf("\tsharedPresentSupportedUsageFlags:\n");
@@ -1517,29 +1451,30 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                 place = work->pNext;
             }
         }
-        if (html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
+        if (html_output) fprintf(out, "\t\t\t\t</details>\n");
     }
 }
 
 #endif
 
-static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *out, FILE *jsout) {
-    const VkFormatProperties *props = &dev->format_props[fmt];
+static void AppDevDumpFormatProps(const struct AppGpu *gpu, VkFormat fmt, bool *first_in_list, FILE *out) {
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(gpu->obj, fmt, &props);
     struct {
         const char *name;
         VkFlags flags;
     } features[3];
 
     features[0].name  = "linearTiling   FormatFeatureFlags";
-    features[0].flags = props->linearTilingFeatures;
+    features[0].flags = props.linearTilingFeatures;
     features[1].name  = "optimalTiling  FormatFeatureFlags";
-    features[1].flags = props->optimalTilingFeatures;
+    features[1].flags = props.optimalTilingFeatures;
     features[2].name  = "bufferFeatures FormatFeatureFlags";
-    features[2].flags = props->bufferFeatures;
+    features[2].flags = props.bufferFeatures;
 
     if (html_output) {
         fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>FORMAT_%s</div></summary>\n", VkFormatString(fmt));
-    } else {
+    } else if (human_readable_output) {
         printf("\nFORMAT_%s:", VkFormatString(fmt));
     }
     for (uint32_t i = 0; i < ARRAY_SIZE(features); ++i) {
@@ -1567,7 +1502,7 @@ static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *
                         ((features[i].flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)               ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR</div></summary></details>\n"               : "")); //0x8000
             }
             fprintf(out, "\t\t\t\t\t\t\t</details>\n");
-        } else {
+        } else if (human_readable_output) {
             printf("\n\t%s:", features[i].name);
             if (features[i].flags == 0) {
                 printf("\n\t\tNone");
@@ -1594,40 +1529,40 @@ static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *
     }
     if (html_output) {
         fprintf(out, "\t\t\t\t\t\t</details>\n");
-    } else {
+    } else if (human_readable_output) {
         printf("\n");
     }
-    if (json_output) {
-        fprintf(jsout, "\t\t{\n");
-        fprintf(jsout, "\t\t\t\"formatID\": %d,\n", fmt);
-        fprintf(jsout, "\t\t\t\"linearTilingFeatures\": %u,\n", props->linearTilingFeatures);
-        fprintf(jsout, "\t\t\t\"optimalTilingFeatures\": %u,\n", props->optimalTilingFeatures);
-        fprintf(jsout, "\t\t\t\"bufferFeatures\": %u\n", props->bufferFeatures);
-        fprintf(jsout, "\t\t}");
+    if (json_output && (props.linearTilingFeatures || props.optimalTilingFeatures || props.bufferFeatures)) {
+        if (!(*first_in_list)) printf(",");
+        printf("\n");
+        printf("\t\t{\n");
+        printf("\t\t\t\"formatID\": %d,\n", fmt);
+        printf("\t\t\t\"linearTilingFeatures\": %u,\n", props.linearTilingFeatures);
+        printf("\t\t\t\"optimalTilingFeatures\": %u,\n", props.optimalTilingFeatures);
+        printf("\t\t\t\"bufferFeatures\": %u\n", props.bufferFeatures);
+        printf("\t\t}");
+        *first_in_list = false;
     }
 }
 
-static void AppDevDump(const struct AppDev *dev, FILE *out, FILE *jsout) {
+static void AppDevDump(const struct AppGpu *gpu, FILE *out) {
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>Format Properties</summary>\n");
-    } else {
+    } else if (human_readable_output) {
         printf("Format Properties:\n");
         printf("==================");
     }
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\"ArrayOfVkFormatProperties\": [");
+        printf(",\n");
+        printf("\t\"ArrayOfVkFormatProperties\": [");
     }
     VkFormat fmt;
+    bool first_in_list = true;   // Used for commas in json output
     for (fmt = 0; fmt < VK_FORMAT_RANGE_SIZE; ++fmt) {
-        if (json_output) {
-            if (fmt > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-        }
-        AppDevDumpFormatProps(dev, fmt, out, jsout);
+        AppDevDumpFormatProps(gpu, fmt, &first_in_list, out);
     }
-    if (html_output) { fprintf(out, "\t\t\t\t\t</details>\n"); }
-    if (json_output) { fprintf(jsout, "\n\t]"); }
+    if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
+    if (json_output) printf("\n\t]");
 }
 
 #ifdef _WIN32
@@ -1636,7 +1571,7 @@ static void AppDevDump(const struct AppDev *dev, FILE *out, FILE *jsout) {
 #define PRINTF_SIZE_T_SPECIFIER    "%zu"
 #endif
 
-static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
+static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
     const VkPhysicalDeviceFeatures *features = &gpu->features;
 
     if (html_output) {
@@ -1697,7 +1632,7 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out, FILE *jsout)
         fprintf(out, "\t\t\t\t\t\t<details><summary>vertexPipelineStoresAndAtomics          = <div class='val'>%u</div></summary></details>\n", features->vertexPipelineStoresAndAtomics         );
         fprintf(out, "\t\t\t\t\t\t<details><summary>wideLines                               = <div class='val'>%u</div></summary></details>\n", features->wideLines                              );
         fprintf(out, "\t\t\t\t\t</details>\n");
-    } else {
+    } else if (human_readable_output) {
         printf("VkPhysicalDeviceFeatures:\n");
         printf("=========================\n");
         printf("\talphaToOne                              = %u\n", features->alphaToOne                             );
@@ -1757,68 +1692,68 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out, FILE *jsout)
         printf("\twideLines                               = %u\n", features->wideLines                              );
     }
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\"VkPhysicalDeviceFeatures\": {\n");
-        fprintf(jsout, "\t\t\"alphaToOne\": %u,\n",                              features->alphaToOne);
-        fprintf(jsout, "\t\t\"depthBiasClamp\": %u,\n",                          features->depthBiasClamp);
-        fprintf(jsout, "\t\t\"depthBounds\": %u,\n",                             features->depthBounds);
-        fprintf(jsout, "\t\t\"depthClamp\": %u,\n",                              features->depthClamp);
-        fprintf(jsout, "\t\t\"drawIndirectFirstInstance\": %u,\n",               features->drawIndirectFirstInstance);
-        fprintf(jsout, "\t\t\"dualSrcBlend\": %u,\n",                            features->dualSrcBlend);
-        fprintf(jsout, "\t\t\"fillModeNonSolid\": %u,\n",                        features->fillModeNonSolid);
-        fprintf(jsout, "\t\t\"fragmentStoresAndAtomics\": %u,\n",                features->fragmentStoresAndAtomics);
-        fprintf(jsout, "\t\t\"fullDrawIndexUint32\": %u,\n",                     features->fullDrawIndexUint32);
-        fprintf(jsout, "\t\t\"geometryShader\": %u,\n",                          features->geometryShader);
-        fprintf(jsout, "\t\t\"imageCubeArray\": %u,\n",                          features->imageCubeArray);
-        fprintf(jsout, "\t\t\"independentBlend\": %u,\n",                        features->independentBlend);
-        fprintf(jsout, "\t\t\"inheritedQueries\": %u,\n",                        features->inheritedQueries);
-        fprintf(jsout, "\t\t\"largePoints\": %u,\n",                             features->largePoints);
-        fprintf(jsout, "\t\t\"logicOp\": %u,\n",                                 features->logicOp);
-        fprintf(jsout, "\t\t\"multiDrawIndirect\": %u,\n",                       features->multiDrawIndirect);
-        fprintf(jsout, "\t\t\"multiViewport\": %u,\n",                           features->multiViewport);
-        fprintf(jsout, "\t\t\"occlusionQueryPrecise\": %u,\n",                   features->occlusionQueryPrecise);
-        fprintf(jsout, "\t\t\"pipelineStatisticsQuery\": %u,\n",                 features->pipelineStatisticsQuery);
-        fprintf(jsout, "\t\t\"robustBufferAccess\": %u,\n",                      features->robustBufferAccess);
-        fprintf(jsout, "\t\t\"samplerAnisotropy\": %u,\n",                       features->samplerAnisotropy);
-        fprintf(jsout, "\t\t\"sampleRateShading\": %u,\n",                       features->sampleRateShading);
-        fprintf(jsout, "\t\t\"shaderClipDistance\": %u,\n",                      features->shaderClipDistance);
-        fprintf(jsout, "\t\t\"shaderCullDistance\": %u,\n",                      features->shaderCullDistance);
-        fprintf(jsout, "\t\t\"shaderFloat64\": %u,\n",                           features->shaderFloat64);
-        fprintf(jsout, "\t\t\"shaderImageGatherExtended\": %u,\n",               features->shaderImageGatherExtended);
-        fprintf(jsout, "\t\t\"shaderInt16\": %u,\n",                             features->shaderInt16);
-        fprintf(jsout, "\t\t\"shaderInt64\": %u,\n",                             features->shaderInt64);
-        fprintf(jsout, "\t\t\"shaderResourceMinLod\": %u,\n",                    features->shaderResourceMinLod);
-        fprintf(jsout, "\t\t\"shaderResourceResidency\": %u,\n",                 features->shaderResourceResidency);
-        fprintf(jsout, "\t\t\"shaderSampledImageArrayDynamicIndexing\": %u,\n",  features->shaderSampledImageArrayDynamicIndexing);
-        fprintf(jsout, "\t\t\"shaderStorageBufferArrayDynamicIndexing\": %u,\n", features->shaderStorageBufferArrayDynamicIndexing);
-        fprintf(jsout, "\t\t\"shaderStorageImageArrayDynamicIndexing\": %u,\n",  features->shaderStorageImageArrayDynamicIndexing);
-        fprintf(jsout, "\t\t\"shaderStorageImageExtendedFormats\": %u,\n",       features->shaderStorageImageExtendedFormats);
-        fprintf(jsout, "\t\t\"shaderStorageImageMultisample\": %u,\n",           features->shaderStorageImageMultisample);
-        fprintf(jsout, "\t\t\"shaderStorageImageReadWithoutFormat\": %u,\n",     features->shaderStorageImageReadWithoutFormat);
-        fprintf(jsout, "\t\t\"shaderStorageImageWriteWithoutFormat\": %u,\n",    features->shaderStorageImageWriteWithoutFormat);
-        fprintf(jsout, "\t\t\"shaderTessellationAndGeometryPointSize\": %u,\n",  features->shaderTessellationAndGeometryPointSize);
-        fprintf(jsout, "\t\t\"shaderUniformBufferArrayDynamicIndexing\": %u,\n", features->shaderUniformBufferArrayDynamicIndexing);
-        fprintf(jsout, "\t\t\"sparseBinding\": %u,\n",                           features->sparseBinding);
-        fprintf(jsout, "\t\t\"sparseResidency2Samples\": %u,\n",                 features->sparseResidency2Samples);
-        fprintf(jsout, "\t\t\"sparseResidency4Samples\": %u,\n",                 features->sparseResidency4Samples);
-        fprintf(jsout, "\t\t\"sparseResidency8Samples\": %u,\n",                 features->sparseResidency8Samples);
-        fprintf(jsout, "\t\t\"sparseResidency16Samples\": %u,\n",                features->sparseResidency16Samples);
-        fprintf(jsout, "\t\t\"sparseResidencyAliased\": %u,\n",                  features->sparseResidencyAliased);
-        fprintf(jsout, "\t\t\"sparseResidencyBuffer\": %u,\n",                   features->sparseResidencyBuffer);
-        fprintf(jsout, "\t\t\"sparseResidencyImage2D\": %u,\n",                  features->sparseResidencyImage2D);
-        fprintf(jsout, "\t\t\"sparseResidencyImage3D\": %u,\n",                  features->sparseResidencyImage3D);
-        fprintf(jsout, "\t\t\"tessellationShader\": %u,\n",                      features->tessellationShader);
-        fprintf(jsout, "\t\t\"textureCompressionASTC_LDR\": %u,\n",              features->textureCompressionASTC_LDR);
-        fprintf(jsout, "\t\t\"textureCompressionBC\": %u,\n",                    features->textureCompressionBC);
-        fprintf(jsout, "\t\t\"textureCompressionETC2\": %u,\n",                  features->textureCompressionETC2);
-        fprintf(jsout, "\t\t\"variableMultisampleRate\": %u,\n",                 features->variableMultisampleRate);
-        fprintf(jsout, "\t\t\"vertexPipelineStoresAndAtomics\": %u,\n",          features->vertexPipelineStoresAndAtomics);
-        fprintf(jsout, "\t\t\"wideLines\": %u\n",                                features->wideLines);
-        fprintf(jsout, "\t}");
+        printf(",\n");
+        printf("\t\"VkPhysicalDeviceFeatures\": {\n");
+        printf("\t\t\"alphaToOne\": %u,\n",                              features->alphaToOne);
+        printf("\t\t\"depthBiasClamp\": %u,\n",                          features->depthBiasClamp);
+        printf("\t\t\"depthBounds\": %u,\n",                             features->depthBounds);
+        printf("\t\t\"depthClamp\": %u,\n",                              features->depthClamp);
+        printf("\t\t\"drawIndirectFirstInstance\": %u,\n",               features->drawIndirectFirstInstance);
+        printf("\t\t\"dualSrcBlend\": %u,\n",                            features->dualSrcBlend);
+        printf("\t\t\"fillModeNonSolid\": %u,\n",                        features->fillModeNonSolid);
+        printf("\t\t\"fragmentStoresAndAtomics\": %u,\n",                features->fragmentStoresAndAtomics);
+        printf("\t\t\"fullDrawIndexUint32\": %u,\n",                     features->fullDrawIndexUint32);
+        printf("\t\t\"geometryShader\": %u,\n",                          features->geometryShader);
+        printf("\t\t\"imageCubeArray\": %u,\n",                          features->imageCubeArray);
+        printf("\t\t\"independentBlend\": %u,\n",                        features->independentBlend);
+        printf("\t\t\"inheritedQueries\": %u,\n",                        features->inheritedQueries);
+        printf("\t\t\"largePoints\": %u,\n",                             features->largePoints);
+        printf("\t\t\"logicOp\": %u,\n",                                 features->logicOp);
+        printf("\t\t\"multiDrawIndirect\": %u,\n",                       features->multiDrawIndirect);
+        printf("\t\t\"multiViewport\": %u,\n",                           features->multiViewport);
+        printf("\t\t\"occlusionQueryPrecise\": %u,\n",                   features->occlusionQueryPrecise);
+        printf("\t\t\"pipelineStatisticsQuery\": %u,\n",                 features->pipelineStatisticsQuery);
+        printf("\t\t\"robustBufferAccess\": %u,\n",                      features->robustBufferAccess);
+        printf("\t\t\"samplerAnisotropy\": %u,\n",                       features->samplerAnisotropy);
+        printf("\t\t\"sampleRateShading\": %u,\n",                       features->sampleRateShading);
+        printf("\t\t\"shaderClipDistance\": %u,\n",                      features->shaderClipDistance);
+        printf("\t\t\"shaderCullDistance\": %u,\n",                      features->shaderCullDistance);
+        printf("\t\t\"shaderFloat64\": %u,\n",                           features->shaderFloat64);
+        printf("\t\t\"shaderImageGatherExtended\": %u,\n",               features->shaderImageGatherExtended);
+        printf("\t\t\"shaderInt16\": %u,\n",                             features->shaderInt16);
+        printf("\t\t\"shaderInt64\": %u,\n",                             features->shaderInt64);
+        printf("\t\t\"shaderResourceMinLod\": %u,\n",                    features->shaderResourceMinLod);
+        printf("\t\t\"shaderResourceResidency\": %u,\n",                 features->shaderResourceResidency);
+        printf("\t\t\"shaderSampledImageArrayDynamicIndexing\": %u,\n",  features->shaderSampledImageArrayDynamicIndexing);
+        printf("\t\t\"shaderStorageBufferArrayDynamicIndexing\": %u,\n", features->shaderStorageBufferArrayDynamicIndexing);
+        printf("\t\t\"shaderStorageImageArrayDynamicIndexing\": %u,\n",  features->shaderStorageImageArrayDynamicIndexing);
+        printf("\t\t\"shaderStorageImageExtendedFormats\": %u,\n",       features->shaderStorageImageExtendedFormats);
+        printf("\t\t\"shaderStorageImageMultisample\": %u,\n",           features->shaderStorageImageMultisample);
+        printf("\t\t\"shaderStorageImageReadWithoutFormat\": %u,\n",     features->shaderStorageImageReadWithoutFormat);
+        printf("\t\t\"shaderStorageImageWriteWithoutFormat\": %u,\n",    features->shaderStorageImageWriteWithoutFormat);
+        printf("\t\t\"shaderTessellationAndGeometryPointSize\": %u,\n",  features->shaderTessellationAndGeometryPointSize);
+        printf("\t\t\"shaderUniformBufferArrayDynamicIndexing\": %u,\n", features->shaderUniformBufferArrayDynamicIndexing);
+        printf("\t\t\"sparseBinding\": %u,\n",                           features->sparseBinding);
+        printf("\t\t\"sparseResidency2Samples\": %u,\n",                 features->sparseResidency2Samples);
+        printf("\t\t\"sparseResidency4Samples\": %u,\n",                 features->sparseResidency4Samples);
+        printf("\t\t\"sparseResidency8Samples\": %u,\n",                 features->sparseResidency8Samples);
+        printf("\t\t\"sparseResidency16Samples\": %u,\n",                features->sparseResidency16Samples);
+        printf("\t\t\"sparseResidencyAliased\": %u,\n",                  features->sparseResidencyAliased);
+        printf("\t\t\"sparseResidencyBuffer\": %u,\n",                   features->sparseResidencyBuffer);
+        printf("\t\t\"sparseResidencyImage2D\": %u,\n",                  features->sparseResidencyImage2D);
+        printf("\t\t\"sparseResidencyImage3D\": %u,\n",                  features->sparseResidencyImage3D);
+        printf("\t\t\"tessellationShader\": %u,\n",                      features->tessellationShader);
+        printf("\t\t\"textureCompressionASTC_LDR\": %u,\n",              features->textureCompressionASTC_LDR);
+        printf("\t\t\"textureCompressionBC\": %u,\n",                    features->textureCompressionBC);
+        printf("\t\t\"textureCompressionETC2\": %u,\n",                  features->textureCompressionETC2);
+        printf("\t\t\"variableMultisampleRate\": %u,\n",                 features->variableMultisampleRate);
+        printf("\t\t\"vertexPipelineStoresAndAtomics\": %u,\n",          features->vertexPipelineStoresAndAtomics);
+        printf("\t\t\"wideLines\": %u\n",                                features->wideLines);
+        printf("\t}");
     }
 }
 
-static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_props, FILE *out, FILE *jsout) {
+static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_props, FILE *out) {
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceSparseProperties</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>residencyStandard2DBlockShape            = <div class='val'>%u</div></summary></details>\n", sparse_props->residencyStandard2DBlockShape           );
@@ -1827,7 +1762,7 @@ static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_pr
         fprintf(out, "\t\t\t\t\t\t<details><summary>residencyAlignedMipSize                  = <div class='val'>%u</div></summary></details>\n", sparse_props->residencyAlignedMipSize                 );
         fprintf(out, "\t\t\t\t\t\t<details><summary>residencyNonResidentStrict               = <div class='val'>%u</div></summary></details>\n", sparse_props->residencyNonResidentStrict              );
         fprintf(out, "\t\t\t\t\t</details>\n");
-    } else {
+    } else if (human_readable_output) {
         printf("\tVkPhysicalDeviceSparseProperties:\n");
         printf("\t---------------------------------\n");
         printf("\t\tresidencyStandard2DBlockShape            = %u\n", sparse_props->residencyStandard2DBlockShape           );
@@ -1837,18 +1772,18 @@ static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_pr
         printf("\t\tresidencyNonResidentStrict               = %u\n", sparse_props->residencyNonResidentStrict              );
     }
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\t\"sparseProperties\": {\n");
-        fprintf(jsout, "\t\t\t\"residencyAlignedMipSize\": %u,\n",                  sparse_props->residencyAlignedMipSize);
-        fprintf(jsout, "\t\t\t\"residencyNonResidentStrict\": %u,\n",               sparse_props->residencyNonResidentStrict);
-        fprintf(jsout, "\t\t\t\"residencyStandard2DBlockShape\": %u,\n",            sparse_props->residencyStandard2DBlockShape);
-        fprintf(jsout, "\t\t\t\"residencyStandard2DMultisampleBlockShape\": %u,\n", sparse_props->residencyStandard2DMultisampleBlockShape);
-        fprintf(jsout, "\t\t\t\"residencyStandard3DBlockShape\": %u\n",             sparse_props->residencyStandard3DBlockShape);
-        fprintf(jsout, "\t\t}");
+        printf(",\n");
+        printf("\t\t\"sparseProperties\": {\n");
+        printf("\t\t\t\"residencyAlignedMipSize\": %u,\n",                  sparse_props->residencyAlignedMipSize);
+        printf("\t\t\t\"residencyNonResidentStrict\": %u,\n",               sparse_props->residencyNonResidentStrict);
+        printf("\t\t\t\"residencyStandard2DBlockShape\": %u,\n",            sparse_props->residencyStandard2DBlockShape);
+        printf("\t\t\t\"residencyStandard2DMultisampleBlockShape\": %u,\n", sparse_props->residencyStandard2DMultisampleBlockShape);
+        printf("\t\t\t\"residencyStandard3DBlockShape\": %u\n",             sparse_props->residencyStandard3DBlockShape);
+        printf("\t\t}");
     }
 }
 
-static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE *jsout) {
+static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out) {
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceLimits</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>maxImageDimension1D                     = <div class='val'>%u</div></summary></details>\n",                 limits->maxImageDimension1D                    );
@@ -1920,8 +1855,8 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE 
         fprintf(out, "\t\t\t\t\t\t<details><summary>maxViewports                            = <div class='val'>%u</div></summary></details>\n",                 limits->maxViewports                           );
         fprintf(out, "\t\t\t\t\t\t<details><summary>maxViewportDimensions[0]                = <div class='val'>%u</div></summary></details>\n",                 limits->maxViewportDimensions[0]               );
         fprintf(out, "\t\t\t\t\t\t<details><summary>maxViewportDimensions[1]                = <div class='val'>%u</div></summary></details>\n",                 limits->maxViewportDimensions[1]               );
-        fprintf(out, "\t\t\t\t\t\t<details><summary>viewportBoundsRange[0]                  =<div class='val'>%13f</div></summary></details>\n",                 limits->viewportBoundsRange[0]                 );
-        fprintf(out, "\t\t\t\t\t\t<details><summary>viewportBoundsRange[1]                  =<div class='val'>%13f</div></summary></details>\n",                 limits->viewportBoundsRange[1]                 );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>viewportBoundsRange[0]                  =<div class='val'>%13f</div></summary></details>\n",                limits->viewportBoundsRange[0]                 );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>viewportBoundsRange[1]                  =<div class='val'>%13f</div></summary></details>\n",                limits->viewportBoundsRange[1]                 );
         fprintf(out, "\t\t\t\t\t\t<details><summary>viewportSubPixelBits                    = <div class='val'>%u</div></summary></details>\n",                 limits->viewportSubPixelBits                   );
         fprintf(out, "\t\t\t\t\t\t<details><summary>minMemoryMapAlignment                   = <div class='val'>" PRINTF_SIZE_T_SPECIFIER "</div></summary></details>\n", limits->minMemoryMapAlignment         );
         fprintf(out, "\t\t\t\t\t\t<details><summary>minTexelBufferOffsetAlignment           = <div class='val'>0x%" PRIxLEAST64 "</div></summary></details>\n", limits->minTexelBufferOffsetAlignment          );
@@ -1966,7 +1901,7 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE 
         fprintf(out, "\t\t\t\t\t\t<details><summary>optimalBufferCopyRowPitchAlignment      = <div class='val'>0x%" PRIxLEAST64 "</div></summary></details>\n", limits->optimalBufferCopyRowPitchAlignment     );
         fprintf(out, "\t\t\t\t\t\t<details><summary>nonCoherentAtomSize                     = <div class='val'>0x%" PRIxLEAST64 "</div></summary></details>\n", limits->nonCoherentAtomSize                    );
         fprintf(out, "\t\t\t\t\t</details>\n");
-    } else {
+    } else if (human_readable_output) {
         printf("\tVkPhysicalDeviceLimits:\n");
         printf("\t-----------------------\n");
         printf("\t\tmaxImageDimension1D                     = %u\n",                 limits->maxImageDimension1D                    );
@@ -2085,139 +2020,139 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out, FILE 
         printf("\t\tnonCoherentAtomSize                     = 0x%" PRIxLEAST64 "\n", limits->nonCoherentAtomSize                    );
     }
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\t\"limits\": {\n");
-        fprintf(jsout, "\t\t\t\"bufferImageGranularity\": %llu,\n",                               (unsigned long long)limits->bufferImageGranularity);
-        fprintf(jsout, "\t\t\t\"discreteQueuePriorities\": %u,\n",                                limits->discreteQueuePriorities);
-        fprintf(jsout, "\t\t\t\"framebufferColorSampleCounts\": %u,\n",                           limits->framebufferColorSampleCounts);
-        fprintf(jsout, "\t\t\t\"framebufferDepthSampleCounts\": %u,\n",                           limits->framebufferDepthSampleCounts);
-        fprintf(jsout, "\t\t\t\"framebufferNoAttachmentsSampleCounts\": %u,\n",                   limits->framebufferNoAttachmentsSampleCounts);
-        fprintf(jsout, "\t\t\t\"framebufferStencilSampleCounts\": %u,\n",                         limits->framebufferStencilSampleCounts);
-        fprintf(jsout, "\t\t\t\"lineWidthGranularity\": %g,\n",                                   limits->lineWidthGranularity);
-        fprintf(jsout, "\t\t\t\"lineWidthRange\": [\n");
-        fprintf(jsout, "\t\t\t\t%g,\n",                                                           limits->lineWidthRange[0]);
-        fprintf(jsout, "\t\t\t\t%g\n",                                                            limits->lineWidthRange[1]);
-        fprintf(jsout, "\t\t\t],\n");
-        fprintf(jsout, "\t\t\t\"maxBoundDescriptorSets\": %u,\n",                                 limits->maxBoundDescriptorSets);
-        fprintf(jsout, "\t\t\t\"maxClipDistances\": %u,\n",                                       limits->maxClipDistances);
-        fprintf(jsout, "\t\t\t\"maxColorAttachments\": %u,\n",                                    limits->maxColorAttachments);
-        fprintf(jsout, "\t\t\t\"maxCombinedClipAndCullDistances\": %u,\n",                        limits->maxCombinedClipAndCullDistances);
-        fprintf(jsout, "\t\t\t\"maxComputeSharedMemorySize\": %u,\n",                             limits->maxComputeSharedMemorySize);
-        fprintf(jsout, "\t\t\t\"maxComputeWorkGroupCount\": [\n");
-        fprintf(jsout, "\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupCount[0]);
-        fprintf(jsout, "\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupCount[1]);
-        fprintf(jsout, "\t\t\t\t%u\n",                                                            limits->maxComputeWorkGroupCount[2]);
-        fprintf(jsout, "\t\t\t],\n");
-        fprintf(jsout, "\t\t\t\"maxComputeWorkGroupInvocations\": %u,\n",                         limits->maxComputeWorkGroupInvocations);
-        fprintf(jsout, "\t\t\t\"maxComputeWorkGroupSize\": [\n");
-        fprintf(jsout, "\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupSize[0]);
-        fprintf(jsout, "\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupSize[1]);
-        fprintf(jsout, "\t\t\t\t%u\n",                                                            limits->maxComputeWorkGroupSize[2]);
-        fprintf(jsout, "\t\t\t],\n");
-        fprintf(jsout, "\t\t\t\"maxCullDistances\": %u,\n",                                       limits->maxCullDistances);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetInputAttachments\": %u,\n",                       limits->maxDescriptorSetInputAttachments);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetSampledImages\": %u,\n",                          limits->maxDescriptorSetSampledImages);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetSamplers\": %u,\n",                               limits->maxDescriptorSetSamplers);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetStorageBuffers\": %u,\n",                         limits->maxDescriptorSetStorageBuffers);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetStorageBuffersDynamic\": %u,\n",                  limits->maxDescriptorSetStorageBuffersDynamic);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetStorageImages\": %u,\n",                          limits->maxDescriptorSetStorageImages);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetUniformBuffers\": %u,\n",                         limits->maxDescriptorSetUniformBuffers);
-        fprintf(jsout, "\t\t\t\"maxDescriptorSetUniformBuffersDynamic\": %u,\n",                  limits->maxDescriptorSetUniformBuffersDynamic);
-        fprintf(jsout, "\t\t\t\"maxDrawIndexedIndexValue\": %u,\n",                               limits->maxDrawIndexedIndexValue);
-        fprintf(jsout, "\t\t\t\"maxDrawIndirectCount\": %u,\n",                                   limits->maxDrawIndirectCount);
-        fprintf(jsout, "\t\t\t\"maxFragmentCombinedOutputResources\": %u,\n",                     limits->maxFragmentCombinedOutputResources);
-        fprintf(jsout, "\t\t\t\"maxFragmentDualSrcAttachments\": %u,\n",                          limits->maxFragmentDualSrcAttachments);
-        fprintf(jsout, "\t\t\t\"maxFragmentInputComponents\": %u,\n",                             limits->maxFragmentInputComponents);
-        fprintf(jsout, "\t\t\t\"maxFragmentOutputAttachments\": %u,\n",                           limits->maxFragmentOutputAttachments);
-        fprintf(jsout, "\t\t\t\"maxFramebufferHeight\": %u,\n",                                   limits->maxFramebufferHeight);
-        fprintf(jsout, "\t\t\t\"maxFramebufferLayers\": %u,\n",                                   limits->maxFramebufferLayers);
-        fprintf(jsout, "\t\t\t\"maxFramebufferWidth\": %u,\n",                                    limits->maxFramebufferWidth);
-        fprintf(jsout, "\t\t\t\"maxGeometryInputComponents\": %u,\n",                             limits->maxGeometryInputComponents);
-        fprintf(jsout, "\t\t\t\"maxGeometryOutputComponents\": %u,\n",                            limits->maxGeometryOutputComponents);
-        fprintf(jsout, "\t\t\t\"maxGeometryOutputVertices\": %u,\n",                              limits->maxGeometryOutputVertices);
-        fprintf(jsout, "\t\t\t\"maxGeometryShaderInvocations\": %u,\n",                           limits->maxGeometryShaderInvocations);
-        fprintf(jsout, "\t\t\t\"maxGeometryTotalOutputComponents\": %u,\n",                       limits->maxGeometryTotalOutputComponents);
-        fprintf(jsout, "\t\t\t\"maxImageArrayLayers\": %u,\n",                                    limits->maxImageArrayLayers);
-        fprintf(jsout, "\t\t\t\"maxImageDimension1D\": %u,\n",                                    limits->maxImageDimension1D);
-        fprintf(jsout, "\t\t\t\"maxImageDimension2D\": %u,\n",                                    limits->maxImageDimension2D);
-        fprintf(jsout, "\t\t\t\"maxImageDimension3D\": %u,\n",                                    limits->maxImageDimension3D);
-        fprintf(jsout, "\t\t\t\"maxImageDimensionCube\": %u,\n",                                  limits->maxImageDimensionCube);
-        fprintf(jsout, "\t\t\t\"maxInterpolationOffset\": %g,\n",                                 limits->maxInterpolationOffset);
-        fprintf(jsout, "\t\t\t\"maxMemoryAllocationCount\": %u,\n",                               limits->maxMemoryAllocationCount);
-        fprintf(jsout, "\t\t\t\"maxPerStageDescriptorInputAttachments\": %u,\n",                  limits->maxPerStageDescriptorInputAttachments);
-        fprintf(jsout, "\t\t\t\"maxPerStageDescriptorSampledImages\": %u,\n",                     limits->maxPerStageDescriptorSampledImages);
-        fprintf(jsout, "\t\t\t\"maxPerStageDescriptorSamplers\": %u,\n",                          limits->maxPerStageDescriptorSamplers);
-        fprintf(jsout, "\t\t\t\"maxPerStageDescriptorStorageBuffers\": %u,\n",                    limits->maxPerStageDescriptorStorageBuffers);
-        fprintf(jsout, "\t\t\t\"maxPerStageDescriptorStorageImages\": %u,\n",                     limits->maxPerStageDescriptorStorageImages);
-        fprintf(jsout, "\t\t\t\"maxPerStageDescriptorUniformBuffers\": %u,\n",                    limits->maxPerStageDescriptorUniformBuffers);
-        fprintf(jsout, "\t\t\t\"maxPerStageResources\": %u,\n",                                   limits->maxPerStageResources);
-        fprintf(jsout, "\t\t\t\"maxPushConstantsSize\": %u,\n",                                   limits->maxPushConstantsSize);
-        fprintf(jsout, "\t\t\t\"maxSampleMaskWords\": %u,\n",                                     limits->maxSampleMaskWords);
-        fprintf(jsout, "\t\t\t\"maxSamplerAllocationCount\": %u,\n",                              limits->maxSamplerAllocationCount);
-        fprintf(jsout, "\t\t\t\"maxSamplerAnisotropy\": %g,\n",                                   limits->maxSamplerAnisotropy);
-        fprintf(jsout, "\t\t\t\"maxSamplerLodBias\": %g,\n",                                      limits->maxSamplerLodBias);
-        fprintf(jsout, "\t\t\t\"maxStorageBufferRange\": %u,\n",                                  limits->maxStorageBufferRange);
-        fprintf(jsout, "\t\t\t\"maxTessellationControlPerPatchOutputComponents\": %u,\n",         limits->maxTessellationControlPerPatchOutputComponents);
-        fprintf(jsout, "\t\t\t\"maxTessellationControlPerVertexInputComponents\": %u,\n",         limits->maxTessellationControlPerVertexInputComponents);
-        fprintf(jsout, "\t\t\t\"maxTessellationControlPerVertexOutputComponents\": %u,\n",        limits->maxTessellationControlPerVertexOutputComponents);
-        fprintf(jsout, "\t\t\t\"maxTessellationControlTotalOutputComponents\": %u,\n",            limits->maxTessellationControlTotalOutputComponents);
-        fprintf(jsout, "\t\t\t\"maxTessellationEvaluationInputComponents\": %u,\n",               limits->maxTessellationEvaluationInputComponents);
-        fprintf(jsout, "\t\t\t\"maxTessellationEvaluationOutputComponents\": %u,\n",              limits->maxTessellationEvaluationOutputComponents);
-        fprintf(jsout, "\t\t\t\"maxTessellationGenerationLevel\": %u,\n",                         limits->maxTessellationGenerationLevel);
-        fprintf(jsout, "\t\t\t\"maxTessellationPatchSize\": %u,\n",                               limits->maxTessellationPatchSize);
-        fprintf(jsout, "\t\t\t\"maxTexelBufferElements\": %u,\n",                                 limits->maxTexelBufferElements);
-        fprintf(jsout, "\t\t\t\"maxTexelGatherOffset\": %u,\n",                                   limits->maxTexelGatherOffset);
-        fprintf(jsout, "\t\t\t\"maxTexelOffset\": %u,\n",                                         limits->maxTexelOffset);
-        fprintf(jsout, "\t\t\t\"maxUniformBufferRange\": %u,\n",                                  limits->maxUniformBufferRange);
-        fprintf(jsout, "\t\t\t\"maxVertexInputAttributeOffset\": %u,\n",                          limits->maxVertexInputAttributeOffset);
-        fprintf(jsout, "\t\t\t\"maxVertexInputAttributes\": %u,\n",                               limits->maxVertexInputAttributes);
-        fprintf(jsout, "\t\t\t\"maxVertexInputBindings\": %u,\n",                                 limits->maxVertexInputBindings);
-        fprintf(jsout, "\t\t\t\"maxVertexInputBindingStride\": %u,\n",                            limits->maxVertexInputBindingStride);
-        fprintf(jsout, "\t\t\t\"maxVertexOutputComponents\": %u,\n",                              limits->maxVertexOutputComponents);
-        fprintf(jsout, "\t\t\t\"maxViewportDimensions\": [\n");
-        fprintf(jsout, "\t\t\t\t%u,\n",                                                           limits->maxViewportDimensions[0]);
-        fprintf(jsout, "\t\t\t\t%u\n",                                                            limits->maxViewportDimensions[1]);
-        fprintf(jsout, "\t\t\t],\n");
-        fprintf(jsout, "\t\t\t\"maxViewports\": %u,\n",                                           limits->maxViewports);
-        fprintf(jsout, "\t\t\t\"minInterpolationOffset\": %g,\n",                                 limits->minInterpolationOffset);
-        fprintf(jsout, "\t\t\t\"minMemoryMapAlignment\": " PRINTF_SIZE_T_SPECIFIER ",\n",         limits->minMemoryMapAlignment);
-        fprintf(jsout, "\t\t\t\"minStorageBufferOffsetAlignment\": %llu,\n",                      (unsigned long long)limits->minStorageBufferOffsetAlignment);
-        fprintf(jsout, "\t\t\t\"minTexelBufferOffsetAlignment\": %llu,\n",                        (unsigned long long)limits->minTexelBufferOffsetAlignment);
-        fprintf(jsout, "\t\t\t\"minTexelGatherOffset\": %d,\n",                                   limits->minTexelGatherOffset);
-        fprintf(jsout, "\t\t\t\"minTexelOffset\": %d,\n",                                         limits->minTexelOffset);
-        fprintf(jsout, "\t\t\t\"minUniformBufferOffsetAlignment\": %llu,\n",                      (unsigned long long)limits->minUniformBufferOffsetAlignment);
-        fprintf(jsout, "\t\t\t\"mipmapPrecisionBits\": %u,\n",                                    limits->mipmapPrecisionBits);
-        fprintf(jsout, "\t\t\t\"nonCoherentAtomSize\": %llu,\n",                                  (unsigned long long)limits->nonCoherentAtomSize);
-        fprintf(jsout, "\t\t\t\"optimalBufferCopyOffsetAlignment\": %llu,\n",                     (unsigned long long)limits->optimalBufferCopyOffsetAlignment);
-        fprintf(jsout, "\t\t\t\"optimalBufferCopyRowPitchAlignment\": %llu,\n",                   (unsigned long long)limits->optimalBufferCopyRowPitchAlignment);
-        fprintf(jsout, "\t\t\t\"pointSizeGranularity\": %g,\n",                                   limits->pointSizeGranularity);
-        fprintf(jsout, "\t\t\t\"pointSizeRange\": [\n");
-        fprintf(jsout, "\t\t\t\t%g,\n",                                                           limits->pointSizeRange[0]);
-        fprintf(jsout, "\t\t\t\t%g\n",                                                            limits->pointSizeRange[1]);
-        fprintf(jsout, "\t\t\t],\n");
-        fprintf(jsout, "\t\t\t\"sampledImageColorSampleCounts\": %u,\n",                          limits->sampledImageColorSampleCounts);
-        fprintf(jsout, "\t\t\t\"sampledImageDepthSampleCounts\": %u,\n",                          limits->sampledImageDepthSampleCounts);
-        fprintf(jsout, "\t\t\t\"sampledImageIntegerSampleCounts\": %u,\n",                        limits->sampledImageIntegerSampleCounts);
-        fprintf(jsout, "\t\t\t\"sampledImageStencilSampleCounts\": %u,\n",                        limits->sampledImageStencilSampleCounts);
-        fprintf(jsout, "\t\t\t\"sparseAddressSpaceSize\": %llu,\n",                               (unsigned long long)limits->sparseAddressSpaceSize);
-        fprintf(jsout, "\t\t\t\"standardSampleLocations\": %u,\n",                                limits->standardSampleLocations);
-        fprintf(jsout, "\t\t\t\"storageImageSampleCounts\": %u,\n",                               limits->storageImageSampleCounts);
-        fprintf(jsout, "\t\t\t\"strictLines\": %u,\n",                                            limits->strictLines);
-        fprintf(jsout, "\t\t\t\"subPixelInterpolationOffsetBits\": %u,\n",                        limits->subPixelInterpolationOffsetBits);
-        fprintf(jsout, "\t\t\t\"subPixelPrecisionBits\": %u,\n",                                  limits->subPixelPrecisionBits);
-        fprintf(jsout, "\t\t\t\"subTexelPrecisionBits\": %u,\n",                                  limits->subTexelPrecisionBits);
-        fprintf(jsout, "\t\t\t\"timestampComputeAndGraphics\": %u,\n",                            limits->timestampComputeAndGraphics);
-        fprintf(jsout, "\t\t\t\"timestampPeriod\": %g,\n",                                        limits->timestampPeriod);
-        fprintf(jsout, "\t\t\t\"viewportBoundsRange\": [\n");
-        fprintf(jsout, "\t\t\t\t%g,\n",                                                           limits->viewportBoundsRange[0]);
-        fprintf(jsout, "\t\t\t\t%g\n",                                                            limits->viewportBoundsRange[1]);
-        fprintf(jsout, "\t\t\t],\n");
-        fprintf(jsout, "\t\t\t\"viewportSubPixelBits\": %u\n",                                    limits->viewportSubPixelBits);
-        fprintf(jsout, "\t\t}");
+        printf(",\n");
+        printf("\t\t\"limits\": {\n");
+        printf("\t\t\t\"bufferImageGranularity\": %llu,\n",                               (unsigned long long)limits->bufferImageGranularity);
+        printf("\t\t\t\"discreteQueuePriorities\": %u,\n",                                limits->discreteQueuePriorities);
+        printf("\t\t\t\"framebufferColorSampleCounts\": %u,\n",                           limits->framebufferColorSampleCounts);
+        printf("\t\t\t\"framebufferDepthSampleCounts\": %u,\n",                           limits->framebufferDepthSampleCounts);
+        printf("\t\t\t\"framebufferNoAttachmentsSampleCounts\": %u,\n",                   limits->framebufferNoAttachmentsSampleCounts);
+        printf("\t\t\t\"framebufferStencilSampleCounts\": %u,\n",                         limits->framebufferStencilSampleCounts);
+        printf("\t\t\t\"lineWidthGranularity\": %g,\n",                                   limits->lineWidthGranularity);
+        printf("\t\t\t\"lineWidthRange\": [\n");
+        printf("\t\t\t\t%g,\n",                                                           limits->lineWidthRange[0]);
+        printf("\t\t\t\t%g\n",                                                            limits->lineWidthRange[1]);
+        printf("\t\t\t],\n");
+        printf("\t\t\t\"maxBoundDescriptorSets\": %u,\n",                                 limits->maxBoundDescriptorSets);
+        printf("\t\t\t\"maxClipDistances\": %u,\n",                                       limits->maxClipDistances);
+        printf("\t\t\t\"maxColorAttachments\": %u,\n",                                    limits->maxColorAttachments);
+        printf("\t\t\t\"maxCombinedClipAndCullDistances\": %u,\n",                        limits->maxCombinedClipAndCullDistances);
+        printf("\t\t\t\"maxComputeSharedMemorySize\": %u,\n",                             limits->maxComputeSharedMemorySize);
+        printf("\t\t\t\"maxComputeWorkGroupCount\": [\n");
+        printf("\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupCount[0]);
+        printf("\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupCount[1]);
+        printf("\t\t\t\t%u\n",                                                            limits->maxComputeWorkGroupCount[2]);
+        printf("\t\t\t],\n");
+        printf("\t\t\t\"maxComputeWorkGroupInvocations\": %u,\n",                         limits->maxComputeWorkGroupInvocations);
+        printf("\t\t\t\"maxComputeWorkGroupSize\": [\n");
+        printf("\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupSize[0]);
+        printf("\t\t\t\t%u,\n",                                                           limits->maxComputeWorkGroupSize[1]);
+        printf("\t\t\t\t%u\n",                                                            limits->maxComputeWorkGroupSize[2]);
+        printf("\t\t\t],\n");
+        printf("\t\t\t\"maxCullDistances\": %u,\n",                                       limits->maxCullDistances);
+        printf("\t\t\t\"maxDescriptorSetInputAttachments\": %u,\n",                       limits->maxDescriptorSetInputAttachments);
+        printf("\t\t\t\"maxDescriptorSetSampledImages\": %u,\n",                          limits->maxDescriptorSetSampledImages);
+        printf("\t\t\t\"maxDescriptorSetSamplers\": %u,\n",                               limits->maxDescriptorSetSamplers);
+        printf("\t\t\t\"maxDescriptorSetStorageBuffers\": %u,\n",                         limits->maxDescriptorSetStorageBuffers);
+        printf("\t\t\t\"maxDescriptorSetStorageBuffersDynamic\": %u,\n",                  limits->maxDescriptorSetStorageBuffersDynamic);
+        printf("\t\t\t\"maxDescriptorSetStorageImages\": %u,\n",                          limits->maxDescriptorSetStorageImages);
+        printf("\t\t\t\"maxDescriptorSetUniformBuffers\": %u,\n",                         limits->maxDescriptorSetUniformBuffers);
+        printf("\t\t\t\"maxDescriptorSetUniformBuffersDynamic\": %u,\n",                  limits->maxDescriptorSetUniformBuffersDynamic);
+        printf("\t\t\t\"maxDrawIndexedIndexValue\": %u,\n",                               limits->maxDrawIndexedIndexValue);
+        printf("\t\t\t\"maxDrawIndirectCount\": %u,\n",                                   limits->maxDrawIndirectCount);
+        printf("\t\t\t\"maxFragmentCombinedOutputResources\": %u,\n",                     limits->maxFragmentCombinedOutputResources);
+        printf("\t\t\t\"maxFragmentDualSrcAttachments\": %u,\n",                          limits->maxFragmentDualSrcAttachments);
+        printf("\t\t\t\"maxFragmentInputComponents\": %u,\n",                             limits->maxFragmentInputComponents);
+        printf("\t\t\t\"maxFragmentOutputAttachments\": %u,\n",                           limits->maxFragmentOutputAttachments);
+        printf("\t\t\t\"maxFramebufferHeight\": %u,\n",                                   limits->maxFramebufferHeight);
+        printf("\t\t\t\"maxFramebufferLayers\": %u,\n",                                   limits->maxFramebufferLayers);
+        printf("\t\t\t\"maxFramebufferWidth\": %u,\n",                                    limits->maxFramebufferWidth);
+        printf("\t\t\t\"maxGeometryInputComponents\": %u,\n",                             limits->maxGeometryInputComponents);
+        printf("\t\t\t\"maxGeometryOutputComponents\": %u,\n",                            limits->maxGeometryOutputComponents);
+        printf("\t\t\t\"maxGeometryOutputVertices\": %u,\n",                              limits->maxGeometryOutputVertices);
+        printf("\t\t\t\"maxGeometryShaderInvocations\": %u,\n",                           limits->maxGeometryShaderInvocations);
+        printf("\t\t\t\"maxGeometryTotalOutputComponents\": %u,\n",                       limits->maxGeometryTotalOutputComponents);
+        printf("\t\t\t\"maxImageArrayLayers\": %u,\n",                                    limits->maxImageArrayLayers);
+        printf("\t\t\t\"maxImageDimension1D\": %u,\n",                                    limits->maxImageDimension1D);
+        printf("\t\t\t\"maxImageDimension2D\": %u,\n",                                    limits->maxImageDimension2D);
+        printf("\t\t\t\"maxImageDimension3D\": %u,\n",                                    limits->maxImageDimension3D);
+        printf("\t\t\t\"maxImageDimensionCube\": %u,\n",                                  limits->maxImageDimensionCube);
+        printf("\t\t\t\"maxInterpolationOffset\": %g,\n",                                 limits->maxInterpolationOffset);
+        printf("\t\t\t\"maxMemoryAllocationCount\": %u,\n",                               limits->maxMemoryAllocationCount);
+        printf("\t\t\t\"maxPerStageDescriptorInputAttachments\": %u,\n",                  limits->maxPerStageDescriptorInputAttachments);
+        printf("\t\t\t\"maxPerStageDescriptorSampledImages\": %u,\n",                     limits->maxPerStageDescriptorSampledImages);
+        printf("\t\t\t\"maxPerStageDescriptorSamplers\": %u,\n",                          limits->maxPerStageDescriptorSamplers);
+        printf("\t\t\t\"maxPerStageDescriptorStorageBuffers\": %u,\n",                    limits->maxPerStageDescriptorStorageBuffers);
+        printf("\t\t\t\"maxPerStageDescriptorStorageImages\": %u,\n",                     limits->maxPerStageDescriptorStorageImages);
+        printf("\t\t\t\"maxPerStageDescriptorUniformBuffers\": %u,\n",                    limits->maxPerStageDescriptorUniformBuffers);
+        printf("\t\t\t\"maxPerStageResources\": %u,\n",                                   limits->maxPerStageResources);
+        printf("\t\t\t\"maxPushConstantsSize\": %u,\n",                                   limits->maxPushConstantsSize);
+        printf("\t\t\t\"maxSampleMaskWords\": %u,\n",                                     limits->maxSampleMaskWords);
+        printf("\t\t\t\"maxSamplerAllocationCount\": %u,\n",                              limits->maxSamplerAllocationCount);
+        printf("\t\t\t\"maxSamplerAnisotropy\": %g,\n",                                   limits->maxSamplerAnisotropy);
+        printf("\t\t\t\"maxSamplerLodBias\": %g,\n",                                      limits->maxSamplerLodBias);
+        printf("\t\t\t\"maxStorageBufferRange\": %u,\n",                                  limits->maxStorageBufferRange);
+        printf("\t\t\t\"maxTessellationControlPerPatchOutputComponents\": %u,\n",         limits->maxTessellationControlPerPatchOutputComponents);
+        printf("\t\t\t\"maxTessellationControlPerVertexInputComponents\": %u,\n",         limits->maxTessellationControlPerVertexInputComponents);
+        printf("\t\t\t\"maxTessellationControlPerVertexOutputComponents\": %u,\n",        limits->maxTessellationControlPerVertexOutputComponents);
+        printf("\t\t\t\"maxTessellationControlTotalOutputComponents\": %u,\n",            limits->maxTessellationControlTotalOutputComponents);
+        printf("\t\t\t\"maxTessellationEvaluationInputComponents\": %u,\n",               limits->maxTessellationEvaluationInputComponents);
+        printf("\t\t\t\"maxTessellationEvaluationOutputComponents\": %u,\n",              limits->maxTessellationEvaluationOutputComponents);
+        printf("\t\t\t\"maxTessellationGenerationLevel\": %u,\n",                         limits->maxTessellationGenerationLevel);
+        printf("\t\t\t\"maxTessellationPatchSize\": %u,\n",                               limits->maxTessellationPatchSize);
+        printf("\t\t\t\"maxTexelBufferElements\": %u,\n",                                 limits->maxTexelBufferElements);
+        printf("\t\t\t\"maxTexelGatherOffset\": %u,\n",                                   limits->maxTexelGatherOffset);
+        printf("\t\t\t\"maxTexelOffset\": %u,\n",                                         limits->maxTexelOffset);
+        printf("\t\t\t\"maxUniformBufferRange\": %u,\n",                                  limits->maxUniformBufferRange);
+        printf("\t\t\t\"maxVertexInputAttributeOffset\": %u,\n",                          limits->maxVertexInputAttributeOffset);
+        printf("\t\t\t\"maxVertexInputAttributes\": %u,\n",                               limits->maxVertexInputAttributes);
+        printf("\t\t\t\"maxVertexInputBindings\": %u,\n",                                 limits->maxVertexInputBindings);
+        printf("\t\t\t\"maxVertexInputBindingStride\": %u,\n",                            limits->maxVertexInputBindingStride);
+        printf("\t\t\t\"maxVertexOutputComponents\": %u,\n",                              limits->maxVertexOutputComponents);
+        printf("\t\t\t\"maxViewportDimensions\": [\n");
+        printf("\t\t\t\t%u,\n",                                                           limits->maxViewportDimensions[0]);
+        printf("\t\t\t\t%u\n",                                                            limits->maxViewportDimensions[1]);
+        printf("\t\t\t],\n");
+        printf("\t\t\t\"maxViewports\": %u,\n",                                           limits->maxViewports);
+        printf("\t\t\t\"minInterpolationOffset\": %g,\n",                                 limits->minInterpolationOffset);
+        printf("\t\t\t\"minMemoryMapAlignment\": " PRINTF_SIZE_T_SPECIFIER ",\n",         limits->minMemoryMapAlignment);
+        printf("\t\t\t\"minStorageBufferOffsetAlignment\": %llu,\n",                      (unsigned long long)limits->minStorageBufferOffsetAlignment);
+        printf("\t\t\t\"minTexelBufferOffsetAlignment\": %llu,\n",                        (unsigned long long)limits->minTexelBufferOffsetAlignment);
+        printf("\t\t\t\"minTexelGatherOffset\": %d,\n",                                   limits->minTexelGatherOffset);
+        printf("\t\t\t\"minTexelOffset\": %d,\n",                                         limits->minTexelOffset);
+        printf("\t\t\t\"minUniformBufferOffsetAlignment\": %llu,\n",                      (unsigned long long)limits->minUniformBufferOffsetAlignment);
+        printf("\t\t\t\"mipmapPrecisionBits\": %u,\n",                                    limits->mipmapPrecisionBits);
+        printf("\t\t\t\"nonCoherentAtomSize\": %llu,\n",                                  (unsigned long long)limits->nonCoherentAtomSize);
+        printf("\t\t\t\"optimalBufferCopyOffsetAlignment\": %llu,\n",                     (unsigned long long)limits->optimalBufferCopyOffsetAlignment);
+        printf("\t\t\t\"optimalBufferCopyRowPitchAlignment\": %llu,\n",                   (unsigned long long)limits->optimalBufferCopyRowPitchAlignment);
+        printf("\t\t\t\"pointSizeGranularity\": %g,\n",                                   limits->pointSizeGranularity);
+        printf("\t\t\t\"pointSizeRange\": [\n");
+        printf("\t\t\t\t%g,\n",                                                           limits->pointSizeRange[0]);
+        printf("\t\t\t\t%g\n",                                                            limits->pointSizeRange[1]);
+        printf("\t\t\t],\n");
+        printf("\t\t\t\"sampledImageColorSampleCounts\": %u,\n",                          limits->sampledImageColorSampleCounts);
+        printf("\t\t\t\"sampledImageDepthSampleCounts\": %u,\n",                          limits->sampledImageDepthSampleCounts);
+        printf("\t\t\t\"sampledImageIntegerSampleCounts\": %u,\n",                        limits->sampledImageIntegerSampleCounts);
+        printf("\t\t\t\"sampledImageStencilSampleCounts\": %u,\n",                        limits->sampledImageStencilSampleCounts);
+        printf("\t\t\t\"sparseAddressSpaceSize\": %llu,\n",                               (unsigned long long)limits->sparseAddressSpaceSize);
+        printf("\t\t\t\"standardSampleLocations\": %u,\n",                                limits->standardSampleLocations);
+        printf("\t\t\t\"storageImageSampleCounts\": %u,\n",                               limits->storageImageSampleCounts);
+        printf("\t\t\t\"strictLines\": %u,\n",                                            limits->strictLines);
+        printf("\t\t\t\"subPixelInterpolationOffsetBits\": %u,\n",                        limits->subPixelInterpolationOffsetBits);
+        printf("\t\t\t\"subPixelPrecisionBits\": %u,\n",                                  limits->subPixelPrecisionBits);
+        printf("\t\t\t\"subTexelPrecisionBits\": %u,\n",                                  limits->subTexelPrecisionBits);
+        printf("\t\t\t\"timestampComputeAndGraphics\": %u,\n",                            limits->timestampComputeAndGraphics);
+        printf("\t\t\t\"timestampPeriod\": %g,\n",                                        limits->timestampPeriod);
+        printf("\t\t\t\"viewportBoundsRange\": [\n");
+        printf("\t\t\t\t%g,\n",                                                           limits->viewportBoundsRange[0]);
+        printf("\t\t\t\t%g\n",                                                            limits->viewportBoundsRange[1]);
+        printf("\t\t\t],\n");
+        printf("\t\t\t\"viewportSubPixelBits\": %u\n",                                    limits->viewportSubPixelBits);
+        printf("\t\t}");
     }
 }
 
-static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
+static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
     const VkPhysicalDeviceProperties *props = &gpu->props;
     const uint32_t apiVersion = props->apiVersion;
     const uint32_t major = VK_VERSION_MAJOR(apiVersion);
@@ -2232,7 +2167,8 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
         fprintf(out, "\t\t\t\t\t\t<details><summary>deviceID = <div class='val'>0x%04x</div></summary></details>\n", props->deviceID);
         fprintf(out, "\t\t\t\t\t\t<details><summary>deviceType = %s</summary></details>\n", VkPhysicalDeviceTypeString(props->deviceType));
         fprintf(out, "\t\t\t\t\t\t<details><summary>deviceName = %s</summary></details>\n", props->deviceName);
-    } else {
+        fprintf(out, "\t\t\t\t\t</details>\n");
+    } else if (human_readable_output) {
         printf("VkPhysicalDeviceProperties:\n");
         printf("===========================\n");
         printf("\tapiVersion     = 0x%" PRIxLEAST32 "  (%d.%d.%d)\n", apiVersion, major, minor, patch);
@@ -2243,88 +2179,89 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
         printf("\tdeviceName     = %s\n", props->deviceName);
     }
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\"VkPhysicalDeviceProperties\": {\n");
-        fprintf(jsout, "\t\t\"apiVersion\": %u,\n", apiVersion);
-        fprintf(jsout, "\t\t\"deviceID\": %u,\n", props->deviceID);
-        fprintf(jsout, "\t\t\"deviceName\": \"%s\",\n", props->deviceName);
-        fprintf(jsout, "\t\t\"deviceType\": %u,\n", props->deviceType);
-        fprintf(jsout, "\t\t\"driverVersion\": %u", props->driverVersion);
+        printf(",\n");
+        printf("\t\"VkPhysicalDeviceProperties\": {\n");
+        printf("\t\t\"apiVersion\": %u,\n", apiVersion);
+        printf("\t\t\"deviceID\": %u,\n", props->deviceID);
+        printf("\t\t\"deviceName\": \"%s\",\n", props->deviceName);
+        printf("\t\t\"deviceType\": %u,\n", props->deviceType);
+        printf("\t\t\"driverVersion\": %u", props->driverVersion);
     }
-    if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
 
-    AppDumpLimits(&gpu->props.limits, out, jsout);
+    AppDumpLimits(&gpu->props.limits, out);
 
     // Dump pipeline cache UUIDs to json
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\t\"pipelineCacheUUID\": [");
+        printf(",\n");
+        printf("\t\t\"pipelineCacheUUID\": [");
         for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-            fprintf(jsout, "\t\t\t%u", props->pipelineCacheUUID[i]);
+            if (i > 0) printf(",");
+            printf("\n");
+            printf("\t\t\t%u", props->pipelineCacheUUID[i]);
         }
-        fprintf(jsout, "\n");
-        fprintf(jsout, "\t\t]");
+        printf("\n");
+        printf("\t\t]");
     }
 
-    AppDumpSparseProps(&gpu->props.sparseProperties, out, jsout);
+    AppDumpSparseProps(&gpu->props.sparseProperties, out);
 
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\t\"vendorID\": %u\n", props->vendorID);
-        fprintf(jsout, "\t}");
+        printf(",\n");
+        printf("\t\t\"vendorID\": %u\n", props->vendorID);
+        printf("\t}");
     }
 
     fflush(out);
-    fflush(jsout);
+    fflush(stdout);
 }
 
 static void AppDumpExtensions(const char *indent, const char *layer_name, const uint32_t extension_count,
-                              const VkExtensionProperties *extension_properties, FILE *out, FILE *jsout) {
-    uint32_t i;
-
-    if (html_output) { fprintf(out, "\t\t\t%s<details><summary>", indent); }
+                              const VkExtensionProperties *extension_properties, FILE *out) {
+    if (html_output) fprintf(out, "\t\t\t%s<details><summary>", indent);
     if (layer_name && (strlen(layer_name) > 0)) {
         if (html_output) {
             fprintf(out, "%s Extensions", layer_name);
-        } else {
+        } else if (human_readable_output) {
             printf("%s%s Extensions", indent, layer_name);
         }
     } else {
-        fprintf(out, "%sExtensions", indent);
+        if (html_output) {
+            fprintf(out, "Extensions");
+        } else if (human_readable_output) {
+            printf("%sExtensions", indent);
+        }
     }
     if (html_output) {
         fprintf(out, "\tcount = <div class='val'>%d</div></summary>", extension_count);
         if (extension_count > 0) fprintf(out, "\n");
-    } else {
+    } else if (human_readable_output) {
         printf("\tcount = %d\n", extension_count);
     }
 
     bool is_device_type = strcmp(layer_name, "Device") == 0;
     if (is_device_type && json_output) {
-        fprintf(jsout,",\n");
-        fprintf(jsout,"\t\"ArrayOfVkExtensionProperties\": [");
+        printf(",\n");
+        printf("\t\"ArrayOfVkExtensionProperties\": [");
     }
 
-    for (i = 0; i < extension_count; ++i) {
+    for (uint32_t i = 0; i < extension_count; ++i) {
         VkExtensionProperties const *ext_prop = &extension_properties[i];
         if (html_output) {
             fprintf(out, "\t\t\t\t%s<details><summary>", indent);
             fprintf(out, "<div class='type'>%s</div>: extension revision <div class='val'>%d</div>", ext_prop->extensionName,
                     ext_prop->specVersion);
             fprintf(out, "</summary></details>\n");
-        } else {
+        } else if (human_readable_output) {
             printf("%s\t", indent);
             printf("%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
         }
         if (is_device_type && json_output) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-            fprintf(jsout,"\t\t{\n");
-            fprintf(jsout,"\t\t\t\"extensionName\": \"%s\",\n", ext_prop->extensionName);
-            fprintf(jsout,"\t\t\t\"specVersion\": %u\n", ext_prop->specVersion);
-            fprintf(jsout,"\t\t}");
+            if (i > 0) printf(",");
+            printf("\n");
+            printf("\t\t{\n");
+            printf("\t\t\t\"extensionName\": \"%s\",\n", ext_prop->extensionName);
+            printf("\t\t\t\"specVersion\": %u\n", ext_prop->specVersion);
+            printf("\t\t}");
         }
     }
     if (html_output) {
@@ -2335,40 +2272,42 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
         }
     }
     if (is_device_type && json_output) {
-        if (extension_count > 0) { fprintf(jsout, "\n\t"); }
-        fprintf(jsout, "]");
+        if (extension_count > 0) printf("\n\t");
+        printf("]");
     }
 
     fflush(out);
-    fflush(jsout);
+    fflush(stdout);
 }
 
-static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *out, FILE *jsout) {
+static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *out) {
     const VkQueueFamilyProperties *props = &gpu->queue_props[id];
 
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkQueueFamilyProperties[<div class='val'>%d</div>]</summary>\n", id);
         fprintf(out, "\t\t\t\t\t\t<details><summary>queueFlags = ");
-    } else {
+    } else if (human_readable_output) {
         printf("VkQueueFamilyProperties[%d]:\n", id);
         printf("===========================\n");
         printf("\tqueueFlags         = ");
     }
-    char *sep = "";  // separator character
-    if (props->queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-        fprintf(out, "GRAPHICS");
-        sep = " | ";
-    }
-    if (props->queueFlags & VK_QUEUE_COMPUTE_BIT) {
-        fprintf(out, "%sCOMPUTE", sep);
-        sep = " | ";
-    }
-    if (props->queueFlags & VK_QUEUE_TRANSFER_BIT) {
-        fprintf(out, "%sTRANSFER", sep);
-        sep = " | ";
-    }
-    if (props->queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
-        fprintf(out, "%sSPARSE", sep);
+    if (html_output || human_readable_output) {
+        char *sep = "";  // separator character
+        if (props->queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            fprintf(out, "GRAPHICS");
+            sep = " | ";
+        }
+        if (props->queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            fprintf(out, "%sCOMPUTE", sep);
+            sep = " | ";
+        }
+        if (props->queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            fprintf(out, "%sTRANSFER", sep);
+            sep = " | ";
+        }
+        if (props->queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+            fprintf(out, "%sSPARSE", sep);
+        }
     }
 
     if (html_output) {
@@ -2378,7 +2317,7 @@ static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *ou
         fprintf(out, "\t\t\t\t\t\t<details><summary>minImageTransferGranularity = (<div class='val'>%d</div>, <div class='val'>%d</div>, <div class='val'>%d</div>)</summary></details>\n",
                 props->minImageTransferGranularity.width, props->minImageTransferGranularity.height, props->minImageTransferGranularity.depth);
         fprintf(out, "\t\t\t\t\t</details>\n");
-    } else {
+    } else if (human_readable_output) {
         printf("\n");
         printf("\tqueueCount         = %u\n", props->queueCount);
         printf("\ttimestampValidBits = %u\n", props->timestampValidBits);
@@ -2386,20 +2325,20 @@ static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *ou
                props->minImageTransferGranularity.height, props->minImageTransferGranularity.depth);
     }
     if (json_output) {
-        fprintf(jsout, "\t\t{\n");
-        fprintf(jsout, "\t\t\t\"minImageTransferGranularity\": {\n");
-        fprintf(jsout, "\t\t\t\t\"depth\": %u,\n", props->minImageTransferGranularity.depth);
-        fprintf(jsout, "\t\t\t\t\"height\": %u,\n", props->minImageTransferGranularity.height);
-        fprintf(jsout, "\t\t\t\t\"width\": %u\n", props->minImageTransferGranularity.width);
-        fprintf(jsout, "\t\t\t},\n");
-        fprintf(jsout, "\t\t\t\"queueCount\": %u,\n", props->queueCount);
-        fprintf(jsout, "\t\t\t\"queueFlags\": %u,\n", props->queueFlags);
-        fprintf(jsout, "\t\t\t\"timestampValidBits\": %u\n", props->timestampValidBits);
-        fprintf(jsout, "\t\t}");
+        printf("\t\t{\n");
+        printf("\t\t\t\"minImageTransferGranularity\": {\n");
+        printf("\t\t\t\t\"depth\": %u,\n", props->minImageTransferGranularity.depth);
+        printf("\t\t\t\t\"height\": %u,\n", props->minImageTransferGranularity.height);
+        printf("\t\t\t\t\"width\": %u\n", props->minImageTransferGranularity.width);
+        printf("\t\t\t},\n");
+        printf("\t\t\t\"queueCount\": %u,\n", props->queueCount);
+        printf("\t\t\t\"queueFlags\": %u,\n", props->queueFlags);
+        printf("\t\t\t\"timestampValidBits\": %u\n", props->timestampValidBits);
+        printf("\t\t}");
     }
 
     fflush(out);
-    fflush(jsout);
+    fflush(stdout);
 }
 
 // This prints a number of bytes in a human-readable format according to prefixes of the International System of Quantities (ISQ),
@@ -2425,22 +2364,22 @@ static char *HumanReadable(const size_t sz) {
     return strndup(buf, kBufferSize);
 }
 
-static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
+static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
     const VkPhysicalDeviceMemoryProperties *props = &gpu->memory_props;
 
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceMemoryProperties</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>memoryHeapCount = <div class='val'>%u</div></summary>", props->memoryHeapCount);
-        if (props->memoryHeapCount > 0) { fprintf(out, "\n"); }
-    } else {
+        if (props->memoryHeapCount > 0) fprintf(out, "\n");
+    } else if (human_readable_output) {
         printf("VkPhysicalDeviceMemoryProperties:\n");
         printf("=================================\n");
         printf("\tmemoryHeapCount       = %u\n", props->memoryHeapCount);
     }
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\"VkPhysicalDeviceMemoryProperties\": {\n");
-        fprintf(jsout, "\t\t\"memoryHeaps\": [");
+        printf(",\n");
+        printf("\t\"VkPhysicalDeviceMemoryProperties\": {\n");
+        printf("\t\t\"memoryHeaps\": [");
     }
     for (uint32_t i = 0; i < props->memoryHeapCount; ++i) {
         const VkDeviceSize memSize = props->memoryHeaps[i].size;
@@ -2450,7 +2389,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
             fprintf(out, "\t\t\t\t\t\t\t<details><summary>memoryHeaps[<div class='val'>%u</div>]</summary>\n", i);
             fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>size = <div class='val'>" PRINTF_SIZE_T_SPECIFIER "</div> (<div class='val'>0x%" PRIxLEAST64 "</div>) (<div class='val'>%s</div>)</summary></details>\n",
                     (size_t)memSize, memSize, mem_size_human_readable);
-        } else {
+        } else if (human_readable_output) {
             printf("\tmemoryHeaps[%u] :\n", i);
             printf("\t\tsize          = " PRINTF_SIZE_T_SPECIFIER " (0x%" PRIxLEAST64 ") (%s)\n", (size_t)memSize, memSize,
                    mem_size_human_readable);
@@ -2465,39 +2404,37 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
             fprintf(out, "</summary></details>\n");
             fprintf(out, "\t\t\t\t\t\t\t\t</details>\n");
             fprintf(out, "\t\t\t\t\t\t\t</details>\n");
-        } else {
+        } else if (human_readable_output) {
             printf("\t\tflags:\n\t\t\t");
             printf((heap_flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT\n" : "None\n");
         }
         if (json_output) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-            fprintf(jsout,"\t\t\t{\n");
-            fprintf(jsout,"\t\t\t\t\"flags\": %u,\n", heap_flags);
-            fprintf(jsout,"\t\t\t\t\"size\": " PRINTF_SIZE_T_SPECIFIER "\n", (size_t)memSize);
-            fprintf(jsout,"\t\t\t}");
+            if (i > 0) printf(",");
+            printf("\n");
+            printf("\t\t\t{\n");
+            printf("\t\t\t\t\"flags\": %u,\n", heap_flags);
+            printf("\t\t\t\t\"size\": " PRINTF_SIZE_T_SPECIFIER "\n", (size_t)memSize);
+            printf("\t\t\t}");
         }
     }
     if (html_output) {
-        if (props->memoryHeapCount > 0) { fprintf(out, "\t\t\t\t\t\t"); }
+        if (props->memoryHeapCount > 0) fprintf(out, "\t\t\t\t\t\t");
         fprintf(out, "</details>\n");
     }
     if (json_output) {
-        if (props->memoryHeapCount > 0) { fprintf(jsout, "\n\t\t"); }
-        fprintf(jsout, "]");
+        if (props->memoryHeapCount > 0) printf("\n\t\t");
+        printf("]");
     }
 
     if (html_output) {
         fprintf(out, "\t\t\t\t\t\t<details><summary>memoryTypeCount = <div class='val'>%u</div></summary>", props->memoryTypeCount);
-        if (props->memoryTypeCount > 0) {
-            fprintf(out, "\n");
-        }
-    } else {
-            printf("\tmemoryTypeCount       = %u\n", props->memoryTypeCount);
+        if (props->memoryTypeCount > 0) fprintf(out, "\n");
+    } else if (human_readable_output) {
+        printf("\tmemoryTypeCount       = %u\n", props->memoryTypeCount);
     }
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\t\"memoryTypes\": [");
+        printf(",\n");
+        printf("\t\t\"memoryTypes\": [");
     }
     for (uint32_t i = 0; i < props->memoryTypeCount; ++i) {
         if (html_output) {
@@ -2509,99 +2446,99 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
             } else {
                 fprintf(out, "\n");
             }
-        } else {
+        } else if (human_readable_output) {
             printf("\tmemoryTypes[%u] :\n", i);
             printf("\t\theapIndex     = %u\n", props->memoryTypes[i].heapIndex);
             printf("\t\tpropertyFlags = 0x%" PRIxLEAST32 ":\n", props->memoryTypes[i].propertyFlags);
         }
         if (json_output) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-            fprintf(jsout,"\t\t\t{\n");
-            fprintf(jsout,"\t\t\t\t\"heapIndex\": %u,\n", props->memoryTypes[i].heapIndex);
-            fprintf(jsout,"\t\t\t\t\"propertyFlags\": %u\n", props->memoryTypes[i].propertyFlags);
-            fprintf(jsout,"\t\t\t}");
+            if (i > 0) printf(",");
+            printf("\n");
+            printf("\t\t\t{\n");
+            printf("\t\t\t\t\"heapIndex\": %u,\n", props->memoryTypes[i].heapIndex);
+            printf("\t\t\t\t\"propertyFlags\": %u\n", props->memoryTypes[i].propertyFlags);
+            printf("\t\t\t}");
         }
 
         // Print each named flag to html or std output if it is set
         VkFlags flags = props->memoryTypes[i].propertyFlags;
         if (html_output) {
-            if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT</div></summary></details>\n");  }
-            if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</div></summary></details>\n");  }
-            if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT</div></summary></details>\n"); }
-            if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_CACHED_BIT</div></summary></details>\n"); }
-            if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT</div></summary></details>\n"); }
-            if (props->memoryTypes[i].propertyFlags > 0) fprintf(out, "\t\t\t\t\t\t\t\t</details>\n");
+            if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)     fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT</div></summary></details>\n");
+            if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)     fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</div></summary></details>\n");
+            if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT</div></summary></details>\n");
+            if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)      fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_CACHED_BIT</div></summary></details>\n");
+            if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT</div></summary></details>\n");
+            if (props->memoryTypes[i].propertyFlags > 0)         fprintf(out, "\t\t\t\t\t\t\t\t</details>\n");
             fprintf(out, "\t\t\t\t\t\t\t</details>\n");
-        } else {
-            if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT\n"); }
-            if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_HOST_VISIBLE_BIT\n"); }
-            if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_HOST_COHERENT_BIT\n"); }
-            if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_HOST_CACHED_BIT\n"); }
-            if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT\n"); }
+        } else if (human_readable_output) {
+            if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)     printf("\t\t\tVK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT\n");
+            if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)     printf("\t\t\tVK_MEMORY_PROPERTY_HOST_VISIBLE_BIT\n");
+            if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)    printf("\t\t\tVK_MEMORY_PROPERTY_HOST_COHERENT_BIT\n");
+            if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)      printf("\t\t\tVK_MEMORY_PROPERTY_HOST_CACHED_BIT\n");
+            if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) printf("\t\t\tVK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT\n");
         }
     }
     if (html_output) {
-        if (props->memoryTypeCount > 0) { fprintf(out, "\t\t\t\t\t\t"); }
+        if (props->memoryTypeCount > 0) fprintf(out, "\t\t\t\t\t\t");
         fprintf(out, "</details>\n");
         fprintf(out, "\t\t\t\t\t</details>\n");
     }
     if (json_output) {
-        if (props->memoryTypeCount > 0) { fprintf(jsout, "\n\t\t"); }
-        fprintf(jsout, "]\n");
-        fprintf(jsout, "\t}");
+        if (props->memoryTypeCount > 0) printf("\n\t\t");
+        printf("]\n");
+        printf("\t}");
     }
 
     fflush(out);
-    fflush(jsout);
+    fflush(stdout);
 }
 // clang-format on
 
-static void AppGpuDump(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
+static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     uint32_t i;
 
     if (html_output) {
         fprintf(out, "\t\t\t<details><summary>Device Properties and Extensions</summary>\n");
         fprintf(out, "\t\t\t\t<details><summary>GPU%u</summary>\n", gpu->id);
-    } else {
+    } else if (human_readable_output) {
         printf("\nDevice Properties and Extensions :\n");
         printf("==================================\n");
         printf("GPU%u\n", gpu->id);
     }
 
-    AppGpuDumpProps(gpu, out, jsout);
+    AppGpuDumpProps(gpu, out);
     if (html_output) {
-        AppDumpExtensions("\t\t", "Device", gpu->device_extension_count, gpu->device_extensions, out, jsout);
-    } else {
+        AppDumpExtensions("\t\t", "Device", gpu->device_extension_count, gpu->device_extensions, out);
+    } else if (human_readable_output) {
         printf("\n");
-        AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out, jsout);
+        AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out);
         printf("\n");
     }
 
     if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\"ArrayOfVkQueueFamilyProperties\": [");
+        printf(",\n");
+        printf("\t\"ArrayOfVkQueueFamilyProperties\": [");
     }
     for (i = 0; i < gpu->queue_count; ++i) {
         if (json_output) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
+            if (i > 0) printf(",");
+            printf("\n");
         }
-        AppGpuDumpQueueProps(gpu, i, out, jsout);
-        if (!html_output) { printf("\n"); }
+        AppGpuDumpQueueProps(gpu, i, out);
+        if (human_readable_output) printf("\n");
     }
     if (json_output) {
-        if (gpu->queue_count > 0) { fprintf(jsout, "\n\t"); }
-        fprintf(jsout, "]");
+        if (gpu->queue_count > 0) printf("\n\t");
+        printf("]");
     }
 
-    AppGpuDumpMemoryProps(gpu, out, jsout);
-    if (!html_output) { printf("\n"); }
+    AppGpuDumpMemoryProps(gpu, out);
+    if (human_readable_output) printf("\n");
 
-    AppGpuDumpFeatures(gpu, out, jsout);
-    if (!html_output) { printf("\n"); }
+    AppGpuDumpFeatures(gpu, out);
+    if (human_readable_output) printf("\n");
 
-    AppDevDump(&gpu->dev, out, jsout);
+    AppDevDump(gpu, out);
     if (html_output) {
         fprintf(out, "\t\t\t\t</details>\n");
         fprintf(out, "\t\t\t</details>\n");
@@ -2641,7 +2578,6 @@ int main(int argc, char **argv) {
     VkResult err;
     struct AppInstance inst;
     FILE *out = stdout;
-    FILE *jsout = stdout;
 
 #ifdef _WIN32
     if (ConsoleIsExclusive()) ConsoleEnlarge();
@@ -2651,6 +2587,7 @@ int main(int argc, char **argv) {
         // Check for html option
         if (strcmp(argv[i], "--html") == 0) {
             out = fopen("vulkaninfo.html", "w");
+            human_readable_output = false;
             html_output = true;
             continue;
         }
@@ -2664,16 +2601,18 @@ int main(int argc, char **argv) {
     if (html_output) {
         PrintHtmlHeader(out);
         fprintf(out, "\t\t\t<details><summary>");
-    } else {
+    } else if (human_readable_output) {
         printf("===========\n");
         printf("VULKAN INFO\n");
         printf("===========\n\n");
     }
-    fprintf(out, "Vulkan API Version: ");
+    if (html_output || human_readable_output) {
+        fprintf(out, "Vulkan API Version: ");
+    }
     if (html_output) {
         fprintf(out, "<div class='val'>%d.%d.%d</div></summary></details>\n", vulkan_major, vulkan_minor, vulkan_patch);
         fprintf(out, "\t\t\t<br />\n");
-    } else {
+    } else if (human_readable_output) {
         printf("%d.%d.%d\n\n", vulkan_major, vulkan_minor, vulkan_patch);
     }
 
@@ -2688,39 +2627,35 @@ int main(int argc, char **argv) {
 
     gpus = malloc(sizeof(gpus[0]) * gpu_count);
     if (!gpus) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+
     for (uint32_t i = 0; i < gpu_count; ++i) {
         AppGpuInit(&gpus[i], &inst, i, objs[i]);
-        if (!html_output) { printf("\n\n"); }
+        if (human_readable_output) printf("\n\n");
     }
 
     // If json output, confirm the desired gpu exists
     if (json_output) {
-        if (selected_gpu >= gpu_count) { selected_gpu = 0; }
-        char filename[30];
-        sprintf(filename, "vulkaninfo-gpu%u.json", selected_gpu);
-        jsout = fopen(filename, "w");
-        PrintJsonHeader(jsout, vulkan_major, vulkan_minor, vulkan_patch);
+        if (selected_gpu >= gpu_count) selected_gpu = 0;
+        PrintJsonHeader(vulkan_major, vulkan_minor, vulkan_patch);
     }
 
-    if (!html_output) {
+    if (human_readable_output) {
         printf("Instance Extensions:\n");
         printf("====================\n");
     }
-    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions, out, jsout);
+    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions, out);
 
     //---Layer-Device-Extensions---
     if (html_output) {
         fprintf(out, "\t\t\t<details><summary>Layers: count = <div class='val'>%d</div></summary>", inst.global_layer_count);
-        if (inst.global_layer_count > 0) {
-            fprintf(out, "\n");
-        }
-    } else {
+        if (inst.global_layer_count > 0) fprintf(out, "\n");
+    } else if (human_readable_output) {
         printf("Layers: count = %d\n", inst.global_layer_count);
         printf("=======\n");
     }
-    if (json_output) {
-        fprintf(jsout, ",\n");
-        fprintf(jsout, "\t\"ArrayOfVkLayerProperties\": [");
+    if (json_output && (inst.global_layer_count > 0)) {
+        printf(",\n");
+        printf("\t\"ArrayOfVkLayerProperties\": [");
     }
     for (uint32_t i = 0; i < inst.global_layer_count; ++i) {
         uint32_t layer_major, layer_minor, layer_patch;
@@ -2737,27 +2672,27 @@ int main(int argc, char **argv) {
                     (char *)layer_prop->description, spec_version);
             fprintf(out, "layer version <div class='val'>%s</div></summary>\n", layer_version);
             AppDumpExtensions("\t\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
-                              out, jsout);
-        } else {
+                              out);
+        } else if (human_readable_output) {
             printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName, (char *)layer_prop->description,
                    spec_version, layer_version);
             AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
-                              out, jsout);
+                              out);
         }
         if (json_output) {
-            if (i > 0) { fprintf(jsout, ","); }
-            fprintf(jsout, "\n");
-            fprintf(jsout, "\t\t{\n");
-            fprintf(jsout, "\t\t\t\"layerName\": \"%s\",\n", layer_prop->layerName);
-            fprintf(jsout, "\t\t\t\"specVersion\": %u,\n", layer_prop->specVersion);
-            fprintf(jsout, "\t\t\t\"implementationVersion\": %u,\n", layer_prop->implementationVersion);
-            fprintf(jsout, "\t\t\t\"description\": \"%s\"\n", layer_prop->description);
-            fprintf(jsout, "\t\t}");
+            if (i > 0) printf(",");
+            printf("\n");
+            printf("\t\t{\n");
+            printf("\t\t\t\"layerName\": \"%s\",\n", layer_prop->layerName);
+            printf("\t\t\t\"specVersion\": %u,\n", layer_prop->specVersion);
+            printf("\t\t\t\"implementationVersion\": %u,\n", layer_prop->implementationVersion);
+            printf("\t\t\t\"description\": \"%s\"\n", layer_prop->description);
+            printf("\t\t}");
         }
 
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary>Devices count = <div class='val'>%d</div></summary>\n", gpu_count);
-        } else {
+        } else if (human_readable_output) {
             printf("\tDevices \tcount = %d\n", gpu_count);
         }
 
@@ -2767,26 +2702,24 @@ int main(int argc, char **argv) {
             if (html_output) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary>");
                 fprintf(out, "GPU id: <div class='val'>%u</div> (%s)</summary></details>\n", j, gpus[j].props.deviceName);
-            } else {
+            } else if (human_readable_output) {
                 printf("\t\tGPU id       : %u (%s)\n", j, gpus[j].props.deviceName);
             }
             uint32_t count = 0;
             VkExtensionProperties *props;
             AppGetPhysicalDeviceLayerExtensions(&gpus[j], layer_name, &count, &props);
             if (html_output) {
-                AppDumpExtensions("\t\t\t", "Layer-Device", count, props, out, jsout);
-            } else {
-                AppDumpExtensions("\t\t", "Layer-Device", count, props, out, jsout);
-            }
-            if (html_output) {
+                AppDumpExtensions("\t\t\t", "Layer-Device", count, props, out);
                 fprintf(out, "\t\t\t\t\t</details>\n");
+            } else if (human_readable_output) {
+                AppDumpExtensions("\t\t", "Layer-Device", count, props, out);
             }
             free(props);
         }
 
         if (html_output) {
             fprintf(out, "\t\t\t\t</details>\n");
-        } else {
+        } else if (human_readable_output) {
             printf("\n");
         }
     }
@@ -2794,15 +2727,12 @@ int main(int argc, char **argv) {
     if (html_output) {
         fprintf(out, "\t\t\t</details>\n");
     }
-    if (html_output) {
-        fprintf(out, "\t\t\t</details>\n");
-    }
-    if (json_output) {
-        fprintf(jsout, "\n\t]");
+    if (json_output && (inst.global_layer_count > 0)) {
+        printf("\n\t]");
     }
 
     fflush(out);
-    fflush(jsout);
+    fflush(stdout);
     //-----------------------------
 
     if (html_output) {
@@ -2812,7 +2742,7 @@ int main(int argc, char **argv) {
         } else {
             fprintf(out, "</details>\n");
         }
-    } else {
+    } else if (human_readable_output) {
         printf("Presentable Surfaces:\n");
         printf("=====================\n");
     }
@@ -2841,7 +2771,7 @@ int main(int argc, char **argv) {
                         gpus[i].props.deviceName);
                 fprintf(out, "\t\t\t\t<details><summary>Surface type : <div class='type'>%s</div></summary></details>\n",
                         VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-            } else {
+            } else if (human_readable_output) {
                 printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
                 printf("Surface type : %s\n", VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
             }
@@ -2863,7 +2793,7 @@ int main(int argc, char **argv) {
                         gpus[i].props.deviceName);
                 fprintf(out, "\t\t\t\t<details><summary>Surface type : <div class='type'>%s</div></summary></details>\n",
                         VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-            } else {
+            } else if (human_readable_output) {
                 printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
                 printf("Surface type : %s\n", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
             }
@@ -2886,7 +2816,7 @@ int main(int argc, char **argv) {
                         gpus[i].props.deviceName);
                 fprintf(out, "\t\t\t\t<details><summary>Surface type : <div class='type'>%s</div></summary></details>\n",
                         VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-            } else {
+            } else if (human_readable_output) {
                 printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
                 printf("Surface type : %s\n", VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
             }
@@ -2903,50 +2833,47 @@ int main(int argc, char **argv) {
     if (!format_count && !present_mode_count) {
         if (html_output) {
             fprintf(out, "\t\t\t\t<details><summary>None found</summary></details>\n");
-        } else {
+        } else if (human_readable_output) {
             printf("None found\n");
         }
     }
 
     if (html_output) {
         fprintf(out, "\t\t\t</details>\n");
-    } else {
+    } else if (human_readable_output) {
         printf("\n");
     }
     //---------
 
     for (uint32_t i = 0; i < gpu_count; ++i) {
         if (json_output && selected_gpu != i) {
-            // Toggle json_output to allow html or std output without json output
+            // Toggle json_output to allow html output without json output
             json_output = false;
-            AppGpuDump(&gpus[i], out, jsout);
+            AppGpuDump(&gpus[i], out);
             json_output = true;
         } else {
-            AppGpuDump(&gpus[i], out, jsout);
+            AppGpuDump(&gpus[i], out);
         }
-        if (!html_output) { printf("\n\n"); }
+        if (human_readable_output) printf("\n\n");
     }
 
-    for (uint32_t i = 0; i < gpu_count; ++i) { AppGpuDestroy(&gpus[i]); }
+    for (uint32_t i = 0; i < gpu_count; ++i) AppGpuDestroy(&gpus[i]);
     free(gpus);
     free(objs);
 
     AppDestroyInstance(&inst);
 
     fflush(out);
-    fflush(jsout);
+    fflush(stdout);
 #ifdef _WIN32
-    if (ConsoleIsExclusive() && !html_output) Sleep(INFINITE);
+    if (ConsoleIsExclusive() && human_readable_output) Sleep(INFINITE);
 #endif
 
     if (html_output) {
         PrintHtmlFooter(out);
         fclose(out);
     }
-    if (json_output) {
-        fprintf(jsout, "\n}\n");
-        fclose(jsout);
-    }
+    if (json_output) printf("\n}\n");
 
     return 0;
 }
