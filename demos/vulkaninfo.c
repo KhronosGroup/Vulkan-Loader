@@ -2436,7 +2436,8 @@ int main(int argc, char **argv) {
 
 #if defined(VK_USE_PLATFORM_XCB_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR)
     bool has_display = true;
-    if (getenv("DISPLAY") == NULL) {
+    const char *display_var = getenv("DISPLAY");
+    if (display_var == NULL || strlen(display_var) == 0) {
         printf("'DISPLAY' environment variable not set... skipping surface info\n");
         has_display = false;
     }
