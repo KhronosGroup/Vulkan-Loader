@@ -2504,6 +2504,12 @@ static void demo_create_window(struct demo *demo) {
 }
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
 static void demo_create_xlib_window(struct demo *demo) {
+    const char *display_envar = getenv("DISPLAY");
+    if (display_envar == NULL || display_envar[0] == '\0') {
+        printf("Environment variable DISPLAY requires a valid value.\nExiting ...\n");
+        fflush(stdout);
+        exit(1);
+    }
 
     XInitThreads();
     demo->display = XOpenDisplay(NULL);
@@ -3763,6 +3769,13 @@ static void demo_init_connection(struct demo *demo) {
     const xcb_setup_t *setup;
     xcb_screen_iterator_t iter;
     int scr;
+
+    const char *display_envar = getenv("DISPLAY");
+    if (display_envar == NULL || display_envar[0] == '\0') {
+        printf("Environment variable DISPLAY requires a valid value.\nExiting ...\n");
+        fflush(stdout);
+        exit(1);
+    }
 
     demo->connection = xcb_connect(NULL, &scr);
     if (xcb_connection_has_error(demo->connection) > 0) {

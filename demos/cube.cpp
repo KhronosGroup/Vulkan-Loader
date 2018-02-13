@@ -971,6 +971,13 @@ Demo::Demo()
         xcb_screen_iterator_t iter;
         int scr;
 
+        const char *display_envar = getenv("DISPLAY");
+        if (display_envar == nullptr || display_envar[0] == '\0') {
+            printf("Environment variable DISPLAY requires a valid value.\nExiting ...\n");
+            fflush(stdout);
+            exit(1);
+        }
+
         connection = xcb_connect(nullptr, &scr);
         if (xcb_connection_has_error(connection) > 0) {
             printf(
@@ -2438,6 +2445,13 @@ Demo::Demo()
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
 
     void Demo::create_xlib_window() {
+        const char *display_envar = getenv("DISPLAY");
+        if (display_envar == nullptr || display_envar[0] == '\0') {
+            printf("Environment variable DISPLAY requires a valid value.\nExiting ...\n");
+            fflush(stdout);
+            exit(1);
+        }
+
         XInitThreads();
         display = XOpenDisplay(nullptr);
         long visualMask = VisualScreenMask;
