@@ -26,8 +26,16 @@ class MeshPicker {
    public:
     MeshPicker()
         : pattern_({{
-              Meshes::MESH_PYRAMID, Meshes::MESH_ICOSPHERE, Meshes::MESH_TEAPOT, Meshes::MESH_PYRAMID, Meshes::MESH_ICOSPHERE,
-              Meshes::MESH_PYRAMID, Meshes::MESH_PYRAMID, Meshes::MESH_PYRAMID, Meshes::MESH_PYRAMID, Meshes::MESH_PYRAMID,
+              Meshes::MESH_PYRAMID,
+              Meshes::MESH_ICOSPHERE,
+              Meshes::MESH_TEAPOT,
+              Meshes::MESH_PYRAMID,
+              Meshes::MESH_ICOSPHERE,
+              Meshes::MESH_PYRAMID,
+              Meshes::MESH_PYRAMID,
+              Meshes::MESH_PYRAMID,
+              Meshes::MESH_PYRAMID,
+              Meshes::MESH_PYRAMID,
           }}),
           cur_(-1) {}
 
@@ -249,7 +257,10 @@ Simulation::Simulation(int object_count) : random_dev_() {
         float scale = mesh.scale(type);
 
         objects_.emplace_back(Object{
-            type, glm::vec3(0.5f + 0.5f * (float)i / object_count), color.pick(), Animation(random_dev_(), scale),
+            type,
+            glm::vec3(0.5f + 0.5f * (float)i / object_count),
+            color.pick(),
+            Animation(random_dev_(), scale),
             Path(random_dev_()),
         });
     }

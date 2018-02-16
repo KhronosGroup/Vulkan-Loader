@@ -811,27 +811,27 @@ static void AppCreateInstance(struct AppInstance *inst) {
     }
 
     inst->vkGetPhysicalDeviceSurfaceSupportKHR =
-            (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
+        (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
     inst->vkGetPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)vkGetInstanceProcAddr(
-            inst->instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+        inst->instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
     inst->vkGetPhysicalDeviceSurfaceFormatsKHR =
-            (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
+        (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
     inst->vkGetPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)vkGetInstanceProcAddr(
-            inst->instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
+        inst->instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
     inst->vkGetPhysicalDeviceProperties2KHR =
-            (PFN_vkGetPhysicalDeviceProperties2KHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceProperties2KHR");
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceProperties2KHR");
     inst->vkGetPhysicalDeviceFormatProperties2KHR = (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vkGetInstanceProcAddr(
-            inst->instance, "vkGetPhysicalDeviceFormatProperties2KHR");
+        inst->instance, "vkGetPhysicalDeviceFormatProperties2KHR");
     inst->vkGetPhysicalDeviceQueueFamilyProperties2KHR = (PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR)vkGetInstanceProcAddr(
-            inst->instance, "vkGetPhysicalDeviceQueueFamilyProperties2KHR");
+        inst->instance, "vkGetPhysicalDeviceQueueFamilyProperties2KHR");
     inst->vkGetPhysicalDeviceFeatures2KHR =
-            (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceFeatures2KHR");
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(inst->instance, "vkGetPhysicalDeviceFeatures2KHR");
     inst->vkGetPhysicalDeviceMemoryProperties2KHR = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vkGetInstanceProcAddr(
-            inst->instance, "vkGetPhysicalDeviceMemoryProperties2KHR");
+        inst->instance, "vkGetPhysicalDeviceMemoryProperties2KHR");
     inst->vkGetPhysicalDeviceSurfaceCapabilities2KHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vkGetInstanceProcAddr(
-            inst->instance, "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+        inst->instance, "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
     inst->vkGetPhysicalDeviceSurfaceCapabilities2EXT = (PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT)vkGetInstanceProcAddr(
-            inst->instance, "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
+        inst->instance, "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
 }
 
 //-----------------------------------------------------------
@@ -2375,7 +2375,7 @@ int main(int argc, char **argv) {
             AppDumpExtensions("\t\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
                               out);
         } else {
-            printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName, (char *) layer_prop->description,
+            printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName, (char *)layer_prop->description,
                    spec_version, layer_version);
             AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
                               out);
@@ -2403,7 +2403,9 @@ int main(int argc, char **argv) {
             } else {
                 AppDumpExtensions("\t\t", "Layer-Device", count, props, out);
             }
-            if (html_output) { fprintf(out, "\t\t\t\t\t</details>\n"); }
+            if (html_output) {
+                fprintf(out, "\t\t\t\t\t</details>\n");
+            }
             free(props);
         }
         if (html_output) {
@@ -2413,7 +2415,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (html_output) { fprintf(out, "\t\t\t</details>\n"); }
+    if (html_output) {
+        fprintf(out, "\t\t\t</details>\n");
+    }
 
     fflush(out);
     //-----------------------------
@@ -2489,7 +2493,8 @@ int main(int argc, char **argv) {
     }
 //--XLIB--
 #elif VK_USE_PLATFORM_XLIB_KHR
-    if (has_display && CheckExtensionEnabled(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
+    if (has_display &&
+        CheckExtensionEnabled(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
         AppCreateXlibWindow(&inst);
         for (uint32_t i = 0; i < gpu_count; i++) {
             AppCreateXlibSurface(&inst);
@@ -2516,7 +2521,7 @@ int main(int argc, char **argv) {
         if (html_output) {
             fprintf(out, "\t\t\t\t<details><summary>None found</summary></details>\n");
         } else {
-            printf( "None found\n");
+            printf("None found\n");
         }
     }
 

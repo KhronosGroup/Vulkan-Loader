@@ -173,42 +173,102 @@ class BuildIcosphere {
         const std::vector<std::array<float, 6>> icosahedron_vertices = {
             //   position           normal
             {{
-                -l1, -l2, 0.0f, -l1, -l2, 0.0f,
+                -l1,
+                -l2,
+                0.0f,
+                -l1,
+                -l2,
+                0.0f,
             }},
             {{
-                l1, -l2, 0.0f, l1, -l2, 0.0f,
+                l1,
+                -l2,
+                0.0f,
+                l1,
+                -l2,
+                0.0f,
             }},
             {{
-                l1, l2, 0.0f, l1, l2, 0.0f,
+                l1,
+                l2,
+                0.0f,
+                l1,
+                l2,
+                0.0f,
             }},
             {{
-                -l1, l2, 0.0f, -l1, l2, 0.0f,
+                -l1,
+                l2,
+                0.0f,
+                -l1,
+                l2,
+                0.0f,
             }},
 
             {{
-                -l2, 0.0f, -l1, -l2, 0.0f, -l1,
+                -l2,
+                0.0f,
+                -l1,
+                -l2,
+                0.0f,
+                -l1,
             }},
             {{
-                l2, 0.0f, -l1, l2, 0.0f, -l1,
+                l2,
+                0.0f,
+                -l1,
+                l2,
+                0.0f,
+                -l1,
             }},
             {{
-                l2, 0.0f, l1, l2, 0.0f, l1,
+                l2,
+                0.0f,
+                l1,
+                l2,
+                0.0f,
+                l1,
             }},
             {{
-                -l2, 0.0f, l1, -l2, 0.0f, l1,
+                -l2,
+                0.0f,
+                l1,
+                -l2,
+                0.0f,
+                l1,
             }},
 
             {{
-                0.0f, -l1, -l2, 0.0f, -l1, -l2,
+                0.0f,
+                -l1,
+                -l2,
+                0.0f,
+                -l1,
+                -l2,
             }},
             {{
-                0.0f, l1, -l2, 0.0f, l1, -l2,
+                0.0f,
+                l1,
+                -l2,
+                0.0f,
+                l1,
+                -l2,
             }},
             {{
-                0.0f, l1, l2, 0.0f, l1, l2,
+                0.0f,
+                l1,
+                l2,
+                0.0f,
+                l1,
+                l2,
             }},
             {{
-                0.0f, -l1, l2, 0.0f, -l1, l2,
+                0.0f,
+                -l1,
+                l2,
+                0.0f,
+                -l1,
+                l2,
             }},
         };
         const std::vector<std::array<int, 3>> icosahedron_faces = {
@@ -280,7 +340,9 @@ class BuildIcosphere {
         const Mesh::Position &pos_a = mesh_.positions_[a];
         const Mesh::Position &pos_b = mesh_.positions_[b];
         Mesh::Position pos_mid = {
-            (pos_a.x + pos_b.x) / 2.0f, (pos_a.y + pos_b.y) / 2.0f, (pos_a.z + pos_b.z) / 2.0f,
+            (pos_a.x + pos_b.x) / 2.0f,
+            (pos_a.y + pos_b.y) / 2.0f,
+            (pos_a.z + pos_b.z) / 2.0f,
         };
         float scale = radius_ / std::sqrt(pos_mid.x * pos_mid.x + pos_mid.y * pos_mid.y + pos_mid.z * pos_mid.z);
         pos_mid.x *= scale;
@@ -320,12 +382,15 @@ class BuildTeapot {
 
         for (int i = 0; i < position_count; i += 3) {
             mesh.positions_.emplace_back(Mesh::Position{
-                (teapot_positions[i + 0] + translate.x) * scale, (teapot_positions[i + 1] + translate.y) * scale,
+                (teapot_positions[i + 0] + translate.x) * scale,
+                (teapot_positions[i + 1] + translate.y) * scale,
                 (teapot_positions[i + 2] + translate.z) * scale,
             });
 
             mesh.normals_.emplace_back(Mesh::Normal{
-                teapot_normals[i + 0], teapot_normals[i + 1], teapot_normals[i + 2],
+                teapot_normals[i + 0],
+                teapot_normals[i + 1],
+                teapot_normals[i + 2],
             });
         }
 
@@ -336,10 +401,14 @@ class BuildTeapot {
 
     void get_transform(const float *positions, int position_count, Mesh::Position &translate, float &scale) {
         float min[3] = {
-            positions[0], positions[1], positions[2],
+            positions[0],
+            positions[1],
+            positions[2],
         };
         float max[3] = {
-            positions[0], positions[1], positions[2],
+            positions[0],
+            positions[1],
+            positions[2],
         };
         for (int i = 3; i < position_count; i += 3) {
             for (int j = 0; j < 3; j++) {
@@ -353,7 +422,9 @@ class BuildTeapot {
         translate.z = -(min[2] + max[2]) / 2.0f;
 
         float extents[3] = {
-            max[0] + translate.x, max[1] + translate.y, max[2] + translate.z,
+            max[0] + translate.x,
+            max[1] + translate.y,
+            max[2] + translate.z,
         };
 
         float max_extent = extents[0];

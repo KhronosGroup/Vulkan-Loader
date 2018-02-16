@@ -84,7 +84,7 @@ void ShellWin32::create_window() {
                            win_rect.right - win_rect.left, win_rect.bottom - win_rect.top, nullptr, nullptr, hinstance_, nullptr);
 
     SetForegroundWindow(hwnd_);
-    SetWindowLongPtr(hwnd_, GWLP_USERDATA, (LONG_PTR) this);
+    SetWindowLongPtr(hwnd_, GWLP_USERDATA, (LONG_PTR)this);
 }
 
 PFN_vkGetInstanceProcAddr ShellWin32::load_vk() {
