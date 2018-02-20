@@ -490,7 +490,9 @@ static void AppGetPhysicalDeviceLayerExtensions(struct AppGpu *gpu, char *layer_
         err = vkEnumerateDeviceExtensionProperties(gpu->obj, layer_name, &ext_count, NULL);
         assert(!err);
 
-        if (ext_ptr) free(ext_ptr);
+        if (ext_ptr) {
+            free(ext_ptr);
+        }
         ext_ptr = malloc(ext_count * sizeof(VkExtensionProperties));
         err = vkEnumerateDeviceExtensionProperties(gpu->obj, layer_name, &ext_count, ext_ptr);
     } while (err == VK_INCOMPLETE);
@@ -675,7 +677,7 @@ void PrintHtmlFooter(FILE *out) {
 }
 
 // Prints opening code for json output file
-void PrintJsonHeader(int vulkan_major, int vulkan_minor, int vulkan_patch) {
+void PrintJsonHeader(const int vulkan_major, const int vulkan_minor, const int vulkan_patch) {
     printf("{\n");
     printf("\t\"$schema\": \"https://schema.khronos.org/vulkan/devsim_1_0_0.json#\",\n");
     printf("\t\"comments\": {\n");
@@ -684,7 +686,7 @@ void PrintJsonHeader(int vulkan_major, int vulkan_minor, int vulkan_patch) {
     printf("\t}");
 }
 
-// Checks if current argument sepcifies json output, interprets/updates gpu selection
+// Checks if current argument specifies json output, interprets/updates gpu selection
 void CheckForJsonOption(const char *arg) {
     if (strncmp("--json", arg, 6) == 0 || strcmp(arg, "-j") == 0) {
         if (strlen(arg) > 7 && strncmp("--json=", arg, 7) == 0) {
@@ -718,7 +720,7 @@ static void AppCreateInstance(struct AppInstance *inst) {
                                               VK_KHR_ANDROID_SURFACE_EXTENSION_NAME
 #endif
     };
-    uint32_t info_instance_extensions_count = ARRAY_SIZE(info_instance_extensions);
+    const uint32_t info_instance_extensions_count = ARRAY_SIZE(info_instance_extensions);
     inst->inst_extensions = malloc(sizeof(char *) * ARRAY_SIZE(info_instance_extensions));
     inst->inst_extensions_count = 0;
 
@@ -828,14 +830,18 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
     gpu->queue_props = malloc(sizeof(gpu->queue_props[0]) * gpu->queue_count);
 
-    if (!gpu->queue_props) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    if (!gpu->queue_props) {
+        ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    }
     vkGetPhysicalDeviceQueueFamilyProperties(gpu->obj, &gpu->queue_count, gpu->queue_props);
 
     if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, gpu->inst->inst_extensions,
                               gpu->inst->inst_extensions_count)) {
         gpu->queue_props2 = malloc(sizeof(gpu->queue_props2[0]) * gpu->queue_count);
 
-        if (!gpu->queue_props2) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+        if (!gpu->queue_props2) {
+            ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+        }
 
         for (i = 0; i < gpu->queue_count; ++i) {
             gpu->queue_props2[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2_KHR;
@@ -847,10 +853,14 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
     /* set up queue requests */
     gpu->queue_reqs = malloc(sizeof(*gpu->queue_reqs) * gpu->queue_count);
-    if (!gpu->queue_reqs) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    if (!gpu->queue_reqs) {
+        ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    }
     for (i = 0; i < gpu->queue_count; ++i) {
         float *queue_priorities = malloc(gpu->queue_props[i].queueCount * sizeof(float));
-        if (!queue_priorities) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+        if (!queue_priorities) {
+            ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+        }
         memset(queue_priorities, 0, gpu->queue_props[i].queueCount * sizeof(float));
 
         gpu->queue_reqs[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -1096,7 +1106,7 @@ static void AppDestroyXlibWindow(struct AppInstance *inst) {
     defined(VK_USE_PLATFORM_XLIB_KHR)    || \
     defined(VK_USE_PLATFORM_WIN32_KHR)
 static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
-    // Get the list of VkFormat's that are supported:
+    // Get the list of VkFormat's that are supported
     VkResult U_ASSERT_ONLY err;
     uint32_t format_count = 0;
     err = inst->vkGetPhysicalDeviceSurfaceFormatsKHR(gpu->obj, inst->surface, &format_count, NULL);
@@ -1126,11 +1136,14 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
             printf("\t%s\n", VkFormatString(surf_formats[i].format));
         }
     }
-    if ((format_count > 0) && html_output) fprintf(out, "\t\t\t\t</details>\n");
+    if (format_count > 0 && html_output) {
+        fprintf(out, "\t\t\t\t</details>\n");
+    }
 
     fflush(out);
     fflush(stdout);
     free(surf_formats);
+
     return format_count;
 }
 
@@ -1165,11 +1178,14 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
             printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
         }
     }
-    if ((present_mode_count > 0) && html_output) fprintf(out, "\t\t\t\t</details>\n");
+    if (present_mode_count > 0 && html_output) {
+        fprintf(out, "\t\t\t\t</details>\n");
+    }
 
     fflush(out);
     fflush(stdout);
     free(surf_present_modes);
+
     return present_mode_count;
 }
 
@@ -1195,7 +1211,9 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             fprintf(out, "\t\t\t\t\t</details>\n");
             fprintf(out, "\t\t\t\t\t<details><summary>maxImageArrayLayers = <div class='val'>%u</div></summary></details>\n", inst->surface_capabilities.maxImageArrayLayers);
             fprintf(out, "\t\t\t\t\t<details><summary>supportedTransform</summary>\n");
-            if (inst->surface_capabilities.supportedTransforms == 0) { fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n"); }
+            if (inst->surface_capabilities.supportedTransforms == 0) {
+                fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+            }
             if (inst->surface_capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR</div></summary></details>\n");
             }
@@ -1225,7 +1243,9 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             }
             fprintf(out, "\t\t\t\t\t</details>\n");
             fprintf(out, "\t\t\t\t\t<details><summary>currentTransform</summary>\n");
-            if (inst->surface_capabilities.currentTransform == 0) { fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n"); }
+            if (inst->surface_capabilities.currentTransform == 0) {
+                fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+            }
             if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR</div></summary></details>\n");
             }
@@ -1255,7 +1275,9 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             }
             fprintf(out, "\t\t\t\t\t</details>\n");
             fprintf(out, "\t\t\t\t\t<details><summary>supportedCompositeAlpha</summary>\n");
-            if (inst->surface_capabilities.supportedCompositeAlpha == 0) { fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n"); }
+            if (inst->surface_capabilities.supportedCompositeAlpha == 0) {
+                fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+            }
             if (inst->surface_capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR</div></summary></details>\n");
             }
@@ -1270,7 +1292,9 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             }
             fprintf(out, "\t\t\t\t\t</details>\n");
             fprintf(out, "\t\t\t\t\t<details><summary>supportedUsageFlags</summary>\n");
-            if (inst->surface_capabilities.supportedUsageFlags == 0) { fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n"); }
+            if (inst->surface_capabilities.supportedUsageFlags == 0) {
+                fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+            }
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_IMAGE_USAGE_TRANSFER_SRC_BIT</div></summary></details>\n");
             }
@@ -1362,7 +1386,9 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             if (html_output) {
                 fprintf(out, "\t\t\t\t\t<details><summary>VkSurfaceCapabilities2EXT</summary>\n");
                 fprintf(out, "\t\t\t\t\t\t<details><summary>supportedSurfaceCounters</summary>\n");
-                if (inst->surface_capabilities2_ext.supportedSurfaceCounters == 0) { fprintf(out, "\t\t\t\t\t\t\t<details><summary>None</summary></details>\n"); }
+                if (inst->surface_capabilities2_ext.supportedSurfaceCounters == 0) {
+                    fprintf(out, "\t\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+                }
                 if (inst->surface_capabilities2_ext.supportedSurfaceCounters & VK_SURFACE_COUNTER_VBLANK_EXT) {
                     fprintf(out, "\t\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_COUNTER_VBLANK_EXT</div></summary></details>\n");
                 }
@@ -1372,9 +1398,13 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                 printf("\nVkSurfaceCapabilities2EXT:\n");
                 printf("==========================\n\n");
                 printf("\tsupportedSurfaceCounters:\n");
-                if (inst->surface_capabilities2_ext.supportedSurfaceCounters == 0) { printf("\t\tNone\n"); }
-                if (inst->surface_capabilities2_ext.supportedSurfaceCounters & VK_SURFACE_COUNTER_VBLANK_EXT) { printf("\t\tVK_SURFACE_COUNTER_VBLANK_EXT\n"); }
-           }
+                if (inst->surface_capabilities2_ext.supportedSurfaceCounters == 0) {
+                    printf("\t\tNone\n");
+                }
+                if (inst->surface_capabilities2_ext.supportedSurfaceCounters & VK_SURFACE_COUNTER_VBLANK_EXT) {
+                    printf("\t\tVK_SURFACE_COUNTER_VBLANK_EXT\n");
+                }
+            }
         }
 
         // Get additional surface capability information from vkGetPhysicalDeviceSurfaceCapabilities2KHR
@@ -1451,7 +1481,9 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                 place = work->pNext;
             }
         }
-        if (html_output) fprintf(out, "\t\t\t\t</details>\n");
+        if (html_output) {
+            fprintf(out, "\t\t\t\t</details>\n");
+        }
     }
 }
 
@@ -1533,7 +1565,11 @@ static void AppDevDumpFormatProps(const struct AppGpu *gpu, VkFormat fmt, bool *
         printf("\n");
     }
     if (json_output && (props.linearTilingFeatures || props.optimalTilingFeatures || props.bufferFeatures)) {
-        if (!(*first_in_list)) printf(",");
+        if (!(*first_in_list)) {
+            printf(",");
+        } else {
+            *first_in_list = false;
+        }
         printf("\n");
         printf("\t\t{\n");
         printf("\t\t\t\"formatID\": %d,\n", fmt);
@@ -1541,7 +1577,6 @@ static void AppDevDumpFormatProps(const struct AppGpu *gpu, VkFormat fmt, bool *
         printf("\t\t\t\"optimalTilingFeatures\": %u,\n", props.optimalTilingFeatures);
         printf("\t\t\t\"bufferFeatures\": %u\n", props.bufferFeatures);
         printf("\t\t}");
-        *first_in_list = false;
     }
 }
 
@@ -1556,13 +1591,17 @@ static void AppDevDump(const struct AppGpu *gpu, FILE *out) {
         printf(",\n");
         printf("\t\"ArrayOfVkFormatProperties\": [");
     }
-    VkFormat fmt;
+
     bool first_in_list = true;   // Used for commas in json output
-    for (fmt = 0; fmt < VK_FORMAT_RANGE_SIZE; ++fmt) {
+    for (VkFormat fmt = 0; fmt < VK_FORMAT_RANGE_SIZE; ++fmt) {
         AppDevDumpFormatProps(gpu, fmt, &first_in_list, out);
     }
-    if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
-    if (json_output) printf("\n\t]");
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t</details>\n");
+    }
+    if (json_output) {
+        printf("\n\t]");
+    }
 }
 
 #ifdef _WIN32
@@ -2195,7 +2234,9 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
         printf(",\n");
         printf("\t\t\"pipelineCacheUUID\": [");
         for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
-            if (i > 0) printf(",");
+            if (i > 0) {
+                printf(",");
+            }
             printf("\n");
             printf("\t\t\t%u", props->pipelineCacheUUID[i]);
         }
@@ -2217,7 +2258,9 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
 
 static void AppDumpExtensions(const char *indent, const char *layer_name, const uint32_t extension_count,
                               const VkExtensionProperties *extension_properties, FILE *out) {
-    if (html_output) fprintf(out, "\t\t\t%s<details><summary>", indent);
+    if (html_output) {
+        fprintf(out, "\t\t\t%s<details><summary>", indent);
+    }
     if (layer_name && (strlen(layer_name) > 0)) {
         if (html_output) {
             fprintf(out, "%s Extensions", layer_name);
@@ -2233,12 +2276,14 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
     }
     if (html_output) {
         fprintf(out, "\tcount = <div class='val'>%d</div></summary>", extension_count);
-        if (extension_count > 0) fprintf(out, "\n");
+        if (extension_count > 0) {
+            fprintf(out, "\n");
+        }
     } else if (human_readable_output) {
         printf("\tcount = %d\n", extension_count);
     }
 
-    bool is_device_type = strcmp(layer_name, "Device") == 0;
+    const bool is_device_type = strcmp(layer_name, "Device") == 0;
     if (is_device_type && json_output) {
         printf(",\n");
         printf("\t\"ArrayOfVkExtensionProperties\": [");
@@ -2256,7 +2301,9 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
             printf("%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
         }
         if (is_device_type && json_output) {
-            if (i > 0) printf(",");
+            if (i > 0) {
+                printf(",");
+            }
             printf("\n");
             printf("\t\t{\n");
             printf("\t\t\t\"extensionName\": \"%s\",\n", ext_prop->extensionName);
@@ -2272,7 +2319,9 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
         }
     }
     if (is_device_type && json_output) {
-        if (extension_count > 0) printf("\n\t");
+        if (extension_count > 0) {
+            printf("\n\t");
+        }
         printf("]");
     }
 
@@ -2370,7 +2419,9 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceMemoryProperties</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>memoryHeapCount = <div class='val'>%u</div></summary>", props->memoryHeapCount);
-        if (props->memoryHeapCount > 0) fprintf(out, "\n");
+        if (props->memoryHeapCount > 0) {
+            fprintf(out, "\n");
+        }
     } else if (human_readable_output) {
         printf("VkPhysicalDeviceMemoryProperties:\n");
         printf("=================================\n");
@@ -2396,7 +2447,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
         }
         free(mem_size_human_readable);
 
-        VkMemoryHeapFlags heap_flags = props->memoryHeaps[i].flags;
+        const VkMemoryHeapFlags heap_flags = props->memoryHeaps[i].flags;
         if (html_output) {
             fprintf(out, "\t\t\t\t\t\t\t\t<details open><summary>flags</summary>\n");
             fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary>");
@@ -2409,7 +2460,9 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
             printf((heap_flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT\n" : "None\n");
         }
         if (json_output) {
-            if (i > 0) printf(",");
+            if (i > 0) {
+                printf(",");
+            }
             printf("\n");
             printf("\t\t\t{\n");
             printf("\t\t\t\t\"flags\": %u,\n", heap_flags);
@@ -2418,17 +2471,23 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
         }
     }
     if (html_output) {
-        if (props->memoryHeapCount > 0) fprintf(out, "\t\t\t\t\t\t");
+        if (props->memoryHeapCount > 0) {
+            fprintf(out, "\t\t\t\t\t\t");
+        }
         fprintf(out, "</details>\n");
     }
     if (json_output) {
-        if (props->memoryHeapCount > 0) printf("\n\t\t");
+        if (props->memoryHeapCount > 0) {
+            printf("\n\t\t");
+        }
         printf("]");
     }
 
     if (html_output) {
         fprintf(out, "\t\t\t\t\t\t<details><summary>memoryTypeCount = <div class='val'>%u</div></summary>", props->memoryTypeCount);
-        if (props->memoryTypeCount > 0) fprintf(out, "\n");
+        if (props->memoryTypeCount > 0) {
+            fprintf(out, "\n");
+        }
     } else if (human_readable_output) {
         printf("\tmemoryTypeCount       = %u\n", props->memoryTypeCount);
     }
@@ -2452,7 +2511,9 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
             printf("\t\tpropertyFlags = 0x%" PRIxLEAST32 ":\n", props->memoryTypes[i].propertyFlags);
         }
         if (json_output) {
-            if (i > 0) printf(",");
+            if (i > 0) {
+                printf(",");
+            }
             printf("\n");
             printf("\t\t\t{\n");
             printf("\t\t\t\t\"heapIndex\": %u,\n", props->memoryTypes[i].heapIndex);
@@ -2461,7 +2522,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
         }
 
         // Print each named flag to html or std output if it is set
-        VkFlags flags = props->memoryTypes[i].propertyFlags;
+        const VkFlags flags = props->memoryTypes[i].propertyFlags;
         if (html_output) {
             if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)     fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT</div></summary></details>\n");
             if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)     fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</div></summary></details>\n");
@@ -2479,12 +2540,16 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
         }
     }
     if (html_output) {
-        if (props->memoryTypeCount > 0) fprintf(out, "\t\t\t\t\t\t");
+        if (props->memoryTypeCount > 0) {
+            fprintf(out, "\t\t\t\t\t\t");
+        }
         fprintf(out, "</details>\n");
         fprintf(out, "\t\t\t\t\t</details>\n");
     }
     if (json_output) {
-        if (props->memoryTypeCount > 0) printf("\n\t\t");
+        if (props->memoryTypeCount > 0) {
+            printf("\n\t\t");
+        }
         printf("]\n");
         printf("\t}");
     }
@@ -2495,8 +2560,6 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
 // clang-format on
 
 static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
-    uint32_t i;
-
     if (html_output) {
         fprintf(out, "\t\t\t<details><summary>Device Properties and Extensions</summary>\n");
         fprintf(out, "\t\t\t\t<details><summary>GPU%u</summary>\n", gpu->id);
@@ -2519,24 +2582,34 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
         printf(",\n");
         printf("\t\"ArrayOfVkQueueFamilyProperties\": [");
     }
-    for (i = 0; i < gpu->queue_count; ++i) {
+    for (uint32_t i = 0; i < gpu->queue_count; ++i) {
         if (json_output) {
-            if (i > 0) printf(",");
+            if (i > 0) {
+                printf(",");
+            }
             printf("\n");
         }
         AppGpuDumpQueueProps(gpu, i, out);
-        if (human_readable_output) printf("\n");
+        if (human_readable_output) {
+            printf("\n");
+        }
     }
     if (json_output) {
-        if (gpu->queue_count > 0) printf("\n\t");
+        if (gpu->queue_count > 0) {
+            printf("\n\t");
+        }
         printf("]");
     }
 
     AppGpuDumpMemoryProps(gpu, out);
-    if (human_readable_output) printf("\n");
+    if (human_readable_output) {
+        printf("\n");
+    }
 
     AppGpuDumpFeatures(gpu, out);
-    if (human_readable_output) printf("\n");
+    if (human_readable_output) {
+        printf("\n");
+    }
 
     AppDevDump(gpu, out);
     if (html_output) {
@@ -2548,7 +2621,7 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
 #ifdef _WIN32
 // Enlarges the console window to have a large scrollback size.
 static void ConsoleEnlarge() {
-    HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    const HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     // make the console window bigger
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -2571,9 +2644,6 @@ static void ConsoleEnlarge() {
 #endif
 
 int main(int argc, char **argv) {
-    uint32_t vulkan_major, vulkan_minor, vulkan_patch;
-    struct AppGpu *gpus;
-    VkPhysicalDevice *objs;
     uint32_t gpu_count;
     VkResult err;
     struct AppInstance inst;
@@ -2594,9 +2664,9 @@ int main(int argc, char **argv) {
         CheckForJsonOption(argv[i]);
     }
 
-    vulkan_major = VK_VERSION_MAJOR(VK_API_VERSION_1_0);
-    vulkan_minor = VK_VERSION_MINOR(VK_API_VERSION_1_0);
-    vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
+    const uint32_t vulkan_major = VK_VERSION_MAJOR(VK_API_VERSION_1_0);
+    const uint32_t vulkan_minor = VK_VERSION_MINOR(VK_API_VERSION_1_0);
+    const uint32_t vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
 
     if (html_output) {
         PrintHtmlHeader(out);
@@ -2619,23 +2689,37 @@ int main(int argc, char **argv) {
     AppCreateInstance(&inst);
 
     err = vkEnumeratePhysicalDevices(inst.instance, &gpu_count, NULL);
-    if (err) ERR_EXIT(err);
-    objs = malloc(sizeof(objs[0]) * gpu_count);
-    if (!objs) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
-    err = vkEnumeratePhysicalDevices(inst.instance, &gpu_count, objs);
-    if (err) ERR_EXIT(err);
+    if (err) {
+        ERR_EXIT(err);
+    }
 
-    gpus = malloc(sizeof(gpus[0]) * gpu_count);
-    if (!gpus) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    VkPhysicalDevice *objs = malloc(sizeof(objs[0]) * gpu_count);
+    if (!objs) {
+        ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    }
+
+    err = vkEnumeratePhysicalDevices(inst.instance, &gpu_count, objs);
+    if (err) {
+        ERR_EXIT(err);
+    }
+
+    struct AppGpu *gpus = malloc(sizeof(gpus[0]) * gpu_count);
+    if (!gpus) {
+        ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    }
 
     for (uint32_t i = 0; i < gpu_count; ++i) {
         AppGpuInit(&gpus[i], &inst, i, objs[i]);
-        if (human_readable_output) printf("\n\n");
+        if (human_readable_output) {
+            printf("\n\n");
+        }
     }
 
     // If json output, confirm the desired gpu exists
     if (json_output) {
-        if (selected_gpu >= gpu_count) selected_gpu = 0;
+        if (selected_gpu >= gpu_count) {
+            selected_gpu = 0;
+        }
         PrintJsonHeader(vulkan_major, vulkan_minor, vulkan_patch);
     }
 
@@ -2648,7 +2732,9 @@ int main(int argc, char **argv) {
     //---Layer-Device-Extensions---
     if (html_output) {
         fprintf(out, "\t\t\t<details><summary>Layers: count = <div class='val'>%d</div></summary>", inst.global_layer_count);
-        if (inst.global_layer_count > 0) fprintf(out, "\n");
+        if (inst.global_layer_count > 0) {
+            fprintf(out, "\n");
+        }
     } else if (human_readable_output) {
         printf("Layers: count = %d\n", inst.global_layer_count);
         printf("=======\n");
@@ -2680,7 +2766,9 @@ int main(int argc, char **argv) {
                               out);
         }
         if (json_output) {
-            if (i > 0) printf(",");
+            if (i > 0) {
+                printf(",");
+            }
             printf("\n");
             printf("\t\t{\n");
             printf("\t\t\t\"layerName\": \"%s\",\n", layer_prop->layerName);
@@ -2854,26 +2942,35 @@ int main(int argc, char **argv) {
         } else {
             AppGpuDump(&gpus[i], out);
         }
-        if (human_readable_output) printf("\n\n");
+        if (human_readable_output) {
+            printf("\n\n");
+        }
     }
 
-    for (uint32_t i = 0; i < gpu_count; ++i) AppGpuDestroy(&gpus[i]);
+    for (uint32_t i = 0; i < gpu_count; ++i) {
+        AppGpuDestroy(&gpus[i]);
+    }
     free(gpus);
     free(objs);
 
     AppDestroyInstance(&inst);
 
-    fflush(out);
-    fflush(stdout);
-#ifdef _WIN32
-    if (ConsoleIsExclusive() && human_readable_output) Sleep(INFINITE);
-#endif
-
     if (html_output) {
         PrintHtmlFooter(out);
+        fflush(out);
         fclose(out);
     }
-    if (json_output) printf("\n}\n");
+    if (json_output) {
+        printf("\n}\n");
+    }
+
+    fflush(stdout);
+
+#ifdef _WIN32
+    if (ConsoleIsExclusive() && human_readable_output) {
+        Sleep(INFINITE);
+    }
+#endif
 
     return 0;
 }
