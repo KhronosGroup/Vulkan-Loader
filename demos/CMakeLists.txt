@@ -1,3 +1,8 @@
+set(DEMO_INCLUDE_DIRS
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_BINARY_DIR}
+)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     set(DisplayServer Win32)
@@ -8,6 +13,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /guard:cf")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /guard:cf")
     endif()
+    set(DEMO_INCLUDE_DIRS
+       "${PROJECT_SOURCE_DIR}/icd/common"
+        ${DEMO_INCLUDE_DIRS}
+    )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -19,21 +28,30 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         if (NOT BUILD_WSI_XCB_SUPPORT)
             message( FATAL_ERROR "Selected XCB for demos build but not building Xcb support" )
         endif()
-        include_directories(${XCB_INCLUDE_DIRS})
+        set(DEMO_INCLUDE_DIRS
+            ${XCB_INCLUDE_DIRS}
+            ${DEMO_INCLUDE_DIRS}
+        )
         link_libraries(${XCB_LIBRARIES})
         add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
     elseif(DEMOS_WSI_SELECTION STREQUAL "XLIB")
         if (NOT BUILD_WSI_XLIB_SUPPORT)
             message( FATAL_ERROR "Selected XLIB for demos build but not building Xlib support" )
         endif()
-        include_directories(${X11_INCLUDE_DIR})
+        set(DEMO_INCLUDE_DIRS
+            ${X11_INCLUDE_DIR}
+            ${DEMO_INCLUDE_DIRS}
+        )
         link_libraries(${X11_LIBRARIES})
         add_definitions(-DVK_USE_PLATFORM_XLIB_KHR)
     elseif(DEMOS_WSI_SELECTION STREQUAL "WAYLAND")
         if (NOT BUILD_WSI_WAYLAND_SUPPORT)
             message( FATAL_ERROR "Selected Wayland for demos build but not building Wayland support" )
         endif()
-        include_directories(${WAYLAND_CLIENT_INCLUDE_DIR})
+        set(DEMO_INCLUDE_DIRS
+            ${WAYLAND_CLIENT_INCLUDE_DIR}
+            ${DEMO_INCLUDE_DIRS}
+        )
         link_libraries(${WAYLAND_CLIENT_LIBRARIES})
         add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
     elseif(DEMOS_WSI_SELECTION STREQUAL "MIR")
@@ -41,7 +59,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             message( FATAL_ERROR "Selected MIR for demos build but not building Mir support" )
         endif()
         add_definitions(-DVK_USE_PLATFORM_MIR_KHR)
-        include_directories(${MIR_INCLUDE_DIR})
+        set(DEMO_INCLUDE_DIRS
+            ${MIR_INCLUDE_DIR}
+            ${DEMO_INCLUDE_DIRS}
+        )
         # TODO - Add Mir support
     elseif(DEMOS_WSI_SELECTION STREQUAL "DISPLAY")
         add_definitions(-DVK_USE_PLATFORM_DISPLAY_KHR)
@@ -113,10 +134,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 
 if(WIN32)
-    include_directories (
-       "${PROJECT_SOURCE_DIR}/icd/common"
-       )
-
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
 endif()
@@ -126,9 +143,12 @@ if(APPLE)
     include(macOS/common.cmake)
 endif()
 
+include_directories(
+    ${DEMO_INCLUDE_DIRS}
+    )
+
 ######################################################################################
 # vulkaninfo
-
 add_executable(${API_LOWERCASE}info vulkaninfo.c)
 target_link_libraries(${API_LOWERCASE}info ${LIBRARIES})
 if(APPLE)
