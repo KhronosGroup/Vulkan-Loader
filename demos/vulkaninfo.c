@@ -674,7 +674,6 @@ void PrintHtmlHeader(FILE *out) {
     fprintf(out, "\t</head>\n");
     fprintf(out, "\t<body>\n");
     fprintf(out, "\t\t<div id='header'>\n");
-    fprintf(out, "\t\t\t<img src='C:/Git/VulkanTools/layersvt/images/lunarg.png' />\n");
     fprintf(out, "\t\t\t<h1>Vulkan Info</h1>\n");
     fprintf(out, "\t\t</div>\n");
     fprintf(out, "\t\t<div id='wrapper'>\n");
