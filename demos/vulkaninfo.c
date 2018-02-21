@@ -477,7 +477,7 @@ static const char *VkPresentModeString(VkPresentModeKHR mode) {
 #endif
 
 static bool CheckExtensionEnabled(const char *extension_to_check, const char **extension_list, uint32_t extension_count) {
-    for (uint32_t i = 0; i < extension_count; i++) {
+    for (uint32_t i = 0; i < extension_count; ++i) {
         if (!strcmp(extension_to_check, extension_list[i])) return true;
     }
     return false;
@@ -485,7 +485,7 @@ static bool CheckExtensionEnabled(const char *extension_to_check, const char **e
 
 static void AppDevInitFormats(struct AppDev *dev) {
     VkFormat f;
-    for (f = 0; f < VK_FORMAT_RANGE_SIZE; f++) {
+    for (f = 0; f < VK_FORMAT_RANGE_SIZE; ++f) {
         const VkFormat fmt = f;
         vkGetPhysicalDeviceFormatProperties(dev->gpu->obj, fmt, &dev->format_props[f]);
 
@@ -620,7 +620,7 @@ static void AppGetInstanceExtensions(struct AppInstance *inst) {
     inst->global_layer_count = count;
     inst->global_layers = global_layers;
 
-    for (uint32_t i = 0; i < inst->global_layer_count; i++) {
+    for (uint32_t i = 0; i < inst->global_layer_count; ++i) {
         VkLayerProperties *src_info = &global_layer_properties[i];
         struct LayerExtensionList *dst_info = &inst->global_layers[i];
         memcpy(&dst_info->layer_properties, src_info, sizeof(VkLayerProperties));
@@ -790,8 +790,8 @@ static void AppCreateInstance(struct AppInstance *inst) {
     inst->inst_extensions = malloc(sizeof(char *) * ARRAY_SIZE(info_instance_extensions));
     inst->inst_extensions_count = 0;
 
-    for (uint32_t k = 0; (k < info_instance_extensions_count); k++) {
-        for (uint32_t j = 0; (j < inst->global_extension_count); j++) {
+    for (uint32_t k = 0; (k < info_instance_extensions_count); ++k) {
+        for (uint32_t j = 0; (j < inst->global_extension_count); ++j) {
             const char *found_name = inst->global_extensions[j].extensionName;
             if (!strcmp(info_instance_extensions[k], found_name)) {
                 inst->inst_extensions[inst->inst_extensions_count++] = info_instance_extensions[k];
@@ -864,7 +864,7 @@ static void AppCreateInstance(struct AppInstance *inst) {
 
 static void AppDestroyInstance(struct AppInstance *inst) {
     free(inst->global_extensions);
-    for (uint32_t i = 0; i < inst->global_layer_count; i++) {
+    for (uint32_t i = 0; i < inst->global_layer_count; ++i) {
         free(inst->global_layers[i].extension_properties);
     }
     free(inst->global_layers);
@@ -905,7 +905,7 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
         if (!gpu->queue_props2) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
 
-        for (i = 0; i < gpu->queue_count; i++) {
+        for (i = 0; i < gpu->queue_count; ++i) {
             gpu->queue_props2[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2_KHR;
             gpu->queue_props2[i].pNext = NULL;
         }
@@ -916,7 +916,7 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
     /* set up queue requests */
     gpu->queue_reqs = malloc(sizeof(*gpu->queue_reqs) * gpu->queue_count);
     if (!gpu->queue_reqs) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
-    for (i = 0; i < gpu->queue_count; i++) {
+    for (i = 0; i < gpu->queue_count; ++i) {
         float *queue_priorities = malloc(gpu->queue_props[i].queueCount * sizeof(float));
         if (!queue_priorities) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
         memset(queue_priorities, 0, gpu->queue_props[i].queueCount * sizeof(float));
@@ -954,7 +954,7 @@ static void AppGpuDestroy(struct AppGpu *gpu) {
     AppDevDestroy(&gpu->dev);
     free(gpu->device_extensions);
 
-    for (uint32_t i = 0; i < gpu->queue_count; i++) {
+    for (uint32_t i = 0; i < gpu->queue_count; ++i) {
         free((void *)gpu->queue_reqs[i].pQueuePriorities);
     }
     free(gpu->queue_reqs);
@@ -1192,7 +1192,7 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
         fprintf(jsout, ",\n");
         fprintf(jsout, "\t\t\"surfaceFormats\": [");
     }
-    for (uint32_t i = 0; i < format_count; i++) {
+    for (uint32_t i = 0; i < format_count; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
                     VkFormatString(surf_formats[i].format));
@@ -1251,7 +1251,7 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
             fprintf(jsout, ",\n");
             fprintf(jsout, "\t\t\"presentModes\": [");
     }
-    for (uint32_t i = 0; i < present_mode_count; i++) {
+    for (uint32_t i = 0; i < present_mode_count; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>%s</div></summary></details>\n",
                     VkPresentModeString(surf_present_modes[i]));
@@ -1617,7 +1617,7 @@ static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *
     } else {
         printf("\nFORMAT_%s:", VkFormatString(fmt));
     }
-    for (uint32_t i = 0; i < ARRAY_SIZE(features); i++) {
+    for (uint32_t i = 0; i < ARRAY_SIZE(features); ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t\t\t<details open><summary>%s</summary>\n", features[i].name);
             if (features[i].flags == 0) {
@@ -1694,7 +1694,7 @@ static void AppDevDump(const struct AppDev *dev, FILE *out, FILE *jsout) {
         fprintf(jsout, "\t\"ArrayOfVkFormatProperties\": [");
     }
     VkFormat fmt;
-    for (fmt = 0; fmt < VK_FORMAT_RANGE_SIZE; fmt++) {
+    for (fmt = 0; fmt < VK_FORMAT_RANGE_SIZE; ++fmt) {
         if (json_output) {
             if (fmt > 0) { fprintf(jsout, ","); }
             fprintf(jsout, "\n");
@@ -2382,7 +2382,7 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
         fprintf(jsout,"\t\"ArrayOfVkExtensionProperties\": [");
     }
 
-    for (i = 0; i < extension_count; i++) {
+    for (i = 0; i < extension_count; ++i) {
         VkExtensionProperties const *ext_prop = &extension_properties[i];
         if (html_output) {
             fprintf(out, "\t\t\t\t%s<details><summary>", indent);
@@ -2517,7 +2517,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
         fprintf(jsout, "\t\"VkPhysicalDeviceMemoryProperties\": {\n");
         fprintf(jsout, "\t\t\"memoryHeaps\": [");
     }
-    for (uint32_t i = 0; i < props->memoryHeapCount; i++) {
+    for (uint32_t i = 0; i < props->memoryHeapCount; ++i) {
         const VkDeviceSize memSize = props->memoryHeaps[i].size;
         char *mem_size_human_readable = HumanReadable((const size_t)memSize);
 
@@ -2574,7 +2574,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out, FILE *jso
         fprintf(jsout, ",\n");
         fprintf(jsout, "\t\t\"memoryTypes\": [");
     }
-    for (uint32_t i = 0; i < props->memoryTypeCount; i++) {
+    for (uint32_t i = 0; i < props->memoryTypeCount; ++i) {
         if (html_output) {
             fprintf(out, "\t\t\t\t\t\t\t<details><summary>memoryTypes[<div class='val'>%u</div>]</summary>\n", i);
             fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>heapIndex = <div class='val'>%u</div></summary></summary></details>\n", props->memoryTypes[i].heapIndex);
@@ -2657,7 +2657,7 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out, FILE *jsout) {
         fprintf(jsout, ",\n");
         fprintf(jsout, "\t\"ArrayOfVkQueueFamilyProperties\": [");
     }
-    for (i = 0; i < gpu->queue_count; i++) {
+    for (i = 0; i < gpu->queue_count; ++i) {
         if (json_output) {
             if (i > 0) { fprintf(jsout, ","); }
             fprintf(jsout, "\n");
@@ -2763,7 +2763,7 @@ int main(int argc, char **argv) {
 
     gpus = malloc(sizeof(gpus[0]) * gpu_count);
     if (!gpus) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
-    for (uint32_t i = 0; i < gpu_count; i++) {
+    for (uint32_t i = 0; i < gpu_count; ++i) {
         AppGpuInit(&gpus[i], &inst, i, objs[i]);
         if (!html_output) { printf("\n\n"); }
     }
@@ -2797,7 +2797,7 @@ int main(int argc, char **argv) {
         fprintf(jsout, ",\n");
         fprintf(jsout, "\t\"ArrayOfVkLayerProperties\": [");
     }
-    for (uint32_t i = 0; i < inst.global_layer_count; i++) {
+    for (uint32_t i = 0; i < inst.global_layer_count; ++i) {
         uint32_t layer_major, layer_minor, layer_patch;
         char spec_version[64], layer_version[64];
         VkLayerProperties const *layer_prop = &inst.global_layers[i].layer_properties;
@@ -2838,7 +2838,7 @@ int main(int argc, char **argv) {
 
         char *layer_name = inst.global_layers[i].layer_properties.layerName;
 
-        for (uint32_t j = 0; j < gpu_count; j++) {
+        for (uint32_t j = 0; j < gpu_count; ++j) {
             if (html_output) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary>");
                 fprintf(out, "GPU id: <div class='val'>%u</div> (%s)</summary></details>\n", j, gpus[j].props.deviceName);
@@ -2909,7 +2909,7 @@ int main(int argc, char **argv) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (CheckExtensionEnabled(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
         AppCreateWin32Window(&inst);
-        for (uint32_t i = 0; i < gpu_count; i++) {
+        for (uint32_t i = 0; i < gpu_count; ++i) {
             AppCreateWin32Surface(&inst);
             if (html_output) {
                 fprintf(out, "\t\t\t\t<details><summary>GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", i,
@@ -2948,7 +2948,7 @@ int main(int argc, char **argv) {
 #elif VK_USE_PLATFORM_XCB_KHR
     if (has_display && CheckExtensionEnabled(VK_KHR_XCB_SURFACE_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
         AppCreateXcbWindow(&inst);
-        for (uint32_t i = 0; i < gpu_count; i++) {
+        for (uint32_t i = 0; i < gpu_count; ++i) {
             AppCreateXcbSurface(&inst);
             if (html_output) {
                 fprintf(out, "\t\t\t\t<details><summary>GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", i,
@@ -2988,7 +2988,7 @@ int main(int argc, char **argv) {
     if (has_display &&
         CheckExtensionEnabled(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
         AppCreateXlibWindow(&inst);
-        for (uint32_t i = 0; i < gpu_count; i++) {
+        for (uint32_t i = 0; i < gpu_count; ++i) {
             AppCreateXlibSurface(&inst);
             if (html_output) {
                 fprintf(out, "\t\t\t\t<details><summary>GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", i,
@@ -3041,7 +3041,7 @@ int main(int argc, char **argv) {
     }
     //---------
 
-    for (uint32_t i = 0; i < gpu_count; i++) {
+    for (uint32_t i = 0; i < gpu_count; ++i) {
         if (json_output && selected_gpu == i) {
             AppGpuDump(&gpus[i], out, jsout);
         } else {
@@ -3053,7 +3053,7 @@ int main(int argc, char **argv) {
         if (!html_output) { printf("\n\n"); }
     }
 
-    for (uint32_t i = 0; i < gpu_count; i++) { AppGpuDestroy(&gpus[i]); }
+    for (uint32_t i = 0; i < gpu_count; ++i) { AppGpuDestroy(&gpus[i]); }
     free(gpus);
     free(objs);
 
