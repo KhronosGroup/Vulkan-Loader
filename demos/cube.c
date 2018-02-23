@@ -787,7 +787,10 @@ static void demo_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf) {
         label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
         label.pNext = NULL;
         label.pLabelName = "ActualDraw";
-        label.color = {-0.4f, -0.3f, -0.2f, -0.1f};
+        label.color[0] = -0.4f;
+        label.color[1] = -0.3f;
+        label.color[2] = -0.2f;
+        label.color[3] = -0.1f;
         demo->CmdBeginDebugUtilsLabelEXT(cmd_buf, &label);
     }
 
