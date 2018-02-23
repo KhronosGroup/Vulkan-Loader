@@ -527,7 +527,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSever
 #ifdef _WIN32
 
     in_callback = true;
-    struct demo *demo = (struct demo*) pUserData;
     if (!demo->suppress_popups)
         MessageBox(NULL, message, "Alert", MB_OK);
     in_callback = false;
@@ -702,7 +701,8 @@ static void demo_set_image_layout(struct demo *demo, VkImage image, VkImageAspec
 }
 
 static void demo_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf) {
-    VkDebugUtilsLabelEXT label = {};
+    VkDebugUtilsLabelEXT label;
+    memset(&label, 0, sizeof(label));
     const VkCommandBufferBeginInfo cmd_buf_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .pNext = NULL,
@@ -3253,17 +3253,6 @@ static void demo_init_vk(struct demo *demo) {
             ERR_EXIT("GetProcAddr: Failed to init VK_EXT_debug_utils\n", "GetProcAddr: Failure");
         }
 
-        VkDebugUtilsMessengerCreateInfoEXT dbg_messenger_create_info;
-        dbg_messenger_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        dbg_messenger_create_info.pNext = NULL;
-        dbg_messenger_create_info.flags = 0;
-        dbg_messenger_create_info.messageSeverity =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        dbg_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        dbg_messenger_create_info.pfnUserCallback = debug_messenger_callback;
-        dbg_messenger_create_info.pUserData = demo;
         err = demo->CreateDebugUtilsMessengerEXT(demo->inst, &dbg_messenger_create_info, NULL, &demo->dbg_messenger);
         switch (err) {
             case VK_SUCCESS:
