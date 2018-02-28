@@ -53,7 +53,7 @@
 
 #include <vulkan/vulkan.h>
 
-#define ERR(err) printf("%s:%d: failed with %s\n", __FILE__, __LINE__, VkResultString(err));
+#define ERR(err) fprintf(stderr, "%s:%d: failed with %s\n", __FILE__, __LINE__, VkResultString(err));
 
 #ifdef _WIN32
 
@@ -80,6 +80,7 @@ static int ConsoleIsExclusive(void) {
     do {                          \
         ERR(err);                 \
         fflush(stdout);           \
+        fflush(stderr);           \
         WAIT_FOR_CONSOLE_DESTROY; \
         exit(-1);                 \
     } while (0)
@@ -764,7 +765,7 @@ static void AppCreateInstance(struct AppInstance *inst) {
     VkResult U_ASSERT_ONLY err;
     err = vkCreateInstance(&inst_info, NULL, &inst->instance);
     if (err == VK_ERROR_INCOMPATIBLE_DRIVER) {
-        printf("Cannot create Vulkan instance.\n");
+        fprintf(stderr, "Cannot create Vulkan instance.\n");
         ERR_EXIT(err);
     } else if (err) {
         ERR_EXIT(err);
@@ -940,8 +941,7 @@ static void AppCreateWin32Window(struct AppInstance *inst) {
     // Register window class:
     if (!RegisterClassEx(&win_class)) {
         // It didn't work, so try to give a useful error:
-        printf("Failed to register the window class!\n");
-        fflush(stdout);
+        fprintf(stderr, "Failed to register the window class!\n");
         exit(1);
     }
     // Create window with the registered class:
@@ -961,8 +961,7 @@ static void AppCreateWin32Window(struct AppInstance *inst) {
         NULL);                // no extra parameters
     if (!inst->h_wnd) {
         // It didn't work, so try to give a useful error:
-        printf("Failed to create a window!\n");
-        fflush(stdout);
+        fprintf(stderr, "Failed to create a window!\n");
         exit(1);
     }
 }
@@ -1066,8 +1065,7 @@ static void AppCreateXlibWindow(struct AppInstance *inst) {
 
     inst->xlib_display = XOpenDisplay(NULL);
     if (inst->xlib_display == NULL) {
-        printf("XLib failed to connect to the X server.\nExiting ...\n");
-        fflush(stdout);
+        fprintf(stderr, "XLib failed to connect to the X server.\nExiting ...\n");
         exit(1);
     }
 
@@ -2843,7 +2841,8 @@ int main(int argc, char **argv) {
     bool has_display = true;
     const char *display_var = getenv("DISPLAY");
     if (display_var == NULL || strlen(display_var) == 0) {
-        printf("'DISPLAY' environment variable not set... skipping surface info\n");
+        fprintf(stderr, "'DISPLAY' environment variable not set... skipping surface info\n");
+        fflush(stderr);
         has_display = false;
     }
 #endif
