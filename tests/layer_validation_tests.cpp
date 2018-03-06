@@ -3095,7 +3095,7 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
         fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_16c004f8);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Number of currently valid memory objects is not less than the maximum allowed");
 
     VkMemoryAllocateInfo mem_alloc = {};
     mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -5728,6 +5728,12 @@ TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+        printf("             Device has apiVersion greater than 1.0 -- skipping Descriptor Set checks.\n");
+        return;
+    }
 
     // Create Pool w/ 1 Sampler descriptor, but try to alloc Uniform Buffer
     // descriptor from it
@@ -8380,13 +8386,13 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     TEST_DESCRIPTION("Compute dispatch with dimensions that exceed device limits");
 
     // Enable KHX device group extensions, if available
-    if (InstanceExtensionSupported(VK_KHX_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHX_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     bool khx_dg_ext_available = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHX_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHX_DEVICE_GROUP_EXTENSION_NAME);
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
         khx_dg_ext_available = true;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -8412,7 +8418,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     VkComputePipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     pipeline_info.pNext = nullptr;
-    pipeline_info.flags = khx_dg_ext_available ? VK_PIPELINE_CREATE_DISPATCH_BASE_KHX : 0;
+    pipeline_info.flags = khx_dg_ext_available ? VK_PIPELINE_CREATE_DISPATCH_BASE_KHR : 0;
     pipeline_info.layout = pipe_layout;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;
@@ -8444,20 +8450,20 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     m_errorMonitor->VerifyFound();
 
     if (khx_dg_ext_available) {
-        PFN_vkCmdDispatchBaseKHX fp_vkCmdDispatchBaseKHX =
-            (PFN_vkCmdDispatchBaseKHX)vkGetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHX");
+        PFN_vkCmdDispatchBaseKHR fp_vkCmdDispatchBaseKHR =
+            (PFN_vkCmdDispatchBaseKHR)vkGetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR");
 
         // Base equals or exceeds limit
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e0034a);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_limit, y_limit - 1, z_limit - 1, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit, y_limit - 1, z_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e0034c);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_limit - 1, y_limit, z_limit - 1, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit - 1, y_limit, z_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e0034e);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_limit - 1, y_limit - 1, z_limit, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit - 1, y_limit - 1, z_limit, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // (Base + count) exceeds limit
@@ -8469,18 +8475,18 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
         z_limit -= z_base;
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e00350);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit + 1, y_limit, z_limit);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit + 1, y_limit, z_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e00352);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit + 1, z_limit);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit + 1, z_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e00354);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit, z_limit + 1);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit, z_limit + 1);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("             KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHX() tests.\n");
+        printf("             KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
     }
 
     // Clean up
@@ -9254,7 +9260,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
         {VK_SHADER_STAGE_VERTEX_BIT, 8, 4},
     }};
     for (const auto &iter : cmd_range_tests) {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc002de);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc00e08);
         vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), iter.stageFlags, iter.offset, iter.size,
                            dummy_values);
         m_errorMonitor->VerifyFound();
@@ -10972,7 +10978,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
     // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b7c);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b7e);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800d38);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
         vkCmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -10980,7 +10986,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
 
     // Try levelCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b7e);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800d38);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
         vkCmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -10988,7 +10994,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
 
     // Try baseMipLevel + levelCount > image.mipLevels
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b7e);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800d38);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
         vkCmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11005,7 +11011,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
     // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b80);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b82);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800d3a);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
         vkCmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11013,7 +11019,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
 
     // Try layerCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b82);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800d3a);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
         vkCmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11021,7 +11027,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
 
     // Try baseArrayLayer + layerCount > image.arrayLayers
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800b82);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18800d3a);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
         vkCmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11063,7 +11069,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
     // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b84);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b86);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00d3c);
         const VkImageSubresourceRange range = {ds_aspect, 1, 1, 0, 1};
         vkCmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11071,7 +11077,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
 
     // Try levelCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b86);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00d3c);
         const VkImageSubresourceRange range = {ds_aspect, 0, 0, 0, 1};
         vkCmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11079,7 +11085,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
 
     // Try baseMipLevel + levelCount > image.mipLevels
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b86);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00d3c);
         const VkImageSubresourceRange range = {ds_aspect, 0, 2, 0, 1};
         vkCmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11096,7 +11102,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
     // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b88);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b8a);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00d3e);
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 1, 1};
         vkCmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11104,7 +11110,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
 
     // Try layerCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b8a);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00d3e);
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 0};
         vkCmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11112,7 +11118,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
 
     // Try baseArrayLayer + layerCount > image.arrayLayers
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00b8a);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00d3e);
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 2};
         vkCmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -11752,33 +11758,42 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = invalid == 1;
 
-    if (only_one_family) {
-        printf("             Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+        printf(
+            "             Device has apiVersion greater than 1.0 -- skipping test cases that require external memory to be "
+            "disabled.\n");
     } else {
-        std::vector<uint32_t> families = {submit_family, other_family};
-        BarrierQueueFamilyTestHelper conc_test(*this);
-        conc_test.Init(&families);
-        // core_validation::barrier_queue_families::kSrcAndDestMustBeIgnore
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, submit_family);
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, VK_QUEUE_FAMILY_IGNORED);
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, submit_family);
+        if (only_one_family) {
+            printf("             Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
+        } else {
+            std::vector<uint32_t> families = {submit_family, other_family};
+            BarrierQueueFamilyTestHelper conc_test(*this);
+            conc_test.Init(&families);
+            // core_validation::barrier_queue_families::kSrcAndDestMustBeIgnore
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, submit_family);
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, VK_QUEUE_FAMILY_IGNORED);
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, submit_family);
+            // true -> positive test
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
+        }
+
+        BarrierQueueFamilyTestHelper excl_test(*this);
+        excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
+
+        // core_validation::barrier_queue_families::kBothIgnoreOrBothValid
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, submit_family);
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, VK_QUEUE_FAMILY_IGNORED);
         // true -> positive test
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, submit_family, true);
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
     }
-
-    BarrierQueueFamilyTestHelper excl_test(*this);
-    excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
-
-    // core_validation::barrier_queue_families::kBothIgnoreOrBothValid
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, submit_family);
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, VK_QUEUE_FAMILY_IGNORED);
-    // true -> positive test
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, submit_family, true);
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
 
     if (only_one_family) {
         printf("             Single queue family found -- VK_SHARING_MODE_EXCLUSIVE submit testcases skipped.\n");
     } else {
+        BarrierQueueFamilyTestHelper excl_test(*this);
+        excl_test.Init(nullptr);
+
         // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
         excl_test(VALIDATION_ERROR_0a00096a, VALIDATION_ERROR_01800958, other_family, other_family, false, m_device->m_queue);
         // true -> positive test
@@ -11908,7 +11923,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
         // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
         {
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9c);
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9e);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d78);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -11919,7 +11934,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try levelCount = 0
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9e);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d78);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -11930,7 +11945,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try baseMipLevel + levelCount > image.mipLevels
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9e);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d78);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -11953,7 +11968,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
         // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
         {
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba0);
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba2);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d7a);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -11964,7 +11979,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try layerCount = 0
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba2);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d7a);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -11975,7 +11990,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try baseArrayLayer + layerCount > image.arrayLayers
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba2);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d7a);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -12006,7 +12021,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
         // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
         {
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9c);
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9e);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d78);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -12017,7 +12032,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try levelCount = 0
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9e);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d78);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -12028,7 +12043,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try baseMipLevel + levelCount > image.mipLevels
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000b9e);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d78);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -12051,7 +12066,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
         // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
         {
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba0);
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba2);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d7a);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -12062,7 +12077,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try layerCount = 0
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba2);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d7a);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -12073,7 +12088,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try baseArrayLayer + layerCount > image.arrayLayers
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000ba2);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a000d7a);
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -17957,7 +17972,7 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
         subres.mipLevel = 1;  // ERROR: triggers VU 00739
         subres.arrayLayer = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a4007cc);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_2a600d68);
         vkGetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -17973,7 +17988,7 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
         subres.mipLevel = 0;
         subres.arrayLayer = 1;  // ERROR: triggers VU 00740
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a4007ce);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_2a600d6a);
         vkGetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -18299,7 +18314,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
     // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b8c);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b8e);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00d6c);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
@@ -18309,7 +18324,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
 
     // Try levelCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b8e);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00d6c);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
@@ -18319,7 +18334,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
 
     // Try baseMipLevel + levelCount > image.mipLevels
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b8e);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00d6c);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
@@ -18327,49 +18342,52 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
         m_errorMonitor->VerifyFound();
     }
 
-    // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
-    }
+    // These tests rely on having the Maintenance1 extension not being enabled, and are invalid on all but version 1.0
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
 
-    // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
-    }
+        // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00d6e);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
 
-    // Try layerCount = 0
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "vkCreateImageView: if pCreateInfo->viewType is VK_IMAGE_TYPE_2D_ARRAY, "
-                                             "pCreateInfo->subresourceRange.layerCount must be >= 1");
-        // TODO: The test environment aborts the Vulkan call in parameter_validation layer before VALIDATION_ERROR_0ac00b92 test
-        // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
-    }
+        // Try layerCount = 0
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "vkCreateImageView: if pCreateInfo->viewType is VK_IMAGE_TYPE_2D_ARRAY, "
+                                                 "pCreateInfo->subresourceRange.layerCount must be >= 1");
+            // TODO: The test environment aborts the Vulkan call in parameter_validation layer before VALIDATION_ERROR_0ac00d6e test
+            // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00d6e);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
 
-    // Try baseArrayLayer + layerCount > image.arrayLayers
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
+        // Try baseArrayLayer + layerCount > image.arrayLayers
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00d6e);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 
@@ -19449,14 +19467,14 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     // 2D texture w/ offset.z > 0. Source = VU 09c00128, dest = 09c00134
     copy_region.extent = {16, 16, 1};
     copy_region.srcOffset.z = 4;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00128);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00df2);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00126);  // also z-dim overrun
     m_commandBuffer->CopyImage(image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcOffset.z = 0;
     copy_region.dstOffset.z = 1;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00134);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00df4);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00132);  // also z-dim overrun
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -19465,12 +19483,12 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
 
     // 2D texture w/ extent.depth > 1. Source = VU 09c00128, dest = 09c00134
     copy_region.extent.depth = 8;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00128);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00df2);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00126);  // also z-dim overrun
     m_commandBuffer->CopyImage(image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00134);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00df4);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00132);  // also z-dim overrun
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -19482,9 +19500,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     copy_region.srcSubresource.baseArrayLayer = 1;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0011a);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         VALIDATION_ERROR_0a600154);  // also triggers 'too many layers'
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         VALIDATION_ERROR_09c0012a);  // and 'copy from layer not present'
+                                         VALIDATION_ERROR_19000d44);  // also triggers 'too many layers'
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -19562,24 +19578,20 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
-    // Copy from layer not present - VU 09c0012a
-    // TODO: this VU is redundant with VU 0a600154. Gitlab issue 812 submitted to have it removed.
+    // Copy from layer not present
     copy_region.srcSubresource.baseArrayLayer = 4;
     copy_region.srcSubresource.layerCount = 6;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0012a);
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a600154);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19000d44);
     m_commandBuffer->CopyImage(image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
 
-    // Copy to layer not present - VU 09c00136
-    // TODO: this VU is redundant with 0a600154. Gitlab issue 812 submitted to have it removed.
+    // Copy to layer not present
     copy_region.dstSubresource.baseArrayLayer = 1;
     copy_region.dstSubresource.layerCount = 8;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00136);
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a600154);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19000d46);
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -20808,6 +20820,13 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
 
     // Do NOT enable VK_KHR_maintenance1
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    // TODO: Main1 is ALWAYS enabled in 1.1.  Re-write test with an extension present in both 1.0 and 1.1
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+        printf("             Device has apiVersion greater than 1.0 -- skipping extension enabled check.\n");
+        return;
+    }
+
     // Find address of extension API
     PFN_vkTrimCommandPoolKHR vkTrimCommandPoolKHR =
         (PFN_vkTrimCommandPoolKHR)vkGetDeviceProcAddr(m_device->handle(), "vkTrimCommandPoolKHR");
@@ -20817,7 +20836,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     }
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "but its required extension VK_KHR_maintenance1 has not been enabled");
-    vkTrimCommandPoolKHR(m_device->handle(), m_commandPool->handle(), (VkCommandPoolTrimFlagsKHR)0);
+    vkTrimCommandPoolKHR(m_device->handle(), m_commandPool->handle(), (VkCommandPoolTrimFlags)0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -20957,6 +20976,7 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
     // core viewport tests
     using std::vector;
     struct TestCase {
+        uint32_t minIncompatableApi;
         VkViewport vp;
         vector<UNIQUE_VALIDATION_ERROR_CODE> vuids;
     };
@@ -20975,32 +20995,33 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
     const auto past_one = nextafterf(1.0, 2.0);
 
     const vector<TestCase> test_cases = {
-        {{0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
-        {{0.0, 0.0, one_past_max_w, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd6}},
-        {{0.0, 0.0, NAN, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
-        {{0.0, 0.0, 64.0, 0.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
-        {{0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
-        {{0.0, 0.0, 64.0, NAN, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
-        {{one_before_min_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
-        {{one_past_max_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
-        {{NAN, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
-        {{0.0, one_before_min_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
-        {{0.0, one_past_max_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
-        {{0.0, NAN, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
-        {{max_bound, 0.0, 1.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
-        {{0.0, max_bound, 64.0, 1.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
-        {{0.0, 0.0, 64.0, 64.0, below_zero, 1.0}, {VALIDATION_ERROR_150009a4}},
-        {{0.0, 0.0, 64.0, 64.0, past_one, 1.0}, {VALIDATION_ERROR_150009a4}},
-        {{0.0, 0.0, 64.0, 64.0, NAN, 1.0}, {VALIDATION_ERROR_150009a4}},
-        {{0.0, 0.0, 64.0, 64.0, 0.0, below_zero}, {VALIDATION_ERROR_150009a6}},
-        {{0.0, 0.0, 64.0, 64.0, 0.0, past_one}, {VALIDATION_ERROR_150009a6}},
-        {{0.0, 0.0, 64.0, 64.0, 0.0, NAN}, {VALIDATION_ERROR_150009a6}},
+        {UINT32_MAX,         {0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
+        {UINT32_MAX,         {0.0, 0.0, one_past_max_w, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd6}},
+        {UINT32_MAX,         {0.0, 0.0, NAN, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
+        {VK_API_VERSION_1_1, {0.0, 0.0, 64.0, 0.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
+        {VK_API_VERSION_1_1, {0.0, 0.0, 64.0, NAN, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
+        {UINT32_MAX,         {one_before_min_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
+        {UINT32_MAX,         {one_past_max_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
+        {UINT32_MAX,         {NAN, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
+        {UINT32_MAX,         {0.0, one_before_min_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
+        {UINT32_MAX,         {0.0, NAN, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
+        {UINT32_MAX,         {max_bound, 0.0, 1.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
+        {UINT32_MAX,         {0.0, max_bound, 64.0, 1.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, below_zero, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, past_one, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, NAN, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, 0.0, below_zero}, {VALIDATION_ERROR_150009a6}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, 0.0, past_one}, {VALIDATION_ERROR_150009a6}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, 0.0, NAN}, {VALIDATION_ERROR_150009a6}},
     };
 
     for (const auto &test_case : test_cases) {
-        for (const auto vuid : test_case.vuids) m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
-        m_errorMonitor->VerifyFound();
+        if (m_device->props.apiVersion < test_case.minIncompatableApi ) {
+            for (const auto vuid : test_case.vuids) m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
+            vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 

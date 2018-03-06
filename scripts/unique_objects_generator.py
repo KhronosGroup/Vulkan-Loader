@@ -24,6 +24,7 @@ import os,re,sys
 import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
+from common_codegen import *
 
 # UniqueObjectsGeneratorOptions - subclass of GeneratorOptions.
 #
@@ -69,34 +70,34 @@ class UniqueObjectsGeneratorOptions(GeneratorOptions):
                  defaultExtensions = None,
                  addExtensions = None,
                  removeExtensions = None,
+                 emitExtensions = None,
                  sortProcedure = regSortFeatures,
                  prefixText = "",
                  genFuncPointers = True,
                  protectFile = True,
                  protectFeature = True,
-                 protectProto = None,
-                 protectProtoStr = None,
                  apicall = '',
                  apientry = '',
                  apientryp = '',
                  indentFuncProto = True,
                  indentFuncPointer = False,
-                 alignFuncParam = 0):
+                 alignFuncParam = 0,
+                 expandEnumerants = True):
         GeneratorOptions.__init__(self, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions, sortProcedure)
+                                  addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
         self.genFuncPointers = genFuncPointers
         self.protectFile     = protectFile
         self.protectFeature  = protectFeature
-        self.protectProto    = protectProto
-        self.protectProtoStr = protectProtoStr
         self.apicall         = apicall
         self.apientry        = apientry
         self.apientryp       = apientryp
         self.indentFuncProto = indentFuncProto
         self.indentFuncPointer = indentFuncPointer
-        self.alignFuncParam  = alignFuncParam
+        self.alignFuncParam   = alignFuncParam
+        self.expandEnumerants = expandEnumerants
+
 
 # UniqueObjectsOutputGenerator - subclass of OutputGenerator.
 # Generates unique objects layer non-dispatchable handle-wrapping code.
@@ -142,17 +143,19 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
             'vkEnumerateInstanceLayerProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateInstanceExtensionProperties',
+            'vkCreateDescriptorUpdateTemplate',
             'vkCreateDescriptorUpdateTemplateKHR',
+            'vkDestroyDescriptorUpdateTemplate',
             'vkDestroyDescriptorUpdateTemplateKHR',
+            'vkUpdateDescriptorSetWithTemplate',
             'vkUpdateDescriptorSetWithTemplateKHR',
             'vkCmdPushDescriptorSetWithTemplateKHR',
             'vkDebugMarkerSetObjectTagEXT',
             'vkDebugMarkerSetObjectNameEXT',
-            'vkGetPhysicalDeviceDisplayProperties2KHR',
-            'vkGetPhysicalDeviceDisplayPlaneProperties2KHR',
-            'vkGetDisplayModeProperties2KHR',
             'vkCreateRenderPass',
             'vkDestroyRenderPass',
+            'vkSetDebugUtilsObjectNameEXT',
+            'vkSetDebugUtilsObjectTagEXT',
             ]
         # Commands shadowed by interface functions and are not implemented
         self.interface_functions = [
@@ -161,10 +164,14 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
             'vkGetDisplayPlaneSupportedDisplaysKHR',
             'vkGetDisplayModePropertiesKHR',
             'vkGetDisplayPlaneCapabilitiesKHR',
-            # DebugReport APIs are hooked, but handled separately in the source file
+            # VK_EXT_debug_report APIs are hooked, but handled separately in the source file
             'vkCreateDebugReportCallbackEXT',
             'vkDestroyDebugReportCallbackEXT',
             'vkDebugReportMessageEXT',
+            # VK_EXT_debug_utils APIs are hooked, but handled separately in the source file
+            'vkCreateDebugUtilsMessengerEXT',
+            'vkDestroyDebugUtilsMessengerEXT',
+            'vkSubmitDebugUtilsMessageEXT',
             ]
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
@@ -237,9 +244,6 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                 write('#ifdef', self.featureExtraProtect, file=self.outFile)
             # Write the unique_objects code to the file
             if (self.sections['command']):
-                if (self.genOpts.protectProto):
-                    write(self.genOpts.protectProto,
-                          self.genOpts.protectProtoStr, file=self.outFile)
                 write('\n'.join(self.sections['command']), end=u'', file=self.outFile)
             if (self.featureExtraProtect != None):
                 write('\n#endif //', self.featureExtraProtect, file=self.outFile)
@@ -260,8 +264,8 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
         # Start processing in superclass
         OutputGenerator.beginFeature(self, interface, emit)
         self.headerVersion = None
-
-        if self.featureName != 'VK_VERSION_1_0':
+        self.featureExtraProtect = GetFeatureProtect(interface)
+        if self.featureName != 'VK_VERSION_1_0' and self.featureName != 'VK_VERSION_1_1':
             white_list_entry = []
             if (self.featureExtraProtect != None):
                 white_list_entry += [ '#ifdef %s' % self.featureExtraProtect ]
@@ -278,14 +282,14 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
         # Finish processing in superclass
         OutputGenerator.endFeature(self)
     #
-    def genType(self, typeinfo, name):
-        OutputGenerator.genType(self, typeinfo, name)
+    def genType(self, typeinfo, name, alias):
+        OutputGenerator.genType(self, typeinfo, name, alias)
         typeElem = typeinfo.elem
         # If the type is a struct type, traverse the imbedded <member> tags generating a structure.
         # Otherwise, emit the tag text.
         category = typeElem.get('category')
         if (category == 'struct' or category == 'union'):
-            self.genStruct(typeinfo, name)
+            self.genStruct(typeinfo, name, alias)
     #
     # Append a definition to the specified section
     def appendSection(self, section, text):
@@ -356,8 +360,8 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
     # <member> tags instead of freeform C type declarations. The <member> tags are just like
     # <param> tags - they are a declaration of a struct or union member. Only simple member
     # declarations are supported (no nested structs etc.)
-    def genStruct(self, typeinfo, typeName):
-        OutputGenerator.genStruct(self, typeinfo, typeName)
+    def genStruct(self, typeinfo, typeName, alias):
+        OutputGenerator.genStruct(self, typeinfo, typeName, alias)
         members = typeinfo.elem.findall('.//member')
         # Iterate over members once to get length parameters for arrays
         lens = set()
@@ -472,7 +476,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
     def build_extension_processing_func(self):
         # Construct helper functions to build and free pNext extension chains
         pnext_proc = ''
-        pnext_proc += 'void *CreateUnwrappedExtensionStructs(layer_data *dev_data, const void *pNext) {\n'
+        pnext_proc += 'void *CreateUnwrappedExtensionStructs(const void *pNext) {\n'
         pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
         pnext_proc += '    void *head_pnext = NULL;\n'
         pnext_proc += '    void *prev_ext_struct = NULL;\n'
@@ -542,7 +546,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                 create_ndo_code += '%sfor (uint32_t index0 = 0; index0 < %s; index0++) {\n' % (indent, cmd_info[-1].len)
                 indent = self.incIndent(indent)
                 ndo_dest = '%s[index0]' % cmd_info[-1].name
-            create_ndo_code += '%s%s = WrapNew(dev_data, %s);\n' % (indent, ndo_dest, ndo_dest)
+            create_ndo_code += '%s%s = WrapNew(%s);\n' % (indent, ndo_dest, ndo_dest)
             if ndo_array == True:
                 indent = self.decIndent(indent)
                 create_ndo_code += '%s}\n' % indent
@@ -571,7 +575,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                     indent = self.incIndent(indent)
                     destroy_ndo_code += '%s%s handle = %s[index0];\n' % (indent, cmd_info[param].type, cmd_info[param].name)
                     destroy_ndo_code += '%suint64_t unique_id = reinterpret_cast<uint64_t &>(handle);\n' % (indent)
-                    destroy_ndo_code += '%sdev_data->unique_id_mapping.erase(unique_id);\n' % (indent)
+                    destroy_ndo_code += '%sunique_id_mapping.erase(unique_id);\n' % (indent)
                     indent = self.decIndent(indent);
                     destroy_ndo_code += '%s}\n' % indent
                     indent = self.decIndent(indent);
@@ -580,8 +584,8 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                     # Remove a single handle from the map
                     destroy_ndo_code += '%sstd::unique_lock<std::mutex> lock(global_lock);\n' % (indent)
                     destroy_ndo_code += '%suint64_t %s_id = reinterpret_cast<uint64_t &>(%s);\n' % (indent, cmd_info[param].name, cmd_info[param].name)
-                    destroy_ndo_code += '%s%s = (%s)dev_data->unique_id_mapping[%s_id];\n' % (indent, cmd_info[param].name, cmd_info[param].type, cmd_info[param].name)
-                    destroy_ndo_code += '%sdev_data->unique_id_mapping.erase(%s_id);\n' % (indent, cmd_info[param].name)
+                    destroy_ndo_code += '%s%s = (%s)unique_id_mapping[%s_id];\n' % (indent, cmd_info[param].name, cmd_info[param].type, cmd_info[param].name)
+                    destroy_ndo_code += '%sunique_id_mapping.erase(%s_id);\n' % (indent, cmd_info[param].name)
                     destroy_ndo_code += '%slock.unlock();\n' % (indent)
         return ndo_array, destroy_ndo_code
 
@@ -616,11 +620,11 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                 pre_call_code += '%s    local_%s%s = new %s[%s];\n' % (indent, prefix, ndo_name, ndo_type, ndo_count)
                 pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, ndo_count, index)
                 indent = self.incIndent(indent)
-                pre_call_code += '%s    local_%s%s[%s] = Unwrap(dev_data, %s[%s]);\n' % (indent, prefix, ndo_name, index, ndo_name, index)
+                pre_call_code += '%s    local_%s%s[%s] = Unwrap(%s[%s]);\n' % (indent, prefix, ndo_name, index, ndo_name, index)
             else:
                 pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, ndo_count, index)
                 indent = self.incIndent(indent)
-                pre_call_code += '%s    %s%s[%s] = Unwrap(dev_data, %s%s[%s]);\n' % (indent, prefix, ndo_name, index, prefix, ndo_name, index)
+                pre_call_code += '%s    %s%s[%s] = Unwrap(%s%s[%s]);\n' % (indent, prefix, ndo_name, index, prefix, ndo_name, index)
             indent = self.decIndent(indent)
             pre_call_code += '%s    }\n' % indent
             indent = self.decIndent(indent)
@@ -632,14 +636,14 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
         else:
             if top_level == True:
                 if (destroy_func == False) or (destroy_array == True):
-                    pre_call_code += '%s    %s = Unwrap(dev_data, %s);\n' % (indent, ndo_name, ndo_name)
+                    pre_call_code += '%s    %s = Unwrap(%s);\n' % (indent, ndo_name, ndo_name)
             else:
                 # Make temp copy of this var with the 'local' removed. It may be better to not pass in 'local_'
                 # as part of the string and explicitly print it
                 fix = str(prefix).strip('local_');
                 pre_call_code += '%s    if (%s%s) {\n' % (indent, fix, ndo_name)
                 indent = self.incIndent(indent)
-                pre_call_code += '%s    %s%s = Unwrap(dev_data, %s%s);\n' % (indent, prefix, ndo_name, fix, ndo_name)
+                pre_call_code += '%s    %s%s = Unwrap(%s%s);\n' % (indent, prefix, ndo_name, fix, ndo_name)
                 indent = self.decIndent(indent)
                 pre_call_code += '%s    }\n' % indent
         return decl_code, pre_call_code, post_call_code
@@ -692,7 +696,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                         if first_level_param == True:
                             pre_code += '%s    %s[%s].initialize(&%s[%s]);\n' % (indent, new_prefix, index, member.name, index)
                             if process_pnext:
-                                pre_code += '%s    %s[%s].pNext = CreateUnwrappedExtensionStructs(dev_data, %s[%s].pNext);\n' % (indent, new_prefix, index, new_prefix, index)
+                                pre_code += '%s    %s[%s].pNext = CreateUnwrappedExtensionStructs(%s[%s].pNext);\n' % (indent, new_prefix, index, new_prefix, index)
                         local_prefix = '%s[%s].' % (new_prefix, index)
                         # Process sub-structs in this struct
                         (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, local_prefix, array_index, create_func, destroy_func, destroy_array, False)
@@ -724,7 +728,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += '%s    local_%s%s->pNext = CreateUnwrappedExtensionStructs(dev_data, local_%s%s->pNext);\n' % (indent, prefix, member.name, prefix, member.name)
+                            pre_code += '%s    local_%s%s->pNext = CreateUnwrappedExtensionStructs(local_%s%s->pNext);\n' % (indent, prefix, member.name, prefix, member.name)
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                         if first_level_param == True:
@@ -769,10 +773,10 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
         return paramdecl, param_pre_code, param_post_code
     #
     # Capture command parameter info needed to wrap NDOs as well as handling some boilerplate code
-    def genCmd(self, cmdinfo, cmdname):
+    def genCmd(self, cmdinfo, cmdname, alias):
 
         # Add struct-member type information to command parameter information
-        OutputGenerator.genCmd(self, cmdinfo, cmdname)
+        OutputGenerator.genCmd(self, cmdinfo, cmdname, alias)
         members = cmdinfo.elem.findall('.//param')
         # Iterate over members once to get length parameters for arrays
         lens = set()
