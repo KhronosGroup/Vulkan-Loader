@@ -25,7 +25,8 @@ LOCAL_SRC_FILES += $(DEMO_DIR)/cube.c \
 LOCAL_C_INCLUDES += $(SRC_DIR)/include \
                     $(DEMO_DIR)/android/include \
                     $(SRC_DIR)/libs \
-                    $(SRC_DIR)/common
+                    $(SRC_DIR)/common \
+                    $(SRC_DIR)/build-android/generated/include
 LOCAL_CFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR --include=$(SRC_DIR)/common/vulkan_wrapper.h
 LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
 LOCAL_LDLIBS    := -llog -landroid

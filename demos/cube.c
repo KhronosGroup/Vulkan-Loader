@@ -331,7 +331,7 @@ struct demo {
     struct wl_keyboard *keyboard;
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-    ANativeWindow *window;
+    struct ANativeWindow *window;
 #elif (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK))
     void *window;
 #endif
@@ -533,16 +533,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSever
 
 #elif defined(ANDROID)
 
-    if (msgFlags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) {
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
         __android_log_print(ANDROID_LOG_INFO,  APP_SHORT_NAME, "%s", message);
-    } else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
         __android_log_print(ANDROID_LOG_WARN,  APP_SHORT_NAME, "%s", message);
-    } else if (msgFlags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
-        __android_log_print(ANDROID_LOG_WARN,  APP_SHORT_NAME, "%s", message);
-    } else if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         __android_log_print(ANDROID_LOG_ERROR, APP_SHORT_NAME, "%s", message);
-    } else if (msgFlags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) {
-        __android_log_print(ANDROID_LOG_DEBUG, APP_SHORT_NAME, "%s", message);
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+        __android_log_print(ANDROID_LOG_VERBOSE, APP_SHORT_NAME, "%s", message);
     } else {
         __android_log_print(ANDROID_LOG_INFO,  APP_SHORT_NAME, "%s", message);
     }
@@ -3350,7 +3348,7 @@ static void demo_init_vk_swapchain(struct demo *demo) {
     createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
     createInfo.pNext = NULL;
     createInfo.flags = 0;
-    createInfo.window = (ANativeWindow *)(demo->window);
+    createInfo.window = (struct ANativeWindow *)(demo->window);
 
     err = vkCreateAndroidSurfaceKHR(demo->inst, &createInfo, NULL, &demo->surface);
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
