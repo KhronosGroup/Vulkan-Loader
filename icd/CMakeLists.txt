@@ -52,6 +52,16 @@ if (WIN32)
             endforeach(config_file)
         endif()
     endif()
+elseif(APPLE)
+    # extra setup for out-of-tree builds
+    if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
+        foreach (config_file ${ICD_JSON_FILES})
+            add_custom_target(${config_file}-json ALL
+                COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/macos/${config_file}.json
+                VERBATIM
+                )
+        endforeach(config_file)
+    endif()
 else()
     # extra setup for out-of-tree builds
     if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
