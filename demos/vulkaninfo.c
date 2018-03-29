@@ -1324,29 +1324,21 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             }
             if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR</div></summary></details>\n");
-            }
-            else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR) {
+            } else if (inst->surface_capabilities.currentTransform & VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR</div></summary></details>\n");
             }
             fprintf(out, "\t\t\t\t\t</details>\n");
@@ -1693,8 +1685,7 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
         gpu->inst->inst_extensions_count)) {
         const VkPhysicalDeviceFeatures *features2_const = &gpu->features2.features;
         features = *features2_const;
-    }
-    else {
+    } else {
         const VkPhysicalDeviceFeatures *features_const = &gpu->features;
         features = *features_const;
     }
@@ -1905,8 +1896,7 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
                     fprintf(out, "\n\t\t\t\t\t<details><summary>VkPhysicalDeviceSamplerYcbcrConversionFeatures</summary>\n");
                     fprintf(out, "\t\t\t\t\t\t<details><summary>samplerYcbcrConversion = <div class='val'>%u</div></summary></details>\n", sampler_ycbcr_features->samplerYcbcrConversion);
                     fprintf(out, "\t\t\t\t\t</details>\n");
-                }
-                else if (human_readable_output) {
+                } else if (human_readable_output) {
                     printf("\nVkPhysicalDeviceSamplerYcbcrConversionFeatures:\n");
                     printf("===============================================\n");
                     printf("\tsamplerYcbcrConversion = %u\n", sampler_ycbcr_features->samplerYcbcrConversion);
@@ -1918,8 +1908,7 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
                     fprintf(out, "\t\t\t\t\t\t<details><summary>variablePointersStorageBuffer = <div class='val'>%u</div></summary></details>\n", var_pointer_features->variablePointersStorageBuffer);
                     fprintf(out, "\t\t\t\t\t\t<details><summary>variablePointers              = <div class='val'>%u</div></summary></details>\n", var_pointer_features->variablePointers             );
                     fprintf(out, "\t\t\t\t\t</details>\n");
-                }
-                else if (human_readable_output) {
+                } else if (human_readable_output) {
                     printf("\nVkPhysicalDeviceVariablePointerFeatures:\n");
                     printf("========================================\n");
                     printf("\tvariablePointersStorageBuffer = %u\n", var_pointer_features->variablePointersStorageBuffer);
@@ -1931,8 +1920,7 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
                     fprintf(out, "\n\t\t\t\t\t<details><summary>VkPhysicalDeviceBlendOperationAdvancedFeatures</summary>\n");
                     fprintf(out, "\t\t\t\t\t\t<details><summary>advancedBlendCoherentOperations = <div class='val'>%u</div></summary></details>\n", blend_op_adv_features->advancedBlendCoherentOperations);
                     fprintf(out, "\t\t\t\t\t</details>\n");
-                }
-                else if (human_readable_output) {
+                } else if (human_readable_output) {
                     printf("\nVkPhysicalDeviceBlendOperationAdvancedFeatures:\n");
                     printf("===============================================\n");
                     printf("\tadvancedBlendCoherentOperations = %u\n", blend_op_adv_features->advancedBlendCoherentOperations);
@@ -2349,8 +2337,7 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
         gpu->inst->inst_extensions_count)) {
         const VkPhysicalDeviceProperties *props2_const = &gpu->props2.properties;
         props = *props2_const;
-    }
-    else {
+    } else {
         const VkPhysicalDeviceProperties *props_const = &gpu->props;
         props = *props_const;
     }
@@ -2390,8 +2377,7 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
 
     if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, gpu->inst->inst_extensions, gpu->inst->inst_extensions_count)) {
         AppDumpLimits(&gpu->props2.properties.limits, out);
-    }
-    else {
+    } else {
         AppDumpLimits(&gpu->props.limits, out);
     }
 
@@ -2412,8 +2398,7 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
 
     if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, gpu->inst->inst_extensions, gpu->inst->inst_extensions_count)) {
         AppDumpSparseProps(&gpu->props2.properties.sparseProperties, out);
-    }
-    else {
+    } else {
         AppDumpSparseProps(&gpu->props.sparseProperties, out);
     }
 
@@ -2439,8 +2424,7 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
                     fprintf(out, "\t\t\t\t\t\t<details><summary>advancedBlendCorrelatedOverlap                  = <div class='val'>%u</div></summary></details>\n", blend_op_adv_props->advancedBlendCorrelatedOverlap       );
                     fprintf(out, "\t\t\t\t\t\t<details><summary>advancedBlendAllOperations                      = <div class='val'>%u</div></summary></details>\n", blend_op_adv_props->advancedBlendAllOperations           );
                     fprintf(out, "\t\t\t\t\t</details>\n");
-                }
-                else if (human_readable_output) {
+                } else if (human_readable_output) {
                     printf("\nVkPhysicalDeviceBlendOperationAdvancedProperties:\n");
                     printf("=================================================\n");
                     printf("\tadvancedBlendMaxColorAttachments               = %u\n", blend_op_adv_props->advancedBlendMaxColorAttachments     );
@@ -2456,8 +2440,7 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
                     fprintf(out, "\n\t\t\t\t\t<details><summary>VkPhysicalDevicePointClippingProperties</summary>\n");
                     fprintf(out, "\t\t\t\t\t\t<details><summary>pointClippingBehavior               = <div class='val'>%u</div></summary></details>\n", pt_clip_props->pointClippingBehavior);
                     fprintf(out, "\t\t\t\t\t</details>\n");
-                }
-                else if (human_readable_output) {
+                } else if (human_readable_output) {
                     printf("\nVkPhysicalDevicePointClippingProperties:\n");
                     printf("========================================\n");
                     printf("\tpointClippingBehavior               = %u\n", pt_clip_props->pointClippingBehavior);
@@ -2468,8 +2451,7 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
                     fprintf(out, "\n\t\t\t\t\t<details><summary>VkPhysicalDevicePushDescriptorProperties</summary>\n");
                     fprintf(out, "\t\t\t\t\t\t<details><summary>maxPushDescriptors                = <div class='val'>%u</div></summary></details>\n", push_desc_props->maxPushDescriptors);
                     fprintf(out, "\t\t\t\t\t</details>\n");
-                }
-                else if (human_readable_output) {
+                } else if (human_readable_output) {
                     printf("\nVkPhysicalDevicePushDescriptorProperties:\n");
                     printf("=========================================\n");
                     printf("\tmaxPushDescriptors               = %u\n", push_desc_props->maxPushDescriptors);
@@ -2480,8 +2462,7 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
                     fprintf(out, "\n\t\t\t\t\t<details><summary>VkPhysicalDeviceDiscardRectangleProperties</summary>\n");
                     fprintf(out, "\t\t\t\t\t\t<details><summary>maxDiscardRectangles               = <div class='val'>%u</div></summary></details>\n", discard_rect_props->maxDiscardRectangles);
                     fprintf(out, "\t\t\t\t\t</details>\n");
-                }
-                else if (human_readable_output) {
+                } else if (human_readable_output) {
                     printf("\nVkPhysicalDeviceDiscardRectangleProperties:\n");
                     printf("=========================================\n");
                     printf("\tmaxDiscardRectangles               = %u\n", discard_rect_props->maxDiscardRectangles);
@@ -2575,8 +2556,7 @@ static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *ou
         gpu->inst->inst_extensions_count)) {
         const VkQueueFamilyProperties *props2_const = &gpu->queue_props2[id].queueFamilyProperties;
         props = *props2_const;
-    }
-    else {
+    } else {
         const VkQueueFamilyProperties *props_const = &gpu->queue_props[id];
         props = *props_const;
     }
@@ -2669,8 +2649,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
         gpu->inst->inst_extensions_count)) {
         const VkPhysicalDeviceMemoryProperties *props2_const = &gpu->memory_props2.memoryProperties;
         props = *props2_const;
-    }
-    else {
+    } else {
         const VkPhysicalDeviceMemoryProperties *props_const = &gpu->memory_props;
         props = *props_const;
     }
