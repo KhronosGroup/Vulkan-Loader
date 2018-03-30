@@ -749,6 +749,7 @@ static void AppCreateInstance(struct AppInstance *inst) {
                                               VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME,
                                               VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
                                               VK_KHR_SURFACE_EXTENSION_NAME,
+                                              VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
                                               VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 #elif VK_USE_PLATFORM_XCB_KHR
@@ -862,7 +863,7 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
                               gpu->inst->inst_extensions_count)) {
         uint32_t sizes[] = {sizeof(VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT),
                             sizeof(VkPhysicalDevicePointClippingPropertiesKHR), sizeof(VkPhysicalDevicePushDescriptorPropertiesKHR),
-                            sizeof(VkPhysicalDeviceDiscardRectanglePropertiesEXT)};
+                            sizeof(VkPhysicalDeviceDiscardRectanglePropertiesEXT), sizeof(VkPhysicalDeviceMultiviewPropertiesKHR)};
 
         uint32_t sizes_len = ARRAY_SIZE(sizes);
 
@@ -870,7 +871,8 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
                                     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
                                     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES_KHR,
                                     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT};
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR};
 
         uint32_t sTypes_len = ARRAY_SIZE(sTypes);
 
@@ -956,11 +958,9 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
         inst->vkGetPhysicalDeviceMemoryProperties2KHR(gpu->obj, &gpu->memory_props2);
 
         uint32_t sizes[] = {
-            sizeof(VkPhysicalDevice16BitStorageFeaturesKHR),
-            sizeof(VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR),
-            sizeof(VkPhysicalDeviceVariablePointerFeaturesKHR),
-            sizeof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT),
-        };
+            sizeof(VkPhysicalDevice16BitStorageFeaturesKHR), sizeof(VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR),
+            sizeof(VkPhysicalDeviceVariablePointerFeaturesKHR), sizeof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT),
+            sizeof(VkPhysicalDeviceMultiviewFeaturesKHR)};
 
         uint32_t sizes_len = ARRAY_SIZE(sizes);
 
@@ -968,7 +968,8 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
                                     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
                                     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES_KHR,
                                     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT};
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR};
 
         uint32_t sTypes_len = ARRAY_SIZE(sTypes);
 
@@ -1942,6 +1943,22 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
                     printf("===============================================\n");
                     printf("\tadvancedBlendCoherentOperations = %u\n", blend_op_adv_features->advancedBlendCoherentOperations);
                 }
+            } else if (structure->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR && CheckPhysicalDeviceExtensionIncluded(VK_KHR_MULTIVIEW_EXTENSION_NAME, gpu->device_extensions, gpu->device_extension_count)) {
+                VkPhysicalDeviceMultiviewFeaturesKHR *multiview_features = (VkPhysicalDeviceMultiviewFeaturesKHR*)structure;
+                if (html_output) {
+                    fprintf(out, "\n\t\t\t\t\t<details><summary>VkPhysicalDeviceMultiviewFeatures</summary>\n");
+                    fprintf(out, "\t\t\t\t\t\t<details><summary>multiview                   = <div class='val'>%u</div></summary></details>\n", multiview_features->multiview                  );
+                    fprintf(out, "\t\t\t\t\t\t<details><summary>multiviewGeometryShader     = <div class='val'>%u</div></summary></details>\n", multiview_features->multiviewGeometryShader    );
+                    fprintf(out, "\t\t\t\t\t\t<details><summary>multiviewTessellationShader = <div class='val'>%u</div></summary></details>\n", multiview_features->multiviewTessellationShader);
+                    fprintf(out, "\t\t\t\t\t</details>\n");
+                }
+                else if (human_readable_output) {
+                    printf("\nVkPhysicalDeviceMultiviewFeatures:\n");
+                    printf("==================================\n");
+                    printf("\tmultiview                   = %u\n", multiview_features->multiview                  );
+                    printf("\tmultiviewGeometryShader     = %u\n", multiview_features->multiviewGeometryShader    );
+                    printf("\tmultiviewTessellationShader = %u\n", multiview_features->multiviewTessellationShader);
+                }
             }
             place = structure->pNext;
         }
@@ -2484,6 +2501,20 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
                     printf("=========================================\n");
                     printf("\tmaxDiscardRectangles               = %u\n", discard_rect_props->maxDiscardRectangles);
                 }
+            } else if (structure->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR && CheckPhysicalDeviceExtensionIncluded(VK_KHR_MULTIVIEW_EXTENSION_NAME, gpu->device_extensions, gpu->device_extension_count)) {
+                VkPhysicalDeviceMultiviewPropertiesKHR *multiview_props = (VkPhysicalDeviceMultiviewPropertiesKHR*)structure;
+                if (html_output) {
+                    fprintf(out, "\n\t\t\t\t\t<details><summary>VkPhysicalDeviceMultiviewProperties</summary>\n");
+                    fprintf(out, "\t\t\t\t\t\t<details><summary>maxMultiviewInstanceIndex = <div class='val'>%u</div></summary></details>\n", multiview_props->maxMultiviewInstanceIndex);
+                    fprintf(out, "\t\t\t\t\t\t<details><summary>maxMultiviewViewCount     = <div class='val'>%u</div></summary></details>\n", multiview_props->maxMultiviewViewCount    );
+                    fprintf(out, "\t\t\t\t\t</details>\n");
+                }
+                else if (human_readable_output) {
+                    printf("\nVkPhysicalDeviceMultiviewProperties:\n");
+                    printf("=========================================\n");
+                    printf("\tmaxMultiviewInstanceIndex = %u\n", multiview_props->maxMultiviewInstanceIndex);
+                    printf("\tmaxMultiviewViewCount     = %u\n", multiview_props->maxMultiviewViewCount    );
+                }
             }
             place = structure->pNext;
         }
@@ -2873,6 +2904,159 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     }
 }
 
+static void AppGroupDump(const VkPhysicalDeviceGroupProperties *group, const uint32_t id, const struct AppInstance *inst,
+                         FILE *out) {
+    if (html_output) {
+        fprintf(out, "\t\t\t\t<details><summary>Device Group Properties (Group %u)</summary>\n", id);
+        fprintf(out, "\t\t\t\t\t<details><summary>physicalDeviceCount = <div class='val'>%u</div></summary>\n",
+                group->physicalDeviceCount);
+    } else if (human_readable_output) {
+        printf("\tDevice Group Properties (Group %u) :\n", id);
+        printf("\t\tphysicalDeviceCount = %u\n", group->physicalDeviceCount);
+    }
+
+    // Keep a record of all physical device properties to give the user clearer information as output.
+    VkPhysicalDeviceProperties *props = malloc(sizeof(props[0]) * group->physicalDeviceCount);
+    if (!props) {
+        ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+    }
+    for (uint32_t i = 0; i < group->physicalDeviceCount; ++i) {
+        vkGetPhysicalDeviceProperties(group->physicalDevices[i], &props[i]);
+    }
+
+    // Output information to the user.
+    for (uint32_t i = 0; i < group->physicalDeviceCount; ++i) {
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t\t<details><summary>%s (ID: <div class='val'>%d</div>)</summary></details>\n",
+                    props[i].deviceName, i);
+        } else if (human_readable_output) {
+            printf("\n\t\t\t%s (ID: %d)\n", props[i].deviceName, i);
+        }
+    }
+
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t</details>\n");
+    }
+
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t<details><summary>subsetAllocation = <div class='val'>%u</div></summary></details>\n",
+                group->subsetAllocation);
+    } else if (human_readable_output) {
+        printf("\n\t\tsubsetAllocation = %u\n", group->subsetAllocation);
+    }
+
+    if (html_output) {
+        fprintf(out, "\t\t\t\t</details>\n");
+    }
+
+    // Build create info for logical device made from all physical devices in this group.
+    char *extensions_list = VK_KHR_DEVICE_GROUP_EXTENSION_NAME;
+
+    VkDeviceGroupDeviceCreateInfoKHR dg_ci = {.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHR,
+                                              .pNext = NULL,
+                                              .physicalDeviceCount = group->physicalDeviceCount,
+                                              .pPhysicalDevices = group->physicalDevices};
+
+    VkDeviceQueueCreateInfo q_ci = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .pNext = NULL, .queueFamilyIndex = 0, .queueCount = 1};
+
+    VkDeviceCreateInfo device_ci = {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+                                    .pNext = &dg_ci,
+                                    .queueCreateInfoCount = 1,
+                                    .pQueueCreateInfos = &q_ci,
+                                    .enabledExtensionCount = 1,
+                                    .ppEnabledExtensionNames = &extensions_list};
+
+    VkDevice logical_device = VK_NULL_HANDLE;
+
+    VkResult err = vkCreateDevice(group->physicalDevices[0], &device_ci, NULL, &logical_device);
+
+    if (!err) {
+        if (html_output) {
+            fprintf(out, "\t\t\t\t<details><summary>Device Group Present Capabilities (Group %d)</summary>\n", id);
+        } else if (human_readable_output) {
+            printf("\n\tDevice Group Present Capabilities (Group %d) :\n", id);
+        }
+
+        VkDeviceGroupPresentCapabilitiesKHR group_capabilities = {.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_CAPABILITIES_KHR,
+                                                                  .pNext = NULL};
+
+        // If the KHR_device_group extension is present, write the capabilities of the logical device into a struct for later output
+        // to user.
+        PFN_vkGetDeviceGroupPresentCapabilitiesKHR vkGetDeviceGroupPresentCapabilitiesKHR =
+            (PFN_vkGetDeviceGroupPresentCapabilitiesKHR)vkGetInstanceProcAddr(inst->instance,
+                                                                              "vkGetDeviceGroupPresentCapabilitiesKHR");
+        vkGetDeviceGroupPresentCapabilitiesKHR(logical_device, &group_capabilities);
+
+        for (uint32_t i = 0; i < group->physicalDeviceCount; i++) {
+            if (html_output) {
+                fprintf(out, "\t\t\t\t\t<details><summary>%s (ID: <div class='val'>%d</div>)</summary></details>\n",
+                        props[i].deviceName, i);
+                fprintf(out, "\t\t\t\t\t<details><summary>Can present images from the following devices:</summary>\n");
+                if (group_capabilities.presentMask[i] != 0) {
+                    for (uint32_t j = 0; j < group->physicalDeviceCount; ++j) {
+                        uint32_t mask = 1 << j;
+                        if (group_capabilities.presentMask[i] & mask) {
+                            fprintf(out, "\t\t\t\t\t\t<details><summary>%s (ID: <div class='val'>%d</div>)</summary></details>\n",
+                                    props[j].deviceName, j);
+                        }
+                    }
+                } else {
+                    fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+                }
+                fprintf(out, "\t\t\t\t\t</details>\n");
+            } else if (human_readable_output) {
+                printf("\n\t\t%s (ID: %d)\n", props[i].deviceName, i);
+                printf("\t\tCan present images from the following devices:\n");
+                if (group_capabilities.presentMask[i] != 0) {
+                    for (uint32_t j = 0; j < group->physicalDeviceCount; ++j) {
+                        uint32_t mask = 1 << j;
+                        if (group_capabilities.presentMask[i] & mask) {
+                            printf("\t\t\t%s (ID: %d)\n", props[j].deviceName, j);
+                        }
+                    }
+                } else {
+                    printf("\t\t\tNone\n");
+                }
+                printf("\n");
+            }
+        }
+
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t<details><summary>Present modes</summary>\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR)
+                fprintf(out, "\t\t\t\t\t\t<details><summary>VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR</summary></details>\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_REMOTE_BIT_KHR)
+                fprintf(out, "\t\t\t\t\t\t<details><summary>VK_DEVICE_GROUP_PRESENT_MODE_REMOTE_BIT_KHR</summary></details>\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_SUM_BIT_KHR)
+                fprintf(out, "\t\t\t\t\t\t<details><summary>VK_DEVICE_GROUP_PRESENT_MODE_SUM_BIT_KHR</summary></details>\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_MULTI_DEVICE_BIT_KHR)
+                fprintf(
+                    out,
+                    "\t\t\t\t\t\t<details><summary>VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_MULTI_DEVICE_BIT_KHR</summary></details>\n");
+            fprintf(out, "\t\t\t\t\t</details>\n");
+        } else if (human_readable_output) {
+            printf("\t\tPresent modes:\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR)
+                printf("\t\t\tVK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_REMOTE_BIT_KHR)
+                printf("\t\t\tVK_DEVICE_GROUP_PRESENT_MODE_REMOTE_BIT_KHR\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_SUM_BIT_KHR)
+                printf("\t\t\tVK_DEVICE_GROUP_PRESENT_MODE_SUM_BIT_KHR\n");
+            if (group_capabilities.modes & VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_MULTI_DEVICE_BIT_KHR)
+                printf("\t\t\tVK_DEVICE_GROUP_PRESENT_MODE_LOCAL_MULTI_DEVICE_BIT_KHR\n");
+        }
+
+        if (html_output) {
+            fprintf(out, "\t\t\t\t</details>\n");
+        }
+    }
+
+    // Clean up after ourselves.
+    free(props);
+    vkDestroyDevice(logical_device, NULL);
+}
+
 #ifdef _WIN32
 // Enlarges the console window to have a large scrollback size.
 static void ConsoleEnlarge() {
@@ -3195,6 +3379,47 @@ int main(int argc, char **argv) {
         printf("\n");
     }
     //---------
+
+    if (CheckExtensionEnabled(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
+        PFN_vkEnumeratePhysicalDeviceGroupsKHR vkEnumeratePhysicalDeviceGroupsKHR =
+            (PFN_vkEnumeratePhysicalDeviceGroupsKHR)vkGetInstanceProcAddr(inst.instance, "vkEnumeratePhysicalDeviceGroupsKHR");
+
+        uint32_t group_count;
+        err = vkEnumeratePhysicalDeviceGroupsKHR(inst.instance, &group_count, NULL);
+        if (err) {
+            ERR_EXIT(err);
+        }
+
+        VkPhysicalDeviceGroupProperties *groups = malloc(sizeof(groups[0]) * group_count);
+        if (!groups) {
+            ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+        }
+
+        err = vkEnumeratePhysicalDeviceGroupsKHR(inst.instance, &group_count, groups);
+        if (err) {
+            ERR_EXIT(err);
+        }
+
+        if (html_output) {
+            fprintf(out, "\t\t\t<details><summary>Groups</summary>\n");
+        } else if (human_readable_output) {
+            printf("\nGroups :\n");
+            printf("========\n");
+        }
+
+        for (uint32_t i = 0; i < group_count; ++i) {
+            AppGroupDump(&groups[i], i, &inst, out);
+            if (human_readable_output) {
+                printf("\n\n");
+            }
+        }
+
+        if (html_output) {
+            fprintf(out, "\t\t\t</details>\n");
+        }
+
+        free(groups);
+    }
 
     for (uint32_t i = 0; i < gpu_count; ++i) {
         if (json_output && selected_gpu != i) {
