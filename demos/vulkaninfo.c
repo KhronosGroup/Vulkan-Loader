@@ -484,6 +484,36 @@ static bool CheckPhysicalDeviceExtensionIncluded(const char *extension_to_check,
     return false;
 }
 
+static void buildpNextChain(struct VkStructureHeader *first, const uint32_t *sizes, uint32_t sizes_len,
+                            const VkStructureType *sTypes, uint32_t sTypes_len) {
+    struct VkStructureHeader *place = first;
+
+    for (uint32_t i = 0; i < sTypes_len; i++) {
+        place->sType = sTypes[i];
+        if (i < sizes_len) {
+            place->pNext = malloc(sizes[i]);
+            if (!place->pNext) {
+                ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
+            }
+        } else {
+            place->pNext = NULL;
+        }
+
+        place = place->pNext;
+    }
+}
+
+static void freepNextChain(struct VkStructureHeader *first) {
+    struct VkStructureHeader *place = first;
+    struct VkStructureHeader *next = NULL;
+
+    while (place) {
+        next = place->pNext;
+        free(place);
+        place = next;
+    }
+}
+
 static void ExtractVersion(uint32_t version, uint32_t *major, uint32_t *minor, uint32_t *patch) {
     *major = version >> 22;
     *minor = (version >> 12) & 0x3ff;
@@ -830,24 +860,21 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
     if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, gpu->inst->inst_extensions,
                               gpu->inst->inst_extensions_count)) {
-        gpu->props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
-        gpu->props2.pNext = malloc(sizeof(VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT));
+        uint32_t sizes[] = {sizeof(VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT),
+                            sizeof(VkPhysicalDevicePointClippingPropertiesKHR), sizeof(VkPhysicalDevicePushDescriptorPropertiesKHR),
+                            sizeof(VkPhysicalDeviceDiscardRectanglePropertiesEXT)};
 
-        VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT *blend_op_adv_props = gpu->props2.pNext;
-        blend_op_adv_props->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT;
-        blend_op_adv_props->pNext = malloc(sizeof(VkPhysicalDevicePointClippingPropertiesKHR));
+        uint32_t sizes_len = ARRAY_SIZE(sizes);
 
-        VkPhysicalDevicePointClippingPropertiesKHR *pt_clip_props = blend_op_adv_props->pNext;
-        pt_clip_props->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES_KHR;
-        pt_clip_props->pNext = malloc(sizeof(VkPhysicalDevicePushDescriptorPropertiesKHR));
+        VkStructureType sTypes[] = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES_KHR,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT};
 
-        VkPhysicalDevicePushDescriptorPropertiesKHR *push_desc_props = pt_clip_props->pNext;
-        push_desc_props->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR;
-        push_desc_props->pNext = malloc(sizeof(VkPhysicalDeviceDiscardRectanglePropertiesEXT));
+        uint32_t sTypes_len = ARRAY_SIZE(sTypes);
 
-        VkPhysicalDeviceDiscardRectanglePropertiesEXT *discard_rect_props = push_desc_props->pNext;
-        discard_rect_props->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT;
-        discard_rect_props->pNext = NULL;
+        buildpNextChain((struct VkStructureHeader *)&gpu->props2, sizes, sizes_len, sTypes, sTypes_len);
 
         inst->vkGetPhysicalDeviceProperties2KHR(gpu->obj, &gpu->props2);
     }
@@ -928,24 +955,26 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
         inst->vkGetPhysicalDeviceMemoryProperties2KHR(gpu->obj, &gpu->memory_props2);
 
-        gpu->features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
-        gpu->features2.pNext = malloc(sizeof(VkPhysicalDevice16BitStorageFeaturesKHR));
+        uint32_t sizes[] = {
+            sizeof(VkPhysicalDevice16BitStorageFeaturesKHR),
+            sizeof(VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR),
+            sizeof(VkPhysicalDeviceVariablePointerFeaturesKHR),
+            sizeof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT),
+        };
 
-        VkPhysicalDevice16BitStorageFeaturesKHR *b16_store_features = gpu->features2.pNext;
-        b16_store_features->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR;
-        b16_store_features->pNext = malloc(sizeof(VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR));
+        uint32_t sizes_len = ARRAY_SIZE(sizes);
 
-        VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR *ycbcr_conv_features = b16_store_features->pNext;
-        ycbcr_conv_features->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES_KHR;
-        ycbcr_conv_features->pNext = malloc(sizeof(VkPhysicalDeviceVariablePointerFeaturesKHR));
+        VkStructureType sTypes[] = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES_KHR,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES_KHR,
+                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT};
 
-        VkPhysicalDeviceVariablePointerFeaturesKHR *var_pointer_features = ycbcr_conv_features->pNext;
-        var_pointer_features->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES_KHR;
-        var_pointer_features->pNext = malloc(sizeof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT));
+        uint32_t sTypes_len = ARRAY_SIZE(sTypes);
 
-        VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *blend_op_adv_features = var_pointer_features->pNext;
-        blend_op_adv_features->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT;
-        blend_op_adv_features->pNext = NULL;
+        struct VkStructureHeader *place = (struct VkStructureHeader *)&gpu->features2;
+
+        buildpNextChain((struct VkStructureHeader *)&gpu->features2, sizes, sizes_len, sTypes, sTypes_len);
 
         inst->vkGetPhysicalDeviceFeatures2KHR(gpu->obj, &gpu->features2);
     }
@@ -956,14 +985,10 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 static void AppGpuDestroy(struct AppGpu *gpu) {
     free(gpu->device_extensions);
 
-    VkPhysicalDevice16BitStorageFeaturesKHR *b16_store_features = gpu->features2.pNext;
-    VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR *ycbcr_conv_features = b16_store_features->pNext;
-    VkPhysicalDeviceVariablePointerFeaturesKHR *var_pointer_features = ycbcr_conv_features->pNext;
-    VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *blend_op_adv_features = var_pointer_features->pNext;
-    free(blend_op_adv_features);
-    free(var_pointer_features);
-    free(ycbcr_conv_features);
-    free(b16_store_features);
+    if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, gpu->inst->inst_extensions,
+                              gpu->inst->inst_extensions_count)) {
+        freepNextChain(gpu->features2.pNext);
+    }
 
     for (uint32_t i = 0; i < gpu->queue_count; ++i) {
         free((void *)gpu->queue_reqs[i].pQueuePriorities);
@@ -974,16 +999,9 @@ static void AppGpuDestroy(struct AppGpu *gpu) {
     if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, gpu->inst->inst_extensions,
                               gpu->inst->inst_extensions_count)) {
         free(gpu->queue_props2);
-    }
 
-    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT *blend_op_adv_props = gpu->props2.pNext;
-    VkPhysicalDevicePointClippingPropertiesKHR *pt_clip_props = blend_op_adv_props->pNext;
-    VkPhysicalDevicePushDescriptorPropertiesKHR *push_desc_props = pt_clip_props->pNext;
-    VkPhysicalDeviceDiscardRectanglePropertiesEXT *discard_rect_props = push_desc_props->pNext;
-    free(discard_rect_props);
-    free(push_desc_props);
-    free(pt_clip_props);
-    free(blend_op_adv_props);
+        freepNextChain(gpu->props2.pNext);
+    }
 }
 
 // clang-format off
