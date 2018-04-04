@@ -106,6 +106,11 @@ struct VkStructureHeader {
     void *pNext;
 };
 
+struct pNextChainBuildingBlockInfo {
+    VkStructureType sType;
+    uint32_t mem_size;
+};
+
 struct LayerExtensionList {
     VkLayerProperties layer_properties;
     uint32_t extension_count;
@@ -484,23 +489,20 @@ static bool CheckPhysicalDeviceExtensionIncluded(const char *extension_to_check,
     return false;
 }
 
-static void buildpNextChain(struct VkStructureHeader *first, const uint32_t *sizes, uint32_t sizes_len,
-                            const VkStructureType *sTypes, uint32_t sTypes_len) {
+static void buildpNextChain(struct VkStructureHeader *first, const struct pNextChainBuildingBlockInfo *chain_info,
+                            uint32_t chain_info_len) {
     struct VkStructureHeader *place = first;
 
-    for (uint32_t i = 0; i < sTypes_len; i++) {
-        place->sType = sTypes[i];
-        if (i < sizes_len) {
-            place->pNext = malloc(sizes[i]);
-            if (!place->pNext) {
-                ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
-            }
-        } else {
-            place->pNext = NULL;
+    for (uint32_t i = 0; i < chain_info_len; i++) {
+        place->pNext = malloc(chain_info[i].mem_size);
+        if (!place->pNext) {
+            ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
         }
-
         place = place->pNext;
+        place->sType = chain_info[i].sType;
     }
+
+    place->pNext = NULL;
 }
 
 static void freepNextChain(struct VkStructureHeader *first) {
@@ -861,22 +863,22 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
     if (CheckExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, gpu->inst->inst_extensions,
                               gpu->inst->inst_extensions_count)) {
-        uint32_t sizes[] = {sizeof(VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT),
-                            sizeof(VkPhysicalDevicePointClippingPropertiesKHR), sizeof(VkPhysicalDevicePushDescriptorPropertiesKHR),
-                            sizeof(VkPhysicalDeviceDiscardRectanglePropertiesEXT), sizeof(VkPhysicalDeviceMultiviewPropertiesKHR)};
+        struct pNextChainBuildingBlockInfo chain_info[] = {
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
+             .mem_size = sizeof(VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES_KHR,
+             .mem_size = sizeof(VkPhysicalDevicePointClippingPropertiesKHR)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR,
+             .mem_size = sizeof(VkPhysicalDevicePushDescriptorPropertiesKHR)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT,
+             .mem_size = sizeof(VkPhysicalDeviceDiscardRectanglePropertiesEXT)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR,
+             .mem_size = sizeof(VkPhysicalDeviceMultiviewPropertiesKHR)}};
 
-        uint32_t sizes_len = ARRAY_SIZE(sizes);
+        uint32_t chain_info_len = ARRAY_SIZE(chain_info);
 
-        VkStructureType sTypes[] = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR};
-
-        uint32_t sTypes_len = ARRAY_SIZE(sTypes);
-
-        buildpNextChain((struct VkStructureHeader *)&gpu->props2, sizes, sizes_len, sTypes, sTypes_len);
+        gpu->props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+        buildpNextChain((struct VkStructureHeader *)&gpu->props2, chain_info, chain_info_len);
 
         inst->vkGetPhysicalDeviceProperties2KHR(gpu->obj, &gpu->props2);
     }
@@ -957,23 +959,22 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
         inst->vkGetPhysicalDeviceMemoryProperties2KHR(gpu->obj, &gpu->memory_props2);
 
-        uint32_t sizes[] = {
-            sizeof(VkPhysicalDevice16BitStorageFeaturesKHR), sizeof(VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR),
-            sizeof(VkPhysicalDeviceVariablePointerFeaturesKHR), sizeof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT),
-            sizeof(VkPhysicalDeviceMultiviewFeaturesKHR)};
+        struct pNextChainBuildingBlockInfo chain_info[] = {
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
+             .mem_size = sizeof(VkPhysicalDevice16BitStorageFeaturesKHR)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES_KHR,
+             .mem_size = sizeof(VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES_KHR,
+             .mem_size = sizeof(VkPhysicalDeviceVariablePointerFeaturesKHR)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT,
+             .mem_size = sizeof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT)},
+            {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR,
+             .mem_size = sizeof(VkPhysicalDeviceMultiviewFeaturesKHR)}};
 
-        uint32_t sizes_len = ARRAY_SIZE(sizes);
+        uint32_t chain_info_len = ARRAY_SIZE(chain_info);
 
-        VkStructureType sTypes[] = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES_KHR,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR};
-
-        uint32_t sTypes_len = ARRAY_SIZE(sTypes);
-
-        buildpNextChain((struct VkStructureHeader *)&gpu->features2, sizes, sizes_len, sTypes, sTypes_len);
+        gpu->features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
+        buildpNextChain((struct VkStructureHeader *)&gpu->features2, chain_info, chain_info_len);
 
         inst->vkGetPhysicalDeviceFeatures2KHR(gpu->obj, &gpu->features2);
     }
