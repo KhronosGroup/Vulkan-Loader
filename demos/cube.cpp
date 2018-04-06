@@ -2984,14 +2984,6 @@ static void demo_main(struct Demo &demo, void *view) {
     demo.spin_angle = 0.4f;
 }
 
-// Global function invoked from NS or UI views and controllers on each demo frame
-static void demo_update_and_draw(struct Demo &demo) {
-    // Wait for work to finish before updating MVP.
-    vkDeviceWaitIdle(demo.device);
-    demo.update_data_buffer();
-    demo.draw();
-}
-
 #else
 #error "Platform not supported"
 #endif

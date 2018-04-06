@@ -3835,14 +3835,6 @@ static void demo_main(struct demo *demo, void *view) {
     demo->spin_angle = 0.4f;
 }
 
-static void demo_update_and_draw(struct demo *demo) {
-    // Wait for work to finish before updating MVP.
-    vkDeviceWaitIdle(demo->device);
-    demo_update_data_buffer(demo);
-
-    demo_draw(demo);
-}
-
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
 #include <android_native_app_glue.h>

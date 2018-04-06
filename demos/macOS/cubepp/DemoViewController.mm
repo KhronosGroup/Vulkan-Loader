@@ -55,7 +55,7 @@
 /** Rendering loop callback function for use with a CVDisplayLink. */
 static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* now, const CVTimeStamp* outputTime,
                                     CVOptionFlags flagsIn, CVOptionFlags* flagsOut, void* target) {
-    demo_update_and_draw(reinterpret_cast<struct Demo&>(*(struct Demo*)target));
+    ((struct Demo*)target)->draw();
     return kCVReturnSuccess;
 }
 
