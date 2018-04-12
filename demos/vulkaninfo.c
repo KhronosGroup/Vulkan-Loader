@@ -972,8 +972,6 @@ static void AppGpuInit(struct AppGpu *gpu, struct AppInstance *inst, uint32_t id
 
         uint32_t sTypes_len = ARRAY_SIZE(sTypes);
 
-        struct VkStructureHeader *place = (struct VkStructureHeader *)&gpu->features2;
-
         buildpNextChain((struct VkStructureHeader *)&gpu->features2, sizes, sizes_len, sTypes, sTypes_len);
 
         inst->vkGetPhysicalDeviceFeatures2KHR(gpu->obj, &gpu->features2);
