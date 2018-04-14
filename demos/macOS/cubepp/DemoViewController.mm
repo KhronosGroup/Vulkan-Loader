@@ -29,6 +29,7 @@
 @implementation DemoViewController {
     CVDisplayLinkRef _displayLink;
     struct Demo demo;
+    NSTimer* _timer;
 }
 
 - (void)dealloc {
@@ -43,19 +44,48 @@
 
     self.view.wantsLayer = YES;  // Back the view with a layer created by the makeBackingLayer method.
 
-    demo_main(demo, self.view);
+    // Convert incoming args to "C" argc/argv strings
+    NSArray *args = [[NSProcessInfo processInfo] arguments];
+    const char** argv = (const char**) alloca(sizeof(char*) * args.count);
+    for(unsigned int i = 0; i < args.count; i++) {
+        NSString *s = args[i];
+        argv[i] = s.UTF8String;
+    }
 
+    demo_main(demo, self.view, args.count, argv);
+
+    // Monitor the rendering loop for a quit condition
+    _timer = [NSTimer scheduledTimerWithTimeInterval: 0.2
+                                              target: self
+                                            selector: @selector(onTick:)
+                                            userInfo: self
+                                             repeats: YES];
+
+    // Start the rendering loop
     CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
     CVDisplayLinkSetOutputCallback(_displayLink, &DisplayLinkCallback, &demo);
     CVDisplayLinkStart(_displayLink);
 }
 
+// Close the window if the demo is in a Quit state
+-(void)onTick:(NSTimer*)timer {
+    if (demo.quit) {
+        [[[self view] window] close];
+    }
+}
+
 #pragma mark Display loop callback function
 
 /** Rendering loop callback function for use with a CVDisplayLink. */
-static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* now, const CVTimeStamp* outputTime,
+static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* now,
+                                    const CVTimeStamp* outputTime,
                                     CVOptionFlags flagsIn, CVOptionFlags* flagsOut, void* target) {
-    ((struct Demo*)target)->draw();
+    struct Demo* demo = (struct Demo*)target;
+    demo->run();
+    if (demo->quit) {
+        CVDisplayLinkStop(displayLink);
+        CVDisplayLinkRelease(displayLink);
+    }
     return kCVReturnSuccess;
 }
 

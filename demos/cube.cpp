@@ -261,6 +261,8 @@ struct Demo {
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
     void run();
     void create_window();
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+    void run();
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
     vk::Result create_display_surface();
@@ -2668,6 +2670,14 @@ void Demo::create_window() {
     wl_shell_surface_set_toplevel(shell_surface);
     wl_shell_surface_set_title(shell_surface, APP_SHORT_NAME);
 }
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+void Demo::run() {
+    draw();
+    curFrame++;
+    if (frameCount != UINT32_MAX && curFrame == frameCount) {
+        quit = true;
+    }
+}
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
 
@@ -2973,9 +2983,7 @@ int main(int argc, char **argv) {
 #elif defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK)
 
 // Global function invoked from NS or UI views and controllers to create demo
-static void demo_main(struct Demo &demo, void *view) {
-    const char *argv[] = {"CubeSample"};
-    int argc = sizeof(argv) / sizeof(char *);
+static void demo_main(struct Demo &demo, void *view, int argc, const char *argv[]) {
 
     demo.init(argc, (char **)argv);
     demo.window = view;

@@ -2713,6 +2713,14 @@ static void demo_run(struct demo *demo) {
     demo_draw(demo);
     demo->curFrame++;
 }
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+static void demo_run(struct demo *demo) {
+    demo_draw(demo);
+    demo->curFrame++;
+    if (demo->frameCount != INT32_MAX && demo->curFrame == demo->frameCount) {
+        demo->quit = TRUE;
+    }
+}
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
 static VkResult demo_create_display_surface(struct demo *demo) {
@@ -3824,9 +3832,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine,
 }
 
 #elif defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK)
-static void demo_main(struct demo *demo, void *view) {
-    const char *argv[] = {"CubeSample"};
-    int argc = sizeof(argv) / sizeof(char *);
+static void demo_main(struct demo *demo, void *view, int argc, const char *argv[]) {
 
     demo_init(demo, argc, (char **)argv);
     demo->window = view;
