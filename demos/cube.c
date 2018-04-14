@@ -3148,7 +3148,7 @@ static void demo_init_vk(struct demo *demo) {
 
     /* Make initial call to query gpu_count, then second call for gpu info*/
     err = vkEnumeratePhysicalDevices(demo->inst, &gpu_count, NULL);
-    assert(!err && gpu_count > 0);
+    assert(!err);
 
     if (gpu_count > 0) {
         VkPhysicalDevice *physical_devices = malloc(sizeof(VkPhysicalDevice) * gpu_count);

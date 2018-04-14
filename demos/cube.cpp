@@ -1217,7 +1217,6 @@ void Demo::init_vk() {
     uint32_t gpu_count;
     result = inst.enumeratePhysicalDevices(&gpu_count, nullptr);
     VERIFY(result == vk::Result::eSuccess);
-    assert(gpu_count > 0);
 
     if (gpu_count > 0) {
         std::unique_ptr<vk::PhysicalDevice[]> physical_devices(new vk::PhysicalDevice[gpu_count]);
