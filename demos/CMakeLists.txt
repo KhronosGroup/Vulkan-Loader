@@ -149,7 +149,11 @@ include_directories(
 
 ######################################################################################
 # vulkaninfo
-add_executable(${API_LOWERCASE}info vulkaninfo.c)
+if(WIN32)
+    add_executable(${API_LOWERCASE}info vulkaninfo.c vulkaninfo.rc)
+else()
+    add_executable(${API_LOWERCASE}info vulkaninfo.c)
+endif()
 target_link_libraries(${API_LOWERCASE}info ${LIBRARIES})
 if(APPLE)
     set_target_properties(${API_LOWERCASE}info PROPERTIES
@@ -220,4 +224,3 @@ if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL ${CMAKE_HOST_SYSTEM_PROCESSOR}))
         add_subdirectory(smoke)
     endif()
 endif()
-
