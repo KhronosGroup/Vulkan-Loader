@@ -2951,7 +2951,8 @@ static void AppGroupDump(const VkPhysicalDeviceGroupProperties *group, const uin
     }
 
     // Build create info for logical device made from all physical devices in this group.
-    const char *extensions_list = VK_KHR_DEVICE_GROUP_EXTENSION_NAME;
+    const char *extensions_list[] = {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                     VK_KHR_DEVICE_GROUP_EXTENSION_NAME};
 
     VkDeviceGroupDeviceCreateInfoKHR dg_ci = {.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHR,
                                               .pNext = NULL,
@@ -2965,8 +2966,8 @@ static void AppGroupDump(const VkPhysicalDeviceGroupProperties *group, const uin
                                     .pNext = &dg_ci,
                                     .queueCreateInfoCount = 1,
                                     .pQueueCreateInfos = &q_ci,
-                                    .enabledExtensionCount = 1,
-                                    .ppEnabledExtensionNames = &extensions_list};
+                                    .enabledExtensionCount = ARRAY_SIZE(extensions_list),
+                                    .ppEnabledExtensionNames = extensions_list};
 
     VkDevice logical_device = VK_NULL_HANDLE;
 
