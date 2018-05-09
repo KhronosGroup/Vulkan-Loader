@@ -2,7 +2,6 @@ cmake_minimum_required (VERSION 2.8.11)
 
 set(LAYER_JSON_FILES
     VkLayer_wrap_objects
-    VkLayer_device_profile_api
     VkLayer_test
     )
 
@@ -68,18 +67,18 @@ if (WIN32)
     )
     set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
     add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
-    add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    add_dependencies(VkLayer_${target} generate_helper_files)
     endmacro()
 elseif(APPLE)
     macro(add_vk_layer target)
     add_library(VkLayer_${target} SHARED ${ARGN})
-    add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    add_dependencies(VkLayer_${target} generate_helper_files)
     set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
     endmacro()
 else()
     macro(add_vk_layer target)
     add_library(VkLayer_${target} SHARED ${ARGN})
-    add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    add_dependencies(VkLayer_${target} generate_helper_files)
     set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic")
     endmacro()
 endif()
@@ -116,42 +115,4 @@ set (TEST_SRCS
        ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_table.cpp
        ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_extension_utils.cpp
        )
-
-set (DEVICE_PROFILE_API_SRCS
-       device_profile_api.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_table.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_extension_utils.cpp
-       )
-
-add_vk_layer(device_profile_api ${DEVICE_PROFILE_API_SRCS})
 add_vk_layer(test ${TEST_SRCS})
-
-if (WIN32)
-    # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/*device_profile_api.* SRC_LAYER)
-    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/VkLayer_device_profile_api.json SRC_JSON)
-    FILE(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIGURATION> DST_LAYER)
-    add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
-        COMMAND xcopy /Y /I ${SRC_LAYER} ${DST_LAYER}
-        COMMAND xcopy /Y /I ${SRC_JSON} ${DST_LAYER})
-elseif(APPLE)
-    if (CMAKE_GENERATOR MATCHES "^Xcode.*")
-        add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
-            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${CMAKE_BINARY_DIR}/layers/$<CONFIG>
-            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/libVkLayer_device_profile_api.dylib ${CMAKE_BINARY_DIR}/layers/$<CONFIG>
-            VERBATIM
-            )
-    else()
-        add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
-            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${CMAKE_BINARY_DIR}/layers
-            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/libVkLayer_device_profile_api.dylib ${CMAKE_BINARY_DIR}/layers
-            VERBATIM
-            )
-    endif()
-else()
-    add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
-        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${PROJECT_BINARY_DIR}/layers
-        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/libVkLayer_device_profile_api.so ${PROJECT_BINARY_DIR}/layers
-        VERBATIM
-        )
-endif()

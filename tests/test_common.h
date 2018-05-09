@@ -63,11 +63,7 @@
 #endif
 
 // Use the NDK's header on Android
-#ifndef __ANDROID__
-#include "../submodules/googletest/googletest/include/gtest/gtest.h"
-#else
 #include "gtest/gtest.h"
-#endif
 
 // Redefine Xlib definitions
 #ifdef VK_USE_PLATFORM_XLIB_KHR
