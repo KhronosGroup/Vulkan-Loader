@@ -85,9 +85,8 @@ endif()
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../layers
     ${CMAKE_CURRENT_SOURCE_DIR}/../../loader
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vulkan
+    ${PROJECT_SOURCE_DIR}/Vulkan-Headers/include
     ${CMAKE_CURRENT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}
@@ -105,14 +104,14 @@ endif()
 
 set (WRAP_SRCS
        wrap_objects.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_table.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_extension_utils.cpp
+       vk_layer_table.cpp
+       vk_layer_extension_utils.cpp
        )
 add_vk_layer(wrap_objects ${WRAP_SRCS})
 
 set (TEST_SRCS
        test.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_table.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_extension_utils.cpp
+       vk_layer_table.cpp
+       vk_layer_extension_utils.cpp
        )
 add_vk_layer(test ${TEST_SRCS})

@@ -62,10 +62,6 @@ set (LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 include_directories(
     ${PROJECT_SOURCE_DIR}/tests
     ${PROJECT_SOURCE_DIR}/tests/googletest/googletest/include
-    ${PROJECT_SOURCE_DIR}/icd/common
-    ${PROJECT_SOURCE_DIR}/layers
-    ${GLSLANG_SPIRV_INCLUDE_DIR}
-    ${LIBGLM_INCLUDE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}
     ${PROJECT_BINARY_DIR}
