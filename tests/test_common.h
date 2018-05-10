@@ -74,7 +74,6 @@
 #ifdef _WIN32
 #pragma warning(pop)
 #endif
-#include "vktestbinding.h"
 
 #define ASSERT_VK_SUCCESS(err) ASSERT_EQ(VK_SUCCESS, err) << vk_result_string(err)
 
