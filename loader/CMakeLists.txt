@@ -279,9 +279,7 @@ else()
         )
     endif(APPLE)
 
-    if(INSTALL_LVL_FILES)
-        install(TARGETS ${API_LOWERCASE} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    endif()
+    install(TARGETS ${API_LOWERCASE} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
     if(NOT APPLE)
         # Generate pkg-config file.
@@ -292,12 +290,8 @@ else()
                 set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
             endforeach()
             configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
-            if(INSTALL_LVL_FILES)
-                install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc"
-                        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
-            endif()
+            install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc"
+                    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
         endif()
     endif()
 endif()
-
-
