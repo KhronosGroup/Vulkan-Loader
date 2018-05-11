@@ -21,19 +21,10 @@ if ($Debug) {
 $AboveDir = (Get-Item -Path ".." -Verbose).FullName
 Write-Host "Using Vulkan run-time=$AboveDir\loader\$dPath"
 Set-Item -path env:Path -value ("$AboveDir\loader\$dPath;" + $env:Path)
-Write-Host "Using VK_LAYER_PATH=$AboveDir\layers\$dPath"
-$env:VK_LAYER_PATH = "$AboveDir\layers\$dPath"
 
 & $dPath\vk_loader_validation_tests --gtest_filter=-$LoaderTestExceptions
 if ($lastexitcode -ne 0) {
    exit 1
 }
-
-& $dPath\vk_layer_validation_tests --gtest_filter=-$TestExceptions
-if ($lastexitcode -ne 0) {
-   exit 1
-}
-
-& .\vkvalidatelayerdoc.ps1
 
 exit $lastexitcode

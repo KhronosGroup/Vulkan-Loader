@@ -114,4 +114,21 @@ SET(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
 SET(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 add_subdirectory(${GTEST_RELATIVE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/googletest)
 
+# Copy googletest (gtest) libs to test dir so the test executable can find them.
+if(WIN32)
+    if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC1)
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/$<CONFIG>/gtest$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC2)
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> GTEST_COPY_DEST)
+    else()
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/gtest_main.dll GTEST_COPY_SRC1)
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/gtest.dll GTEST_COPY_SRC2)
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} GTEST_COPY_DEST)
+    endif()
+    add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
+        COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
+        COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST}
+    )
+endif()
+
 add_subdirectory(layers)
