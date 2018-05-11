@@ -11,14 +11,6 @@ matrix:
   allow_failures:
     - env: CHECK_COMMIT_FORMAT=ON
   include:
-    # Android build.
-    - os: linux
-      compiler: gcc
-      env: VULKAN_BUILD_TARGET=ANDROID ANDROID_TARGET=android-23 ANDROID_ABI=armeabi-v7a
-    # Android 64-bit build.
-    - os: linux
-      compiler: gcc
-      env: VULKAN_BUILD_TARGET=ANDROID ANDROID_TARGET=android-23 ANDROID_ABI=arm64-v8a
     # Linux GCC debug build.
     - os: linux
       compiler: gcc
@@ -48,16 +40,6 @@ before_install:
       sudo apt-get -y install libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev libx11-xcb-dev
     fi
   - |
-    if [[ "$VULKAN_BUILD_TARGET" == "ANDROID" ]]; then
-      # Install the Android NDK.
-      export ARCH=`uname -m`
-      wget http://dl.google.com/android/repository/android-ndk-r15c-linux-${ARCH}.zip
-      unzip -u -q android-ndk-r15c-linux-${ARCH}.zip
-      export ANDROID_NDK_HOME=`pwd`/android-ndk-r15c
-      export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
-      export PATH="$ANDROID_NDK_HOME:$PATH"
-    fi
-  - |
     if [[ "$CHECK_FORMAT" == "ON" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then
       # Install the clang format diff tool, but only for pull requests.
       curl -L http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py -o scripts/clang-format-diff.py;
@@ -71,48 +53,12 @@ script:
   - set -e
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Get VulkanTools and build DevSim
-      mkdir -p external
-      cd external
-      git clone https://github.com/LunarG/VulkanTools.git
-      cd VulkanTools
-      # Get as little as possible from external sources
-      ./update_external_sources.sh --glslang --no-build
-      # Build as few components as possible
-      cmake -H. -Bbuild -DBUILD_LOADER=NO -DBUILD_TESTS=NO \
-          -DBUILD_LAYERS=NO -DBUILD_DEMOS=NO -DBUILD_VKTRACE=NO \
-          -DBUILD_VKJSON=NO -DBUILD_VIA=NO -DBUILD_ICD=NO
-      make -C build -j $core_count
-      cd ${TRAVIS_BUILD_DIR}
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build LVL
-      ./update_external_sources.sh
-      cmake -H. -Bdbuild -DCMAKE_BUILD_TYPE=Debug
-      make -C dbuild -j $core_count
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Run Tests
-      (cd dbuild/tests; ./vkvalidatelayerdoc.sh)
-      export LD_LIBRARY_PATH=dbuild/loader:$LD_LIBRARY_PATH
-      export VK_LAYER_PATH=external/VulkanTools/build/layersvt:dbuild/layers
-      export VK_ICD_FILENAMES=dbuild/icd/VkICD_mock_icd.json
-      dbuild/tests/vk_layer_validation_tests
-      for profile in tests/device_profiles/*.json
-      do
-        echo Testing with profile $profile
-        VK_DEVSIM_FILENAME=$profile dbuild/tests/vk_layer_validation_tests --devsim
-      done
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "ANDROID" ]]; then
-      pushd build-android
-      ./update_external_sources_android.sh --abi $ANDROID_ABI --no-build
-      ./android-generate.sh
-      USE_CCACHE=1 NDK_CCACHE=ccache ndk-build APP_ABI=$ANDROID_ABI -j $core_count
-      popd
+      # Build Vulkan-Loader
+      mkdir build
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=Debug ..
+      make -j $core_count
+      cd ..
     fi
   - |
     if [[ "$CHECK_FORMAT" == "ON" ]]; then

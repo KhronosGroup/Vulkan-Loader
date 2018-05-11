@@ -7,8 +7,8 @@ for Windows, Linux, and MacOS.
 
 | Platform | Build Status |
 |:--------:|:------------:|
-| Linux/Android | [![Build Status](https://travis-ci.org/KhronosGroup/Vulkan-Loader.svg?branch=master)](https://travis-ci.org/KhronosGroup/Vulkan-Loader) |
-| Windows |[![Build status](https://ci.appveyor.com/api/projects/status/unknown/branch/master?svg=true)](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-loader/branch/master) |
+| Linux | [![Build Status](https://travis-ci.org/KhronosGroup/Vulkan-Loader.svg?branch=master)](https://travis-ci.org/KhronosGroup/Vulkan-Loader) |
+| Windows |[![Build status](https://ci.appveyor.com/api/projects/status/l93pu0w90tui708m?svg=true)](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-loader/branch/master) |
 
 ## Introduction
 
