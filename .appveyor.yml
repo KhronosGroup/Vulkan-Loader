@@ -31,11 +31,7 @@ before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
   - echo.
   - echo Starting build for %APPVEYOR_REPO_NAME%
-  - echo Update external sources
-  - if %PLATFORM% == Win32 (if %CONFIGURATION% == Debug (update_external_sources.bat --32 --debug))
-  - if %PLATFORM% == Win32 (if %CONFIGURATION% == Release (update_external_sources.bat --32 --release))
-  - if %PLATFORM% == x64 (if %CONFIGURATION% == Debug (update_external_sources.bat --64 --debug))
-  - if %PLATFORM% == x64 (if %CONFIGURATION% == Release (update_external_sources.bat --64 --release))
+  - git submodule update --init --recursive
   # Determine the appropriate CMake generator for the current version of Visual Studio
   - echo Determining VS version
   - python .\scripts\determine_vs_version.py > vsversion.tmp
@@ -61,6 +57,6 @@ configuration:
   - Debug
 
 build:
-  parallel: true                  # enable MSBuild parallel builds
-  project: build/VULKAN.sln       # path to Visual Studio solution or project
-  verbosity: quiet                # quiet|minimal|normal|detailed
+  parallel: true                   # enable MSBuild parallel builds
+  project: build/VULKAN_LOADER.sln # path to Visual Studio solution or project
+  verbosity: quiet                 # quiet|minimal|normal|detailed
