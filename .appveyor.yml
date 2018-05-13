@@ -58,5 +58,5 @@ configuration:
 
 build:
   parallel: true                   # enable MSBuild parallel builds
-  project: build/VULKAN_LOADER.sln # path to Visual Studio solution or project
+  project: build/Vulkan-Loader.sln # path to Visual Studio solution or project
   verbosity: quiet                 # quiet|minimal|normal|detailed

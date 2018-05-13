@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.11)
 # This must come before the project command.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 
-project(VULKAN_LOADER)
+project(Vulkan-Loader)
 set (CMAKE_VERBOSE_MAKEFILE 0)
 
 # The API_NAME allows renaming builds to avoid conflicts with installed SDKs
