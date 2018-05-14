@@ -76,6 +76,11 @@ endif()
 
 set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 
+# Output warning if vulkan headers submodule contents are not present
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/Vulkan-Headers/include/vulkan/vulkan_core.h")
+    message(FATAL_ERROR "Please run 'git submodule update --init' before running cmake")
+endif()
+
 # Add location of Vulkan header files to include search path
 set(vulkan_include_dir "${PROJECT_SOURCE_DIR}/Vulkan-Headers/include")
 include_directories(${vulkan_include_dir})
