@@ -24,7 +24,7 @@ The following components are available in this repository:
 
 - [Vulkan header files (Vulkan-Headers submodule)](https://github.com/KhronosGroup/Vulkan-Headers)
 - [ICD Loader](loader/)
-- [Loader Documentation](loader/LoaderAndValidationLayers.md)
+- [Loader Documentation](loader/LoaderAndLayerInterface.md)
 - [Tests](tests/)
 
 ## Contact Information
