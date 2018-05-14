@@ -1,8 +1,5 @@
 # Loader Specification and Interfaces
-See LoaderAndLayerInterface.md.
+See LoaderAndLayerInterface.md for detailed documentation.
 
 # Building
-Builds for Linux and Windows are supported via CMake. See top level BUILD.md file.
-
-
-
+Builds for Linux, Windows, and MacOS are supported via CMake. See top level BUILD.md file.
