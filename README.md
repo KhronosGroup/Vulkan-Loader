@@ -6,7 +6,7 @@ This project provides the Khronos official Vulkan ICD desktop loader for Windows
 
 | Platform | Build Status |
 |:--------:|:------------:|
-| Linux | [![Build Status](https://travis-ci.org/KhronosGroup/Vulkan-Loader.svg?branch=master)](https://travis-ci.org/KhronosGroup/Vulkan-Loader) |
+| Linux/MacOS | [![Build Status](https://travis-ci.org/KhronosGroup/Vulkan-Loader.svg?branch=master)](https://travis-ci.org/KhronosGroup/Vulkan-Loader) |
 | Windows |[![Build status](https://ci.appveyor.com/api/projects/status/l93pu0w90tui708m?svg=true)](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-loader/branch/master) |
 
 ## Introduction

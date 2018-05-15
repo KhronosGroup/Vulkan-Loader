@@ -19,6 +19,10 @@ matrix:
     - os: linux
       compiler: clang
       env: VULKAN_BUILD_TARGET=LINUX
+    # MacOS clang debug build.
+    - os: osx
+      compiler: clang
+      env: VULKAN_BUILD_TARGET=MACOS
     # Check for proper clang formatting in the pull request.
     - env: CHECK_FORMAT=ON
     # Check for proper commit message formatting for commits in PR
@@ -27,6 +31,7 @@ matrix:
 cache: ccache
 
 # Use set -e so that the build fails when a command fails.
+# Note that set +e must be called at the end or else failures may occur within Travis
 # The default action for Travis-CI is to continue running even if a command fails.
 # See https://github.com/travis-ci/travis-ci/issues/1066.
 # Use the YAML block scalar header (|) to allow easier multiline script coding.
@@ -40,6 +45,11 @@ before_install:
       sudo apt-get -y install libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev libx11-xcb-dev
     fi
   - |
+    if [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
+      # Install the appropriate MacOS packages
+      brew upgrade python3
+    fi
+  - |
     if [[ "$CHECK_FORMAT" == "ON" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then
       # Install the clang format diff tool, but only for pull requests.
       curl -L http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py -o scripts/clang-format-diff.py;
@@ -49,10 +59,13 @@ before_install:
   - export core_count=$(nproc || echo 4) && echo core_count = $core_count
   - set +e
 
+# It is important to use `unset -f cd` on MacOS because RVM overrides it, which causes conflicts with `set -e`
+
 script:
   - set -e
+  - unset -f cd
   - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
+    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]] || [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
       # Build Vulkan-Loader
       mkdir build
       cd build
@@ -84,8 +97,6 @@ notifications:
   email:
     recipients:
       - karl@lunarg.com
-      - cnorthrop@google.com
-      - tobine@google.com
-      - chrisforbes@google.com
+      - lenny@lunarg.com
     on_success: change
     on_failure: always
