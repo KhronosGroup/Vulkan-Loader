@@ -345,20 +345,6 @@ Setup Homebrew and components
 
       brew install cmake python python3 git
 
-### Clone the Repository
-
-Clone the Vulkan-LoaderAndValidationLayers repository:
-
-    git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git
-
-### Get the External Libraries
-
-Change to the cloned directory (`cd Vulkan-LoaderAndValidationLayers`) and run the script:
-
-    ./update_external_sources.sh
-
-This script downloads and builds the `glslang` and `MoltenVK` repositories.
-
 ### MacOS build
 
 #### CMake Generators
@@ -386,74 +372,6 @@ For example:
 
     make -j4
 
-You can now run the demo applications from the command line:
-
-    open demos/cube.app
-    open demos/cubepp.app
-    open demos/smoketest.app
-    open demos/vulkaninfo.app
-
-Or you can locate them from `Finder` and launch them from there.
-
-##### The Install Target and RPATH
-
-The applications you just built are "bundled applications", but the executables
-are using the `RPATH` mechanism to locate runtime dependencies that are still
-in your build tree.
-
-To see this, run this command from your `build` directory:
-
-    otool -l demos/cube.app/Contents/MacOS/cube
-
-and note that the `cube` executable contains loader commands:
-
-- `LC_LOAD_DYLIB` to load `libvulkan.1.dylib` via an `@rpath`
-- `LC_RPATH` that contains an absolute path to the build location of the Vulkan loader
-
-This makes the bundled application "non-transportable", meaning that it won't run
-unless the Vulkan loader is on that specific absolute path.
-This is useful for debugging the loader or other components built in this repository,
-but not if you want to move the application to another machine or remove your build tree.
-
-To address this problem, run:
-
-    make install
-
-This step "cleans up" the `RPATH` to remove any external references
-and performs other bundle fix-ups.
-After running `make install`, re-run the `otool` command again and note:
-
-- `LC_LOAD_DYLIB` is now `@executable_path/../MacOS/libvulkan.1.dylib`
-- `LC_RPATH` is no longer present
-
-The "bundle fix-up" operation also puts a copy of the Vulkan loader into the bundle,
-making the bundle completely self-contained and self-referencing.
-
-Note that the "install" target has a very different meaning compared to the Linux
-"make install" target.
-The Linux "install" copies the targets to system directories.
-In MacOS, "install" means fixing up application bundles.
-In both cases, the "install" target operations clean up the `RPATH`.
-
-##### The Non-bundled vulkaninfo Application
-
-There is also a non-bundled version of the `vulkaninfo` application that you can
-run from the command line:
-
-    demos/vulkaninfo
-
-If you run this before you run "make install", vulkaninfo's RPATH is already set
-to point to the Vulkan loader in the build tree, so it has no trouble finding it.
-But the loader will not find the MoltenVK driver and you'll see a message about an
-incompatible driver.  To remedy this:
-
-    VK_ICD_FILENAMES=../external/MoltenVK/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json demos/vulkaninfo
-
-If you run `vulkaninfo` after doing a "make install", the `RPATH` in the `vulkaninfo` application
-got removed and the OS needs extra help to locate the Vulkan loader:
-
-    DYLD_LIBRARY_PATH=loader VK_ICD_FILENAMES=../external/MoltenVK/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json demos/vulkaninfo
-
 #### Building with the Xcode Generator
 
 To create and open an Xcode project:
@@ -461,10 +379,29 @@ To create and open an Xcode project:
         mkdir build-xcode
         cd build-xcode
         cmake -GXcode ..
-        open VULKAN.xcodeproj
+        open Vulkan-Loader.xcodeproj
 
 Within Xcode, you can select Debug or Release builds in the project's Build Settings.
-You can also select individual schemes for working with specific applications like `cube`.
+
+### Using the new loader
+
+If you want to test a Vulkan application with the loader you just built, you can direct the application to load it from your build directory:
+
+        export DYLD_LIBRARY_PATH=<path to your repository>/build/loader
+
+### MacOS Tests
+
+The Vulkan-Loader repository contains some simple unit tests for the loader but no other test clients.
+
+Before you run these tests, you will need to clone and build the [MoltenVK](https://github.com/KhronosGroup/MoltenVK) repository.
+
+You will also need to direct your new loader to the MoltenVK ICD:
+
+        export VK_ICD_FILENAMES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+
+To run the loader test script, change to the `build/tests` directory in your Vulkan-Loader repository, and run:
+
+        ./vk_loader_validation_tests
 
 ## Ninja Builds - All Platforms
 
