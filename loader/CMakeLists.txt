@@ -234,25 +234,24 @@ else()
         target_link_libraries(${API_LOWERCASE} "-framework CoreFoundation")
 
         # Build vulkan.framework
-        set(VULKAN_HEADERS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/Vulkan-Headers/include/vulkan)
         set(FRAMEWORK_HEADERS
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vk_icd.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vk_layer.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vk_platform.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vk_sdk_platform.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_android.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_core.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_ios.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_macos.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_mir.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_vi.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_wayland.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_win32.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_xcb.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_xlib.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan_xlib_xrandr.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan.h
-            ${VULKAN_HEADERS_INCLUDE_DIR}/vulkan.hpp
+            ${HEADERS_DIR}/include/vulkan/vk_icd.h
+            ${HEADERS_DIR}/include/vulkan/vk_layer.h
+            ${HEADERS_DIR}/include/vulkan/vk_platform.h
+            ${HEADERS_DIR}/include/vulkan/vk_sdk_platform.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_android.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_core.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_ios.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_macos.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_mir.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_vi.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_wayland.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_win32.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_xcb.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_xlib.h
+            ${HEADERS_DIR}/include/vulkan/vulkan_xlib_xrandr.h
+            ${HEADERS_DIR}/include/vulkan/vulkan.h
+            ${HEADERS_DIR}/include/vulkan/vulkan.hpp
         )
         add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
         add_dependencies(vulkan-framework generate_helper_files loader_gen_files loader_asm_gen_files)

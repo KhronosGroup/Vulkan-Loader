@@ -75,14 +75,15 @@ if(WIN32)
 endif()
 
 set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
+set(HEADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
 
 # Output warning if vulkan headers submodule contents are not present
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/Vulkan-Headers/include/vulkan/vulkan_core.h")
+if (NOT EXISTS "${HEADERS_DIR}/include/vulkan/vulkan_core.h")
     message(FATAL_ERROR "Please run 'git submodule update --init' before running cmake")
 endif()
 
 # Add location of Vulkan header files to include search path
-set(vulkan_include_dir "${PROJECT_SOURCE_DIR}/Vulkan-Headers/include")
+set(vulkan_include_dir "${HEADERS_DIR}/include")
 include_directories(${vulkan_include_dir})
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -131,8 +132,8 @@ set (PYTHON_CMD ${PYTHON_EXECUTABLE})
 # Define macro used for building vkxml generated files
 macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
-    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${SCRIPTS_DIR}/vk.xml ${output}
-    DEPENDS ${SCRIPTS_DIR}/vk.xml ${SCRIPTS_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${SCRIPTS_DIR}/reg.py
+    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${HEADERS_DIR}/registry/vk.xml ${output}
+    DEPENDS ${HEADERS_DIR}/registry/vk.xml ${SCRIPTS_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${SCRIPTS_DIR}/reg.py
     )
 endmacro()
 
@@ -173,7 +174,7 @@ if(NOT WIN32)
 endif()
 
 if(UNIX)
-    install(DIRECTORY "${PROJECT_SOURCE_DIR}/Vulkan-Headers/include/vulkan" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(DIRECTORY "${HEADERS_DIR}/include/vulkan" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vk_layer_dispatch_table.h" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/vulkan")
 
 # uninstall target
