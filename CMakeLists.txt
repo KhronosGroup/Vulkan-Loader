@@ -6,13 +6,6 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment ve
 project(Vulkan-Loader)
 set (CMAKE_VERBOSE_MAKEFILE 0)
 
-# The API_NAME allows renaming builds to avoid conflicts with installed SDKs
-# The MAJOR number of the version we're building, used in naming
-# <api-name>-<major>.dll (and other files).
-set(API_NAME "Vulkan" CACHE STRING "API name to use when building")
-set(MAJOR "1")
-string(TOLOWER ${API_NAME} API_LOWERCASE)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 REQUIRED)
 
@@ -188,7 +181,7 @@ add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
 
-add_definitions(-DAPI_NAME="${API_NAME}")
+add_definitions(-DAPI_NAME="Vulkan")
 
 if(BUILD_LOADER)
     add_subdirectory(loader)
