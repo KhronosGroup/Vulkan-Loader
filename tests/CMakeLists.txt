@@ -88,13 +88,6 @@ else()
     endif()
 endif()
 
-if(WIN32)
-   set (LIBVK "${API_LOWERCASE}-${MAJOR}")
-elseif(UNIX)
-   set (LIBVK "${API_LOWERCASE}")
-else()
-endif()
-
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
 set_target_properties(vk_loader_validation_tests
    PROPERTIES
@@ -105,7 +98,7 @@ if(NOT WIN32)
         COMPILE_FLAGS "-Wno-sign-compare")
 endif()
 
-target_link_libraries(vk_loader_validation_tests ${LIBVK} gtest gtest_main)
+target_link_libraries(vk_loader_validation_tests vulkan gtest gtest_main)
 if(BUILD_LOADER AND ENABLE_STATIC_LOADER)
     set_target_properties(vk_loader_validation_tests PROPERTIES LINK_FLAGS "/ignore:4098")
 endif()

@@ -55,13 +55,6 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-if (WIN32)
-	FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-${MAJOR}.def DEF_FILE)
-	FILE(READ ${DEF_FILE} DEF_TEXT)
-	STRING(REGEX REPLACE "vulkan-${MAJOR}.dll" "${API_LOWERCASE}-${MAJOR}.dll" DEF_EDITED "${DEF_TEXT}" )
-	FILE(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${API_LOWERCASE}-${MAJOR}.def" "${DEF_EDITED}")
-endif()
-
 # DEBUG enables runtime loader ICD verification
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
@@ -182,31 +175,31 @@ if (WIN32)
         target_compile_definitions(loader-norm PUBLIC LOADER_DYNAMIC_LIB)
         target_compile_definitions(loader-opt PUBLIC LOADER_DYNAMIC_LIB)
 
-        add_library(vulkan-1 SHARED $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm> ${CMAKE_CURRENT_BINARY_DIR}/vulkan-1.def ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
-        set_target_properties(vulkan-1 PROPERTIES LINK_FLAGS_DEBUG "/ignore:4098")
+        add_library(vulkan SHARED $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm> ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
+        set_target_properties(vulkan PROPERTIES LINK_FLAGS_DEBUG "/ignore:4098" OUTPUT_NAME vulkan-1)
     else()
-        add_library(vulkan-1 STATIC $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm>)
-        set_target_properties(vulkan-1 PROPERTIES OUTPUT_NAME VKstatic.1)
+        add_library(vulkan STATIC $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm>)
+        set_target_properties(vulkan PROPERTIES OUTPUT_NAME VKstatic.1)
     endif()
 
     if (ENABLE_WIN10_ONECORE)
-        target_link_libraries(${API_LOWERCASE}-${MAJOR} OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
-        set_target_properties(${API_LOWERCASE}-${MAJOR} PROPERTIES LINK_FLAGS   "/NODEFAULTLIB")
+        target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
+        set_target_properties(vulkan PROPERTIES LINK_FLAGS   "/NODEFAULTLIB")
     else()
-        target_link_libraries(${API_LOWERCASE}-${MAJOR} Cfgmgr32)
+        target_link_libraries(vulkan Cfgmgr32)
     endif()
 
-    add_dependencies(${API_LOWERCASE}-${MAJOR} generate_helper_files loader_gen_files loader_asm_gen_files)
+    add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
 
     if(BUILD_TESTS AND NOT ENABLE_STATIC_LOADER)
         if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${API_LOWERCASE}-${MAJOR}.dll COPY_SRC_PATH)
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/vulkan-1.dll COPY_SRC_PATH)
             file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/$<CONFIGURATION>/ COPY_DST_TEST_PATH)
         else()
-            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${API_LOWERCASE}-${MAJOR}.dll COPY_SRC_PATH)
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/vulkan-1.dll COPY_SRC_PATH)
             file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/ COPY_DST_TEST_PATH)
         endif()
-        add_custom_command(TARGET ${API_LOWERCASE}-${MAJOR} POST_BUILD
+        add_custom_command(TARGET vulkan POST_BUILD
             COMMAND xcopy /Y /I ${COPY_SRC_PATH} ${COPY_DST_TEST_PATH})
     endif()
 
@@ -220,15 +213,15 @@ else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
     endif()
 
-    add_library(${API_LOWERCASE} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-    add_dependencies(${API_LOWERCASE} generate_helper_files loader_gen_files loader_asm_gen_files)
-    target_compile_definitions(${API_LOWERCASE} PUBLIC -DLOADER_DYNAMIC_LIB)
-    set_target_properties(${API_LOWERCASE} PROPERTIES SOVERSION "1" VERSION "1.1.${vk_header_version}")
-    target_link_libraries(${API_LOWERCASE} -ldl -lpthread -lm)
+    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+    add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
+    target_compile_definitions(vulkan PUBLIC -DLOADER_DYNAMIC_LIB)
+    set_target_properties(vulkan PROPERTIES SOVERSION "1" VERSION "1.1.${vk_header_version}")
+    target_link_libraries(vulkan -ldl -lpthread -lm)
 
     if(APPLE)
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
-        target_link_libraries(${API_LOWERCASE} "-framework CoreFoundation")
+        target_link_libraries(vulkan "-framework CoreFoundation")
 
         # Build vulkan.framework
         set(FRAMEWORK_HEADERS
@@ -276,7 +269,7 @@ else()
         )
     endif(APPLE)
 
-    install(TARGETS ${API_LOWERCASE} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(TARGETS vulkan LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
     if(NOT APPLE)
         # Generate pkg-config file.
