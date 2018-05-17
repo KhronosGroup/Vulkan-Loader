@@ -106,6 +106,9 @@ if(NOT WIN32)
 endif()
 
 target_link_libraries(vk_loader_validation_tests ${LIBVK} gtest gtest_main)
+if(BUILD_LOADER AND ENABLE_STATIC_LOADER)
+    set_target_properties(vk_loader_validation_tests PROPERTIES LINK_FLAGS "/ignore:4098")
+endif()
 
 SET(GTEST_RELATIVE_LOCATION googletest)
 SET(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")

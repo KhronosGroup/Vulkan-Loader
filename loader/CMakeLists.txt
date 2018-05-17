@@ -157,7 +157,7 @@ if (WIN32)
     endforeach()
 
     if (ENABLE_WIN10_ONECORE)
-    # Note  When linking your app or driver to OneCore.lib, be sure to remove any links to non-umbrella libs (such as kernel32.lib). 
+    # Note  When linking your app or driver to OneCore.lib, be sure to remove any links to non-umbrella libs (such as kernel32.lib).
         set(CMAKE_CXX_STANDARD_LIBRARIES " ") # space is intentional
         set(CMAKE_C_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES})
     endif()
@@ -170,29 +170,24 @@ if (WIN32)
     set(CMAKE_C_FLAGS_DEBUG " ")
     separate_arguments(LOCAL_C_FLAGS_REL WINDOWS_COMMAND ${CMAKE_C_FLAGS_RELEASE})
 
-    add_library(loader-norm-dy OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
-    add_dependencies(loader-norm-dy generate_helper_files loader_gen_files)
-    target_compile_definitions(loader-norm-dy PUBLIC LOADER_DYNAMIC_LIB)
-    target_compile_options(loader-norm-dy PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
+    add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
+    add_dependencies(loader-norm generate_helper_files loader_gen_files)
+    target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
 
-    add_library(loader-opt-dy OBJECT ${OPT_LOADER_SRCS})
-    add_dependencies(loader-opt-dy generate_helper_files loader_gen_files loader_asm_gen_files)
-    target_compile_definitions(loader-opt-dy PUBLIC LOADER_DYNAMIC_LIB)
-    target_compile_options(loader-opt-dy PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
+    add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
+    add_dependencies(loader-opt generate_helper_files loader_gen_files loader_asm_gen_files)
+    target_compile_options(loader-opt PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
 
-    add_library(loader-norm-st OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
-    add_dependencies(loader-norm-st generate_helper_files loader_gen_files)
-    target_compile_options(loader-norm-st PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
+    if(NOT ENABLE_STATIC_LOADER)
+        target_compile_definitions(loader-norm PUBLIC LOADER_DYNAMIC_LIB)
+        target_compile_definitions(loader-opt PUBLIC LOADER_DYNAMIC_LIB)
 
-    add_library(loader-opt-st OBJECT ${OPT_LOADER_SRCS})
-    add_dependencies(loader-opt-st generate_helper_files loader_gen_files loader_asm_gen_files)
-    target_compile_options(loader-opt-st PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
-
-    add_library(${API_LOWERCASE}-${MAJOR} SHARED $<TARGET_OBJECTS:loader-opt-dy> $<TARGET_OBJECTS:loader-norm-dy> ${CMAKE_CURRENT_BINARY_DIR}/${API_LOWERCASE}-${MAJOR}.def ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
-    add_library(VKstatic.${MAJOR} STATIC $<TARGET_OBJECTS:loader-opt-st> $<TARGET_OBJECTS:loader-norm-st>)
-    # Suppress conflicting libs warning for debug builds.
-    set_target_properties(${API_LOWERCASE}-${MAJOR} PROPERTIES LINK_FLAGS_DEBUG /ignore:4098)
-    set_target_properties(VKstatic.${MAJOR} PROPERTIES OUTPUT_NAME VKstatic.${MAJOR})
+        add_library(vulkan-1 SHARED $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm> ${CMAKE_CURRENT_BINARY_DIR}/vulkan-1.def ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
+        set_target_properties(vulkan-1 PROPERTIES LINK_FLAGS_DEBUG "/ignore:4098")
+    else()
+        add_library(vulkan-1 STATIC $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm>)
+        set_target_properties(vulkan-1 PROPERTIES OUTPUT_NAME VKstatic.1)
+    endif()
 
     if (ENABLE_WIN10_ONECORE)
         target_link_libraries(${API_LOWERCASE}-${MAJOR} OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
@@ -203,15 +198,17 @@ if (WIN32)
 
     add_dependencies(${API_LOWERCASE}-${MAJOR} generate_helper_files loader_gen_files loader_asm_gen_files)
 
-    if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${API_LOWERCASE}-${MAJOR}.dll COPY_SRC_PATH)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/$<CONFIGURATION>/ COPY_DST_TEST_PATH)
-    else()
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${API_LOWERCASE}-${MAJOR}.dll COPY_SRC_PATH)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/ COPY_DST_TEST_PATH)
+    if(BUILD_TESTS AND NOT ENABLE_STATIC_LOADER)
+        if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${API_LOWERCASE}-${MAJOR}.dll COPY_SRC_PATH)
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/$<CONFIGURATION>/ COPY_DST_TEST_PATH)
+        else()
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${API_LOWERCASE}-${MAJOR}.dll COPY_SRC_PATH)
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/ COPY_DST_TEST_PATH)
+        endif()
+        add_custom_command(TARGET ${API_LOWERCASE}-${MAJOR} POST_BUILD
+            COMMAND xcopy /Y /I ${COPY_SRC_PATH} ${COPY_DST_TEST_PATH})
     endif()
-    add_custom_command(TARGET ${API_LOWERCASE}-${MAJOR} POST_BUILD
-      COMMAND xcopy /Y /I ${COPY_SRC_PATH} ${COPY_DST_TEST_PATH})
 
 else()
     # Linux and MacOS

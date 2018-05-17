@@ -72,6 +72,7 @@ endif()
 
 if(WIN32)
     option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
+    option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
 endif()
 
 set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
