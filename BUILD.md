@@ -434,3 +434,38 @@ requiring that the LIB, INCLUDE, and PATHenv variables be set to the WDK paths b
 - [Ninja Users Manual](https://ninja-build.org/manual.html)
 
 - [QtCreator as IDE for CMake builds on all platforms](https://qt.io/download-open-source/#section-2)
+
+## Build Options
+
+When generating native platform build files through CMake, several options can be specified to customize the build.
+Some of the options are binary on/off options, while others take a string as input.
+The following is a table of all on/off options currently supported by this repository:
+
+| Option | Platform | Default | Description |
+| ------ | -------- | ------- | ----------- |
+| BUILD_LOADER | All | `ON` | Controls whether or not the loader is built. Setting this to `OFF` will allow building the tests against a loader that is installed to the system. |
+| BUILD_TESTS | All | `ON` | Controls whether or not the loader tests are built. |
+| BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the loader with the XCB entry points enabled. Without this, the XCB headers should not be needed, but the extension `VK_KHR_xcb_surface` won't be available. |
+| BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the loader with the Xlib entry points enabled. Without this, the X11 headers should not be needed, but the extension `VK_KHR_xlib_surface` won't be available. |
+| BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the loader with the Wayland entry points enabled. Without this, the Wayland headers should not be needed, but the extension `VK_KHR_wayland_surface` won't be available. |
+| BUILD_WSI_MIR_SUPPORT | Linux | `OFF` | Build the loader with the Mir entry points enabled. Without this, the Mir headers should not be needed, but the extension `VK_KHR_mir_surface` won't be available. |
+| ENABLE_STATIC_LOADER | Windows | `OFF` | By default, the loader is built as a dynamic library. This allows it to be built as a static library, instead. |
+| ENABLE_WIN10_ONECORE | Windows | `OFF` | Link the loader to the [OneCore](https://msdn.microsoft.com/en-us/library/windows/desktop/mt654039.aspx) umbrella library, instead of the standard Win32 ones. |
+| USE_CCACHE | Linux | `OFF` | Enable caching with the CCache program. |
+
+The following is a table of all string options currently supported by this repsitory:
+
+| Option | Platform | Default | Description |
+| ------ | -------- | ------- | ----------- |
+| CMAKE_OSX_DEPLOYMENT_TARGET | MacOS | `10.12` | The minimum version of MacOS for loader deployment. |
+| FALLBACK_CONFIG_DIRS | Linux/MacOS | `/etc/xdg` | Configuration path(s) to use instead of `XDG_CONFIG_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
+| FALLBACK_DATA_DIRS | Linux/MacOS | `/usr/local/share:/usr/share` | Configuration path(s) to use instead of `XDG_DATA_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
+
+These environment variables should be set using the `-D` flag when invoking CMake to generate the native platform files.
+For example, to generate a Linux makefile with the tests disabled and a custom configuration directory, one would run:
+
+```
+cmake .. -DBUILD_TESTS=OFF -DFALLBACK_CONFIG_DIRS=/my/custom/location
+```
+
+The directory can then be built as usual, which on Linux would simply be the `make` command.
