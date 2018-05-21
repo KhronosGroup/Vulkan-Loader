@@ -114,6 +114,9 @@ target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_mai
 if(BUILD_LOADER AND ENABLE_STATIC_LOADER)
     set_target_properties(vk_loader_validation_tests PROPERTIES LINK_FLAGS "/ignore:4098")
 endif()
+if(WIN32)
+    file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
 
 SET(GTEST_RELATIVE_LOCATION googletest)
 SET(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
