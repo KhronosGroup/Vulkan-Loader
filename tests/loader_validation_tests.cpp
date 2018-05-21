@@ -448,8 +448,8 @@ TEST(CreateInstance, LayerNotPresent) {
 
 // Used by run_loader_tests.sh to test for layer insertion.
 TEST(CreateInstance, LayerPresent) {
-    char const *const names1[] = {"VK_LAYER_LUNARG_parameter_validation"};  // Temporary required due to MSVC bug.
-    char const *const names2[] = {"VK_LAYER_LUNARG_standard_validation"};   // Temporary required due to MSVC bug.
+    char const *const names1[] = {"VK_LAYER_LUNARG_test"};  // Temporary required due to MSVC bug.
+    char const *const names2[] = {"VK_LAYER_LUNARG_meta"};  // Temporary required due to MSVC bug.
     auto const info1 = VK::InstanceCreateInfo().enabledLayerCount(1).ppEnabledLayerNames(names1);
     VkInstance instance = VK_NULL_HANDLE;
     VkResult result = vkCreateInstance(info1, VK_NULL_HANDLE, &instance);
@@ -556,9 +556,8 @@ TEST(EnumeratePhysicalDevices, TwoCallIncomplete) {
 
 // Test to make sure that layers enabled in the instance show up in the list of device layers.
 TEST(EnumerateDeviceLayers, LayersMatch) {
-    char const *const names1[] = {"VK_LAYER_LUNARG_standard_validation"};
-    char const *const names2[3] = {"VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_core_validation",
-                                   "VK_LAYER_LUNARG_object_tracker"};
+    char const *const names1[] = {"VK_LAYER_LUNARG_meta"};
+    char const *const names2[2] = {"VK_LAYER_LUNARG_test", "VK_LAYER_LUNARG_wrap_objects"};
     auto const info1 = VK::InstanceCreateInfo().enabledLayerCount(1).ppEnabledLayerNames(names1);
     VkInstance instance = VK_NULL_HANDLE;
     VkResult result = vkCreateInstance(info1, VK_NULL_HANDLE, &instance);
@@ -590,7 +589,7 @@ TEST(EnumerateDeviceLayers, LayersMatch) {
 
     vkDestroyInstance(instance, nullptr);
 
-    auto const info2 = VK::InstanceCreateInfo().enabledLayerCount(3).ppEnabledLayerNames(names2);
+    auto const info2 = VK::InstanceCreateInfo().enabledLayerCount(2).ppEnabledLayerNames(names2);
     instance = VK_NULL_HANDLE;
     result = vkCreateInstance(info2, VK_NULL_HANDLE, &instance);
     ASSERT_EQ(result, VK_SUCCESS);
@@ -607,8 +606,8 @@ TEST(EnumerateDeviceLayers, LayersMatch) {
 
     count = 24;
     vkEnumerateDeviceLayerProperties(physical2[0], &count, layer_props);
-    ASSERT_GE(count, 3u);
-    for (uint32_t jjj = 0; jjj < 3; jjj++) {
+    ASSERT_GE(count, 2u);
+    for (uint32_t jjj = 0; jjj < 2; jjj++) {
         found = false;
         for (uint32_t iii = 0; iii < count; iii++) {
             if (!strcmp(layer_props[iii].layerName, names2[jjj])) {

@@ -22,7 +22,7 @@ RunEnvironmentVariablePathsTest()
        GTEST_FILTER=CreateInstance.LayerPresent \
        ./vk_loader_validation_tests 2>&1)
 
-    # Here is a path we expect to find.  The loader constructs these from the XDG* env vars. 
+    # Here is a path we expect to find.  The loader constructs these from the XDG* env vars.
     right_path="/tmp/goober/vulkan/icd.d:/tmp/goober2/vulkan/icd.d:/tmp/goober3/with spaces/vulkan/icd.d"
     # There are other paths that come from SYSCONFIG settings established at build time.
     # So we can't really guess at what those are here.
@@ -65,12 +65,12 @@ RunCreateInstanceTest()
        GTEST_FILTER=CreateInstance.LayerPresent \
        ./vk_loader_validation_tests 2>&1)
 
-    echo "$output" | grep -q "Insert instance layer VK_LAYER_LUNARG_parameter_validation"
+    echo "$output" | grep -q "Insert instance layer VK_LAYER_LUNARG_test"
     ec=$?
 
     if [ $ec -eq 1 ]
     then
-       echo "CreateInstance insertion test FAILED - parameter-validation not detected in instance layers" >&2
+       echo "CreateInstance insertion test FAILED - test layer not detected in instance layers" >&2
        exit 1
     fi
     echo "CreateInstance Insertion test PASSED"
@@ -132,6 +132,7 @@ RunEnumerateInstanceExtensionPropertiesTest()
     echo "EnumerateInstanceExtensionProperties OnePass vs TwoPass test PASSED"
 }
 
+VK_LAYER_PATH="$PWD/layers"
 ./vk_loader_validation_tests
 
 RunEnvironmentVariablePathsTest

@@ -3,13 +3,15 @@ cmake_minimum_required (VERSION 2.8.11)
 set(LAYER_JSON_FILES
     VkLayer_wrap_objects
     VkLayer_test
-    )
+    VkLayer_meta
+)
 
 set(VK_LAYER_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
 set(CMAKE_INSTALL_RPATH ${VK_LAYER_RPATH})
 
 if (WIN32)
     if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
+        add_custom_target(mk_test_layer_config_dir ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
         foreach (config_file ${LAYER_JSON_FILES})
             FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${config_file}.json src_json)
             if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
@@ -21,7 +23,7 @@ if (WIN32)
                 COMMAND copy ${src_json} ${dst_json}
                 VERBATIM
                 )
-            add_dependencies(${config_file}-json ${config_file})
+            add_dependencies(${config_file}-json mk_test_layer_config_dir)
             set_target_properties(${config_file}-json PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
         endforeach(config_file)
     endif()
