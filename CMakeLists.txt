@@ -126,7 +126,7 @@ set (PYTHON_CMD ${PYTHON_EXECUTABLE})
 macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
     COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${HEADERS_DIR}/registry/vk.xml ${output}
-    DEPENDS ${HEADERS_DIR}/registry/vk.xml ${SCRIPTS_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${SCRIPTS_DIR}/reg.py
+    DEPENDS ${HEADERS_DIR}/registry/vk.xml ${HEADERS_DIR}/registry/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${HEADERS_DIR}/registry/reg.py
     )
 endmacro()
 
