@@ -14,11 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, cProfile, pdb, string, sys, time
+import argparse, cProfile, pdb, string, sys, time, os
+
+scripts_dir = os.path.dirname(os.path.abspath(__file__))
+registry_dir = os.path.join(scripts_dir, '../Vulkan-Headers/registry')
+sys.path.insert(0, registry_dir)
+
 from reg import *
 from generator import write
 from cgenerator import CGeneratorOptions, COutputGenerator
-# LoaderAndValidationLayer Generator Modifications
+# Loader Generator Modifications
 from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
 from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
 from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
