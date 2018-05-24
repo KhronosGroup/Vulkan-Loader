@@ -78,11 +78,6 @@ static const char UTF8_THREE_BYTE_MASK = 0xF8;
 static const char UTF8_DATA_BYTE_CODE = 0x80;
 static const char UTF8_DATA_BYTE_MASK = 0xC0;
 
-struct VkStructureHeader {
-    VkStructureType sType;
-    const void *pNext;
-};
-
 // form of all dynamic lists/arrays
 // only the list element should be changed
 struct loader_generic_list {

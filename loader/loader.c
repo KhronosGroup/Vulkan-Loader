@@ -4815,8 +4815,8 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
     // need to replace all the incoming physical device values (which are really loader trampoline physical device values)
     // with the layer/ICD version.
     {
-        struct VkStructureHeader *pNext = (struct VkStructureHeader *)loader_create_info.pNext;
-        struct VkStructureHeader *pPrev = (struct VkStructureHeader *)&loader_create_info;
+        VkBaseOutStructure *pNext = (VkBaseOutStructure *)loader_create_info.pNext;
+        VkBaseOutStructure *pPrev = (VkBaseOutStructure *)&loader_create_info;
         while (NULL != pNext) {
             if (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO == pNext->sType) {
                 VkDeviceGroupDeviceCreateInfoKHR *cur_struct = (VkDeviceGroupDeviceCreateInfoKHR *)pNext;
@@ -4842,14 +4842,14 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
                     temp_struct->pPhysicalDevices = phys_dev_array;
 
                     // Replace the old struct in the pNext chain with this one.
-                    pPrev->pNext = (const void *)temp_struct;
-                    pNext = (struct VkStructureHeader *)(temp_struct);
+                    pPrev->pNext = (VkBaseOutStructure *)temp_struct;
+                    pNext = (VkBaseOutStructure *)temp_struct;
                 }
                 break;
             }
 
             pPrev = pNext;
-            pNext = (struct VkStructureHeader *)(pPrev->pNext);
+            pNext = pNext->pNext;
         }
     }
 
@@ -5393,7 +5393,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     PFN_vkCreateDevice fpCreateDevice = icd_term->dispatch.CreateDevice;
     struct loader_extension_list icd_exts;
 
-    struct VkStructureHeader *caller_dgci_container = NULL;
+    VkBaseOutStructure *caller_dgci_container = NULL;
     VkDeviceGroupDeviceCreateInfoKHR *caller_dgci = NULL;
 
     dev->phys_dev_term = phys_dev_term;
@@ -5464,8 +5464,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     // are really loader physical device terminator values) with the ICD versions.
     //if (icd_term->this_instance->enabled_known_extensions.khr_device_group_creation == 1) {
     {
-        struct VkStructureHeader *pNext = (struct VkStructureHeader *)localCreateInfo.pNext;
-        struct VkStructureHeader *pPrev = (struct VkStructureHeader *)&localCreateInfo;
+        VkBaseOutStructure *pNext = (VkBaseOutStructure *)localCreateInfo.pNext;
+        VkBaseOutStructure *pPrev = (VkBaseOutStructure *)&localCreateInfo;
         while (NULL != pNext) {
             if (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO == pNext->sType) {
                 VkDeviceGroupDeviceCreateInfo *cur_struct = (VkDeviceGroupDeviceCreateInfo *)pNext;
@@ -5495,14 +5495,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                     caller_dgci = cur_struct;
 
                     // Replace the old struct in the pNext chain with this one.
-                    pPrev->pNext = (const void *)temp_struct;
-                    pNext = (struct VkStructureHeader *)(temp_struct);
+                    pPrev->pNext = (VkBaseOutStructure *)temp_struct;
+                    pNext = (VkBaseOutStructure *)temp_struct;
                 }
                 break;
             }
 
             pPrev = pNext;
-            pNext = (struct VkStructureHeader *)(pPrev->pNext);
+            pNext = pNext->pNext;
         }
     }
 
@@ -5564,7 +5564,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                 // Multiview properties are also allowed, but since VK_KHX_multiview is a device extension, we'll just let the ICD
                 // handle that error when the user enables the extension here
                 default: {
-                    const struct VkStructureHeader *header = pNext;
+                    const VkBaseInStructure *header = pNext;
                     pNext = header->pNext;
                     break;
                 }
@@ -5608,7 +5608,7 @@ out:
     // Restore pNext pointer to old VkDeviceGroupDeviceCreateInfoKHX
     // in the chain to maintain consistency for the caller.
     if (caller_dgci_container != NULL) {
-        caller_dgci_container->pNext = caller_dgci;
+        caller_dgci_container->pNext = (VkBaseOutStructure *)caller_dgci;
     }
 
     return res;
@@ -6612,13 +6612,13 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
         // Write to the VkPhysicalDeviceFeatures2 struct
         icd_term->dispatch.GetPhysicalDeviceFeatures(phys_dev_term->phys_dev, &pFeatures->features);
 
-        void *pNext = pFeatures->pNext;
+        const VkBaseInStructure *pNext = pFeatures->pNext;
         while (pNext != NULL) {
-            switch (*(VkStructureType *)pNext) {
+            switch (pNext->sType) {
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: {
                     // Skip the check if VK_KHR_multiview is enabled because it's a device extension
                     // Write to the VkPhysicalDeviceMultiviewFeaturesKHR struct
-                    VkPhysicalDeviceMultiviewFeaturesKHR *multiview_features = pNext;
+                    VkPhysicalDeviceMultiviewFeaturesKHR *multiview_features = (VkPhysicalDeviceMultiviewFeaturesKHR *)pNext;
                     multiview_features->multiview = VK_FALSE;
                     multiview_features->multiviewGeometryShader = VK_FALSE;
                     multiview_features->multiviewTessellationShader = VK_FALSE;
@@ -6631,8 +6631,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
                                "vkGetPhysicalDeviceFeatures2: Emulation found unrecognized structure type in pFeatures->pNext - "
                                "this struct will be ignored");
 
-                    struct VkStructureHeader *header = pNext;
-                    pNext = (void *)header->pNext;
+                    pNext = pNext->pNext;
                     break;
                 }
             }
@@ -6666,11 +6665,11 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
         // Write to the VkPhysicalDeviceProperties2 struct
         icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &pProperties->properties);
 
-        void *pNext = pProperties->pNext;
+        const VkBaseInStructure *pNext = pProperties->pNext;
         while (pNext != NULL) {
-            switch (*(VkStructureType *)pNext) {
+            switch (pNext->sType) {
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES: {
-                    VkPhysicalDeviceIDPropertiesKHR *id_properties = pNext;
+                    VkPhysicalDeviceIDPropertiesKHR *id_properties = (VkPhysicalDeviceIDPropertiesKHR *)pNext;
 
                     // Verify that "VK_KHR_external_memory_capabilities" is enabled
                     if (icd_term->this_instance->enabled_known_extensions.khr_external_memory_capabilities) {
@@ -6692,8 +6691,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
                                "vkGetPhysicalDeviceProperties2KHR: Emulation found unrecognized structure type in "
                                "pProperties->pNext - this struct will be ignored");
 
-                    struct VkStructureHeader *header = pNext;
-                    pNext = (void *)header->pNext;
+                    pNext = pNext->pNext;
                     break;
                 }
             }
