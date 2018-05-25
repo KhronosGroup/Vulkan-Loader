@@ -91,7 +91,7 @@ For example:
 
     cmake -G "Visual Studio 14 2015 Win64" ..
 
-This creates a Windows 64-bit solution file named `VULKAN_LOADER.sln`
+This creates a Windows 64-bit solution file named `Vulkan-Loader.sln`
 in the build directory for Visual Studio 2015.
 
 At this point, you can build the solution from the command line or open the
@@ -111,9 +111,25 @@ to make a Release build.
 
 #### Build the solution with Visual Studio
 
-Launch Visual Studio and open the "VULKAN_LOADER.sln" solution file in the build folder.
+Launch Visual Studio and open the "Vulkan-Loader.sln" solution file in the build folder.
 You may select "Debug" or "Release" from the Solution Configurations drop-down list.
 Start a build by selecting the Build->Build Solution menu item.
+
+#### Windows Install Target
+
+The CMake project also generates an "install" target that you can use to
+copy the primary build artifacts to a specific location using a
+"bin, include, lib" style directory structure.
+This may be useful for collecting the artifacts and providing them to
+another project that is dependent on them.
+
+The default location is `$CMAKE_BINARY_DIR\install`, but can be changed
+with the `CMAKE_INSTALL_PREFIX` variable.
+You can build the install target with:
+
+    cmake --build . --config Release --target install
+
+or build the `INSTALL` target from the Visual Studio solution explorer.
 
 ### Windows Tests
 
@@ -244,6 +260,8 @@ For example, if you would like to install to `/tmp/build` instead of `/usr/local
     -DDEST_DIR=/tmp/build
 
 Then run `make install` as before. The install step places the files in `/tmp/build`.
+This may be useful for collecting the artifacts and providing them to
+another project that is dependent on them.
 
 Using the `CMAKE_INSTALL_PREFIX` to customize the install location also modifies
 the loader search paths to include searching for layers in the specified install location.
@@ -383,7 +401,7 @@ To create and open an Xcode project:
 
 Within Xcode, you can select Debug or Release builds in the project's Build Settings.
 
-### Using the new loader
+### Using the new macOS loader
 
 If you want to test a Vulkan application with the loader you just built, you can direct the application to load it from your build directory:
 
@@ -464,7 +482,7 @@ The following is a table of all string options currently supported by this repsi
 These environment variables should be set using the `-D` flag when invoking CMake to generate the native platform files.
 For example, to generate a Linux makefile with the tests disabled and a custom configuration directory, one would run:
 
-```
+```shell
 cmake .. -DBUILD_TESTS=OFF -DFALLBACK_CONFIG_DIRS=/my/custom/location
 ```
 
