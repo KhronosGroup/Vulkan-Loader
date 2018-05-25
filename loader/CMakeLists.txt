@@ -269,8 +269,6 @@ else()
         )
     endif(APPLE)
 
-    install(TARGETS vulkan LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
     if(NOT APPLE)
         # Generate pkg-config file.
         include(FindPkgConfig QUIET)
@@ -285,3 +283,8 @@ else()
         endif()
     endif()
 endif()
+
+install(TARGETS vulkan
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

@@ -18,6 +18,12 @@ if (USE_CCACHE)
     endif(CCACHE_FOUND)
 endif()
 
+include(GNUInstallDirs)
+# Set a better default install location for Windows only if the user did not provide one.
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND WIN32)
+    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE )
+endif()
+
 if(APPLE)
     # CMake versions 3 or later need CMAKE_MACOSX_RPATH defined.
     # This avoids the CMP0042 policy message.
@@ -154,8 +160,6 @@ run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
 run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
 
 if(NOT WIN32)
-    include(GNUInstallDirs)
-
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
     add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
     add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
@@ -166,19 +170,16 @@ if(NOT WIN32)
     endif()
 endif()
 
-if(UNIX)
-    install(DIRECTORY "${HEADERS_DIR}/include/vulkan" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vk_layer_dispatch_table.h" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/vulkan")
+install(DIRECTORY "${HEADERS_DIR}/include/vulkan" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vk_layer_dispatch_table.h" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/vulkan")
 
 # uninstall target
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
     IMMEDIATE @ONLY)
-
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif()
 
 add_definitions(-DAPI_NAME="Vulkan")
 
