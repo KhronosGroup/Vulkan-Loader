@@ -170,7 +170,6 @@ if(NOT WIN32)
     endif()
 endif()
 
-install(DIRECTORY "${HEADERS_DIR}/include/vulkan" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vk_layer_dispatch_table.h" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/vulkan")
 
 # uninstall target
