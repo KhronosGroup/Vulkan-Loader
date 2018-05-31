@@ -315,6 +315,7 @@ struct loader_instance {
     bool wsi_ios_surface_enabled;
 #endif
     bool wsi_display_enabled;
+    bool wsi_display_props2_enabled;
 };
 
 // VkPhysicalDevice requires special treatment by loader.  Firstly, terminator

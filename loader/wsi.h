@@ -163,4 +163,20 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDevicePresentRectanglesKHR(
                                                                                 uint32_t* pRectCount,
                                                                                 VkRect2D* pRects);
 
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                                 uint32_t *pPropertyCount,
+                                                                                 VkDisplayProperties2KHR *pProperties);
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                                      uint32_t *pPropertyCount,
+                                                                                      VkDisplayPlaneProperties2KHR *pProperties);
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                                       uint32_t *pPropertyCount,
+                                                                       VkDisplayModeProperties2KHR *pProperties);
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                          const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
+                                                                          VkDisplayPlaneCapabilities2KHR *pCapabilities);
+
 #endif // WSI_H

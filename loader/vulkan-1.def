@@ -211,3 +211,8 @@ EXPORTS
    vkCreateDescriptorUpdateTemplate
    vkDestroyDescriptorUpdateTemplate
    vkUpdateDescriptorSetWithTemplate
+
+   vkGetPhysicalDeviceDisplayProperties2KHR
+   vkGetPhysicalDeviceDisplayPlaneProperties2KHR
+   vkGetDisplayModeProperties2KHR
+   vkGetDisplayPlaneCapabilities2KHR
