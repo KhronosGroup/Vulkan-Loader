@@ -38,7 +38,8 @@ WSI_EXT_NAMES = ['VK_KHR_surface',
                  'VK_MVK_macos_surface',
                  'VK_MVK_ios_surface',
                  'VK_KHR_swapchain',
-                 'VK_KHR_display_swapchain']
+                 'VK_KHR_display_swapchain',
+                 'VK_KHR_get_display_properties2']
 
 ADD_INST_CMDS = ['vkCreateInstance',
                  'vkEnumerateInstanceExtensionProperties',
@@ -59,7 +60,7 @@ DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkDebugMarkerSetObjectNameEXT',
                          'vkSetDebugUtilsObjectNameEXT',
                          'vkSetDebugUtilsObjectTagEXT']
-                         
+
 ALIASED_CMDS = {
     'vkEnumeratePhysicalDeviceGroupsKHR':                   'vkEnumeratePhysicalDeviceGroups',
     'vkGetPhysicalDeviceFeatures2KHR':                      'vkGetPhysicalDeviceFeatures2',
@@ -890,7 +891,11 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                                'vkGetRandROutputDisplayEXT',
                                'vkGetPhysicalDeviceExternalBufferPropertiesKHR',
                                'vkGetPhysicalDeviceExternalSemaphorePropertiesKHR',
-                               'vkGetPhysicalDeviceExternalFencePropertiesKHR']
+                               'vkGetPhysicalDeviceExternalFencePropertiesKHR',
+                               'vkGetPhysicalDeviceDisplayProperties2KHR',
+                               'vkGetPhysicalDeviceDisplayPlaneProperties2KHR',
+                               'vkGetDisplayModeProperties2KHR',
+                               'vkGetDisplayPlaneCapabilities2KHR']
 
         for ext_cmd in self.ext_commands:
             if (ext_cmd.ext_name in WSI_EXT_NAMES or
