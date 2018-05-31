@@ -9,6 +9,12 @@ set (CMAKE_VERBOSE_MAKEFILE 0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 REQUIRED)
 
+find_package(VulkanHeaders)
+if (NOT ${VulkanHeaders_FOUND})
+    message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
+        "installation of the Vulkan-Headers repository.")
+endif()
+
 option(USE_CCACHE "Use ccache" OFF)
 if (USE_CCACHE)
     find_program(CCACHE_FOUND ccache)
@@ -74,16 +80,9 @@ if(WIN32)
 endif()
 
 set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
-set(HEADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
-
-# Output warning if vulkan headers submodule contents are not present
-if (NOT EXISTS "${HEADERS_DIR}/include/vulkan/vulkan_core.h")
-    message(FATAL_ERROR "Please run 'git submodule update --init' before running cmake")
-endif()
 
 # Add location of Vulkan header files to include search path
-set(vulkan_include_dir "${HEADERS_DIR}/include")
-include_directories(${vulkan_include_dir})
+include_directories(${VulkanHeaders_INCLUDE_DIRS})
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
@@ -131,8 +130,8 @@ set (PYTHON_CMD ${PYTHON_EXECUTABLE})
 # Define macro used for building vkxml generated files
 macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
-    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${HEADERS_DIR}/registry/vk.xml ${output}
-    DEPENDS ${HEADERS_DIR}/registry/vk.xml ${HEADERS_DIR}/registry/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${HEADERS_DIR}/registry/reg.py
+    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts ${VulkanRegistry_DIR} ${output}
+    DEPENDS ${VulkanRegistry_DIR}/vk.xml ${VulkanRegistry_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/loader_genvk.py ${VulkanRegistry_DIR}/reg.py
     )
 endmacro()
 

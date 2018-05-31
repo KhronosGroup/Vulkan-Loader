@@ -1,3 +1,8 @@
+if(NOT ${VulkanRegistry_FOUND})
+    message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
+        "installation of the Vulkan-Headers repository.")
+endif()
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -12,7 +17,7 @@ CHECK_FUNCTION_EXISTS(__secure_getenv HAVE___SECURE_GETENV)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/loader_cmake_config.h)
 
 # Fetch header version from vulkan_core.h
-file(STRINGS "${vulkan_include_dir}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
+file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
 list(LENGTH lines len)
 if(${len} EQUAL 1)
     string(REGEX MATCHALL "[0-9]+" vk_header_version ${lines})
@@ -225,23 +230,23 @@ else()
 
         # Build vulkan.framework
         set(FRAMEWORK_HEADERS
-            ${HEADERS_DIR}/include/vulkan/vk_icd.h
-            ${HEADERS_DIR}/include/vulkan/vk_layer.h
-            ${HEADERS_DIR}/include/vulkan/vk_platform.h
-            ${HEADERS_DIR}/include/vulkan/vk_sdk_platform.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_android.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_core.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_ios.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_macos.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_mir.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_vi.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_wayland.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_win32.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_xcb.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_xlib.h
-            ${HEADERS_DIR}/include/vulkan/vulkan_xlib_xrandr.h
-            ${HEADERS_DIR}/include/vulkan/vulkan.h
-            ${HEADERS_DIR}/include/vulkan/vulkan.hpp
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_icd.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_layer.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_platform.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_sdk_platform.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_android.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_ios.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_macos.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_mir.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_vi.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_wayland.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_win32.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xcb.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib_xrandr.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp
         )
         add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
         add_dependencies(vulkan-framework generate_helper_files loader_gen_files loader_asm_gen_files)
@@ -286,5 +291,5 @@ endif()
 
 install(TARGETS vulkan
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

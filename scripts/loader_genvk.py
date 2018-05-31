@@ -16,18 +16,6 @@
 
 import argparse, cProfile, pdb, string, sys, time, os
 
-scripts_dir = os.path.dirname(os.path.abspath(__file__))
-registry_dir = os.path.join(scripts_dir, '../Vulkan-Headers/registry')
-sys.path.insert(0, registry_dir)
-
-from reg import *
-from generator import write
-from cgenerator import CGeneratorOptions, COutputGenerator
-# Loader Generator Modifications
-from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
-from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
-from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
-
 # Simple timer functions
 startTime = None
 
@@ -445,7 +433,24 @@ if __name__ == '__main__':
     parser.add_argument('-verbose', action='store_false', dest='quiet', default=True,
                         help='Enable script output during normal execution.')
 
+    # This argument tells us where to load the script from the Vulkan-Headers registry
+    parser.add_argument('-scripts', action='store',
+                        help='Find additional scripts in this directory')
+
     args = parser.parse_args()
+
+    scripts_dir = os.path.dirname(os.path.abspath(__file__))
+    registry_dir = os.path.join(scripts_dir, args.scripts)
+    sys.path.insert(0, registry_dir)
+
+    # The imports need to be done here so that they can be picked up from Vulkan-Headers
+    from reg import *
+    from generator import write
+    from cgenerator import CGeneratorOptions, COutputGenerator
+
+    from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
+    from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
+    from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
 
     # This splits arguments which are space-separated lists
     args.feature = [name for arg in args.feature for name in arg.split()]
