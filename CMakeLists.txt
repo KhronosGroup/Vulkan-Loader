@@ -123,7 +123,6 @@ if(WIN32)
 endif()
 
 option(BUILD_LOADER "Build loader" ON)
-option(BUILD_TESTS "Build tests" ON)
 
 set (PYTHON_CMD ${PYTHON_EXECUTABLE})
 
@@ -180,6 +179,8 @@ add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
 add_definitions(-DAPI_NAME="Vulkan")
+
+add_subdirectory(external)
 
 if(BUILD_LOADER)
     add_subdirectory(loader)

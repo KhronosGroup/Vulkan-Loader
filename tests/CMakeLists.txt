@@ -59,8 +59,8 @@ endif()
 set (LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}/tests
-    ${PROJECT_SOURCE_DIR}/tests/googletest/googletest/include
+    ${PROJECT_SOURCE_DIR}/external
+    ${GTEST_SOURCE_DIR}/googletest/include
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}
     ${PROJECT_BINARY_DIR}
@@ -118,23 +118,15 @@ if(WIN32)
     file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
-SET(GTEST_RELATIVE_LOCATION googletest)
-SET(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
-SET(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
-SET(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
-SET(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-# EXCLUDE_FROM_ALL keeps the install target from installing GTEST files.
-add_subdirectory(${GTEST_RELATIVE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
-
 # Copy googletest (gtest) libs to test dir so the test executable can find them.
 if(WIN32)
     if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC1)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/$<CONFIG>/gtest$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC2)
+        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC1)
+        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC2)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> GTEST_COPY_DEST)
     else()
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/gtest_main.dll GTEST_COPY_SRC1)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_RELATIVE_LOCATION}/googletest/gtest.dll GTEST_COPY_SRC2)
+        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googeltest/gtest_main.dll GTEST_COPY_SRC1)
+        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/gtest.dll GTEST_COPY_SRC2)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} GTEST_COPY_DEST)
     endif()
     add_custom_command(TARGET vk_loader_validation_tests POST_BUILD

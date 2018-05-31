@@ -8,7 +8,7 @@ VKConfig.h
 build
 build32
 dbuild
-external
+external/googletest
 *.so
 *.so.*
 *.pyc
