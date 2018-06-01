@@ -44,6 +44,9 @@ If you forget to specify this option, you can later run:
 Windows 7+ with the following software packages:
 
 - Microsoft Visual Studio 2013 Update 4 Professional, VS2015 (any version), or VS2017 (any version).
+- [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers)
+  - Vulkan headers should be built with the "install" target. Generally, you will want to use the
+    `CMAKE_INSTALL_PREFIX` and remember where you set this to.
 - [CMake](http://www.cmake.org/download/)
   - Tell the installer to "Add CMake to the system PATH" environment variable.
 - [Python 3](https://www.python.org/downloads)
@@ -72,12 +75,17 @@ PowerShell, MINGW, CygWin, etc.
 #### Use `cmake` to create the VS project files
 
 Switch to the top of the cloned repository directory,
-create a build directory and generate the VS project files:
+create a build directory and generate the VS project files.
+When generating the project files, the location to a Vulkan-Headers install
+directory must be provided. This can be done by setting the environment variable
+`VULKAN_HEADERS_INSTALL_DIR` or by setting it as a CMake flag.
+In either case, the variable should point to the installation directory of the
+Vulkan-Headers repo:
 
     cd Vulkan-Loader
     mkdir build
     cd build
-    cmake ..
+    cmake -DVULKAN_HEADERS_INSTALL_DIR=C:\SampleDir ..
 
 As it starts generating the project files, `cmake` responds with something like:
 
@@ -89,7 +97,7 @@ If this is not what you want, you can supply one of the
 [specific generators](#cmake-visual-studio-generators).
 For example:
 
-    cmake -G "Visual Studio 14 2015 Win64" ..
+    cmake -DVULKAN_HEADERS_INSTALL_DIR=C:\SampleDir -G "Visual Studio 14 2015 Win64" ..
 
 This creates a Windows 64-bit solution file named `Vulkan-Loader.sln`
 in the build directory for Visual Studio 2015.
@@ -201,18 +209,27 @@ It should be straightforward to adapt this repository to other Linux distributio
 
     sudo apt-get install git cmake build-essential libx11-xcb-dev libxkbcommon-dev libmirclient-dev libwayland-dev libxrandr-dev
 
+In addition to this, the [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers) repo should be
+built and installed to the directory of your choosing. This can be done by setting `CMAKE_INSTALL_PREFIX`
+and running the "install" target from within the Vulkan-Headers repository.
+
 ### Linux Build
 
 Example debug build (Note that the update\_external\_sources script used below builds external tools into predefined locations.
 See **Loader and Validation Layer Dependencies** for more information and other options):
 
 Switch to the top of the cloned repository directory,
-create a build directory and generate the make files:
+create a build directory and generate the make files.
+When generating the project files, the location to a Vulkan-Headers install
+directory must be provided. This can be done by setting the environment variable
+`VULKAN_HEADERS_INSTALL_DIR` or by setting it as a CMake flag.
+In either case, the variable should point to the installation directory of the
+Vulkan-Headers repo:
 
     cd Vulkan-Loader
     mkdir build
     cd build
-    cmake -DCMAKE_BUILD_TYPE=Debug ..
+    cmake -DVULKAN_HEADERS_INSTALL_DIR=/sample/dir -DCMAKE_BUILD_TYPE=Debug ..
 
 Run `make -j8` to begin the build.
 
@@ -363,6 +380,10 @@ Setup Homebrew and components
 
       brew install cmake python python3 git
 
+      In addition to this, the [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers) repo should be
+      built and installed to the directory of your choosing. This can be done by setting `CMAKE_INSTALL_PREFIX`
+      and running the "install" target from within the Vulkan-Headers repository.
+
 ### MacOS build
 
 #### CMake Generators
@@ -376,12 +397,16 @@ The CMake generators explicitly supported in this repository are:
 
 #### Building with the Unix Makefiles Generator
 
-This generator is the default generator, so all that is needed for a debug
-build is:
+This generator is the default generator.
+However, when generating the project files, the location to a Vulkan-Headers install
+directory must be provided. This can be done by setting the environment variable
+`VULKAN_HEADERS_INSTALL_DIR` or by setting it as a CMake flag.
+In either case, the variable should point to the installation directory of the
+Vulkan-Headers repo:
 
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Debug ..
+        cmake -DVULKAN_HEADERS_INSTALL_DIR=/sample/dir -DCMAKE_BUILD_TYPE=Debug ..
         make
 
 To speed up the build on a multi-core machine, use the `-j` option for `make`
