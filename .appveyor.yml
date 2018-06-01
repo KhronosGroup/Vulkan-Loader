@@ -33,12 +33,21 @@ before_build:
   - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" (set VK_VERSION=15 2017)
   - if %PLATFORM% == Win32 (set GENERATOR="Visual Studio %VS_VERSION%")
   - if %PLATFORM% == x64 (set GENERATOR="Visual Studio %VS_VERSION% Win64")
+  # Install Vulkan-Headers
+  - mkdir %TEMP%\headers
+  - git clone https://github.com/KhronosGroup/Vulkan-Headers.git %TEMP%\headers\repo
+  - ps: pushd $ENV:TEMP\headers\repo
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_INSTALL_PREFIX=%TEMP%\headers\install ..
+  - cmake --build . --target install
+  - ps: popd
   # Generate build files using CMake for the build step.
   - echo Generating CMake files for %GENERATOR%
   - cd %TOP_DIR%
   - mkdir build
   - cd build
-  - cmake -G %GENERATOR% ..
+  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%TEMP%\headers\install ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:

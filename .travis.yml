@@ -38,6 +38,7 @@ cache: ccache
 
 before_install:
   - set -e
+  - unset -f cd pushd popd
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Install the appropriate Linux packages.
@@ -48,6 +49,16 @@ before_install:
     if [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
       # Install the appropriate MacOS packages
       brew upgrade python3
+    fi
+  - |
+    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]] || [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
+      # Install Vulkan-Headers
+      mkdir /tmp/headers
+      git clone https://github.com/KhronosGroup/Vulkan-Headers.git /tmp/headers/repo
+      pushd /tmp/headers/repo
+      cmake . -DCMAKE_INSTALL_PREFIX=/tmp/headers/install
+      cmake --build . --target install
+      popd
     fi
   - |
     if [[ "$CHECK_FORMAT" == "ON" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then
@@ -63,13 +74,12 @@ before_install:
 
 script:
   - set -e
-  - unset -f cd
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]] || [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
       # Build Vulkan-Loader
       mkdir build
       cd build
-      cmake -DCMAKE_BUILD_TYPE=Debug ..
+      cmake -DCMAKE_BUILD_TYPE=Debug -DVULKAN_HEADERS_INSTALL_DIR=/tmp/headers/install ..
       make -j $core_count
       cd ..
     fi
