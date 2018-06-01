@@ -59,6 +59,8 @@ before_install:
       cmake . -DCMAKE_INSTALL_PREFIX=/tmp/headers/install
       cmake --build . --target install
       popd
+      # Get Google Test
+      git clone https://github.com/google/googletest.git external/googletest
     fi
   - |
     if [[ "$CHECK_FORMAT" == "ON" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then

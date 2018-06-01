@@ -42,6 +42,8 @@ before_build:
   - cmake -DCMAKE_INSTALL_PREFIX=%TEMP%\headers\install ..
   - cmake --build . --target install
   - ps: popd
+  # Get Google Test
+  - git clone https://github.com/google/googletest.git external/googletest
   # Generate build files using CMake for the build step.
   - echo Generating CMake files for %GENERATOR%
   - cd %TOP_DIR%
