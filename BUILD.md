@@ -29,13 +29,7 @@ graphics hardware vendor and install it properly.
 
 To create your local git repository:
 
-    git clone --recurse-submodules https://github.com/KhronosGroup/Vulkan-Loader
-
-The `--recurse-submodules` option is required because this repository contains
-submodules.
-If you forget to specify this option, you can later run:
-
-    git submodule update --init --recursive
+    git clone https://github.com/KhronosGroup/Vulkan-Loader
 
 ## Building On Windows
 
@@ -60,6 +54,10 @@ Windows 7+ with the following software packages:
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
   - Install both the 32-bit and 64-bit versions, as the 64-bit installer does not install the
     32-bit libraries and tools.
+- [Google Test](https://github.com/google/googletest) (Tests only)
+  - To build the loader tests, clone google test into the "external" directory like:
+        git clone https://github.com/google/googletest external/googletest
+  - If you do not include Google Test, the repo will still build, but the tests will be omitted
 
 ### Windows Build - Microsoft Visual Studio
 
@@ -212,6 +210,13 @@ It should be straightforward to adapt this repository to other Linux distributio
 In addition to this, the [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers) repo should be
 built and installed to the directory of your choosing. This can be done by setting `CMAKE_INSTALL_PREFIX`
 and running the "install" target from within the Vulkan-Headers repository.
+
+In addition to this, the loader tests require that a copy of Google Test be present in the "external" directory.
+The loader will still build if Google Test is not provided, but the tests will be skipped.
+To get a copy of Google Test, run:
+
+    git clone https://github.com/google/googletest external/googletest
+
 
 ### Linux Build
 
@@ -384,6 +389,12 @@ Setup Homebrew and components
       built and installed to the directory of your choosing. This can be done by setting `CMAKE_INSTALL_PREFIX`
       and running the "install" target from within the Vulkan-Headers repository.
 
+- The loader tests require that a copy of Google Test be present in the "external" directory.
+  The loader will still build if Google Test is not provided, but the tests will be skipped.
+  To get a copy of Google Test, run:
+
+      git clone https://github.com/google/googletest external/googletest
+
 ### MacOS build
 
 #### CMake Generators
@@ -487,7 +498,7 @@ The following is a table of all on/off options currently supported by this repos
 | Option | Platform | Default | Description |
 | ------ | -------- | ------- | ----------- |
 | BUILD_LOADER | All | `ON` | Controls whether or not the loader is built. Setting this to `OFF` will allow building the tests against a loader that is installed to the system. |
-| BUILD_TESTS | All | `ON` | Controls whether or not the loader tests are built. |
+| BUILD_TESTS | All | `ON` | Controls whether or not the loader tests are built. This option is only available when a copy of Google Test is available in the "external" directory. |
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the loader with the XCB entry points enabled. Without this, the XCB headers should not be needed, but the extension `VK_KHR_xcb_surface` won't be available. |
 | BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the loader with the Xlib entry points enabled. Without this, the X11 headers should not be needed, but the extension `VK_KHR_xlib_surface` won't be available. |
 | BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the loader with the Wayland entry points enabled. Without this, the Wayland headers should not be needed, but the extension `VK_KHR_wayland_surface` won't be available. |
