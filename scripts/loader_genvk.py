@@ -110,7 +110,7 @@ def makeGenOpts(args):
     # Defaults for generating re-inclusion protection wrappers (or not)
     protectFeature = protect
 
-    # LoaderAndValidationLayer Generators
+    # Loader Generators
     # Options for dispatch table helper generator
     genOpts['vk_dispatch_table_helper.h'] = [
           DispatchTableHelperOutputGenerator,
