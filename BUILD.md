@@ -220,9 +220,6 @@ To get a copy of Google Test, run:
 
 ### Linux Build
 
-Example debug build (Note that the update\_external\_sources script used below builds external tools into predefined locations.
-See **Loader and Validation Layer Dependencies** for more information and other options):
-
 Switch to the top of the cloned repository directory,
 create a build directory and generate the make files.
 When generating the project files, the location to a Vulkan-Headers install
@@ -242,12 +239,13 @@ If your build system supports ccache, you can enable that via CMake option `-DUS
 
 #### Using the new loader
 
-If you want to test a Vulkan application with the loader you just built, you can
+If you want to test a Vulkan application with the loader you just built from the
+[Vulkan-Loader repository](https://github.com/KhronosGroup/Vulkan-Loader), you can
 direct the application to load it from your build directory:
 
     export LD_LIBRARY_PATH=<path to your repository root>/build/loader
 
-The `LoaderAndLayerInterface` document in the `loader` folder in this repository
+The `LoaderAndLayerInterface.md` document in the `loader` folder in this repository
 is a specification that describes both how ICDs and layers should be properly packaged,
 and how developers can point to ICDs and layers within their builds.
 
@@ -456,25 +454,6 @@ You will also need to direct your new loader to the MoltenVK ICD:
 To run the loader test script, change to the `build/tests` directory in your Vulkan-Loader repository, and run:
 
         ./vk_loader_validation_tests
-
-## Ninja Builds - All Platforms
-
-The [Qt Creator IDE](https://qt.io/download-open-source/#section-2) can open a root CMakeList.txt
-as a project directly, and it provides tools within Creator to configure and generate Vulkan SDK
-build files for one to many targets concurrently.
-Alternatively, when invoking CMake, use the `-G "Codeblocks - Ninja"` option to generate Ninja build
-files to be used as project files for QtCreator
-
-- Follow the steps defined elsewhere for the OS using the update\_external\_sources script or as
-  shown in **Loader and Validation Layer Dependencies** below
-- Open, configure, and build the glslang CMakeList.txt files. Note that building the glslang
-  project will provide access to spirv-tools and spirv-headers
-- Then do the same with the Vulkan-LoaderAndValidationLayers CMakeList.txt file
-- In order to debug with QtCreator, a
-  [Microsoft WDK: eg WDK 10](http://go.microsoft.com/fwlink/p/?LinkId=526733) is required.
-
-Note that installing the WDK breaks the MSVC vcvarsall.bat build scripts provided by MSVC,
-requiring that the LIB, INCLUDE, and PATHenv variables be set to the WDK paths by some other means
 
 ## Optional software packages
 

@@ -2737,7 +2737,7 @@ of discovery.
 | Field Name | Field Value |
 |:---:|--------------------|
 | Android Loader | The loader designed to work primarily for the Android OS.  This is generated from a different code-base than the desktop loader.  But, in all important aspects, should be functionally equivalent. |
-| Desktop Loader | The loader designed to work on Windows, Linux and MacOS.  This is generated from a different [code-base](#https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers) than the Android loader.  But in all important aspects, should be functionally equivalent. |
+| Desktop Loader | The loader designed to work on Windows, Linux and MacOS.  This is generated from a different [code-base](#https://github.com/KhronosGroup/Vulkan-Loader) than the Android loader.  But in all important aspects, should be functionally equivalent. |
 | Core Function | A function that is already part of the Vulkan core specification and not an extension.  For example, vkCreateDevice(). |
 | Device Call Chain | The call chain of functions followed for device functions.  This call chain for a device function is usually as follows: first the application calls into a loader trampoline, then the loader trampoline calls enabled layers, the final layer calls into the ICD specific to the device.  See the [Dispatch Tables and Call Chains](#dispatch-tables-and-call-chains) section for more information |
 | Device Function | A Device function is any Vulkan function which takes a `VkDevice`, `VkQueue`, `VkCommandBuffer`, or any child of these, as its first parameter.  Some Vulkan Device functions are: `vkQueueSubmit`, `vkBeginCommandBuffer`, `vkCreateEvent`.  See the [Instance Versus Device](#instance-versus-device) section for more information. |
