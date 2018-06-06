@@ -12,5 +12,5 @@ elseif(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/googletest")
     # EXCLUDE_FROM_ALL keeps the install target from installing GTEST files.
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/googletest" EXCLUDE_FROM_ALL)
 else()
-    message(STATUS "Google Test was not found - test based on that will not build")
+    message(STATUS "Google Test was not found - tests based on that will not build")
 endif()
