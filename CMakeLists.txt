@@ -123,6 +123,7 @@ if(WIN32)
 endif()
 
 option(BUILD_LOADER "Build loader" ON)
+option(BUILD_TESTS "BUILD_TESTS" ON)
 
 set (PYTHON_CMD ${PYTHON_EXECUTABLE})
 
@@ -180,12 +181,11 @@ add_custom_target(uninstall
 
 add_definitions(-DAPI_NAME="Vulkan")
 
-add_subdirectory(external)
-
 if(BUILD_LOADER)
     add_subdirectory(loader)
 endif()
 
 if(BUILD_TESTS)
+    add_subdirectory(external)
     add_subdirectory(tests)
 endif()
