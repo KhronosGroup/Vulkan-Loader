@@ -119,7 +119,7 @@ if(TARGET gtest_main)
         file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
     endif()
 
-    # Copy googletest (gtest) libs to test dir so the test executable can find them.
+    # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
     if(WIN32)
         if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
             file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC1)
@@ -134,6 +134,11 @@ if(TARGET gtest_main)
             COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
             COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST}
         )
+        # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
+        if((NOT ENABLE_STATIC_LOADER) AND TARGET vulkan)
+            add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:vk_loader_validation_tests>)
+        endif()
     endif()
 
     add_subdirectory(layers)
