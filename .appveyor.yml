@@ -26,13 +26,6 @@ before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
   - echo.
   - echo Starting build for %APPVEYOR_REPO_NAME%
-  - git submodule update --init --recursive
-  # Determine the appropriate CMake generator for the current version of Visual Studio
-  - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2013" (set VS_VERSION=12 2013)
-  - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2015" (set VS_VERSION=14 2015)
-  - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" (set VK_VERSION=15 2017)
-  - if %PLATFORM% == Win32 (set GENERATOR="Visual Studio %VS_VERSION%")
-  - if %PLATFORM% == x64 (set GENERATOR="Visual Studio %VS_VERSION% Win64")
   # Install Vulkan-Headers
   - mkdir %TEMP%\headers
   - git clone https://github.com/KhronosGroup/Vulkan-Headers.git %TEMP%\headers\repo
@@ -45,11 +38,10 @@ before_build:
   # Get Google Test
   - git clone https://github.com/google/googletest.git external/googletest
   # Generate build files using CMake for the build step.
-  - echo Generating CMake files for %GENERATOR%
-  - cd %TOP_DIR%
+  - echo Generating CMake files for %PLATFORM%
   - mkdir build
   - cd build
-  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%TEMP%\headers\install ..
+  - cmake -A %PLATFORM% -DVULKAN_HEADERS_INSTALL_DIR=%TEMP%\headers\install ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
@@ -59,6 +51,16 @@ platform:
 configuration:
   - Release
   - Debug
+
+# Build only x64 Release and Win32(x86) Debug to reduce build time.
+# This should still provide adequate 32-bit vs 64-bit and
+# Release vs Debug coverage.
+matrix:
+  exclude:
+    - configuration: Release
+      platform: Win32
+    - configuration: Debug
+      platform: x64
 
 build:
   parallel: true                   # enable MSBuild parallel builds
