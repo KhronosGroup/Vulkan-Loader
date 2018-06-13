@@ -196,18 +196,6 @@ if (WIN32)
 
     add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
 
-    if(BUILD_TESTS AND NOT ENABLE_STATIC_LOADER)
-        if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/vulkan-1.dll COPY_SRC_PATH)
-            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/$<CONFIGURATION>/ COPY_DST_TEST_PATH)
-        else()
-            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/vulkan-1.dll COPY_SRC_PATH)
-            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../tests/ COPY_DST_TEST_PATH)
-        endif()
-        add_custom_command(TARGET vulkan POST_BUILD
-            COMMAND xcopy /Y /I ${COPY_SRC_PATH} ${COPY_DST_TEST_PATH})
-    endif()
-
 else()
     # Linux and MacOS
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith")
