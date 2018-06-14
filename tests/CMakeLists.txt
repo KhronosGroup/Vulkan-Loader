@@ -85,7 +85,7 @@ if(TARGET gtest_main)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUN_ALL} run_all_tests.ps1
                 VERBATIM
             )
-            set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+            set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
         endif()
     endif()
 

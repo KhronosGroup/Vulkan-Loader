@@ -38,9 +38,10 @@ if(APPLE)
     set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 endif()
 
-# Enable cmake folders
+# Enable IDE GUI folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(LVL_TARGET_FOLDER lvl_cmake_targets)
+# "Helper" targets that don't have interesting source code should set their FOLDER property to this
+set(LOADER_HELPER_FOLDER "Helper Targets")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(FALLBACK_CONFIG_DIRS "/etc/xdg" CACHE STRING
@@ -146,7 +147,7 @@ add_custom_target(generate_helper_files DEPENDS
     vk_extension_helper.h
     vk_typemap_helper.h
     )
-set_target_properties(generate_helper_files PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
 # Rules to build generated helper files
 run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
@@ -179,6 +180,7 @@ if(NOT TARGET uninstall)
         IMMEDIATE @ONLY)
     add_custom_target(uninstall
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+    set_target_properties(uninstall PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 endif()
 
 add_definitions(-DAPI_NAME="Vulkan")
