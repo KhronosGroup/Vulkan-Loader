@@ -8,6 +8,7 @@ Build-Depends: debhelper (>=10),
  libx11-dev,
  libxcb1-dev,
  libxrandr-dev,
+ vulkan-headers,
  pkg-config,
  quilt
 Standards-Version: 4.1.3
