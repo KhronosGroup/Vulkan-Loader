@@ -3240,7 +3240,7 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
             } else {
                 if (warn_if_not_present) {
                     // This is only a warning for layers
-                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                    loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
                                "loader_get_manifest_files: Registry lookup failed "
                                "to get layer manifest files.");
                 }
