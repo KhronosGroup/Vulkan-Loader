@@ -124,7 +124,11 @@ if(WIN32)
 endif()
 
 option(BUILD_LOADER "Build loader" ON)
-option(BUILD_TESTS "BUILD_TESTS" ON)
+if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
+    option(BUILD_TESTS "Build Tests" ON)
+else()
+    option(BUILD_TESTS "Build Tests" OFF)
+endif()
 
 set (PYTHON_CMD ${PYTHON_EXECUTABLE})
 
@@ -189,7 +193,7 @@ if(BUILD_LOADER)
     add_subdirectory(loader)
 endif()
 
+add_subdirectory(external)
 if(BUILD_TESTS)
-    add_subdirectory(external)
     add_subdirectory(tests)
 endif()
