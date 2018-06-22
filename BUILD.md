@@ -105,7 +105,7 @@ on/off options currently supported by this repository:
 | Option | Platform | Default | Description |
 | ------ | -------- | ------- | ----------- |
 | BUILD_LOADER | All | `ON` | Controls whether or not the loader is built. Setting this to `OFF` will allow building the tests against a loader that is installed to the system. |
-| BUILD_TESTS | All | `ON` | Controls whether or not the loader tests are built. This option is only available when a copy of Google Test is available in the "external" directory. |
+| BUILD_TESTS | All | `???` | Controls whether or not the loader tests are built. The default is `ON` when the Google Test repository is cloned into the `external` directory.  Otherwise, the default is `OFF`. |
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the loader with the XCB entry points enabled. Without this, the XCB headers should not be needed, but the extension `VK_KHR_xcb_surface` won't be available. |
 | BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the loader with the Xlib entry points enabled. Without this, the X11 headers should not be needed, but the extension `VK_KHR_xlib_surface` won't be available. |
 | BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the loader with the Wayland entry points enabled. Without this, the Wayland headers should not be needed, but the extension `VK_KHR_wayland_surface` won't be available. |
