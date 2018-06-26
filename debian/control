@@ -16,11 +16,9 @@ Homepage: https://github.com/KhronosGroup/Vulkan-Loader
 Vcs-Git: 
 Vcs-Browser: 
 
-Package: vulkan-loader
+Package: libvulkan1
 Architecture: linux-any
 Depends: ${shlibs:Depends},${misc:Depends}
-Breaks: libvulkan1
-Replaces: libvulkan1
 Multi-Arch: same
 Description: Khronos official Vulkan ICD desktop loader for Linux
  The ICD loader is a library that is placed between a Vulkan application and any

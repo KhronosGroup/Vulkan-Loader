@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: spirv-headers
-Source: https://github.com/KhronosGroup/Vulkan-Headers
+Upstream-Name: Vulkan-Loader
+Source: https://github.com/KhronosGroup/Vulkan-Loader
 
 Files: *
 Copyright: 2015-2018 The Khronos Group Inc.
