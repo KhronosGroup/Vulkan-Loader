@@ -1,0 +1,40 @@
+
+add_executable: --------------------------------------------------------------------------------------------------
+loader/CMakeLists.txt:101:   add_executable(asm_offset asm_offset.c)
+loader/CMakeLists.txt:128:   add_executable(asm_offset asm_offset.c)
+tests/CMakeLists.txt:98:     add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
+
+add_library --------------------------------------------------------------------------------------------------
+loader/CMakeLists.txt:178:   add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
+loader/CMakeLists.txt:182:   add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
+loader/CMakeLists.txt:190:   add_library(vulkan
+loader/CMakeLists.txt:198:   add_library(vulkan STATIC $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm>)
+loader/CMakeLists.txt:221:   add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+loader/CMakeLists.txt:250:   add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+
+tests/layers/CMakeLists.txt:30:  add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
+tests/layers/CMakeLists.txt:35:  add_library(VkLayer_${target} SHARED ${ARGN})
+tests/layers/CMakeLists.txt:41:  add_library(VkLayer_${target} SHARED ${ARGN})
+
+add_custom* --------------------------------------------------------------------------------------------------
+loader/CMakeLists.txt:103:  add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset MASM)
+loader/CMakeLists.txt:104:  add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
+loader/CMakeLists.txt:109:  add_custom_target(loader_asm_gen_files)
+loader/CMakeLists.txt:115:  add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
+loader/CMakeLists.txt:130:  add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
+loader/CMakeLists.txt:131:  add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
+loader/CMakeLists.txt:135:  add_custom_target(loader_asm_gen_files)
+loader/CMakeLists.txt:141:  add_custom_target(loader_gen_files DEPENDS vk_loader_extensions.h vk_loader_extensions.c)
+
+tests/layers/CMakeLists.txt:26:  add_custom_target(copy-${target}-def-file ALL
+tests/layers/CMakeLists.txt:96:  add_custom_target(${TARGET_NAME}-json ALL COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
+
+tests/CMakeLists.txt:81:   add_custom_target(binary-dir-symlinks ALL
+tests/CMakeLists.txt:91:   add_custom_target(binary-dir-symlinks ALL
+tests/CMakeLists.txt:137:  add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
+tests/CMakeLists.txt:142:  add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
+
+CMakeLists.txt:156:  add_custom_command(OUTPUT ${output}
+CMakeLists.txt:167:  add_custom_target(generate_helper_files
+CMakeLists.txt:204:  add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+

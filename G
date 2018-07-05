@@ -1,0 +1,8 @@
+#! /bin/bash
+
+[ "$#" -gt 0 ] || { echo "missing argument"; exit 1; }
+
+set -o errexit
+set -o nounset
+
+grep "$@" CMakeLists.txt external/CMakeLists.txt loader/CMakeLists.txt tests/CMakeLists.txt tests/layers/CMakeLists.txt
