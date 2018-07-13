@@ -28,15 +28,6 @@ check_function_exists(secure_getenv HAVE_SECURE_GETENV)
 check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/loader_cmake_config.h)
 
-# Fetch header version from vulkan_core.h
-file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
-list(LENGTH lines len)
-if(${len} EQUAL 1)
-    string(REGEX MATCHALL "[0-9]+" vk_header_version ${lines})
-else()
-    message(FATAL_ERROR "Unable to fetch version from vulkan.h")
-endif()
-
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     set(DisplayServer Win32)
