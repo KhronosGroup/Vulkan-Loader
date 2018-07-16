@@ -5582,8 +5582,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
             dev->extensions.ext_debug_marker_enabled = true;
         }
-        dev->extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
     }
+    dev->extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
 
     res = fpCreateDevice(phys_dev_term->phys_dev, &localCreateInfo, pAllocator, &dev->icd_device);
     if (res != VK_SUCCESS) {
