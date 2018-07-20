@@ -26,22 +26,15 @@ before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
   - echo.
   - echo Starting build for %APPVEYOR_REPO_NAME%
-  # Install Vulkan-Headers
-  - mkdir %TEMP%\headers
-  - git clone https://github.com/KhronosGroup/Vulkan-Headers.git %TEMP%\headers\repo
-  - ps: pushd $ENV:TEMP\headers\repo
-  - mkdir build
-  - cd build
-  - cmake -DCMAKE_INSTALL_PREFIX=%TEMP%\headers\install ..
-  - cmake --build . --target install
-  - ps: popd
+  # Install dependencies
+  - python scripts/update_deps.py --dir=external
   # Get Google Test
   - git clone https://github.com/google/googletest.git external/googletest
   # Generate build files using CMake for the build step.
   - echo Generating CMake files for %PLATFORM%
   - mkdir build
   - cd build
-  - cmake -A %PLATFORM% -DVULKAN_HEADERS_INSTALL_DIR=%TEMP%\headers\install ..
+  - cmake -A %PLATFORM% -C../external/helper.cmake ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
