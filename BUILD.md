@@ -28,7 +28,6 @@ loader and its tests.
 The `install` target installs the following files under the directory
 indicated by *install_dir*:
 
-- *install_dir*`/include/vulkan` : `vk_layer_dispatch_table.h`
 - *install_dir*`/lib` : The Vulkan loader library
 - *install_dir*`/bin` : The Vulkan loader library DLL (Windows)
 
