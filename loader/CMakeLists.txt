@@ -30,7 +30,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURR
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
-    set(DisplayServer Win32)
     if(NOT MSVC_VERSION LESS 1900)
         # Enable control flow guard
         message(STATUS "Building loader with control flow guard")
