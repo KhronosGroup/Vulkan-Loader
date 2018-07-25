@@ -38,7 +38,7 @@ if(USE_CCACHE)
     if(CCACHE_FOUND)
         set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
         set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-    endif(CCACHE_FOUND)
+    endif()
 endif()
 
 include(GNUInstallDirs)

@@ -272,7 +272,7 @@ else()
             FRAMEWORK DESTINATION loader
         )
 # cmake-format: on
-    endif(APPLE)
+    endif()
 
     if(NOT APPLE)
         # Generate pkg-config file.
