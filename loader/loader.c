@@ -25,7 +25,9 @@
  *
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
