@@ -35,7 +35,9 @@
 /* Linux-specific common code: */
 
 // Headers:
+//#ifndef _GNU_SOURCE
 //#define _GNU_SOURCE 1
+//#endif
 // TBD: Are the contents of the following file used?
 #include <unistd.h>
 // Note: The following file is for dynamic loading:

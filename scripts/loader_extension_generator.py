@@ -180,7 +180,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             preamble += '#pragma once\n'
 
         elif self.genOpts.filename == 'vk_loader_extensions.c':
+            preamble += '#ifndef _GNU_SOURCE\n'
             preamble += '#define _GNU_SOURCE\n'
+            preamble += '#endif\n'
             preamble += '#include <stdio.h>\n'
             preamble += '#include <stdlib.h>\n'
             preamble += '#include <string.h>\n'

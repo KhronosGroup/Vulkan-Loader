@@ -22,7 +22,10 @@
  * Author: Tony Barbour <tony@LunarG.com>
  * Author: Chia-I Wu <olv@lunarg.com>
  */
+
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <stdlib.h>
 #include <string.h>
 
