@@ -42,8 +42,9 @@ if(USE_CCACHE)
 endif()
 
 include(GNUInstallDirs)
-# Set a better default install location for Windows only if the user did not provide one.
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND WIN32)
+
+if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
