@@ -151,12 +151,10 @@ else()
     option(BUILD_TESTS "Build Tests" OFF)
 endif()
 
-set(PYTHON_CMD ${PYTHON_EXECUTABLE})
-
 # Define macro used for building vkxml generated files
 macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
-                       COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
+                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
                                ${VulkanRegistry_DIR} ${output}
                        DEPENDS ${VulkanRegistry_DIR}/vk.xml
                                ${VulkanRegistry_DIR}/generator.py
