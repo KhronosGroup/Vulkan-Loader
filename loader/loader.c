@@ -4653,6 +4653,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
     PFN_vkGetInstanceProcAddr next_gipa = loader_gpa_instance_internal;
     PFN_vkGetInstanceProcAddr cur_gipa = loader_gpa_instance_internal;
+    PFN_vkGetDeviceProcAddr cur_gdpa = loader_gpa_device_internal;
     PFN_GetPhysicalDeviceProcAddr next_gpdpa = loader_gpdpa_instance_internal;
     PFN_GetPhysicalDeviceProcAddr cur_gpdpa = loader_gpdpa_instance_internal;
 
@@ -4714,6 +4715,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                         // structure.
                         if (interface_struct.loaderLayerInterfaceVersion > 1) {
                             cur_gipa = interface_struct.pfnGetInstanceProcAddr;
+                            cur_gdpa = interface_struct.pfnGetDeviceProcAddr;
                             cur_gpdpa = interface_struct.pfnGetPhysicalDeviceProcAddr;
                             if (cur_gipa != NULL) {
                                 // We've set the functions, so make sure we
@@ -4754,6 +4756,12 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             if (layer_prop->interface_version > 1 && cur_gpdpa != NULL) {
                 layer_prop->functions.get_physical_device_proc_addr = cur_gpdpa;
                 next_gpdpa = cur_gpdpa;
+            }
+            if (layer_prop->interface_version > 1 && cur_gipa != NULL) {
+                layer_prop->functions.get_instance_proc_addr = cur_gipa;
+            }
+            if (layer_prop->interface_version > 1 && cur_gdpa != NULL) {
+                layer_prop->functions.get_device_proc_addr = cur_gdpa;
             }
 
             chain_info.u.pLayerInfo = &layer_instance_link_info[activated_layers];
