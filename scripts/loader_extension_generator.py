@@ -48,6 +48,8 @@ ADD_INST_CMDS = ['vkCreateInstance',
 
 AVOID_EXT_NAMES = ['VK_EXT_debug_report']
 
+NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils']
+
 AVOID_CMD_NAMES = ['vkCreateDebugUtilsMessengerEXT',
                    'vkDestroyDebugUtilsMessengerEXT',
                    'vkSubmitDebugUtilsMessageEXT']
@@ -1016,6 +1018,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '        local_tag_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;\n'
                     funcs += '    }\n'
 
+                if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
+                    funcs += '    if (disp->' + base_name + ' != NULL) {\n'
                 funcs += return_prefix
                 funcs += 'disp->'
                 funcs += base_name
@@ -1036,6 +1040,11 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                     count += 1
                 funcs += ');\n'
+                if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
+                    if ext_cmd.return_type != None:
+                        funcs += '    } else {\n'
+                        funcs += '        return VK_SUCCESS;\n'
+                    funcs += '    }\n'
                 funcs += '}\n\n'
 
                 funcs += term_header
@@ -1250,6 +1259,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 funcs += ext_cmd.params[0].name
                 funcs += ');\n'
 
+                if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
+                    funcs += '    if (disp->' + base_name + ' != NULL) {\n'
                 funcs += return_prefix
                 funcs += 'disp->'
                 funcs += base_name
@@ -1261,6 +1272,11 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += param.name
                     count += 1
                 funcs += ');\n'
+                if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
+                    if ext_cmd.return_type != None:
+                        funcs += '    } else {\n'
+                        funcs += '        return VK_SUCCESS;\n'
+                    funcs += '    }\n'
                 funcs += '}\n\n'
 
             if ext_cmd.protect is not None:
