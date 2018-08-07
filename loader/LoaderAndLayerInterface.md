@@ -894,7 +894,7 @@ manifest file specified by the key value. Each value must be a full absolute
 path to a JSON manifest file. A key value may also be of type `REG_MULTI_SZ`, in
 which case the value will be interpreted as a list of paths to JSON manifest files.
 
-In general, applications should install layers into the `SOFTWARE\Khrosos\Vulkan`
+In general, applications should install layers into the `SOFTWARE\Khronos\Vulkan`
 paths. The PnP registry locations are intended specifically for layers that are
 distributed as part of a driver installation. An application installer should not
 modify the device-specific registries, while a device driver should not modify
