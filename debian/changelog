@@ -1,4 +1,10 @@
-vulkan-loader (1.1.79.0-1) UNRELEASED; urgency=medium
+vulkan-loader (1.1.82.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Brett Johnson <brett@linuxturtle.net>  Thu, 09 Aug 2018 12:45:40 -0600
+
+vulkan-loader (1.1.79.0-1) stable; urgency=medium
 
   * New upstream version
 
