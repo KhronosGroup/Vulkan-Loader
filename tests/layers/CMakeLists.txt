@@ -15,8 +15,6 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 2.8.11)
-
 set(TARGET_NAMES VkLayer_wrap_objects VkLayer_test VkLayer_meta)
 
 set(VK_LAYER_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
