@@ -15,7 +15,7 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.4)
 
 # This must come before the project command.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
