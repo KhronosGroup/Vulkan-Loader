@@ -128,20 +128,20 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-if(WIN32)
+if(MSVC)
     # Treat warnings as errors
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/WX>")
+    add_compile_options("/WX")
     # Disable RTTI
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/GR->")
+    add_compile_options("/GR-")
     # Warn about nested declarations
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34456>")
+    add_compile_options("/w34456")
     # Warn about potentially uninitialized variables
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34701>")
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34703>")
+    add_compile_options("/w34701")
+    add_compile_options("/w34703")
     # Warn about different indirection types.
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34057>")
+    add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34245>")
+    add_compile_options("/w34245")
 endif()
 
 option(BUILD_LOADER "Build loader" ON)
