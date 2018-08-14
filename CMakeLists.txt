@@ -15,12 +15,17 @@
 # limitations under the License.
 # ~~~
 
+# CMake project initialization ---------------------------------------------------------------------------------------------------
+# This section contains pre-project() initialization, and ends with the project() command.
+
 cmake_minimum_required(VERSION 3.4)
 
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 
 project(Vulkan-Loader)
+
+# find_package(), include() and global project settings --------------------------------------------------------------------------
 
 #set(CMAKE_DEBUG_TARGET_PROPERTIES INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS AUTOUIC_OPTIONS SOURCES COMPILE_FEATURES POSITION_INDEPENDENT_CODE)
 
@@ -59,6 +64,9 @@ if(APPLE)
     # CMake versions 3 or later need CMAKE_MACOSX_RPATH defined. This avoids the CMP0042 policy message.
     set(CMAKE_MACOSX_RPATH 1)
 endif()
+
+# User-interface declarations ----------------------------------------------------------------------------------------------------
+# Things that may affect development GUIs such as option(), folders, and variables with the CACHE property.
 
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
@@ -121,6 +129,8 @@ else()
     option(BUILD_TESTS "Build Tests" OFF)
 endif()
 
+# --------------------------------------------------------------------------------------------------------------------------------
+
 # Add location of Vulkan header files to include search path
 include_directories(${VulkanHeaders_INCLUDE_DIRS})
 
@@ -163,6 +173,8 @@ if(MSVC)
     # Warn about signed/unsigned mismatch.
     add_compile_options("/w34245")
 endif()
+
+# Source code generation ---------------------------------------------------------------------------------------------------------
 
 # Define a macro to generate source code from vk.xml
 set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
@@ -211,7 +223,8 @@ if(UNIX)
     endif()
 endif()
 
-# uninstall target
+# Define the uninstall target ----------------------------------------------------------------------------------------------------
+
 if(NOT TARGET uninstall)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
                    IMMEDIATE
@@ -219,6 +232,8 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
     set_target_properties(uninstall PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 endif()
+
+# Pull in subprojects ------------------------------------------------------------------------------------------------------------
 
 if(BUILD_LOADER)
     add_subdirectory(loader)
