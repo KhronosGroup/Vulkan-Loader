@@ -15,8 +15,7 @@
 # limitations under the License.
 # ~~~
 
-set(VK_LAYER_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
-set(CMAKE_INSTALL_RPATH ${VK_LAYER_RPATH})
+set(CMAKE_INSTALL_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
 
 if(WIN32)
     macro(add_vk_layer target)
