@@ -206,6 +206,7 @@ if(NOT TARGET uninstall)
     set_target_properties(uninstall PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 endif()
 
+# TODO(mew) API_NAME is only referenced in loader/vk_loader_platform.h
 add_definitions(-DAPI_NAME="Vulkan")
 
 if(BUILD_LOADER)
