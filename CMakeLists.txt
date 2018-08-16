@@ -107,6 +107,7 @@ set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 include_directories(${VulkanHeaders_INCLUDE_DIRS})
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+# TODO(mew) replace COMMON_COMPILE_FLAGS
     set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
     set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -fno-strict-aliasing -fno-builtin-memcmp")
 
