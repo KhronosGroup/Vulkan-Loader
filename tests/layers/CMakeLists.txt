@@ -36,7 +36,7 @@ elseif(APPLE)
         add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
     endmacro()
-else()
+else(UNIX AND NOT APPLE)        # i.e.: Linux
     macro(add_vk_layer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} generate_helper_files)

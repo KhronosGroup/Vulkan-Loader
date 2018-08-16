@@ -15,13 +15,15 @@
 # limitations under the License.
 # ~~~
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
+elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(APPLE)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+elseif(UNIX AND NOT APPLE)      # i.e.: Linux
     if(BUILD_WSI_XCB_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
     endif()
@@ -38,8 +40,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_definitions(-DVK_USE_PLATFORM_MIR_KHR)
         include_directories(${MIR_INCLUDE_DIR})
     endif()
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -75,7 +75,7 @@ include_directories(${PROJECT_SOURCE_DIR}/external
                     ${CMAKE_BINARY_DIR}
                     ${PROJECT_BINARY_DIR})
 
-if(NOT WIN32)
+if(UNIX)
     # extra setup for out-of-tree builds
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
         add_custom_target(binary-dir-symlinks ALL
@@ -97,7 +97,7 @@ endif()
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
 set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-if(NOT WIN32)
+if(UNIX)
     set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif()
 

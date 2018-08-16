@@ -56,7 +56,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # "Helper" targets that don't have interesting source code should set their FOLDER property to this
 set(LOADER_HELPER_FOLDER "Helper Targets")
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(UNIX)
     set(
         FALLBACK_CONFIG_DIRS "/etc/xdg"
         CACHE
@@ -71,7 +71,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         )
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(UNIX AND NOT APPLE)  # i.e.: Linux
     include(FindPkgConfig)
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
@@ -185,7 +185,7 @@ run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
 run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
 run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
 
-if(NOT WIN32)
+if(UNIX)
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
     add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
     add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
