@@ -22,7 +22,10 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment ve
 
 project(Vulkan-Loader)
 
+#set(CMAKE_DEBUG_TARGET_PROPERTIES INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS AUTOUIC_OPTIONS SOURCES COMPILE_FEATURES POSITION_INDEPENDENT_CODE)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 find_package(PythonInterp 3 REQUIRED)
 
 find_package(VulkanHeaders)
@@ -222,3 +225,109 @@ add_subdirectory(external)
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
+
+# Debug stuff ------------------------------------------------------------------------
+
+message("CMAKE_SYSTEM : ${CMAKE_SYSTEM}")
+message("CMAKE_SYSTEM_NAME : ${CMAKE_SYSTEM_NAME}") # Windows Darwin Linux Android FreeBSD
+message("CMAKE_ROOT : ${CMAKE_ROOT}")
+message("PROJECT_NAME : ${PROJECT_NAME}")
+message("CMAKE_PROJECT_NAME : ${CMAKE_PROJECT_NAME}")
+message("CMAKE_VERSION : ${CMAKE_VERSION}")
+message("CMAKE_GENERATOR : ${CMAKE_GENERATOR}")
+
+message("UNIX : ${UNIX}")         # includes OSX and CygWin
+message("APPLE : ${APPLE}")
+message("WIN32 : ${WIN32}")
+
+message("MSVC : ${MSVC}")
+message("MSYS : ${MSYS}")
+message("MINGW : ${MINGW}")
+message("CYGWIN : ${CYGWIN}")
+
+message("CMAKE_BUILD_TYPE : ${CMAKE_BUILD_TYPE}")
+message("CMAKE_CONFIGURATION_TYPES : ${CMAKE_CONFIGURATION_TYPES}") # When using a multi-configuration generator, such as the one for Visual Studio, this variable contains a list of the available configurations.
+
+message("LIB_TYPE : ${LIB_TYPE}")
+message("BUILD_SHARED_LIBS : ${BUILD_SHARED_LIBS}")
+message("CMAKE_SHARED_LINKER_FLAGS : ${CMAKE_SHARED_LINKER_FLAGS}")
+
+message("CMAKE_COMPILER_IS_GNUCC : ${CMAKE_COMPILER_IS_GNUCC}")
+message("CMAKE_COMPILER_IS_GNUCXX : ${CMAKE_COMPILER_IS_GNUCXX}")
+
+# CMAKE_MODULE_PATH # tell CMake to search first in directories listed in CMAKE_MODULE_PATH when you use FIND_PACKAGE() or INCLUDE()
+
+message("CMAKE_C_COMPILER_ID : ${CMAKE_C_COMPILER_ID}") # Clang GNU Intel MSVC
+message("CMAKE_C_COMPILER_VERSION : ${CMAKE_C_COMPILER_VERSION}")
+message("CMAKE_C_COMPILE_FLAGS : ${CMAKE_C_COMPILE_FLAGS}")
+message("CMAKE_C_FLAGS : ${CMAKE_C_FLAGS}")
+message("CMAKE_C_FLAGS_DEBUG : ${CMAKE_C_FLAGS_DEBUG}")
+message("CMAKE_C_FLAGS_RELEASE : ${CMAKE_C_FLAGS_RELEASE}")
+message("CMAKE_C_FLAGS_MINSIZEREL : ${CMAKE_C_FLAGS_MINSIZEREL}")
+message("CMAKE_C_FLAGS_RELWITHDEBINFO : ${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+message("CMAKE_C_OUTPUT_EXTENSION : ${CMAKE_C_OUTPUT_EXTENSION}")
+
+message("CMAKE_CXX_COMPILER_ID : ${CMAKE_CXX_COMPILER_ID}") # Clang GNU Intel MSVC
+message("CMAKE_CXX_COMPILER_VERSION : ${CMAKE_CXX_COMPILER_VERSION}")
+message("CMAKE_CXX_COMPILE_FLAGS : ${CMAKE_CXX_COMPILE_FLAGS}")
+message("CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message("CMAKE_CXX_FLAGS_DEBUG : ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE_CXX_FLAGS_RELEASE : ${CMAKE_CXX_FLAGS_RELEASE}")
+message("CMAKE_CXX_FLAGS_MINSIZEREL : ${CMAKE_CXX_FLAGS_MINSIZEREL}")
+message("CMAKE_CXX_FLAGS_RELWITHDEBINFO : ${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+message("CMAKE_CXX_OUTPUT_EXTENSION : ${CMAKE_C_OUTPUT_EXTENSION}")
+
+message("CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR}") # this is the directory which contains the top-level CMakeLists.txt, i.e. the top level source directory
+MESSAGE("CMAKE_CURRENT_LIST_FILE : ${CMAKE_CURRENT_LIST_FILE}") # this is the filename including the complete path of the file where this variable is used.
+MESSAGE("CMAKE_CURRENT_LIST_LINE : ${CMAKE_CURRENT_LIST_LINE}") # this is linenumber where the variable is used
+MESSAGE("CMAKE_INCLUDE_PATH : ${CMAKE_INCLUDE_PATH}") # this is used when searching for include files e.g. using the FIND_PATH() command.
+MESSAGE("CMAKE_LIBRARY_PATH : ${CMAKE_LIBRARY_PATH}") # this is used when searching for libraries e.g. using the FIND_LIBRARY() command.
+MESSAGE("CMAKE_SKIP_RPATH : ${CMAKE_SKIP_RPATH}") # If set, runtime paths are not added when using shared libraries. Default it is set to OFF
+MESSAGE("CMAKE_VERBOSE_MAKEFILE : ${CMAKE_VERBOSE_MAKEFILE}")
+MESSAGE("CMAKE_SUPPRESS_REGENERATION : ${CMAKE_SUPPRESS_REGENERATION}")
+
+
+get_property(mewmew GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES)
+message("get_property(mewmew GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES) : ${mewmew}")
+#MESSAGE("CMAKE_CXX_COMPILE_FEATURES : ${CMAKE_CXX_COMPILE_FEATURES}")
+
+# Prefixes, Suffixes (Postfixes), and Extensions
+# CMAKE_EXECUTABLE_SUFFIX : Suffix of executables on the target platform.
+# CMAKE_FIND_LIBRARY_PREFIXES : List of possible library prefixes used by find_library(). "lib" on UNIX systems.
+# CMAKE_FIND_LIBRARY_SUFFIXES : List of possible library suffixes used by find_library(). ".a;.so" on UNIX systems. Note that it's possible to use this to control whether find_package() modules find shared or static libraries.
+# CMAKE_<SHARED|STATIC>_LIBRARY_PREFIX : Prefix for shared or static libraries on this platform. Read-only.
+# CMAKE_<SHARED|STATIC>_LIBRARY_SUFFIX : Suffix for shared or static libraries on this platform. Read-only.
+# CMAKE__POSTFIX : Adds a custom "postfix" to static and shared libraries when in a certain build type. Example: Setting CMAKE_BUILD_TYPE=DEBUG and CMAKE_DEBUG_POSTFIX="_d" would turn mylib.lib into mylib_d.lib.
+
+# CMAKE_BINARY_DIR  if you are building in-source, this is the same as CMAKE_SOURCE_DIR, otherwise this is the top level directory of your build tree
+# CMAKE_CURRENT_BINARY_DIR if you are building in-source, this is the same as CMAKE_CURRENT_SOURCE_DIR, otherwise this is the directory where the compiled or generated files from the current CMakeLists.txt will go to
+# CMAKE_CURRENT_SOURCE_DIR # this is the directory where the currently processed CMakeLists.txt is located in
+# CMAKE_CURRENT_LIST_FILE
+# CMAKE_CURRENT_LIST_DIR
+# CMAKE_CURRENT_LIST_LINE
+# CMAKE_FILES_DIRECTORY
+# PROJECT_BINARY_DIR : contains the full path to the top level directory of your build tree
+# PROJECT_SOURCE_DIR : contains the full path to the root of your project source directory, i.e. to the nearest directory where CMakeLists.txt contains the PROJECT() command
+
+# System & Compiler Information
+# CMAKE_VERBOSE_MAKEFILE : set this to true if you are using makefiles and want to see the full compile and link commands instead of only the shortened ones
+# CMAKE_SUPPRESS_REGENERATION : this will cause CMake to not put in the rules that re-run CMake. This might be useful if you want to use the generated build files on another machine.
+# CMAKE_COLOR_MAKEFILE : create Makefiles with colored output (defaults to on)
+
+# Compilers and Tools
+# CMake will create by default the following variables when using a single-configuration generator:
+# - None (CMAKE_C_FLAGS or CMAKE_CXX_FLAGS used)
+# - Debug (CMAKE_C_FLAGS_DEBUG or CMAKE_CXX_FLAGS_DEBUG)
+# - Release (CMAKE_C_FLAGS_RELEASE or CMAKE_CXX_FLAGS_RELEASE)
+# - RelWithDebInfo (CMAKE_C_FLAGS_RELWITHDEBINFO or CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+# - MinSizeRel (CMAKE_C_FLAGS_MINSIZEREL or CMAKE_CXX_FLAGS_MINSIZEREL)
+# You can use these default compilation flags (or modify them) by setting the CMAKE_BUILD_TYPE variable at configuration time on the command line, or from within the "ccmake" GUI. Note! The default values for
+# these flags change with different compilers. If CMake does not know your compiler, the contents will be empty.
+# If you are using the Makefile generator, you can create your own build type like this:
+    # SET(CMAKE_BUILD_TYPE distribution)
+    # SET(CMAKE_CXX_FLAGS_DISTRIBUTION "-O3")
+    # SET(CMAKE_C_FLAGS_DISTRIBUTION "-O3")
+# Note that CMAKE_BUILD_TYPE is not initialized with a readable value at configuration time. This is because the user is free to select a build
+# type at build time. Use CMAKE_CFG_INTDIR if you need a variable that evaluates to the correct build time directory.
+
+MESSAGE("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
