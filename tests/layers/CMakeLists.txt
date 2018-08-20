@@ -18,7 +18,7 @@
 set(CMAKE_INSTALL_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
 
 if(WIN32)
-    macro(add_vk_layer target)
+    macro(AddVkLayer target)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_${target}.def DEF_FILE)
         add_custom_target(copy-${target}-def-file ALL
                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DEF_FILE} VkLayer_${target}.def
@@ -28,13 +28,13 @@ if(WIN32)
         add_dependencies(VkLayer_${target} generate_helper_files)
     endmacro()
 elseif(APPLE)
-    macro(add_vk_layer target)
+    macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
     endmacro()
 else(UNIX AND NOT APPLE)        # i.e.: Linux
-    macro(add_vk_layer target)
+    macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic")
@@ -58,9 +58,9 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function")
 endif()
 
-add_vk_layer(wrap_objects wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
+AddVkLayer(wrap_objects wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
-add_vk_layer(test test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
+AddVkLayer(test test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
 # The output file needs Unix "/" separators or Windows "\" separators
 # On top of that, Windows separators actually need to be doubled because the json format uses backslash escapes
