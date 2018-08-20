@@ -58,8 +58,7 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function")
 endif()
 
-set(WRAP_SRCS wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
-add_vk_layer(wrap_objects ${WRAP_SRCS})
+add_vk_layer(wrap_objects wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
 set(TEST_SRCS test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 add_vk_layer(test ${TEST_SRCS})
