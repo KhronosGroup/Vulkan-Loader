@@ -60,8 +60,7 @@ endif()
 
 add_vk_layer(wrap_objects wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
-set(TEST_SRCS test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
-add_vk_layer(test ${TEST_SRCS})
+add_vk_layer(test test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
 # The output file needs Unix "/" separators or Windows "\" separators
 # On top of that, Windows separators actually need to be doubled because the json format uses backslash escapes
