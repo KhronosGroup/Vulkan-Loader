@@ -152,7 +152,7 @@ else()
 endif()
 
 # Define macro used for building vkxml generated files
-macro(run_vk_xml_generate dependency output)
+macro(run_vk_xml_generate output dependency)
     add_custom_command(OUTPUT ${output}
                        COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
                                ${VulkanRegistry_DIR} ${output}
@@ -176,14 +176,14 @@ add_custom_target(generate_helper_files
 set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
 # Rules to build generated helper files
-run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
-run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.cpp)
-run_vk_xml_generate(helper_file_generator.py vk_enum_string_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
-run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
+run_vk_xml_generate(vk_layer_dispatch_table.h loader_extension_generator.py)
+run_vk_xml_generate(vk_dispatch_table_helper.h dispatch_table_helper_generator.py)
+run_vk_xml_generate(vk_safe_struct.h helper_file_generator.py)
+run_vk_xml_generate(vk_safe_struct.cpp helper_file_generator.py)
+run_vk_xml_generate(vk_enum_string_helper.h helper_file_generator.py)
+run_vk_xml_generate(vk_object_types.h helper_file_generator.py)
+run_vk_xml_generate(vk_extension_helper.h helper_file_generator.py)
+run_vk_xml_generate(vk_typemap_helper.h helper_file_generator.py)
 
 if(UNIX)
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
