@@ -136,8 +136,8 @@ else(UNIX AND NOT APPLE)        # i.e.: Linux
     endif()
 endif()
 
-run_vk_xml_generate(vk_loader_extensions.h loader_extension_generator.py)
-run_vk_xml_generate(vk_loader_extensions.c loader_extension_generator.py)
+GenerateFromVkXml(vk_loader_extensions.h loader_extension_generator.py)
+GenerateFromVkXml(vk_loader_extensions.c loader_extension_generator.py)
 add_custom_target(loader_gen_files DEPENDS vk_loader_extensions.h vk_loader_extensions.c)
 set_target_properties(loader_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
