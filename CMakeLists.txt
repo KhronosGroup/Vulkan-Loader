@@ -156,10 +156,10 @@ macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
                        COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
                                ${VulkanRegistry_DIR} ${output}
-                       DEPENDS ${VulkanRegistry_DIR}/vk.xml
-                               ${VulkanRegistry_DIR}/generator.py
-                               ${SCRIPTS_DIR}/${dependency}
+                       DEPENDS ${SCRIPTS_DIR}/${dependency}
                                ${SCRIPTS_DIR}/loader_genvk.py
+                               ${VulkanRegistry_DIR}/vk.xml
+                               ${VulkanRegistry_DIR}/generator.py
                                ${VulkanRegistry_DIR}/reg.py)
 endmacro()
 
