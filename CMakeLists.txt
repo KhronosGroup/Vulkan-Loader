@@ -161,7 +161,7 @@ if(MSVC)
     add_compile_options("/w34245")
 endif()
 
-# Define macro used for building vkxml generated files
+# Define a macro to generate source code from vk.xml
 set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 macro(GenerateFromVkXml output dependency)
     add_custom_command(OUTPUT ${output}
@@ -174,7 +174,17 @@ macro(GenerateFromVkXml output dependency)
                                ${VulkanRegistry_DIR}/reg.py)
 endmacro()
 
-# Custom target for generated vulkan helper file dependencies
+# Use the macro to generate the source files.
+GenerateFromVkXml(vk_layer_dispatch_table.h loader_extension_generator.py)
+GenerateFromVkXml(vk_dispatch_table_helper.h dispatch_table_helper_generator.py)
+GenerateFromVkXml(vk_safe_struct.h helper_file_generator.py)
+GenerateFromVkXml(vk_safe_struct.cpp helper_file_generator.py)
+GenerateFromVkXml(vk_enum_string_helper.h helper_file_generator.py)
+GenerateFromVkXml(vk_object_types.h helper_file_generator.py)
+GenerateFromVkXml(vk_extension_helper.h helper_file_generator.py)
+GenerateFromVkXml(vk_typemap_helper.h helper_file_generator.py)
+
+# Use a custom target to cause the source files to be generated.
 add_custom_target(generate_helper_files
                   DEPENDS vk_enum_string_helper.h
                           vk_safe_struct.h
@@ -184,17 +194,8 @@ add_custom_target(generate_helper_files
                           vk_dispatch_table_helper.h
                           vk_extension_helper.h
                           vk_typemap_helper.h)
-set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
-# Rules to build generated helper files
-GenerateFromVkXml(vk_layer_dispatch_table.h loader_extension_generator.py)
-GenerateFromVkXml(vk_dispatch_table_helper.h dispatch_table_helper_generator.py)
-GenerateFromVkXml(vk_safe_struct.h helper_file_generator.py)
-GenerateFromVkXml(vk_safe_struct.cpp helper_file_generator.py)
-GenerateFromVkXml(vk_enum_string_helper.h helper_file_generator.py)
-GenerateFromVkXml(vk_object_types.h helper_file_generator.py)
-GenerateFromVkXml(vk_extension_helper.h helper_file_generator.py)
-GenerateFromVkXml(vk_typemap_helper.h helper_file_generator.py)
+set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
 if(UNIX)
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
