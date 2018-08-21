@@ -104,12 +104,10 @@ target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_mai
 if(BUILD_LOADER AND ENABLE_STATIC_LOADER)
     set_target_properties(vk_loader_validation_tests PROPERTIES LINK_FLAGS "/ignore:4098")
 endif()
-if(WIN32)
-    file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-endif()
 
 # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
 if(WIN32)
+    file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
     if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
         file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll
                             GTEST_COPY_SRC1)
