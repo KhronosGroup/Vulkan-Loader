@@ -15,11 +15,6 @@
 # limitations under the License.
 # ~~~
 
-if(NOT ${VulkanRegistry_FOUND})
-    message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                        "installation of the Vulkan-Headers repository.")
-endif()
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_BINARY_DIR})
 
 # Check for the existance of the secure_getenv or __secure_getenv commands

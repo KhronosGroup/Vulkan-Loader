@@ -30,6 +30,10 @@ if(NOT ${VulkanHeaders_FOUND})
     message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
                         "installation of the Vulkan-Headers repository.")
 endif()
+if(NOT ${VulkanRegistry_FOUND})
+    message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
+                        "installation of the Vulkan-Headers repository.")
+endif()
 
 option(USE_CCACHE "Use ccache" OFF)
 if(USE_CCACHE)
