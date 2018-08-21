@@ -108,8 +108,6 @@ if(WIN32)
     option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
 endif()
 
-set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
-
 # Add location of Vulkan header files to include search path
 include_directories(${VulkanHeaders_INCLUDE_DIRS})
 
@@ -161,6 +159,7 @@ else()
 endif()
 
 # Define macro used for building vkxml generated files
+set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 macro(GenerateFromVkXml output dependency)
     add_custom_command(OUTPUT ${output}
                        COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
