@@ -110,6 +110,14 @@ if(WIN32)
     option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
 endif()
 
+option(BUILD_LOADER "Build loader" ON)
+
+if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
+    option(BUILD_TESTS "Build Tests" ON)
+else()
+    option(BUILD_TESTS "Build Tests" OFF)
+endif()
+
 # Add location of Vulkan header files to include search path
 include_directories(${VulkanHeaders_INCLUDE_DIRS})
 
@@ -151,13 +159,6 @@ if(MSVC)
     add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
     add_compile_options("/w34245")
-endif()
-
-option(BUILD_LOADER "Build loader" ON)
-if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
-    option(BUILD_TESTS "Build Tests" ON)
-else()
-    option(BUILD_TESTS "Build Tests" OFF)
 endif()
 
 # Define macro used for building vkxml generated files
