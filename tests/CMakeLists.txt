@@ -25,11 +25,21 @@ if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
+
+    # If MSVC, disable some signed/unsigned mismatch warnings.
+    if(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267")
+    endif()
+
 elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(APPLE)
     add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(UNIX AND NOT APPLE)      # i.e.: Linux
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     if(BUILD_WSI_XCB_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
     endif()
@@ -48,18 +58,6 @@ elseif(UNIX AND NOT APPLE)      # i.e.: Linux
     endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
-endif()
-
-if(WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
-
-    # If MSVC, disable some signed/unsigned mismatch warnings.
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267")
-    endif()
-
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
