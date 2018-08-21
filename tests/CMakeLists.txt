@@ -16,16 +16,16 @@
 # ~~~
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
-set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+target_compile_definitions(vk_loader_validation_tests PRIVATE "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 if(UNIX)
     set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif()
 
 if(WIN32)
-    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
+    target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_WIN32_KHR" "WIN32_LEAN_AND_MEAN")
+    target_compile_definitions(vk_loader_validation_tests PRIVATE "_CRT_SECURE_NO_WARNINGS" "_USE_MATH_DEFINES")
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
-    add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
+    target_compile_definitions(vk_loader_validation_tests PRIVATE "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
 
     # If MSVC, disable some signed/unsigned mismatch warnings.
     if(MSVC)
@@ -33,27 +33,27 @@ if(WIN32)
     endif()
 
 elseif(ANDROID)
-    add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
+    target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_ANDROID_KHR")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(APPLE)
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+    target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_MACOS_MVK")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(UNIX AND NOT APPLE)      # i.e.: Linux
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     if(BUILD_WSI_XCB_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
+        target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_XCB_KHR")
     endif()
 
     if(BUILD_WSI_XLIB_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_XLIB_KHR)
+        target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_XLIB_KHR")
     endif()
 
     if(BUILD_WSI_WAYLAND_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
+        target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_WAYLAND_KHR")
     endif()
 
     if(BUILD_WSI_MIR_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_MIR_KHR)
+        target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_MIR_KHR")
         include_directories(${MIR_INCLUDE_DIR})
     endif()
 else()
