@@ -15,6 +15,12 @@
 # limitations under the License.
 # ~~~
 
+add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
+set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+if(UNIX)
+    set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
+endif()
+
 if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
@@ -82,12 +88,6 @@ else()
                           VERBATIM)
         set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
     endif()
-endif()
-
-add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
-set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-if(UNIX)
-    set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif()
 
 if(TARGET vulkan)
