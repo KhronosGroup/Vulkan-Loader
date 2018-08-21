@@ -76,6 +76,8 @@ endif()
 AddVkLayer(wrap_objects wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 AddVkLayer(test test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
+# --------------------------------------------------------------------------------------------------------------------------------
+
 # The output file needs Unix "/" separators or Windows "\" separators
 # On top of that, Windows separators actually need to be doubled because the json format uses backslash escapes
 file(TO_NATIVE_PATH "./" RELATIVE_PATH_PREFIX)
@@ -85,22 +87,26 @@ string(REPLACE "\\" "\\\\" RELATIVE_PATH_PREFIX "${RELATIVE_PATH_PREFIX}")
 # We need to create the generator.cmake script so that the generator can be run at compile time, instead of configure time
 # Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and TARGET_FILE_DIR, specifically)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\")")
+
 foreach(TARGET_NAME VkLayer_wrap_objects VkLayer_test VkLayer_meta)
     set(CONFIG_DEFINES
         -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
         -DVK_VERSION="${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}"
     )
-    # If this json file is not a metalayer, get the needed properties from that target
+
+    # Append further config parameters, depending on which layer.
     if(TARGET ${TARGET_NAME})
+        # This json file corresponds to an actual target (not a metalayer); query properties from that target.
         set(CONFIG_DEFINES ${CONFIG_DEFINES}
             -DOUTPUT_FILE="$<TARGET_FILE_DIR:${TARGET_NAME}>/${TARGET_NAME}.json"
             -DRELATIVE_LAYER_BINARY="${RELATIVE_PATH_PREFIX}$<TARGET_FILE_NAME:${TARGET_NAME}>"
         )
-    # If this json file is a metalayer, make the output path match the test layer, and there is no layer binary file
     else()
+        # This json file is a metalayer.  Query properties from the VkLayer_test layer; there is no layer binary file.
         set(CONFIG_DEFINES ${CONFIG_DEFINES}
             -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_test>/${TARGET_NAME}.json"
         )
     endif()
+
     add_custom_target(${TARGET_NAME}-json ALL COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
 endforeach()
