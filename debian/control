@@ -3,13 +3,13 @@ Section: libs
 Priority: optional
 Maintainer: Brett Johnson <brett@lunarg.com>
 Build-Depends: debhelper (>=9),
+ vulkan-headers (>=1.1.82), vulkan-headers (<<1.1.83),
  cmake,
  python3,
  libwayland-dev,
  libx11-dev,
  libxcb1-dev,
  libxrandr-dev,
- vulkan-headers,
  pkg-config,
  quilt
 Standards-Version: 4.1.3
