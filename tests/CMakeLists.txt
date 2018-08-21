@@ -44,17 +44,6 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-# On Windows, we must pair Debug and Release appropriately
-if(WIN32)
-    # For Windows, since 32-bit and 64-bit items can co-exist, we build each in its own build directory. 32-bit target data goes in
-    # build32, and 64-bit target data goes into build.  So, include/link the appropriate data at build time.
-    if(CMAKE_CL_64)
-        set(BUILDTGT_DIR build)
-    else()
-        set(BUILDTGT_DIR build32)
-    endif()
-endif()
-
 if(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
 
