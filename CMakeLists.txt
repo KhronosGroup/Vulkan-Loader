@@ -52,14 +52,14 @@ if(UNIX AND NOT APPLE)  # i.e.: Linux
     include(FindPkgConfig)
 endif()
 
-if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
-endif()
-
 if(APPLE)
     # CMake versions 3 or later need CMAKE_MACOSX_RPATH defined. This avoids the CMP0042 policy message.
     set(CMAKE_MACOSX_RPATH 1)
+endif()
+
+if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
 # Enable IDE GUI folders
