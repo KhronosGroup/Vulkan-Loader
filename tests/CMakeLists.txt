@@ -60,8 +60,6 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
-
 target_include_directories(vk_loader_validation_tests PRIVATE
                     ${PROJECT_SOURCE_DIR}/external
                     ${GTEST_SOURCE_DIR}/googletest/include
