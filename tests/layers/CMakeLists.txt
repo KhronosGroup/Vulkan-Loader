@@ -15,8 +15,9 @@
 # limitations under the License.
 # ~~~
 
-set(CMAKE_INSTALL_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
+# --------------------------------------------------------------------------------------------------------------------------------
 
+# Define a system-specific macro that creates a library target.
 if(WIN32)
     macro(AddVkLayer target)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_${target}.def DEF_FILE)
@@ -24,42 +25,55 @@ if(WIN32)
                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DEF_FILE} VkLayer_${target}.def
                           VERBATIM)
         set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
+
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
         add_dependencies(VkLayer_${target} generate_helper_files)
+        target_compile_definitions(VkLayer_${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
+        target_compile_features(VkLayer_${target} PRIVATE $<$<CONFIG:Debug>:"/bigobj">)
+        target_include_directories(VkLayer_${target} PRIVATE
+                            ${CMAKE_CURRENT_SOURCE_DIR}
+                            ${CMAKE_CURRENT_SOURCE_DIR}/../../loader
+                            ${PROJECT_SOURCE_DIR}/Vulkan-Headers/include
+                            ${CMAKE_CURRENT_BINARY_DIR}
+                            ${PROJECT_BINARY_DIR}
+                            ${CMAKE_BINARY_DIR})
     endmacro()
 elseif(APPLE)
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
+        target_compile_features(VkLayer_${target} PRIVATE -Wpointer-arith -Wno-unused-function)
+        target_include_directories(VkLayer_${target} PRIVATE
+                            ${CMAKE_CURRENT_SOURCE_DIR}
+                            ${CMAKE_CURRENT_SOURCE_DIR}/../../loader
+                            ${PROJECT_SOURCE_DIR}/Vulkan-Headers/include
+                            ${CMAKE_CURRENT_BINARY_DIR}
+                            ${PROJECT_BINARY_DIR}
+                            ${CMAKE_BINARY_DIR})
     endmacro()
 else(UNIX AND NOT APPLE)        # i.e.: Linux
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic")
+        set_property(TARGET VkLayer_${target}
+                    PROPERTY INSTALL_RPATH
+                    /usr/lib/x86_64-linux-gnu/vulkan/layer
+                    /usr/lib/i386-linux-gnu/vulkan/layer)
+        target_compile_features(VkLayer_${target} PRIVATE -Wpointer-arith -Wno-unused-function)
+        target_include_directories(VkLayer_${target} PRIVATE
+                            ${CMAKE_CURRENT_SOURCE_DIR}
+                            ${CMAKE_CURRENT_SOURCE_DIR}/../../loader
+                            ${PROJECT_SOURCE_DIR}/Vulkan-Headers/include
+                            ${CMAKE_CURRENT_BINARY_DIR}
+                            ${PROJECT_BINARY_DIR}
+                            ${CMAKE_BINARY_DIR})
     endmacro()
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../../loader
-                    ${PROJECT_SOURCE_DIR}/Vulkan-Headers/include
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${PROJECT_BINARY_DIR}
-                    ${CMAKE_BINARY_DIR})
-
-if(WIN32)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_CRT_SECURE_NO_WARNINGS")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -D_CRT_SECURE_NO_WARNINGS")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_CRT_SECURE_NO_WARNINGS /bigobj")
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_CRT_SECURE_NO_WARNINGS /bigobj")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpointer-arith -Wno-unused-function")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function")
-endif()
-
+# Use the macro to create library targets.
 AddVkLayer(wrap_objects wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
-
 AddVkLayer(test test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
 # The output file needs Unix "/" separators or Windows "\" separators
