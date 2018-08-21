@@ -24,6 +24,9 @@ project(Vulkan-Loader)
 
 #set(CMAKE_DEBUG_TARGET_PROPERTIES INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS AUTOUIC_OPTIONS SOURCES COMPILE_FEATURES POSITION_INDEPENDENT_CODE)
 
+# TODO(mew) API_NAME is only referenced in loader/vk_loader_platform.h
+add_definitions(-DAPI_NAME="Vulkan")
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(PythonInterp 3 REQUIRED)
@@ -216,9 +219,6 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
     set_target_properties(uninstall PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 endif()
-
-# TODO(mew) API_NAME is only referenced in loader/vk_loader_platform.h
-add_definitions(-DAPI_NAME="Vulkan")
 
 if(BUILD_LOADER)
     add_subdirectory(loader)
