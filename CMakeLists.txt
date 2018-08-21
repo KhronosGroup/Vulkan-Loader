@@ -48,6 +48,10 @@ endif()
 
 include(GNUInstallDirs)
 
+if(UNIX AND NOT APPLE)  # i.e.: Linux
+    include(FindPkgConfig)
+endif()
+
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
@@ -79,7 +83,6 @@ if(UNIX)
 endif()
 
 if(UNIX AND NOT APPLE)  # i.e.: Linux
-    include(FindPkgConfig)
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
