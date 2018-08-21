@@ -17,9 +17,6 @@
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
 target_compile_definitions(vk_loader_validation_tests PRIVATE "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-if(UNIX)
-    set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
-endif()
 
 if(WIN32)
     target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_WIN32_KHR" "WIN32_LEAN_AND_MEAN")
@@ -27,18 +24,20 @@ if(WIN32)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     target_compile_definitions(vk_loader_validation_tests PRIVATE "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
 
-    # If MSVC, disable some signed/unsigned mismatch warnings.
     if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267")
+        # disable some signed/unsigned mismatch warnings.
+        target_compile_options(vk_loader_validation_tests PRIVATE "/wd4267")
     endif()
 
 elseif(ANDROID)
     target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_ANDROID_KHR")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(APPLE)
+    target_compile_options(vk_loader_validation_tests PRIVATE "-Wno-sign-compare")
     target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_MACOS_MVK")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(UNIX AND NOT APPLE)      # i.e.: Linux
+    target_compile_options(vk_loader_validation_tests PRIVATE "-Wno-sign-compare")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     if(BUILD_WSI_XCB_SUPPORT)
         target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_XCB_KHR")
