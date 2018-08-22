@@ -104,7 +104,8 @@ if(WIN32)
 endif()
 
 target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_main)
-if(BUILD_LOADER AND ENABLE_STATIC_LOADER)
+
+if(MSVC AND BUILD_LOADER AND ENABLE_STATIC_LOADER)
     set_target_properties(vk_loader_validation_tests PROPERTIES LINK_FLAGS "/ignore:4098")
 endif()
 
