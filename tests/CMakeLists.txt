@@ -54,7 +54,7 @@ elseif(UNIX AND NOT APPLE)      # i.e.: Linux
 
     if(BUILD_WSI_MIR_SUPPORT)
         target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_MIR_KHR")
-        include_directories(${MIR_INCLUDE_DIR})
+        target_include_directories(vk_loader_validation_tests PRIVATE ${MIR_INCLUDE_DIR})
     endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
@@ -62,7 +62,8 @@ endif()
 
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
-include_directories(${PROJECT_SOURCE_DIR}/external
+target_include_directories(vk_loader_validation_tests PRIVATE
+                    ${PROJECT_SOURCE_DIR}/external
                     ${GTEST_SOURCE_DIR}/googletest/include
                     ${CMAKE_CURRENT_BINARY_DIR}
                     ${CMAKE_BINARY_DIR}
