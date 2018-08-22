@@ -15,6 +15,8 @@
 # limitations under the License.
 # ~~~
 
+# Define the main target of this subdirectory ------------------------------------------------------------------------------------
+
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
 target_compile_definitions(vk_loader_validation_tests PRIVATE "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 target_include_directories(vk_loader_validation_tests PRIVATE
@@ -23,6 +25,8 @@ target_include_directories(vk_loader_validation_tests PRIVATE
                     ${CMAKE_CURRENT_BINARY_DIR}
                     ${CMAKE_BINARY_DIR}
                     ${PROJECT_BINARY_DIR})
+
+# Adjust platform-specific build settings ----------------------------------------------------------------------------------------
 
 if(WIN32)
     target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_WIN32_KHR" "WIN32_LEAN_AND_MEAN")
@@ -66,6 +70,8 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
+# Create copies/symlinks if out-of-source build ----------------------------------------------------------------------------------
+
 if(UNIX)
     # extra setup for out-of-tree builds
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
@@ -86,6 +92,8 @@ else()
     endif()
 endif()
 
+# Link to the desired loader library (taking into account an envar override) -----------------------------------------------------
+
 if(TARGET vulkan)
     set(LOADER_LIB vulkan)
 elseif(WIN32 AND NOT $ENV{VULKAN_SDK} EQUAL "")
@@ -102,6 +110,8 @@ target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_mai
 if(BUILD_LOADER AND ENABLE_STATIC_LOADER)
     set_target_properties(vk_loader_validation_tests PROPERTIES LINK_FLAGS "/ignore:4098")
 endif()
+
+# Windows only: copy libraries to test dir, so test executable can find them. ----------------------------------------------------
 
 # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
 if(WIN32)
@@ -126,5 +136,7 @@ if(WIN32)
                            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:vk_loader_validation_tests>)
     endif()
 endif()
+
+# Pull in subprojects ------------------------------------------------------------------------------------------------------------
 
 add_subdirectory(layers)
