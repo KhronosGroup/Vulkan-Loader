@@ -72,18 +72,15 @@ endif()
 
 # Create copies/symlinks if out-of-source build ----------------------------------------------------------------------------------
 
-if(UNIX)
-    # extra setup for out-of-tree builds
-    if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
+if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
+    if(UNIX)
         add_custom_target(binary-dir-symlinks ALL
                           COMMAND $(CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_wrap_objects_tests.sh run_wrap_objects_tests.sh
                           COMMAND $(CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_loader_tests.sh run_loader_tests.sh
                           COMMAND $(CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_extra_loader_tests.sh run_extra_loader_tests.sh
                           COMMAND $(CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_all_tests.sh run_all_tests.sh
                           VERBATIM)
-    endif()
-else()
-    if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
+    else()
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/_run_all_tests.ps1 RUN_ALL)
         add_custom_target(binary-dir-symlinks ALL
                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUN_ALL} run_all_tests.ps1
