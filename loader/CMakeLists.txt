@@ -15,6 +15,13 @@
 # limitations under the License.
 # ~~~
 
+# Define target "loader_gen_files"------------------------------------------------------------------------------------------------
+
+GenerateFromVkXml(vk_loader_extensions.h loader_extension_generator.py)
+GenerateFromVkXml(vk_loader_extensions.c loader_extension_generator.py)
+add_custom_target(loader_gen_files DEPENDS vk_loader_extensions.h vk_loader_extensions.c)
+set_target_properties(loader_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_BINARY_DIR})
 
 # Check for the existance of the secure_getenv or __secure_getenv commands
@@ -130,11 +137,6 @@ else(UNIX AND NOT APPLE)        # i.e.: Linux
         add_custom_target(loader_asm_gen_files)
     endif()
 endif()
-
-GenerateFromVkXml(vk_loader_extensions.h loader_extension_generator.py)
-GenerateFromVkXml(vk_loader_extensions.c loader_extension_generator.py)
-add_custom_target(loader_gen_files DEPENDS vk_loader_extensions.h vk_loader_extensions.c)
-set_target_properties(loader_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
 if(WIN32)
     # Use static MSVCRT libraries
