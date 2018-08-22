@@ -64,6 +64,17 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
+if(UNIX)
+    add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
+    add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
+    add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
+
+    # Make sure /etc is searched by the loader
+    if(NOT (CMAKE_INSTALL_FULL_SYSCONFDIR STREQUAL "/etc"))
+        add_definitions(-DEXTRASYSCONFDIR="/etc")
+    endif()
+endif()
+
 # DEBUG enables runtime loader ICD verification
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")

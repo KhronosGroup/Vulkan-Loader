@@ -212,17 +212,6 @@ add_custom_target(generate_helper_files
 
 set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
-if(UNIX)
-    add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
-    add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
-    add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
-
-    # Make sure /etc is searched by the loader
-    if(NOT (CMAKE_INSTALL_FULL_SYSCONFDIR STREQUAL "/etc"))
-        add_definitions(-DEXTRASYSCONFDIR="/etc")
-    endif()
-endif()
-
 # Define the uninstall target ----------------------------------------------------------------------------------------------------
 
 if(NOT TARGET uninstall)
