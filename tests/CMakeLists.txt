@@ -91,16 +91,16 @@ endif()
 
 # Link to the desired loader library (taking into account an envar override) -----------------------------------------------------
 
-if(TARGET vulkan)
-    set(LOADER_LIB vulkan)
-elseif(WIN32 AND NOT $ENV{VULKAN_SDK} EQUAL "")
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(LOADER_LIB "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
-    else()
-        set(LOADER_LIB "$ENV{VULKAN_SDK}/Lib32/vulkan-1.lib")
+set(LOADER_LIB "vulkan")
+
+if(WIN32)
+    if(NOT $ENV{VULKAN_SDK} EQUAL "")
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(LOADER_LIB "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
+        else()
+            set(LOADER_LIB "$ENV{VULKAN_SDK}/Lib32/vulkan-1.lib")
+        endif()
     endif()
-else()
-    set(LOADER_LIB vulkan)
 endif()
 
 target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_main)
