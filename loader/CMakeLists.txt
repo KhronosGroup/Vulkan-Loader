@@ -162,6 +162,7 @@ if(WIN32)
             CMAKE_CXX_FLAGS_RELEASE
             CMAKE_CXX_FLAGS_RELWITHDEBINFO)
         if(${configuration} MATCHES "/MD")
+            # change multithread dynamic linkage to multithread static linkage
             string(REGEX REPLACE "/MD" "/MT" ${configuration} "${${configuration}}")
         endif()
     endforeach()
