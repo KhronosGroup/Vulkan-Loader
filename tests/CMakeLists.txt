@@ -31,14 +31,15 @@ if(WIN32)
 
 elseif(ANDROID)
     target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_ANDROID_KHR")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    target_compile_features(vk_loader_validation_tests PRIVATE "cxx_std_11")
 elseif(APPLE)
     target_compile_options(vk_loader_validation_tests PRIVATE "-Wno-sign-compare")
     target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_MACOS_MVK")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    target_compile_features(vk_loader_validation_tests PRIVATE "cxx_std_11")
 elseif(UNIX AND NOT APPLE)      # i.e.: Linux
     target_compile_options(vk_loader_validation_tests PRIVATE "-Wno-sign-compare")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    target_compile_features(vk_loader_validation_tests PRIVATE "cxx_std_11")
+
     if(BUILD_WSI_XCB_SUPPORT)
         target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_XCB_KHR")
     endif()
