@@ -1,8 +1,10 @@
-vulkan-loader (1.1.82.0-1) UNRELEASED; urgency=medium
+vulkan-loader (1.1.82.0-3) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Fix vulkan-header dependency
+  * Fix policy package issues
 
- -- Brett Johnson <brett@linuxturtle.net>  Thu, 09 Aug 2018 12:45:40 -0600
+ -- Brett Johnson <brett@linuxturtle.net>  Wed, 22 Aug 2018 10:04:02 -0600
 
 vulkan-loader (1.1.79.0-1) stable; urgency=medium
 

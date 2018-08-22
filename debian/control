@@ -12,7 +12,7 @@ Build-Depends: debhelper (>=9),
  libxrandr-dev,
  pkg-config,
  quilt
-Standards-Version: 4.1.3
+Standards-Version: 4.1.5
 Homepage: https://github.com/KhronosGroup/Vulkan-Loader
 Vcs-Git: 
 Vcs-Browser: 
@@ -20,10 +20,15 @@ Vcs-Browser:
 Package: libvulkan1
 Architecture: linux-any
 Depends: ${shlibs:Depends},${misc:Depends}
+Breaks: vulkan-loader,
+ libvulkan1 (<<1.1.82)
+Replaces: vulkan-loader,
+ libvulkan1 (<<1.1.82)
 Multi-Arch: same
-Description: Khronos official Vulkan ICD desktop loader for Linux
- The ICD loader is a library that is placed between a Vulkan application and any
- number of Vulkan drivers, in order to support multiple drivers and the
- instance-level functionality that works across these drivers. Additionally, the
- loader manages inserting Vulkan layer libraries, such as validation layers,
- between an application and the drivers.
+Description: Vulkan Loader Library
+ Khronos official Vulkan ICD desktop loader for Linux The ICD loader is a
+ library that is placed between a Vulkan application and any number of Vulkan
+ drivers, in order to support multiple drivers and the instance-level
+ functionality that works across these drivers. Additionally, the loader manages
+ inserting Vulkan layer libraries, such as validation layers, between an
+ application and the drivers.
