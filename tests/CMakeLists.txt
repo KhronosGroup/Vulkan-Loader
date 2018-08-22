@@ -17,6 +17,12 @@
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
 target_compile_definitions(vk_loader_validation_tests PRIVATE "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+target_include_directories(vk_loader_validation_tests PRIVATE
+                    ${PROJECT_SOURCE_DIR}/external
+                    ${GTEST_SOURCE_DIR}/googletest/include
+                    ${CMAKE_CURRENT_BINARY_DIR}
+                    ${CMAKE_BINARY_DIR}
+                    ${PROJECT_BINARY_DIR})
 
 if(WIN32)
     target_compile_definitions(vk_loader_validation_tests PRIVATE "VK_USE_PLATFORM_WIN32_KHR" "WIN32_LEAN_AND_MEAN")
@@ -59,13 +65,6 @@ elseif(UNIX AND NOT APPLE)      # i.e.: Linux
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
-
-target_include_directories(vk_loader_validation_tests PRIVATE
-                    ${PROJECT_SOURCE_DIR}/external
-                    ${GTEST_SOURCE_DIR}/googletest/include
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${CMAKE_BINARY_DIR}
-                    ${PROJECT_BINARY_DIR})
 
 if(UNIX)
     # extra setup for out-of-tree builds
