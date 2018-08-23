@@ -3370,7 +3370,10 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
                 strcpy(out_files->filename_list[out_files->count], name);
                 out_files->count++;
             } else if(file_already_loaded) {
-                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                // If the file has already been loaded we want to silently skip it. We do not want to report an error because having
+                // multiple GPUs using the Windows PnP registries with the same driver are expected to see a duplicate entry. We
+                // leave this as a debug message because it can still be useful in loader debugging.
+                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
                     "Skipping manifest file %s - The file has already been read once", name);
             } else if (!list_is_dirs) {
                 loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "Skipping manifest file %s, file name must end in .json",
