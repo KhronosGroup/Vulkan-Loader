@@ -21,7 +21,8 @@ Package: libvulkan1
 Architecture: linux-any
 Depends: ${shlibs:Depends},${misc:Depends}
 Breaks: vulkan-loader,
- libvulkan1 (<<1.1.82)
+ libvulkan1 (<<1.1.82),
+ libvulkan-dev
 Replaces: vulkan-loader,
  libvulkan1 (<<1.1.82)
 Multi-Arch: same
