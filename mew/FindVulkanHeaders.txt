@@ -1,0 +1,21 @@
+VULKAN_HEADERS_INSTALL_DIR set to install location
+
+This module defines the following variables:
+
+#   VulkanHeaders_FOUND          - True if VulkanHeaders was found
+#   VulkanHeaders_INCLUDE_DIRS   - include directories for VulkanHeaders
+
+#   VulkanRegistry_FOUND         - True if VulkanRegistry was found
+#   VulkanRegistry_DIRS          - directories for VulkanRegistry
+
+#   VulkanHeaders_VERSION_MAJOR  - The Major API version of the latest version
+#                                  contained in the Vulkan header
+#   VulkanHeaders_VERSION_MINOR  - The Minor API version of the latest version
+#                                  contained in the Vulkan header
+#   VulkanHeaders_VERSION_PATCH  - The Patch API version of the latest version
+#                                  contained in the Vulkan header
+
+# The module will also define two cache variables:
+
+#   VulkanHeaders_INCLUDE_DIR    - the VulkanHeaders include directory
+#   VulkanRegistry_DIR           - the VulkanRegistry directory
