@@ -23,8 +23,5 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	dh_auto_install --destdir=debian/tmp
 
-	mkdir -p debian/tmp/usr/include
-	cp -rp include/vulkan debian/tmp/usr/include
-
 override_dh_missing:
 	dh_missing --fail-missing
