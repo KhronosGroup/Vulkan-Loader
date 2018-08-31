@@ -218,6 +218,7 @@ import sys
 import platform
 import multiprocessing
 import shutil
+import re
 
 KNOWN_GOOD_FILE_NAME = 'known_good.json'
 
@@ -458,6 +459,10 @@ def GetInstallNames(args):
         else:
             return None
 
+def SanitizeForCmake( value ):
+    """Escapes characters in value for Cmake"""
+    return re.sub(r'[()#"\\$@^]', r'\\\g<0>', value)
+
 
 def CreateHelper(args, repos, filename):
     """Create a CMake config helper file.
@@ -474,10 +479,10 @@ def CreateHelper(args, repos, filename):
     with open(filename, 'w') as helper_file:
         for repo in repos:
             if install_names and repo.name in install_names:
-                helper_file.write('set({var} "{dir}" CACHE STRING "" FORCE)\n'
+                helper_file.write('set({var} "{dir}" CACHE PATH "" FORCE)\n'
                                   .format(
                                       var=install_names[repo.name],
-                                      dir=repo.install_dir))
+                                      dir=SanitizeForCmake(repo.install_dir)))
 
 
 def main():
