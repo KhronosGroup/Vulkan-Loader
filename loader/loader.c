@@ -4885,7 +4885,6 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
         for (int32_t i = dev->expanded_activated_layer_list.count - 1; i >= 0; i--) {
             struct loader_layer_properties *layer_prop = &dev->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
-            bool functions_in_interface = false;
 
             lib_handle = loader_open_layer_lib(inst, "device", layer_prop);
             if (!lib_handle) {
