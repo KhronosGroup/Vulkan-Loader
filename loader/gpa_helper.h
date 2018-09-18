@@ -226,6 +226,7 @@ static inline void *loader_non_passthrough_gdpa(const char *name) {
     if (!strcmp(name, "GetDeviceProcAddr")) return vkGetDeviceProcAddr;
     if (!strcmp(name, "DestroyDevice")) return vkDestroyDevice;
     if (!strcmp(name, "GetDeviceQueue")) return vkGetDeviceQueue;
+    if (!strcmp(name, "GetDeviceQueue2")) return vkGetDeviceQueue2;
     if (!strcmp(name, "AllocateCommandBuffers")) return vkAllocateCommandBuffers;
 
     return NULL;
