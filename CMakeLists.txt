@@ -15,13 +15,14 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.4)
 
-# This must come before the project command.
+# Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 
 project(Vulkan-Loader)
-set(CMAKE_VERBOSE_MAKEFILE 0)
+
+add_definitions(-DAPI_NAME="Vulkan")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 REQUIRED)
@@ -31,20 +32,23 @@ if(NOT ${VulkanHeaders_FOUND})
     message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
                         "installation of the Vulkan-Headers repository.")
 endif()
+if(NOT ${VulkanRegistry_FOUND})
+    message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
+                        "installation of the Vulkan-Headers repository.")
+endif()
 
 option(USE_CCACHE "Use ccache" OFF)
 if(USE_CCACHE)
     find_program(CCACHE_FOUND ccache)
     if(CCACHE_FOUND)
         set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-        set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-    endif(CCACHE_FOUND)
+    endif()
 endif()
 
 include(GNUInstallDirs)
-# Set a better default install location for Windows only if the user did not provide one.
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND WIN32)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+
+if(UNIX AND NOT APPLE) # i.e.: Linux
+    include(FindPkgConfig)
 endif()
 
 if(APPLE)
@@ -52,12 +56,16 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH 1)
 endif()
 
-# Enable IDE GUI folders
+if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+endif()
+
+# Enable IDE GUI folders.  "Helper targets" that don't have interesting source code should set their FOLDER property to this
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-# "Helper" targets that don't have interesting source code should set their FOLDER property to this
 set(LOADER_HELPER_FOLDER "Helper Targets")
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(UNIX)
     set(
         FALLBACK_CONFIG_DIRS "/etc/xdg"
         CACHE
@@ -72,8 +80,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         )
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    include(FindPkgConfig)
+if(UNIX AND NOT APPLE) # i.e.: Linux
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
@@ -102,7 +109,13 @@ if(WIN32)
     option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
 endif()
 
-set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
+option(BUILD_LOADER "Build loader" ON)
+
+if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
+    option(BUILD_TESTS "Build Tests" ON)
+else()
+    option(BUILD_TESTS "Build Tests" OFF)
+endif()
 
 # Add location of Vulkan header files to include search path
 include_directories(${VulkanHeaders_INCLUDE_DIRS})
@@ -129,44 +142,46 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-if(WIN32)
+if(MSVC)
     # Treat warnings as errors
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/WX>")
+    add_compile_options("/WX")
     # Disable RTTI
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/GR->")
+    add_compile_options("/GR-")
     # Warn about nested declarations
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34456>")
+    add_compile_options("/w34456")
     # Warn about potentially uninitialized variables
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34701>")
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34703>")
+    add_compile_options("/w34701")
+    add_compile_options("/w34703")
     # Warn about different indirection types.
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34057>")
+    add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34245>")
+    add_compile_options("/w34245")
 endif()
 
-option(BUILD_LOADER "Build loader" ON)
-if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
-    option(BUILD_TESTS "Build Tests" ON)
-else()
-    option(BUILD_TESTS "Build Tests" OFF)
-endif()
-
-set(PYTHON_CMD ${PYTHON_EXECUTABLE})
-
-# Define macro used for building vkxml generated files
-macro(run_vk_xml_generate dependency output)
+# Define a macro to generate source code from vk.xml
+set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
+macro(GenerateFromVkXml output dependency)
     add_custom_command(OUTPUT ${output}
-                       COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
+                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
                                ${VulkanRegistry_DIR} ${output}
-                       DEPENDS ${VulkanRegistry_DIR}/vk.xml
-                               ${VulkanRegistry_DIR}/generator.py
-                               ${SCRIPTS_DIR}/${dependency}
+                       DEPENDS ${SCRIPTS_DIR}/${dependency}
                                ${SCRIPTS_DIR}/loader_genvk.py
+                               ${VulkanRegistry_DIR}/vk.xml
+                               ${VulkanRegistry_DIR}/generator.py
                                ${VulkanRegistry_DIR}/reg.py)
 endmacro()
 
-# Custom target for generated vulkan helper file dependencies
+# Use the macro to generate the source files.
+GenerateFromVkXml(vk_layer_dispatch_table.h loader_extension_generator.py)
+GenerateFromVkXml(vk_dispatch_table_helper.h dispatch_table_helper_generator.py)
+GenerateFromVkXml(vk_safe_struct.h helper_file_generator.py)
+GenerateFromVkXml(vk_safe_struct.cpp helper_file_generator.py)
+GenerateFromVkXml(vk_enum_string_helper.h helper_file_generator.py)
+GenerateFromVkXml(vk_object_types.h helper_file_generator.py)
+GenerateFromVkXml(vk_extension_helper.h helper_file_generator.py)
+GenerateFromVkXml(vk_typemap_helper.h helper_file_generator.py)
+
+# Use a custom target to cause the source files to be generated.
 add_custom_target(generate_helper_files
                   DEPENDS vk_enum_string_helper.h
                           vk_safe_struct.h
@@ -176,19 +191,10 @@ add_custom_target(generate_helper_files
                           vk_dispatch_table_helper.h
                           vk_extension_helper.h
                           vk_typemap_helper.h)
+
 set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
-# Rules to build generated helper files
-run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
-run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.cpp)
-run_vk_xml_generate(helper_file_generator.py vk_enum_string_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
-run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
-
-if(NOT WIN32)
+if(UNIX)
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
     add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
     add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
@@ -201,14 +207,13 @@ endif()
 
 # uninstall target
 if(NOT TARGET uninstall)
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
                    IMMEDIATE
                    @ONLY)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
     set_target_properties(uninstall PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 endif()
-
-add_definitions(-DAPI_NAME="Vulkan")
 
 if(BUILD_LOADER)
     add_subdirectory(loader)

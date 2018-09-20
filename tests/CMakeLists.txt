@@ -15,14 +15,21 @@
 # limitations under the License.
 # ~~~
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
+set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+if(UNIX)
+    set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
+endif()
+
+if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-    set(DisplayServer Win32)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
+elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(APPLE)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_XCB_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
     endif()
@@ -39,24 +46,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_definitions(-DVK_USE_PLATFORM_MIR_KHR)
         include_directories(${MIR_INCLUDE_DIR})
     endif()
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
-
-# On Windows, we must pair Debug and Release appropriately
-if(WIN32)
-    # For Windows, since 32-bit and 64-bit items can co-exist, we build each in its own build directory. 32-bit target data goes in
-    # build32, and 64-bit target data goes into build.  So, include/link the appropriate data at build time.
-    if(CMAKE_CL_64)
-        set(BUILDTGT_DIR build)
-    else()
-        set(BUILDTGT_DIR build32)
-    endif()
-endif()
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
@@ -78,14 +70,17 @@ include_directories(${PROJECT_SOURCE_DIR}/external
                     ${CMAKE_BINARY_DIR}
                     ${PROJECT_BINARY_DIR})
 
-if(NOT WIN32)
+if(UNIX)
     # extra setup for out-of-tree builds
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
         add_custom_target(binary-dir-symlinks ALL
-                          COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/run_wrap_objects_tests.sh
-                          COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/run_loader_tests.sh
-                          COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/run_extra_loader_tests.sh
-                          COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/run_all_tests.sh
+                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_wrap_objects_tests.sh
+                                  run_wrap_objects_tests.sh
+                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_loader_tests.sh
+                                  run_loader_tests.sh
+                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_extra_loader_tests.sh
+                                  run_extra_loader_tests.sh
+                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_all_tests.sh run_all_tests.sh
                           VERBATIM)
     endif()
 else()
@@ -96,12 +91,6 @@ else()
                           VERBATIM)
         set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
     endif()
-endif()
-
-add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
-set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-if(NOT WIN32)
-    set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif()
 
 if(TARGET vulkan)
@@ -120,12 +109,10 @@ target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_mai
 if(BUILD_LOADER AND ENABLE_STATIC_LOADER)
     set_target_properties(vk_loader_validation_tests PROPERTIES LINK_FLAGS "/ignore:4098")
 endif()
-if(WIN32)
-    file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-endif()
 
 # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
 if(WIN32)
+    file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
     if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
         file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll
                             GTEST_COPY_SRC1)

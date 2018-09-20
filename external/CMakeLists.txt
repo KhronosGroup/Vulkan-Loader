@@ -15,16 +15,17 @@
 # limitations under the License.
 # ~~~
 
-# Add all optional dependencies. Currently, the only optional project is googletest.
+# Add your optional dependencies in this "external" directory.
 
+# googletest is an optional external dependency for this repo.
 if(BUILD_TESTS)
-    # googletest is an external dependency for the tests in the ValidationLayers repo. Add googletest to the project if present and
-    # not already defined.
+    # Attempt to enable if it is available.
     if(TARGET gtest_main)
-        # It is possible that a project enclosing this one has defined the gtest target
-        message(STATUS "Vulkan-Loader/external: " "Google Test (googletest) already configured - use it")
+        # Already enabled as a target (perhaps by a project enclosing this one)
+        message(STATUS "Vulkan-Loader/external: " "googletest already configured - using it")
     elseif(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/googletest")
-        message(STATUS "Vulkan-Loader/external: " "googletests found - configuring it for tests")
+        # The googletest directory exists, so enable it as a target.
+        message(STATUS "Vulkan-Loader/external: " "googletest found - configuring it for tests")
         set(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
         set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
         set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
@@ -32,7 +33,7 @@ if(BUILD_TESTS)
         # EXCLUDE_FROM_ALL keeps the install target from installing GTEST files.
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/googletest" EXCLUDE_FROM_ALL)
     else()
-        message(SEND_ERROR "Vulkan-Loader/external: Google Test was not found.  "
+        message(SEND_ERROR "Vulkan-Loader/external: " "Google Test was not found.  "
                            "Provide Google Test in external/googletest or set BUILD_TESTS=OFF")
     endif()
 endif()

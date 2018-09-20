@@ -15,15 +15,10 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 2.8.11)
-
-set(TARGET_NAMES VkLayer_wrap_objects VkLayer_test VkLayer_meta)
-
-set(VK_LAYER_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
-set(CMAKE_INSTALL_RPATH ${VK_LAYER_RPATH})
+set(CMAKE_INSTALL_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
 
 if(WIN32)
-    macro(add_vk_layer target)
+    macro(AddVkLayer target)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_${target}.def DEF_FILE)
         add_custom_target(copy-${target}-def-file ALL
                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DEF_FILE} VkLayer_${target}.def
@@ -33,13 +28,13 @@ if(WIN32)
         add_dependencies(VkLayer_${target} generate_helper_files)
     endmacro()
 elseif(APPLE)
-    macro(add_vk_layer target)
+    macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
     endmacro()
-else()
-    macro(add_vk_layer target)
+else(UNIX AND NOT APPLE) # i.e.: Linux
+    macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic")
@@ -63,37 +58,41 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function")
 endif()
 
-set(WRAP_SRCS wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
-add_vk_layer(wrap_objects ${WRAP_SRCS})
+AddVkLayer(wrap_objects wrap_objects.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
-set(TEST_SRCS test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
-add_vk_layer(test ${TEST_SRCS})
+AddVkLayer(test test.cpp vk_layer_table.cpp vk_layer_extension_utils.cpp)
 
-# The output file needs Unix "/" separators or Windows "\" separators
-# On top of that, Windows separators actually need to be doubled because the json format uses backslash escapes
+# --------------------------------------------------------------------------------------------------------------------------------
+
+# The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
+# because the json format uses backslash escapes
 file(TO_NATIVE_PATH "./" RELATIVE_PATH_PREFIX)
-string(REPLACE "\\" "\\\\" RELATIVE_PATH_PREFIX "${RELATIVE_PATH_PREFIX}")
+string(REPLACE "\\"
+               "\\\\"
+               RELATIVE_PATH_PREFIX
+               "${RELATIVE_PATH_PREFIX}")
 
-# Run each .json.in file through the generator
-# We need to create the generator.cmake script so that the generator can be run at compile time, instead of configure time
-# Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and TARGET_FILE_DIR, specifically)
+# Run each .json.in file through the generator We need to create the generator.cmake script so that the generator can be run at
+# compile time, instead of configure time Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and
+# TARGET_FILE_DIR, specifically)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\")")
-foreach(TARGET_NAME ${TARGET_NAMES})
-    set(CONFIG_DEFINES
-        -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
-        -DVK_VERSION="${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}"
-    )
-    # If this json file is not a metalayer, get the needed properties from that target
+
+foreach(TARGET_NAME VkLayer_wrap_objects VkLayer_test VkLayer_meta)
+    set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
+        -DVK_VERSION="${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+
+    # Append further config parameters, depending on which layer.
     if(TARGET ${TARGET_NAME})
-        set(CONFIG_DEFINES ${CONFIG_DEFINES}
+        # This json file corresponds to an actual target (not a metalayer); query properties from that target.
+        set(CONFIG_DEFINES
+            ${CONFIG_DEFINES}
             -DOUTPUT_FILE="$<TARGET_FILE_DIR:${TARGET_NAME}>/${TARGET_NAME}.json"
-            -DRELATIVE_LAYER_BINARY="${RELATIVE_PATH_PREFIX}$<TARGET_FILE_NAME:${TARGET_NAME}>"
-        )
-    # If this json file is a metalayer, make the output path match the test layer, and there is no layer binary file
+            -DRELATIVE_LAYER_BINARY="${RELATIVE_PATH_PREFIX}$<TARGET_FILE_NAME:${TARGET_NAME}>")
     else()
-        set(CONFIG_DEFINES ${CONFIG_DEFINES}
-            -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_test>/${TARGET_NAME}.json"
-        )
+        # This json file is a metalayer.  Query properties from the VkLayer_test layer; there is no layer binary file.
+        set(CONFIG_DEFINES ${CONFIG_DEFINES} -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_test>/${TARGET_NAME}.json")
     endif()
-    add_custom_target(${TARGET_NAME}-json ALL COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
+
+    add_custom_target(${TARGET_NAME}-json ALL
+                      COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
 endforeach()

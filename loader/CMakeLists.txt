@@ -15,11 +15,6 @@
 # limitations under the License.
 # ~~~
 
-if(NOT ${VulkanRegistry_FOUND})
-    message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                        "installation of the Vulkan-Headers repository.")
-endif()
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_BINARY_DIR})
 
 # Check for the existance of the secure_getenv or __secure_getenv commands
@@ -28,19 +23,20 @@ check_function_exists(secure_getenv HAVE_SECURE_GETENV)
 check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/loader_cmake_config.h)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
-    set(DisplayServer Win32)
-    if(NOT MSVC_VERSION LESS 1900)
+    if(MSVC AND NOT MSVC_VERSION LESS 1900)
         # Enable control flow guard
         message(STATUS "Building loader with control flow guard")
-        add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/guard:cf>")
+        add_compile_options("/guard:cf")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /guard:cf")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /guard:cf")
     endif()
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
+elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(APPLE)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_XCB_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
     endif()
@@ -57,8 +53,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_definitions(-DVK_USE_PLATFORM_MIR_KHR)
         include_directories(${MIR_INCLUDE_DIR})
     endif()
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -109,12 +103,12 @@ if(WIN32)
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
         add_custom_target(loader_asm_gen_files)
     endif()
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+elseif(APPLE)
     # For MacOS, use the C code and force the compiler's tail-call optimization instead of using assembly code.
     set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
     set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
     add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
-else()
+else(UNIX AND NOT APPLE) # i.e.: Linux
     enable_language(ASM-ATT)
     set(CMAKE_ASM-ATT_COMPILE_FLAGS "${CMAKE_ASM-ATT_COMPILE_FLAGS} $ENV{ASFLAGS}")
     set(CMAKE_ASM-ATT_COMPILE_FLAGS "${CMAKE_ASM-ATT_COMPILE_FLAGS} -I\"${CMAKE_CURRENT_BINARY_DIR}\"")
@@ -137,8 +131,8 @@ else()
     endif()
 endif()
 
-run_vk_xml_generate(loader_extension_generator.py vk_loader_extensions.h)
-run_vk_xml_generate(loader_extension_generator.py vk_loader_extensions.c)
+GenerateFromVkXml(vk_loader_extensions.h loader_extension_generator.py)
+GenerateFromVkXml(vk_loader_extensions.c loader_extension_generator.py)
 add_custom_target(loader_gen_files DEPENDS vk_loader_extensions.h vk_loader_extensions.c)
 set_target_properties(loader_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
@@ -155,7 +149,11 @@ if(WIN32)
             CMAKE_CXX_FLAGS_RELEASE
             CMAKE_CXX_FLAGS_RELWITHDEBINFO)
         if(${configuration} MATCHES "/MD")
-            string(REGEX REPLACE "/MD" "/MT" ${configuration} "${${configuration}}")
+            string(REGEX
+                   REPLACE "/MD"
+                           "/MT"
+                           ${configuration}
+                           "${${configuration}}")
         endif()
     endforeach()
 
@@ -194,7 +192,11 @@ if(WIN32)
                     $<TARGET_OBJECTS:loader-norm>
                     ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                     ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
-        set_target_properties(vulkan PROPERTIES LINK_FLAGS_DEBUG "/ignore:4098" OUTPUT_NAME vulkan-1)
+        set_target_properties(vulkan
+                              PROPERTIES LINK_FLAGS_DEBUG
+                                         "/ignore:4098"
+                                         OUTPUT_NAME
+                                         vulkan-1)
     else()
         add_library(vulkan STATIC $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm>)
         set_target_properties(vulkan PROPERTIES OUTPUT_NAME VKstatic.1)
@@ -222,7 +224,11 @@ else()
     add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
     target_compile_definitions(vulkan PUBLIC -DLOADER_DYNAMIC_LIB)
-    set_target_properties(vulkan PROPERTIES SOVERSION "1" VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+    set_target_properties(vulkan
+                          PROPERTIES SOVERSION
+                                     "1"
+                                     VERSION
+                                     "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
     target_link_libraries(vulkan -ldl -lpthread -lm)
 
     if(APPLE)
@@ -273,7 +279,7 @@ else()
             FRAMEWORK DESTINATION loader
         )
 # cmake-format: on
-    endif(APPLE)
+    endif()
 
     if(NOT APPLE)
         # Generate pkg-config file.
