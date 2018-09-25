@@ -40,6 +40,11 @@ before_install:
   - set -e
   - unset -f cd pushd popd
   - |
+    if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
+        # Add an option to update dependencies from master
+        UPDATE_DEPS_EXTRA_OPTIONS="--ref=master"
+    fi
+  - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Install the appropriate Linux packages.
       sudo apt-get -qq update
@@ -52,13 +57,8 @@ before_install:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]] || [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
-      # Install Vulkan-Headers
-      mkdir /tmp/headers
-      git clone https://github.com/KhronosGroup/Vulkan-Headers.git /tmp/headers/repo
-      pushd /tmp/headers/repo
-      cmake . -DCMAKE_INSTALL_PREFIX=/tmp/headers/install
-      cmake --build . --target install
-      popd
+      # Install dependencies
+      python scripts/update_deps.py --dir=external $UPDATE_DEPS_EXTRA_OPTIONS
       # Get Google Test
       git clone https://github.com/google/googletest.git external/googletest
     fi
@@ -81,7 +81,7 @@ script:
       # Build Vulkan-Loader
       mkdir build
       cd build
-      cmake -DCMAKE_BUILD_TYPE=Debug -DVULKAN_HEADERS_INSTALL_DIR=/tmp/headers/install ..
+      cmake -DCMAKE_BUILD_TYPE=Debug -C../external/helper.cmake ..
       make -j $core_count
       cd ..
     fi

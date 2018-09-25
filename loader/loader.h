@@ -34,6 +34,7 @@
 #include <vulkan/vk_layer.h>
 #include <vulkan/vk_icd.h>
 #include <assert.h>
+#include "vk_layer_dispatch_table.h"
 #include "vk_loader_extensions.h"
 
 #if defined(__GNUC__) && __GNUC__ >= 4

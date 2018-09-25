@@ -30,7 +30,6 @@
 #include "vk_loader_platform.h"
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
-#include "vk_validation_error_messages.h"
 #include <signal.h>
 #include <cinttypes>
 #include <stdarg.h>
@@ -849,12 +848,6 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
 
     std::string str_plus_spec_text(str);
 
-    // If the msg_code is in the error map, tack on spec text to error message.
-    if (validation_error_map.find(msg_code) != validation_error_map.end()) {
-        str_plus_spec_text += " ";
-        str_plus_spec_text += validation_error_map[msg_code];
-    }
-
     bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, msg_code, "Validation",
                                 str_plus_spec_text.c_str() ? str_plus_spec_text.c_str() : "Allocation failure");
     free(str);
@@ -882,12 +875,6 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
     va_end(argptr);
 
     std::string str_plus_spec_text(str);
-
-    // If the msg_code is in the error map, get ID, look up spec text, and tack it onto error message.
-    if (validation_error_text_map.find(vuid_text.c_str()) != validation_error_text_map.end()) {
-        str_plus_spec_text += " ";
-        str_plus_spec_text += validation_error_map[validation_error_text_map[vuid_text.c_str()]];
-    }
 
     // Append layer prefix with VUID string, pass in UNDEFINED for numerical VUID
     static const int UNDEFINED_VUID = -1;

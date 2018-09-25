@@ -1,0 +1,15 @@
+{
+  "repos" : [
+    {
+      "name" : "Vulkan-Headers",
+      "url" : "https://github.com/KhronosGroup/Vulkan-Headers.git",
+      "sub_dir" : "Vulkan-Headers",
+      "build_dir" : "Vulkan-Headers/build",
+      "install_dir" : "Vulkan-Headers/build/install",
+      "commit" : "c4e056d365472174471a243dfefbfe66a03564af"
+    }
+  ],
+  "install_names" : {
+      "Vulkan-Headers" : "VULKAN_HEADERS_INSTALL_DIR"
+    }
+}
