@@ -1,4 +1,10 @@
-vulkan-loader (1.1.82.0-2) UNRELEASED; urgency=medium
+vulkan-loader (1.1.85.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version
+
+ -- Brett Johnson <brett@linuxturtle.net>  Mon, 01 Oct 2018 13:08:20 -0600
+
+vulkan-loader (1.1.82.0-2) unstable; urgency=medium
 
   [ Timo Aaltonen ]
   * New upstream release from the vulkan-loader repo.
@@ -21,7 +27,7 @@ vulkan-loader (1.1.82.0-2) UNRELEASED; urgency=medium
   [ Brett Johnson ]
   * Rebuild/backport for LunarG
 
- -- Brett Johnson <brett@linuxturtle.net>  Mon, 27 Aug 2018 15:30:50 -0600
+ -- Brett Johnson <brett@linuxturtle.net>  Mon, 01 Oct 2018 13:08:20 -0600
 
 vulkan (1.1.73+dfsg-1) unstable; urgency=medium
 
