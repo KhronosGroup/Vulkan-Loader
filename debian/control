@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 9),
  pkg-config,
  python3,
  quilt,
- vulkan-headers (>=1.1.82), vulkan-headers (<<1.1.83)
+ vulkan-headers (>=1.1.85), vulkan-headers (<<1.1.86)
 Standards-Version: 4.1.3
 Section: libs
 Homepage: https://github.com/KhronosGroup/Vulkan-Loader
