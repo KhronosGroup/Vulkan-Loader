@@ -1,0 +1,10 @@
+--- a/loader/vulkan.pc.in
++++ b/loader/vulkan.pc.in
+@@ -1,6 +1,6 @@
+ prefix=@CMAKE_INSTALL_PREFIX@
+ exec_prefix=@CMAKE_INSTALL_PREFIX@
+-libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
++libdir=@CMAKE_INSTALL_LIBDIR@
+ includedir=${prefix}/include
+ 
+ Name: @CMAKE_PROJECT_NAME@

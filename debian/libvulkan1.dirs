@@ -1,0 +1,3 @@
+etc/vulkan/explicit_layer.d
+etc/vulkan/icd.d
+etc/vulkan/implicit_layer.d
