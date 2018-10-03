@@ -35,10 +35,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stddef.h>
+
 #if defined(__APPLE__)
 #include <CoreFoundation/CoreFoundation.h>
 #include <sys/param.h>
 #endif
+
+// Time related functions
+#include <time.h>
+
 #include <sys/types.h>
 #if defined(_WIN32)
 #include "dirent_on_windows.h"
@@ -70,6 +75,9 @@
 // Generated file containing all the extension data
 #include "vk_loader_extensions.c"
 
+// Override layer information
+#define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
+
 struct loader_struct loader = {0};
 // TLS for instance for alloc/free callbacks
 THREAD_LOCAL_DECL struct loader_instance *tls_instance;
@@ -92,6 +100,12 @@ enum loader_debug {
 
 uint32_t g_loader_debug = 0;
 uint32_t g_loader_log_msgs = 0;
+
+enum loader_data_files_type {
+    LOADER_DATA_FILE_MANIFEST_ICD = 0,
+    LOADER_DATA_FILE_MANIFEST_LAYER,
+    LOADER_DATA_FILE_NUM_TYPES  // Not a real field, used for possible loop terminator
+};
 
 // thread safety lock for accessing global data structures such as "loader"
 // all entrypoints on the instance chain need to be locked except GPA
@@ -565,7 +579,7 @@ bool loaderGetDeviceRegistryEntry(const struct loader_instance *inst, char **reg
     manifest_path = loader_instance_heap_alloc(inst, requiredSize, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (manifest_path == NULL) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-            "loaderGetDeviceRegistryEntry: Failed to allocate space for DriverName.");
+                   "loaderGetDeviceRegistryEntry: Failed to allocate space for DriverName.");
         *result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
@@ -645,7 +659,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
         pDeviceNames = loader_instance_heap_alloc(inst, deviceNamesSize * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (pDeviceNames == NULL) {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                "loaderGetDeviceRegistryFiles: Failed to allocate space for display device names.");
+                       "loaderGetDeviceRegistryFiles: Failed to allocate space for display device names.");
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             return result;
         }
@@ -668,8 +682,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
                            deviceName);
                 continue;
             }
-            if ((ulStatus & DN_HAS_PROBLEM) && (ulProblem == CM_PROB_NEED_RESTART || ulProblem == DN_NEED_RESTART))
-            {
+            if ((ulStatus & DN_HAS_PROBLEM) && (ulProblem == CM_PROB_NEED_RESTART || ulProblem == DN_NEED_RESTART)) {
                 loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
                            "loaderGetDeviceRegistryFiles: device %s is pending reboot, skipping ...", deviceName);
                 continue;
@@ -716,7 +729,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
 
                 if (loaderGetDeviceRegistryEntry(inst, reg_data, reg_data_size, childID, value_name, &result)) {
                     found = true;
-                    break; // check next-display-device
+                    break;  // check next-display-device
                 }
 
             } while (CM_Get_Sibling(&childID, childID, 0) == CR_SUCCESS);
@@ -747,7 +760,8 @@ static char *loader_get_next_path(char *path);
 //
 // *reg_data contains a string list of filenames as pointer.
 // When done using the returned string list, the caller should free the pointer.
-VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *location, bool use_secondary_hive, char **reg_data, PDWORD reg_data_size) {
+VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *location, bool use_secondary_hive, char **reg_data,
+                                PDWORD reg_data_size) {
     LONG rtn_value;
     HKEY hive = DEFAULT_VK_REGISTRY_HIVE, key;
     DWORD access_flags;
@@ -959,24 +973,15 @@ bool has_vk_dev_ext_property(const VkExtensionProperties *ext_prop, const struct
     return false;
 }
 
-// Search the given layer list for a layer matching the given layer name
-static struct loader_layer_properties *loader_get_layer_property(const char *name, const struct loader_layer_list *layer_list) {
-    for (uint32_t i = 0; i < layer_list->count; i++) {
-        const VkLayerProperties *item = &layer_list->list[i].info;
-        if (strcmp(name, item->layerName) == 0) return &layer_list->list[i];
-    }
-    return NULL;
-}
-
 // Get the next unused layer property in the list. Init the property to zero.
-static struct loader_layer_properties *loader_get_next_layer_property(const struct loader_instance *inst,
+static struct loader_layer_properties *loaderGetNextLayerPropertySlot(const struct loader_instance *inst,
                                                                       struct loader_layer_list *layer_list) {
     if (layer_list->capacity == 0) {
         layer_list->list =
             loader_instance_heap_alloc(inst, sizeof(struct loader_layer_properties) * 64, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (layer_list->list == NULL) {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_get_next_layer_property: Out of memory can "
+                       "loaderGetNextLayerPropertySlot: Out of memory can "
                        "not add any layer properties to list");
             return NULL;
         }
@@ -989,7 +994,7 @@ static struct loader_layer_properties *loader_get_next_layer_property(const stru
         void *new_ptr = loader_instance_heap_realloc(inst, layer_list->list, layer_list->capacity, layer_list->capacity * 2,
                                                      VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_ptr) {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "loader_get_next_layer_property: realloc failed for layer list");
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "loaderGetNextLayerPropertySlot: realloc failed for layer list");
             return NULL;
         }
         layer_list->list = new_ptr;
@@ -1000,8 +1005,44 @@ static struct loader_layer_properties *loader_get_next_layer_property(const stru
     return &(layer_list->list[layer_list->count - 1]);
 }
 
+// Search the given layer list for a layer property matching the given layer name
+static struct loader_layer_properties *loaderFindLayerProperty(const char *name, const struct loader_layer_list *layer_list) {
+    for (uint32_t i = 0; i < layer_list->count; i++) {
+        const VkLayerProperties *item = &layer_list->list[i].info;
+        if (strcmp(name, item->layerName) == 0) return &layer_list->list[i];
+    }
+    return NULL;
+}
+
+// Search the given layer list for a layer matching the given layer name
+static bool loaderFindLayerNameInList(const char *name, const struct loader_layer_list *layer_list) {
+    if (NULL == layer_list) {
+        return false;
+    }
+    if (NULL != loaderFindLayerProperty(name, layer_list)) {
+        return true;
+    }
+    return false;
+}
+
+// Search the given meta-layer's component list for a layer matching the given layer name
+static bool loaderFindLayerNameInMetaLayer(const struct loader_instance *inst, const char *layer_name,
+                                           struct loader_layer_list *layer_list, struct loader_layer_properties *meta_layer_props) {
+    for (uint32_t comp_layer = 0; comp_layer < meta_layer_props->num_component_layers; comp_layer++) {
+        if (!strcmp(meta_layer_props->component_layer_names[comp_layer], layer_name)) {
+            return true;
+        }
+        struct loader_layer_properties *comp_layer_props =
+            loaderFindLayerProperty(meta_layer_props->component_layer_names[comp_layer], layer_list);
+        if (comp_layer_props->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            return loaderFindLayerNameInMetaLayer(inst, layer_name, layer_list, comp_layer_props);
+        }
+    }
+    return false;
+}
+
 // Remove all layer properties entries from the list
-void loader_delete_layer_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
+void loaderDeleteLayerListAndProperties(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
     uint32_t i, j, k;
     struct loader_device_extension_list *dev_ext_list;
     struct loader_dev_ext_props *ext_props;
@@ -1011,6 +1052,10 @@ void loader_delete_layer_properties(const struct loader_instance *inst, struct l
         if (NULL != layer_list->list[i].component_layer_names) {
             loader_instance_heap_free(inst, layer_list->list[i].component_layer_names);
             layer_list->list[i].component_layer_names = NULL;
+        }
+        if (NULL != layer_list->list[i].override_paths) {
+            loader_instance_heap_free(inst, layer_list->list[i].override_paths);
+            layer_list->list[i].override_paths = NULL;
         }
         loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_list->list[i].instance_extension_list);
         dev_ext_list = &layer_list->list[i].device_extension_list;
@@ -1032,6 +1077,116 @@ void loader_delete_layer_properties(const struct loader_instance *inst, struct l
     if (layer_list->capacity > 0) {
         layer_list->capacity = 0;
         loader_instance_heap_free(inst, layer_list->list);
+    }
+}
+
+// Remove all layers in the layer list that are not found inside the override layer.
+// NOTE: This should only be called if an override layer is found and not expired.
+void loaderRemoveLayersNotInOverride(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
+    struct loader_layer_properties *override_prop = loaderFindLayerProperty(VK_OVERRIDE_LAYER_NAME, layer_list);
+    if (NULL == override_prop) {
+        return;
+    }
+
+    for (int32_t j = 0; j < (int32_t)(layer_list->count); j++) {
+        struct loader_layer_properties cur_layer_prop = layer_list->list[j];
+        const char *cur_layer_name = &cur_layer_prop.info.layerName[0];
+
+        // Skip the override layer itself.
+        if (!strcmp(VK_OVERRIDE_LAYER_NAME, cur_layer_name)) {
+            continue;
+        }
+
+        // If not found in the override layer, remove it
+        if (!loaderFindLayerNameInMetaLayer(inst, cur_layer_name, layer_list, override_prop)) {
+            loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
+                       "loaderRemoveLayersNotInOverride : Override layer is active, and layer %s is not list"
+                       " inside of it.  So removing layer from current layer list.",
+                       cur_layer_name);
+
+            if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+                // Delete the component layers
+                loader_instance_heap_free(inst, cur_layer_prop.component_layer_names);
+                loader_instance_heap_free(inst, cur_layer_prop.override_paths);
+            }
+
+            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
+            // overlapping the source and destination addresses.
+            memmove(&layer_list->list[j], &layer_list->list[j + 1],
+                    sizeof(struct loader_layer_properties) * (layer_list->count - 1 - j));
+
+            // Decrement the count (because we now have one less) and decrement the loop index since we need to
+            // re-check this index.
+            layer_list->count--;
+            j--;
+
+            // Re-do the query for the override layer
+            override_prop = loaderFindLayerProperty(VK_OVERRIDE_LAYER_NAME, layer_list);
+        }
+    }
+}
+
+// Remove all layers in the layer list that are not found inside any implicit meta-layers.
+void loaderRemoveLayersNotInImplicitMetaLayers(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
+    int32_t i;
+    int32_t j;
+    int32_t layer_count = (int32_t)(layer_list->count);
+
+    for (i = 0; i < layer_count; i++) {
+        layer_list->list[i].keep = false;
+    }
+
+    for (i = 0; i < layer_count; i++) {
+        struct loader_layer_properties cur_layer_prop = layer_list->list[i];
+
+        if (0 == (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
+            cur_layer_prop.keep = true;
+        } else {
+            continue;
+        }
+
+        if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            for (j = 0; j < layer_count; j++) {
+                struct loader_layer_properties layer_to_check = layer_list->list[j];
+
+                if (i == j) {
+                    continue;
+                }
+
+                // For all layers found in this meta layer, we want to keep them as well.
+                if (loaderFindLayerNameInMetaLayer(inst, layer_to_check.info.layerName, layer_list, &cur_layer_prop)) {
+                    cur_layer_prop.keep = true;
+                }
+            }
+        }
+    }
+
+    // Remove any layers we don't want to keep (Don't use layer_count here as we need it to be
+    // dynamically updated if we delete a layer property in the list).
+    for (i = 0; i < (int32_t)(layer_list->count); i++) {
+        struct loader_layer_properties cur_layer_prop = layer_list->list[i];
+        if (!cur_layer_prop.keep) {
+            loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
+                       "loaderRemoveLayersNotInOverride : Implicit meta-layers are active, and layer %s is not list"
+                       " inside of any.  So removing layer from current layer list.",
+                       cur_layer_prop.info.layerName);
+
+            if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+                // Delete the component layers
+                loader_instance_heap_free(inst, cur_layer_prop.component_layer_names);
+                loader_instance_heap_free(inst, cur_layer_prop.override_paths);
+            }
+
+            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
+            // overlapping the source and destination addresses.
+            memmove(&layer_list->list[i], &layer_list->list[i + 1],
+                    sizeof(struct loader_layer_properties) * (layer_list->count - 1 - i));
+
+            // Decrement the count (because we now have one less) and decrement the loop index since we need to
+            // re-check this index.
+            layer_list->count--;
+            i--;
+        }
     }
 }
 
@@ -1312,69 +1467,13 @@ VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct l
     return VK_SUCCESS;
 }
 
-// Prototype of loader_add_meta_layer function since we use it in the loader_add_implicit_layer, but can also
-// call loader_add_implicit_layer from loader_add_meta_layer.
-bool loader_add_meta_layer(const struct loader_instance *inst, const struct loader_layer_properties *prop,
-                           struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
-                           const struct loader_layer_list *source_list);
-
-// Search the given layer list for a list matching the given VkLayerProperties
-bool has_vk_layer_property(const VkLayerProperties *vk_layer_prop, const struct loader_layer_list *list) {
-    for (uint32_t i = 0; i < list->count; i++) {
-        if (strcmp(vk_layer_prop->layerName, list->list[i].info.layerName) == 0) return true;
-    }
-    return false;
-}
-
-// Search the given layer list for a layer matching the given name
-bool has_layer_name(const char *name, const struct loader_layer_list *list) {
-    for (uint32_t i = 0; i < list->count; i++) {
-        if (strcmp(name, list->list[i].info.layerName) == 0) return true;
-    }
-    return false;
-}
-
-// Search the given search_list for any layers in the props list.  Add these to the
-// output layer_list.  Don't add duplicates to the output layer_list.
-static VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, struct loader_layer_list *output_list,
-                                               struct loader_layer_list *expanded_output_list, uint32_t name_count,
-                                               const char *const *names, const struct loader_layer_list *source_list) {
-    struct loader_layer_properties *layer_prop;
-    VkResult err = VK_SUCCESS;
-
-    for (uint32_t i = 0; i < name_count; i++) {
-        const char *source_name = names[i];
-        layer_prop = loader_get_layer_property(source_name, source_list);
-        if (NULL == layer_prop) {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_add_layer_names_to_list: Unable to find layer"
-                       " %s",
-                       source_name);
-            err = VK_ERROR_LAYER_NOT_PRESENT;
-            continue;
-        }
-
-        // If not a meta-layer, simply add it.
-        if (0 == (layer_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            if (!has_vk_layer_property(&layer_prop->info, output_list)) {
-                loader_add_to_layer_list(inst, output_list, 1, layer_prop);
-            }
-            if (!has_vk_layer_property(&layer_prop->info, expanded_output_list)) {
-                loader_add_to_layer_list(inst, expanded_output_list, 1, layer_prop);
-            }
-        } else {
-            if (!has_vk_layer_property(&layer_prop->info, output_list) ||
-                !has_vk_layer_property(&layer_prop->info, expanded_output_list)) {
-                loader_add_meta_layer(inst, layer_prop, output_list, expanded_output_list, source_list);
-            }
-        }
-    }
-
-    return err;
-}
+// Prototypes needed.
+bool loaderAddMetaLayer(const struct loader_instance *inst, const struct loader_layer_properties *prop,
+                        struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
+                        const struct loader_layer_list *source_list);
 
 // Manage lists of VkLayerProperties
-static bool loader_init_layer_list(const struct loader_instance *inst, struct loader_layer_list *list) {
+static bool loaderInitLayerList(const struct loader_instance *inst, struct loader_layer_list *list) {
     list->capacity = 32 * sizeof(struct loader_layer_properties);
     list->list = loader_instance_heap_alloc(inst, list->capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (list->list == NULL) {
@@ -1385,8 +1484,16 @@ static bool loader_init_layer_list(const struct loader_instance *inst, struct lo
     return true;
 }
 
-void loader_destroy_layer_list(const struct loader_instance *inst, struct loader_device *device,
-                               struct loader_layer_list *layer_list) {
+// Search the given layer list for a list matching the given VkLayerProperties
+bool loaderListHasLayerProperty(const VkLayerProperties *vk_layer_prop, const struct loader_layer_list *list) {
+    for (uint32_t i = 0; i < list->count; i++) {
+        if (strcmp(vk_layer_prop->layerName, list->list[i].info.layerName) == 0) return true;
+    }
+    return false;
+}
+
+void loaderDestroyLayerList(const struct loader_instance *inst, struct loader_device *device,
+                            struct loader_layer_list *layer_list) {
     if (device) {
         loader_device_heap_free(device, layer_list->list);
     } else {
@@ -1397,13 +1504,13 @@ void loader_destroy_layer_list(const struct loader_instance *inst, struct loader
 }
 
 // Append non-duplicate layer properties defined in prop_list to the given layer_info list
-VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loader_layer_list *list, uint32_t prop_list_count,
-                                  const struct loader_layer_properties *props) {
+VkResult loaderAddLayerPropertiesToList(const struct loader_instance *inst, struct loader_layer_list *list,
+                                        uint32_t prop_list_count, const struct loader_layer_properties *props) {
     uint32_t i;
     struct loader_layer_properties *layer;
 
     if (list->list == NULL || list->capacity == 0) {
-        loader_init_layer_list(inst, list);
+        loaderInitLayerList(inst, list);
     }
 
     if (list->list == NULL) return VK_SUCCESS;
@@ -1412,7 +1519,7 @@ VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loa
         layer = (struct loader_layer_properties *)&props[i];
 
         // Look for duplicates, and skip
-        if (has_vk_layer_property(&layer->info, list)) {
+        if (loaderListHasLayerProperty(&layer->info, list)) {
             continue;
         }
 
@@ -1423,7 +1530,7 @@ VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loa
                 loader_instance_heap_realloc(inst, list->list, list->capacity, new_capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_ptr) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                           "loader_add_to_layer_list: Realloc failed for when attempting to add new layer");
+                           "loaderAddLayerPropertiesToList: Realloc failed for when attempting to add new layer");
                 return VK_ERROR_OUT_OF_HOST_MEMORY;
             }
             list->list = new_ptr;
@@ -1437,12 +1544,101 @@ VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loa
     return VK_SUCCESS;
 }
 
+// Search the given search_list for any layers in the props list.  Add these to the
+// output layer_list.  Don't add duplicates to the output layer_list.
+static VkResult loaderAddLayerNamesToList(const struct loader_instance *inst, struct loader_layer_list *output_list,
+                                          struct loader_layer_list *expanded_output_list, uint32_t name_count,
+                                          const char *const *names, const struct loader_layer_list *source_list) {
+    struct loader_layer_properties *layer_prop;
+    VkResult err = VK_SUCCESS;
+
+    for (uint32_t i = 0; i < name_count; i++) {
+        const char *source_name = names[i];
+        layer_prop = loaderFindLayerProperty(source_name, source_list);
+        if (NULL == layer_prop) {
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "loaderAddLayerNamesToList: Unable to find layer %s", source_name);
+            err = VK_ERROR_LAYER_NOT_PRESENT;
+            continue;
+        }
+
+        // If not a meta-layer, simply add it.
+        if (0 == (layer_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
+            if (!loaderListHasLayerProperty(&layer_prop->info, output_list)) {
+                loaderAddLayerPropertiesToList(inst, output_list, 1, layer_prop);
+            }
+            if (!loaderListHasLayerProperty(&layer_prop->info, expanded_output_list)) {
+                loaderAddLayerPropertiesToList(inst, expanded_output_list, 1, layer_prop);
+            }
+        } else {
+            if (!loaderListHasLayerProperty(&layer_prop->info, output_list) ||
+                !loaderListHasLayerProperty(&layer_prop->info, expanded_output_list)) {
+                loaderAddMetaLayer(inst, layer_prop, output_list, expanded_output_list, source_list);
+            }
+        }
+    }
+
+    return err;
+}
+
+static bool checkExpiration(const struct loader_instance *inst, const struct loader_layer_properties *prop) {
+    time_t current = time(NULL);
+    struct tm tm_current = *localtime(&current);
+
+    struct tm tm_expiration = {
+        .tm_sec = 0,
+        .tm_min = prop->expiration.minute,
+        .tm_hour = prop->expiration.hour,
+        .tm_mday = prop->expiration.day,
+        .tm_mon = prop->expiration.month,
+        .tm_year = prop->expiration.year - 1900,
+        .tm_isdst = tm_current.tm_isdst,
+        // wday and yday are ignored by mktime
+    };
+    time_t expiration = mktime(&tm_expiration);
+
+    return current < expiration;
+}
+
+// Determine if the provided implicit layer should be enabled by querying the appropriate environmental variables.
+// For an implicit layer, at least a disable environment variable is required.
+bool loaderImplicitLayerIsEnabled(const struct loader_instance *inst, const struct loader_layer_properties *prop) {
+    bool enable = false;
+    char *env_value = NULL;
+
+    // If no enable_environment variable is specified, this implicit layer is always be enabled by default.
+    if (prop->enable_env_var.name[0] == 0) {
+        enable = true;
+    } else {
+        // Otherwise, only enable this layer if the enable environment variable is defined
+        env_value = loader_secure_getenv(prop->enable_env_var.name, inst);
+        if (env_value && !strcmp(prop->enable_env_var.value, env_value)) {
+            enable = true;
+        }
+        loader_free_getenv(env_value, inst);
+    }
+
+    // The disable_environment has priority over everything else.  If it is defined, the layer is always
+    // disabled.
+    env_value = loader_secure_getenv(prop->disable_env_var.name, inst);
+    if (env_value) {
+        enable = false;
+    }
+    loader_free_getenv(env_value, inst);
+
+    // If this layer has an expiration, check it to determine if this layer has expired.
+    if (prop->has_expiration) {
+        enable = checkExpiration(inst, prop);
+    }
+
+    return enable;
+}
+
 // Check the individual implicit layer for the enable/disable environment variable settings.  Only add it after
 // every check has passed indicating it should be used.
-static void loader_add_implicit_layer(const struct loader_instance *inst, const struct loader_layer_properties *prop,
-                                      struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
-                                      const struct loader_layer_list *source_list) {
-    bool enable = loader_is_implicit_layer_enabled(inst, prop);
+static void loaderAddImplicitLayer(const struct loader_instance *inst, const struct loader_layer_properties *prop,
+                                   struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
+                                   const struct loader_layer_list *source_list) {
+    bool enable = loaderImplicitLayerIsEnabled(inst, prop);
 
     // If the implicit layer is supposed to be enable, make sure the layer supports at least the same API version
     // that the application is asking (i.e. layer's API >= app's API).  If it's not, disable this layer.
@@ -1462,48 +1658,61 @@ static void loader_add_implicit_layer(const struct loader_instance *inst, const 
 
     if (enable) {
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            if (NULL != target_list && !has_vk_layer_property(&prop->info, target_list)) {
-                loader_add_to_layer_list(inst, target_list, 1, prop);
+            if (!loaderListHasLayerProperty(&prop->info, target_list)) {
+                loaderAddLayerPropertiesToList(inst, target_list, 1, prop);
             }
-            if (NULL != expanded_target_list && !has_vk_layer_property(&prop->info, expanded_target_list)) {
-                loader_add_to_layer_list(inst, expanded_target_list, 1, prop);
+            if (NULL != expanded_target_list && !loaderListHasLayerProperty(&prop->info, expanded_target_list)) {
+                loaderAddLayerPropertiesToList(inst, expanded_target_list, 1, prop);
             }
         } else {
-            if (!has_vk_layer_property(&prop->info, target_list) ||
-                (NULL != expanded_target_list && !has_vk_layer_property(&prop->info, expanded_target_list))) {
-                loader_add_meta_layer(inst, prop, target_list, expanded_target_list, source_list);
+            if (!loaderListHasLayerProperty(&prop->info, target_list) ||
+                (NULL != expanded_target_list && !loaderListHasLayerProperty(&prop->info, expanded_target_list))) {
+                loaderAddMetaLayer(inst, prop, target_list, expanded_target_list, source_list);
             }
         }
     }
 }
 
 // Add the component layers of a meta-layer to the active list of layers
-bool loader_add_meta_layer(const struct loader_instance *inst, const struct loader_layer_properties *prop,
-                           struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
-                           const struct loader_layer_list *source_list) {
+bool loaderAddMetaLayer(const struct loader_instance *inst, const struct loader_layer_properties *prop,
+                        struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
+                        const struct loader_layer_list *source_list) {
     bool found = true;
+
+    // If the meta-layer isn't present in the unexpanded list, add it.
+    if (!loaderListHasLayerProperty(&prop->info, target_list)) {
+        loaderAddLayerPropertiesToList(inst, target_list, 1, prop);
+    }
 
     // We need to add all the individual component layers
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
         bool found_comp = false;
         const struct loader_layer_properties *search_prop =
-            loader_get_layer_property(prop->component_layer_names[comp_layer], source_list);
+            loaderFindLayerProperty(prop->component_layer_names[comp_layer], source_list);
         if (search_prop != NULL) {
             found_comp = true;
 
             // If the component layer is itself an implicit layer, we need to do the implicit layer enable
             // checks
             if (0 == (search_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-                loader_add_implicit_layer(inst, search_prop, target_list, expanded_target_list, source_list);
+                loaderAddImplicitLayer(inst, search_prop, target_list, expanded_target_list, source_list);
             } else {
-                if (NULL != expanded_target_list && !has_vk_layer_property(&search_prop->info, expanded_target_list)) {
-                    loader_add_to_layer_list(inst, expanded_target_list, 1, search_prop);
+                if (0 != (search_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
+                    found = loaderAddMetaLayer(inst, search_prop, target_list, expanded_target_list, source_list);
+                } else {
+                    // Otherwise, just make sure it hasn't already been added to either list before we add it
+                    if (!loaderListHasLayerProperty(&search_prop->info, target_list)) {
+                        loaderAddLayerPropertiesToList(inst, target_list, 1, search_prop);
+                    }
+                    if (NULL != expanded_target_list && !loaderListHasLayerProperty(&search_prop->info, expanded_target_list)) {
+                        loaderAddLayerPropertiesToList(inst, expanded_target_list, 1, search_prop);
+                    }
                 }
             }
         }
         if (!found_comp) {
             loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                       "loader_add_meta_layer: Failed to find layer name %s component layer "
+                       "loaderAddMetaLayer: Failed to find layer name %s component layer "
                        "%s to activate",
                        search_prop->info.layerName, prop->component_layer_names[comp_layer]);
             found = false;
@@ -1511,8 +1720,8 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
     }
 
     // Add this layer to the overall target list (not the expanded one)
-    if (found && !has_vk_layer_property(&prop->info, target_list)) {
-        loader_add_to_layer_list(inst, target_list, 1, prop);
+    if (found && !loaderListHasLayerProperty(&prop->info, target_list)) {
+        loaderAddLayerPropertiesToList(inst, target_list, 1, prop);
     }
 
     return found;
@@ -1521,31 +1730,31 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
 // Search the source_list for any layer with a name that matches the given name and a type
 // that matches the given type.  Add all matching layers to the target_list.
 // Do not add if found loader_layer_properties is already on the target_list.
-void loader_find_layer_name_add_list(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
-                                     const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
-                                     struct loader_layer_list *expanded_target_list) {
+void loaderAddLayerNameToList(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
+                              const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
+                              struct loader_layer_list *expanded_target_list) {
     bool found = false;
     for (uint32_t i = 0; i < source_list->count; i++) {
         struct loader_layer_properties *source_prop = &source_list->list[i];
         if (0 == strcmp(source_prop->info.layerName, name) && (source_prop->type_flags & type_flags) == type_flags) {
             // If not a meta-layer, simply add it.
             if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                if (NULL != target_list && !has_vk_layer_property(&source_prop->info, target_list) &&
-                    VK_SUCCESS == loader_add_to_layer_list(inst, target_list, 1, source_prop)) {
+                if (!loaderListHasLayerProperty(&source_prop->info, target_list) &&
+                    VK_SUCCESS == loaderAddLayerPropertiesToList(inst, target_list, 1, source_prop)) {
                     found = true;
                 }
-                if (NULL != expanded_target_list && !has_vk_layer_property(&source_prop->info, expanded_target_list) &&
-                    VK_SUCCESS == loader_add_to_layer_list(inst, expanded_target_list, 1, source_prop)) {
+                if (!loaderListHasLayerProperty(&source_prop->info, expanded_target_list) &&
+                    VK_SUCCESS == loaderAddLayerPropertiesToList(inst, expanded_target_list, 1, source_prop)) {
                     found = true;
                 }
             } else {
-                found = loader_add_meta_layer(inst, source_prop, target_list, expanded_target_list, source_list);
+                found = loaderAddMetaLayer(inst, source_prop, target_list, expanded_target_list, source_list);
             }
         }
     }
     if (!found) {
-        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                   "loader_find_layer_name_add_list: Failed to find layer name %s to activate", name);
+        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "loaderAddLayerNameToList: Failed to find layer name %s to activate",
+                   name);
     }
 }
 
@@ -1672,10 +1881,10 @@ void loader_destroy_logical_device(const struct loader_instance *inst, struct lo
         dev->alloc_callbacks = *pAllocator;
     }
     if (NULL != dev->expanded_activated_layer_list.list) {
-        loader_deactivate_layers(inst, dev, &dev->expanded_activated_layer_list);
+        loaderDeactivateLayers(inst, dev, &dev->expanded_activated_layer_list);
     }
     if (NULL != dev->app_activated_layer_list.list) {
-        loader_destroy_layer_list(inst, dev, &dev->app_activated_layer_list);
+        loaderDestroyLayerList(inst, dev, &dev->app_activated_layer_list);
     }
     loader_device_heap_free(dev, dev);
 }
@@ -2036,8 +2245,9 @@ void loader_initialize(void) {
     cJSON_InitHooks(&alloc_fns);
 }
 
-struct loader_manifest_files {
+struct loader_data_files {
     uint32_t count;
+    uint32_t alloc_count;
     char **filename_list;
 };
 
@@ -2170,94 +2380,16 @@ out:
     return res;
 }
 
-// Do a deep copy of the loader_layer_properties structure.
-VkResult loader_copy_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *dst,
-                                      struct loader_layer_properties *src) {
-    uint32_t cnt, i;
-    memcpy(dst, src, sizeof(*src));
-    dst->instance_extension_list.list = loader_instance_heap_alloc(
-        inst, sizeof(VkExtensionProperties) * src->instance_extension_list.count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (NULL == dst->instance_extension_list.list) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "loader_copy_layer_properties: Failed to allocate space "
-                   "for instance extension list of size %d.",
-                   src->instance_extension_list.count);
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-    dst->instance_extension_list.capacity = sizeof(VkExtensionProperties) * src->instance_extension_list.count;
-    memcpy(dst->instance_extension_list.list, src->instance_extension_list.list, dst->instance_extension_list.capacity);
-    dst->device_extension_list.list = loader_instance_heap_alloc(
-        inst, sizeof(struct loader_dev_ext_props) * src->device_extension_list.count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (NULL == dst->device_extension_list.list) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "loader_copy_layer_properties: Failed to allocate space "
-                   "for device extension list of size %d.",
-                   src->device_extension_list.count);
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-    memset(dst->device_extension_list.list, 0, sizeof(struct loader_dev_ext_props) * src->device_extension_list.count);
-
-    dst->device_extension_list.capacity = sizeof(struct loader_dev_ext_props) * src->device_extension_list.count;
-    memcpy(dst->device_extension_list.list, src->device_extension_list.list, dst->device_extension_list.capacity);
-    if (src->device_extension_list.count > 0 && src->device_extension_list.list->entrypoint_count > 0) {
-        cnt = src->device_extension_list.list->entrypoint_count;
-        dst->device_extension_list.list->entrypoints =
-            loader_instance_heap_alloc(inst, sizeof(char *) * cnt, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == dst->device_extension_list.list->entrypoints) {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_copy_layer_properties: Failed to allocate space "
-                       "for device extension entrypoint list of size %d.",
-                       cnt);
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
-        memset(dst->device_extension_list.list->entrypoints, 0, sizeof(char *) * cnt);
-
-        for (i = 0; i < cnt; i++) {
-            dst->device_extension_list.list->entrypoints[i] = loader_instance_heap_alloc(
-                inst, strlen(src->device_extension_list.list->entrypoints[i]) + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (NULL == dst->device_extension_list.list->entrypoints[i]) {
-                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                           "loader_copy_layer_properties: Failed to "
-                           "allocate space for device extension entrypoint "
-                           "%d name of length",
-                           i);
-                return VK_ERROR_OUT_OF_HOST_MEMORY;
-            }
-            strcpy(dst->device_extension_list.list->entrypoints[i], src->device_extension_list.list->entrypoints[i]);
-        }
-    }
-
-    return VK_SUCCESS;
-}
-
-static bool loader_find_layer_name_list(const char *name, const struct loader_layer_list *layer_list) {
-    if (NULL == layer_list) {
-        return false;
-    }
-    for (uint32_t j = 0; j < layer_list->count; j++) {
-        if (!strcmp(name, layer_list->list[j].info.layerName)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool loader_find_layer_name_array(const char *name, uint32_t layer_count, const char layer_list[][VK_MAX_EXTENSION_NAME_SIZE]) {
-    if (!layer_list) return false;
-    for (uint32_t j = 0; j < layer_count; j++)
-        if (!strcmp(name, layer_list[j])) return true;
-    return false;
-}
-
 const char *std_validation_str = "VK_LAYER_LUNARG_standard_validation";
 
 // Adds the legacy VK_LAYER_LUNARG_standard_validation as a meta-layer if it
 // fails to find it in the list already.  This is usually an indication that a
 // newer loader is being used with an older layer set.
-static bool loader_add_legacy_std_val_layer(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list) {
+static bool loaderAddLegacyStandardValidationLayer(const struct loader_instance *inst,
+                                                   struct loader_layer_list *layer_instance_list) {
     uint32_t i;
     bool success = true;
-    struct loader_layer_properties *props = loader_get_next_layer_property(inst, layer_instance_list);
+    struct loader_layer_properties *props = loaderGetNextLayerPropertySlot(inst, layer_instance_list);
     const char std_validation_names[6][VK_MAX_EXTENSION_NAME_SIZE] = {
         "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker",
         "VK_LAYER_LUNARG_core_validation", "VK_LAYER_GOOGLE_unique_objects"};
@@ -2303,28 +2435,32 @@ out:
 }
 
 // Verify that all component layers in a meta-layer are valid.
-static bool verify_meta_layer_comp_layers(const struct loader_instance *inst, struct loader_layer_properties *prop,
-                                          struct loader_layer_list *instance_layers) {
+static bool verifyMetaLayerComponentLayers(const struct loader_instance *inst, struct loader_layer_properties *prop,
+                                           struct loader_layer_list *instance_layers) {
     bool success = true;
     const uint32_t expected_major = VK_VERSION_MAJOR(prop->info.specVersion);
     const uint32_t expected_minor = VK_VERSION_MINOR(prop->info.specVersion);
 
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
-        if (!loader_find_layer_name_list(prop->component_layer_names[comp_layer], instance_layers)) {
-            loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                       "Meta-layer %s can't find component layer %s at index %d."
-                       "  Skipping this layer.",
-                       prop->info.layerName, prop->component_layer_names[comp_layer], comp_layer);
+        if (!loaderFindLayerNameInList(prop->component_layer_names[comp_layer], instance_layers)) {
+            if (NULL != inst) {
+                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                           "verifyMetaLayerComponentLayers: Meta-layer %s can't find component layer %s at index %d."
+                           "  Skipping this layer.",
+                           prop->info.layerName, prop->component_layer_names[comp_layer], comp_layer);
+            }
             success = false;
             break;
         } else {
             struct loader_layer_properties *comp_prop =
-                loader_get_layer_property(prop->component_layer_names[comp_layer], instance_layers);
+                loaderFindLayerProperty(prop->component_layer_names[comp_layer], instance_layers);
             if (comp_prop == NULL) {
-                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                           "Meta-layer %s can't find property for component layer %s at index %d."
-                           "  Skipping this layer.",
-                           prop->info.layerName, prop->component_layer_names[comp_layer], comp_layer);
+                if (NULL != inst) {
+                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                               "verifyMetaLayerComponentLayers: Meta-layer %s can't find property for component layer "
+                               "%s at index %d.  Skipping this layer.",
+                               prop->info.layerName, prop->component_layer_names[comp_layer], comp_layer);
+                }
                 success = false;
                 break;
             }
@@ -2333,34 +2469,42 @@ static bool verify_meta_layer_comp_layers(const struct loader_instance *inst, st
             uint32_t cur_major = VK_VERSION_MAJOR(comp_prop->info.specVersion);
             uint32_t cur_minor = VK_VERSION_MINOR(comp_prop->info.specVersion);
             if (cur_major != expected_major || cur_minor != expected_minor) {
-                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                           "Meta-layer uses API version %d.%d, but component layer %d uses API "
-                           "version %d.%d.  Skipping this layer.",
-                           expected_major, expected_minor, comp_layer, cur_major, cur_minor);
+                if (NULL != inst) {
+                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                               "verifyMetaLayerComponentLayers: Meta-layer uses API version %d.%d, but component "
+                               "layer %d uses API version %d.%d.  Skipping this layer.",
+                               expected_major, expected_minor, comp_layer, cur_major, cur_minor);
+                }
                 success = false;
                 break;
             }
 
             // Make sure the layer isn't using it's own name
             if (!strcmp(prop->info.layerName, prop->component_layer_names[comp_layer])) {
-                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                           "Meta-layer %s lists itself in its component layer list at index %d."
-                           "  Skipping this layer.",
-                           prop->info.layerName, comp_layer);
+                if (NULL != inst) {
+                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                               "verifyMetaLayerComponentLayers: Meta-layer %s lists itself in its component layer "
+                               "list at index %d.  Skipping this layer.",
+                               prop->info.layerName, comp_layer);
+                }
                 success = false;
                 break;
             }
             if (comp_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                           "verify_meta_layer_comp_layers: Adding meta-layer %s which also contains meta-layer %s",
-                           prop->info.layerName, comp_prop->info.layerName);
+                if (NULL != inst) {
+                    loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                               "verifyMetaLayerComponentLayers: Adding meta-layer %s which also contains meta-layer %s",
+                               prop->info.layerName, comp_prop->info.layerName);
+                }
 
                 // Make sure if the layer is using a meta-layer in its component list that we also verify that.
-                if (!verify_meta_layer_comp_layers(inst, comp_prop, instance_layers)) {
-                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                               "Meta-layer %s component layer %s can not find all component layers."
-                               "  Skipping this layer.",
-                               prop->info.layerName, prop->component_layer_names[comp_layer]);
+                if (!verifyMetaLayerComponentLayers(inst, comp_prop, instance_layers)) {
+                    if (NULL != inst) {
+                        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                                   "Meta-layer %s component layer %s can not find all component layers."
+                                   "  Skipping this layer.",
+                                   prop->info.layerName, prop->component_layer_names[comp_layer]);
+                    }
                     success = false;
                     break;
                 }
@@ -2369,18 +2513,23 @@ static bool verify_meta_layer_comp_layers(const struct loader_instance *inst, st
             // Add any instance and device extensions from component layers to this layer
             // list, so that anyone querying extensions will only need to look at the meta-layer
             for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
-                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Meta-layer %s component layer %s adding instance extension %s",
-                           prop->info.layerName, prop->component_layer_names[comp_layer],
-                           comp_prop->instance_extension_list.list[ext].extensionName);
+                if (NULL != inst) {
+                    loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
+                               "Meta-layer %s component layer %s adding instance extension %s", prop->info.layerName,
+                               prop->component_layer_names[comp_layer], comp_prop->instance_extension_list.list[ext].extensionName);
+                }
                 if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
                     loader_add_to_ext_list(inst, &prop->instance_extension_list, 1, &comp_prop->instance_extension_list.list[ext]);
                 }
             }
 
             for (uint32_t ext = 0; ext < comp_prop->device_extension_list.count; ext++) {
-                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Meta-layer %s component layer %s adding device extension %s",
-                           prop->info.layerName, prop->component_layer_names[comp_layer],
-                           comp_prop->device_extension_list.list[ext].props.extensionName);
+                if (NULL != inst) {
+                    loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
+                               "Meta-layer %s component layer %s adding device extension %s", prop->info.layerName,
+                               prop->component_layer_names[comp_layer],
+                               comp_prop->device_extension_list.list[ext].props.extensionName);
+                }
                 if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
                     loader_add_to_dev_ext_list(inst, &prop->device_extension_list,
                                                &comp_prop->device_extension_list.list[ext].props, 0, NULL);
@@ -2396,14 +2545,18 @@ static bool verify_meta_layer_comp_layers(const struct loader_instance *inst, st
 }
 
 // Verify that all meta-layers in a layer list are valid.
-static void verify_all_meta_layers(const struct loader_instance *inst, struct loader_layer_list *instance_layers) {
+static void VerifyAllMetaLayers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
+                                bool *override_layer_present) {
+    *override_layer_present = false;
     for (int32_t i = 0; i < (int32_t)instance_layers->count; i++) {
         struct loader_layer_properties *prop = &instance_layers->list[i];
 
         // If this is a meta-layer, make sure it is valid
-        if ((prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) && !verify_meta_layer_comp_layers(inst, prop, instance_layers)) {
-            loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
-                       "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
+        if ((prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) && !verifyMetaLayerComponentLayers(inst, prop, instance_layers)) {
+            if (NULL != inst) {
+                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
+                           "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
+            }
 
             // Delete the component layers
             loader_instance_heap_free(inst, prop->component_layer_names);
@@ -2417,6 +2570,8 @@ static void verify_all_meta_layers(const struct loader_instance *inst, struct lo
             // re-check this index.
             instance_layers->count--;
             i--;
+        } else if (prop->is_override && loaderImplicitLayerIsEnabled(inst, prop)) {
+            *override_layer_present = true;
         }
     }
 }
@@ -2429,35 +2584,18 @@ typedef struct {
     uint16_t patch;
 } layer_json_version;
 
-static inline bool is_valid_layer_json_version(const layer_json_version *layer_json) {
-    // Supported versions are: 1.0.0, 1.0.1, 1.1.0, 1.1.1, and 1.1.2.
-    if ((layer_json->major == 1 && layer_json->minor == 1 && layer_json->patch < 3) ||
-        (layer_json->major == 1 && layer_json->minor == 0 && layer_json->patch < 2)) {
-        return true;
-    }
-    return false;
-}
-
-static inline bool layer_json_supports_layers_tag(const layer_json_version *layer_json) {
-    // Supported versions started in 1.0.1, so anything newer
-    if ((layer_json->major > 1 || layer_json->minor > 0 || layer_json->patch > 1)) {
-        return true;
-    }
-    return false;
-}
-
 static inline bool layer_json_supports_pre_instance_tag(const layer_json_version *layer_json) {
     // Supported versions started in 1.1.2, so anything newer
     return layer_json->major > 1 || layer_json->minor > 1 || (layer_json->minor == 1 && layer_json->patch > 1);
 }
 
-static VkResult loader_read_json_layer(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
-                                       cJSON *layer_node, layer_json_version version, cJSON *item, cJSON *disable_environment,
-                                       bool is_implicit, char *filename) {
+static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
+                                    cJSON *layer_node, layer_json_version version, cJSON *item, cJSON *disable_environment,
+                                    bool is_implicit, char *filename) {
     char *temp;
     char *name, *type, *library_path_str, *api_version;
     char *implementation_version, *description;
-    cJSON *ext_item, *library_path, *component_layers;
+    cJSON *ext_item, *library_path, *component_layers, *override_paths;
     VkExtensionProperties ext_prop;
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     struct loader_layer_properties *props = NULL;
@@ -2529,9 +2667,9 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
             layer_node = layer_node->next;
             goto out;
         }
-        props = loader_get_next_layer_property(inst, layer_instance_list);
+        props = loaderGetNextLayerPropertySlot(inst, layer_instance_list);
         if (NULL == props) {
-            // Error already triggered in loader_get_next_layer_property.
+            // Error already triggered in loaderGetNextLayerPropertySlot.
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
@@ -2542,6 +2680,74 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
     } else {
         layer_node = layer_node->next;
         goto out;
+    }
+
+    // Expiration date for override layer.  Field starte with JSON file 1.1.2 and
+    // is completely optional.  So, no check put in place.
+    if (!strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
+        cJSON *expiration;
+
+        if (version.major < 1 && version.minor < 1 && version.patch < 2) {
+            loader_log(
+                inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                "Override layer expiration date not added until version 1.1.2.  Please update JSON file version appropriately.");
+        }
+
+        props->is_override = true;
+        expiration = cJSON_GetObjectItem(layer_node, "expiration");
+        if (NULL != expiration) {
+            char date_copy[32];
+            uint8_t cur_item = 0;
+
+            // Get the string for the current item
+            temp = cJSON_Print(expiration);
+            if (temp == NULL) {
+                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                           "Problem accessing layer value 'expiration' in manifest JSON file, skipping this layer");
+                result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+            temp[strlen(temp) - 1] = '\0';
+            strcpy(date_copy, &temp[1]);
+            cJSON_Free(temp);
+
+            if (strlen(date_copy) == 16) {
+                char *cur_start = &date_copy[0];
+                char *next_dash = strchr(date_copy, '-');
+                if (NULL != next_dash) {
+                    while (cur_item < 5 && strlen(cur_start)) {
+                        if (next_dash != NULL) {
+                            *next_dash = '\0';
+                        }
+                        switch (cur_item) {
+                            case 0:  // Year
+                                props->expiration.year = atoi(cur_start);
+                                break;
+                            case 1:  // Month
+                                props->expiration.month = atoi(cur_start);
+                                break;
+                            case 2:  // Day
+                                props->expiration.day = atoi(cur_start);
+                                break;
+                            case 3:  // Hour
+                                props->expiration.hour = atoi(cur_start);
+                                break;
+                            case 4:  // Minute
+                                props->expiration.minute = atoi(cur_start);
+                                props->has_expiration = true;
+                                break;
+                            default:  // Ignore
+                                break;
+                        }
+                        if (next_dash != NULL) {
+                            cur_start = next_dash + 1;
+                            next_dash = strchr(cur_start, '-');
+                        }
+                        cur_item++;
+                    }
+                }
+            }
+        }
     }
 
     // Library path no longer required unless component_layers is also not defined
@@ -2582,8 +2788,12 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
                 rel_base = loader_platform_dirname(name_copy);
                 loader_expand_path(library_path_str, rel_base, MAX_STRING_SIZE, fullpath);
             } else {
-                // A filename which is assumed in a system directory
+// A filename which is assumed in a system directory
+#if defined(DEFAULT_VK_LAYERS_PATH)
                 loader_get_fullpath(library_path_str, DEFAULT_VK_LAYERS_PATH, MAX_STRING_SIZE, fullpath);
+#else
+                loader_get_fullpath(library_path_str, "", MAX_STRING_SIZE, fullpath);
+#endif
             }
         }
     } else if (NULL != component_layers) {
@@ -2630,6 +2840,41 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
                    "Layer missing both library_path and component_layers fields.  One or the "
                    "other MUST be defined.  Skipping this layer");
         goto out;
+    }
+
+    override_paths = cJSON_GetObjectItem(layer_node, "override_paths");
+    if (NULL != override_paths) {
+        if (version.major == 1 && (version.minor < 1 || version.patch < 1)) {
+            loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                       "Indicating meta-layer-specific override paths, but using older "
+                       "JSON file version.");
+        }
+        int count = cJSON_GetArraySize(override_paths);
+        props->num_override_paths = count;
+
+        // Allocate buffer for override paths
+        props->override_paths =
+            loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == props->override_paths) {
+            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+
+        // Copy the override paths into the array
+        for (i = 0; i < count; i++) {
+            cJSON *override_path = cJSON_GetArrayItem(override_paths, i);
+            if (NULL != override_path) {
+                temp = cJSON_Print(override_path);
+                if (NULL == temp) {
+                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                }
+                temp[strlen(temp) - 1] = '\0';
+                strncpy(props->override_paths[i], temp + 1, MAX_STRING_SIZE - 1);
+                props->override_paths[i][MAX_STRING_SIZE - 1] = '\0';
+                cJSON_Free(temp);
+            }
+        }
     }
 
     if (is_implicit) {
@@ -2880,19 +3125,40 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
     result = VK_SUCCESS;
 
 out:
-
 #undef GET_JSON_ITEM
 #undef GET_JSON_OBJECT
 
     if (VK_SUCCESS != result && NULL != props) {
-        props->num_component_layers = 0;
         if (NULL != props->component_layer_names) {
             loader_instance_heap_free(inst, props->component_layer_names);
         }
+        if (NULL != props->override_paths) {
+            loader_instance_heap_free(inst, props->override_paths);
+        }
+        props->num_component_layers = 0;
         props->component_layer_names = NULL;
+        props->num_override_paths = 0;
+        props->override_paths = NULL;
     }
 
     return result;
+}
+
+static inline bool isValidLayerJsonVersion(const layer_json_version *layer_json) {
+    // Supported versions are: 1.0.0, 1.0.1, and 1.1.0 - 1.1.2.
+    if ((layer_json->major == 1 && layer_json->minor == 1 && layer_json->patch < 3) ||
+        (layer_json->major == 1 && layer_json->minor == 0 && layer_json->patch < 2)) {
+        return true;
+    }
+    return false;
+}
+
+static inline bool layerJsonSupportsMultipleLayers(const layer_json_version *layer_json) {
+    // Supported versions started in 1.0.1, so anything newer
+    if ((layer_json->major > 1 || layer_json->minor > 0 || layer_json->patch > 1)) {
+        return true;
+    }
+    return false;
 }
 
 // Given a cJSON struct (json) of the top level JSON object from layer manifest
@@ -2904,8 +3170,8 @@ out:
 // layer_list has a new entry and initialized accordingly.
 // If the json input object does not have all the required fields no entry
 // is added to the list.
-static VkResult loader_add_layer_properties(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
-                                            cJSON *json, bool is_implicit, char *filename) {
+static VkResult loaderAddLayerProperties(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
+                                         cJSON *json, bool is_implicit, char *filename) {
     // The following Fields in layer manifest file that are required:
     //   - "file_format_version"
     //   - If more than one "layer" object are used, then the "layers" array is
@@ -2938,11 +3204,10 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
         }
     }
 
-    if (!is_valid_layer_json_version(&json_version)) {
+    if (!isValidLayerJsonVersion(&json_version)) {
         loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                   "loader_add_layer_properties: %s invalid layer "
-                   "manifest file version %d.%d.%d.  May cause errors.",
-                   filename, json_version.major, json_version.minor, json_version.patch);
+                   "loaderAddLayerProperties: %s invalid layer manifest file version %d.%d.%d.  May cause errors.", filename,
+                   json_version.major, json_version.minor, json_version.patch);
     }
     cJSON_Free(file_vers);
 
@@ -2950,33 +3215,30 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     layers_node = cJSON_GetObjectItem(json, "layers");
     if (layers_node != NULL) {
         int numItems = cJSON_GetArraySize(layers_node);
-        if (!layer_json_supports_layers_tag(&json_version)) {
-            loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                       "loader_add_layer_properties: \'layers\' tag not "
-                       "supported until file version 1.0.1, but %s is "
-                       "reporting version %s",
-                       filename, file_vers);
+        if (!layerJsonSupportsMultipleLayers(&json_version)) {
+            loader_log(
+                inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                "loaderAddLayerProperties: \'layers\' tag not supported until file version 1.0.1, but %s is reporting version %s",
+                filename, file_vers);
         }
         for (int curLayer = 0; curLayer < numItems; curLayer++) {
             layer_node = cJSON_GetArrayItem(layers_node, curLayer);
             if (layer_node == NULL) {
                 loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                           "loader_add_layer_properties: Can not find "
-                           "\'layers\' array element %d object in manifest "
-                           "JSON file %s.  Skipping this file",
+                           "loaderAddLayerProperties: Can not find 'layers' array element %d object in manifest JSON file %s.  "
+                           "Skipping this file",
                            curLayer, filename);
                 goto out;
             }
-            result = loader_read_json_layer(inst, layer_instance_list, layer_node, json_version, item, disable_environment,
-                                            is_implicit, filename);
+            result = loaderReadLayerJson(inst, layer_instance_list, layer_node, json_version, item, disable_environment,
+                                         is_implicit, filename);
         }
     } else {
         // Otherwise, try to read in individual layers
         layer_node = cJSON_GetObjectItem(json, "layer");
         if (layer_node == NULL) {
             loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                       "loader_add_layer_properties: Can not find \'layer\' "
-                       "object in manifest JSON file %s.  Skipping this file.",
+                       "loaderAddLayerProperties: Can not find 'layer' object in manifest JSON file %s.  Skipping this file.",
                        filename);
             goto out;
         }
@@ -2992,16 +3254,15 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
         // Throw a warning if we encounter multiple "layer" objects in file
         // versions newer than 1.0.0.  Having multiple objects with the same
         // name at the same level is actually a JSON standard violation.
-        if (layer_count > 1 && layer_json_supports_layers_tag(&json_version)) {
+        if (layer_count > 1 && layerJsonSupportsMultipleLayers(&json_version)) {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_add_layer_properties: Multiple \'layer\' nodes"
-                       " are deprecated starting in file version \"1.0.1\".  "
-                       "Please use \'layers\' : [] array instead in %s.",
+                       "loaderAddLayerProperties: Multiple 'layer' nodes are deprecated starting in file version \"1.0.1\".  "
+                       "Please use 'layers' : [] array instead in %s.",
                        filename);
         } else {
             do {
-                result = loader_read_json_layer(inst, layer_instance_list, layer_node, json_version, item, disable_environment,
-                                                is_implicit, filename);
+                result = loaderReadLayerJson(inst, layer_instance_list, layer_node, json_version, item, disable_environment,
+                                             is_implicit, filename);
                 layer_node = layer_node->next;
             } while (layer_node != NULL);
         }
@@ -3011,6 +3272,477 @@ out:
 
     return result;
 }
+
+static inline size_t DetermineDataFilePathSize(const char *cur_path, size_t relative_path_size) {
+    size_t path_size = 0;
+
+    if (NULL != cur_path) {
+        // For each folder in cur_path, (detected by finding additional
+        // path separators in the string) we need to add the relative path on
+        // the end.  Plus, leave an additional two slots on the end to add an
+        // additional directory slash and path separator if needed
+        path_size += strlen(cur_path) + relative_path_size + 2;
+        for (const char *x = cur_path; *x; ++x) {
+            if (*x == PATH_SEPARATOR) {
+                path_size += relative_path_size + 2;
+            }
+        }
+    }
+
+    return path_size;
+}
+
+static inline void CopyDataFilePath(const char *cur_path, const char *relative_path, size_t relative_path_size,
+                                    char **output_path) {
+    if (NULL != cur_path) {
+        uint32_t start = 0;
+        uint32_t stop = 0;
+        char *cur_write = *output_path;
+
+        while (cur_path[start] != '\0') {
+            while (cur_path[start] == PATH_SEPARATOR) {
+                start++;
+            }
+            stop = start;
+            while (cur_path[stop] != PATH_SEPARATOR && cur_path[stop] != '\0') {
+                stop++;
+            }
+            const size_t s = stop - start;
+            if (s) {
+                memcpy(cur_write, &cur_path[start], s);
+                cur_write += s;
+
+                // If last symbol written was not a directory symbol, add it.
+                if (*(cur_write - 1) != DIRECTORY_SYMBOL) {
+                    *cur_write++ = DIRECTORY_SYMBOL;
+                }
+
+                if (relative_path_size > 0) {
+                    memcpy(cur_write, relative_path, relative_path_size);
+                    cur_write += relative_path_size;
+                }
+                *cur_write++ = PATH_SEPARATOR;
+                start = stop;
+            }
+        }
+        *output_path = cur_write;
+    }
+}
+
+// Check to see if there's enough space in the data file list.  If not, add some.
+static inline VkResult CheckAndAdjustDataFileList(const struct loader_instance *inst, struct loader_data_files *out_files) {
+    if (out_files->count == 0) {
+        out_files->filename_list = loader_instance_heap_alloc(inst, 64 * sizeof(char *), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == out_files->filename_list) {
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "CheckAndAdjustDataFileList: Failed to allocate space for manifest file name list");
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        out_files->alloc_count = 64;
+    } else if (out_files->count == out_files->alloc_count) {
+        size_t new_size = out_files->alloc_count * sizeof(char *) * 2;
+        void *new_ptr = loader_instance_heap_realloc(inst, out_files->filename_list, out_files->alloc_count * sizeof(char *),
+                                                     new_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == new_ptr) {
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "CheckAndAdjustDataFileList: Failed to reallocate space for manifest file name list");
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        out_files->filename_list = new_ptr;
+        out_files->alloc_count *= 2;
+    }
+
+    return VK_SUCCESS;
+}
+
+// If the file found is a manifest file name, add it to the out_files manifest list.
+static VkResult AddIfManifestFile(const struct loader_instance *inst, const char *file_name, struct loader_data_files *out_files) {
+    VkResult vk_result = VK_SUCCESS;
+
+    if (NULL == file_name || NULL == out_files) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "AddIfManfistFile: Received NULL pointer");
+        vk_result = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    // Look for files ending with ".json" suffix
+    size_t name_len = strlen(file_name);
+    const char *name_suffix = file_name + name_len - 5;
+    if ((name_len < 5) || 0 != strncmp(name_suffix, ".json", 5)) {
+        // Use incomplete to indicate invalid name, but to keep going.
+        vk_result = VK_INCOMPLETE;
+        goto out;
+    }
+
+    // Check and allocate space in the manifest list if necessary
+    vk_result = CheckAndAdjustDataFileList(inst, out_files);
+    if (VK_SUCCESS != vk_result) {
+        goto out;
+    }
+
+    out_files->filename_list[out_files->count] =
+        loader_instance_heap_alloc(inst, strlen(file_name) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (out_files->filename_list[out_files->count] == NULL) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "AddIfManfistFile: Failed to allocate space for manifest file %d list",
+                   out_files->count);
+        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    strcpy(out_files->filename_list[out_files->count++], file_name);
+
+out:
+
+    return vk_result;
+}
+
+static VkResult AddDataFilesInPath(const struct loader_instance *inst, char *search_path, bool is_directory_list,
+                                   struct loader_data_files *out_files) {
+    VkResult vk_result = VK_SUCCESS;
+    DIR *dir_stream = NULL;
+    struct dirent *dir_entry;
+    char *cur_file;
+    char *next_file;
+    char *name;
+    char full_path[2048];
+#ifndef _WIN32
+    char temp_path[2048];
+#endif
+
+    // Now, parse the paths
+    next_file = search_path;
+    while (NULL != next_file && *next_file != '\0') {
+        name = NULL;
+        cur_file = next_file;
+        next_file = loader_get_next_path(cur_file);
+
+        // Get the next name in the list and verify it's valid
+        if (is_directory_list) {
+            dir_stream = opendir(cur_file);
+            if (NULL == dir_stream) {
+                continue;
+            }
+            while (1) {
+                dir_entry = readdir(dir_stream);
+                if (NULL == dir_entry) {
+                    break;
+                }
+
+                name = &(dir_entry->d_name[0]);
+                loader_get_fullpath(name, cur_file, sizeof(full_path), full_path);
+                name = full_path;
+
+                VkResult local_res;
+                local_res = AddIfManifestFile(inst, name, out_files);
+
+                // Incomplete means this was not a valid data file.
+                if (local_res == VK_INCOMPLETE) {
+                    continue;
+                } else if (local_res != VK_SUCCESS) {
+                    vk_result = local_res;
+                    break;
+                }
+            }
+            closedir(dir_stream);
+            if (vk_result != VK_SUCCESS) {
+                goto out;
+            }
+        } else {
+#ifdef _WIN32
+            name = cur_file;
+#else
+            // Only Linux has relative paths, make a copy of location so it isn't modified
+            size_t str_len;
+            if (NULL != next_file) {
+                str_len = next_file - cur_file + 1;
+            } else {
+                str_len = strlen(cur_file) + 1;
+            }
+            if (str_len > sizeof(temp_path)) {
+                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "AddDataFilesInPath: Path to %s too long\n", cur_file);
+                continue;
+            }
+            strcpy(temp_path, cur_file);
+            name = temp_path;
+#endif
+            loader_get_fullpath(cur_file, name, sizeof(full_path), full_path);
+            name = full_path;
+
+            VkResult local_res;
+            local_res = AddIfManifestFile(inst, name, out_files);
+
+            // Incomplete means this was not a valid data file.
+            if (local_res == VK_INCOMPLETE) {
+                continue;
+            } else if (local_res != VK_SUCCESS) {
+                vk_result = local_res;
+                break;
+            }
+        }
+    }
+
+out:
+
+    return vk_result;
+}
+
+// Look for data files in the provided paths, but first check the environment override to determine if we should use that
+// instead.
+static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
+                                           const char *env_override, const char *path_override, const char *relative_location,
+                                           bool *override_active, struct loader_data_files *out_files) {
+    VkResult vk_result = VK_SUCCESS;
+    bool is_directory_list = true;
+    bool is_icd = (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD);
+    char *override_env = NULL;
+    const char *override_path = NULL;
+    size_t search_path_size = 0;
+    char *search_path = NULL;
+    char *cur_path_ptr = NULL;
+    size_t rel_size = 0;
+#ifndef _WIN32
+    bool xdgconfig_alloc = true;
+    bool xdgdata_alloc = true;
+#endif
+
+#ifndef _WIN32
+    // Determine how much space is needed to generate the full search path
+    // for the current manifest files.
+    char *xdgconfdirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
+    char *xdgdatadirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
+    char *xdgdatahome = loader_secure_getenv("XDG_DATA_HOME", inst);
+    char *home = NULL;
+    char* home_root = NULL;
+
+    if (xdgconfdirs == NULL) {
+        xdgconfig_alloc = false;
+    }
+    if (xdgdatadirs == NULL) {
+        xdgdata_alloc = false;
+    }
+    if (xdgconfdirs == NULL || xdgconfdirs[0] == '\0') {
+        xdgconfdirs = FALLBACK_CONFIG_DIRS;
+    }
+    if (xdgdatadirs == NULL || xdgdatadirs[0] == '\0') {
+        xdgdatadirs = FALLBACK_DATA_DIRS;
+    }
+
+    // Only use HOME if XDG_DATA_HOME is not present on the system
+    if (NULL == xdgdatahome) {
+        home = loader_secure_getenv("HOME", inst);
+        if (home != NULL) {
+            home_root = loader_instance_heap_alloc(inst, strlen(home) + 14, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (home_root == NULL) {
+                vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+            strcpy(home_root, home);
+            strcat(home_root, "/.local/share");
+        }
+    }
+#endif
+
+    if (path_override != NULL) {
+        override_path = path_override;
+    } else if (env_override != NULL) {
+#ifndef _WIN32
+        if (geteuid() != getuid() || getegid() != getgid()) {
+            // Don't allow setuid apps to use the env var:
+            env_override = NULL;
+        } else
+#endif
+        {
+            override_env = loader_secure_getenv(env_override, inst);
+
+            // The ICD override is actually a specific list of filenames, not directories
+            if (is_icd && NULL != override_env) {
+                is_directory_list = false;
+            }
+            override_path = override_env;
+        }
+    }
+
+    // Add two by default for NULL terminator and one path separator on end (just in case)
+    search_path_size = 2;
+
+    // If there's an override, use that (and the local folder if required) and nothing else
+    if (NULL != override_path) {
+        // Local folder and null terminator
+        search_path_size += strlen(override_path) + 1;
+    } else if (NULL == relative_location) {
+        // If there's no override, and no relative location, bail out.  This is usually
+        // the case when we're on Windows and the default path is to use the registry.
+        goto out;
+    } else {
+        // Add the general search folders (with the appropriate relative folder added)
+        rel_size = strlen(relative_location);
+        if (rel_size == 0) {
+            goto out;
+        } else {
+#ifndef _WIN32
+            search_path_size += DetermineDataFilePathSize(xdgconfdirs, rel_size);
+            search_path_size += DetermineDataFilePathSize(xdgdatadirs, rel_size);
+            search_path_size += DetermineDataFilePathSize(SYSCONFDIR, rel_size);
+#if defined(EXTRASYSCONFDIR)
+            search_path_size += DetermineDataFilePathSize(EXTRASYSCONFDIR, rel_size);
+#endif
+            if (is_directory_list) {
+                search_path_size += DetermineDataFilePathSize(xdgdatahome, rel_size);
+                search_path_size += DetermineDataFilePathSize(home_root, rel_size);
+            }
+#endif
+        }
+    }
+
+    // Allocate the required space
+    search_path = loader_instance_heap_alloc(inst, search_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == search_path) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ReadDataFilesInSearchPaths: Failed to allocate space for search path of length %d", (uint32_t)search_path_size);
+        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    cur_path_ptr = search_path;
+
+    // Add the remaining paths to the list
+    if (NULL != override_path) {
+        strcpy(cur_path_ptr, override_path);
+    } else {
+#ifndef _WIN32
+        if (rel_size > 0) {
+            CopyDataFilePath(xdgconfdirs, relative_location, rel_size, &cur_path_ptr);
+            CopyDataFilePath(SYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
+#if defined(EXTRASYSCONFDIR)
+            CopyDataFilePath(EXTRASYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
+#endif
+            CopyDataFilePath(xdgdatadirs, relative_location, rel_size, &cur_path_ptr);
+            if (is_directory_list) {
+                CopyDataFilePath(xdgdatahome, relative_location, rel_size, &cur_path_ptr);
+                CopyDataFilePath(home_root, relative_location, rel_size, &cur_path_ptr);
+            }
+        }
+
+        // Remove the last path separator
+        --cur_path_ptr;
+
+        assert(cur_path_ptr - search_path < (ptrdiff_t)search_path_size);
+        *cur_path_ptr = '\0';
+#endif
+    }
+
+    // Print out the paths being searched if debugging is enabled
+    if (search_path_size > 0) {
+        loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
+                   "ReadDataFilesInSearchPaths: Searching the following paths for manifest files: %s\n", search_path);
+    }
+
+    // Now, parse the paths and add any manifest files found in them.
+    vk_result = AddDataFilesInPath(inst, search_path, is_directory_list, out_files);
+
+    if (NULL != override_path) {
+        *override_active = true;
+    } else {
+        *override_active = false;
+    }
+
+out:
+
+    if (NULL != override_env) {
+        loader_free_getenv(override_env, inst);
+    }
+#ifndef _WIN32
+    if (xdgconfig_alloc) {
+        loader_free_getenv(xdgconfdirs, inst);
+    }
+    if (xdgdata_alloc) {
+        loader_free_getenv(xdgdatadirs, inst);
+    }
+    if (NULL != xdgdatahome) {
+        loader_free_getenv(xdgdatahome, inst);
+    }
+    if (NULL != home) {
+        loader_free_getenv(home, inst);
+    }
+    if (NULL != home_root) {
+        loader_instance_heap_free(inst, home_root);
+    }
+#endif
+
+    if (NULL != search_path) {
+        loader_instance_heap_free(inst, search_path);
+    }
+
+    return vk_result;
+}
+
+#ifdef _WIN32
+// Look for data files in the registry.
+static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
+                                        bool warn_if_not_present, char *registry_location, struct loader_data_files *out_files) {
+    VkResult vk_result = VK_SUCCESS;
+    bool is_icd = (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD);
+    bool use_secondary_hive = data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER;
+    char *search_path = NULL;
+
+    // These calls look at the PNP/Device section of the registry.
+    VkResult regHKR_result = VK_SUCCESS;
+    DWORD reg_size = 4096;
+    if (!strncmp(registry_location, VK_DRIVERS_INFO_REGISTRY_LOC, sizeof(VK_DRIVERS_INFO_REGISTRY_LOC))) {
+        regHKR_result = loaderGetDeviceRegistryFiles(inst, &search_path, &reg_size, LoaderPnpDriverRegistry());
+    } else if (!strncmp(registry_location, VK_ELAYERS_INFO_REGISTRY_LOC, sizeof(VK_ELAYERS_INFO_REGISTRY_LOC))) {
+        regHKR_result = loaderGetDeviceRegistryFiles(inst, &search_path, &reg_size, LoaderPnpELayerRegistry());
+    } else if (!strncmp(registry_location, VK_ILAYERS_INFO_REGISTRY_LOC, sizeof(VK_ILAYERS_INFO_REGISTRY_LOC))) {
+        regHKR_result = loaderGetDeviceRegistryFiles(inst, &search_path, &reg_size, LoaderPnpILayerRegistry());
+    }
+
+    // This call looks into the Khronos non-device specific section of the registry.
+    VkResult reg_result = loaderGetRegistryFiles(inst, registry_location, use_secondary_hive, &search_path, &reg_size);
+
+    if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == search_path) {
+        if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
+            loader_log(
+                inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                "ReadDataFilesInRegistry: Registry lookup failed to get ICD manifest files.  Possibly missing Vulkan driver?");
+            if (VK_SUCCESS == reg_result || VK_ERROR_OUT_OF_HOST_MEMORY == reg_result) {
+                vk_result = reg_result;
+            } else {
+                vk_result = VK_ERROR_INCOMPATIBLE_DRIVER;
+            }
+        } else {
+            if (warn_if_not_present) {
+                if (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) {
+                    // This is only a warning for layers
+                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                               "ReadDataFilesInRegistry: Registry lookup failed to get layer manifest files.");
+                } else {
+                    // This is only a warning for general data files
+                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                               "ReadDataFilesInRegistry: Registry lookup failed to get data files.");
+                }
+            }
+            if (reg_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                vk_result = reg_result;
+            } else {
+                // Return success for now since it's not critical for layers
+                vk_result = VK_SUCCESS;
+            }
+        }
+        goto out;
+    }
+
+    // Now, parse the paths and add any manifest files found in them.
+    vk_result = AddDataFilesInPath(inst, search_path, false, out_files);
+
+out:
+
+    if (NULL != search_path) {
+        loader_instance_heap_free(inst, search_path);
+    }
+
+    return vk_result;
+}
+#endif  // _WIN32
 
 // Find the Vulkan library manifest files.
 //
@@ -3037,458 +3769,53 @@ out:
 // Win Layer  | files    | dirs
 // Linux ICD  | dirs     | files
 // Linux Layer| dirs     | dirs
-static VkResult loader_get_manifest_files(const struct loader_instance *inst, const char *env_override, const char *source_override,
-                                          bool is_layer, bool warn_if_not_present, const char *location,
-                                          const char *relative_location, struct loader_manifest_files *out_files) {
-    const char *override = NULL;
-    char *override_getenv = NULL;
-    char *loc, *orig_loc = NULL;
-    size_t loc_size = 0;
-    char *reg = NULL;
-    char *file, *next_file, *name;
-    size_t alloced_count = 64;
-    char full_path[2048];
-    DIR *sysdir = NULL;
-    bool list_is_dirs = false;
-    struct dirent *dent;
+static VkResult loaderGetDataFiles(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
+                                   bool warn_if_not_present, const char *env_override, const char *path_override,
+                                   char *registry_location, const char *relative_location, struct loader_data_files *out_files) {
     VkResult res = VK_SUCCESS;
+    bool override_active = false;
 
+    // Free and init the out_files information so there's no false data left from uninitialized variables.
+    if (out_files->filename_list != NULL) {
+        for (uint32_t i = 0; i < out_files->count; i++) {
+            if (NULL != out_files->filename_list[i]) {
+                loader_instance_heap_free(inst, out_files->filename_list[i]);
+            }
+        }
+        loader_instance_heap_free(inst, out_files->filename_list);
+    }
     out_files->count = 0;
+    out_files->alloc_count = 0;
     out_files->filename_list = NULL;
 
-    if (source_override != NULL) {
-        override = source_override;
-    } else if (env_override != NULL) {
-#if !defined(_WIN32)
-        if (geteuid() != getuid() || getegid() != getgid()) {
-            // Don't allow setuid apps to use the env var:
-            env_override = NULL;
-        }
-#endif
-        if (env_override != NULL) {
-            override = override_getenv = loader_secure_getenv(env_override, inst);
-        }
-    }
-#if !defined(_WIN32)
-    if (relative_location == NULL) {
-#else
-    relative_location = NULL;
-    if (location == NULL) {
-#endif
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "loader_get_manifest_files: Can not get manifest files with "
-                   "NULL location, env_override=%s",
-                   (env_override != NULL) ? env_override : "");
-        res = VK_ERROR_INITIALIZATION_FAILED;
+    res = ReadDataFilesInSearchPaths(inst, data_file_type, env_override, path_override, relative_location, &override_active,
+                                     out_files);
+    if (VK_SUCCESS != res) {
         goto out;
     }
 
-#if defined(_WIN32)
-    list_is_dirs = (is_layer && override != NULL) ? true : false;
-#else
-    list_is_dirs = (override == NULL || is_layer) ? true : false;
-#endif
-    // Make a copy of the input we are using so it is not modified
-    // Also handle getting the location(s) from registry on Windows
-    if (override == NULL) {
-#if !defined(_WIN32)
-        const char *xdgconfdirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
-        const char *xdgdatadirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
-        if (xdgconfdirs == NULL || xdgconfdirs[0] == '\0') xdgconfdirs = FALLBACK_CONFIG_DIRS;
-        if (xdgdatadirs == NULL || xdgdatadirs[0] == '\0') xdgdatadirs = FALLBACK_DATA_DIRS;
-        const size_t rel_size = strlen(relative_location);
-        // Leave space for trailing separators
-        loc_size += strlen(xdgconfdirs) + strlen(xdgdatadirs) + 2 * rel_size + 2;
-        for (const char *x = xdgconfdirs; *x; ++x)
-            if (*x == PATH_SEPARATOR) loc_size += rel_size;
-        for (const char *x = xdgdatadirs; *x; ++x)
-            if (*x == PATH_SEPARATOR) loc_size += rel_size;
-        loc_size += strlen(SYSCONFDIR) + rel_size + 1;
-#if defined(EXTRASYSCONFDIR)
-        loc_size += strlen(EXTRASYSCONFDIR) + rel_size + 1;
-#endif
-#if defined(__APPLE__)
-        // For bundle path
-        loc_size += MAXPATHLEN;
-#endif
-#else
-        loc_size += strlen(location) + 1;
-#endif
-        loc = loader_stack_alloc(loc_size);
-        if (loc == NULL) {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_get_manifest_files: Failed to allocate "
-                       "%d bytes for manifest file location.",
-                       loc_size);
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+#ifdef _WIN32
+    // Read the registry if the override wasn't active.
+    if (!override_active) {
+        res = ReadDataFilesInRegistry(inst, data_file_type, warn_if_not_present, registry_location, out_files);
+        if (VK_SUCCESS != res) {
             goto out;
         }
-        char *loc_write = loc;
-#if !defined(_WIN32)
-        const char *loc_read;
-        size_t start, stop;
-
-#if defined(__APPLE__)
-        // Add the bundle's Resources dir to the beginning of the search path.
-        // Looks for manifests in the bundle first, before any system directories.
-        CFBundleRef main_bundle = CFBundleGetMainBundle();
-        if (NULL != main_bundle) {
-            CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);
-            if (NULL != ref) {
-                if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)loc_write, loc_size)) {
-                    loc_write += strlen(loc_write);
-                    memcpy(loc_write, relative_location, rel_size);
-                    loc_write += rel_size;
-                    *loc_write++ = PATH_SEPARATOR;
-                }
-                CFRelease(ref);
-            }
-        }
-#endif
-        loc_read = &xdgconfdirs[0];
-        start = 0;
-        while (loc_read[start] != '\0') {
-            while (loc_read[start] == PATH_SEPARATOR) {
-                start++;
-            }
-            stop = start;
-            while (loc_read[stop] != PATH_SEPARATOR && loc_read[stop] != '\0') {
-                stop++;
-            }
-            const size_t s = stop - start;
-            if (s) {
-                memcpy(loc_write, &loc_read[start], s);
-                loc_write += s;
-                memcpy(loc_write, relative_location, rel_size);
-                loc_write += rel_size;
-                *loc_write++ = PATH_SEPARATOR;
-                start = stop;
-            }
-        }
-
-        memcpy(loc_write, SYSCONFDIR, strlen(SYSCONFDIR));
-        loc_write += strlen(SYSCONFDIR);
-        memcpy(loc_write, relative_location, rel_size);
-        loc_write += rel_size;
-        *loc_write++ = PATH_SEPARATOR;
-
-#if defined(EXTRASYSCONFDIR)
-        memcpy(loc_write, EXTRASYSCONFDIR, strlen(EXTRASYSCONFDIR));
-        loc_write += strlen(EXTRASYSCONFDIR);
-        memcpy(loc_write, relative_location, rel_size);
-        loc_write += rel_size;
-        *loc_write++ = PATH_SEPARATOR;
-#endif
-
-        loc_read = &xdgdatadirs[0];
-        start = 0;
-        while (loc_read[start] != '\0') {
-            while (loc_read[start] == PATH_SEPARATOR) {
-                start++;
-            }
-            stop = start;
-            while (loc_read[stop] != PATH_SEPARATOR && loc_read[stop] != '\0') {
-                stop++;
-            }
-            const size_t s = stop - start;
-            if (s) {
-                memcpy(loc_write, &loc_read[start], s);
-                loc_write += s;
-                memcpy(loc_write, relative_location, rel_size);
-                loc_write += rel_size;
-                *loc_write++ = PATH_SEPARATOR;
-                start = stop;
-            }
-        }
-
-        --loc_write;
-#else
-        memcpy(loc_write, location, strlen(location));
-        loc_write += strlen(location);
-#endif
-        assert(loc_write - loc < (ptrdiff_t)loc_size);
-        *loc_write = '\0';
-
-#if defined(_WIN32)
-        VkResult regHKR_result = VK_SUCCESS;
-
-        DWORD reg_size = 4096;
-
-        // These calls look at the PNP/Device section of the registry.
-        if (!strncmp(loc, DEFAULT_VK_DRIVERS_INFO, sizeof(DEFAULT_VK_DRIVERS_INFO))) {
-            regHKR_result = loaderGetDeviceRegistryFiles(inst, &reg, &reg_size, LoaderPnpDriverRegistry());
-        } else if (!strncmp(loc, DEFAULT_VK_ELAYERS_INFO, sizeof(DEFAULT_VK_ELAYERS_INFO))) {
-            regHKR_result = loaderGetDeviceRegistryFiles(inst, &reg, &reg_size, LoaderPnpELayerRegistry());
-        } else if (!strncmp(loc, DEFAULT_VK_ILAYERS_INFO, sizeof(DEFAULT_VK_ILAYERS_INFO))) {
-            regHKR_result = loaderGetDeviceRegistryFiles(inst, &reg, &reg_size, LoaderPnpILayerRegistry());
-        }
-
-        // This call looks into the Khronos non-device specific section of the registry.
-        VkResult reg_result = loaderGetRegistryFiles(inst, loc, is_layer, &reg, &reg_size);
-
-        if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == reg) {
-            if (!is_layer) {
-                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                           "loader_get_manifest_files: Registry lookup failed "
-                           "to get ICD manifest files.  Possibly missing Vulkan"
-                           " driver?");
-                if (VK_SUCCESS == regHKR_result || VK_ERROR_OUT_OF_HOST_MEMORY == regHKR_result) {
-                    res = regHKR_result;
-                } else if (VK_SUCCESS == reg_result || VK_ERROR_OUT_OF_HOST_MEMORY == reg_result) {
-                    res = reg_result;
-                } else {
-                    res = VK_ERROR_INCOMPATIBLE_DRIVER;
-                }
-            } else {
-                if (warn_if_not_present) {
-                    // This is only a warning for layers
-                    loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                               "loader_get_manifest_files: Registry lookup failed "
-                               "to get layer manifest files.");
-                }
-                if (reg_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-                    res = reg_result;
-                } else {
-                    // Return success for now since it's not critical for layers
-                    res = VK_SUCCESS;
-                }
-            }
-            goto out;
-        }
-        orig_loc = loc;
-        loc = reg;
-#endif
-    } else {
-        loc = loader_stack_alloc(strlen(override) + 1);
-        if (loc == NULL) {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_get_manifest_files: Failed to allocate space for "
-                       "override environment variable of length %d",
-                       strlen(override) + 1);
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-        strcpy(loc, override);
     }
-
-    size_t n = 0;
-    loc_size = strlen(loc);
-    // Remove duplicated directory symbols (could hide duplicated paths)
-    for (size_t i = 0; i < loc_size; i++) {
-        if (n > 0) loc[i] = loc[i + n];
-        if (loc[i] == DIRECTORY_SYMBOL && loc[i + 1 + n] == DIRECTORY_SYMBOL) {
-            loc_size--;
-            n++;
-        }
-    }
-    loc[loc_size] = '\0';
-
-    // Print out the paths being searched if debugging is enabled
-    loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Searching the following paths for manifest files: %s\n", loc);
-
-    file = loc;
-    while (*file) {
-        next_file = loader_get_next_path(file);
-        if (list_is_dirs) {
-            sysdir = opendir(file);
-            name = NULL;
-            if (sysdir) {
-                dent = readdir(sysdir);
-                if (dent == NULL) break;
-                name = &(dent->d_name[0]);
-                loader_get_fullpath(name, file, sizeof(full_path), full_path);
-                name = full_path;
-            }
-        } else {
-#if defined(_WIN32)
-            name = file;
-#else
-            // only Linux has relative paths
-            char *dir;
-            // make a copy of location so it isn't modified
-            dir = loader_stack_alloc(strlen(loc) + 1);
-            if (dir == NULL) {
-                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                           "loader_get_manifest_files: Failed to allocate "
-                           "space for relative location path length %d",
-                           strlen(loc) + 1);
-                goto out;
-            }
-            strcpy(dir, loc);
-
-            loader_get_fullpath(file, dir, sizeof(full_path), full_path);
-
-            name = full_path;
 #endif
-        }
-        while (name) {
-            // Look for files ending with ".json" suffix
-            uint32_t nlen = (uint32_t)strlen(name);
-            const char *suf = name + nlen - 5;
-
-            // Check if the file is already present
-            bool file_already_loaded = false;
-            for (uint32_t i = 0; i < out_files->count; ++i) {
-                if (!strcmp(out_files->filename_list[i], name)) {
-                    file_already_loaded = true;
-                }
-            }
-
-            if (!file_already_loaded && (nlen > 5) && !strncmp(suf, ".json", 5)) {
-                if (out_files->count == 0) {
-                    out_files->filename_list =
-                        loader_instance_heap_alloc(inst, alloced_count * sizeof(char *), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                    if (NULL == out_files->filename_list) {
-                        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                                   "loader_get_manifest_files: Failed to allocate space for manifest file name list");
-                        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    }
-                } else if (out_files->count == alloced_count) {
-                    void *new_ptr =
-                        loader_instance_heap_realloc(inst, out_files->filename_list, alloced_count * sizeof(char *),
-                                                     alloced_count * sizeof(char *) * 2, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                    if (NULL == new_ptr) {
-                        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                                   "loader_get_manifest_files: Failed to reallocate space for manifest file name list");
-                        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    }
-                    out_files->filename_list = new_ptr;
-                    alloced_count *= 2;
-                }
-                out_files->filename_list[out_files->count] =
-                    loader_instance_heap_alloc(inst, strlen(name) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                if (out_files->filename_list[out_files->count] == NULL) {
-                    loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                               "loader_get_manifest_files: Failed to allocate "
-                               "space for manifest file %d list",
-                               out_files->count);
-                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                strcpy(out_files->filename_list[out_files->count], name);
-                out_files->count++;
-            } else if(file_already_loaded) {
-                // If the file has already been loaded we want to silently skip it. We do not want to report an error because having
-                // multiple GPUs using the Windows PnP registries with the same driver are expected to see a duplicate entry. We
-                // leave this as a debug message because it can still be useful in loader debugging.
-                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
-                    "Skipping manifest file %s - The file has already been read once", name);
-            } else if (!list_is_dirs) {
-                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "Skipping manifest file %s, file name must end in .json",
-                           name);
-            }
-            if (list_is_dirs) {
-                dent = readdir(sysdir);
-                if (dent == NULL) {
-                    break;
-                }
-                name = &(dent->d_name[0]);
-                loader_get_fullpath(name, file, sizeof(full_path), full_path);
-                name = full_path;
-            } else {
-                break;
-            }
-        }
-        if (sysdir) {
-            closedir(sysdir);
-            sysdir = NULL;
-        }
-        file = next_file;
-#if !defined(_WIN32)
-        if (relative_location != NULL && (next_file == NULL || *next_file == '\0') && override == NULL) {
-            char *xdgdatahome = loader_secure_getenv("XDG_DATA_HOME", inst);
-            size_t len;
-            if (xdgdatahome != NULL) {
-                size_t alloc_len = strlen(xdgdatahome) + 2 + strlen(relative_location);
-                char *home_loc = loader_stack_alloc(alloc_len);
-                if (home_loc == NULL) {
-                    loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                               "loader_get_manifest_files: Failed to allocate "
-                               "space for manifest file XDG Home location");
-                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                strcpy(home_loc, xdgdatahome);
-                // Add directory separator if needed
-                if (relative_location[0] != DIRECTORY_SYMBOL) {
-                    len = strlen(home_loc);
-                    home_loc[len] = DIRECTORY_SYMBOL;
-                    home_loc[len + 1] = '\0';
-                }
-                strncat(home_loc, relative_location, alloc_len);
-                file = home_loc;
-                next_file = loader_get_next_path(file);
-                relative_location = NULL;
-
-                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Searching the following path for manifest files: %s\n",
-                           home_loc);
-                list_is_dirs = true;
-
-            } else {
-                char *home = loader_secure_getenv("HOME", inst);
-                if (home != NULL) {
-                    size_t alloc_len = strlen(home) + 16 + strlen(relative_location);
-                    char *home_loc = loader_stack_alloc(alloc_len);
-                    if (home_loc == NULL) {
-                        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                                   "loader_get_manifest_files: Failed to allocate "
-                                   "space for manifest file Home location");
-                        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    }
-                    strncpy(home_loc, home, alloc_len);
-
-                    len = strlen(home);
-                    if (home[len] != DIRECTORY_SYMBOL) {
-                        home_loc[len] = DIRECTORY_SYMBOL;
-                        home_loc[len + 1] = '\0';
-                    }
-                    strncat(home_loc, ".local/share", alloc_len);
-
-                    if (relative_location[0] != DIRECTORY_SYMBOL) {
-                        len = strlen(home_loc);
-                        home_loc[len] = DIRECTORY_SYMBOL;
-                        home_loc[len + 1] = '\0';
-                    }
-                    strncat(home_loc, relative_location, alloc_len);
-                    file = home_loc;
-                    next_file = loader_get_next_path(file);
-                    relative_location = NULL;
-
-                    loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Searching the following path for manifest files: %s\n",
-                               home_loc);
-                    list_is_dirs = true;
-                } else {
-                    // without knowing HOME, we just.. give up
-                }
-            }
-        }
-#endif
-    }
 
 out:
+
     if (VK_SUCCESS != res && NULL != out_files->filename_list) {
         for (uint32_t remove = 0; remove < out_files->count; remove++) {
             loader_instance_heap_free(inst, out_files->filename_list[remove]);
         }
         loader_instance_heap_free(inst, out_files->filename_list);
         out_files->count = 0;
+        out_files->alloc_count = 0;
         out_files->filename_list = NULL;
     }
 
-    if (NULL != sysdir) {
-        closedir(sysdir);
-    }
-
-    if (override_getenv != NULL) {
-        loader_free_getenv(override_getenv, inst);
-    }
-
-    if (NULL != reg && reg != orig_loc) {
-        loader_instance_heap_free(inst, reg);
-    }
     return res;
 }
 
@@ -3512,13 +3839,13 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
     uint16_t file_minor_vers = 0;
     uint16_t file_patch_vers = 0;
     char *vers_tok;
-    struct loader_manifest_files manifest_files;
+    struct loader_data_files manifest_files;
     VkResult res = VK_SUCCESS;
     bool lockedMutex = false;
     cJSON *json = NULL;
     uint32_t num_good_icds = 0;
 
-    memset(&manifest_files, 0, sizeof(struct loader_manifest_files));
+    memset(&manifest_files, 0, sizeof(struct loader_data_files));
 
     res = loader_scanned_icd_init(inst, icd_tramp_list);
     if (VK_SUCCESS != res) {
@@ -3526,8 +3853,8 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
     }
 
     // Get a list of manifest files for ICDs
-    res = loader_get_manifest_files(inst, "VK_ICD_FILENAMES", NULL, false, true, DEFAULT_VK_DRIVERS_INFO, RELATIVE_VK_DRIVERS_INFO,
-                                    &manifest_files);
+    res = loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_ICD, true, "VK_ICD_FILENAMES", NULL, VK_DRIVERS_INFO_REGISTRY_LOC,
+                             VK_DRIVERS_INFO_RELATIVE_DIR, &manifest_files);
     if (VK_SUCCESS != res || manifest_files.count == 0) {
         goto out;
     }
@@ -3657,8 +3984,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 }
                 char fullpath[MAX_STRING_SIZE];
                 // Print out the paths being searched if debugging is enabled
-                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Searching for ICD drivers named %s, using default dir %s",
-                           library_path, DEFAULT_VK_DRIVERS_PATH);
+                loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Searching for ICD drivers named %s", library_path);
                 if (loader_platform_is_path(library_path)) {
                     // a relative or absolute path
                     char *name_copy = loader_stack_alloc(strlen(file_str) + 1);
@@ -3667,8 +3993,12 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     rel_base = loader_platform_dirname(name_copy);
                     loader_expand_path(library_path, rel_base, sizeof(fullpath), fullpath);
                 } else {
-                    // a filename which is assumed in a system directory
+// a filename which is assumed in a system directory
+#if defined(DEFAULT_VK_DRIVERS_PATH)
                     loader_get_fullpath(library_path, DEFAULT_VK_DRIVERS_PATH, sizeof(fullpath), fullpath);
+#else
+                        loader_get_fullpath(library_path, "", sizeof(fullpath), fullpath);
+#endif
                 }
 
                 uint32_t vers = 0;
@@ -3750,53 +4080,105 @@ out:
     return res;
 }
 
-void loader_layer_scan(const struct loader_instance *inst, struct loader_layer_list *instance_layers) {
+void loaderScanForLayers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
     char *file_str;
-    struct loader_manifest_files manifest_files[2];  // [0] = explicit, [1] = implicit
+    struct loader_data_files manifest_files;
     cJSON *json;
-    uint32_t implicit;
-    bool lockedMutex = false;
+    bool override_layer_valid = false;
+    char *override_paths = NULL;
+    uint32_t total_count = 0;
 
-    memset(manifest_files, 0, sizeof(struct loader_manifest_files) * 2);
+    memset(&manifest_files, 0, sizeof(struct loader_data_files));
 
-    // Get a list of manifest files for explicit layers
-    if (VK_SUCCESS != loader_get_manifest_files(inst, LAYERS_PATH_ENV, LAYERS_SOURCE_PATH, true, true, DEFAULT_VK_ELAYERS_INFO,
-                                                RELATIVE_VK_ELAYERS_INFO, &manifest_files[0])) {
-        goto out;
-    }
-
-    // Get a list of manifest files for any implicit layers
-    // Pass NULL for environment variable override - implicit layers are not
-    // overridden by LAYERS_PATH_ENV
-    if (VK_SUCCESS != loader_get_manifest_files(inst, NULL, NULL, true, false, DEFAULT_VK_ILAYERS_INFO, RELATIVE_VK_ILAYERS_INFO,
-                                                &manifest_files[1])) {
-        goto out;
-    }
-
-    // Make sure we have at least one layer, if not, go ahead and return
-    if (manifest_files[0].count == 0 && manifest_files[1].count == 0) {
-        goto out;
-    }
-
-    // cleanup any previously scanned libraries
-    loader_delete_layer_properties(inst, instance_layers);
+    // Cleanup any previously scanned libraries
+    loaderDeleteLayerListAndProperties(inst, instance_layers);
 
     loader_platform_thread_lock_mutex(&loader_json_lock);
-    lockedMutex = true;
-    for (implicit = 0; implicit < 2; implicit++) {
-        for (uint32_t i = 0; i < manifest_files[implicit].count; i++) {
-            file_str = manifest_files[implicit].filename_list[i];
-            if (file_str == NULL) continue;
 
-            // parse file into JSON struct
+    // Get a list of manifest files for any implicit layers
+    // Pass NULL for environment variable override - implicit layers are not overridden by LAYERS_PATH_ENV
+    if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, false, NULL, NULL, VK_ILAYERS_INFO_REGISTRY_LOC,
+                                         VK_ILAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
+        goto out;
+    }
+
+    if (manifest_files.count != 0) {
+        total_count += manifest_files.count;
+        for (uint32_t i = 0; i < manifest_files.count; i++) {
+            file_str = manifest_files.filename_list[i];
+            if (file_str == NULL) {
+                continue;
+            }
+
+            // Parse file into JSON struct
             VkResult res = loader_get_json(inst, file_str, &json);
             if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-                break;
+                goto out;
             } else if (VK_SUCCESS != res || NULL == json) {
                 continue;
             }
 
-            VkResult local_res = loader_add_layer_properties(inst, instance_layers, json, (implicit == 1), file_str);
+            VkResult local_res = loaderAddLayerProperties(inst, instance_layers, json, true, file_str);
+            cJSON_Delete(json);
+
+            if (VK_SUCCESS != local_res) {
+                goto out;
+            }
+        }
+    }
+
+    // Check to see if the override layer is present, and use it's override paths.
+    for (int32_t i = 0; i < (int32_t)instance_layers->count; i++) {
+        struct loader_layer_properties *prop = &instance_layers->list[i];
+        if (prop->is_override && loaderImplicitLayerIsEnabled(inst, prop) && prop->num_override_paths > 0) {
+            char *cur_write_ptr = NULL;
+            size_t override_path_size = 0;
+            for (uint32_t j = 0; j < prop->num_override_paths; j++) {
+                override_path_size += DetermineDataFilePathSize(prop->override_paths[j], 0);
+            }
+            override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (override_paths == NULL) {
+                goto out;
+            }
+            cur_write_ptr = &override_paths[0];
+            for (uint32_t j = 0; j < prop->num_override_paths; j++) {
+                CopyDataFilePath(prop->override_paths[j], NULL, 0, &cur_write_ptr);
+            }
+            // Remove the last path separator
+            --cur_write_ptr;
+            assert(cur_write_ptr - override_paths < (ptrdiff_t)override_path_size);
+            *cur_write_ptr = '\0';
+            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "loaderScanForLayers: Override layer has override paths set to %s",
+                       override_paths);
+        }
+    }
+
+    // Get a list of manifest files for explicit layers
+    if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, "VK_LAYER_PATH", override_paths,
+                                         VK_ELAYERS_INFO_REGISTRY_LOC, VK_ELAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
+        goto out;
+    }
+
+    // Make sure we have at least one layer, if not, go ahead and return
+    if (manifest_files.count == 0 && total_count == 0) {
+        goto out;
+    } else {
+        total_count += manifest_files.count;
+        for (uint32_t i = 0; i < manifest_files.count; i++) {
+            file_str = manifest_files.filename_list[i];
+            if (file_str == NULL) {
+                continue;
+            }
+
+            // Parse file into JSON struct
+            VkResult res = loader_get_json(inst, file_str, &json);
+            if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                goto out;
+            } else if (VK_SUCCESS != res || NULL == json) {
+                continue;
+            }
+
+            VkResult local_res = loaderAddLayerProperties(inst, instance_layers, json, false, file_str);
             cJSON_Delete(json);
 
             // If the error is anything other than out of memory we still want to try to load the other layers
@@ -3819,51 +4201,64 @@ void loader_layer_scan(const struct loader_instance *inst, struct loader_layer_l
     // If we didn't find the VK_LAYER_LUNARG_standard_validation meta-layer in
     // the list, then we need to add it manually.  This is likely because we're
     // dealing with a new loader, but an old layer folder.
-    if (!found_std_val && !loader_add_legacy_std_val_layer(inst, instance_layers)) {
+    if (!found_std_val && !loaderAddLegacyStandardValidationLayer(inst, instance_layers)) {
         goto out;
     }
 
     // Verify any meta-layers in the list are valid and all the component layers are
     // actually present in the available layer list
-    verify_all_meta_layers(inst, instance_layers);
+    VerifyAllMetaLayers(inst, instance_layers, &override_layer_valid);
+
+    if (override_layer_valid) {
+        loaderRemoveLayersNotInOverride(inst, instance_layers);
+        if (NULL != inst) {
+            inst->override_layer_present = true;
+        }
+    }
 
 out:
 
-    for (uint32_t manFile = 0; manFile < 2; manFile++) {
-        if (NULL != manifest_files[manFile].filename_list) {
-            for (uint32_t i = 0; i < manifest_files[manFile].count; i++) {
-                if (NULL != manifest_files[manFile].filename_list[i]) {
-                    loader_instance_heap_free(inst, manifest_files[manFile].filename_list[i]);
-                }
+    if (NULL != override_paths) {
+        loader_instance_heap_free(inst, override_paths);
+    }
+    if (NULL != manifest_files.filename_list) {
+        for (uint32_t i = 0; i < manifest_files.count; i++) {
+            if (NULL != manifest_files.filename_list[i]) {
+                loader_instance_heap_free(inst, manifest_files.filename_list[i]);
             }
-            loader_instance_heap_free(inst, manifest_files[manFile].filename_list);
         }
+        loader_instance_heap_free(inst, manifest_files.filename_list);
     }
-    if (lockedMutex) {
-        loader_platform_thread_unlock_mutex(&loader_json_lock);
-    }
+    loader_platform_thread_unlock_mutex(&loader_json_lock);
 }
 
-void loader_implicit_layer_scan(const struct loader_instance *inst, struct loader_layer_list *instance_layers) {
+void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
     char *file_str;
-    struct loader_manifest_files manifest_files;
+    struct loader_data_files manifest_files;
     cJSON *json;
-    uint32_t i;
+    bool override_layer_valid = false;
+    char *override_paths = NULL;
+    bool implicit_metalayer_present = false;
+    bool have_json_lock = false;
 
-    // Pass NULL for environment variable override - implicit layers are not
-    // overridden by LAYERS_PATH_ENV
-    VkResult res = loader_get_manifest_files(inst, NULL, NULL, true, false, DEFAULT_VK_ILAYERS_INFO, RELATIVE_VK_ILAYERS_INFO,
-                                             &manifest_files);
+    // Before we begin anything, init manifest_files to avoid a delete of garbage memory if
+    // a failure occurs before allocating the manifest filename_list.
+    memset(&manifest_files, 0, sizeof(struct loader_data_files));
+
+    // Pass NULL for environment variable override - implicit layers are not overridden by LAYERS_PATH_ENV
+    VkResult res = loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, false, NULL, NULL, VK_ILAYERS_INFO_REGISTRY_LOC,
+                                      VK_ILAYERS_INFO_RELATIVE_DIR, &manifest_files);
     if (VK_SUCCESS != res || manifest_files.count == 0) {
-        return;
+        goto out;
     }
 
     // Cleanup any previously scanned libraries
-    loader_delete_layer_properties(inst, instance_layers);
+    loaderDeleteLayerListAndProperties(inst, instance_layers);
 
     loader_platform_thread_lock_mutex(&loader_json_lock);
+    have_json_lock = true;
 
-    for (i = 0; i < manifest_files.count; i++) {
+    for (uint32_t i = 0; i < manifest_files.count; i++) {
         file_str = manifest_files.filename_list[i];
         if (file_str == NULL) {
             continue;
@@ -3872,47 +4267,112 @@ void loader_implicit_layer_scan(const struct loader_instance *inst, struct loade
         // parse file into JSON struct
         res = loader_get_json(inst, file_str, &json);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-            break;
+            goto out;
         } else if (VK_SUCCESS != res || NULL == json) {
             continue;
         }
 
-        res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
+        res = loaderAddLayerProperties(inst, instance_layers, json, true, file_str);
 
         loader_instance_heap_free(inst, file_str);
         cJSON_Delete(json);
 
         if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-            break;
+            goto out;
         }
     }
-    loader_instance_heap_free(inst, manifest_files.filename_list);
-    loader_platform_thread_unlock_mutex(&loader_json_lock);
-}
 
-// Check if an implicit layer should be enabled.
-bool loader_is_implicit_layer_enabled(const struct loader_instance *inst, const struct loader_layer_properties *prop) {
-    bool enable = false;
-    char *env_value = NULL;
-
-    // if no enable_environment variable is specified, this implicit layer
-    // should always be enabled. Otherwise check if the variable is set
-    if (prop->enable_env_var.name[0] == 0) {
-        enable = true;
-    } else {
-        env_value = loader_secure_getenv(prop->enable_env_var.name, inst);
-        if (env_value && !strcmp(prop->enable_env_var.value, env_value)) enable = true;
-        loader_free_getenv(env_value, inst);
+    // Check to see if either the override layer is present, or another implicit meta-layer.
+    // Each of these may require explicit layers to be enabled at this time.
+    for (int32_t i = 0; i < (int32_t)instance_layers->count; i++) {
+        struct loader_layer_properties *prop = &instance_layers->list[i];
+        if (prop->is_override && loaderImplicitLayerIsEnabled(inst, prop)) {
+            override_layer_valid = true;
+            if (prop->num_override_paths > 0) {
+                char *cur_write_ptr = NULL;
+                size_t override_path_size = 0;
+                for (uint32_t j = 0; j < prop->num_override_paths; j++) {
+                    override_path_size += DetermineDataFilePathSize(prop->override_paths[j], 0);
+                }
+                override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                if (override_paths == NULL) {
+                    goto out;
+                }
+                cur_write_ptr = &override_paths[0];
+                for (uint32_t j = 0; j < prop->num_override_paths; j++) {
+                    CopyDataFilePath(prop->override_paths[j], NULL, 0, &cur_write_ptr);
+                }
+                // Remove the last path separator
+                --cur_write_ptr;
+                assert(cur_write_ptr - override_paths < (ptrdiff_t)override_path_size);
+                *cur_write_ptr = '\0';
+                loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                           "loaderScanForImplicitLayers: Override layer has override paths set to %s", override_paths);
+            }
+        } else if (!prop->is_override && prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            implicit_metalayer_present = true;
+        }
     }
 
-    // disable_environment has priority, i.e. if both enable and disable
-    // environment variables are set, the layer is disabled. Implicit
-    // layers are required to have a disable_environment variables
-    env_value = loader_secure_getenv(prop->disable_env_var.name, inst);
-    if (env_value && !strcmp(prop->disable_env_var.value, env_value)) enable = false;
-    loader_free_getenv(env_value, inst);
+    // If either the override layer or an implicit meta-layer are present, we need to add
+    // explicit layer info as well.  Not to worry, though, all explicit layers not included
+    // in the override layer will be removed below in loaderRemoveLayersNotInOverride().
+    if (override_layer_valid || implicit_metalayer_present) {
+        if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, "VK_LAYER_PATH", override_paths,
+                                             VK_ELAYERS_INFO_REGISTRY_LOC, VK_ELAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
+            goto out;
+        }
 
-    return enable;
+        for (uint32_t i = 0; i < manifest_files.count; i++) {
+            file_str = manifest_files.filename_list[i];
+            if (file_str == NULL) {
+                continue;
+            }
+
+            // parse file into JSON struct
+            res = loader_get_json(inst, file_str, &json);
+            if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                goto out;
+            } else if (VK_SUCCESS != res || NULL == json) {
+                continue;
+            }
+
+            res = loaderAddLayerProperties(inst, instance_layers, json, false, file_str);
+
+            loader_instance_heap_free(inst, file_str);
+            cJSON_Delete(json);
+
+            if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                goto out;
+            }
+        }
+    }
+
+    // Verify any meta-layers in the list are valid and all the component layers are
+    // actually present in the available layer list
+    VerifyAllMetaLayers(inst, instance_layers, &override_layer_valid);
+
+    if (override_layer_valid) {
+        loaderRemoveLayersNotInOverride(inst, instance_layers);
+        if (NULL != inst) {
+            inst->override_layer_present = true;
+        }
+    } else if (implicit_metalayer_present) {
+        loaderRemoveLayersNotInImplicitMetaLayers(inst, instance_layers);
+    }
+
+out:
+
+    if (NULL != override_paths) {
+        loader_instance_heap_free(inst, override_paths);
+    }
+    if (NULL != manifest_files.filename_list) {
+        loader_instance_heap_free(inst, manifest_files.filename_list);
+    }
+
+    if (have_json_lock) {
+        loader_platform_thread_unlock_mutex(&loader_json_lock);
+    }
 }
 
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_internal(VkInstance inst, const char *pName) {
@@ -4473,8 +4933,8 @@ struct loader_instance *loader_get_instance(const VkInstance instance) {
     return ptr_instance;
 }
 
-static loader_platform_dl_handle loader_open_layer_lib(const struct loader_instance *inst, const char *chain_type,
-                                                       struct loader_layer_properties *prop) {
+static loader_platform_dl_handle loaderOpenLayerFile(const struct loader_instance *inst, const char *chain_type,
+                                                     struct loader_layer_properties *prop) {
     if ((prop->lib_handle = loader_platform_open_library(prop->lib_name)) == NULL) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(prop->lib_name));
     } else {
@@ -4484,7 +4944,7 @@ static loader_platform_dl_handle loader_open_layer_lib(const struct loader_insta
     return prop->lib_handle;
 }
 
-static void loader_close_layer_lib(const struct loader_instance *inst, struct loader_layer_properties *prop) {
+static void loaderCloseLayerFile(const struct loader_instance *inst, struct loader_layer_properties *prop) {
     if (prop->lib_handle) {
         loader_platform_close_library(prop->lib_handle);
         loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Unloading layer library %s", prop->lib_name);
@@ -4492,35 +4952,37 @@ static void loader_close_layer_lib(const struct loader_instance *inst, struct lo
     }
 }
 
-void loader_deactivate_layers(const struct loader_instance *instance, struct loader_device *device,
-                              struct loader_layer_list *list) {
+void loaderDeactivateLayers(const struct loader_instance *instance, struct loader_device *device, struct loader_layer_list *list) {
     // Delete instance list of enabled layers and close any layer libraries
     for (uint32_t i = 0; i < list->count; i++) {
         struct loader_layer_properties *layer_prop = &list->list[i];
 
-        loader_close_layer_lib(instance, layer_prop);
+        loaderCloseLayerFile(instance, layer_prop);
     }
-    loader_destroy_layer_list(instance, device, list);
+    loaderDestroyLayerList(instance, device, list);
 }
 
 // Go through the search_list and find any layers which match type. If layer
 // type match is found in then add it to ext_list.
-static void loader_add_implicit_layers(const struct loader_instance *inst, struct loader_layer_list *target_list,
-                                       struct loader_layer_list *expanded_target_list,
-                                       const struct loader_layer_list *source_list) {
+static void loaderAddImplicitLayers(const struct loader_instance *inst, struct loader_layer_list *target_list,
+                                    struct loader_layer_list *expanded_target_list, const struct loader_layer_list *source_list) {
     for (uint32_t src_layer = 0; src_layer < source_list->count; src_layer++) {
         const struct loader_layer_properties *prop = &source_list->list[src_layer];
+        // Only directly add the override layer here, if it includes any others, it should be done below
+        if (inst->override_layer_present && !prop->is_override) {
+            continue;
+        }
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-            loader_add_implicit_layer(inst, prop, target_list, expanded_target_list, source_list);
+            loaderAddImplicitLayer(inst, prop, target_list, expanded_target_list, source_list);
         }
     }
 }
 
 // Get the layer name(s) from the env_name environment variable. If layer is found in
 // search_list then add it to layer_list.  But only add it to layer_list if type_flags matches.
-static void loader_add_env_layers(const struct loader_instance *inst, const enum layer_type_flags type_flags, const char *env_name,
-                                  struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
-                                  const struct loader_layer_list *source_list) {
+static void loaderAddEnvironmentLayers(struct loader_instance *inst, const enum layer_type_flags type_flags, const char *env_name,
+                                       struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
+                                       const struct loader_layer_list *source_list) {
     char *next, *name;
     char *layer_env = loader_secure_getenv(env_name, inst);
     if (layer_env == NULL) {
@@ -4534,7 +4996,7 @@ static void loader_add_env_layers(const struct loader_instance *inst, const enum
 
     while (name && *name) {
         next = loader_get_next_path(name);
-        loader_find_layer_name_add_list(inst, name, type_flags, source_list, target_list, expanded_target_list);
+        loaderAddLayerNameToList(inst, name, type_flags, source_list, target_list, expanded_target_list);
         name = next;
     }
 
@@ -4547,9 +5009,9 @@ out:
     return;
 }
 
-VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
-                                       const struct loader_layer_list *instance_layers) {
-    VkResult err;
+VkResult loaderEnableInstanceLayers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
+                                    const struct loader_layer_list *instance_layers) {
+    VkResult err = VK_SUCCESS;
     uint16_t layer_api_major_version;
     uint16_t layer_api_minor_version;
     uint32_t i;
@@ -4557,30 +5019,34 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
 
     assert(inst && "Cannot have null instance");
 
-    if (!loader_init_layer_list(inst, &inst->app_activated_layer_list)) {
+    if (!loaderInitLayerList(inst, &inst->app_activated_layer_list)) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "loader_enable_instance_layers: Failed to initialize"
-                   " application version of the layer list");
+                   "loaderEnableInstanceLayers: Failed to initialize application version of the layer list");
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    if (!loader_init_layer_list(inst, &inst->expanded_activated_layer_list)) {
+    if (!loaderInitLayerList(inst, &inst->expanded_activated_layer_list)) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "loader_enable_instance_layers: Failed to initialize"
-                   " expanded version of the layer list");
+                   "loaderEnableInstanceLayers: Failed to initialize expanded version of the layer list");
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     // Add any implicit layers first
-    loader_add_implicit_layers(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
+    loaderAddImplicitLayers(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
 
-    // Add any layers specified via environment variable next
-    loader_add_env_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, ENABLED_LAYERS_ENV, &inst->app_activated_layer_list,
-                          &inst->expanded_activated_layer_list, instance_layers);
+    // If the override layer is enabled, only use it, don't use the environment or application layer lists.
+    if (!inst->override_layer_present) {
+        // Add any layers specified via environment variable next
+        loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS", &inst->app_activated_layer_list,
+                                   &inst->expanded_activated_layer_list, instance_layers);
 
-    // Add layers specified by the application
-    err = loader_add_layer_names_to_list(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
-                                         pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
+        // Add layers specified by the application
+        err = loaderAddLayerNamesToList(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
+                                        pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
+    } else {
+        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                   "loaderEnableInstanceLayers: Override layer is active, disabling all non-included layers");
+    }
 
     for (i = 0; i < inst->expanded_activated_layer_list.count; i++) {
         // Verify that the layer api version is at least that of the application's request, if not, throw a warning since
@@ -4602,11 +5068,12 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
 }
 
 // Determine the layer interface version to use.
-bool loader_get_layer_interface_version(PFN_vkNegotiateLoaderLayerInterfaceVersion fp_negotiate_layer_version,
-                                        VkNegotiateLayerInterface *interface_struct) {
+bool loaderGetLayerInterfaceVersion(PFN_vkNegotiateLoaderLayerInterfaceVersion fp_negotiate_layer_version,
+                                    VkNegotiateLayerInterface *interface_struct) {
     memset(interface_struct, 0, sizeof(VkNegotiateLayerInterface));
     interface_struct->sType = LAYER_NEGOTIATE_INTERFACE_STRUCT;
     interface_struct->loaderLayerInterfaceVersion = 1;
+    interface_struct->pNext = NULL;
 
     if (fp_negotiate_layer_version != NULL) {
         // Layer supports the negotiation API, so call it with the loader's
@@ -4682,7 +5149,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             struct loader_layer_properties *layer_prop = &inst->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
 
-            lib_handle = loader_open_layer_lib(inst, "instance", layer_prop);
+            lib_handle = loaderOpenLayerFile(inst, "instance", layer_prop);
             if (!lib_handle) {
                 continue;
             }
@@ -4707,7 +5174,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
                     VkNegotiateLayerInterface interface_struct;
 
-                    if (loader_get_layer_interface_version(negotiate_interface, &interface_struct)) {
+                    if (loaderGetLayerInterfaceVersion(negotiate_interface, &interface_struct)) {
                         // Go ahead and set the properties version to the
                         // correct value.
                         layer_prop->interface_version = interface_struct.loaderLayerInterfaceVersion;
@@ -4804,7 +5271,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     return res;
 }
 
-void loader_activate_instance_layer_extensions(struct loader_instance *inst, VkInstance created_inst) {
+void loaderActivateInstanceLayerExtensions(struct loader_instance *inst, VkInstance created_inst) {
     loader_init_instance_extension_dispatch_table(&inst->disp->layer_inst_disp, inst->disp->layer_inst_disp.GetInstanceProcAddr,
                                                   created_inst);
 }
@@ -4886,7 +5353,7 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
             struct loader_layer_properties *layer_prop = &dev->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
 
-            lib_handle = loader_open_layer_lib(inst, "device", layer_prop);
+            lib_handle = loaderOpenLayerFile(inst, "device", layer_prop);
             if (!lib_handle) {
                 continue;
             }
@@ -4968,30 +5435,30 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
     return res;
 }
 
-VkResult loader_validate_layers(const struct loader_instance *inst, const uint32_t layer_count,
-                                const char *const *ppEnabledLayerNames, const struct loader_layer_list *list) {
+VkResult loaderValidateLayers(const struct loader_instance *inst, const uint32_t layer_count,
+                              const char *const *ppEnabledLayerNames, const struct loader_layer_list *list) {
     struct loader_layer_properties *prop;
 
     for (uint32_t i = 0; i < layer_count; i++) {
         VkStringErrorFlags result = vk_string_validate(MaxLoaderStringLength, ppEnabledLayerNames[i]);
         if (result != VK_STRING_ERROR_NONE) {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_validate_layers: Device ppEnabledLayerNames "
+                       "loaderValidateLayers: Device ppEnabledLayerNames "
                        "contains string that is too long or is badly formed");
             return VK_ERROR_LAYER_NOT_PRESENT;
         }
 
-        prop = loader_get_layer_property(ppEnabledLayerNames[i], list);
+        prop = loaderFindLayerProperty(ppEnabledLayerNames[i], list);
         if (NULL == prop) {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_validate_layers: Layer %d does not exist in the list of available layers", i);
+                       "loaderValidateLayers: Layer %d does not exist in the list of available layers", i);
             return VK_ERROR_LAYER_NOT_PRESENT;
         }
     }
     return VK_SUCCESS;
 }
 
-VkResult loader_validate_instance_extensions(const struct loader_instance *inst, const struct loader_extension_list *icd_exts,
+VkResult loader_validate_instance_extensions(struct loader_instance *inst, const struct loader_extension_list *icd_exts,
                                              const struct loader_layer_list *instance_layers,
                                              const VkInstanceCreateInfo *pCreateInfo) {
     VkExtensionProperties *extension_prop;
@@ -5003,21 +5470,21 @@ VkResult loader_validate_instance_extensions(const struct loader_instance *inst,
     struct loader_layer_list expanded_layers;
     memset(&active_layers, 0, sizeof(active_layers));
     memset(&expanded_layers, 0, sizeof(expanded_layers));
-    if (!loader_init_layer_list(inst, &active_layers)) {
+    if (!loaderInitLayerList(inst, &active_layers)) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    if (!loader_init_layer_list(inst, &expanded_layers)) {
+    if (!loaderInitLayerList(inst, &expanded_layers)) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
 
     // Build the lists of active layers (including metalayers) and expanded layers (with metalayers resolved to their components)
-    loader_add_implicit_layers(inst, &active_layers, &expanded_layers, instance_layers);
-    loader_add_env_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, ENABLED_LAYERS_ENV, &active_layers, &expanded_layers,
-                          instance_layers);
-    res = loader_add_layer_names_to_list(inst, &active_layers, &expanded_layers, pCreateInfo->enabledLayerCount,
-                                         pCreateInfo->ppEnabledLayerNames, instance_layers);
+    loaderAddImplicitLayers(inst, &active_layers, &expanded_layers, instance_layers);
+    loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, ENABLED_LAYERS_ENV, &active_layers, &expanded_layers,
+                               instance_layers);
+    res = loaderAddLayerNamesToList(inst, &active_layers, &expanded_layers, pCreateInfo->enabledLayerCount,
+                                    pCreateInfo->ppEnabledLayerNames, instance_layers);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -5067,10 +5534,21 @@ VkResult loader_validate_instance_extensions(const struct loader_instance *inst,
 
         extension_prop = NULL;
 
-        // Not in global list, search expanded layer extension list
+        // Not in global list, search layer extension lists
+        struct loader_layer_properties *layer_prop = NULL;
         for (uint32_t j = 0; NULL == extension_prop && j < expanded_layers.count; ++j) {
+            layer_prop = loaderFindLayerProperty(pCreateInfo->ppEnabledLayerNames[j], instance_layers);
+            if (NULL == layer_prop) {
+                // Should NOT get here, loaderValidateLayers should have already filtered this case out.
+                continue;
+            }
+
             extension_prop =
                 get_extension_property(pCreateInfo->ppEnabledExtensionNames[i], &expanded_layers.list[j].instance_extension_list);
+            if (extension_prop) {
+                // Found the extension in one of the layers enabled by the app.
+                break;
+            }
         }
 
         if (!extension_prop) {
@@ -5085,8 +5563,8 @@ VkResult loader_validate_instance_extensions(const struct loader_instance *inst,
     }
 
 out:
-    loader_destroy_layer_list(inst, NULL, &active_layers);
-    loader_destroy_layer_list(inst, NULL, &expanded_layers);
+    loaderDestroyLayerList(inst, NULL, &active_layers);
+    loaderDestroyLayerList(inst, NULL, &expanded_layers);
     return res;
 }
 
@@ -5340,7 +5818,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
         icd_terms = next_icd_term;
     }
 
-    loader_delete_layer_properties(ptr_instance, &ptr_instance->instance_layer_list);
+    loaderDeleteLayerListAndProperties(ptr_instance, &ptr_instance->instance_layer_list);
     loader_scanned_icd_clear(ptr_instance, &ptr_instance->icd_tramp_list);
     loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->ext_list);
     if (NULL != ptr_instance->phys_devs_term) {
@@ -6006,12 +6484,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
         goto out;
     }
 
-    if (!loader_init_layer_list(icd_term->this_instance, &implicit_layer_list)) {
+    if (!loaderInitLayerList(icd_term->this_instance, &implicit_layer_list)) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
 
-    loader_add_implicit_layers(icd_term->this_instance, &implicit_layer_list, NULL, &icd_term->this_instance->instance_layer_list);
+    loaderAddImplicitLayers(icd_term->this_instance, &implicit_layer_list, NULL, &icd_term->this_instance->instance_layer_list);
     // We need to determine which implicit layers are active, and then add their extensions. This can't be cached as
     // it depends on results of environment variables (which can change).
     if (pProperties != NULL) {
@@ -6028,8 +6506,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
             goto out;
         }
 
-        loader_add_implicit_layers(icd_term->this_instance, &implicit_layer_list, NULL,
-                                   &icd_term->this_instance->instance_layer_list);
+        loaderAddImplicitLayers(icd_term->this_instance, &implicit_layer_list, NULL, &icd_term->this_instance->instance_layer_list);
 
         for (uint32_t i = 0; i < implicit_layer_list.count; i++) {
             for (uint32_t j = 0; j < implicit_layer_list.list[i].device_extension_list.count; j++) {
@@ -6159,7 +6636,7 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
             goto out;
         }
 
-        loader_layer_scan(NULL, &instance_layers);
+        loaderScanForLayers(NULL, &instance_layers);
         for (uint32_t i = 0; i < instance_layers.count; i++) {
             struct loader_layer_properties *props = &instance_layers.list[i];
             if (strcmp(props->info.layerName, pLayerName) == 0) {
@@ -6182,9 +6659,9 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
         loader_scanned_icd_clear(NULL, &icd_tramp_list);
 
         // Append enabled implicit layers.
-        loader_implicit_layer_scan(NULL, &instance_layers);
+        loaderScanForImplicitLayers(NULL, &instance_layers);
         for (uint32_t i = 0; i < instance_layers.count; i++) {
-            if (!loader_is_implicit_layer_enabled(NULL, &instance_layers.list[i])) {
+            if (!loaderImplicitLayerIsEnabled(NULL, &instance_layers.list[i])) {
                 continue;
             }
             struct loader_extension_list *ext_list = &instance_layers.list[i].instance_extension_list;
@@ -6218,7 +6695,7 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
 out:
 
     loader_destroy_generic_list(NULL, (struct loader_generic_list *)&local_ext_list);
-    loader_delete_layer_properties(NULL, &instance_layers);
+    loaderDeleteLayerListAndProperties(NULL, &instance_layers);
     return res;
 }
 
@@ -6235,7 +6712,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(const
 
     // Get layer libraries
     memset(&instance_layer_list, 0, sizeof(instance_layer_list));
-    loader_layer_scan(NULL, &instance_layer_list);
+    loaderScanForLayers(NULL, &instance_layer_list);
 
     if (pProperties == NULL) {
         *pPropertyCount = instance_layer_list.count;
@@ -6256,7 +6733,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(const
 
 out:
 
-    loader_delete_layer_properties(NULL, &instance_layer_list);
+    loaderDeleteLayerListAndProperties(NULL, &instance_layer_list);
     return result;
 }
 

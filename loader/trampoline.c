@@ -118,7 +118,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     // Get the implicit layers
     struct loader_layer_list layers;
     memset(&layers, 0, sizeof(layers));
-    loader_implicit_layer_scan(NULL, &layers);
+    loaderScanForImplicitLayers(NULL, &layers);
 
     // We'll need to save the dl handles so we can close them later
     loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
@@ -129,7 +129,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
 
     // Prepend layers onto the chain if they implment this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
-        if (!loader_is_implicit_layer_enabled(NULL, layers.list + i) ||
+        if (!loaderImplicitLayerIsEnabled(NULL, layers.list + i) ||
             layers.list[i].pre_instance_functions.enumerate_instance_extension_properties[0] == '\0') {
             continue;
         }
@@ -166,7 +166,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     }
 
     // Free up the layers
-    loader_delete_layer_properties(NULL, &layers);
+    loaderDeleteLayerListAndProperties(NULL, &layers);
 
     // Tear down the chain
     while (chain_head != &chain_tail) {
@@ -206,7 +206,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     // Get the implicit layers
     struct loader_layer_list layers;
     memset(&layers, 0, sizeof(layers));
-    loader_implicit_layer_scan(NULL, &layers);
+    loaderScanForImplicitLayers(NULL, &layers);
 
     // We'll need to save the dl handles so we can close them later
     loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
@@ -217,7 +217,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 
     // Prepend layers onto the chain if they implment this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
-        if (!loader_is_implicit_layer_enabled(NULL, layers.list + i) ||
+        if (!loaderImplicitLayerIsEnabled(NULL, layers.list + i) ||
             layers.list[i].pre_instance_functions.enumerate_instance_layer_properties[0] == '\0') {
             continue;
         }
@@ -254,7 +254,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     }
 
     // Free up the layers
-    loader_delete_layer_properties(NULL, &layers);
+    loaderDeleteLayerListAndProperties(NULL, &layers);
 
     // Tear down the chain
     while (chain_head != &chain_tail) {
@@ -294,7 +294,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     // Get the implicit layers
     struct loader_layer_list layers;
     memset(&layers, 0, sizeof(layers));
-    loader_implicit_layer_scan(NULL, &layers);
+    loaderScanForImplicitLayers(NULL, &layers);
 
     // We'll need to save the dl handles so we can close them later
     loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
@@ -305,7 +305,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
 
     // Prepend layers onto the chain if they implment this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
-        if (!loader_is_implicit_layer_enabled(NULL, layers.list + i) ||
+        if (!loaderImplicitLayerIsEnabled(NULL, layers.list + i) ||
             layers.list[i].pre_instance_functions.enumerate_instance_version[0] == '\0') {
             continue;
         }
@@ -342,7 +342,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     }
 
     // Free up the layers
-    loader_delete_layer_properties(NULL, &layers);
+    loaderDeleteLayerListAndProperties(NULL, &layers);
 
     // Tear down the chain
     while (chain_head != &chain_tail) {
@@ -448,14 +448,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
 
     // Due to implicit layers need to get layer list even if
     // enabledLayerCount == 0 and VK_INSTANCE_LAYERS is unset. For now always
-    // get layer list via loader_layer_scan().
+    // get layer list via loaderScanForLayers().
     memset(&ptr_instance->instance_layer_list, 0, sizeof(ptr_instance->instance_layer_list));
-    loader_layer_scan(ptr_instance, &ptr_instance->instance_layer_list);
+    loaderScanForLayers(ptr_instance, &ptr_instance->instance_layer_list);
 
     // Validate the app requested layers to be enabled
     if (pCreateInfo->enabledLayerCount > 0) {
-        res = loader_validate_layers(ptr_instance, pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames,
-                                     &ptr_instance->instance_layer_list);
+        res = loaderValidateLayers(ptr_instance, pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames,
+                                   &ptr_instance->instance_layer_list);
         if (res != VK_SUCCESS) {
             goto out;
         }
@@ -492,7 +492,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     loader.instances = ptr_instance;
 
     // Activate any layers on instance chain
-    res = loader_enable_instance_layers(ptr_instance, &ici, &ptr_instance->instance_layer_list);
+    res = loaderEnableInstanceLayers(ptr_instance, &ici, &ptr_instance->instance_layer_list);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -513,7 +513,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         // the CreateInstance command go by. This allows the layer's
         // GetInstanceProcAddr functions to return valid extension functions
         // if enabled.
-        loader_activate_instance_layer_extensions(ptr_instance, *pInstance);
+        loaderActivateInstanceLayerExtensions(ptr_instance, *pInstance);
     }
 
 out:
@@ -542,13 +542,13 @@ out:
             }
 
             if (NULL != ptr_instance->expanded_activated_layer_list.list) {
-                loader_deactivate_layers(ptr_instance, NULL, &ptr_instance->expanded_activated_layer_list);
+                loaderDeactivateLayers(ptr_instance, NULL, &ptr_instance->expanded_activated_layer_list);
             }
             if (NULL != ptr_instance->app_activated_layer_list.list) {
-                loader_destroy_layer_list(ptr_instance, NULL, &ptr_instance->app_activated_layer_list);
+                loaderDestroyLayerList(ptr_instance, NULL, &ptr_instance->app_activated_layer_list);
             }
 
-            loader_delete_layer_properties(ptr_instance, &ptr_instance->instance_layer_list);
+            loaderDeleteLayerListAndProperties(ptr_instance, &ptr_instance->instance_layer_list);
             loader_scanned_icd_clear(ptr_instance, &ptr_instance->icd_tramp_list);
             loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->ext_list);
 
@@ -608,10 +608,10 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     disp->DestroyInstance(instance, pAllocator);
 
     if (NULL != ptr_instance->expanded_activated_layer_list.list) {
-        loader_deactivate_layers(ptr_instance, NULL, &ptr_instance->expanded_activated_layer_list);
+        loaderDeactivateLayers(ptr_instance, NULL, &ptr_instance->expanded_activated_layer_list);
     }
     if (NULL != ptr_instance->app_activated_layer_list.list) {
-        loader_destroy_layer_list(ptr_instance, NULL, &ptr_instance->app_activated_layer_list);
+        loaderDestroyLayerList(ptr_instance, NULL, &ptr_instance->app_activated_layer_list);
     }
 
     if (ptr_instance->phys_devs_tramp) {
