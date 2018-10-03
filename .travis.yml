@@ -61,6 +61,9 @@ before_install:
       python scripts/update_deps.py --dir=external $UPDATE_DEPS_EXTRA_OPTIONS
       # Get Google Test
       git clone https://github.com/google/googletest.git external/googletest
+      pushd ${TRAVIS_BUILD_DIR}/external/googletest
+      git checkout tags/release-1.8.1
+      popd
     fi
   - |
     if [[ "$CHECK_FORMAT" == "ON" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then
