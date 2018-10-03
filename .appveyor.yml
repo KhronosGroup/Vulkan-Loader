@@ -30,6 +30,9 @@ before_build:
   - python scripts/update_deps.py --dir=external
   # Get Google Test
   - git clone https://github.com/google/googletest.git external/googletest
+  - cd external/googletest
+  - git checkout tags/release-1.8.1
+  - cd %APPVEYOR_BUILD_FOLDER%
   # Generate build files using CMake for the build step.
   - echo Generating CMake files for %PLATFORM%
   - mkdir build
