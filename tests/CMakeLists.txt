@@ -16,7 +16,9 @@
 # ~~~
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
-set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+if (NOT GTEST_IS_STATIC_LIB)
+    set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+endif()
 if(UNIX)
     set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif()
@@ -70,7 +72,7 @@ include_directories(${PROJECT_SOURCE_DIR}/external
 if(UNIX)
     # extra setup for out-of-tree builds
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
-        add_custom_target(binary-dir-symlinks ALL
+        add_custom_target(VulkanLoader_binary-dir-symlinks ALL
                           COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_wrap_objects_tests.sh
                                   run_wrap_objects_tests.sh
                           COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_loader_tests.sh
@@ -83,10 +85,10 @@ if(UNIX)
 else()
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/_run_all_tests.ps1 RUN_ALL)
-        add_custom_target(binary-dir-symlinks ALL
+        add_custom_target(VulkanLoader_binary-dir-symlinks ALL
                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUN_ALL} run_all_tests.ps1
                           VERBATIM)
-        set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
+        set_target_properties(VulkanLoader_binary-dir-symlinks PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
     endif()
 endif()
 
@@ -110,20 +112,22 @@ endif()
 # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
 if(WIN32)
     file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll
-                            GTEST_COPY_SRC1)
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest$<$<CONFIG:Debug>:d>.dll
-                            GTEST_COPY_SRC2)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> GTEST_COPY_DEST)
-    else()
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googeltest/gtest_main.dll GTEST_COPY_SRC1)
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/gtest.dll GTEST_COPY_SRC2)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} GTEST_COPY_DEST)
+    if (NOT GTEST_IS_STATIC_LIB)
+        if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+            file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll
+                                GTEST_COPY_SRC1)
+            file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest$<$<CONFIG:Debug>:d>.dll
+                                GTEST_COPY_SRC2)
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> GTEST_COPY_DEST)
+        else()
+            file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googeltest/gtest_main.dll GTEST_COPY_SRC1)
+            file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/gtest.dll GTEST_COPY_SRC2)
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} GTEST_COPY_DEST)
+        endif()
+        add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
+                           COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
+                           COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
     endif()
-    add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
-                       COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
-                       COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
     # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
     if((NOT ENABLE_STATIC_LOADER) AND TARGET vulkan)
         add_custom_command(TARGET vk_loader_validation_tests POST_BUILD

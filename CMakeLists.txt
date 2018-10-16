@@ -27,7 +27,18 @@ add_definitions(-DAPI_NAME="Vulkan")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 REQUIRED)
 
-find_package(VulkanHeaders)
+if (DEFINED Vulkan-Headers_SOURCE_DIR)
+    message(STATUS "Using Vulkan headers from ${Vulkan-Headers_SOURCE_DIR}")
+    set(VulkanHeaders_INCLUDE_DIR "${Vulkan-Headers_SOURCE_DIR}/include")
+    set(VulkanHeaders_INCLUDE_DIRS "${VulkanHeaders_INCLUDE_DIR}")
+    set(VulkanHeaders_FOUND TRUE)
+    set(VulkanRegistry_DIR "${Vulkan-Headers_SOURCE_DIR}/registry")
+    set(VulkanRegistry_DIRS "${VulkanRegistry_DIR}")
+    set(VulkanRegistry_FOUND TRUE)
+else()
+    find_package(VulkanHeaders)
+endif()
+
 if(NOT ${VulkanHeaders_FOUND})
     message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
                         "installation of the Vulkan-Headers repository.")
@@ -63,7 +74,7 @@ endif()
 
 # Enable IDE GUI folders.  "Helper targets" that don't have interesting source code should set their FOLDER property to this
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(LOADER_HELPER_FOLDER "Helper Targets")
+set(LOADER_HELPER_FOLDER "Vulkan Loader Helper Targets")
 
 if(UNIX)
     set(
@@ -106,7 +117,7 @@ endif()
 
 option(BUILD_LOADER "Build loader" ON)
 
-if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
+if(TARGET gtest OR IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
     option(BUILD_TESTS "Build Tests" ON)
 else()
     option(BUILD_TESTS "Build Tests" OFF)
@@ -171,7 +182,7 @@ GenerateFromVkXml(vk_extension_helper.h helper_file_generator.py)
 GenerateFromVkXml(vk_typemap_helper.h helper_file_generator.py)
 
 # Use a custom target to cause the source files to be generated.
-add_custom_target(generate_helper_files
+add_custom_target(VulkanLoader_generate_helper_files
                   DEPENDS vk_enum_string_helper.h
                           vk_safe_struct.h
                           vk_safe_struct.cpp
@@ -181,7 +192,7 @@ add_custom_target(generate_helper_files
                           vk_extension_helper.h
                           vk_typemap_helper.h)
 
-set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
+set_target_properties(VulkanLoader_generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
 if(UNIX)
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")

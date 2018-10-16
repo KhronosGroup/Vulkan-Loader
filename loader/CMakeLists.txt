@@ -125,9 +125,8 @@ if(WIN32)
         if(NOT CMAKE_CL_64)
             set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} /safeseh)
         endif()
-
         add_executable(asm_offset asm_offset.c)
-        add_dependencies(asm_offset generate_helper_files loader_gen_files)
+        add_dependencies(asm_offset VulkanLoader_generate_helper_files loader_gen_files)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset MASM)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
@@ -164,7 +163,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         set(CMAKE_ASM-ATT_FLAGS "$ENV{ASFLAGS} -I\"${CMAKE_CURRENT_BINARY_DIR}\"")
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.asm)
         add_executable(asm_offset asm_offset.c)
-        add_dependencies(asm_offset generate_helper_files loader_gen_files)
+        add_dependencies(asm_offset VulkanLoader_generate_helper_files loader_gen_files)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
@@ -181,12 +180,12 @@ set_target_properties(loader_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER}
 
 if(WIN32)
     add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
-    add_dependencies(loader-norm generate_helper_files loader_gen_files)
+    add_dependencies(loader-norm VulkanLoader_generate_helper_files loader_gen_files)
     target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
     target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
 
     add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
-    add_dependencies(loader-opt generate_helper_files loader_gen_files loader_asm_gen_files)
+    add_dependencies(loader-opt VulkanLoader_generate_helper_files loader_gen_files loader_asm_gen_files)
     target_compile_options(loader-opt PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
 
@@ -222,7 +221,7 @@ if(WIN32)
         target_link_libraries(vulkan Cfgmgr32)
     endif()
 
-    add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
+    add_dependencies(vulkan VulkanLoader_generate_helper_files loader_gen_files loader_asm_gen_files)
 
 else()
     # Linux and MacOS
@@ -235,7 +234,7 @@ else()
     endif()
 
     add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-    add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
+    add_dependencies(vulkan VulkanLoader_generate_helper_files loader_gen_files loader_asm_gen_files)
     target_compile_definitions(vulkan PUBLIC -DLOADER_DYNAMIC_LIB)
     set_target_properties(vulkan
                           PROPERTIES SOVERSION
@@ -267,7 +266,7 @@ else()
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
         add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
-        add_dependencies(vulkan-framework generate_helper_files loader_gen_files loader_asm_gen_files)
+        add_dependencies(vulkan-framework VulkanLoader_generate_helper_files loader_gen_files loader_asm_gen_files)
         target_compile_definitions(vulkan-framework PUBLIC -DLOADER_DYNAMIC_LIB)
         target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
 
