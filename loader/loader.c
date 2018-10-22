@@ -3707,7 +3707,7 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
             if (VK_SUCCESS == reg_result || VK_ERROR_OUT_OF_HOST_MEMORY == reg_result) {
                 vk_result = reg_result;
             } else {
-                vk_result = VK_ERROR_INCOMPATIBLE_DRIVER;
+                vk_result = regHKR_result;
             }
         } else {
             if (warn_if_not_present) {
