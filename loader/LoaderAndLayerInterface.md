@@ -687,12 +687,10 @@ specific extensions:
 | Windows  | VK_KHR_win32_surface |
 | Linux (Default) |  VK_KHR_xcb_surface and VK_KHR_xlib_surface |
 | Linux (Wayland) | VK_KHR_wayland_surface |
-| Linux (Mir)  | VK_KHR_mir_surface |
 | MacOS (MoltenVK) | VK_MVK_macos_surface |
 
-**NOTE:** Wayland and Mir targets are not fully supported at this time.  Wayland
-support is present, but should be considered Beta quality.  Mir support is not
-completely implemented at this time.
+**NOTE:** Wayland is not fully supported at this time.  Wayland
+support is present, but should be considered Beta quality.
 
 It is important to understand that while the loader may support the various
 entry-points for these extensions, there is a hand-shake required to actually
@@ -2485,7 +2483,7 @@ vkObj alloc_icd_obj()
 Normally, ICDs handle object creation and destruction for various Vulkan
 objects. The WSI surface extensions for Linux, Windows, and MacOS
 ("VK\_KHR\_win32\_surface", "VK\_KHR\_xcb\_surface", "VK\_KHR\_xlib\_surface",
-"VK\_KHR\_mir\_surface", "VK\_KHR\_wayland\_surface", "VK\_MVK\_macos\_surface"
+"VK\_KHR\_wayland\_surface", "VK\_MVK\_macos\_surface"
 and "VK\_KHR\_surface")
 are handled differently.  For these extensions, the `VkSurfaceKHR` object
 creation and destruction may be handled by either the loader, or an ICD.
@@ -2495,7 +2493,6 @@ If the loader handles the management of the `VkSurfaceKHR` objects:
 `vkDestroySurfaceKHR`
     functions without involving the ICDs.
     * Where XXX stands for the Windowing System name:
-      * Mir
       * Wayland
       * Xcb
       * Xlib
@@ -2509,7 +2506,7 @@ If the loader handles the management of the `VkSurfaceKHR` objects:
     `VkIcdSurfaceXXX` structure.
  4. The first field of all the `VkIcdSurfaceXXX` structures is a
 `VkIcdSurfaceBase` enumerant that indicates whether the
-    surface object is Win32, Xcb, Xlib, Mir, or Wayland.
+    surface object is Win32, Xcb, Xlib, or Wayland.
 
 The ICD may choose to handle `VkSurfaceKHR` object creation instead.  If an ICD
 desires to handle creating and destroying it must do the following:

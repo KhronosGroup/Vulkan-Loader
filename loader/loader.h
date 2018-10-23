@@ -309,9 +309,6 @@ struct loader_instance {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool wsi_win32_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_MIR_KHR
-    bool wsi_mir_surface_enabled;
-#endif
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     bool wsi_wayland_surface_enabled;
 #endif

@@ -48,11 +48,6 @@ elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_WAYLAND_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
     endif()
-
-    if(BUILD_WSI_MIR_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_MIR_KHR)
-        include_directories(${MIR_INCLUDE_DIR})
-    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -245,7 +240,6 @@ else()
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_ios.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_macos.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_mir.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_vi.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_wayland.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_win32.h

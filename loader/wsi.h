@@ -27,9 +27,6 @@
 
 typedef struct {
     union {
-#ifdef VK_USE_PLATFORM_MIR_KHR
-        VkIcdSurfaceMir mir_surf;
-#endif  // VK_USE_PLATFORM_MIR_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
         VkIcdSurfaceWayland wayland_surf;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
@@ -91,13 +88,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                        uint32_t queueFamilyIndex);
-#endif
-#ifdef VK_USE_PLATFORM_MIR_KHR
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMirSurfaceKHR(VkInstance instance, const VkMirSurfaceCreateInfoKHR *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
-VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceMirPresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                                     uint32_t queueFamilyIndex,
-                                                                                     MirConnection *connection);
 #endif
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance instance,

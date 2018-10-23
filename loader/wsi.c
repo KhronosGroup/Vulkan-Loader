@@ -42,9 +42,6 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     ptr_instance->wsi_win32_surface_enabled = false;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_MIR_KHR
-    ptr_instance->wsi_mir_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_MIR_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     ptr_instance->wsi_wayland_surface_enabled = false;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
@@ -78,12 +75,6 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
             continue;
         }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_MIR_KHR
-        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_MIR_SURFACE_EXTENSION_NAME) == 0) {
-            ptr_instance->wsi_mir_surface_enabled = true;
-            continue;
-        }
-#endif  // VK_USE_PLATFORM_MIR_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) == 0) {
             ptr_instance->wsi_wayland_surface_enabled = true;
@@ -134,16 +125,13 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
 // Linux WSI surface extensions are not always compiled into the loader. (Assume
 // for Windows the KHR_win32_surface is always compiled into loader). A given
 // Linux build environment might not have the headers required for building one
-// of the four extensions  (Xlib, Xcb, Mir, Wayland).  Thus, need to check if
+// of the three extensions  (Xlib, Xcb, Wayland).  Thus, need to check if
 // the built loader actually supports the particular Linux surface extension.
 // If not supported by the built loader it will not be included in the list of
 // enumerated instance extensions.  This solves the issue where an ICD or layer
 // advertises support for a given Linux surface extension but the loader was not
 // built to support the extension.
 bool wsi_unsupported_instance_extension(const VkExtensionProperties *ext_prop) {
-#ifndef VK_USE_PLATFORM_MIR_KHR
-    if (!strcmp(ext_prop->extensionName, "VK_KHR_mir_surface")) return true;
-#endif  // VK_USE_PLATFORM_MIR_KHR
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
     if (!strcmp(ext_prop->extensionName, "VK_KHR_wayland_surface")) return true;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
@@ -595,120 +583,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupp
     return icd_term->dispatch.GetPhysicalDeviceWin32PresentationSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-
-#ifdef VK_USE_PLATFORM_MIR_KHR
-
-// Functions for the VK_KHR_mir_surface extension:
-
-// This is the trampoline entrypoint for CreateMirSurfaceKHR
-LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateMirSurfaceKHR(VkInstance instance,
-                                                                   const VkMirSurfaceCreateInfoKHR *pCreateInfo,
-                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                   VkSurfaceKHR *pSurface) {
-    const VkLayerInstanceDispatchTable *disp;
-    disp = loader_get_instance_layer_dispatch(instance);
-    VkResult res;
-
-    res = disp->CreateMirSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-    return res;
-}
-
-// This is the instance chain terminator function for CreateMirSurfaceKHR
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMirSurfaceKHR(VkInstance instance, const VkMirSurfaceCreateInfoKHR *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
-
-    // First, check to ensure the appropriate extension was enabled:
-    struct loader_instance *ptr_instance = loader_get_instance(instance);
-    if (!ptr_instance->wsi_mir_surface_enabled) {
-        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "VK_KHR_mir_surface extension not enabled.  vkCreateMirSurfaceKHR not executed!\n");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
-        goto out;
-    }
-
-    // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(ptr_instance, sizeof(pIcdSurface->mir_surf.base), sizeof(pIcdSurface->mir_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-
-    pIcdSurface->mir_surf.base.platform = VK_ICD_WSI_PLATFORM_MIR;
-    pIcdSurface->mir_surf.connection = pCreateInfo->connection;
-    pIcdSurface->mir_surf.mirSurface = pCreateInfo->mirSurface;
-
-    // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = ptr_instance->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateMirSurfaceKHR) {
-                vkRes = icd_term->dispatch.CreateMirSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                               &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
-                    goto out;
-                }
-            }
-        }
-    }
-
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
-
-out:
-
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = ptr_instance->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(ptr_instance, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(ptr_instance, pIcdSurface);
-    }
-
-    return vkRes;
-}
-
-// This is the trampoline entrypoint for
-// GetPhysicalDeviceMirPresentationSupportKHR
-LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceMirPresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                                          uint32_t queueFamilyIndex,
-                                                                                          MirConnection *connection) {
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    const VkLayerInstanceDispatchTable *disp;
-    disp = loader_get_instance_layer_dispatch(physicalDevice);
-    VkBool32 res = disp->GetPhysicalDeviceMirPresentationSupportKHR(unwrapped_phys_dev, queueFamilyIndex, connection);
-    return res;
-}
-
-// This is the instance chain terminator function for
-// GetPhysicalDeviceMirPresentationSupportKHR
-VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceMirPresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                                     uint32_t queueFamilyIndex,
-                                                                                     MirConnection *connection) {
-    // First, check to ensure the appropriate extension was enabled:
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    struct loader_instance *ptr_instance = (struct loader_instance *)icd_term->this_instance;
-    if (!ptr_instance->wsi_mir_surface_enabled) {
-        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "VK_KHR_mir_surface extension not enabled.  vkGetPhysicalDeviceMirPresentationSupportKHR not executed!\n");
-        return VK_SUCCESS;
-    }
-
-    if (NULL == icd_term->dispatch.GetPhysicalDeviceMirPresentationSupportKHR) {
-        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceMirPresentationSupportKHR!\n");
-        assert(false && "loader: null GetPhysicalDeviceMirPresentationSupportKHR ICD pointer");
-    }
-
-    return icd_term->dispatch.GetPhysicalDeviceMirPresentationSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex, connection);
-}
-#endif  // VK_USE_PLATFORM_MIR_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
@@ -1867,18 +1741,6 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
         return true;
     }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_MIR_KHR
-
-    // Functions for the VK_KHR_mir_surface extension:
-    if (!strcmp("vkCreateMirSurfaceKHR", name)) {
-        *addr = ptr_instance->wsi_mir_surface_enabled ? (void *)vkCreateMirSurfaceKHR : NULL;
-        return true;
-    }
-    if (!strcmp("vkGetPhysicalDeviceMirPresentationSupportKHR", name)) {
-        *addr = ptr_instance->wsi_mir_surface_enabled ? (void *)vkGetPhysicalDeviceMirPresentationSupportKHR : NULL;
-        return true;
-    }
-#endif  // VK_USE_PLATFORM_MIR_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
     // Functions for the VK_KHR_wayland_surface extension:
