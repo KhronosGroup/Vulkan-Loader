@@ -1101,27 +1101,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceWaylandPresentationSupportKHR(
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-
-#ifdef VK_USE_PLATFORM_MIR_KHR
-
-
-VKAPI_ATTR VkResult VKAPI_CALL vkCreateMirSurfaceKHR(VkInstance instance, const VkMirSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface)
-{
-    wrapped_inst_obj *inst;
-    auto vk_inst = unwrap_instance(instance, &inst);
-    VkResult result = inst->layer_disp.CreateMirSurfaceKHR(vk_inst, pCreateInfo, pAllocator, pSurface);
-    return result;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceMirPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, MirConnection* connection)
-{
-    wrapped_phys_dev_obj *phys_dev;
-    auto vk_phys_dev = unwrap_phys_dev(physicalDevice, &phys_dev);
-    VkBool32 result = phys_dev->inst->layer_disp.GetPhysicalDeviceMirPresentationSupportKHR(vk_phys_dev, queueFamilyIndex, connection);
-    return result;
-}
-#endif  // VK_USE_PLATFORM_MIR_KHR
-
 VKAPI_ATTR VkResult VKAPI_CALL
 vkCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
                              const VkAllocationCallbacks *pAllocator, VkDebugReportCallbackEXT *pMsgCallback) {
@@ -1543,12 +1522,6 @@ VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(V
     if (!strcmp("vkGetPhysicalDeviceXlibPresentationSupportKHR", funcName))
         return reinterpret_cast<PFN_vkVoidFunction>(vkGetPhysicalDeviceXlibPresentationSupportKHR);
 #endif // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_MIR_KHR
-    if (!strcmp("vkCreateMirSurfaceKHR", funcName))
-        return reinterpret_cast<PFN_vkVoidFunction>(vkCreateMirSurfaceKHR);
-    if (!strcmp("vkGetPhysicalDeviceMirPresentationSupportKHR", funcName))
-        return reinterpret_cast<PFN_vkVoidFunction>(vkGetPhysicalDeviceMirPresentationSupportKHR);
-#endif // VK_USE_PLATFORM_MIR_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     if (!strcmp("vkCreateWaylandSurfaceKHR", funcName))
         return reinterpret_cast<PFN_vkVoidFunction>(vkCreateWaylandSurfaceKHR);

@@ -156,7 +156,6 @@ on/off options currently supported by this repository:
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the loader with the XCB entry points enabled. Without this, the XCB headers should not be needed, but the extension `VK_KHR_xcb_surface` won't be available. |
 | BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the loader with the Xlib entry points enabled. Without this, the X11 headers should not be needed, but the extension `VK_KHR_xlib_surface` won't be available. |
 | BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the loader with the Wayland entry points enabled. Without this, the Wayland headers should not be needed, but the extension `VK_KHR_wayland_surface` won't be available. |
-| BUILD_WSI_MIR_SUPPORT | Linux | `OFF` | Build the loader with the Mir entry points enabled. Without this, the Mir headers should not be needed, but the extension `VK_KHR_mir_surface` won't be available. |
 | ENABLE_STATIC_LOADER | Windows | `OFF` | By default, the loader is built as a dynamic library. This allows it to be built as a static library, instead. |
 | ENABLE_WIN10_ONECORE | Windows | `OFF` | Link the loader to the [OneCore](https://msdn.microsoft.com/en-us/library/windows/desktop/mt654039.aspx) umbrella library, instead of the standard Win32 ones. |
 | USE_CCACHE | Linux | `OFF` | Enable caching with the CCache program. |
@@ -364,7 +363,7 @@ repository to other Linux distributions.
 #### Required Package List
 
     sudo apt-get install git cmake build-essential libx11-xcb-dev \
-        libxkbcommon-dev libmirclient-dev libwayland-dev libxrandr-dev
+        libxkbcommon-dev libwayland-dev libxrandr-dev
 
 ### Linux Build
 
