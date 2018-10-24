@@ -185,7 +185,7 @@ CMake to generate the native platform files.
     - [2017](https://www.visualstudio.com/vs/downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
-- [CMake](http://www.cmake.org/download/) (Version 2.8.11 or better)
+- [CMake](http://www.cmake.org/download/) (Version 3.11 or better)
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
   - [Git for Windows](http://git-scm.com/download/win) is a popular solution
