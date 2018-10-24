@@ -52,7 +52,9 @@ before_install:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
-      # Install the appropriate MacOS packages
+      # We need to uninstall oclint or we get a gcc conflict when upgrading python
+      brew cask uninstall oclint
+      # We need to upgrade to a newer python
       brew upgrade python3
     fi
   - |
