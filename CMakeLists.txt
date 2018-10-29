@@ -139,18 +139,18 @@ endif()
 
 if(MSVC)
     # Treat warnings as errors
-    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/WX>)
+    add_compile_options("/WX")
     # Disable RTTI
-    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/GR->)
+    add_compile_options("/GR-")
     # Warn about nested declarations
-    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/w34456>)
+    add_compile_options("/w34456")
     # Warn about potentially uninitialized variables
-    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/w34701>)
-    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/w34703>)
+    add_compile_options("/w34701")
+    add_compile_options("/w34703")
     # Warn about different indirection types.
-    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/w34057>)
+    add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
-    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/w34245>)
+    add_compile_options("/w34245")
 endif()
 
 # Define a macro to generate source code from vk.xml

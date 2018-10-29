@@ -28,7 +28,7 @@ if(WIN32)
     if(MSVC AND NOT MSVC_VERSION LESS 1900)
         # Enable control flow guard
         message(STATUS "Building loader with control flow guard")
-	add_compile_options($<$<COMPILE_LANGUAGE:C>:/guard:cf>)
+        add_compile_options("/guard:cf")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /guard:cf")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /guard:cf")
     endif()
@@ -171,11 +171,11 @@ if(WIN32)
 
     add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
     add_dependencies(loader-norm generate_helper_files loader_gen_files)
-    target_compile_options(loader-norm PUBLIC "$<$<AND:$<CONFIG:DEBUG>,$<COMPILE_LANGUAGE:C>>:${LOCAL_C_FLAGS_DBG}>")
+    target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
 
     add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
     add_dependencies(loader-opt generate_helper_files loader_gen_files loader_asm_gen_files)
-    target_compile_options(loader-opt PUBLIC "$<$<AND:$<CONFIG:DEBUG>,$<COMPILE_LANGUAGE:C>>:${LOCAL_C_FLAGS_REL}>")
+    target_compile_options(loader-opt PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
 
     if(NOT ENABLE_STATIC_LOADER)
         target_compile_definitions(loader-norm PUBLIC LOADER_DYNAMIC_LIB)
