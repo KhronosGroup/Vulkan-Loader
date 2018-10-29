@@ -138,19 +138,13 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(MSVC)
-    # Treat warnings as errors
-    add_compile_options("/WX")
-    # Disable RTTI
-    add_compile_options("/GR-")
-    # Warn about nested declarations
-    add_compile_options("/w34456")
-    # Warn about potentially uninitialized variables
-    add_compile_options("/w34701")
-    add_compile_options("/w34703")
-    # Warn about different indirection types.
-    add_compile_options("/w34057")
-    # Warn about signed/unsigned mismatch.
-    add_compile_options("/w34245")
+    # /WX: Treat warnings as errors
+    # /GR-: Disable RTTI
+    # /w34456: Warn about nested declarations
+    # /w34701, /w34703: Warn about potentially uninitialized variables
+    # /w34057: Warn about different indirection types.
+    # /w34245: Warn about signed/unsigned mismatch.
+    set(MSVC_LOADER_COMPILE_OPTIONS /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
 endif()
 
 # Define a macro to generate source code from vk.xml

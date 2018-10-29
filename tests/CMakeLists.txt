@@ -22,6 +22,8 @@ if(UNIX)
 endif()
 
 if(WIN32)
+    target_compile_options(vk_loader_validation_tests PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
+
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
