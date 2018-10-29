@@ -429,22 +429,13 @@ VKAPI_ATTR void VKAPI_CALL terminator_SubmitDebugUtilsMessageEXT(VkInstance inst
                                                                  VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                                  VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                                  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData) {
-    const struct loader_icd_term *icd_term;
-
-    struct loader_instance *inst = (struct loader_instance *)instance;
-
     loader_platform_thread_lock_mutex(&loader_lock);
-    for (icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
-        if (icd_term->dispatch.SubmitDebugUtilsMessageEXT != NULL) {
-            icd_term->dispatch.SubmitDebugUtilsMessageEXT(icd_term->instance, messageSeverity, messageTypes, pCallbackData);
-        }
-    }
-
-    // Now that all ICDs have seen the message, call the necessary callbacks.  Ignoring "bail" return value
-    // as there is nothing to bail from at this point.
-
+    // NOTE: Just make the callback ourselves because there could be one or more ICDs that support this extension
+    //       and each one will trigger the callback to the user.  This would result in multiple callback triggers
+    //       per message.  Instead, if we get a messaged up to here, then just trigger the message ourselves and
+    //       return.  This would still allow the ICDs to trigger their own messages, but won't get any external ones.
+    struct loader_instance *inst = (struct loader_instance *)instance;
     util_SubmitDebugUtilsMessageEXT(inst, messageSeverity, messageTypes, pCallbackData);
-
     loader_platform_thread_unlock_mutex(&loader_lock);
 }
 
