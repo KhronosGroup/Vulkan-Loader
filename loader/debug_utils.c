@@ -87,14 +87,16 @@ VkBool32 util_SubmitDebugUtilsMessageEXT(const struct loader_instance *inst, VkD
                                          const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData) {
     VkBool32 bail = false;
 
-    if (NULL != pCallbackData && NULL != pCallbackData->pObjects && 0 < pCallbackData->objectCount) {
+    if (NULL != pCallbackData) {
         VkLayerDbgFunctionNode *pTrav = inst->DbgFunctionHead;
-        VkDebugReportObjectTypeEXT object_type;
+        VkDebugReportObjectTypeEXT object_type = VK_OBJECT_TYPE_UNKNOWN;
         VkDebugReportFlagsEXT object_flags = 0;
-        uint64_t object_handle;
+        uint64_t object_handle = 0;
 
         debug_utils_AnnotFlagsToReportFlags(messageSeverity, messageTypes, &object_flags);
-        debug_utils_AnnotObjectToDebugReportObject(pCallbackData->pObjects, &object_type, &object_handle);
+        if (0 < pCallbackData->objectCount) {
+            debug_utils_AnnotObjectToDebugReportObject(pCallbackData->pObjects, &object_type, &object_handle);
+        }
 
         while (pTrav) {
             if (pTrav->is_messenger && (pTrav->messenger.messageSeverity & messageSeverity) &&
