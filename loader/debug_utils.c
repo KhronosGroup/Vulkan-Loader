@@ -89,7 +89,7 @@ VkBool32 util_SubmitDebugUtilsMessageEXT(const struct loader_instance *inst, VkD
 
     if (NULL != pCallbackData) {
         VkLayerDbgFunctionNode *pTrav = inst->DbgFunctionHead;
-        VkDebugReportObjectTypeEXT object_type = VK_OBJECT_TYPE_UNKNOWN;
+        VkDebugReportObjectTypeEXT object_type = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
         VkDebugReportFlagsEXT object_flags = 0;
         uint64_t object_handle = 0;
 
