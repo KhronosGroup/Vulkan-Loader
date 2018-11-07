@@ -3579,6 +3579,9 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
         if (rel_size == 0) {
             goto out;
         } else {
+#if defined(__APPLE__)
+            search_path_size += MAXPATHLEN;
+#endif
 #ifndef _WIN32
             search_path_size += DetermineDataFilePathSize(xdgconfdirs, rel_size);
             search_path_size += DetermineDataFilePathSize(xdgdatadirs, rel_size);
@@ -3611,6 +3614,24 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
     } else {
 #ifndef _WIN32
         if (rel_size > 0) {
+#if defined(__APPLE__)
+            // Add the bundle's Resources dir to the beginning of the search path.
+            // Looks for manifests in the bundle first, before any system directories.
+            CFBundleRef main_bundle = CFBundleGetMainBundle();
+            if (NULL != main_bundle) {
+                CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);
+                if (NULL != ref) {
+                    if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)cur_path_ptr, search_path_size)) {
+                        cur_path_ptr += strlen(cur_path_ptr);
+                        *cur_path_ptr++ = DIRECTORY_SYMBOL;
+                        memcpy(cur_path_ptr, relative_location, rel_size);
+                        cur_path_ptr += rel_size;
+                        *cur_path_ptr++ = PATH_SEPARATOR;
+                    }
+                    CFRelease(ref);
+                }
+            }
+#endif
             CopyDataFilePath(xdgconfdirs, relative_location, rel_size, &cur_path_ptr);
             CopyDataFilePath(SYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
 #if defined(EXTRASYSCONFDIR)
