@@ -3801,6 +3801,7 @@ static VkResult loaderGetDataFiles(const struct loader_instance *inst, enum load
         for (uint32_t i = 0; i < out_files->count; i++) {
             if (NULL != out_files->filename_list[i]) {
                 loader_instance_heap_free(inst, out_files->filename_list[i]);
+                out_files->filename_list[i] = NULL;
             }
         }
         loader_instance_heap_free(inst, out_files->filename_list);
@@ -4296,6 +4297,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
         res = loaderAddLayerProperties(inst, instance_layers, json, true, file_str);
 
         loader_instance_heap_free(inst, file_str);
+        manifest_files.filename_list[i] = NULL;
         cJSON_Delete(json);
 
         if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
