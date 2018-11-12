@@ -2955,10 +2955,10 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
         if (vkGetInstanceProcAddr != NULL) {
             strncpy(props->functions.str_gipa, vkGetInstanceProcAddr, sizeof(props->functions.str_gipa));
             if (version.major > 1 || version.minor >= 1) {
-                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
                            "Layer \"%s\" using deprecated \'vkGetInstanceProcAddr\' tag which was deprecated starting with JSON "
-                           "file version 1.1.0.  Instead, use the new vkNegotiateLayerInterfaceVersion function to return the "
-                           "GetInstanceProcAddr function for this layer.",
+                           "file version 1.1.0. The new vkNegotiateLayerInterfaceVersion function is preferred, though for "
+                           "compatibility reasons it may be desirable to continue using the deprecated tag.",
                            name);
             }
         }
@@ -2966,10 +2966,10 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
         if (vkGetDeviceProcAddr != NULL) {
             strncpy(props->functions.str_gdpa, vkGetDeviceProcAddr, sizeof(props->functions.str_gdpa));
             if (version.major > 1 || version.minor >= 1) {
-                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
                            "Layer \"%s\" using deprecated \'vkGetDeviceProcAddr\' tag which was deprecated starting with JSON "
-                           "file version 1.1.0.  Instead, use the new vkNegotiateLayerInterfaceVersion function to return the "
-                           "GetDeviceProcAddr function for this layer.",
+                           "file version 1.1.0. The new vkNegotiateLayerInterfaceVersion function is preferred, though for "
+                           "compatibility reasons it may be desirable to continue using the deprecated tag.",
                            name);
             }
         }
