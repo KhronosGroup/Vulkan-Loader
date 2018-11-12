@@ -1589,7 +1589,7 @@ static bool checkExpiration(const struct loader_instance *inst, const struct loa
         .tm_min = prop->expiration.minute,
         .tm_hour = prop->expiration.hour,
         .tm_mday = prop->expiration.day,
-        .tm_mon = prop->expiration.month,
+        .tm_mon = prop->expiration.month - 1,
         .tm_year = prop->expiration.year - 1900,
         .tm_isdst = tm_current.tm_isdst,
         // wday and yday are ignored by mktime
@@ -2694,7 +2694,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
         }
 
         props->is_override = true;
-        expiration = cJSON_GetObjectItem(layer_node, "expiration");
+        expiration = cJSON_GetObjectItem(layer_node, "expiration_date");
         if (NULL != expiration) {
             char date_copy[32];
             uint8_t cur_item = 0;
@@ -2703,7 +2703,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
             temp = cJSON_Print(expiration);
             if (temp == NULL) {
                 loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                           "Problem accessing layer value 'expiration' in manifest JSON file, skipping this layer");
+                           "Problem accessing layer value 'expiration_date' in manifest JSON file, skipping this layer");
                 result = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
