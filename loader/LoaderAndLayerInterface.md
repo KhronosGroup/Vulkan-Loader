@@ -2256,7 +2256,7 @@ Here is an example ICD JSON Manifest file:
 |----------------|--------------------|
 | "file\_format\_version" | The JSON format major.minor.patch version number of this file.  Currently supported version is 1.0.0. |
 | "ICD" | The identifier used to group all ICD information together. |
-| "library_path" | The "library\_path" specifies either a filename, a relative pathname, or a full pathname to a layer shared library file.  If "library\_path" specifies a relative pathname, it is relative to the path of the JSON manifest file.  If "library\_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the ICD shared library files other than it should end with the appropriate suffix (".DLL" on Windows, ".so" on Linux and "*.dylib" on MacOS). | N/A |
+| "library_path" | The "library\_path" specifies either a filename, a relative pathname, or a full pathname to an ICD shared library file.  If "library\_path" specifies a relative pathname, it is relative to the path of the JSON manifest file.  If "library\_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the ICD shared library files other than it should end with the appropriate suffix (".DLL" on Windows, ".so" on Linux and "*.dylib" on MacOS). | N/A |
 | "api_version" | The major.minor.patch version number of the Vulkan API that the shared library files for the ICD was built against. For example: 1.0.33. |
 
 **NOTE:** If the same ICD shared library supports multiple, incompatible
