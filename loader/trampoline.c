@@ -849,7 +849,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice phy
     // Initialize WSI device extensions as part of core dispatch since loader
     // has dedicated trampoline code for these
     loader_init_device_extension_dispatch_table(&dev->loader_dispatch, inst->disp->layer_inst_disp.GetInstanceProcAddr,
-                                                dev->loader_dispatch.core_dispatch.GetDeviceProcAddr, (VkInstance)inst, *pDevice);
+                                                dev->loader_dispatch.core_dispatch.GetDeviceProcAddr, inst->instance, *pDevice);
 
 out:
 
