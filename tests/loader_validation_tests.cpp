@@ -460,6 +460,36 @@ TEST(CreateInstance, LayerPresent) {
     instance = VK_NULL_HANDLE;
     result = vkCreateInstance(info2, VK_NULL_HANDLE, &instance);
     ASSERT_EQ(result, VK_SUCCESS);
+
+    uint32_t deviceCount;
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+    std::vector<VkPhysicalDevice> devs(deviceCount);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devs.data());
+    auto device_create_info = VkDeviceCreateInfo{
+              VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,  // sType
+              nullptr,                               // pNext
+              0,                                     // flags
+              0,                                     // queueCreateInfoCount
+              nullptr,                               // pQueueCreateInfos
+              0,                                     // enabledLayerCount
+              nullptr,                               // ppEnabledLayerNames
+              0,                                     // enabledExtensionCount
+              nullptr,                               // ppEnabledExtensionNames
+              nullptr                                // pEnabledFeatures
+    };
+    auto deviceQueue = VkDeviceQueueCreateInfo{};
+    deviceQueue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    float prios = 1;
+    deviceQueue.queueFamilyIndex = 0;
+    deviceQueue.queueCount = 1;
+    deviceQueue.pQueuePriorities = &prios;
+    device_create_info.pQueueCreateInfos = &deviceQueue;
+    device_create_info.queueCreateInfoCount = 1;
+    VkDevice dev;
+    vkCreateDevice(devs[0], &device_create_info, nullptr, &dev);
+
+    vkDestroyDevice(dev, nullptr);
+
     vkDestroyInstance(instance, nullptr);
 }
 
