@@ -27,6 +27,5 @@
 LIBRARY VkLayer_test
 EXPORTS
 vkGetInstanceProcAddr
-vkGetDeviceProcAddr
 vkEnumerateInstanceLayerProperties
 vkEnumerateInstanceExtensionProperties
