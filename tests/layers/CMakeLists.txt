@@ -78,7 +78,7 @@ string(REPLACE "\\"
 # TARGET_FILE_DIR, specifically)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\")")
 
-foreach(TARGET_NAME VkLayer_wrap_objects VkLayer_test VkLayer_meta)
+foreach(TARGET_NAME VkLayer_wrap_objects VkLayer_test VkLayer_meta VkLayer_meta_rev)
     set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
         -DVK_VERSION="${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
 
