@@ -153,7 +153,12 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
 
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.asm
                ".intel_syntax noprefix\n.text\n.global sample\nsample:\nmov ecx, [eax + 16]\n")
+    # try_compile uses the C/C++ linker flags even for ASM,
+    # while they're not valid for ASM and making linking fail.
+    set(TMP_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS})
+    set(CMAKE_EXE_LINKER_FLAGS "")
     try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/asm_test.asm)
+    set(CMAKE_EXE_LINKER_FLAGS ${TMP_EXE_LINKER_FLAGS})
     file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.asm)
     if(ASSEMBLER_WORKS)
         set(CMAKE_ASM-ATT_FLAGS "$ENV{ASFLAGS} -I\"${CMAKE_CURRENT_BINARY_DIR}\"")
