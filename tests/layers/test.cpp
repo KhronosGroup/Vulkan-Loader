@@ -20,6 +20,7 @@
 #include <cassert>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 
 #include "vk_dispatch_table_helper.h"
 #include "vk_layer_data.h"
@@ -62,10 +63,50 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
         return result;
     }
 
+    VkLayerInstanceCreateInfo *create_dev_info = get_chain_info(pCreateInfo, VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK);
+    assert(create_dev_info != nullptr);
+    auto layer_create_device = create_dev_info->u.layerDevice.pfnLayerCreateDevice;
+    auto layer_destroy_device = create_dev_info->u.layerDevice.pfnLayerDestroyDevice;
+
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
     instance_data->instance = *pInstance;
     instance_data->instance_dispatch_table = new VkLayerInstanceDispatchTable;
     layer_init_instance_dispatch_table(*pInstance, instance_data->instance_dispatch_table, fpGetInstanceProcAddr);
+
+    uint32_t count = 0;
+    instance_data->instance_dispatch_table->EnumeratePhysicalDevices(*pInstance, &count, nullptr);
+    std::vector<VkPhysicalDevice> devices(count);
+    instance_data->instance_dispatch_table->EnumeratePhysicalDevices(*pInstance, &count, devices.data());
+    VkDevice device;
+    auto device_create_info = VkDeviceCreateInfo{
+              VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,  // sType
+              nullptr,                               // pNext
+              0,                                     // flags
+              0,                                     // queueCreateInfoCount
+              nullptr,                               // pQueueCreateInfos
+              0,                                     // enabledLayerCount
+              nullptr,                               // ppEnabledLayerNames
+              0,                                     // enabledExtensionCount
+              nullptr,                               // ppEnabledExtensionNames
+              nullptr                                // pEnabledFeatures
+    };
+    auto deviceQueue = VkDeviceQueueCreateInfo{};
+    deviceQueue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    float prios = 1;
+    deviceQueue.queueFamilyIndex = 0;
+    deviceQueue.queueCount = 1;
+    deviceQueue.pQueuePriorities = &prios;
+    device_create_info.pQueueCreateInfos = &deviceQueue;
+    device_create_info.queueCreateInfoCount = 1;
+
+    PFN_vkGetDeviceProcAddr newGDPA = nullptr;
+    layer_create_device(*pInstance, devices[0], &device_create_info, nullptr, &device, vkGetInstanceProcAddr, &newGDPA);
+    assert(newGDPA != nullptr);
+    PFN_vkDestroyDevice destroy = (PFN_vkDestroyDevice) newGDPA(device, "vkDestroyDevice");
+    layer_destroy_device(device, nullptr, destroy);
+
+    std::cout << "VK_LAYER_LUNARG_test: device count " << count << '\n';
+
     // Marker for testing.
     std::cout << "VK_LAYER_LUNARG_test: CreateInstance" << '\n';
 
