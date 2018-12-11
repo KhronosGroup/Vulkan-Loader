@@ -5208,14 +5208,17 @@ bool loaderGetLayerInterfaceVersion(PFN_vkNegotiateLoaderLayerInterfaceVersion f
 VKAPI_ATTR VkResult VKAPI_CALL vkLayerCreateDevice(VkInstance instance, VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
 						   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, PFN_vkGetInstanceProcAddr layerGIPA, PFN_vkGetDeviceProcAddr *nextGDPA) {
     VkResult res;
-    struct loader_physical_device_tramp *phys_dev = NULL;
+    VkPhysicalDevice internal_device = VK_NULL_HANDLE;
     struct loader_device *dev = NULL;
     struct loader_instance *inst = NULL;
 
     assert(pCreateInfo->queueCreateInfoCount >= 1);
 
-    phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
-    inst = (struct loader_instance *)phys_dev->this_instance;
+    {
+      struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
+      internal_device = phys_dev->phys_dev;
+      inst = (struct loader_instance *)phys_dev->this_instance;
+    }
 
     // Get the physical device (ICD) extensions
     struct loader_extension_list icd_exts;
@@ -5226,7 +5229,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkLayerCreateDevice(VkInstance instance, VkPhysic
         goto out;
     }
 
-    res = loader_add_device_extensions(inst, inst->disp->layer_inst_disp.EnumerateDeviceExtensionProperties, phys_dev->phys_dev,
+    res = loader_add_device_extensions(inst, inst->disp->layer_inst_disp.EnumerateDeviceExtensionProperties, internal_device,
                                        "Unknown", &icd_exts);
     if (res != VK_SUCCESS) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "vkCreateDevice:  Failed to add extensions to list");
@@ -5288,7 +5291,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkLayerCreateDevice(VkInstance instance, VkPhysic
         dev->expanded_activated_layer_list.list = NULL;
     }
 
-    res = loader_create_device_chain(phys_dev->phys_dev, pCreateInfo, pAllocator, inst, dev);
+    res = loader_create_device_chain(internal_device, pCreateInfo, pAllocator, inst, dev);
     if (res != VK_SUCCESS) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "vkCreateDevice:  Failed to create device chain.");
         goto out;
