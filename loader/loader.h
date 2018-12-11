@@ -510,7 +510,7 @@ VkResult vkLayerCreateDevice(VkInstance instance, VkPhysicalDevice physicalDevic
 
 VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
-                                    struct loader_device *dev);
+                                    struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer, PFN_vkGetDeviceProcAddr *layerNextGDPA);
 
 VkResult loader_validate_device_extensions(struct loader_instance *this_instance,
                                            const struct loader_layer_list *activated_device_layers,
