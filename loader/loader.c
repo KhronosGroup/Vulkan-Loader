@@ -5156,7 +5156,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkLayerCreateDevice(VkInstance instance, VkPhysic
     }
 
     // Make sure requested extensions to be enabled are supported
-    res = loader_validate_device_extensions(phys_dev, &inst->expanded_activated_layer_list, &icd_exts, pCreateInfo);
+    res = loader_validate_device_extensions(inst, &inst->expanded_activated_layer_list, &icd_exts, pCreateInfo);
     if (res != VK_SUCCESS) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "vkCreateDevice:  Failed to validate extensions in list");
         goto out;
@@ -5210,7 +5210,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkLayerCreateDevice(VkInstance instance, VkPhysic
         dev->expanded_activated_layer_list.list = NULL;
     }
 
-    res = loader_create_device_chain(phys_dev, pCreateInfo, pAllocator, inst, dev);
+    res = loader_create_device_chain(phys_dev->phys_dev, pCreateInfo, pAllocator, inst, dev);
     if (res != VK_SUCCESS) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "vkCreateDevice:  Failed to create device chain.");
         goto out;
@@ -5421,7 +5421,7 @@ void loaderActivateInstanceLayerExtensions(struct loader_instance *inst, VkInsta
                                                   created_inst);
 }
 
-VkResult loader_create_device_chain(const struct loader_physical_device_tramp *pd, const VkDeviceCreateInfo *pCreateInfo,
+VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
                                     struct loader_device *dev) {
     uint32_t activated_layers = 0;
@@ -5561,7 +5561,7 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
 
         create_info_disp.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp;
-        res = fpCreateDevice(pd->phys_dev, &loader_create_info, pAllocator, &created_device);
+        res = fpCreateDevice(pd, &loader_create_info, pAllocator, &created_device);
         if (res != VK_SUCCESS) {
             return res;
         }
@@ -5713,7 +5713,7 @@ out:
     return res;
 }
 
-VkResult loader_validate_device_extensions(struct loader_physical_device_tramp *phys_dev,
+VkResult loader_validate_device_extensions(struct loader_instance *this_instance,
                                            const struct loader_layer_list *activated_device_layers,
                                            const struct loader_extension_list *icd_exts, const VkDeviceCreateInfo *pCreateInfo) {
     VkExtensionProperties *extension_prop;
@@ -5722,7 +5722,7 @@ VkResult loader_validate_device_extensions(struct loader_physical_device_tramp *
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         VkStringErrorFlags result = vk_string_validate(MaxLoaderStringLength, pCreateInfo->ppEnabledExtensionNames[i]);
         if (result != VK_STRING_ERROR_NONE) {
-            loader_log(phys_dev->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+            loader_log(this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                        "loader_validate_device_extensions: Device ppEnabledExtensionNames contains "
                        "string that is too long or is badly formed");
             return VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -5748,7 +5748,7 @@ VkResult loader_validate_device_extensions(struct loader_physical_device_tramp *
 
         if (!extension_prop) {
             // Didn't find extension name in any of the device layers, error out
-            loader_log(phys_dev->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+            loader_log(this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                        "loader_validate_device_extensions: Device extension %s not supported by selected physical device "
                        "or enabled layers.",
                        pCreateInfo->ppEnabledExtensionNames[i]);
