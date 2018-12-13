@@ -495,6 +495,7 @@ static bool loaderAddJsonEntry(const struct loader_instance *inst,
 
     // Check for and ignore duplicates.
     if (*reg_data && strstr(*reg_data, json_path)) {
+        // Success. The json_path is already in the list.
         return true;
     }
 
