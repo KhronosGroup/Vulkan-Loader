@@ -492,6 +492,12 @@ static bool loaderAddJsonEntry(const struct loader_instance *inst,
                                LPSTR json_path,    // JSON string to add to the list reg_data
                                DWORD json_size,    // size in bytes of json_path
                                VkResult *result) {
+
+    // Check for and ignore duplicates.
+    if (*reg_data && strstr(*reg_data, json_path)) {
+        return true;
+    }
+
     if (NULL == *reg_data) {
         *reg_data = loader_instance_heap_alloc(inst, *total_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == *reg_data) {
