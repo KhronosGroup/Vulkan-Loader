@@ -101,6 +101,11 @@ RunImplicitLayerTest()
     echo "ImplicitLayer test PASSED"
 }
 
-! RunImplicitLayerTest && echo "ImplicitLayer test FAILED" >&2 && exit 1
+# Prevent the implicit layer test from running concurrently with itself in another process.
+# i.e. flock the following command subshell with an automatic file descriptor.
+filename=${0##*/}
+(
+    flock "$filedesc" && ! RunImplicitLayerTest && echo "ImplicitLayer test FAILED" >&2 && exit 1
+){filedesc}>"/tmp/$filename.lockfile"
 
 popd > /dev/null
