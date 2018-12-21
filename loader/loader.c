@@ -3862,7 +3862,14 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
     // This uses minimal memory, but is O(N^2) on the number of paths. Expect only a few paths.
     char path_sep_str[2] = {PATH_SEPARATOR, '\0'};
     size_t search_path_updated_size = strlen(search_path);
-    for (size_t first = 0; first < search_path_updated_size - 1;) {
+    for (size_t first = 0; first < search_path_updated_size;) {
+        // If this is an empty path, erase it
+        if (search_path[first] == PATH_SEPARATOR) {
+            memmove(&search_path[first], &search_path[first + 1], search_path_updated_size - first + 1);
+            search_path_updated_size -= 1;
+            continue;
+        }
+
         size_t first_end = first + 1;
         first_end += strcspn(&search_path[first_end], path_sep_str);
         for (size_t second = first_end + 1; second < search_path_updated_size;) {
