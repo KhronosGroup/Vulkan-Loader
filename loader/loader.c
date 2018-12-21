@@ -3860,15 +3860,16 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
 
     // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
     // This uses minimal memory, but is O(N^2) on the number of paths. Expect only a few paths.
-    char path_sep_str[2] = { PATH_SEPARATOR, '\0' };
+    char path_sep_str[2] = {PATH_SEPARATOR, '\0'};
     size_t search_path_updated_size = strlen(search_path);
-    for (size_t first = 0; first < search_path_updated_size - 1; ) {
+    for (size_t first = 0; first < search_path_updated_size - 1;) {
         size_t first_end = first + 1;
         first_end += strcspn(&search_path[first_end], path_sep_str);
-        for (size_t second = first_end + 1; second < search_path_updated_size; ) {
+        for (size_t second = first_end + 1; second < search_path_updated_size;) {
             size_t second_end = second + 1;
             second_end += strcspn(&search_path[second_end], path_sep_str);
-            if (first_end - first == second_end - second && !strncmp(&search_path[first], &search_path[second], second_end - second)) {
+            if (first_end - first == second_end - second &&
+                !strncmp(&search_path[first], &search_path[second], second_end - second)) {
                 // Found duplicate. Include PATH_SEPARATOR in second_end, then erase it from search_path.
                 if (search_path[second_end] == PATH_SEPARATOR) {
                     second_end++;
