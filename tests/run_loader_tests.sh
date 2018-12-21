@@ -45,9 +45,9 @@ RunEnvironmentVariablePathsTest()
        echo "Environment Variable Path test FAILED - Implicit layer path incorrect" >&2
        exit 1
     fi
-    # Sadly, the loader does not clean up this path and just stumbles through it.
-    # So just make sure it is the same.
-    right_path="${vk_layer_path}"
+    # The loader cleans up this path to remove the empty paths, so we need to clean up the right path, too
+    right_path="${vk_layer_path//:::::/:}"
+    right_path="${right_path//::::/:}"
     echo "$output" | grep -q "$right_path"
     ec=$?
     if [ $ec -eq 1 ]
