@@ -753,29 +753,22 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceMemoryProperties(VkP
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
     loader_platform_thread_lock_mutex(&loader_lock);
-    VkResult res = vkLayerCreateDevice(NULL, physicalDevice, pCreateInfo, pAllocator, pDevice, NULL, NULL);
+    VkResult res = loader_layer_create_device(NULL, physicalDevice, pCreateInfo, pAllocator, pDevice, NULL, NULL);
     loader_platform_thread_unlock_mutex(&loader_lock);
     return res;
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     const VkLayerDispatchTable *disp;
-    struct loader_device *dev;
 
     if (device == VK_NULL_HANDLE) {
         return;
     }
+    disp = loader_get_dispatch(device);
 
     loader_platform_thread_lock_mutex(&loader_lock);
 
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, NULL);
-    const struct loader_instance *inst = icd_term->this_instance;
-    disp = loader_get_dispatch(device);
-
-    disp->DestroyDevice(device, pAllocator);
-    dev->chain_device = NULL;
-    dev->icd_device = NULL;
-    loader_remove_logical_device(inst, icd_term, dev, pAllocator);
+    loader_layer_destroy_device(device, pAllocator, disp->DestroyDevice);
 
     loader_platform_thread_unlock_mutex(&loader_lock);
 }

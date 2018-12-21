@@ -5127,7 +5127,7 @@ bool loaderGetLayerInterfaceVersion(PFN_vkNegotiateLoaderLayerInterfaceVersion f
     return true;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL vkLayerCreateDevice(VkInstance instance, VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
 						   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, PFN_vkGetInstanceProcAddr layerGIPA, PFN_vkGetDeviceProcAddr *nextGDPA) {
     VkResult res;
     VkPhysicalDevice internal_device = VK_NULL_HANDLE;
@@ -5253,7 +5253,7 @@ out:
     return res;
 }
 
-VKAPI_ATTR void VKAPI_CALL vkLayerDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator, PFN_vkDestroyDevice destroyFunction){
+VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const VkAllocationCallbacks *pAllocator, PFN_vkDestroyDevice destroyFunction){
     struct loader_device *dev;
 
     if (device == VK_NULL_HANDLE) {
@@ -5433,8 +5433,8 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
         create_info_disp2.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
         create_info_disp2.function = VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK;
 
-        create_info_disp2.u.layerDevice.pfnLayerCreateDevice = vkLayerCreateDevice;
-        create_info_disp2.u.layerDevice.pfnLayerDestroyDevice = vkLayerDestroyDevice;
+        create_info_disp2.u.layerDevice.pfnLayerCreateDevice = loader_layer_create_device;
+        create_info_disp2.u.layerDevice.pfnLayerDestroyDevice = loader_layer_destroy_device;
 
         create_info_disp2.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp2;
