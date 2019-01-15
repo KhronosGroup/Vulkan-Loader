@@ -1005,6 +1005,7 @@ static struct loader_layer_properties *loaderGetNextLayerPropertySlot(const stru
             return NULL;
         }
         layer_list->list = new_ptr;
+        memset((uint8_t *)layer_list->list + layer_list->capacity, 0, layer_list->capacity);
         layer_list->capacity *= 2;
     }
 
