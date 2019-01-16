@@ -1,8 +1,8 @@
-vulkan-loader (1.1.92.1~rc1-1) UNRELEASED; urgency=medium
+vulkan-loader (1.1.92.1~rc1-1lunarg16.04.1.1) xenial; urgency=medium
 
   * new upstream version
 
- -- Jeremy Hayes <jeremy@centaurus>  Tue, 27 Nov 2018 13:21:16 -0700
+ -- Jeremy Hayes <jeremy@centaurus>  Tue, 27 Nov 2018 13:23:11 -0700
 
 vulkan-loader (1.1.85.0.1-1) unstable; urgency=medium
 
