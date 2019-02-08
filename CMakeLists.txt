@@ -27,14 +27,24 @@ add_definitions(-DAPI_NAME="Vulkan")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 REQUIRED)
 
-find_package(VulkanHeaders)
-if(NOT ${VulkanHeaders_FOUND})
-    message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                        "installation of the Vulkan-Headers repository.")
-endif()
-if(NOT ${VulkanRegistry_FOUND})
-    message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                        "installation of the Vulkan-Headers repository.")
+if (TARGET Vulkan::Headers)
+    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
+    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
+else()
+    find_package(VulkanHeaders)
+    if(NOT ${VulkanHeaders_FOUND})
+        message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
+                            "installation of the Vulkan-Headers repository.")
+    endif()
+    if(NOT ${VulkanRegistry_FOUND})
+        message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
+                            "installation of the Vulkan-Headers repository.")
+    endif()
+
+    # set up the Vulkan::Headers target for consistency
+    add_library(vulkan-headers INTERFACE)
+    target_include_directories(vulkan-headers INTERFACE "${VulkanHeaders_INCLUDE_DIRS}")
+    add_library(Vulkan::Headers ALIAS vulkan-headers)
 endif()
 
 option(USE_CCACHE "Use ccache" OFF)
@@ -111,9 +121,6 @@ if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
 else()
     option(BUILD_TESTS "Build Tests" OFF)
 endif()
-
-# Add location of Vulkan header files to include search path
-include_directories(${VulkanHeaders_INCLUDE_DIRS})
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-stringop-truncation -Wno-stringop-overflow")

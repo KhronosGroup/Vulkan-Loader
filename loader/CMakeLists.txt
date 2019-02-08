@@ -128,6 +128,7 @@ if(WIN32)
 
         add_executable(asm_offset asm_offset.c)
         add_dependencies(asm_offset generate_helper_files loader_gen_files)
+        target_link_libraries(asm_offset Vulkan::Headers)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset MASM)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
@@ -165,6 +166,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.asm)
         add_executable(asm_offset asm_offset.c)
         add_dependencies(asm_offset generate_helper_files loader_gen_files)
+        target_link_libraries(asm_offset Vulkan::Headers)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
@@ -184,11 +186,13 @@ if(WIN32)
     add_dependencies(loader-norm generate_helper_files loader_gen_files)
     target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
     target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
+    target_include_directories(loader-norm PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
     add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
     add_dependencies(loader-opt generate_helper_files loader_gen_files loader_asm_gen_files)
     target_compile_options(loader-opt PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
+    target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
     if(NOT ENABLE_STATIC_LOADER)
         target_compile_definitions(loader-norm PUBLIC LOADER_DYNAMIC_LIB)
@@ -206,6 +210,7 @@ if(WIN32)
                                          "/ignore:4098"
                                          OUTPUT_NAME
                                          vulkan-1)
+        target_link_libraries(vulkan Vulkan::Headers)
     else()
         add_library(vulkan
                     STATIC
@@ -243,6 +248,7 @@ else()
                                      VERSION
                                      "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
     target_link_libraries(vulkan -ldl -lpthread -lm)
+    target_link_libraries(vulkan Vulkan::Headers)
 
     if(APPLE)
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
@@ -270,6 +276,7 @@ else()
         add_dependencies(vulkan-framework generate_helper_files loader_gen_files loader_asm_gen_files)
         target_compile_definitions(vulkan-framework PUBLIC -DLOADER_DYNAMIC_LIB)
         target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
+        target_link_libraries(vulkan-framework Vulkan::Headers)
 
         # The FRAMEWORK_VERSION needs to be "A" here so that Xcode code-signing works when a user adds their framework to an Xcode
         # project and does "Sign on Copy". It would have been nicer to use "1" to denote Vulkan 1. Although Apple docs say that a
@@ -306,6 +313,9 @@ else()
         endif()
     endif()
 endif()
+
+target_link_libraries(vulkan Vulkan::Headers)
+add_library(Vulkan::Vulkan ALIAS vulkan)
 
 install(TARGETS vulkan
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
