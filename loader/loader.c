@@ -5821,7 +5821,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
                 break;
             }
 
-            layer_prop = loaderFindLayerProperty(pCreateInfo->ppEnabledLayerNames[j], instance_layers);
+            layer_prop = loaderFindLayerProperty(expanded_layers.list[j].info.layerName, instance_layers);
             if (NULL == layer_prop) {
                 // Should NOT get here, loaderValidateLayers should have already filtered this case out.
                 continue;
