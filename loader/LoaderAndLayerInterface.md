@@ -7,6 +7,9 @@
 # Architecture of the Vulkan Loader Interfaces
 [![Creative Commons][3]][4]
 
+<!-- Copyright &copy; 2015-2019 LunarG, Inc. -->
+
+
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 ## Table of Contents
