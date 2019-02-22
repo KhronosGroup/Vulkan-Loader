@@ -5,6 +5,8 @@
 [2]: https://www.khronos.org/vulkan/
 
 # Architecture of the Vulkan Loader Interfaces
+Copyright &copy; 2015-2019 LunarG, Inc.
+
 [![Creative Commons][3]][4]
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
