@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2018 The Khronos Group Inc.
- * Copyright (c) 2014-2018 Valve Corporation
- * Copyright (c) 2014-2018 LunarG, Inc.
+ * Copyright (c) 2014-2019 The Khronos Group Inc.
+ * Copyright (c) 2014-2019 Valve Corporation
+ * Copyright (c) 2014-2019 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1049,6 +1049,17 @@ static bool loaderFindLayerNameInMetaLayer(const struct loader_instance *inst, c
     return false;
 }
 
+// Search the override layer's blacklist for a layer matching the given layer name
+static bool loaderFindLayerNameInBlacklist(const struct loader_instance *inst, const char *layer_name,
+                                           struct loader_layer_list *layer_list, struct loader_layer_properties *meta_layer_props) {
+    for (uint32_t black_layer = 0; black_layer < meta_layer_props->num_blacklist_layers; black_layer++) {
+        if (!strcmp(meta_layer_props->blacklist_layer_names[black_layer], layer_name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Remove all layer properties entries from the list
 void loaderDeleteLayerListAndProperties(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
     uint32_t i, j, k;
@@ -1057,6 +1068,10 @@ void loaderDeleteLayerListAndProperties(const struct loader_instance *inst, stru
     if (!layer_list) return;
 
     for (i = 0; i < layer_list->count; i++) {
+        if (NULL != layer_list->list[i].blacklist_layer_names) {
+            loader_instance_heap_free(inst, layer_list->list[i].blacklist_layer_names);
+            layer_list->list[i].blacklist_layer_names = NULL;
+        }
         if (NULL != layer_list->list[i].component_layer_names) {
             loader_instance_heap_free(inst, layer_list->list[i].component_layer_names);
             layer_list->list[i].component_layer_names = NULL;
@@ -1088,9 +1103,9 @@ void loaderDeleteLayerListAndProperties(const struct loader_instance *inst, stru
     }
 }
 
-// Remove all layers in the layer list that are not found inside the override layer.
+// Remove all layers in the layer list that are blacklisted by the override layer.
 // NOTE: This should only be called if an override layer is found and not expired.
-void loaderRemoveLayersNotInOverride(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
+void loaderRemoveLayersInBlacklist(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
     struct loader_layer_properties *override_prop = loaderFindLayerProperty(VK_OVERRIDE_LAYER_NAME, layer_list);
     if (NULL == override_prop) {
         return;
@@ -1105,17 +1120,18 @@ void loaderRemoveLayersNotInOverride(const struct loader_instance *inst, struct 
             continue;
         }
 
-        // If not found in the override layer, remove it
-        if (!loaderFindLayerNameInMetaLayer(inst, cur_layer_name, layer_list, override_prop)) {
+        // If found in the override layer's blacklist, remove it
+        if (loaderFindLayerNameInBlacklist(inst, cur_layer_name, layer_list, override_prop)) {
             loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
-                       "loaderRemoveLayersNotInOverride : Override layer is active, and layer %s is not list"
-                       " inside of it.  So removing layer from current layer list.",
+                       "loaderRemoveLayersInBlacklist: Override layer is active and layer % is in the blacklist"
+                       " inside of it. Removing that layer from current layer list.",
                        cur_layer_name);
 
             if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
                 // Delete the component layers
                 loader_instance_heap_free(inst, cur_layer_prop.component_layer_names);
                 loader_instance_heap_free(inst, cur_layer_prop.override_paths);
+                // Never need to free the blacklist, since it can only exist in the override layer
             }
 
             // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
@@ -1175,7 +1191,7 @@ void loaderRemoveLayersNotInImplicitMetaLayers(const struct loader_instance *ins
         struct loader_layer_properties cur_layer_prop = layer_list->list[i];
         if (!cur_layer_prop.keep) {
             loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
-                       "loaderRemoveLayersNotInOverride : Implicit meta-layers are active, and layer %s is not list"
+                       "loaderRemoveLayersNotInImplicitMetaLayers : Implicit meta-layers are active, and layer %s is not list"
                        " inside of any.  So removing layer from current layer list.",
                        cur_layer_prop.info.layerName);
 
@@ -2568,6 +2584,9 @@ static void VerifyAllMetaLayers(struct loader_instance *inst, struct loader_laye
 
             // Delete the component layers
             loader_instance_heap_free(inst, prop->component_layer_names);
+            if (prop->blacklist_layer_names != NULL) {
+                loader_instance_heap_free(inst, prop->blacklist_layer_names);
+            }
 
             // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
             // overlapping the source and destination addresses.
@@ -2603,7 +2622,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
     char *temp;
     char *name, *type, *library_path_str, *api_version;
     char *implementation_version, *description;
-    cJSON *ext_item, *library_path, *component_layers, *override_paths;
+    cJSON *ext_item, *library_path, *component_layers, *override_paths, *blacklisted_layers;
     VkExtensionProperties ext_prop;
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     struct loader_layer_properties *props = NULL;
@@ -2848,6 +2867,43 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
                    "Layer missing both library_path and component_layers fields.  One or the "
                    "other MUST be defined.  Skipping this layer");
         goto out;
+    }
+
+    props->num_blacklist_layers = 0;
+    props->blacklist_layer_names = NULL;
+    blacklisted_layers = cJSON_GetObjectItem(layer_node, "blacklisted_layers");
+    if (blacklisted_layers != NULL && strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
+        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                   "Layer %s contains a blacklist, but a blacklist can only be provided by the override metalayer. "
+                   "This blacklist will be ignored.",
+                   name);
+    } else if (blacklisted_layers != NULL) {
+        props->num_blacklist_layers = cJSON_GetArraySize(blacklisted_layers);
+
+        // Allocate the blacklist array
+        props->blacklist_layer_names = loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * props->num_blacklist_layers,
+                                                                  VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (props->blacklist_layer_names == NULL) {
+            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+
+        // Copy the blacklisted layers into the array
+        for (i = 0; i < (int)props->num_blacklist_layers; ++i) {
+            cJSON *black_layer = cJSON_GetArrayItem(blacklisted_layers, i);
+            if (black_layer == NULL) {
+                continue;
+            }
+            temp = cJSON_Print(black_layer);
+            if (temp == NULL) {
+                result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+            temp[strlen(temp) - 1] = '\0';
+            strncpy(props->blacklist_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
+            props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
+            cJSON_Free(temp);
+        }
     }
 
     override_paths = cJSON_GetObjectItem(layer_node, "override_paths");
@@ -3137,12 +3193,17 @@ out:
 #undef GET_JSON_OBJECT
 
     if (VK_SUCCESS != result && NULL != props) {
+        if (NULL != props->blacklist_layer_names) {
+            loader_instance_heap_free(inst, props->blacklist_layer_names);
+        }
         if (NULL != props->component_layer_names) {
             loader_instance_heap_free(inst, props->component_layer_names);
         }
         if (NULL != props->override_paths) {
             loader_instance_heap_free(inst, props->override_paths);
         }
+        props->num_blacklist_layers = 0;
+        props->blacklist_layer_names = NULL;
         props->num_component_layers = 0;
         props->component_layer_names = NULL;
         props->num_override_paths = 0;
@@ -4240,7 +4301,7 @@ void loaderScanForLayers(struct loader_instance *inst, struct loader_layer_list 
     VerifyAllMetaLayers(inst, instance_layers, &override_layer_valid);
 
     if (override_layer_valid) {
-        loaderRemoveLayersNotInOverride(inst, instance_layers);
+        loaderRemoveLayersInBlacklist(inst, instance_layers);
         if (NULL != inst) {
             inst->override_layer_present = true;
         }
@@ -4347,7 +4408,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
 
     // If either the override layer or an implicit meta-layer are present, we need to add
     // explicit layer info as well.  Not to worry, though, all explicit layers not included
-    // in the override layer will be removed below in loaderRemoveLayersNotInOverride().
+    // in the override layer will be removed below in loaderRemoveLayersInBlacklist().
     if (override_layer_valid || implicit_metalayer_present) {
         if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, "VK_LAYER_PATH", override_paths,
                                              VK_ELAYERS_INFO_REGISTRY_LOC, VK_ELAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
@@ -4384,7 +4445,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
     VerifyAllMetaLayers(inst, instance_layers, &override_layer_valid);
 
     if (override_layer_valid) {
-        loaderRemoveLayersNotInOverride(inst, instance_layers);
+        loaderRemoveLayersInBlacklist(inst, instance_layers);
         if (NULL != inst) {
             inst->override_layer_present = true;
         }

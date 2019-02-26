@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2017 The Khronos Group Inc.
- * Copyright (c) 2014-2017 Valve Corporation
- * Copyright (c) 2014-2017 LunarG, Inc.
+ * Copyright (c) 2014-2019 The Khronos Group Inc.
+ * Copyright (c) 2014-2019 Valve Corporation
+ * Copyright (c) 2014-2019 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
  * Author: Chia-I Wu <olvaffe@gmail.com>
  * Author: Chia-I Wu <olv@lunarg.com>
  * Author: Mark Lobodzinski <mark@LunarG.com>
+ * Author: Lenny Komow <lenny@lunarg.com>
  *
  */
 
@@ -152,6 +153,8 @@ struct loader_layer_properties {
     bool has_expiration;
     struct loader_override_expiration expiration;
     bool keep;
+    uint32_t num_blacklist_layers;
+    char (*blacklist_layer_names)[MAX_STRING_SIZE];
 };
 
 struct loader_layer_list {
