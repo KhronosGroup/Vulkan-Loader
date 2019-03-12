@@ -698,12 +698,9 @@ target-specific extensions:
 | Windowing System | Extensions available |
 |----------------|--------------------|
 | Windows  | VK_KHR_win32_surface |
-| Linux (Default) |  VK_KHR_xcb_surface and VK_KHR_xlib_surface |
 | Linux (Wayland) | VK_KHR_wayland_surface |
+| Linux (X11) |  VK_KHR_xcb_surface and VK_KHR_xlib_surface |
 | macOS (MoltenVK) | VK_MVK_macos_surface |
-
-**NOTE:** Wayland is not fully supported at this time.  Wayland
-support is present, but should be considered Beta quality.
 
 It is important to understand that while the loader may support the various
 entry points for these extensions, there is a handshake required to actually
