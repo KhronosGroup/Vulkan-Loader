@@ -2503,7 +2503,7 @@ If the loader handles the management of the `VkSurfaceKHR` objects:
     functions without involving the ICDs.
     * Where XXX stands for the Windowing System name:
       * Wayland
-      * Xcb
+      * XCB
       * Xlib
       * Windows
       * Android
@@ -2515,7 +2515,7 @@ If the loader handles the management of the `VkSurfaceKHR` objects:
     `VkIcdSurfaceXXX` structure.
  4. The first field of all the `VkIcdSurfaceXXX` structures is a
 `VkIcdSurfaceBase` enumerant that indicates whether the
-    surface object is Win32, Xcb, Xlib, or Wayland.
+    surface object is Win32, XCB, Xlib, or Wayland.
 
 The ICD may choose to handle `VkSurfaceKHR` object creation instead.  If an ICD
 desires to handle creating and destroying it must do the following:
