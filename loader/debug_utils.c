@@ -271,8 +271,6 @@ static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugUtilsMessengerEXT(VkIn
 
     inst->disp->layer_inst_disp.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
 
-    util_DestroyDebugUtilsMessenger(inst, messenger, pAllocator);
-
     loader_platform_thread_unlock_mutex(&loader_lock);
 }
 
@@ -412,6 +410,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
         }
         storage_idx++;
     }
+
+    util_DestroyDebugUtilsMessenger(inst, messenger, pAllocator);
 
 #if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
     {
@@ -670,8 +670,6 @@ static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugReportCallbackEXT(VkIn
 
     inst->disp->layer_inst_disp.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
 
-    util_DestroyDebugReportCallback(inst, callback, pAllocator);
-
     loader_platform_thread_unlock_mutex(&loader_lock);
 }
 
@@ -820,6 +818,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugReportCallbackEXT(VkInstance i
         }
         storage_idx++;
     }
+
+    util_DestroyDebugReportCallback(inst, callback, pAllocator);
 
 #if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
     {
