@@ -209,8 +209,10 @@ struct loader_device {
     struct {
         bool khr_swapchain_enabled;
         bool khr_display_swapchain_enabled;
+        bool khr_device_group_enabled;
         bool ext_debug_marker_enabled;
         bool ext_debug_utils_enabled;
+        bool ext_full_screen_exclusive_enabled;
     } extensions;
 
     struct loader_device *next;

@@ -111,11 +111,15 @@ def makeGenOpts(args):
     # Defaults for generating re-inclusion protection wrappers (or not)
     protectFeature = protect
 
+    # An API style conventions object
+    conventions = VulkanConventions()
+
     # Loader Generators
     # Options for dispatch table helper generator
     genOpts['vk_dispatch_table_helper.h'] = [
           DispatchTableHelperOutputGenerator,
           DispatchTableHelperOutputGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_dispatch_table_helper.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -138,6 +142,7 @@ def makeGenOpts(args):
     genOpts['vk_layer_dispatch_table.h'] = [
           LoaderExtensionOutputGenerator,
           LoaderExtensionGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_layer_dispatch_table.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -160,6 +165,7 @@ def makeGenOpts(args):
     genOpts['vk_loader_extensions.h'] = [
           LoaderExtensionOutputGenerator,
           LoaderExtensionGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_loader_extensions.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -182,6 +188,7 @@ def makeGenOpts(args):
     genOpts['vk_loader_extensions.c'] = [
           LoaderExtensionOutputGenerator,
           LoaderExtensionGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_loader_extensions.c',
             directory         = directory,
             apiname           = 'vulkan',
@@ -204,6 +211,7 @@ def makeGenOpts(args):
     genOpts['vk_enum_string_helper.h'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_enum_string_helper.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -227,6 +235,7 @@ def makeGenOpts(args):
     genOpts['vk_safe_struct.h'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_safe_struct.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -250,6 +259,7 @@ def makeGenOpts(args):
     genOpts['vk_safe_struct.cpp'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_safe_struct.cpp',
             directory         = directory,
             apiname           = 'vulkan',
@@ -273,6 +283,7 @@ def makeGenOpts(args):
     genOpts['vk_object_types.h'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_object_types.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -296,6 +307,7 @@ def makeGenOpts(args):
     genOpts['vk_extension_helper.h'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_extension_helper.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -319,6 +331,7 @@ def makeGenOpts(args):
     genOpts['vk_typemap_helper.h'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
             filename          = 'vk_typemap_helper.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -452,6 +465,7 @@ if __name__ == '__main__':
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
     from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
+    from vkconventions import VulkanConventions
 
     # This splits arguments which are space-separated lists
     args.feature = [name for arg in args.feature for name in arg.split()]

@@ -29,6 +29,7 @@ from common_codegen import *
 # DispatchTableHelperOutputGeneratorOptions - subclass of GeneratorOptions.
 class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -47,7 +48,7 @@ class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
                  apientryp = '',
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
