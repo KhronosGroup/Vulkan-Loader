@@ -45,6 +45,11 @@ current assignee.
 * Please base your fixes on the master branch.
   SDK branches are generally not updated except for critical fixes needed to
   repair an SDK release.
+* The resulting Pull Request will be assigned to a repository maintainer.
+  It is the maintainer's responsibility to ensure the Pull Request
+  passes the Google/LunarG internal CI processes.
+  Once the Pull Request has been approved and is passing internal CI,
+  a repository maintainer will merge the PR.
 
 #### Coding Conventions and Formatting
 
