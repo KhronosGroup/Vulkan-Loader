@@ -111,6 +111,10 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
             continue;
         }
 #endif  // VK_USE_PLATFORM_IOS_MVK
+        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) == 0) {
+            ptr_instance->wsi_headless_surface_enabled = true;
+            continue;
+        }
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_DISPLAY_EXTENSION_NAME) == 0) {
             ptr_instance->wsi_display_enabled = true;
             continue;
@@ -973,6 +977,75 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+// Functions for the VK_EXT_headless_surface extension:
+
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    const VkLayerInstanceDispatchTable *disp;
+    disp = loader_get_instance_layer_dispatch(instance);
+    VkResult res;
+
+    res = disp->CreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    return res;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance instance,
+                                                                   const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkSurfaceKHR *pSurface) {
+    struct loader_instance *inst = loader_get_instance(instance);
+    VkIcdSurface *pIcdSurface = NULL;
+    VkResult vkRes = VK_SUCCESS;
+    uint32_t i = 0;
+
+    if (!inst->wsi_headless_surface_enabled) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "VK_EXT_headless_surface extension not enabled.  "
+                   "vkCreateHeadlessSurfaceEXT not executed!\n");
+        return VK_SUCCESS;
+    }
+
+    // Next, if so, proceed with the implementation of this function:
+    pIcdSurface = AllocateIcdSurfaceStruct(inst, sizeof(pIcdSurface->headless_surf.base), sizeof(pIcdSurface->headless_surf));
+    if (pIcdSurface == NULL) {
+        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    pIcdSurface->headless_surf.base.platform = VK_ICD_WSI_PLATFORM_HEADLESS;
+    // Loop through each ICD and determine if they need to create a surface
+    for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
+            if (NULL != icd_term->dispatch.CreateHeadlessSurfaceEXT) {
+                vkRes = icd_term->dispatch.CreateHeadlessSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
+                                                                    &pIcdSurface->real_icd_surfaces[i]);
+                if (VK_SUCCESS != vkRes) {
+                    goto out;
+                }
+            }
+        }
+    }
+
+    *pSurface = (VkSurfaceKHR)pIcdSurface;
+
+out:
+
+    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
+        if (NULL != pIcdSurface->real_icd_surfaces) {
+            i = 0;
+            for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
+                }
+            }
+            loader_instance_heap_free(inst, pIcdSurface->real_icd_surfaces);
+        }
+        loader_instance_heap_free(inst, pIcdSurface);
+    }
+
+    return vkRes;
+}
+
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 
 // Functions for the VK_MVK_macos_surface extension:
@@ -1785,6 +1858,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
         return true;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 
     // Functions for the VK_MVK_macos_surface extension:
@@ -1801,6 +1875,12 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
         return true;
     }
 #endif  // VK_USE_PLATFORM_IOS_MVK
+
+    // Functions for the VK_EXT_headless_surface extension:
+    if (!strcmp("vkCreateHeadlessSurfaceEXT", name)) {
+        *addr = ptr_instance->wsi_headless_surface_enabled ? (void *)vkCreateHeadlessSurfaceEXT : NULL;
+        return true;
+    }
 
     // Functions for VK_KHR_display extension:
     if (!strcmp("vkGetPhysicalDeviceDisplayPropertiesKHR", name)) {
