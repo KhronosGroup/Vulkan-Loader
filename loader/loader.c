@@ -5645,17 +5645,17 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
         // Not in global list, search layer extension lists
         struct loader_layer_properties *layer_prop = NULL;
         for (uint32_t j = 0; NULL == extension_prop && j < expanded_layers.count; ++j) {
-            layer_prop = loaderFindLayerProperty(pCreateInfo->ppEnabledLayerNames[j], instance_layers);
-            if (NULL == layer_prop) {
-                // Should NOT get here, loaderValidateLayers should have already filtered this case out.
-                continue;
-            }
-
             extension_prop =
                 get_extension_property(pCreateInfo->ppEnabledExtensionNames[i], &expanded_layers.list[j].instance_extension_list);
             if (extension_prop) {
                 // Found the extension in one of the layers enabled by the app.
                 break;
+            }
+
+            layer_prop = loaderFindLayerProperty(pCreateInfo->ppEnabledLayerNames[j], instance_layers);
+            if (NULL == layer_prop) {
+                // Should NOT get here, loaderValidateLayers should have already filtered this case out.
+                continue;
             }
         }
 
