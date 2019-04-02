@@ -1654,6 +1654,25 @@ bool loaderImplicitLayerIsEnabled(const struct loader_instance *inst, const stru
         enable = checkExpiration(inst, prop);
     }
 
+    // Enable this layer if it is included in the override layer
+    if (inst != NULL && inst->override_layer_present) {
+        struct loader_layer_properties *override = NULL;
+        for (uint32_t i = 0; i < inst->instance_layer_list.count; ++i) {
+            if (strcmp(inst->instance_layer_list.list[i].info.layerName, VK_OVERRIDE_LAYER_NAME) == 0) {
+                override = &inst->instance_layer_list.list[i];
+                break;
+            }
+        }
+        if (override != NULL) {
+            for (uint32_t i = 0; i < override->num_component_layers; ++i) {
+                if (strcmp(override->component_layer_names[i], prop->info.layerName) == 0) {
+                    enable = true;
+                    break;
+                }
+            }
+        }
+    }
+
     return enable;
 }
 
@@ -5060,10 +5079,6 @@ static void loaderAddImplicitLayers(const struct loader_instance *inst, struct l
                                     struct loader_layer_list *expanded_target_list, const struct loader_layer_list *source_list) {
     for (uint32_t src_layer = 0; src_layer < source_list->count; src_layer++) {
         const struct loader_layer_properties *prop = &source_list->list[src_layer];
-        // Only directly add the override layer here, if it includes any others, it should be done below
-        if (inst->override_layer_present && !prop->is_override) {
-            continue;
-        }
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
             loaderAddImplicitLayer(inst, prop, target_list, expanded_target_list, source_list);
         }
@@ -5126,19 +5141,13 @@ VkResult loaderEnableInstanceLayers(struct loader_instance *inst, const VkInstan
     // Add any implicit layers first
     loaderAddImplicitLayers(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
 
-    // If the override layer is enabled, only use it, don't use the environment or application layer lists.
-    if (!inst->override_layer_present) {
-        // Add any layers specified via environment variable next
-        loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS", &inst->app_activated_layer_list,
-                                   &inst->expanded_activated_layer_list, instance_layers);
+    // Add any layers specified via environment variable next
+    loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS", &inst->app_activated_layer_list,
+                               &inst->expanded_activated_layer_list, instance_layers);
 
-        // Add layers specified by the application
-        err = loaderAddLayerNamesToList(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
-                                        pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
-    } else {
-        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                   "loaderEnableInstanceLayers: Override layer is active, disabling all non-included layers");
-    }
+    // Add layers specified by the application
+    err = loaderAddLayerNamesToList(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
+                                    pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
 
     for (i = 0; i < inst->expanded_activated_layer_list.count; i++) {
         // Verify that the layer api version is at least that of the application's request, if not, throw a warning since
