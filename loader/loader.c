@@ -1052,7 +1052,7 @@ static bool loaderFindLayerNameInMetaLayer(const struct loader_instance *inst, c
 // Search the override layer's blacklist for a layer matching the given layer name
 static bool loaderFindLayerNameInBlacklist(const struct loader_instance *inst, const char *layer_name,
                                            struct loader_layer_list *layer_list, struct loader_layer_properties *meta_layer_props) {
-    for (uint32_t black_layer = 0; black_layer < meta_layer_props->num_blacklist_layers; black_layer++) {
+    for (uint32_t black_layer = 0; black_layer < meta_layer_props->num_blacklist_layers; ++black_layer) {
         if (!strcmp(meta_layer_props->blacklist_layer_names[black_layer], layer_name)) {
             return true;
         }
@@ -2641,7 +2641,11 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
     char *temp;
     char *name, *type, *library_path_str, *api_version;
     char *implementation_version, *description;
-    cJSON *ext_item, *library_path, *component_layers, *override_paths, *blacklisted_layers;
+    cJSON *ext_item;
+    cJSON *library_path;
+    cJSON *component_layers;
+    cJSON *override_paths;
+    cJSON *blacklisted_layers;
     VkExtensionProperties ext_prop;
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     struct loader_layer_properties *props = NULL;
@@ -2891,37 +2895,39 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
     props->num_blacklist_layers = 0;
     props->blacklist_layer_names = NULL;
     blacklisted_layers = cJSON_GetObjectItem(layer_node, "blacklisted_layers");
-    if (blacklisted_layers != NULL && strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
-        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                   "Layer %s contains a blacklist, but a blacklist can only be provided by the override metalayer. "
-                   "This blacklist will be ignored.",
-                   name);
-    } else if (blacklisted_layers != NULL) {
-        props->num_blacklist_layers = cJSON_GetArraySize(blacklisted_layers);
+    if (blacklisted_layers != NULL) {
+        if (strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
+            loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                       "Layer %s contains a blacklist, but a blacklist can only be provided by the override metalayer. "
+                       "This blacklist will be ignored.",
+                       name);
+        } else {
+            props->num_blacklist_layers = cJSON_GetArraySize(blacklisted_layers);
 
-        // Allocate the blacklist array
-        props->blacklist_layer_names = loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * props->num_blacklist_layers,
-                                                                  VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (props->blacklist_layer_names == NULL) {
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-
-        // Copy the blacklisted layers into the array
-        for (i = 0; i < (int)props->num_blacklist_layers; ++i) {
-            cJSON *black_layer = cJSON_GetArrayItem(blacklisted_layers, i);
-            if (black_layer == NULL) {
-                continue;
-            }
-            temp = cJSON_Print(black_layer);
-            if (temp == NULL) {
+            // Allocate the blacklist array
+            props->blacklist_layer_names = loader_instance_heap_alloc(
+                inst, sizeof(char[MAX_STRING_SIZE]) * props->num_blacklist_layers, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (props->blacklist_layer_names == NULL) {
                 result = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
-            temp[strlen(temp) - 1] = '\0';
-            strncpy(props->blacklist_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
-            props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
-            cJSON_Free(temp);
+
+            // Copy the blacklisted layers into the array
+            for (i = 0; i < (int)props->num_blacklist_layers; ++i) {
+                cJSON *black_layer = cJSON_GetArrayItem(blacklisted_layers, i);
+                if (black_layer == NULL) {
+                    continue;
+                }
+                temp = cJSON_Print(black_layer);
+                if (temp == NULL) {
+                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                }
+                temp[strlen(temp) - 1] = '\0';
+                strncpy(props->blacklist_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
+                props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
+                cJSON_Free(temp);
+            }
         }
     }
 
