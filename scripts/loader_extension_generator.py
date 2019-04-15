@@ -923,7 +923,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                                'vkGetPhysicalDeviceDisplayProperties2KHR',
                                'vkGetPhysicalDeviceDisplayPlaneProperties2KHR',
                                'vkGetDisplayModeProperties2KHR',
-                               'vkGetDisplayPlaneCapabilities2KHR']
+                               'vkGetDisplayPlaneCapabilities2KHR',
+                               'vkGetPhysicalDeviceSurfacePresentModes2EXT',
+                               'vkGetDeviceGroupSurfacePresentModes2EXT']
 
         for ext_cmd in self.ext_commands:
             if (ext_cmd.ext_name in WSI_EXT_NAMES or
