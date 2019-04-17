@@ -1247,9 +1247,9 @@ appropriate type to call into the next entity.
   * This can be implemented in various ways but
 for clarity, will be referred to as a dispatch table.
 - A layer can use the `VkLayerDispatchTable` structure as a device dispatch
-table (see include/vulkan/vk_layer.h).
+table (see include/vulkan/vk_dispatch_table_helper.h).
 - A layer can use the `VkLayerInstanceDispatchTable` structure as a instance
-dispatch table (see include/vulkan/vk_layer.h).
+dispatch table (see include/vulkan/vk_dispatch_table_helper.h).
 - A Layer's `vkGetInstanceProcAddr` function uses the next entity's
 `vkGetInstanceProcAddr` to call down the chain for unknown (i.e.
 non-intercepted) functions.
