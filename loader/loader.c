@@ -393,7 +393,6 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     cmd_line_size -= 1;
     size_t original_size = cmd_line_size;
 
-    va_start(ap, format);
     if ((msg_type & LOADER_INFO_BIT) != 0) {
         strncat(cmd_line_msg, "INFO", cmd_line_size);
         cmd_line_size -= 4;
@@ -1123,7 +1122,7 @@ void loaderRemoveLayersInBlacklist(const struct loader_instance *inst, struct lo
         // If found in the override layer's blacklist, remove it
         if (loaderFindLayerNameInBlacklist(inst, cur_layer_name, layer_list, override_prop)) {
             loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
-                       "loaderRemoveLayersInBlacklist: Override layer is active and layer % is in the blacklist"
+                       "loaderRemoveLayersInBlacklist: Override layer is active and layer %s is in the blacklist"
                        " inside of it. Removing that layer from current layer list.",
                        cur_layer_name);
 
@@ -1534,7 +1533,9 @@ VkResult loaderAddLayerPropertiesToList(const struct loader_instance *inst, stru
     struct loader_layer_properties *layer;
 
     if (list->list == NULL || list->capacity == 0) {
-        loaderInitLayerList(inst, list);
+        if (!loaderInitLayerList(inst, list)) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
     }
 
     if (list->list == NULL) return VK_SUCCESS;
@@ -4703,8 +4704,8 @@ static bool loader_add_dev_ext_table(struct loader_instance *inst, uint32_t *ptr
     if (list->capacity == 0) {
         list->index = loader_instance_heap_alloc(inst, 8 * sizeof(*(list->index)), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (list->index == NULL) {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "loader_add_dev_ext_table: Failed to allocate memory for list index",
-                       funcName);
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "loader_add_dev_ext_table: Failed to allocate memory for list index of function %s", funcName);
             return false;
         }
         list->capacity = 8 * sizeof(*(list->index));
@@ -4713,7 +4714,7 @@ static bool loader_add_dev_ext_table(struct loader_instance *inst, uint32_t *ptr
                                                      VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_ptr) {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "loader_add_dev_ext_table: Failed to reallocate memory for list index", funcName);
+                       "loader_add_dev_ext_table: Failed to reallocate memory for list index of function %s", funcName);
             return false;
         }
         list->index = new_ptr;
@@ -5531,7 +5532,7 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
     } else {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "loader_create_device_chain: Failed to find \'vkCreateDevice\' "
-                   "in layer %s");
+                   "in layers or ICD");
         // Couldn't find CreateDevice function!
         return VK_ERROR_INITIALIZATION_FAILED;
     }
@@ -5983,7 +5984,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
         if (NULL == filtered_extension_names) {
             loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                        "terminator_CreateDevice: Failed to create extension name "
-                       "storage for %d extensions %d",
+                       "storage for %d extensions",
                        pCreateInfo->enabledExtensionCount);
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
