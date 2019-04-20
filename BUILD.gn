@@ -1,0 +1,256 @@
+# Copyright (C) 2018-2019 The ANGLE Project Authors.
+# Copyright (C) 2019 LunarG, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build_overrides/vulkan_loader.gni")
+
+vulkan_registry_script_files = [
+  "$vulkan_headers_dir/registry/cgenerator.py",
+  "$vulkan_headers_dir/registry/conventions.py",
+  "$vulkan_headers_dir/registry/generator.py",
+  "$vulkan_headers_dir/registry/reg.py",
+  "$vulkan_headers_dir/registry/vkconventions.py",
+  "$vulkan_headers_dir/registry/vk.xml",
+]
+
+# Fuchsia has non-upstream changes to the vulkan loader, so we don't want
+# to build it from upstream sources.
+assert(!is_fuchsia)
+
+if (!is_android) {
+  vulkan_undefine_configs = []
+}
+if (is_win) {
+  vulkan_undefine_configs += [
+    "//build/config/win:nominmax",
+    "//build/config/win:unicode",
+  ]
+}
+
+vulkan_gen_dir = "$target_gen_dir/$vulkan_gen_subdir"
+raw_vulkan_gen_dir = rebase_path(vulkan_gen_dir, root_build_dir)
+
+# Vulkan helper scripts
+# ---------------------
+
+helper_script_and_deps = [
+  [
+    "vulkan_gen_dispatch_table_helper_h",
+    "vk_dispatch_table_helper.h",
+    "dispatch_table_helper_generator.py",
+  ],
+  [
+    "vulkan_gen_enum_string_helper",
+    "vk_enum_string_helper.h",
+    "helper_file_generator.py",
+  ],
+  [
+    "vulkan_gen_extension_helper",
+    "vk_extension_helper.h",
+    "helper_file_generator.py",
+  ],
+  [
+    "vulkan_gen_layer_dispatch_table_h",
+    "vk_layer_dispatch_table.h",
+    "loader_extension_generator.py",
+  ],
+  [
+    "vulkan_gen_loader_extensions_c",
+    "vk_loader_extensions.c",
+    "loader_extension_generator.py",
+  ],
+  [
+    "vulkan_gen_loader_extensions_h",
+    "vk_loader_extensions.h",
+    "loader_extension_generator.py",
+  ],
+  [
+    "vulkan_gen_object_types_h",
+    "vk_object_types.h",
+    "helper_file_generator.py",
+  ],
+  [
+    "vulkan_gen_safe_struct_cpp",
+    "vk_safe_struct.cpp",
+    "helper_file_generator.py",
+  ],
+  [
+    "vulkan_gen_safe_struct_h",
+    "vk_safe_struct.h",
+    "helper_file_generator.py",
+  ],
+  [
+    "vulkan_gen_typemap_helper",
+    "vk_typemap_helper.h",
+    "helper_file_generator.py",
+  ],
+]
+
+# Python scripts needed for codegen, copy them to a temp dir
+# so that all dependencies are together. The reg.py script from
+# the headers repo is required input to loader_genvk.py.
+copy("python_gen_deps") {
+  sources = vulkan_registry_script_files + [
+              "scripts/common_codegen.py",
+              "scripts/dispatch_table_helper_generator.py",
+              "scripts/helper_file_generator.py",
+              "scripts/loader_extension_generator.py",
+              "scripts/loader_genvk.py",
+            ]
+  outputs = [
+    "$vulkan_gen_dir/{{source_file_part}}",
+  ]
+}
+
+foreach(script_and_dep, helper_script_and_deps) {
+  target_name = script_and_dep[0]
+  file = script_and_dep[1]
+  dep = script_and_dep[2]
+  target("action", target_name) {
+    public_deps = [
+      ":python_gen_deps",
+    ]
+    script = "$vulkan_gen_dir/loader_genvk.py"
+    inputs = [
+      "$vulkan_gen_dir/$dep",
+      "$vulkan_gen_dir/common_codegen.py",
+    ]
+    outputs = [
+      "$vulkan_gen_dir/$file",
+    ]
+    args = [
+      "-o",
+      raw_vulkan_gen_dir,
+      "-registry",
+      "$raw_vulkan_gen_dir/vk.xml",
+      "-scripts",
+      raw_vulkan_gen_dir,
+      "$file",
+      "-quiet",
+    ]
+  }
+}
+
+config("vulkan_generated_files_config") {
+  include_dirs = [ vulkan_gen_dir ]
+}
+
+group("vulkan_generate_helper_files") {
+  public_deps = [
+    "$vulkan_headers_dir:vulkan_headers",
+  ]
+  public_configs = [ ":vulkan_generated_files_config" ]
+  foreach(script_and_dep, helper_script_and_deps) {
+    target_name = script_and_dep[0]
+    public_deps += [ ":$target_name" ]
+  }
+}
+
+config("vulkan_internal_config") {
+  defines = [ "VULKAN_NON_CMAKE_BUILD" ]
+  if (is_clang || !is_win) {
+    cflags = [ "-Wno-unused-function" ]
+  }
+  if (is_linux) {
+    defines += [
+      "SYSCONFDIR=\"/etc\"",
+      "FALLBACK_CONFIG_DIRS=\"/etc/xdg\"",
+      "FALLBACK_DATA_DIRS=\"/usr/local/share:/usr/share\"",
+    ]
+  }
+}
+
+# Vulkan loader
+# -------------
+
+config("vulkan_loader_config") {
+  include_dirs = [
+    vulkan_gen_dir,
+    "loader",
+  ]
+  defines = [ "API_NAME=\"Vulkan\"" ] + vulkan_loader_extra_defines
+
+  if (is_win) {
+    cflags = [ "/wd4201" ]
+  }
+  if (is_linux) {
+    # assume secure_getenv() is available
+    defines += [ "HAVE_SECURE_GETENV" ]
+  }
+}
+
+if (!is_android) {
+  if (vulkan_loader_shared) {
+    library_type = "shared_library"
+  } else {
+    library_type = "static_library"
+  }
+
+  target(library_type, "libvulkan") {
+    sources = [
+      "loader/asm_offset.c",
+      "loader/cJSON.c",
+      "loader/cJSON.h",
+      "loader/debug_utils.c",
+      "loader/debug_utils.h",
+      "loader/dev_ext_trampoline.c",
+      "loader/extension_manual.c",
+      "loader/extension_manual.h",
+      "loader/gpa_helper.h",
+      "loader/loader.c",
+      "loader/loader.h",
+      "loader/murmurhash.c",
+      "loader/murmurhash.h",
+      "loader/phys_dev_ext.c",
+      "loader/trampoline.c",
+
+      # TODO(jmadill): Use assembler where available.
+      "loader/unknown_ext_chain.c",
+      "loader/vk_loader_platform.h",
+      "loader/wsi.c",
+      "loader/wsi.h",
+    ]
+    if (is_win) {
+      sources += [
+        "loader/dirent_on_windows.c",
+        "loader/dirent_on_windows.h",
+      ]
+      if (!is_clang) {
+        cflags = [
+          "/wd4054",  # Type cast from function pointer
+          "/wd4055",  # Type cast from data pointer
+          "/wd4100",  # Unreferenced formal parameter
+          "/wd4152",  # Nonstandard extension used (pointer conversion)
+          "/wd4201",  # Nonstandard extension used: nameless struct/union
+          "/wd4214",  # Nonstandard extension used: bit field types other than int
+          "/wd4232",  # Nonstandard extension used: address of dllimport is not static
+          "/wd4305",  # Type cast truncation
+          "/wd4706",  # Assignment within conditional expression
+          "/wd4996",  # Unsafe stdlib function
+        ]
+      }
+    }
+    deps = [
+      ":vulkan_generate_helper_files",
+    ]
+    public_deps = [
+      "$vulkan_headers_dir:vulkan_headers",
+    ]
+    configs -= [ "//build/config/compiler:chromium_code" ]
+    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs += [ ":vulkan_internal_config" ]
+    public_configs = [ ":vulkan_loader_config" ]
+    configs -= vulkan_undefine_configs
+  }
+}
