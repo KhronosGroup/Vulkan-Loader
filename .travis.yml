@@ -51,11 +51,6 @@ before_install:
       sudo apt-get -y install libxkbcommon-dev libwayland-dev libxrandr-dev libx11-xcb-dev
     fi
   - |
-    if [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
-      # We need to upgrade to a newer python
-      brew upgrade python3
-    fi
-  - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]] || [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
       # Install dependencies
       python scripts/update_deps.py --dir=external $UPDATE_DEPS_EXTRA_OPTIONS

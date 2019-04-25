@@ -1,5 +1,17 @@
-# Architecture of the Vulkan Loader Interfaces
+<!-- markdownlint-disable MD041 -->
+[![Khronos Vulkan][1]][2]
 
+[1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
+[2]: https://www.khronos.org/vulkan/
+
+# Architecture of the Vulkan Loader Interfaces
+[![Creative Commons][3]][4]
+
+<!-- Copyright &copy; 2015-2019 LunarG, Inc. -->
+
+
+[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
+[4]: https://creativecommons.org/licenses/by-nd/4.0/
 ## Table of Contents
   * [Overview](#overview)
     * [Who Should Read This Document](#who-should-read-this-document)
@@ -1235,9 +1247,9 @@ appropriate type to call into the next entity.
   * This can be implemented in various ways but
 for clarity, will be referred to as a dispatch table.
 - A layer can use the `VkLayerDispatchTable` structure as a device dispatch
-table (see include/vulkan/vk_layer.h).
+table (see include/vulkan/vk_dispatch_table_helper.h).
 - A layer can use the `VkLayerInstanceDispatchTable` structure as a instance
-dispatch table (see include/vulkan/vk_layer.h).
+dispatch table (see include/vulkan/vk_dispatch_table_helper.h).
 - A Layer's `vkGetInstanceProcAddr` function uses the next entity's
 `vkGetInstanceProcAddr` to call down the chain for unknown (i.e.
 non-intercepted) functions.

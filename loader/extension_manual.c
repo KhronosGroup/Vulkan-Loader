@@ -362,3 +362,70 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetRandROutputDisplayEXT(VkPhysicalDev
 }
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
+    uint32_t*                                   pPresentModeCount,
+    VkPresentModeKHR*                           pPresentModes) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceSurfacePresentModes2EXT(unwrapped_phys_dev, pSurfaceInfo, pPresentModeCount, pPresentModes);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModes2EXT(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
+    uint32_t*                                   pPresentModeCount,
+    VkPresentModeKHR*                           pPresentModes) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT) {
+        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSurfacePresentModes2EXT");
+    }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(pSurfaceInfo->surface);
+    uint8_t icd_index = phys_dev_term->icd_index;
+    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)icd_surface->real_icd_surfaces[icd_index]) {
+        const VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy = {
+            .sType = pSurfaceInfo->sType,
+            .pNext = pSurfaceInfo->pNext,
+            .surface = icd_surface->real_icd_surfaces[icd_index],
+        };
+        return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, &surface_info_copy, pPresentModeCount, pPresentModes);
+    }
+    return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, pSurfaceInfo, pPresentModeCount, pPresentModes);
+}
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(
+    VkDevice                                    device,
+    const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(
+    VkDevice                                    device,
+    const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT) {
+        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pSurfaceInfo->surface;
+        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+            const VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy = {
+                .sType = pSurfaceInfo->sType,
+                .pNext = pSurfaceInfo->pNext,
+                .surface = icd_surface->real_icd_surfaces[icd_index],
+            };
+            return icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, &surface_info_copy, pModes);
+        }
+        return icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
+    }
+    return VK_SUCCESS;
+}
