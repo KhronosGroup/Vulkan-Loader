@@ -79,16 +79,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     instance_data->instance_dispatch_table->EnumeratePhysicalDevices(*pInstance, &count, devices.data());
     VkDevice device;
     auto device_create_info = VkDeviceCreateInfo{
-              VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,  // sType
-              nullptr,                               // pNext
-              0,                                     // flags
-              0,                                     // queueCreateInfoCount
-              nullptr,                               // pQueueCreateInfos
-              0,                                     // enabledLayerCount
-              nullptr,                               // ppEnabledLayerNames
-              0,                                     // enabledExtensionCount
-              nullptr,                               // ppEnabledExtensionNames
-              nullptr                                // pEnabledFeatures
+        VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,  // sType
+        nullptr,                               // pNext
+        0,                                     // flags
+        0,                                     // queueCreateInfoCount
+        nullptr,                               // pQueueCreateInfos
+        0,                                     // enabledLayerCount
+        nullptr,                               // ppEnabledLayerNames
+        0,                                     // enabledExtensionCount
+        nullptr,                               // ppEnabledExtensionNames
+        nullptr                                // pEnabledFeatures
     };
     auto deviceQueue = VkDeviceQueueCreateInfo{};
     deviceQueue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -102,7 +102,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     PFN_vkGetDeviceProcAddr newGDPA = nullptr;
     layer_create_device(*pInstance, devices[0], &device_create_info, nullptr, &device, vkGetInstanceProcAddr, &newGDPA);
     assert(newGDPA != nullptr);
-    PFN_vkDestroyDevice destroy = (PFN_vkDestroyDevice) newGDPA(device, "vkDestroyDevice");
+    PFN_vkDestroyDevice destroy = (PFN_vkDestroyDevice)newGDPA(device, "vkDestroyDevice");
     layer_destroy_device(device, nullptr, destroy);
 
     std::cout << "VK_LAYER_LUNARG_test: device count " << count << '\n';

@@ -5205,8 +5205,10 @@ bool loaderGetLayerInterfaceVersion(PFN_vkNegotiateLoaderLayerInterfaceVersion f
     return true;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-						   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, PFN_vkGetInstanceProcAddr layerGIPA, PFN_vkGetDeviceProcAddr *nextGDPA) {
+VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, VkPhysicalDevice physicalDevice,
+                                                          const VkDeviceCreateInfo *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                                          PFN_vkGetInstanceProcAddr layerGIPA, PFN_vkGetDeviceProcAddr *nextGDPA) {
     VkResult res;
     VkPhysicalDevice internal_device = VK_NULL_HANDLE;
     struct loader_device *dev = NULL;
@@ -5214,13 +5216,13 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
 
     assert(pCreateInfo->queueCreateInfoCount >= 1);
 
-    if(instance != NULL) {
-      inst = loader_get_instance(instance);
-      internal_device = physicalDevice;
+    if (instance != NULL) {
+        inst = loader_get_instance(instance);
+        internal_device = physicalDevice;
     } else {
-      struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
-      internal_device = phys_dev->phys_dev;
-      inst = (struct loader_instance *)phys_dev->this_instance;
+        struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
+        internal_device = phys_dev->phys_dev;
+        inst = (struct loader_instance *)phys_dev->this_instance;
     }
 
     // Get the physical device (ICD) extensions
@@ -5233,13 +5235,13 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
     }
 
     PFN_vkEnumerateDeviceExtensionProperties enumDeviceExtensionProperties = NULL;
-    if(layerGIPA != NULL) {
-      enumDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties) layerGIPA(instance, "vkEnumerateDeviceExtensionProperties");
+    if (layerGIPA != NULL) {
+        enumDeviceExtensionProperties =
+            (PFN_vkEnumerateDeviceExtensionProperties)layerGIPA(instance, "vkEnumerateDeviceExtensionProperties");
     } else {
-      enumDeviceExtensionProperties = inst->disp->layer_inst_disp.EnumerateDeviceExtensionProperties;
+        enumDeviceExtensionProperties = inst->disp->layer_inst_disp.EnumerateDeviceExtensionProperties;
     }
-    res = loader_add_device_extensions(inst, enumDeviceExtensionProperties, internal_device,
-                                       "Unknown", &icd_exts);
+    res = loader_add_device_extensions(inst, enumDeviceExtensionProperties, internal_device, "Unknown", &icd_exts);
     if (res != VK_SUCCESS) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "vkCreateDevice:  Failed to add extensions to list");
         goto out;
@@ -5331,7 +5333,8 @@ out:
     return res;
 }
 
-VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const VkAllocationCallbacks *pAllocator, PFN_vkDestroyDevice destroyFunction){
+VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const VkAllocationCallbacks *pAllocator,
+                                                       PFN_vkDestroyDevice destroyFunction) {
     struct loader_device *dev;
 
     if (device == VK_NULL_HANDLE) {
@@ -5347,7 +5350,6 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
     loader_remove_logical_device(inst, icd_term, dev, pAllocator);
 }
 
- 
 // Given the list of layers to activate in the loader_instance
 // structure. This function will add a VkLayerInstanceCreateInfo
 // structure to the VkInstanceCreateInfo.pNext pointer.
@@ -5506,7 +5508,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
         create_info_disp.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp;
 
-	VkLayerInstanceCreateInfo create_info_disp2;
+        VkLayerInstanceCreateInfo create_info_disp2;
 
         create_info_disp2.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
         create_info_disp2.function = VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK;
@@ -5517,7 +5519,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
         create_info_disp2.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp2;
 
-	res = fpCreateInstance(&loader_create_info, pAllocator, created_instance);
+        res = fpCreateInstance(&loader_create_info, pAllocator, created_instance);
     } else {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "loader_create_instance_chain: Failed to find "
@@ -5541,7 +5543,8 @@ void loaderActivateInstanceLayerExtensions(struct loader_instance *inst, VkInsta
 
 VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
-                                    struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer, PFN_vkGetDeviceProcAddr *layerNextGDPA) {
+                                    struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
+                                    PFN_vkGetDeviceProcAddr *layerNextGDPA) {
     uint32_t activated_layers = 0;
     VkLayerDeviceLink *layer_device_link_info;
     VkLayerDeviceCreateInfo chain_info;
@@ -5611,8 +5614,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         chain_info.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &chain_info;
 
-	bool done = false;
-	
+        bool done = false;
+
         // Create instance chain of enabled layers
         for (int32_t i = dev->expanded_activated_layer_list.count - 1; i >= 0; i--) {
             struct loader_layer_properties *layer_prop = &dev->expanded_activated_layer_list.list[i];
@@ -5642,15 +5645,15 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                 }
             }
 
-	    if(fpGIPA == callingLayer){
-	      if(layerNextGDPA != NULL){
-		*layerNextGDPA = nextGDPA;
-	      }
-	      done = true;
-	      continue;
-	    }
+            if (fpGIPA == callingLayer) {
+                if (layerNextGDPA != NULL) {
+                    *layerNextGDPA = nextGDPA;
+                }
+                done = true;
+                continue;
+            }
 
-	    if ((fpGDPA = layer_prop->functions.get_device_proc_addr) == NULL) {
+            if ((fpGDPA = layer_prop->functions.get_device_proc_addr) == NULL) {
                 if (strlen(layer_prop->functions.str_gdpa) == 0) {
                     fpGDPA = (PFN_vkGetDeviceProcAddr)loader_platform_get_proc_address(lib_handle, "vkGetDeviceProcAddr");
                     layer_prop->functions.get_device_proc_addr = fpGDPA;
