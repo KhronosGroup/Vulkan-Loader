@@ -332,6 +332,7 @@ struct loader_instance {
 #ifdef VK_USE_PLATFORM_IOS_MVK
     bool wsi_ios_surface_enabled;
 #endif
+    bool wsi_headless_surface_enabled;
     bool wsi_display_enabled;
     bool wsi_display_props2_enabled;
 };

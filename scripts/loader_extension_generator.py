@@ -36,6 +36,7 @@ WSI_EXT_NAMES = ['VK_KHR_surface',
                  'VK_KHR_android_surface',
                  'VK_MVK_macos_surface',
                  'VK_MVK_ios_surface',
+                 'VK_EXT_headless_surface',
                  'VK_KHR_swapchain',
                  'VK_KHR_display_swapchain',
                  'VK_KHR_get_display_properties2']
