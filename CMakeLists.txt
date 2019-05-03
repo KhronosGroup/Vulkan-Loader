@@ -170,23 +170,13 @@ endmacro()
 # Use the macro to generate the source files.
 GenerateFromVkXml(vk_layer_dispatch_table.h loader_extension_generator.py)
 GenerateFromVkXml(vk_dispatch_table_helper.h dispatch_table_helper_generator.py)
-GenerateFromVkXml(vk_safe_struct.h helper_file_generator.py)
-GenerateFromVkXml(vk_safe_struct.cpp helper_file_generator.py)
-GenerateFromVkXml(vk_enum_string_helper.h helper_file_generator.py)
 GenerateFromVkXml(vk_object_types.h helper_file_generator.py)
-GenerateFromVkXml(vk_extension_helper.h helper_file_generator.py)
-GenerateFromVkXml(vk_typemap_helper.h helper_file_generator.py)
 
 # Use a custom target to cause the source files to be generated.
 add_custom_target(generate_helper_files
-                  DEPENDS vk_enum_string_helper.h
-                          vk_safe_struct.h
-                          vk_safe_struct.cpp
-                          vk_object_types.h
+                  DEPENDS vk_object_types.h
                           vk_layer_dispatch_table.h
-                          vk_dispatch_table_helper.h
-                          vk_extension_helper.h
-                          vk_typemap_helper.h)
+                          vk_dispatch_table_helper.h)
 
 set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
