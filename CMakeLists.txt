@@ -15,7 +15,7 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 3.11.3)
+cmake_minimum_required(VERSION 3.12.4)
 
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")

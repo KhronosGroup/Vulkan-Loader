@@ -184,7 +184,7 @@ CMake to generate the native platform files.
     - [2017](https://www.visualstudio.com/vs/downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
-- CMake: Continuous integration tools use [CMake 3.12.2](https://github.com/Kitware/CMake/releases/tag/v3.12.2) for Windows
+- CMake [version 3.12.4](https://github.com/Kitware/CMake/releases/tag/v3.12.4) or greater is required.
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
   - [Git for Windows](http://git-scm.com/download/win) is a popular solution
@@ -360,12 +360,11 @@ that the minimum supported compiler versions are GCC 4.8.2 and Clang 3.4,
 although earlier versions may work. It should be straightforward to adapt this
 repository to other Linux distributions.
 
-
-The continuous integration tools use [CMake 3.12.4](https://github.com/Kitware/CMake/releases/tag/v3.12.4) for Linux
+CMake [version 3.12.4](https://github.com/Kitware/CMake/releases/tag/v3.12.4) or greater is required.
 
 #### Required Package List
 
-    sudo apt-get install git cmake build-essential libx11-xcb-dev \
+    sudo apt-get install git build-essential libx11-xcb-dev \
         libxkbcommon-dev libwayland-dev libxrandr-dev
 
 ### Linux Build
@@ -566,6 +565,8 @@ Finally, rebuild the repository using `cmake` and `make`, as explained above.
 
 Tested on OSX version 10.12.6
 
+- CMake [version 3.12.4](https://github.com/Kitware/CMake/releases/tag/v3.12.4) or greater is required.
+
 Setup Homebrew and components
 
 - Follow instructions on [brew.sh](http://brew.sh) to get Homebrew installed.
@@ -579,7 +580,7 @@ Setup Homebrew and components
 
 - Add packages with the following (may need refinement)
 
-      brew install cmake python python3 git
+      brew install python python3 git
 
 ### Clone the Repository
 
@@ -589,7 +590,7 @@ Clone the Vulkan-ValidationLayers repository:
 
 ### MacOS build
 
-The continuous integration tools use [CMake 3.11.3](https://github.com/Kitware/CMake/releases/tag/v3.11.3) for MacOS
+CMake [version 3.12.4](https://github.com/Kitware/CMake/releases/tag/v3.12.4) or greater is required.
 
 #### CMake Generators
 
