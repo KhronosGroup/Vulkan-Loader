@@ -131,7 +131,6 @@ script:
 notifications:
   email:
     recipients:
-      - karl@lunarg.com
       - lenny@lunarg.com
     on_success: change
     on_failure: always
