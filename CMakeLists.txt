@@ -22,6 +22,8 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment ve
 
 project(Vulkan-Loader)
 
+enable_testing()
+
 add_definitions(-DAPI_NAME="Vulkan")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
