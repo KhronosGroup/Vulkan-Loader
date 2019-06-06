@@ -16,6 +16,8 @@
 # ~~~
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
+add_test(NAME vk_loader_validation_tests COMMAND vk_loader_validation_tests)
+
 set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 if(UNIX)
     set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
