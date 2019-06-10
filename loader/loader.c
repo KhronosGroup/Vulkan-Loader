@@ -6756,11 +6756,56 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
     struct loader_extension_list all_exts = {0};
     struct loader_extension_list icd_exts = {0};
 
-    assert(pLayerName == NULL || strlen(pLayerName) == 0);
-
     // Any layer or trampoline wrapping should be removed at this point in time can just cast to the expected
     // type for VkPhysicalDevice.
     phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+
+    // if we got here with a non-empty pLayerName, look up the extensions
+    // from the json
+    if (pLayerName != NULL && strlen(pLayerName) > 0) {
+        uint32_t count;
+        uint32_t copy_size;
+        const struct loader_instance *inst = phys_dev_term->this_icd_term->this_instance;
+        struct loader_device_extension_list *dev_ext_list = NULL;
+        struct loader_device_extension_list local_ext_list;
+        memset(&local_ext_list, 0, sizeof(local_ext_list));
+        if (vk_string_validate(MaxLoaderStringLength, pLayerName) == VK_STRING_ERROR_NONE) {
+            for (uint32_t i = 0; i < inst->instance_layer_list.count; i++) {
+                struct loader_layer_properties *props = &inst->instance_layer_list.list[i];
+                if (strcmp(props->info.layerName, pLayerName) == 0) {
+                    dev_ext_list = &props->device_extension_list;
+                }
+            }
+
+            count = (dev_ext_list == NULL) ? 0 : dev_ext_list->count;
+            if (pProperties == NULL) {
+                *pPropertyCount = count;
+                loader_destroy_generic_list(inst, (struct loader_generic_list *)&local_ext_list);
+                loader_platform_thread_unlock_mutex(&loader_lock);
+                return VK_SUCCESS;
+            }
+
+            copy_size = *pPropertyCount < count ? *pPropertyCount : count;
+            for (uint32_t i = 0; i < copy_size; i++) {
+                memcpy(&pProperties[i], &dev_ext_list->list[i].props, sizeof(VkExtensionProperties));
+            }
+            *pPropertyCount = copy_size;
+
+            loader_destroy_generic_list(inst, (struct loader_generic_list *)&local_ext_list);
+            if (copy_size < count) {
+                loader_platform_thread_unlock_mutex(&loader_lock);
+                return VK_INCOMPLETE;
+            }
+        } else {
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "vkEnumerateDeviceExtensionProperties:  pLayerName "
+                       "is too long or is badly formed");
+            loader_platform_thread_unlock_mutex(&loader_lock);
+            return VK_ERROR_EXTENSION_NOT_PRESENT;
+        }
+
+        return VK_SUCCESS;
+    }
 
     // This case is during the call down the instance chain with pLayerName == NULL
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
