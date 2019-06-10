@@ -778,61 +778,17 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionPropertie
                                                                                   VkExtensionProperties *pProperties) {
     VkResult res = VK_SUCCESS;
     struct loader_physical_device_tramp *phys_dev;
+    const VkLayerInstanceDispatchTable *disp;
     phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
 
     loader_platform_thread_lock_mutex(&loader_lock);
 
-    // If pLayerName == NULL, then querying ICD extensions, pass this call
-    // down the instance chain which will terminate in the ICD. This allows
-    // layers to filter the extensions coming back up the chain.
-    // If pLayerName != NULL then get layer extensions from manifest file.
-    if (pLayerName == NULL || strlen(pLayerName) == 0) {
-        const VkLayerInstanceDispatchTable *disp;
-
-        disp = loader_get_instance_layer_dispatch(physicalDevice);
-        res = disp->EnumerateDeviceExtensionProperties(phys_dev->phys_dev, NULL, pPropertyCount, pProperties);
-    } else {
-        uint32_t count;
-        uint32_t copy_size;
-        const struct loader_instance *inst = phys_dev->this_instance;
-        struct loader_device_extension_list *dev_ext_list = NULL;
-        struct loader_device_extension_list local_ext_list;
-        memset(&local_ext_list, 0, sizeof(local_ext_list));
-        if (vk_string_validate(MaxLoaderStringLength, pLayerName) == VK_STRING_ERROR_NONE) {
-            for (uint32_t i = 0; i < inst->instance_layer_list.count; i++) {
-                struct loader_layer_properties *props = &inst->instance_layer_list.list[i];
-                if (strcmp(props->info.layerName, pLayerName) == 0) {
-                    dev_ext_list = &props->device_extension_list;
-                }
-            }
-
-            count = (dev_ext_list == NULL) ? 0 : dev_ext_list->count;
-            if (pProperties == NULL) {
-                *pPropertyCount = count;
-                loader_destroy_generic_list(inst, (struct loader_generic_list *)&local_ext_list);
-                loader_platform_thread_unlock_mutex(&loader_lock);
-                return VK_SUCCESS;
-            }
-
-            copy_size = *pPropertyCount < count ? *pPropertyCount : count;
-            for (uint32_t i = 0; i < copy_size; i++) {
-                memcpy(&pProperties[i], &dev_ext_list->list[i].props, sizeof(VkExtensionProperties));
-            }
-            *pPropertyCount = copy_size;
-
-            loader_destroy_generic_list(inst, (struct loader_generic_list *)&local_ext_list);
-            if (copy_size < count) {
-                loader_platform_thread_unlock_mutex(&loader_lock);
-                return VK_INCOMPLETE;
-            }
-        } else {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                       "vkEnumerateDeviceExtensionProperties:  pLayerName "
-                       "is too long or is badly formed");
-            loader_platform_thread_unlock_mutex(&loader_lock);
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-    }
+    // always pass this call down the instance chain which will terminate
+    // in the ICD. This allows layers to filter the extensions coming back
+    // up the chain. In the terminator we look up layer extensions from the
+    // manifest file if it wasn't provided by the layer itself.
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    res = disp->EnumerateDeviceExtensionProperties(phys_dev->phys_dev, pLayerName, pPropertyCount, pProperties);
 
     loader_platform_thread_unlock_mutex(&loader_lock);
     return res;
