@@ -90,6 +90,12 @@ if(UNIX)
             STRING
             "Search path to use when XDG_DATA_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant."
         )
+    set(
+        SYSCONFDIR ""
+        CACHE
+            STRING
+            "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used."
+        )
 endif()
 
 if(UNIX AND NOT APPLE) # i.e.: Linux
@@ -185,11 +191,17 @@ set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FO
 if(UNIX)
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
     add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
-    add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 
-    # Make sure /etc is searched by the loader
-    if(NOT (CMAKE_INSTALL_FULL_SYSCONFDIR STREQUAL "/etc"))
-        add_definitions(-DEXTRASYSCONFDIR="/etc")
+    if(NOT (SYSCONFDIR STREQUAL ""))
+        # SYSCONFDIR is specified, use it and do not force /etc.
+        add_definitions(-DSYSCONFDIR="${SYSCONFDIR}")
+    else()
+        add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
+
+        # Make sure /etc is searched by the loader
+        if(NOT (CMAKE_INSTALL_FULL_SYSCONFDIR STREQUAL "/etc"))
+            add_definitions(-DEXTRASYSCONFDIR="/etc")
+        endif()
     endif()
 endif()
 
