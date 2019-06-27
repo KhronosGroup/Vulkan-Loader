@@ -71,6 +71,15 @@ contains the Vulkan API definition files (registry) that are required to build
 the loader. You must also take note of the headers install directory and pass
 it on the CMake command line for building this repository, as described below.
 
+#### Windows Driver Kit (WDK)
+
+On Windows builds, the loader needs to have a WDK installed. Microsoft provides
+[WDK releases](https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk),
+including several old releases. The installed WDK must be at least version 1709.
+Take note of the fact that the latest WDK release generally requires the latest
+version of Visual Studio. It may be necessary to use an older WDK with an older
+Visual Studio.
+
 #### Google Test
 
 The loader tests depend on the [Google Test](https://github.com/google/googletest)
@@ -179,11 +188,12 @@ CMake to generate the native platform files.
   - Any Personal Computer version supported by Microsoft
 - Microsoft [Visual Studio](https://www.visualstudio.com/)
   - Versions
-    - [2013 (update 4)](https://www.visualstudio.com/vs/older-downloads/)
     - [2015](https://www.visualstudio.com/vs/older-downloads/)
-    - [2017](https://www.visualstudio.com/vs/downloads/)
+    - [2017](https://www.visualstudio.com/vs/older-downloads/)
+    - [2019](https://www.visualstudio.com/vs/downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
+- [Windows Driver Kit](https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk) 1803 or later
 - CMake: Continuous integration tools use [CMake 3.12.2](https://github.com/Kitware/CMake/releases/tag/v3.12.2) for Windows
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
@@ -202,6 +212,8 @@ work with the solution interactively.
 
 #### Windows Quick Start
 
+Open a developer command prompt and enter:
+
     cd Vulkan-Loader
     mkdir build
     cd build
@@ -212,6 +224,13 @@ The above commands instruct CMake to find and use the default Visual Studio
 installation to generate a Visual Studio solution and projects for the x64
 architecture. The second CMake command builds the Debug (default)
 configuration of the solution.
+
+Note that if you do not wish to use a developer command prompt, you may either
+run either `vcvars64.bat` or `vcvars32.bat` to set the required environment
+variables. You may also define a `WDK_FULL_PATH` variable when first invoking CMake
+like:
+
+    cmake -A x64 --DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir -DWDK_BASE="C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0" ..
 
 See below for the details.
 
@@ -324,9 +343,12 @@ include:
 
 | Build Platform               | 64-bit Generator              | 32-bit Generator        |
 |------------------------------|-------------------------------|-------------------------|
-| Microsoft Visual Studio 2013 | "Visual Studio 12 2013 Win64" | "Visual Studio 12 2013" |
 | Microsoft Visual Studio 2015 | "Visual Studio 14 2015 Win64" | "Visual Studio 14 2015" |
 | Microsoft Visual Studio 2017 | "Visual Studio 15 2017 Win64" | "Visual Studio 15 2017" |
+| Microsoft Visual Studio 2019 | "Visual Studio 16 2019"       | "Visual Studio 16 2019" |
+
+Note that with Visual Studio 2019, the architecture will need to be specified with the `-A`
+flag for 64-bit builds.
 
 #### Using The Vulkan Loader Library in this Repository on Windows
 
