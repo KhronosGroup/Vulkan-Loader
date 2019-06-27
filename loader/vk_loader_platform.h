@@ -207,7 +207,12 @@ static inline void loader_platform_thread_cond_broadcast(loader_platform_thread_
 static inline const char *LoaderPnpDriverRegistry() {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
-    return is_wow ? (API_NAME "DriverNameWow") : (API_NAME "DriverName");
+    return is_wow ? "VulkanDriverNameWow" : "VulkanDriverName";
+}
+static inline const wchar_t *LoaderPnpDriverRegistryWide() {
+    BOOL is_wow;
+    IsWow64Process(GetCurrentProcess(), &is_wow);
+    return is_wow ? L"VulkanDriverNameWow" : L"VulkanDriverName";
 }
 
 // Get the key for the plug 'n play explicit layer registry
@@ -215,15 +220,25 @@ static inline const char *LoaderPnpDriverRegistry() {
 static inline const char *LoaderPnpELayerRegistry() {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
-    return is_wow ? (API_NAME "ExplicitLayersWow") : (API_NAME "ExplicitLayers");
+    return is_wow ? "VulkanExplicitLayersWow" : "VulkanExplicitLayers";
 }
+static inline const wchar_t *LoaderPnpELayerRegistryWide() {
+    BOOL is_wow;
+    IsWow64Process(GetCurrentProcess(), &is_wow);
+    return is_wow ? L"VulkanExplicitLayersWow" : L"VulkanExplicitLayers";
+}
+
 // Get the key for the plug 'n play implicit layer registry
 // The string returned by this function should NOT be freed
-
 static inline const char *LoaderPnpILayerRegistry() {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
-    return is_wow ? (API_NAME "ImplicitLayersWow") : (API_NAME "ImplicitLayers");
+    return is_wow ? "VulkanImplicitLayersWow" : "VulkanImplicitLayers";
+}
+static inline const wchar_t *LoaderPnpILayerRegistryWide() {
+    BOOL is_wow;
+    IsWow64Process(GetCurrentProcess(), &is_wow);
+    return is_wow ? L"VulkanImplicitLayersWow" : L"VulkanImplicitLayers";
 }
 #endif
 
