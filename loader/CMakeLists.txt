@@ -247,7 +247,7 @@ else()
                                      "1"
                                      VERSION
                                      "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
-    target_link_libraries(vulkan -ldl -lpthread -lm)
+    target_link_libraries(vulkan ${CMAKE_DL_LIBS} -lpthread -lm)
     target_link_libraries(vulkan Vulkan::Headers)
 
     if(APPLE)
