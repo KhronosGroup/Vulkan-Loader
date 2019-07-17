@@ -453,6 +453,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # default scripts path to be same as registry
+    if not args.scripts:
+        args.scripts = os.path.dirname(args.registry)
+        print(args.scripts)
+
     scripts_dir = os.path.dirname(os.path.abspath(__file__))
     registry_dir = os.path.join(scripts_dir, args.scripts)
     sys.path.insert(0, registry_dir)
