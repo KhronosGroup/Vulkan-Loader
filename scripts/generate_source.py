@@ -45,12 +45,7 @@ def main(argv):
                                             'vk_layer_dispatch_table.h',
                                             'vk_loader_extensions.h',
                                             'vk_loader_extensions.c',
-                                            'vk_enum_string_helper.h',
-                                            'vk_safe_struct.h',
-                                            'vk_safe_struct.cpp',
-                                            'vk_object_types.h',
-                                            'vk_extension_helper.h',
-                                            'vk_typemap_helper.h']]
+                                            'vk_object_types.h']]
 
     repo_dir = common_codegen.repo_relative('loader/generated')
 
