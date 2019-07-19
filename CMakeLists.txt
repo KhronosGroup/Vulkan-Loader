@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2018 Valve Corporation
-# Copyright (c) 2014-2018 LunarG, Inc.
+# Copyright (c) 2014-2019 Valve Corporation
+# Copyright (c) 2014-2019 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ enable_testing()
 add_definitions(-DAPI_NAME="Vulkan")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-find_package(PythonInterp 3 REQUIRED)
+find_package(PythonInterp 3 QUIET)
 
 if (TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
@@ -163,31 +163,16 @@ if(MSVC)
     set(MSVC_LOADER_COMPILE_OPTIONS /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
 endif()
 
-# Define a macro to generate source code from vk.xml
-set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
-macro(GenerateFromVkXml output dependency)
-    add_custom_command(OUTPUT ${output}
-                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/loader_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
-                               ${VulkanRegistry_DIR} ${output}
-                       DEPENDS ${SCRIPTS_DIR}/${dependency}
-                               ${SCRIPTS_DIR}/loader_genvk.py
-                               ${VulkanRegistry_DIR}/vk.xml
-                               ${VulkanRegistry_DIR}/generator.py
-                               ${VulkanRegistry_DIR}/reg.py)
-endmacro()
+# Optional codegen target
+if(PYTHONINTERP_FOUND)
+    add_custom_target(VulkanLoader_generated_source
+                      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
+                              ${VulkanRegistry_DIR} --incremental
+                      )
+else()
+    message("WARNING: VulkanLoader_generated_source target requires python 3")
+endif()
 
-# Use the macro to generate the source files.
-GenerateFromVkXml(vk_layer_dispatch_table.h loader_extension_generator.py)
-GenerateFromVkXml(vk_dispatch_table_helper.h dispatch_table_helper_generator.py)
-GenerateFromVkXml(vk_object_types.h helper_file_generator.py)
-
-# Use a custom target to cause the source files to be generated.
-add_custom_target(generate_helper_files
-                  DEPENDS vk_object_types.h
-                          vk_layer_dispatch_table.h
-                          vk_dispatch_table_helper.h)
-
-set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
 if(UNIX)
     add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")

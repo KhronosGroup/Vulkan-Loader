@@ -26,20 +26,17 @@ if(WIN32)
         set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
         target_compile_options(VkLayer_${target} PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
-        add_dependencies(VkLayer_${target} generate_helper_files)
         target_link_libraries(VkLayer_${target} Vulkan::Headers)
     endmacro()
 elseif(APPLE)
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
-        add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
         target_link_libraries(VkLayer_${target} Vulkan::Headers)
     endmacro()
 else(UNIX AND NOT APPLE) # i.e.: Linux
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
-        add_dependencies(VkLayer_${target} generate_helper_files)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic")
         target_link_libraries(VkLayer_${target} Vulkan::Headers)
     endmacro()
@@ -47,9 +44,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../loader
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${PROJECT_BINARY_DIR}
-                    ${CMAKE_BINARY_DIR})
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../../loader/generated)
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_CRT_SECURE_NO_WARNINGS")

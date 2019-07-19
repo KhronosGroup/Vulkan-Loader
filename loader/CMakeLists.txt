@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2018 Valve Corporation
-# Copyright (c) 2014-2018 LunarG, Inc.
+# Copyright (c) 2014-2019 Valve Corporation
+# Copyright (c) 2014-2019 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 # limitations under the License.
 # ~~~
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
 
 # Check for the existance of the secure_getenv or __secure_getenv commands
 include(CheckFunctionExists)
@@ -127,7 +127,6 @@ if(WIN32)
         endif()
 
         add_executable(asm_offset asm_offset.c)
-        add_dependencies(asm_offset generate_helper_files loader_gen_files)
         target_link_libraries(asm_offset Vulkan::Headers)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset MASM)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
@@ -138,7 +137,6 @@ if(WIN32)
         message(WARNING "Could not find working MASM assebler\n${ASM_FAILURE_MSG}")
         add_custom_target(loader_asm_gen_files)
         add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
-        add_dependencies(loader-unknown-chain generate_helper_files loader_gen_files)
         target_compile_options(loader-unknown-chain PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
         target_compile_options(loader-unknown-chain PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     endif()
@@ -165,7 +163,6 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         set(CMAKE_ASM-ATT_FLAGS "$ENV{ASFLAGS} -I\"${CMAKE_CURRENT_BINARY_DIR}\"")
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.asm)
         add_executable(asm_offset asm_offset.c)
-        add_dependencies(asm_offset generate_helper_files loader_gen_files)
         target_link_libraries(asm_offset Vulkan::Headers)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
@@ -176,21 +173,15 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
     endif()
 endif()
 
-GenerateFromVkXml(vk_loader_extensions.h loader_extension_generator.py)
-GenerateFromVkXml(vk_loader_extensions.c loader_extension_generator.py)
-add_custom_target(loader_gen_files DEPENDS vk_loader_extensions.h vk_loader_extensions.c)
-set_target_properties(loader_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
-
 if(WIN32)
     add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
-    add_dependencies(loader-norm generate_helper_files loader_gen_files)
     target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
     target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-norm PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
     target_include_directories(loader-norm PRIVATE "${WDK_INCLUDE_DIRS}")
 
     add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
-    add_dependencies(loader-opt generate_helper_files loader_gen_files loader_asm_gen_files)
+    add_dependencies(loader-opt loader_asm_gen_files)
     target_compile_options(loader-opt PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
@@ -228,7 +219,7 @@ if(WIN32)
         target_link_libraries(vulkan Cfgmgr32)
     endif()
 
-    add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
+    add_dependencies(vulkan loader_asm_gen_files)
 
 else()
     # Linux and MacOS
@@ -241,7 +232,7 @@ else()
     endif()
 
     add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-    add_dependencies(vulkan generate_helper_files loader_gen_files loader_asm_gen_files)
+    add_dependencies(vulkan loader_asm_gen_files)
     target_compile_definitions(vulkan PUBLIC -DLOADER_DYNAMIC_LIB)
     set_target_properties(vulkan
                           PROPERTIES SOVERSION
@@ -274,7 +265,7 @@ else()
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
         add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
-        add_dependencies(vulkan-framework generate_helper_files loader_gen_files loader_asm_gen_files)
+        add_dependencies(vulkan-framework loader_asm_gen_files)
         target_compile_definitions(vulkan-framework PUBLIC -DLOADER_DYNAMIC_LIB)
         target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework Vulkan::Headers)
