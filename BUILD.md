@@ -151,6 +151,20 @@ Here is a usage example for this repository:
 - Please use `update_deps.py --help` to list additional options and read the
   internal documentation in `update_deps.py` for further information.
 
+### Generated source code
+
+This repository contains generated source code in the `loader/generated`
+directory which is not intended to be modified directly. Instead, changes should be
+made to the corresponding generator in the `scripts` directory. The source files can
+then be regenerated using `scripts/generate_source.py`:
+
+    python3 scripts/generate_source.py PATH_TO_VULKAN_HEADERS_REGISTRY_DIR
+
+A helper CMake target `VulkanLoader_generated_source` is also provided to simplify
+the invocation of `scripts/generate_source.py` from the build directory:
+
+    cmake --build . --target VulkanLoader_generated_source
+
 ### Build Options
 
 When generating native platform build files through CMake, several options can
