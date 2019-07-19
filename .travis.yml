@@ -93,6 +93,9 @@ script:
   - set -e
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]] || [[ "$VULKAN_BUILD_TARGET" == "MACOS" ]]; then
+      # Verify consistency between source file generators and output
+      echo Verifying consistency between source file generators and output
+      python3 scripts/generate_source.py --verify external/Vulkan-Headers/registry
       # Build Vulkan-Loader
       mkdir build
       cd build
