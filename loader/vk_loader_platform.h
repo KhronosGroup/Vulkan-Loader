@@ -334,7 +334,23 @@ static char *loader_platform_get_proc_address_error(const char *name) {
 
 // Threads:
 typedef HANDLE loader_platform_thread;
+
+// __declspec(thread) is not supported by MinGW compiler (ignored with warning or
+//                    cause erorr depending on compiler switches)
+//
+// __thread should be used instead
+//
+// __MINGW32__ defined for both 32 and 64 bit MinGW compilers, so it is enough to
+// detect any (32 or 64) flawor of MinGW compiler.
+//
+// @note __GNUC__ could be used as a more generic way to detect _any_
+//       GCC[-compitible] compiler on Windows, but this fix was tested
+//       only with MinGW, so keep it explicit at the moment.
+#if defined(__MINGW32__)
+#define THREAD_LOCAL_DECL __thread
+#else
 #define THREAD_LOCAL_DECL __declspec(thread)
+#endif
 
 // The once init functionality is not used when building a DLL on Windows. This is because there is no way to clean up the
 // resources allocated by anything allocated by once init. This isn't a problem for static libraries, but it is for dynamic
