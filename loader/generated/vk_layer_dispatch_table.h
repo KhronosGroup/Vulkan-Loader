@@ -631,6 +631,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetDeviceGroupSurfacePresentModes2EXT GetDeviceGroupSurfacePresentModes2EXT;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
+    // ---- VK_EXT_line_rasterization extension commands
+    PFN_vkCmdSetLineStippleEXT CmdSetLineStippleEXT;
+
     // ---- VK_EXT_host_query_reset extension commands
     PFN_vkResetQueryPoolEXT ResetQueryPoolEXT;
 } VkLayerDispatchTable;
