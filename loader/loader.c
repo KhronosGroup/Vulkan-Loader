@@ -66,9 +66,9 @@
 #include "murmurhash.h"
 
 #if defined(_WIN32)
-#include <Cfgmgr32.h>
+#include <cfgmgr32.h>
 #include <initguid.h>
-#include <Devpkey.h>
+#include <devpkey.h>
 #include <winternl.h>
 #include <d3dkmthk.h>
 
