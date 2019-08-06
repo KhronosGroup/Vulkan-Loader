@@ -979,8 +979,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
 
 // Functions for the VK_EXT_headless_surface extension:
 
-VKAPI_ATTR VkResult VKAPI_CALL vkCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
-                                                          const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateHeadlessSurfaceEXT(VkInstance instance,
+                                                                        const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkSurfaceKHR *pSurface) {
     const VkLayerInstanceDispatchTable *disp;
     disp = loader_get_instance_layer_dispatch(instance);
     VkResult res;
