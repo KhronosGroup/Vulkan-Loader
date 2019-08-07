@@ -146,22 +146,16 @@ elseif(APPLE)
     set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
     add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
 else(UNIX AND NOT APPLE) # i.e.: Linux
-    enable_language(ASM-ATT)
-    set(CMAKE_ASM-ATT_COMPILE_FLAGS "${CMAKE_ASM-ATT_COMPILE_FLAGS} $ENV{ASFLAGS}")
-    set(CMAKE_ASM-ATT_COMPILE_FLAGS "${CMAKE_ASM-ATT_COMPILE_FLAGS} -I\"${CMAKE_CURRENT_BINARY_DIR}\"")
+    enable_language(ASM)
+    set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
 
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.asm
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.S
                ".intel_syntax noprefix\n.text\n.global sample\nsample:\nmov ecx, [eax + 16]\n")
-    # try_compile uses the C/C++ linker flags even for ASM,
-    # while they're not valid for ASM and making linking fail.
-    set(TMP_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS})
-    set(CMAKE_EXE_LINKER_FLAGS "")
-    try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/asm_test.asm)
-    set(CMAKE_EXE_LINKER_FLAGS ${TMP_EXE_LINKER_FLAGS})
-    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.asm)
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+    try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/asm_test.S)
+    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.S)
     if(ASSEMBLER_WORKS)
-        set(CMAKE_ASM-ATT_FLAGS "$ENV{ASFLAGS} -I\"${CMAKE_CURRENT_BINARY_DIR}\"")
-        set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.asm)
+        set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.S)
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset Vulkan::Headers)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
