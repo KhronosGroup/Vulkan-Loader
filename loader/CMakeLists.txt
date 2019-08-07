@@ -19,6 +19,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/gene
 
 # Check for the existance of the secure_getenv or __secure_getenv commands
 include(CheckFunctionExists)
+include(CheckIncludeFile)
+
 check_function_exists(secure_getenv HAVE_SECURE_GETENV)
 check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/loader_cmake_config.h)
@@ -149,6 +151,10 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
     enable_language(ASM)
     set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
 
+    check_include_file("cet.h" HAVE_CET_H)
+    if(HAVE_CET_H)
+        add_definitions(-DHAVE_CET_H)
+    endif()
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.S
                ".intel_syntax noprefix\n.text\n.global sample\nsample:\nmov ecx, [eax + 16]\n")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
