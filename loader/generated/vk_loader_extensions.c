@@ -527,6 +527,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdDrawIndirectCountKHR = (PFN_vkCmdDrawIndirectCountKHR)gdpa(dev, "vkCmdDrawIndirectCountKHR");
     table->CmdDrawIndexedIndirectCountKHR = (PFN_vkCmdDrawIndexedIndirectCountKHR)gdpa(dev, "vkCmdDrawIndexedIndirectCountKHR");
 
+    // ---- VK_KHR_pipeline_executable_properties extension commands
+    table->GetPipelineExecutablePropertiesKHR = (PFN_vkGetPipelineExecutablePropertiesKHR)gdpa(dev, "vkGetPipelineExecutablePropertiesKHR");
+    table->GetPipelineExecutableStatisticsKHR = (PFN_vkGetPipelineExecutableStatisticsKHR)gdpa(dev, "vkGetPipelineExecutableStatisticsKHR");
+    table->GetPipelineExecutableInternalRepresentationsKHR = (PFN_vkGetPipelineExecutableInternalRepresentationsKHR)gdpa(dev, "vkGetPipelineExecutableInternalRepresentationsKHR");
+
     // ---- VK_EXT_debug_marker extension commands
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gdpa(dev, "vkDebugMarkerSetObjectTagEXT");
     table->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)gdpa(dev, "vkDebugMarkerSetObjectNameEXT");
@@ -1140,6 +1145,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_KHR_draw_indirect_count extension commands
     if (!strcmp(name, "CmdDrawIndirectCountKHR")) return (void *)table->CmdDrawIndirectCountKHR;
     if (!strcmp(name, "CmdDrawIndexedIndirectCountKHR")) return (void *)table->CmdDrawIndexedIndirectCountKHR;
+
+    // ---- VK_KHR_pipeline_executable_properties extension commands
+    if (!strcmp(name, "GetPipelineExecutablePropertiesKHR")) return (void *)table->GetPipelineExecutablePropertiesKHR;
+    if (!strcmp(name, "GetPipelineExecutableStatisticsKHR")) return (void *)table->GetPipelineExecutableStatisticsKHR;
+    if (!strcmp(name, "GetPipelineExecutableInternalRepresentationsKHR")) return (void *)table->GetPipelineExecutableInternalRepresentationsKHR;
 
     // ---- VK_EXT_debug_marker extension commands
     if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return (void *)table->DebugMarkerSetObjectTagEXT;
@@ -1888,6 +1898,36 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     disp->CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+}
+
+
+// ---- VK_KHR_pipeline_executable_properties extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(
+    VkDevice                                    device,
+    const VkPipelineInfoKHR*                    pPipelineInfo,
+    uint32_t*                                   pExecutableCount,
+    VkPipelineExecutablePropertiesKHR*          pProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableStatisticsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pStatisticCount,
+    VkPipelineExecutableStatisticKHR*           pStatistics) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pInternalRepresentationCount,
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
 }
 
 
@@ -3420,6 +3460,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdDrawIndexedIndirectCountKHR", name)) {
         *addr = (void *)CmdDrawIndexedIndirectCountKHR;
+        return true;
+    }
+
+    // ---- VK_KHR_pipeline_executable_properties extension commands
+    if (!strcmp("vkGetPipelineExecutablePropertiesKHR", name)) {
+        *addr = (void *)GetPipelineExecutablePropertiesKHR;
+        return true;
+    }
+    if (!strcmp("vkGetPipelineExecutableStatisticsKHR", name)) {
+        *addr = (void *)GetPipelineExecutableStatisticsKHR;
+        return true;
+    }
+    if (!strcmp("vkGetPipelineExecutableInternalRepresentationsKHR", name)) {
+        *addr = (void *)GetPipelineExecutableInternalRepresentationsKHR;
         return true;
     }
 

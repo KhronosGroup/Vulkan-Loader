@@ -470,6 +470,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdDrawIndirectCountKHR CmdDrawIndirectCountKHR;
     PFN_vkCmdDrawIndexedIndirectCountKHR CmdDrawIndexedIndirectCountKHR;
 
+    // ---- VK_KHR_pipeline_executable_properties extension commands
+    PFN_vkGetPipelineExecutablePropertiesKHR GetPipelineExecutablePropertiesKHR;
+    PFN_vkGetPipelineExecutableStatisticsKHR GetPipelineExecutableStatisticsKHR;
+    PFN_vkGetPipelineExecutableInternalRepresentationsKHR GetPipelineExecutableInternalRepresentationsKHR;
+
     // ---- VK_EXT_debug_marker extension commands
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
     PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
