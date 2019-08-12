@@ -1,4 +1,10 @@
-vulkan-loader (1.1.108.0~rc1-1) UNRELEASED; urgency=medium
+vulkan-loader (1.1.114.0~rc1-1lunarg16.04.1.1) xenial; urgency=medium
+
+  * New 1.1.114.0~rc1 SDK
+
+ -- John Zupin <john@odin>  Tue, 23 Jul 2019 10:49:57 -0600
+
+vulkan-loader (1.1.108.0~rc1-1) unstable; urgency=medium
 
   * New 1.1.108.0~rc1 SDK
 
