@@ -2056,7 +2056,8 @@ struct loader_icd_term *loader_get_icd_and_device(const VkDevice device, struct 
             for (struct loader_device *dev = icd_term->logical_device_list; dev; dev = dev->next)
                 // Value comparison of device prevents object wrapping by layers
                 if (loader_get_dispatch(dev->icd_device) == loader_get_dispatch(device) ||
-                    loader_get_dispatch(dev->chain_device) == loader_get_dispatch(device)) {
+                    (dev->chain_device != VK_NULL_HANDLE &&
+                     loader_get_dispatch(dev->chain_device) == loader_get_dispatch(device))) {
                     *found_dev = dev;
                     if (NULL != icd_index) {
                         *icd_index = index;
