@@ -55,7 +55,7 @@ before_build:
   - echo Generating CMake files for %PLATFORM%
   - mkdir build
   - cd build
-  - cmake -A %PLATFORM% -C../external/helper.cmake ..
+  - cmake -A %PLATFORM% -C../external/helper.cmake -DWDK_VERSION=10.0.17763.0 ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
