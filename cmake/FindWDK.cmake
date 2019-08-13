@@ -41,21 +41,33 @@
 #   WDK_INCLUDE_DIRS             - include directories for the WDK
 #
 
-if(NOT DEFINED WDK_FULL_PATH)
-    if(NOT DEFINED WDK_BASE)
+if(DEFINED WDK_FULL_PATH)
+    find_path(WDK_VERSION_INCLUDE_DIR
+        NAMES km/d3dkmthk.h shared/d3dkmdt.h
+        PATHS "${WDK_FULL_PATH}"
+    )
+else()
+    if(NOT DEFINED WDK_BASE AND DEFINED "$ENV{UniversalCRTSdkDir}")
         set(WDK_BASE "$ENV{UniversalCRTSdkDir}")
+    elseif(NOT DEFINED WDK_BASE)
+        set(WDK_BASE "C:/Program Files (x86)/Windows Kits/10/")
     endif()
-    if(NOT DEFINED WDK_VERSION)
-        set(WDK_VERSION "$ENV{UCRTVersion}")
-        string(REPLACE \\ "" WDK_VERSION "${WDK_VERSION}")
-    endif()
-    set(WDK_FULL_PATH "${WDK_BASE}/Include/${WDK_VERSION}")
-endif()
 
-find_path(WDK_VERSION_INCLUDE_DIR
-    NAMES km/d3dkmthk.h shared/d3dkmdt.h
-    PATHS "${WDK_FULL_PATH}"
-)
+    if(DEFINED WDK_VERSION)
+        set(SUBDIRS "Include/${WDK_VERSION}")
+    else()
+        file(GLOB DIR_LIST RELATIVE "C:/Program Files (x86)/Windows Kits/10/" "C:/Program Files (x86)/Windows Kits/10/Include/*")
+        list(REVERSE DIR_LIST)
+        foreach(DIR IN ITEMS "${DIR_LIST}")
+            set(SUBDIRS "${SUBDIRS}" "${DIR}")
+        endforeach()
+    endif()
+    find_path(WDK_VERSION_INCLUDE_DIR
+        NAMES km/d3dkmthk.h shared/d3dkmdt.h
+        PATHS "${WDK_BASE}"
+        PATH_SUFFIXES ${SUBDIRS}
+    )
+endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(WDK DEFAULT_MSG WDK_VERSION_INCLUDE_DIR)
