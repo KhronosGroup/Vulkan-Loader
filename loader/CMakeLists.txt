@@ -164,7 +164,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.S)
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset Vulkan::Headers)
-        add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
+        add_custom_command(OUTPUT gen_defines.asm DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/asm_offset COMMAND ${CMAKE_CURRENT_BINARY_DIR}/asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
         message(WARNING "Could not find working x86 GAS assembler\n${ASM_FAILURE_MSG}")
