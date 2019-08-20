@@ -6140,16 +6140,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
         // Get the driver version from vkEnumerateInstanceVersion
         uint32_t icd_version = VK_API_VERSION_1_0;
-        PFN_vkEnumerateInstanceVersion icd_enumerate_instance_version = (PFN_vkEnumerateInstanceVersion)
-            icd_term->scanned_icd->GetInstanceProcAddr(NULL, "vkEnumerateInstanceVersion");
         VkResult icd_result = VK_SUCCESS;
-        if (icd_enumerate_instance_version != NULL) {
-            icd_result = icd_enumerate_instance_version(&icd_version);
-            if (icd_result != VK_SUCCESS) {
-                icd_version = VK_API_VERSION_1_0;
-                loader_log(ptr_instance, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "terminator_CreateInstance: ICD \"%s\" "
-                    "vkEnumerateInstanceVersion returned error. The ICD will be treated as a 1.0 ICD",
-                    icd_term->scanned_icd->lib_name);
+        if (icd_term->scanned_icd->api_version >= VK_API_VERSION_1_1) {
+            PFN_vkEnumerateInstanceVersion icd_enumerate_instance_version = (PFN_vkEnumerateInstanceVersion)
+                icd_term->scanned_icd->GetInstanceProcAddr(NULL, "vkEnumerateInstanceVersion");
+            if (icd_enumerate_instance_version != NULL) {
+                icd_result = icd_enumerate_instance_version(&icd_version);
+                if (icd_result != VK_SUCCESS) {
+                    icd_version = VK_API_VERSION_1_0;
+                    loader_log(ptr_instance, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "terminator_CreateInstance: ICD \"%s\" "
+                        "vkEnumerateInstanceVersion returned error. The ICD will be treated as a 1.0 ICD",
+                        icd_term->scanned_icd->lib_name);
+                }
             }
         }
 
