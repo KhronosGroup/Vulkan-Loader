@@ -778,7 +778,7 @@ static char *loader_get_next_path(char *path);
 // *reg_data contains a string list of filenames as pointer.
 // When done using the returned string list, the caller should free the pointer.
 VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *location, bool use_secondary_hive, char **reg_data,
-                                PDWORD reg_data_size) {
+                                PDWORD reg_data_size, bool use_system_paths) {
     LONG rtn_value;
     HKEY hive = DEFAULT_VK_REGISTRY_HIVE, key;
     DWORD access_flags;
@@ -806,6 +806,16 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
             while ((rtn_value = RegEnumValue(key, idx++, name, &name_size, NULL, NULL, (LPBYTE)&value, &value_size)) ==
                    ERROR_SUCCESS) {
                 if (value_size == sizeof(value) && value == 0) {
+                    if (!use_system_paths && value == 0) {
+                        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                                   "Driver manifest '%s' was found, but is disabled as it was not found in a device-specific "
+                                   "location and other device-specific driver(s) were found",
+                                   name);
+
+                        name_size = sizeof(name);
+                        continue;
+                    }
+
                     if (NULL == *reg_data) {
                         *reg_data = loader_instance_heap_alloc(inst, *reg_data_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                         if (NULL == *reg_data) {
@@ -867,7 +877,7 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
                         }
                     }
                 }
-                name_size = 2048;
+                name_size = sizeof(name);
             }
             RegCloseKey(key);
         }
@@ -3972,7 +3982,10 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
     }
 
     // This call looks into the Khronos non-device specific section of the registry.
-    VkResult reg_result = loaderGetRegistryFiles(inst, registry_location, use_secondary_hive, &search_path, &reg_size);
+    bool use_system_paths =
+        strcmp(registry_location, VK_DRIVERS_INFO_REGISTRY_LOC) || search_path == NULL || search_path[0] == '\0';
+    VkResult reg_result =
+        loaderGetRegistryFiles(inst, registry_location, use_secondary_hive, &search_path, &reg_size, use_system_paths);
 
     if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == search_path) {
         if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
