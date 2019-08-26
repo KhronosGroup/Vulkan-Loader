@@ -285,6 +285,28 @@ static inline void loader_free_getenv(char *val, const struct loader_instance *i
 
 #elif defined(WIN32)
 
+static inline bool IsHighIntegrity() {
+    HANDLE process_token;
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_QUERY_SOURCE, &process_token)) {
+        // Maximum possible size of SID_AND_ATTRIBUTES is maximum size of a SID + size of attributes DWORD.
+        uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(DWORD)];
+        DWORD buffer_size;
+        if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
+            &buffer_size) != 0) {
+            const TOKEN_MANDATORY_LABEL *mandatory_label = (const TOKEN_MANDATORY_LABEL *)mandatory_label_buffer;
+            const DWORD sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
+            const DWORD integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
+
+            CloseHandle(process_token);
+            return integrity_level > SECURITY_MANDATORY_MEDIUM_RID;
+        }
+
+        CloseHandle(process_token);
+    }
+
+    return false;
+}
+
 static inline char *loader_getenv(const char *name, const struct loader_instance *inst) {
     char *retVal;
     DWORD valSize;
@@ -311,7 +333,10 @@ static inline char *loader_getenv(const char *name, const struct loader_instance
 }
 
 static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
-    // No secure version for Windows as far as I know
+    if (IsHighIntegrity()) {
+        return NULL;
+    }
+
     return loader_getenv(name, inst);
 }
 
