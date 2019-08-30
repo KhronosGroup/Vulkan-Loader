@@ -19,6 +19,5 @@ vulkan_headers_dir = "//external/Vulkan-Headers"
 vulkan_gen_subdir = "" 
 
 # Vulkan loader build options
-vulkan_loader_extra_defines = []
 vulkan_loader_shared = true
 

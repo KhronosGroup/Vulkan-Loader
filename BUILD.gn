@@ -51,7 +51,7 @@ config("vulkan_loader_config") {
     "loader/generated",
     "loader",
   ]
-  defines = [ "API_NAME=\"Vulkan\"" ] + vulkan_loader_extra_defines
+  defines = [ "API_NAME=\"Vulkan\"" ]
 
   if (is_win) {
     cflags = [ "/wd4201" ]
