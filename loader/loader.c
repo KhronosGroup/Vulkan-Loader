@@ -126,7 +126,7 @@ LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
 // This loader supports Vulkan API version 1.1
 uint32_t loader_major_version = 1;
-uint32_t loader_minor_version = 1;
+uint32_t loader_minor_version = 2;
 
 void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope alloc_scope) {
     void *pMemory = NULL;
