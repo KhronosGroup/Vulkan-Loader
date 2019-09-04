@@ -46,7 +46,7 @@
   * [Vulkan Installable Client Driver interface with the loader](#vulkan-installable-client-driver-interface-with-the-loader)
     * [ICD Discovery](#icd-discovery)
     * [ICD Manifest File Format](#icd-manifest-file-format)
-    * [ICD Vulkan Entry Point Discovery](#icd-vulkan-entry point-discovery)
+    * [ICD Vulkan Entry Point Discovery](#icd-vulkan-entry-point-discovery)
     * [ICD API Version](#icd-api-version)
     * [ICD Unknown Physical Device Extensions](#icd-unknown-physical-device-extensions)
     * [ICD Dispatchable Object Creation](#icd-dispatchable-object-creation)
