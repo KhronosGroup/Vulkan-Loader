@@ -213,10 +213,10 @@ if(WIN32)
     endif()
 
     if(ENABLE_WIN10_ONECORE)
-        target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
+        target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB Dxgi)
         set_target_properties(vulkan PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
     else()
-        target_link_libraries(vulkan Cfgmgr32)
+        target_link_libraries(vulkan Cfgmgr32 Dxgi)
     endif()
 
     add_dependencies(vulkan loader_asm_gen_files)
