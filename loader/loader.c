@@ -71,6 +71,7 @@
 #include <devpkey.h>
 #include <winternl.h>
 #include <d3dkmthk.h>
+#include <Dxgi1_6.h>
 
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTEnumAdapters2)(const D3DKMT_ENUMADAPTERS2*);
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
@@ -779,6 +780,49 @@ static char *loader_get_next_path(char *path);
 // When done using the returned string list, the caller should free the pointer.
 VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *location, bool use_secondary_hive, char **reg_data,
                                 PDWORD reg_data_size) {
+    // This list contains all of the allowed ICDs. This allows us to verify that a device is actually present from the vendor
+    // specified. This does disallow other vendors, but any new driver should use the device-specific registries anyway.
+    static const struct {
+        const char *filename;
+        int vendor_id;
+    } known_drivers[] = {
+#if defined(_WIN64)
+        {
+            .filename = "igvk64.json",
+            .vendor_id = 0x8086,
+        },
+        {
+            .filename = "nv-vk64.json",
+            .vendor_id = 0x10de,
+        },
+        {
+            .filename = "amd-vulkan64.json",
+            .vendor_id = 0x1002,
+        },
+        {
+            .filename = "amdvlk64.json",
+            .vendor_id = 0x1002,
+        },
+#else
+        {
+            .filename = "igvk32.json",
+            .vendor_id = 0x8086,
+        },
+        {
+            .filename = "nv-vk32.json",
+            .vendor_id = 0x10de,
+        },
+        {
+            .filename = "amd-vulkan32.json",
+            .vendor_id = 0x1002,
+        },
+        {
+            .filename = "amdvlk32.json",
+            .vendor_id = 0x1002,
+        },
+#endif
+    };
+
     LONG rtn_value;
     HKEY hive = DEFAULT_VK_REGISTRY_HIVE, key;
     DWORD access_flags;
@@ -791,10 +835,23 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
     DWORD value_size = sizeof(value);
     VkResult result = VK_SUCCESS;
     bool found = false;
+    IDXGIFactory1 *dxgi_factory = NULL;
+    bool is_driver = !strcmp(location, VK_DRIVERS_INFO_REGISTRY_LOC);
 
     if (NULL == reg_data) {
         result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
+    }
+
+    if (is_driver) {
+        HRESULT hres = CreateDXGIFactory1(&IID_IDXGIFactory1, &dxgi_factory);
+        if (hres != S_OK) {
+            loader_log(
+                inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                "loaderGetRegistryFiles: Failed to create dxgi factory for ICD registry verification. No ICDs will be added from "
+                "legacy registry locations");
+            goto out;
+        }
     }
 
     while (*loc) {
@@ -831,9 +888,59 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
                         *reg_data = new_ptr;
                         *reg_data_size *= 2;
                     }
+
+                    // We've now found a json file. If this is an ICD, we still need to check if there is actually a device
+                    // that matches this ICD
                     loader_log(
                         inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "Located json file \"%s\" from registry \"%s\\%s\"", name,
                         hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR, location);
+                    if (is_driver) {
+                        int i;
+                        for (i = 0; i < sizeof(known_drivers) / sizeof(known_drivers[0]); ++i) {
+                            if (!strcmp(name + strlen(name) - strlen(known_drivers[i].filename), known_drivers[i].filename)) {
+                                break;
+                            }
+                        }
+                        if (i == sizeof(known_drivers) / sizeof(known_drivers[0])) {
+                            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                                       "Dropping driver %s as it was not recognized as a known driver", name);
+                            continue;
+                        }
+
+                        bool found_gpu = false;
+                        for (int j = 0;; ++j) {
+                            IDXGIAdapter1 *adapter;
+                            HRESULT hres = dxgi_factory->lpVtbl->EnumAdapters1(dxgi_factory, j, &adapter);
+                            if (hres == DXGI_ERROR_NOT_FOUND) {
+                                break;
+                            } else if (hres != S_OK) {
+                                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                                           "Failed to enumerate DXGI adapters at index %d. As a result, drivers may be skipped", j);
+                                continue;
+                            }
+
+                            DXGI_ADAPTER_DESC1 description;
+                            hres = adapter->lpVtbl->GetDesc1(adapter, &description);
+                            if (hres != S_OK) {
+                                loader_log(
+                                    inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                                    "Failed to get DXGI adapter information at index %d. As a result, drivers may be skipped", j);
+                                continue;
+                            }
+
+                            if (description.VendorId == known_drivers[i].vendor_id) {
+                                found_gpu = true;
+                                break;
+                            }
+                        }
+
+                        if (!found_gpu) {
+                            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                                       "Dropping driver %s as no corresponduing DXGI adapter was found", name);
+                            continue;
+                        }
+                    }
+
                     if (strlen(*reg_data) == 0) {
                         // The list is emtpy. Add the first entry.
                         (void)snprintf(*reg_data, name_size + 1, "%s", name);
@@ -886,6 +993,9 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
     }
 
 out:
+    if (is_driver && dxgi_factory != NULL) {
+        dxgi_factory->lpVtbl->Release(dxgi_factory);
+    }
 
     return result;
 }
