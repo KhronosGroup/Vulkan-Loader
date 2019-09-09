@@ -242,6 +242,10 @@ void *loader_device_heap_realloc(const struct loader_device *device, void *pMemo
 // Environment variables
 #if defined(__linux__) || defined(__APPLE__)
 
+static inline bool IsHighIntegrity() {
+    return geteuid() != getuid() || getegid() != getgid();
+}
+
 static inline char *loader_getenv(const char *name, const struct loader_instance *inst) {
     // No allocation of memory necessary for Linux, but we should at least touch
     // the inst pointer to get rid of compiler warnings.
@@ -258,7 +262,7 @@ static inline char *loader_secure_getenv(const char *name, const struct loader_i
     // that can do damage.
     // This algorithm is derived from glibc code that sets an internal
     // variable (__libc_enable_secure) if the process is running under setuid or setgid.
-    return geteuid() != getuid() || getegid() != getgid() ? NULL : loader_getenv(name, inst);
+    return IsHighIntegrity() ? NULL : loader_getenv(name, inst);
 #else
 // Linux
 #ifdef HAVE_SECURE_GETENV
@@ -3727,8 +3731,10 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
             search_path_size += DetermineDataFilePathSize(EXTRASYSCONFDIR, rel_size);
 #endif
             if (is_directory_list) {
-                search_path_size += DetermineDataFilePathSize(xdgdatahome, rel_size);
-                search_path_size += DetermineDataFilePathSize(home_root, rel_size);
+                if (!IsHighIntegrity()) {
+                    search_path_size += DetermineDataFilePathSize(xdgdatahome, rel_size);
+                    search_path_size += DetermineDataFilePathSize(home_root, rel_size);
+                }
             }
 #endif
         }
@@ -3972,7 +3978,6 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
                                         bool warn_if_not_present, char *registry_location, struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
     bool is_icd = (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD);
-    bool use_secondary_hive = data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER;
     char *search_path = NULL;
 
     // These calls look at the PNP/Device section of the registry.
@@ -3997,6 +4002,7 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
     }
 
     // This call looks into the Khronos non-device specific section of the registry.
+    bool use_secondary_hive = (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) && (!IsHighIntegrity());
     VkResult reg_result = loaderGetRegistryFiles(inst, registry_location, use_secondary_hive, &search_path, &reg_size);
 
     if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == search_path) {
