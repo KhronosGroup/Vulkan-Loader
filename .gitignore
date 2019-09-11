@@ -28,5 +28,6 @@ external/*
 .vscode/
 .DS_Store
 _out64
+out/
 out32/*
 out64/*
