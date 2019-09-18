@@ -24,7 +24,7 @@ project(Vulkan-Loader)
 
 enable_testing()
 
-add_definitions(-DAPI_NAME="Vulkan")
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 QUIET)
@@ -133,21 +133,33 @@ else()
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-    set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-stringop-truncation -Wno-stringop-overflow")
+    set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
     set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -fno-strict-aliasing -fno-builtin-memcmp")
 
     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
     # all compilers until they all accept the C++17 standard
-    if(CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_CXX_COMPILER_VERSION LESS 7.1))
-        set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -Wimplicit-fallthrough=0")
+    if(CMAKE_COMPILER_IS_GNUCC)
+        set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -Wno-stringop-truncation -Wno-stringop-overflow")
+        if(CMAKE_CXX_COMPILER_VERSION LESS 7.1)
+            set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -Wimplicit-fallthrough=0")
+        endif()
     endif()
+    
 
     if(APPLE)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS}")
+    #clang-cl on Windows
+    elseif((CMAKE_C_COMPILER_ID MATCHES "Clang") AND (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xclang -std=c99 ${COMMON_COMPILE_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -std:c++11 -fno-rtti")
+    # clang (not clang-cl) or gcc
     else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 ${COMMON_COMPILE_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std:c++11 -fno-rtti")
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++11 -fno-rtti")
+    
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS}")
+    
     if(UNIX)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
@@ -176,18 +188,17 @@ endif()
 
 
 if(UNIX)
-    add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
-    add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
+    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS FALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}" FALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
 
     if(NOT (SYSCONFDIR STREQUAL ""))
         # SYSCONFDIR is specified, use it and do not force /etc.
-        add_definitions(-DSYSCONFDIR="${SYSCONFDIR}")
+        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS SYSCONFDIR="${SYSCONFDIR}")
     else()
-        add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
+        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS SYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 
         # Make sure /etc is searched by the loader
         if(NOT (CMAKE_INSTALL_FULL_SYSCONFDIR STREQUAL "/etc"))
-            add_definitions(-DEXTRASYSCONFDIR="/etc")
+            set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS EXTRASYSCONFDIR="/etc")
         endif()
     endif()
 endif()
