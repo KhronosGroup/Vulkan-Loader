@@ -3051,28 +3051,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(
 
 #endif // VK_USE_PLATFORM_FUCHSIA
 
-// ---- VK_EXT_metal_surface extension trampoline/terminators
-
-#ifdef VK_USE_PLATFORM_METAL_EXT
-VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(
-    VkInstance                                  instance,
-    const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
-#error("Not implemented. Likely needs to be manually generated!");
-    return disp->CreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(
-    VkInstance                                  instance,
-    const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
-#error("Not implemented. Likely needs to be manually generated!");
-}
-
-#endif // VK_USE_PLATFORM_METAL_EXT
-
 // ---- VK_EXT_buffer_device_address extension trampoline/terminators
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(
@@ -3979,16 +3957,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 #endif // VK_USE_PLATFORM_FUCHSIA
 
-    // ---- VK_EXT_metal_surface extension commands
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    if (!strcmp("vkCreateMetalSurfaceEXT", name)) {
-        *addr = (ptr_instance->enabled_known_extensions.ext_metal_surface == 1)
-                     ? (void *)CreateMetalSurfaceEXT
-                     : NULL;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_METAL_EXT
-
     // ---- VK_EXT_buffer_device_address extension commands
     if (!strcmp("vkGetBufferDeviceAddressEXT", name)) {
         *addr = (void *)GetBufferDeviceAddressEXT;
@@ -4114,12 +4082,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME)) {
             ptr_instance->enabled_known_extensions.fuchsia_imagepipe_surface = 1;
 #endif // VK_USE_PLATFORM_FUCHSIA
-
-    // ---- VK_EXT_metal_surface extension commands
-#ifdef VK_USE_PLATFORM_METAL_EXT
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_METAL_SURFACE_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.ext_metal_surface = 1;
-#endif // VK_USE_PLATFORM_METAL_EXT
         }
     }
 }
