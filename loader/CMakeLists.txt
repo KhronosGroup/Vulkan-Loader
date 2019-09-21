@@ -175,7 +175,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
 endif()
 
 if(WIN32)
-    add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
+    add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c dxgi_loader.c)
     target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
     target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-norm PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
@@ -214,10 +214,10 @@ if(WIN32)
     endif()
 
     if(ENABLE_WIN10_ONECORE)
-        target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB Dxgi)
+        target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
         set_target_properties(vulkan PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
     else()
-        target_link_libraries(vulkan Cfgmgr32 Dxgi)
+        target_link_libraries(vulkan Cfgmgr32)
     endif()
 
     add_dependencies(vulkan loader_asm_gen_files)
