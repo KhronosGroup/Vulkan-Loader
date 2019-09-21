@@ -71,7 +71,7 @@
 #include <devpkey.h>
 #include <winternl.h>
 #include <d3dkmthk.h>
-#include <Dxgi1_6.h>
+#include <dxgi1_2.h>
 
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTEnumAdapters2)(const D3DKMT_ENUMADAPTERS2*);
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
