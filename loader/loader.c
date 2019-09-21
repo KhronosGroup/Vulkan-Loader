@@ -71,7 +71,7 @@
 #include <devpkey.h>
 #include <winternl.h>
 #include <d3dkmthk.h>
-#include <dxgi1_2.h>
+#include "dxgi_loader.h"
 
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTEnumAdapters2)(const D3DKMT_ENUMADAPTERS2*);
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
@@ -873,7 +873,7 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
     }
 
     if (is_driver) {
-        HRESULT hres = CreateDXGIFactory1(&IID_IDXGIFactory1, &dxgi_factory);
+        HRESULT hres = dyn_CreateDXGIFactory1(&IID_IDXGIFactory1, &dxgi_factory);
         if (hres != S_OK) {
             loader_log(
                 inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
