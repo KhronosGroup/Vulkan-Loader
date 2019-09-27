@@ -121,7 +121,6 @@ endif()
 if(WIN32)
     find_package(WDK REQUIRED)
     option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
-    option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
 endif()
 
 option(BUILD_LOADER "Build loader" ON)
