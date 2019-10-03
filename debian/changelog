@@ -1,3 +1,9 @@
+vulkan-loader (1.1.121.0~rc2-1lunarg16.04.1.1) xenial; urgency=medium
+
+  * New 1.1.121.0~rc2 SDK
+
+ -- John Zupin <john@odin>  Thu, 12 Sep 2019 11:48:34 -0600
+
 vulkan-loader (1.1.114.0~rc1-1lunarg16.04.1.1) xenial; urgency=medium
 
   * New 1.1.114.0~rc1 SDK
