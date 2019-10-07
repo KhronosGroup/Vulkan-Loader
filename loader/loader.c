@@ -4756,7 +4756,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
                 continue;
             }
 
-            res = loaderAddLayerProperties(inst, instance_layers, json, false, file_str);
+            res = loaderAddLayerProperties(inst, instance_layers, json, true, file_str);
 
             loader_instance_heap_free(inst, file_str);
             cJSON_Delete(json);
@@ -4771,13 +4771,11 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
     // actually present in the available layer list
     VerifyAllMetaLayers(inst, instance_layers, &override_layer_valid);
 
-    if (override_layer_valid) {
-        loaderRemoveLayersInBlacklist(inst, instance_layers);
-        if (NULL != inst) {
+    if (override_layer_valid || implicit_metalayer_present) {
+        loaderRemoveLayersNotInImplicitMetaLayers(inst, instance_layers);
+        if (override_layer_valid && inst != NULL) {
             inst->override_layer_present = true;
         }
-    } else if (implicit_metalayer_present) {
-        loaderRemoveLayersNotInImplicitMetaLayers(inst, instance_layers);
     }
 
 out:
