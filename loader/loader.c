@@ -1785,7 +1785,7 @@ bool loaderImplicitLayerIsEnabled(const struct loader_instance *inst, const stru
         enable = true;
     } else {
         // Otherwise, only enable this layer if the enable environment variable is defined
-        env_value = loader_secure_getenv(prop->enable_env_var.name, inst);
+        env_value = loader_getenv(prop->enable_env_var.name, inst);
         if (env_value && !strcmp(prop->enable_env_var.value, env_value)) {
             enable = true;
         }
@@ -1794,7 +1794,7 @@ bool loaderImplicitLayerIsEnabled(const struct loader_instance *inst, const stru
 
     // The disable_environment has priority over everything else.  If it is defined, the layer is always
     // disabled.
-    env_value = loader_secure_getenv(prop->disable_env_var.name, inst);
+    env_value = loader_getenv(prop->disable_env_var.name, inst);
     if (env_value) {
         enable = false;
     }
@@ -5397,7 +5397,7 @@ static void loaderAddEnvironmentLayers(struct loader_instance *inst, const enum 
                                        struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
                                        const struct loader_layer_list *source_list) {
     char *next, *name;
-    char *layer_env = loader_secure_getenv(env_name, inst);
+    char *layer_env = loader_getenv(env_name, inst);
     if (layer_env == NULL) {
         goto out;
     }
