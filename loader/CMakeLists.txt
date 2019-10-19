@@ -155,11 +155,8 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
     if(HAVE_CET_H)
         set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS HAVE_CET_H)
     endif()
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.S
-               ".intel_syntax noprefix\n.text\n.global sample\nsample:\nmov ecx, [eax + 16]\n")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-    try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/asm_test.S)
-    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/asm_test.S)
+    try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test.S)
     if(ASSEMBLER_WORKS)
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.S)
         add_executable(asm_offset asm_offset.c)
