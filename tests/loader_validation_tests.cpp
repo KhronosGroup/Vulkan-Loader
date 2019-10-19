@@ -254,6 +254,8 @@ struct CommandLine : public ::testing::Test {
 
     static void SetUpTestCase(){};
     static void TearDownTestCase(){};
+    static void SetUpTestSuite(){};
+    static void TearDownTestSuite(){};
 
     static std::vector<std::string> arguments;
 };

@@ -26,10 +26,12 @@
  */
 
 // This needs to be defined first, or else we'll get redefinitions on NTSTATUS values
+#ifndef VK_LOADER_SKIP_WDK
 #ifdef _WIN32
 #define UMDF_USING_NTSTATUS
 #include <ntstatus.h>
 #endif
+#endif  // VK_LOADER_SKIP_WDK
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -69,12 +71,18 @@
 #include <cfgmgr32.h>
 #include <initguid.h>
 #include <devpkey.h>
+
+#ifndef VK_LOADER_SKIP_WDK
 #include <winternl.h>
 #include <d3dkmthk.h>
+#endif  // VK_LOADER_SKIP_WDK
+
 #include "dxgi_loader.h"
 
+#ifndef VK_LOADER_SKIP_WDK
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTEnumAdapters2)(const D3DKMT_ENUMADAPTERS2*);
 typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
+#endif  // VK_LOADER_DEBUG
 #endif
 
 // This is a CMake generated file with #defines for any functions/includes
@@ -3951,6 +3959,7 @@ out:
 }
 
 #ifdef _WIN32
+#ifndef VK_LOADER_SKIP_WDK
 // Read manifest JSON files uing the Windows driver interface
 static VkResult ReadManifestsFromD3DAdapters(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size,
                                              const wchar_t *value_name) {
@@ -4082,6 +4091,7 @@ out:
 
     return result;
 }
+#endif  // VK_LOADER_SKIP_WDK
 
 // Look for data files in the registry.
 static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
@@ -4094,21 +4104,33 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
     VkResult regHKR_result = VK_SUCCESS;
     DWORD reg_size = 4096;
     if (!strncmp(registry_location, VK_DRIVERS_INFO_REGISTRY_LOC, sizeof(VK_DRIVERS_INFO_REGISTRY_LOC))) {
+#ifndef VK_LOADER_SKIP_WDK
         // If we're looking for drivers we need to try enumerating adapters
         regHKR_result = ReadManifestsFromD3DAdapters(inst, &search_path, &reg_size, LoaderPnpDriverRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
+#endif  // VK_LOADER_SKIP_WDK
             regHKR_result = loaderGetDeviceRegistryFiles(inst, &search_path, &reg_size, LoaderPnpDriverRegistry());
+#ifndef VK_LOADER_SKIP_WDK
         }
+#endif  // VK_LOADER_SKIP_WDK
     } else if (!strncmp(registry_location, VK_ELAYERS_INFO_REGISTRY_LOC, sizeof(VK_ELAYERS_INFO_REGISTRY_LOC))) {
+#ifndef VK_LOADER_SKIP_WDK
         regHKR_result = ReadManifestsFromD3DAdapters(inst, &search_path, &reg_size, LoaderPnpELayerRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
+#endif  // VK_LOADER_SKIP_WDK
             regHKR_result = loaderGetDeviceRegistryFiles(inst, &search_path, &reg_size, LoaderPnpELayerRegistry());
+#ifndef VK_LOADER_SKIP_WDK
         }
+#endif  // VK_LOADER_SKIP_WDK
     } else if (!strncmp(registry_location, VK_ILAYERS_INFO_REGISTRY_LOC, sizeof(VK_ILAYERS_INFO_REGISTRY_LOC))) {
+#ifndef VK_LOADER_SKIP_WDK
         regHKR_result = ReadManifestsFromD3DAdapters(inst, &search_path, &reg_size, LoaderPnpILayerRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
+#endif  // VK_LOADER_SKIP_WDK
             regHKR_result = loaderGetDeviceRegistryFiles(inst, &search_path, &reg_size, LoaderPnpILayerRegistry());
+#ifndef VK_LOADER_SKIP_WDK
         }
+#endif  // VK_LOADER_SKIP_WDK
     }
 
     // This call looks into the Khronos non-device specific section of the registry.

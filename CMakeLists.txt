@@ -118,8 +118,14 @@ if(UNIX AND NOT APPLE) # i.e.: Linux
     endif()
 endif()
 
+option(VK_LOADER_SKIP_WDK "Skip WDK inclusion" OFF)
 if(WIN32)
-    find_package(WDK REQUIRED)
+    if (NOT ${VK_LOADER_SKIP_WDK})
+        find_package(WDK REQUIRED)
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_LOADER_SKIP_WDK=1")
+    endif()
+
     option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
     option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
 endif()
