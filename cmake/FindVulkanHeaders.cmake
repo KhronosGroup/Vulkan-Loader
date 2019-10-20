@@ -76,7 +76,8 @@ else()
   # do a normal search without hints.
   find_path(VulkanHeaders_INCLUDE_DIR NAMES vulkan/vulkan.h)
   get_filename_component(VULKAN_REGISTRY_PATH_HINT ${VulkanHeaders_INCLUDE_DIR} DIRECTORY)
-  find_path(VulkanRegistry_DIR NAMES vk.xml HINTS ${VULKAN_REGISTRY_PATH_HINT}/share/vulkan/registry)
+  find_path(VulkanRegistry_DIR NAMES vk.xml HINTS ${VULKAN_REGISTRY_PATH_HINT}/share/vulkan/registry
+    "${VULKAN_REGISTRY_PATH_HINT}/registry")
 endif()
 
 set(VulkanHeaders_INCLUDE_DIRS ${VulkanHeaders_INCLUDE_DIR})
