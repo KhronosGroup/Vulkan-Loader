@@ -932,41 +932,40 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
                         }
                         if (i == sizeof(known_drivers) / sizeof(known_drivers[0])) {
                             loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                                       "Dropping driver %s as it was not recognized as a known driver", name);
-                            continue;
-                        }
+                                       "Driver %s is not recognized as a known driver. It will be assumed to be active", name);
+                        } else {
+                            bool found_gpu = false;
+                            for (int j = 0;; ++j) {
+                                IDXGIAdapter1 *adapter;
+                                HRESULT hres = dxgi_factory->lpVtbl->EnumAdapters1(dxgi_factory, j, &adapter);
+                                if (hres == DXGI_ERROR_NOT_FOUND) {
+                                    break;
+                                } else if (hres != S_OK) {
+                                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                                               "Failed to enumerate DXGI adapters at index %d. As a result, drivers may be skipped", j);
+                                    continue;
+                                }
 
-                        bool found_gpu = false;
-                        for (int j = 0;; ++j) {
-                            IDXGIAdapter1 *adapter;
-                            HRESULT hres = dxgi_factory->lpVtbl->EnumAdapters1(dxgi_factory, j, &adapter);
-                            if (hres == DXGI_ERROR_NOT_FOUND) {
-                                break;
-                            } else if (hres != S_OK) {
-                                loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                                           "Failed to enumerate DXGI adapters at index %d. As a result, drivers may be skipped", j);
+                                DXGI_ADAPTER_DESC1 description;
+                                hres = adapter->lpVtbl->GetDesc1(adapter, &description);
+                                if (hres != S_OK) {
+                                    loader_log(
+                                        inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                                        "Failed to get DXGI adapter information at index %d. As a result, drivers may be skipped", j);
+                                    continue;
+                                }
+
+                                if (description.VendorId == known_drivers[i].vendor_id) {
+                                    found_gpu = true;
+                                    break;
+                                }
+                            }
+
+                            if (!found_gpu) {
+                                loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                                           "Dropping driver %s as no corresponduing DXGI adapter was found", name);
                                 continue;
                             }
-
-                            DXGI_ADAPTER_DESC1 description;
-                            hres = adapter->lpVtbl->GetDesc1(adapter, &description);
-                            if (hres != S_OK) {
-                                loader_log(
-                                    inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                                    "Failed to get DXGI adapter information at index %d. As a result, drivers may be skipped", j);
-                                continue;
-                            }
-
-                            if (description.VendorId == known_drivers[i].vendor_id) {
-                                found_gpu = true;
-                                break;
-                            }
-                        }
-
-                        if (!found_gpu) {
-                            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                                       "Dropping driver %s as no corresponduing DXGI adapter was found", name);
-                            continue;
                         }
                     }
 
