@@ -38,7 +38,6 @@
 //#ifndef _GNU_SOURCE
 //#define _GNU_SOURCE 1
 //#endif
-// TBD: Are the contents of the following file used?
 #include <unistd.h>
 // Note: The following file is for dynamic loading:
 #include <dlfcn.h>
@@ -99,6 +98,8 @@ static inline bool loader_platform_is_path_absolute(const char *path) {
 }
 
 static inline char *loader_platform_dirname(char *path) { return dirname(path); }
+
+static inline char *loader_current_directory(char buffer[1024]) { return getcwd(buffer, 1024); }
 
 // Dynamic Loading of libraries:
 typedef void *loader_platform_dl_handle;
@@ -162,6 +163,7 @@ static inline void loader_platform_thread_cond_broadcast(loader_platform_thread_
 #include <io.h>
 #include <stdbool.h>
 #include <shlwapi.h>
+#include <direct.h>
 #ifdef __cplusplus
 #include <iostream>
 #include <string>
@@ -277,6 +279,12 @@ static inline char *loader_platform_dirname(char *path) {
         }
     }
     return path;
+}
+
+static inline char *loader_current_directory(char buffer[1024]) {
+    DWORD ret = GetCurrentDirectory(1024, buffer);
+    if (ret == 0) return NULL;
+    return buffer;
 }
 
 // Dynamic Loading:
