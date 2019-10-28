@@ -156,6 +156,8 @@ struct loader_layer_properties {
     bool keep;
     uint32_t num_blacklist_layers;
     char (*blacklist_layer_names)[MAX_STRING_SIZE];
+    uint32_t num_app_key_paths;
+    char (*app_key_paths)[MAX_STRING_SIZE];
 };
 
 struct loader_layer_list {

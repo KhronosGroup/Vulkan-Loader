@@ -170,6 +170,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         target_link_libraries(asm_offset Vulkan::Headers)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
+        target_compile_definitions(asm_offset PRIVATE _XOPEN_SOURCE=500) # hush compiler warnings for readlink
     else()
         message(WARNING "Could not find working x86 GAS assembler\n${ASM_FAILURE_MSG}")
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
@@ -235,7 +236,6 @@ else()
                                      "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
     target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m)
     target_link_libraries(vulkan Vulkan::Headers)
-
     if(APPLE)
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
         target_link_libraries(vulkan "-framework CoreFoundation")
@@ -290,6 +290,8 @@ else()
     endif()
 
     if(NOT APPLE)
+        target_compile_definitions(vulkan PRIVATE _XOPEN_SOURCE=500) # hush compiler warnings for readlink
+
         # Generate pkg-config file.
         include(FindPkgConfig QUIET)
         if(PKG_CONFIG_FOUND)
