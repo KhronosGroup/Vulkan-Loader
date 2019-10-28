@@ -38,7 +38,6 @@
 //#ifndef _GNU_SOURCE
 //#define _GNU_SOURCE 1
 //#endif
-// TBD: Are the contents of the following file used?
 #include <unistd.h>
 // Note: The following file is for dynamic loading:
 #include <dlfcn.h>
@@ -99,6 +98,27 @@ static inline bool loader_platform_is_path_absolute(const char *path) {
 }
 
 static inline char *loader_platform_dirname(char *path) { return dirname(path); }
+
+#if defined(__linux__)
+
+// find application path + name. Path cannot be longer than 1024, returns NULL if it is greater than that.
+static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    ssize_t count = readlink("/proc/self/exe", buffer, size);
+    if (count == -1) return NULL;
+    if (count == 0) return NULL;
+    buffer[count] = '\0';
+    return buffer;
+}
+#elif defined(__APPLE__)  // defined(__linux__)
+#include <libproc.h>
+static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    pid_t pid = getpid();
+    int ret = proc_pidpath(pid, buffer, size);
+    if (ret <= 0) return NULL;
+    buffer[ret] = '\0';
+    return buffer;
+}
+#endif  // defined (__APPLE__)
 
 // Dynamic Loading of libraries:
 typedef void *loader_platform_dl_handle;
@@ -162,6 +182,7 @@ static inline void loader_platform_thread_cond_broadcast(loader_platform_thread_
 #include <io.h>
 #include <stdbool.h>
 #include <shlwapi.h>
+#include <direct.h>
 #ifdef __cplusplus
 #include <iostream>
 #include <string>
@@ -277,6 +298,14 @@ static inline char *loader_platform_dirname(char *path) {
         }
     }
     return path;
+}
+
+static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    DWORD ret = GetModuleFileName(NULL, buffer, (DWORD)size);
+    if (ret == 0) return NULL;
+    if (ret > size) return NULL;
+    buffer[ret] = '\0';
+    return buffer;
 }
 
 // Dynamic Loading:
