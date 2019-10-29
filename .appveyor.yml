@@ -12,7 +12,7 @@ version: "{build}"
 max_jobs: 4
 
 os:
-  - Visual Studio 2017
+  - Visual Studio 2015
 
 init:
   - git config --global core.autocrlf true
@@ -34,11 +34,6 @@ install:
 
 before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
-  # vcvars32.bat will override the platform ennvar, so we need to reset it or else appveyor dies
-  - "SET APPVEYOR_PLATFORM=%PLATFORM%"
-  - if %APPVEYOR_PLATFORM% == x64 (call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat")
-  - if %APPVEYOR_PLATFORM% == Win32 (call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat")
-  - "SET PLATFORM=%APPVEYOR_PLATFORM%"
   - echo.
   - echo Starting build for %APPVEYOR_REPO_NAME%
   # Install dependencies
@@ -55,7 +50,7 @@ before_build:
   - echo Generating CMake files for %PLATFORM%
   - mkdir build
   - cd build
-  - cmake -A %PLATFORM% -C../external/helper.cmake -DWDK_VERSION=10.0.17763.0 ..
+  - cmake -A %PLATFORM% -C../external/helper.cmake ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:

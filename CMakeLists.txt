@@ -119,7 +119,6 @@ if(UNIX AND NOT APPLE) # i.e.: Linux
 endif()
 
 if(WIN32)
-    find_package(WDK REQUIRED)
     option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
     option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
 endif()
