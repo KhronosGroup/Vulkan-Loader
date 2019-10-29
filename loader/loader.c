@@ -70,11 +70,8 @@
 #include <initguid.h>
 #include <devpkey.h>
 #include <winternl.h>
-#include <d3dkmthk.h>
+#include "adapters.h"
 #include "dxgi_loader.h"
-
-typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTEnumAdapters2)(const D3DKMT_ENUMADAPTERS2*);
-typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
 #endif
 
 // This is a CMake generated file with #defines for any functions/includes
@@ -3955,70 +3952,70 @@ out:
 static VkResult ReadManifestsFromD3DAdapters(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size,
                                              const wchar_t *value_name) {
     VkResult result = VK_INCOMPLETE;
-    D3DKMT_ENUMADAPTERS2 adapters = {.NumAdapters = 0, .pAdapters = NULL};
-    D3DDDI_QUERYREGISTRY_INFO *full_info = NULL;
+    LoaderEnumAdapters2 adapters = {.adapter_count = 0, .adapters = NULL};
+    LoaderQueryRegistryInfo *full_info = NULL;
     size_t full_info_size = 0;
     char *json_path = NULL;
     size_t json_path_size = 0;
 
-    PFN_D3DKMTEnumAdapters2 fpD3DKMTEnumAdapters2 =
-        (PFN_D3DKMTEnumAdapters2)GetProcAddress(GetModuleHandle("gdi32.dll"), "D3DKMTEnumAdapters2");
-    PFN_D3DKMTQueryAdapterInfo fpD3DKMTQueryAdapterInfo =
-        (PFN_D3DKMTQueryAdapterInfo)GetProcAddress(GetModuleHandle("gdi32.dll"), "D3DKMTQueryAdapterInfo");
-    if (fpD3DKMTEnumAdapters2 == NULL || fpD3DKMTQueryAdapterInfo == NULL) {
+    PFN_LoaderEnumAdapters2 fpLoaderEnumAdapters2 =
+        (PFN_LoaderEnumAdapters2)GetProcAddress(GetModuleHandle("gdi32.dll"), "D3DKMTEnumAdapters2");
+    PFN_LoaderQueryAdapterInfo fpLoaderQueryAdapterInfo =
+        (PFN_LoaderQueryAdapterInfo)GetProcAddress(GetModuleHandle("gdi32.dll"), "D3DKMTQueryAdapterInfo");
+    if (fpLoaderEnumAdapters2 == NULL || fpLoaderQueryAdapterInfo == NULL) {
         result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
 
     // Get all of the adapters
-    NTSTATUS status = fpD3DKMTEnumAdapters2(&adapters);
-    if (status == STATUS_SUCCESS && adapters.NumAdapters > 0) {
-        adapters.pAdapters =
-            loader_instance_heap_alloc(inst, sizeof(D3DKMT_ADAPTERINFO) * adapters.NumAdapters, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (adapters.pAdapters == NULL) {
+    NTSTATUS status = fpLoaderEnumAdapters2(&adapters);
+    if (status == STATUS_SUCCESS && adapters.adapter_count > 0) {
+        adapters.adapters = loader_instance_heap_alloc(inst, sizeof(*adapters.adapters) * adapters.adapter_count,
+                                                       VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (adapters.adapters == NULL) {
             goto out;
         }
-        status = fpD3DKMTEnumAdapters2(&adapters);
+        status = fpLoaderEnumAdapters2(&adapters);
     }
     if (status != STATUS_SUCCESS) {
         goto out;
     }
 
     // If that worked, we need to get the manifest file(s) for each adapter
-    for (ULONG i = 0; i < adapters.NumAdapters; ++i) {
+    for (ULONG i = 0; i < adapters.adapter_count; ++i) {
         // The first query should just check if the field exists and how big it is
-        D3DDDI_QUERYREGISTRY_INFO filename_info = {
-            .QueryType = D3DDDI_QUERYREGISTRY_ADAPTERKEY,
-            .QueryFlags =
+        LoaderQueryRegistryInfo filename_info = {
+            .query_type = LOADER_QUERY_REGISTRY_ADAPTER_KEY,
+            .query_flags =
                 {
-                    .TranslatePath = true,
+                    .translate_path = true,
                 },
-            .ValueType = REG_MULTI_SZ,
-            .PhysicalAdapterIndex = 0,
+            .value_type = REG_MULTI_SZ,
+            .physical_adapter_index = 0,
         };
-        wcsncpy(filename_info.ValueName, value_name, sizeof(filename_info.ValueName) / sizeof(DWORD));
-        D3DKMT_QUERYADAPTERINFO query_info = {
-            .hAdapter = adapters.pAdapters[i].hAdapter,
-            .Type = KMTQAITYPE_QUERYREGISTRY,
-            .pPrivateDriverData = &filename_info,
-            .PrivateDriverDataSize = sizeof(filename_info),
+        wcsncpy(filename_info.value_name, value_name, sizeof(filename_info.value_name) / sizeof(DWORD));
+        LoaderQueryAdapterInfo query_info = {
+            .handle = adapters.adapters[i].handle,
+            .type = LOADER_QUERY_TYPE_REGISTRY,
+            .private_data = &filename_info,
+            .private_data_size = sizeof(filename_info),
         };
-        status = fpD3DKMTQueryAdapterInfo(&query_info);
+        status = fpLoaderQueryAdapterInfo(&query_info);
 
         // This error indicates that the type didn't match, so we'll try a REG_SZ
         if (status != STATUS_SUCCESS) {
-            filename_info.ValueType = REG_SZ;
-            status = fpD3DKMTQueryAdapterInfo(&query_info);
+            filename_info.value_type = REG_SZ;
+            status = fpLoaderQueryAdapterInfo(&query_info);
         }
 
-        if (status != STATUS_SUCCESS || filename_info.Status != D3DDDI_QUERYREGISTRY_STATUS_BUFFER_OVERFLOW) {
+        if (status != STATUS_SUCCESS || filename_info.status != LOADER_QUERY_REGISTRY_STATUS_BUFFER_OVERFLOW) {
             continue;
         }
 
-        while (status == STATUS_SUCCESS && ((D3DDDI_QUERYREGISTRY_INFO *)query_info.pPrivateDriverData)->Status ==
-                                               D3DDDI_QUERYREGISTRY_STATUS_BUFFER_OVERFLOW) {
+        while (status == STATUS_SUCCESS &&
+               ((LoaderQueryRegistryInfo *)query_info.private_data)->status == LOADER_QUERY_REGISTRY_STATUS_BUFFER_OVERFLOW) {
             bool needs_copy = (full_info == NULL);
-            size_t full_size = sizeof(D3DDDI_QUERYREGISTRY_INFO) + filename_info.OutputValueSize;
+            size_t full_size = sizeof(LoaderQueryRegistryInfo) + filename_info.output_value_size;
             void *buffer =
                 loader_instance_heap_realloc(inst, full_info, full_info_size, full_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
             if (buffer == NULL) {
@@ -4029,29 +4026,29 @@ static VkResult ReadManifestsFromD3DAdapters(const struct loader_instance *inst,
             full_info_size = full_size;
 
             if (needs_copy) {
-                memcpy(full_info, &filename_info, sizeof(D3DDDI_QUERYREGISTRY_INFO));
+                memcpy(full_info, &filename_info, sizeof(LoaderQueryRegistryInfo));
             }
-            query_info.pPrivateDriverData = full_info;
-            query_info.PrivateDriverDataSize = (UINT)full_info_size;
-            status = fpD3DKMTQueryAdapterInfo(&query_info);
+            query_info.private_data = full_info;
+            query_info.private_data_size = (UINT)full_info_size;
+            status = fpLoaderQueryAdapterInfo(&query_info);
         }
 
-        if (status != STATUS_SUCCESS || full_info->Status != D3DDDI_QUERYREGISTRY_STATUS_SUCCESS) {
+        if (status != STATUS_SUCCESS || full_info->status != LOADER_QUERY_REGISTRY_STATUS_SUCCESS) {
             goto out;
         }
 
         // Convert the wide string to a narrow string
-        void *buffer = loader_instance_heap_realloc(inst, json_path, json_path_size, full_info->OutputValueSize,
+        void *buffer = loader_instance_heap_realloc(inst, json_path, json_path_size, full_info->output_value_size,
                                                     VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (buffer == NULL) {
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
         json_path = buffer;
-        json_path_size = full_info->OutputValueSize;
+        json_path_size = full_info->output_value_size;
 
         // Iterate over each component string
-        for (const wchar_t *curr_path = full_info->OutputString; curr_path[0] != '\0'; curr_path += wcslen(curr_path) + 1) {
+        for (const wchar_t *curr_path = full_info->output_string; curr_path[0] != '\0'; curr_path += wcslen(curr_path) + 1) {
             WideCharToMultiByte(CP_UTF8, 0, curr_path, -1, json_path, (int)json_path_size, NULL, NULL);
 
             // Add the string to the output list
@@ -4063,7 +4060,7 @@ static VkResult ReadManifestsFromD3DAdapters(const struct loader_instance *inst,
             }
 
             // If this is a string and not a multi-string, we don't want to go throught the loop more than once
-            if (full_info->ValueType == REG_SZ) {
+            if (full_info->value_type == REG_SZ) {
                 break;
             }
         }
@@ -4076,8 +4073,8 @@ out:
     if (full_info != NULL) {
         loader_instance_heap_free(inst, full_info);
     }
-    if (adapters.pAdapters != NULL) {
-        loader_instance_heap_free(inst, adapters.pAdapters);
+    if (adapters.adapters != NULL) {
+        loader_instance_heap_free(inst, adapters.adapters);
     }
 
     return result;

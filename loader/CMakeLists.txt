@@ -114,6 +114,10 @@ set(NORMAL_LOADER_SRCS
     murmurhash.c
     murmurhash.h)
 
+if(WIN32)
+    set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} adapters.h)
+endif()
+
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
 
 # Check for assembler support
