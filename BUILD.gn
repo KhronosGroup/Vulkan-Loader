@@ -114,7 +114,7 @@ if (!is_android) {
       }
     }
     if (is_mac) {
-      libs = [ "CoreFoundation.framework" ],
+      libs = [ "CoreFoundation.framework" ]
     }
     public_deps = [
       "$vulkan_headers_dir:vulkan_headers",
