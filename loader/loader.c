@@ -999,7 +999,8 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
                         }
                     }
                 }
-                name_size = 2048;
+                name_size = sizeof(name);
+                value_size = sizeof(value);
             }
             RegCloseKey(key);
         }
