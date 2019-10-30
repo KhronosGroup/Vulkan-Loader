@@ -34,7 +34,7 @@ config("vulkan_internal_config") {
   if (is_clang || !is_win) {
     cflags = [ "-Wno-unused-function" ]
   }
-  if (is_linux) {
+  if (is_linux || is_mac) {
     defines += [
       "SYSCONFDIR=\"/etc\"",
       "FALLBACK_CONFIG_DIRS=\"/etc/xdg\"",
@@ -112,6 +112,9 @@ if (!is_android) {
           "/wd4996",  # Unsafe stdlib function
         ]
       }
+    }
+    if (is_mac) {
+      libs = [ "CoreFoundation.framework" ],
     }
     public_deps = [
       "$vulkan_headers_dir:vulkan_headers",
