@@ -97,6 +97,8 @@ if (!is_android) {
       sources += [
         "loader/dirent_on_windows.c",
         "loader/dirent_on_windows.h",
+        "loader/dxgi_loader.c",
+        "loader/dxgi_loader.h",
       ]
       if (!is_clang) {
         cflags = [
@@ -111,6 +113,9 @@ if (!is_android) {
           "/wd4706",  # Assignment within conditional expression
           "/wd4996",  # Unsafe stdlib function
         ]
+      }
+      if (is_clang) {
+          cflags = [ "-Wno-incompatible-pointer-types" ]
       }
     }
     if (is_mac) {
