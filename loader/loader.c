@@ -266,16 +266,13 @@ static inline char *loader_secure_getenv(const char *name, const struct loader_i
     return IsHighIntegrity() ? NULL : loader_getenv(name, inst);
 #else
 // Linux
-#ifdef HAVE_SECURE_GETENV
+#if defined(HAVE_SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
     (void)inst;
     return secure_getenv(name);
-#elif defined(HAVE___SECURE_GETENV)
+#elif defined(HAVE___SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
     (void)inst;
     return __secure_getenv(name);
 #else
-#pragma message(                                                                       \
-    "Warning:  Falling back to non-secure getenv for environmental lookups!  Consider" \
-    " updating to a different libc.")
     return loader_getenv(name, inst);
 #endif
 #endif
@@ -338,9 +335,11 @@ static inline char *loader_getenv(const char *name, const struct loader_instance
 }
 
 static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
+#if !defined(USE_UNSAFE_FILE_SEARCH)
     if (IsHighIntegrity()) {
         return NULL;
     }
+#endif
 
     return loader_getenv(name, inst);
 }
