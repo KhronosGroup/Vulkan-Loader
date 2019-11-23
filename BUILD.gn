@@ -120,6 +120,7 @@ if (!is_android) {
       if (is_clang) {
           cflags = [ "-Wno-incompatible-pointer-types" ]
       }
+      libs = [ "Cfgmgr32.lib" ]
     }
     if (is_mac) {
       libs = [ "CoreFoundation.framework" ]
