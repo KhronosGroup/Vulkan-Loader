@@ -540,6 +540,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->WaitSemaphoresKHR = (PFN_vkWaitSemaphoresKHR)gdpa(dev, "vkWaitSemaphoresKHR");
     table->SignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)gdpa(dev, "vkSignalSemaphoreKHR");
 
+    // ---- VK_KHR_buffer_device_address extension commands
+    table->GetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)gdpa(dev, "vkGetBufferDeviceAddressKHR");
+    table->GetBufferOpaqueCaptureAddressKHR = (PFN_vkGetBufferOpaqueCaptureAddressKHR)gdpa(dev, "vkGetBufferOpaqueCaptureAddressKHR");
+    table->GetDeviceMemoryOpaqueCaptureAddressKHR = (PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR)gdpa(dev, "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
+
     // ---- VK_KHR_pipeline_executable_properties extension commands
     table->GetPipelineExecutablePropertiesKHR = (PFN_vkGetPipelineExecutablePropertiesKHR)gdpa(dev, "vkGetPipelineExecutablePropertiesKHR");
     table->GetPipelineExecutableStatisticsKHR = (PFN_vkGetPipelineExecutableStatisticsKHR)gdpa(dev, "vkGetPipelineExecutableStatisticsKHR");
@@ -1171,6 +1176,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetSemaphoreCounterValueKHR")) return (void *)table->GetSemaphoreCounterValueKHR;
     if (!strcmp(name, "WaitSemaphoresKHR")) return (void *)table->WaitSemaphoresKHR;
     if (!strcmp(name, "SignalSemaphoreKHR")) return (void *)table->SignalSemaphoreKHR;
+
+    // ---- VK_KHR_buffer_device_address extension commands
+    if (!strcmp(name, "GetBufferDeviceAddressKHR")) return (void *)table->GetBufferDeviceAddressKHR;
+    if (!strcmp(name, "GetBufferOpaqueCaptureAddressKHR")) return (void *)table->GetBufferOpaqueCaptureAddressKHR;
+    if (!strcmp(name, "GetDeviceMemoryOpaqueCaptureAddressKHR")) return (void *)table->GetDeviceMemoryOpaqueCaptureAddressKHR;
 
     // ---- VK_KHR_pipeline_executable_properties extension commands
     if (!strcmp(name, "GetPipelineExecutablePropertiesKHR")) return (void *)table->GetPipelineExecutablePropertiesKHR;
@@ -2020,6 +2030,30 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(
     const VkSemaphoreSignalInfoKHR*             pSignalInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     return disp->SignalSemaphoreKHR(device, pSignalInfo);
+}
+
+
+// ---- VK_KHR_buffer_device_address extension trampoline/terminators
+
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetBufferDeviceAddressKHR(device, pInfo);
+}
+
+VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetBufferOpaqueCaptureAddressKHR(device, pInfo);
+}
+
+VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
 }
 
 
@@ -3177,7 +3211,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo) {
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     return disp->GetBufferDeviceAddressEXT(device, pInfo);
 }
@@ -3592,6 +3626,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkSignalSemaphoreKHR", name)) {
         *addr = (void *)SignalSemaphoreKHR;
+        return true;
+    }
+
+    // ---- VK_KHR_buffer_device_address extension commands
+    if (!strcmp("vkGetBufferDeviceAddressKHR", name)) {
+        *addr = (void *)GetBufferDeviceAddressKHR;
+        return true;
+    }
+    if (!strcmp("vkGetBufferOpaqueCaptureAddressKHR", name)) {
+        *addr = (void *)GetBufferOpaqueCaptureAddressKHR;
+        return true;
+    }
+    if (!strcmp("vkGetDeviceMemoryOpaqueCaptureAddressKHR", name)) {
+        *addr = (void *)GetDeviceMemoryOpaqueCaptureAddressKHR;
         return true;
     }
 
