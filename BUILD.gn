@@ -97,11 +97,13 @@ if (!is_android) {
       "loader/wsi.h",
     ]
     if (is_win) {
+      output_name = "vulkan-1"
       sources += [
         "loader/dirent_on_windows.c",
         "loader/dirent_on_windows.h",
         "loader/dxgi_loader.c",
         "loader/dxgi_loader.h",
+        "loader/vulkan-1.def",
       ]
       if (!is_clang) {
         cflags = [
