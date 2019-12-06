@@ -3993,7 +3993,7 @@ static VkResult ReadManifestsFromD3DAdapters(const struct loader_instance *inst,
             .value_type = REG_MULTI_SZ,
             .physical_adapter_index = 0,
         };
-        wcsncpy(filename_info.value_name, value_name, sizeof(filename_info.value_name) / sizeof(DWORD));
+        wcsncpy(filename_info.value_name, value_name, sizeof(filename_info.value_name) / sizeof(WCHAR));
         LoaderQueryAdapterInfo query_info = {
             .handle = adapters.adapters[i].handle,
             .type = LOADER_QUERY_TYPE_REGISTRY,
