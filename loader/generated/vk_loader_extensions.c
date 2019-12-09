@@ -258,6 +258,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     LOOKUP_GIPA(CreateMetalSurfaceEXT, false);
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+    // ---- VK_EXT_tooling_info extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceToolPropertiesEXT, false);
+
     // ---- VK_NV_cooperative_matrix extension commands
     LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixPropertiesNV, false);
 
@@ -911,6 +914,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
     table->CreateMetalSurfaceEXT = (PFN_vkCreateMetalSurfaceEXT)gpa(inst, "vkCreateMetalSurfaceEXT");
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+    // ---- VK_EXT_tooling_info extension commands
+    table->GetPhysicalDeviceToolPropertiesEXT = (PFN_vkGetPhysicalDeviceToolPropertiesEXT)gpa(inst, "vkGetPhysicalDeviceToolPropertiesEXT");
+
     // ---- VK_NV_cooperative_matrix extension commands
     table->GetPhysicalDeviceCooperativeMatrixPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeMatrixPropertiesNV");
 
@@ -1551,6 +1557,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 #ifdef VK_USE_PLATFORM_METAL_EXT
     if (!strcmp(name, "CreateMetalSurfaceEXT")) return (void *)table->CreateMetalSurfaceEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+    // ---- VK_EXT_tooling_info extension commands
+    if (!strcmp(name, "GetPhysicalDeviceToolPropertiesEXT")) return (void *)table->GetPhysicalDeviceToolPropertiesEXT;
 
     // ---- VK_NV_cooperative_matrix extension commands
     if (!strcmp(name, "GetPhysicalDeviceCooperativeMatrixPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeMatrixPropertiesNV;
@@ -3217,6 +3226,32 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(
 }
 
 
+// ---- VK_EXT_tooling_info extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pToolCount,
+    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceToolPropertiesEXT(unwrapped_phys_dev, pToolCount, pToolProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolPropertiesEXT(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pToolCount,
+    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
+        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceToolPropertiesEXT");
+    }
+    return icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+}
+
+
 // ---- VK_NV_cooperative_matrix extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(
@@ -4165,6 +4200,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_tooling_info extension commands
+    if (!strcmp("vkGetPhysicalDeviceToolPropertiesEXT", name)) {
+        *addr = (void *)GetPhysicalDeviceToolPropertiesEXT;
+        return true;
+    }
+
     // ---- VK_NV_cooperative_matrix extension commands
     if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixPropertiesNV", name)) {
         *addr = (void *)GetPhysicalDeviceCooperativeMatrixPropertiesNV;
@@ -4527,6 +4568,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     .CreateMetalSurfaceEXT = terminator_CreateMetalSurfaceEXT,
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+    // ---- VK_EXT_tooling_info extension commands
+    .GetPhysicalDeviceToolPropertiesEXT = terminator_GetPhysicalDeviceToolPropertiesEXT,
 
     // ---- VK_NV_cooperative_matrix extension commands
     .GetPhysicalDeviceCooperativeMatrixPropertiesNV = terminator_GetPhysicalDeviceCooperativeMatrixPropertiesNV,
