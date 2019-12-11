@@ -49,7 +49,8 @@ ADD_INST_CMDS = ['vkCreateInstance',
 
 AVOID_EXT_NAMES = ['VK_EXT_debug_report']
 
-NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils']
+NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils',
+                       'VK_EXT_tooling_info']
 
 AVOID_CMD_NAMES = ['vkCreateDebugUtilsMessengerEXT',
                    'vkDestroyDebugUtilsMessengerEXT',
