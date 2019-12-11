@@ -3235,7 +3235,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    return disp->GetPhysicalDeviceToolPropertiesEXT(unwrapped_phys_dev, pToolCount, pToolProperties);
+    if (disp->GetPhysicalDeviceToolPropertiesEXT != NULL) {
+        return disp->GetPhysicalDeviceToolPropertiesEXT(unwrapped_phys_dev, pToolCount, pToolProperties);
+    } else {
+        return VK_SUCCESS;
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolPropertiesEXT(
