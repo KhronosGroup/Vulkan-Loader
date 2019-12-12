@@ -49,8 +49,7 @@ ADD_INST_CMDS = ['vkCreateInstance',
 
 AVOID_EXT_NAMES = ['VK_EXT_debug_report']
 
-NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils',
-                       'VK_EXT_tooling_info']
+NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils']
 
 AVOID_CMD_NAMES = ['vkCreateDebugUtilsMessengerEXT',
                    'vkDestroyDebugUtilsMessengerEXT',
@@ -928,7 +927,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                                'vkGetDisplayModeProperties2KHR',
                                'vkGetDisplayPlaneCapabilities2KHR',
                                'vkGetPhysicalDeviceSurfacePresentModes2EXT',
-                               'vkGetDeviceGroupSurfacePresentModes2EXT']
+                               'vkGetDeviceGroupSurfacePresentModes2EXT',
+                               'vkGetPhysicalDeviceToolPropertiesEXT']
 
         for ext_cmd in self.ext_commands:
             if (ext_cmd.ext_name in WSI_EXT_NAMES or
