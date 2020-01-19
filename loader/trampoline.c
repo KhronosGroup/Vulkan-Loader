@@ -135,6 +135,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         }
 
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
+        if (layer_lib == NULL) {
+            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
+                       layers.list[i].lib_name);
+            continue;
+        }
+
         libs[lib_count++] = layer_lib;
         void *pfn = loader_platform_get_proc_address(layer_lib,
                                                      layers.list[i].pre_instance_functions.enumerate_instance_extension_properties);
@@ -223,6 +229,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         }
 
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
+        if (layer_lib == NULL) {
+            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
+                       layers.list[i].lib_name);
+            continue;
+        }
+
         libs[lib_count++] = layer_lib;
         void *pfn =
             loader_platform_get_proc_address(layer_lib, layers.list[i].pre_instance_functions.enumerate_instance_layer_properties);
@@ -311,6 +323,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
         }
 
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
+        if (layer_lib == NULL) {
+            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
+                       layers.list[i].lib_name);
+            continue;
+        }
+
         libs[lib_count++] = layer_lib;
         void *pfn = loader_platform_get_proc_address(layer_lib,
                                                      layers.list[i].pre_instance_functions.enumerate_instance_version);
