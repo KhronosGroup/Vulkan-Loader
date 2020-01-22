@@ -1,3 +1,9 @@
+vulkan-loader (1.2.131.0~rc1-1ubuntu16.04.1.1) xenial; urgency=medium
+
+  * Automated package build
+
+ -- John Zupin <john@odin>  Tue, 22 Jan 2020 15:25:33 -0700
+
 vulkan-loader (1.1.130.0~rc1-1ubuntu16.04.1.1) xenial; urgency=medium
 
   * Automated package build
