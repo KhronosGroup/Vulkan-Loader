@@ -66,7 +66,7 @@ DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkGetDeviceGroupSurfacePresentModes2EXT']
 
 ALIASED_CMDS = {
-    # 1.1 aliases
+    # 1.1 aliases, specifically for APIs taking instance/pdev dispatchable objects
     'vkEnumeratePhysicalDeviceGroupsKHR':                   'vkEnumeratePhysicalDeviceGroups',
     'vkGetPhysicalDeviceFeatures2KHR':                      'vkGetPhysicalDeviceFeatures2',
     'vkGetPhysicalDeviceProperties2KHR':                    'vkGetPhysicalDeviceProperties2',
@@ -78,21 +78,6 @@ ALIASED_CMDS = {
     'vkGetPhysicalDeviceExternalBufferPropertiesKHR':       'vkGetPhysicalDeviceExternalBufferProperties',
     'vkGetPhysicalDeviceExternalSemaphorePropertiesKHR':    'vkGetPhysicalDeviceExternalSemaphoreProperties',
     'vkGetPhysicalDeviceExternalFencePropertiesKHR':        'vkGetPhysicalDeviceExternalFenceProperties',
-    
-    # 1.2 aliases
-    'vkCreateRenderPass2KHR':                               'vkCreateRenderPass2',
-    'vkCmdBeginRenderPass2KHR':                             'vkCmdBeginRenderPass2',
-    'vkCmdNextSubpass2KHR':                                 'vkCmdNextSubpass2',
-    'vkCmdEndRenderPass2KHR':                               'vkCmdEndRenderPass2',
-    'vkCmdDrawIndirectCountKHR':                            'vkCmdDrawIndirectCount',
-    'vkCmdDrawIndexedIndirectCountKHR':                     'vkCmdDrawIndexedIndirectCount',
-    'vkGetSemaphoreCounterValueKHR':                        'vkGetSemaphoreCounterValue',
-    'vkWaitSemaphoresKHR':                                  'vkWaitSemaphores',
-    'vkSignalSemaphoreKHR':                                 'vkSignalSemaphore',
-    'vkGetBufferDeviceAddressKHR':                          'vkGetBufferDeviceAddress',
-    'vkGetBufferOpaqueCaptureAddressKHR':                   'vkGetBufferOpaqueCaptureAddress',
-    'vkGetDeviceMemoryOpaqueCaptureAddressKHR':             'vkGetDeviceMemoryOpaqueCaptureAddress',
-    'vkResetQueryPoolEXT':                                  'vkResetQueryPool',
 }
 
 PRE_INSTANCE_FUNCTIONS = ['vkEnumerateInstanceExtensionProperties',
@@ -1391,7 +1376,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 gpa_func += '    }\n'
             else:
                 gpa_func += '    if (!strcmp("%s", name)) {\n' % (cur_cmd.name)
-                gpa_func += '        *addr = (void *)%s;\n' % (cur_cmd.name[2:])
+                gpa_func += '        *addr = (void *)%s;\n' % (base_name)
                 gpa_func += '        return true;\n'
                 gpa_func += '    }\n'
 
