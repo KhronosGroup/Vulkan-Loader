@@ -3518,19 +3518,19 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
 
     // ---- VK_KHR_create_renderpass2 extension commands
     if (!strcmp("vkCreateRenderPass2KHR", name)) {
-        *addr = (void *)vkCreateRenderPass2;
+        *addr = (void *)CreateRenderPass2KHR;
         return true;
     }
     if (!strcmp("vkCmdBeginRenderPass2KHR", name)) {
-        *addr = (void *)vkCmdBeginRenderPass2;
+        *addr = (void *)CmdBeginRenderPass2KHR;
         return true;
     }
     if (!strcmp("vkCmdNextSubpass2KHR", name)) {
-        *addr = (void *)vkCmdNextSubpass2;
+        *addr = (void *)CmdNextSubpass2KHR;
         return true;
     }
     if (!strcmp("vkCmdEndRenderPass2KHR", name)) {
-        *addr = (void *)vkCmdEndRenderPass2;
+        *addr = (void *)CmdEndRenderPass2KHR;
         return true;
     }
 
@@ -3646,39 +3646,39 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
 
     // ---- VK_KHR_draw_indirect_count extension commands
     if (!strcmp("vkCmdDrawIndirectCountKHR", name)) {
-        *addr = (void *)vkCmdDrawIndirectCount;
+        *addr = (void *)CmdDrawIndirectCountKHR;
         return true;
     }
     if (!strcmp("vkCmdDrawIndexedIndirectCountKHR", name)) {
-        *addr = (void *)vkCmdDrawIndexedIndirectCount;
+        *addr = (void *)CmdDrawIndexedIndirectCountKHR;
         return true;
     }
 
     // ---- VK_KHR_timeline_semaphore extension commands
     if (!strcmp("vkGetSemaphoreCounterValueKHR", name)) {
-        *addr = (void *)vkGetSemaphoreCounterValue;
+        *addr = (void *)GetSemaphoreCounterValueKHR;
         return true;
     }
     if (!strcmp("vkWaitSemaphoresKHR", name)) {
-        *addr = (void *)vkWaitSemaphores;
+        *addr = (void *)WaitSemaphoresKHR;
         return true;
     }
     if (!strcmp("vkSignalSemaphoreKHR", name)) {
-        *addr = (void *)vkSignalSemaphore;
+        *addr = (void *)SignalSemaphoreKHR;
         return true;
     }
 
     // ---- VK_KHR_buffer_device_address extension commands
     if (!strcmp("vkGetBufferDeviceAddressKHR", name)) {
-        *addr = (void *)vkGetBufferDeviceAddress;
+        *addr = (void *)GetBufferDeviceAddressKHR;
         return true;
     }
     if (!strcmp("vkGetBufferOpaqueCaptureAddressKHR", name)) {
-        *addr = (void *)vkGetBufferOpaqueCaptureAddress;
+        *addr = (void *)GetBufferOpaqueCaptureAddressKHR;
         return true;
     }
     if (!strcmp("vkGetDeviceMemoryOpaqueCaptureAddressKHR", name)) {
-        *addr = (void *)vkGetDeviceMemoryOpaqueCaptureAddress;
+        *addr = (void *)GetDeviceMemoryOpaqueCaptureAddressKHR;
         return true;
     }
 
@@ -4256,7 +4256,7 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
 
     // ---- VK_EXT_host_query_reset extension commands
     if (!strcmp("vkResetQueryPoolEXT", name)) {
-        *addr = (void *)vkResetQueryPool;
+        *addr = (void *)ResetQueryPoolEXT;
         return true;
     }
     return false;

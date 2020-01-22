@@ -1391,7 +1391,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 gpa_func += '    }\n'
             else:
                 gpa_func += '    if (!strcmp("%s", name)) {\n' % (cur_cmd.name)
-                gpa_func += '        *addr = (void *)%s;\n' % (base_name)
+                gpa_func += '        *addr = (void *)%s;\n' % (cur_cmd.name[2:])
                 gpa_func += '        return true;\n'
                 gpa_func += '    }\n'
 
