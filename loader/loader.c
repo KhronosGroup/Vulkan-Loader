@@ -2582,60 +2582,6 @@ out:
     return res;
 }
 
-const char *std_validation_str = "VK_LAYER_LUNARG_standard_validation";
-
-// Adds the legacy VK_LAYER_LUNARG_standard_validation as a meta-layer if it
-// fails to find it in the list already.  This is usually an indication that a
-// newer loader is being used with an older layer set.
-static bool loaderAddLegacyStandardValidationLayer(const struct loader_instance *inst,
-                                                   struct loader_layer_list *layer_instance_list) {
-    uint32_t i;
-    bool success = true;
-    struct loader_layer_properties *props = loaderGetNextLayerPropertySlot(inst, layer_instance_list);
-    const char std_validation_names[6][VK_MAX_EXTENSION_NAME_SIZE] = {
-        "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker",
-        "VK_LAYER_LUNARG_core_validation", "VK_LAYER_GOOGLE_unique_objects"};
-    uint32_t layer_count = sizeof(std_validation_names) / sizeof(std_validation_names[0]);
-
-    loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
-               "Adding VK_LAYER_LUNARG_standard_validation using the loader legacy path.  This is"
-               " not an error.");
-
-    if (NULL == props) {
-        goto out;
-    }
-
-    memset(props, 0, sizeof(struct loader_layer_properties));
-    props->type_flags = VK_LAYER_TYPE_FLAG_INSTANCE_LAYER | VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER | VK_LAYER_TYPE_FLAG_META_LAYER;
-    strncpy(props->info.description, "LunarG Standard Validation Layer", sizeof(props->info.description));
-    props->info.implementationVersion = 1;
-    strncpy(props->info.layerName, std_validation_str, sizeof(props->info.layerName));
-    props->info.specVersion = VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION);
-
-    props->component_layer_names =
-        loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * layer_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (NULL == props->component_layer_names) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "Failed to allocate space for legacy VK_LAYER_LUNARG_standard_validation"
-                   " meta-layer component_layers information.");
-        success = false;
-        goto out;
-    }
-    for (i = 0; i < layer_count; i++) {
-        strncpy(props->component_layer_names[i], std_validation_names[i], MAX_STRING_SIZE - 1);
-        props->component_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
-    }
-
-out:
-
-    if (!success && NULL != props && NULL != props->component_layer_names) {
-        loader_instance_heap_free(inst, props->component_layer_names);
-        props->component_layer_names = NULL;
-    }
-
-    return success;
-}
-
 // Verify that all component layers in a meta-layer are valid.
 static bool verifyMetaLayerComponentLayers(const struct loader_instance *inst, struct loader_layer_properties *prop,
                                            struct loader_layer_list *instance_layers) {
@@ -4605,23 +4551,6 @@ void loaderScanForLayers(struct loader_instance *inst, struct loader_layer_list 
                 goto out;
             }
         }
-    }
-
-    // See if "VK_LAYER_LUNARG_standard_validation" already in list.
-    bool found_std_val = false;
-    for (uint32_t i = 0; i < instance_layers->count; i++) {
-        struct loader_layer_properties *props = &instance_layers->list[i];
-        if (strcmp(props->info.layerName, std_validation_str) == 0) {
-            found_std_val = true;
-            break;
-        }
-    }
-
-    // If we didn't find the VK_LAYER_LUNARG_standard_validation meta-layer in
-    // the list, then we need to add it manually.  This is likely because we're
-    // dealing with a new loader, but an old layer folder.
-    if (!found_std_val && !loaderAddLegacyStandardValidationLayer(inst, instance_layers)) {
-        goto out;
     }
 
     // Verify any meta-layers in the list are valid and all the component layers are
