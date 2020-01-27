@@ -65,8 +65,10 @@ DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkSetDebugUtilsObjectTagEXT',
                          'vkGetDeviceGroupSurfacePresentModes2EXT']
 
-ALIASED_CMDS = {
-    # 1.1 aliases, specifically for APIs taking instance/pdev dispatchable objects
+# These are the aliased functions that use the same terminator for both extension and core versions
+# Generally, this is only applies to physical device level functions in instance extensions
+SHARED_ALIASES = {
+    # 1.1 aliases
     'vkEnumeratePhysicalDeviceGroupsKHR':                   'vkEnumeratePhysicalDeviceGroups',
     'vkGetPhysicalDeviceFeatures2KHR':                      'vkGetPhysicalDeviceFeatures2',
     'vkGetPhysicalDeviceProperties2KHR':                    'vkGetPhysicalDeviceProperties2',
@@ -1363,7 +1365,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 gpa_func += '#ifdef %s\n' % cur_cmd.protect
 
             #base_name = cur_cmd.name[2:]
-            base_name = ALIASED_CMDS[cur_cmd.name] if cur_cmd.name in ALIASED_CMDS else cur_cmd.name[2:]
+            base_name = SHARED_ALIASES[cur_cmd.name] if cur_cmd.name in SHARED_ALIASES else cur_cmd.name[2:]
 
             if (cur_cmd.ext_type == 'instance'):
                 gpa_func += '    if (!strcmp("%s", name)) {\n' % (cur_cmd.name)
@@ -1525,7 +1527,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                     # Remove 'vk' from proto name
                     base_name = cur_cmd.name[2:]
-                    aliased_name = ALIASED_CMDS[cur_cmd.name][2:] if cur_cmd.name in ALIASED_CMDS else base_name
+                    aliased_name = SHARED_ALIASES[cur_cmd.name][2:] if cur_cmd.name in SHARED_ALIASES else base_name
 
                     if (base_name == 'CreateInstance' or base_name == 'CreateDevice' or
                         base_name == 'EnumerateInstanceExtensionProperties' or
