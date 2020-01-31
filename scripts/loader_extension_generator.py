@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
+# Copyright (c) 2015-2020 The Khronos Group Inc.
+# Copyright (c) 2015-2020 Valve Corporation
+# Copyright (c) 2015-2020 LunarG, Inc.
 # Copyright (c) 2015-2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,6 +63,12 @@ DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkDebugMarkerSetObjectNameEXT',
                          'vkSetDebugUtilsObjectNameEXT',
                          'vkSetDebugUtilsObjectTagEXT',
+                         'vkQueueBeginDebugUtilsLabelEXT',
+                         'vkQueueEndDebugUtilsLabelEXT',
+                         'vkQueueInsertDebugUtilsLabelEXT',
+                         'vkCmdBeginDebugUtilsLabelEXT',
+                         'vkCmdEndDebugUtilsLabelEXT',
+                         'vkCmdInsertDebugUtilsLabelEXT',
                          'vkGetDeviceGroupSurfacePresentModes2EXT']
 
 # These are the aliased functions that use the same terminator for both extension and core versions
@@ -1180,29 +1186,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                 elif ext_cmd.handle_type == 'VkInstance':
                     funcs += '#error("Not implemented. Likely needs to be manually generated!");\n'
-                elif 'DebugUtilsLabel' in ext_cmd.name:
-                    funcs += '    const VkLayerDispatchTable *disp = loader_get_dispatch('
-                    funcs += ext_cmd.params[0].name
-                    funcs += ');\n'
-                    if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
-                        funcs += '    if (disp->' + base_name + ' != NULL) {\n'
-                        funcs += '    '
-                    funcs += '    '
-                    if has_return_type:
-                        funcs += 'return '
-                    funcs += 'disp->'
-                    funcs += base_name
-                    funcs += '('
-                    count = 0
-                    for param in ext_cmd.params:
-                        if count != 0:
-                            funcs += ', '
-                        funcs += param.name
-                        count += 1
-                    funcs += ');\n'
-                    if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
-                        funcs += '    }\n'
-                elif 'DebugMarkerSetObject' in ext_cmd.name or 'SetDebugUtilsObject' in ext_cmd.name:
+                elif 'DebugMarkerSetObject' in ext_cmd.name or 'SetDebugUtilsObject' in ext_cmd.name or 'DebugUtilsLabel' in ext_cmd.name:
                     funcs += '    uint32_t icd_index = 0;\n'
                     funcs += '    struct loader_device *dev;\n'
                     funcs += '    struct loader_icd_term *icd_term = loader_get_icd_and_device(%s, &dev, &icd_index);\n' % (ext_cmd.params[0].name)
