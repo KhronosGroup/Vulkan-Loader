@@ -477,7 +477,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
 bool loaderImplicitLayerIsEnabled(const struct loader_instance *inst, const struct loader_layer_properties *prop);
 VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                                                    struct loader_extension_list *inst_exts);
-struct loader_icd_term *loader_get_icd_and_device(const VkDevice device, struct loader_device **found_dev, uint32_t *icd_index);
+struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index);
 void loader_init_dispatch_dev_ext(struct loader_instance *inst, struct loader_device *dev);
 void *loader_dev_ext_gpa(struct loader_instance *inst, const char *funcName);
 void *loader_get_dev_ext_trampoline(uint32_t index);

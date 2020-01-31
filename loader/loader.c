@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2019 The Khronos Group Inc.
- * Copyright (c) 2014-2019 Valve Corporation
- * Copyright (c) 2014-2019 LunarG, Inc.
+ * Copyright (c) 2014-2020 The Khronos Group Inc.
+ * Copyright (c) 2014-2020 Valve Corporation
+ * Copyright (c) 2014-2020 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2044,7 +2044,7 @@ out:
     return res;
 }
 
-struct loader_icd_term *loader_get_icd_and_device(const VkDevice device, struct loader_device **found_dev, uint32_t *icd_index) {
+struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index) {
     *found_dev = NULL;
     for (struct loader_instance *inst = loader.instances; inst; inst = inst->next) {
         uint32_t index = 0;
@@ -4850,6 +4850,32 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_internal(VkI
     }
     if (!strcmp(pName, "vkCreateDevice")) {
         return (PFN_vkVoidFunction)terminator_CreateDevice;
+    }
+
+    // The VK_EXT_debug_utils functions need a special case here so the terminators can still be found from vkGetInstanceProcAddr
+    if (!strcmp(pName, "vkSetDebugUtilsObjectNameEXT")) {
+        return (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectNameEXT;
+    }
+    if (!strcmp(pName, "vkSetDebugUtilsObjectTagEXT")) {
+        return (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectTagEXT;
+    }
+    if (!strcmp(pName, "vkQueueBeginDebugUtilsLabelEXT")) {
+        return (PFN_vkVoidFunction)terminator_QueueBeginDebugUtilsLabelEXT;
+    }
+    if (!strcmp(pName, "vkQueueEndDebugUtilsLabelEXT")) {
+        return (PFN_vkVoidFunction)terminator_QueueEndDebugUtilsLabelEXT;
+    }
+    if (!strcmp(pName, "vkQueueInsertDebugUtilsLabelEXT")) {
+        return (PFN_vkVoidFunction)terminator_QueueInsertDebugUtilsLabelEXT;
+    }
+    if (!strcmp(pName, "vkCmdBeginDebugUtilsLabelEXT")) {
+        return (PFN_vkVoidFunction)terminator_CmdBeginDebugUtilsLabelEXT;
+    }
+    if (!strcmp(pName, "vkCmdEndDebugUtilsLabelEXT")) {
+        return (PFN_vkVoidFunction)terminator_CmdEndDebugUtilsLabelEXT;
+    }
+    if (!strcmp(pName, "vkCmdInsertDebugUtilsLabelEXT")) {
+        return (PFN_vkVoidFunction)terminator_CmdInsertDebugUtilsLabelEXT;
     }
 
     // inst is not wrapped
