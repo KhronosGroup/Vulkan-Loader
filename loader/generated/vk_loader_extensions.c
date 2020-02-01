@@ -238,6 +238,12 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     // ---- VK_EXT_debug_utils extension commands
     LOOKUP_GIPA(SetDebugUtilsObjectNameEXT, false);
     LOOKUP_GIPA(SetDebugUtilsObjectTagEXT, false);
+    LOOKUP_GIPA(QueueBeginDebugUtilsLabelEXT, false);
+    LOOKUP_GIPA(QueueEndDebugUtilsLabelEXT, false);
+    LOOKUP_GIPA(QueueInsertDebugUtilsLabelEXT, false);
+    LOOKUP_GIPA(CmdBeginDebugUtilsLabelEXT, false);
+    LOOKUP_GIPA(CmdEndDebugUtilsLabelEXT, false);
+    LOOKUP_GIPA(CmdInsertDebugUtilsLabelEXT, false);
     LOOKUP_GIPA(CreateDebugUtilsMessengerEXT, false);
     LOOKUP_GIPA(DestroyDebugUtilsMessengerEXT, false);
     LOOKUP_GIPA(SubmitDebugUtilsMessageEXT, false);
@@ -2711,7 +2717,18 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
     if (disp->QueueBeginDebugUtilsLabelEXT != NULL) {
-    disp->QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
+        disp->QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL terminator_QueueBeginDebugUtilsLabelEXT(
+    VkQueue                                     queue,
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(queue, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.QueueBeginDebugUtilsLabelEXT) {
+        icd_term->dispatch.QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
     }
 }
 
@@ -2719,7 +2736,17 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(
     VkQueue                                     queue) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
     if (disp->QueueEndDebugUtilsLabelEXT != NULL) {
-    disp->QueueEndDebugUtilsLabelEXT(queue);
+        disp->QueueEndDebugUtilsLabelEXT(queue);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL terminator_QueueEndDebugUtilsLabelEXT(
+    VkQueue                                     queue) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(queue, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.QueueEndDebugUtilsLabelEXT) {
+        icd_term->dispatch.QueueEndDebugUtilsLabelEXT(queue);
     }
 }
 
@@ -2728,7 +2755,18 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
     if (disp->QueueInsertDebugUtilsLabelEXT != NULL) {
-    disp->QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
+        disp->QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL terminator_QueueInsertDebugUtilsLabelEXT(
+    VkQueue                                     queue,
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(queue, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.QueueInsertDebugUtilsLabelEXT) {
+        icd_term->dispatch.QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
     }
 }
 
@@ -2737,7 +2775,18 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (disp->CmdBeginDebugUtilsLabelEXT != NULL) {
-    disp->CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+        disp->CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL terminator_CmdBeginDebugUtilsLabelEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(commandBuffer, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.CmdBeginDebugUtilsLabelEXT) {
+        icd_term->dispatch.CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     }
 }
 
@@ -2745,7 +2794,17 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (disp->CmdEndDebugUtilsLabelEXT != NULL) {
-    disp->CmdEndDebugUtilsLabelEXT(commandBuffer);
+        disp->CmdEndDebugUtilsLabelEXT(commandBuffer);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL terminator_CmdEndDebugUtilsLabelEXT(
+    VkCommandBuffer                             commandBuffer) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(commandBuffer, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.CmdEndDebugUtilsLabelEXT) {
+        icd_term->dispatch.CmdEndDebugUtilsLabelEXT(commandBuffer);
     }
 }
 
@@ -2754,7 +2813,18 @@ VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (disp->CmdInsertDebugUtilsLabelEXT != NULL) {
-    disp->CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+        disp->CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL terminator_CmdInsertDebugUtilsLabelEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(commandBuffer, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.CmdInsertDebugUtilsLabelEXT) {
+        icd_term->dispatch.CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     }
 }
 
@@ -4370,6 +4440,18 @@ PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *de
             addr = (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectNameEXT;
         } else if(!strcmp(pName, "vkSetDebugUtilsObjectTagEXT")) {
             addr = (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectTagEXT;
+        } else if(!strcmp(pName, "vkQueueBeginDebugUtilsLabelEXT")) {
+            addr = (PFN_vkVoidFunction)terminator_QueueBeginDebugUtilsLabelEXT;
+        } else if(!strcmp(pName, "vkQueueEndDebugUtilsLabelEXT")) {
+            addr = (PFN_vkVoidFunction)terminator_QueueEndDebugUtilsLabelEXT;
+        } else if(!strcmp(pName, "vkQueueInsertDebugUtilsLabelEXT")) {
+            addr = (PFN_vkVoidFunction)terminator_QueueInsertDebugUtilsLabelEXT;
+        } else if(!strcmp(pName, "vkCmdBeginDebugUtilsLabelEXT")) {
+            addr = (PFN_vkVoidFunction)terminator_CmdBeginDebugUtilsLabelEXT;
+        } else if(!strcmp(pName, "vkCmdEndDebugUtilsLabelEXT")) {
+            addr = (PFN_vkVoidFunction)terminator_CmdEndDebugUtilsLabelEXT;
+        } else if(!strcmp(pName, "vkCmdInsertDebugUtilsLabelEXT")) {
+            addr = (PFN_vkVoidFunction)terminator_CmdInsertDebugUtilsLabelEXT;
         }
     }
 #ifdef VK_USE_PLATFORM_WIN32_KHR

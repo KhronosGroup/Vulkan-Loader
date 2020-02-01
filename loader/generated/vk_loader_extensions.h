@@ -386,6 +386,12 @@ struct loader_icd_term_dispatch {
     // ---- VK_EXT_debug_utils extension commands
     PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
     PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT;
+    PFN_vkQueueBeginDebugUtilsLabelEXT QueueBeginDebugUtilsLabelEXT;
+    PFN_vkQueueEndDebugUtilsLabelEXT QueueEndDebugUtilsLabelEXT;
+    PFN_vkQueueInsertDebugUtilsLabelEXT QueueInsertDebugUtilsLabelEXT;
+    PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT;
+    PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT;
+    PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
     PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT;
     PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
     PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
