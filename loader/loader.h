@@ -67,6 +67,7 @@ typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_NONE = 0x00000000,
     VK_STRING_ERROR_LENGTH = 0x00000001,
     VK_STRING_ERROR_BAD_DATA = 0x00000002,
+    VK_STRING_ERROR_NULL_PTR = 0x00000004,
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 

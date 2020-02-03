@@ -7237,6 +7237,10 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
     int num_char_bytes = 0;
     int i, j;
 
+    if (utf8 == NULL) {
+        return VK_STRING_ERROR_NULL_PTR;
+    }
+
     for (i = 0; i <= max_length; i++) {
         if (utf8[i] == 0) {
             break;
