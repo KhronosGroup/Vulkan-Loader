@@ -252,6 +252,7 @@ static inline char *loader_getenv(const char *name, const struct loader_instance
 }
 
 static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
+    char *out;
 #if defined(__APPLE__)
     // Apple does not appear to have a secure getenv implementation.
     // The main difference between secure getenv and getenv is that secure getenv
@@ -265,14 +266,19 @@ static inline char *loader_secure_getenv(const char *name, const struct loader_i
 // Linux
 #if defined(HAVE_SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
     (void)inst;
-    return secure_getenv(name);
+    out = secure_getenv(name);
 #elif defined(HAVE___SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
     (void)inst;
-    return __secure_getenv(name);
+    out = __secure_getenv(name);
 #else
-    return loader_getenv(name, inst);
+    out = loader_getenv(name, inst);
 #endif
 #endif
+    if (out == NULL) {
+        loader_log(inst, LOADER_WARN_BIT, 0,
+                   "Loader is running with elevated permissions. Environment variable %s will be ignored.", name);
+    }
+    return out;
 }
 
 static inline void loader_free_getenv(char *val, const struct loader_instance *inst) {
@@ -334,6 +340,8 @@ static inline char *loader_getenv(const char *name, const struct loader_instance
 static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
 #if !defined(USE_UNSAFE_FILE_SEARCH)
     if (IsHighIntegrity()) {
+        loader_log(inst, LOADER_WARN_BIT, 0,
+                   "Loader is running with elevated permissions. Environment variable %s will be ignored.", name);
         return NULL;
     }
 #endif
