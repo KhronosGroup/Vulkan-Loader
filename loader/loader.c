@@ -275,7 +275,7 @@ static inline char *loader_secure_getenv(const char *name, const struct loader_i
 #endif
 #endif
     if (out == NULL) {
-        loader_log(inst, LOADER_WARN_BIT, 0,
+        loader_log(inst, LOADER_INFO_BIT, 0,
                    "Loader is running with elevated permissions. Environment variable %s will be ignored.", name);
     }
     return out;
@@ -340,7 +340,7 @@ static inline char *loader_getenv(const char *name, const struct loader_instance
 static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
 #if !defined(USE_UNSAFE_FILE_SEARCH)
     if (IsHighIntegrity()) {
-        loader_log(inst, LOADER_WARN_BIT, 0,
+        loader_log(inst, LOADER_INFO_BIT, 0,
                    "Loader is running with elevated permissions. Environment variable %s will be ignored.", name);
         return NULL;
     }
