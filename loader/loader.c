@@ -862,7 +862,6 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
     char name[2048];
     char *loc = location;
     char *next;
-    DWORD idx;
     DWORD name_size = sizeof(name);
     DWORD value;
     DWORD value_size = sizeof(value);
@@ -892,9 +891,9 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
         access_flags = KEY_QUERY_VALUE;
         rtn_value = RegOpenKeyEx(hive, loc, 0, access_flags, &key);
         if (ERROR_SUCCESS == rtn_value) {
-            idx = 0;
-            while ((rtn_value = RegEnumValue(key, idx++, name, &name_size, NULL, NULL, (LPBYTE)&value, &value_size)) ==
-                   ERROR_SUCCESS) {
+            for (DWORD idx = 0;
+                 rtn_value = RegEnumValue(key, idx++, name, &name_size, NULL, NULL, (LPBYTE)&value, &value_size) == ERROR_SUCCESS;
+                 name_size = sizeof(name), value_size = sizeof(value)) {
                 if (value_size == sizeof(value) && value == 0) {
                     if (NULL == *reg_data) {
                         *reg_data = loader_instance_heap_alloc(inst, *reg_data_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
@@ -1006,8 +1005,6 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
                         }
                     }
                 }
-                name_size = sizeof(name);
-                value_size = sizeof(value);
             }
             RegCloseKey(key);
         }
