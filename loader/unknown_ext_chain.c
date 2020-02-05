@@ -19,49 +19,49 @@
  * Author: Lenny Komow <lenny@lunarg.com>
  */
 
- // This code is used to pass on physical device extensions through the call chain. It must do this without creating a stack frame,
- // because the actual parameters of the call are not known. Since the first parameter is known to be a VkPhysicalDevice, it can
+// This code is used to pass on physical device extensions through the call chain. It must do this without creating a stack frame,
+// because the actual parameters of the call are not known. Since the first parameter is known to be a VkPhysicalDevice, it can
 // unwrap the physical device, overwriting the wrapped device, and then jump to the next function in the call chain. This code
 // attempts to accomplish this by relying on tail-call optimizations, but there is no guarantee that this will work. As a result,
 // this code is only compiled on systems where an assembly alternative has not been written.
 
- #include "vk_loader_platform.h"
- #include "loader.h"
+#include "vk_loader_platform.h"
+#include "loader.h"
 
- #if defined(__GNUC__) && !defined(__clang__)
- #pragma GCC optimize(3)  // force gcc to use tail-calls
- #endif
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC optimize(3)  // force gcc to use tail-calls
+#endif
 
- // Trampoline function macro for unknown physical device extension command.
- #define PhysDevExtTramp(num)                                                              \
-     VKAPI_ATTR void VKAPI_CALL vkPhysDevExtTramp##num(VkPhysicalDevice physical_device) { \
-         const struct loader_instance_dispatch_table *disp;                                \
-         disp = loader_get_instance_dispatch(physical_device);                             \
-         disp->phys_dev_ext[num](loader_unwrap_physical_device(physical_device));          \
-     }
+// Trampoline function macro for unknown physical device extension command.
+#define PhysDevExtTramp(num)                                                              \
+    VKAPI_ATTR void VKAPI_CALL vkPhysDevExtTramp##num(VkPhysicalDevice physical_device) { \
+        const struct loader_instance_dispatch_table *disp;                                \
+        disp = loader_get_instance_dispatch(physical_device);                             \
+        disp->phys_dev_ext[num](loader_unwrap_physical_device(physical_device));          \
+    }
 
 // Terminator function macro for unknown physical device extension command.
 #define PhysDevExtTermin(num)                                                                                         \
     VKAPI_ATTR void VKAPI_CALL vkPhysDevExtTermin##num(VkPhysicalDevice physical_device) {                            \
-         struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physical_device;    \
-         struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;                                              \
-         struct loader_instance *inst = (struct loader_instance *)icd_term->this_instance;                             \
-         if (NULL == icd_term->phys_dev_ext[num]) {                                                                    \
-             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "Extension %s not supported for this physical device", \
-                        inst->phys_dev_ext_disp_hash[num].func_name);                                                  \
-         }                                                                                                             \
-         icd_term->phys_dev_ext[num](phys_dev_term->phys_dev);                                                         \
+        struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physical_device;    \
+        struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;                                              \
+        struct loader_instance *inst = (struct loader_instance *)icd_term->this_instance;                             \
+        if (NULL == icd_term->phys_dev_ext[num]) {                                                                    \
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "Extension %s not supported for this physical device", \
+                       inst->phys_dev_ext_disp_hash[num].func_name);                                                  \
+        }                                                                                                             \
+        icd_term->phys_dev_ext[num](phys_dev_term->phys_dev);                                                         \
     }
 
 // Trampoline function macro for unknown physical device extension command.
-#define DevExtTramp(num)                                                          \
-   VKAPI_ATTR void VKAPI_CALL vkdev_ext##num(VkDevice device) {                   \
-           const struct loader_dev_dispatch_table *disp;                          \
-           disp = loader_get_dev_dispatch(device);                                \
-           disp->ext_dispatch.dev_ext[num](device);                               \
-       }
+#define DevExtTramp(num)                                         \
+    VKAPI_ATTR void VKAPI_CALL vkdev_ext##num(VkDevice device) { \
+        const struct loader_dev_dispatch_table *disp;            \
+        disp = loader_get_dev_dispatch(device);                  \
+        disp->ext_dispatch.dev_ext[num](device);                 \
+    }
 
-
+// clang-format off
 // Instantiations of the trampoline
 PhysDevExtTramp(0)
 PhysDevExtTramp(1)
@@ -817,3 +817,4 @@ DevExtTramp(246)
 DevExtTramp(247)
 DevExtTramp(248)
 DevExtTramp(249)
+    // clang-format on
