@@ -892,7 +892,7 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
         rtn_value = RegOpenKeyEx(hive, loc, 0, access_flags, &key);
         if (ERROR_SUCCESS == rtn_value) {
             for (DWORD idx = 0;
-                 rtn_value = RegEnumValue(key, idx++, name, &name_size, NULL, NULL, (LPBYTE)&value, &value_size) == ERROR_SUCCESS;
+                 (rtn_value = RegEnumValue(key, idx++, name, &name_size, NULL, NULL, (LPBYTE)&value, &value_size)) == ERROR_SUCCESS;
                  name_size = sizeof(name), value_size = sizeof(value)) {
                 if (value_size == sizeof(value) && value == 0) {
                     if (NULL == *reg_data) {
