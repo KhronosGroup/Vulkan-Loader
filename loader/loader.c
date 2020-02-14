@@ -1259,9 +1259,18 @@ void loaderRemoveLayerInList(const struct loader_instance *inst, struct loader_l
     }
     if (layer_list->list[layer_to_remove].type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
         // Delete the component layers
-        loader_instance_heap_free(inst, layer_list->list[layer_to_remove].component_layer_names);
-        loader_instance_heap_free(inst, layer_list->list[layer_to_remove].override_paths);
-        // Never need to free the blacklist, since it can only exist in the override layer
+        if (layer_list->list[layer_to_remove].component_layer_names != NULL) {
+            loader_instance_heap_free(inst, layer_list->list[layer_to_remove].component_layer_names);
+            layer_list->list[layer_to_remove].component_layer_names = NULL;
+        }
+        if (layer_list->list[layer_to_remove].override_paths != NULL) {
+            loader_instance_heap_free(inst, layer_list->list[layer_to_remove].override_paths);
+            layer_list->list[layer_to_remove].override_paths = NULL;
+        }
+        if (layer_list->list[layer_to_remove].blacklist_layer_names != NULL) {
+            loader_instance_heap_free(inst, layer_list->list[layer_to_remove].blacklist_layer_names);
+            layer_list->list[layer_to_remove].blacklist_layer_names = NULL;
+        }
     }
 
     // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
@@ -1301,21 +1310,7 @@ void loaderRemoveLayersInBlacklist(const struct loader_instance *inst, struct lo
                        " inside of it. Removing that layer from current layer list.",
                        cur_layer_name);
 
-            if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                // Delete the component layers
-                loader_instance_heap_free(inst, cur_layer_prop.component_layer_names);
-                loader_instance_heap_free(inst, cur_layer_prop.override_paths);
-                // Never need to free the blacklist, since it can only exist in the override layer
-            }
-
-            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
-            // overlapping the source and destination addresses.
-            memmove(&layer_list->list[j], &layer_list->list[j + 1],
-                    sizeof(struct loader_layer_properties) * (layer_list->count - 1 - j));
-
-            // Decrement the count (because we now have one less) and decrement the loop index since we need to
-            // re-check this index.
-            layer_list->count--;
+            loaderRemoveLayerInList(inst, layer_list, j);
             j--;
 
             // Re-do the query for the override layer
@@ -1369,20 +1364,7 @@ void loaderRemoveLayersNotInImplicitMetaLayers(const struct loader_instance *ins
                        " inside of any.  So removing layer from current layer list.",
                        cur_layer_prop.info.layerName);
 
-            if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                // Delete the component layers
-                loader_instance_heap_free(inst, cur_layer_prop.component_layer_names);
-                loader_instance_heap_free(inst, cur_layer_prop.override_paths);
-            }
-
-            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
-            // overlapping the source and destination addresses.
-            memmove(&layer_list->list[i], &layer_list->list[i + 1],
-                    sizeof(struct loader_layer_properties) * (layer_list->count - 1 - i));
-
-            // Decrement the count (because we now have one less) and decrement the loop index since we need to
-            // re-check this index.
-            layer_list->count--;
+            loaderRemoveLayerInList(inst, layer_list, i);
             i--;
         }
     }
@@ -2730,20 +2712,7 @@ static void VerifyAllMetaLayers(struct loader_instance *inst, struct loader_laye
                            "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
             }
 
-            // Delete the component layers
-            loader_instance_heap_free(inst, prop->component_layer_names);
-            if (prop->blacklist_layer_names != NULL) {
-                loader_instance_heap_free(inst, prop->blacklist_layer_names);
-            }
-
-            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
-            // overlapping the source and destination addresses.
-            memmove(&instance_layers->list[i], &instance_layers->list[i + 1],
-                    sizeof(struct loader_layer_properties) * (instance_layers->count - 1 - i));
-
-            // Decrement the count (because we now have one less) and decrement the loop index since we need to
-            // re-check this index.
-            instance_layers->count--;
+            loaderRemoveLayerInList(inst, instance_layers, i);
             i--;
         } else if (prop->is_override && loaderImplicitLayerIsEnabled(inst, prop)) {
             *override_layer_present = true;
