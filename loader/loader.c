@@ -3151,7 +3151,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
             if (version.major > 1 || version.minor >= 1) {
                 loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
                            "Layer \"%s\" using deprecated \'vkGetInstanceProcAddr\' tag which was deprecated starting with JSON "
-                           "file version 1.1.0. The new vkNegotiateLayerInterfaceVersion function is preferred, though for "
+                           "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
                            "compatibility reasons it may be desirable to continue using the deprecated tag.",
                            name);
             }
@@ -3162,7 +3162,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
             if (version.major > 1 || version.minor >= 1) {
                 loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
                            "Layer \"%s\" using deprecated \'vkGetDeviceProcAddr\' tag which was deprecated starting with JSON "
-                           "file version 1.1.0. The new vkNegotiateLayerInterfaceVersion function is preferred, though for "
+                           "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
                            "compatibility reasons it may be desirable to continue using the deprecated tag.",
                            name);
             }
