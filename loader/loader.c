@@ -5469,8 +5469,6 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
     struct loader_device *dev = NULL;
     struct loader_instance *inst = NULL;
 
-    assert(pCreateInfo->queueCreateInfoCount >= 1);
-
     if (instance != NULL) {
         inst = loader_get_instance(instance);
         internal_device = physicalDevice;
