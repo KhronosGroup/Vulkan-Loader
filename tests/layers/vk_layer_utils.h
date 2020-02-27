@@ -88,8 +88,6 @@ static inline SepString string_join(const char *sep, const StringCollection &str
 extern "C" {
 #endif
 
-#define VK_LAYER_API_VERSION VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION)
-
 typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_NONE = 0x00000000,
     VK_STRING_ERROR_LENGTH = 0x00000001,
