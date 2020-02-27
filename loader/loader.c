@@ -124,10 +124,6 @@ loader_platform_thread_mutex loader_json_lock;
 
 LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
-// This loader supports Vulkan API version 1.1
-uint32_t loader_major_version = 1;
-uint32_t loader_minor_version = 2;
-
 void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope alloc_scope) {
     void *pMemory = NULL;
 #if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
@@ -1078,11 +1074,11 @@ static size_t loader_platform_combine_path(char *dest, size_t len, ...) {
 
 // Given string of three part form "maj.min.pat" convert to a vulkan version number.
 static uint32_t loader_make_version(char *vers_str) {
-    uint32_t vers = 0, major = 0, minor = 0, patch = 0;
+    uint32_t major = 0, minor = 0, patch = 0;
     char *vers_tok;
 
     if (!vers_str) {
-        return vers;
+        return 0;
     }
 
     vers_tok = strtok(vers_str, ".\"\n\r");
@@ -6589,7 +6585,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     if (!dev->extensions.khr_device_group_enabled) {
         VkPhysicalDeviceProperties properties;
         icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
-        if (properties.apiVersion >= VK_MAKE_VERSION(1, 1, 0)) {
+        if (properties.apiVersion >= VK_API_VERSION_1_1) {
             dev->extensions.khr_device_group_enabled = true;
         }
     }
@@ -7244,7 +7240,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 terminator_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain, uint32_t* pApiVersion) {
     // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
     // prefers us crashing.
-    *pApiVersion = VK_MAKE_VERSION(loader_major_version, loader_minor_version, VK_HEADER_VERSION);
+    *pApiVersion = VK_HEADER_VERSION_COMPLETE;
     return VK_SUCCESS;
 }
 
