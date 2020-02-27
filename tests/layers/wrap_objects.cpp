@@ -31,7 +31,10 @@
 namespace wrap_objects {
 
 static const VkLayerProperties global_layer = {
-    "VK_LAYER_LUNARG_wrap_objects", VK_LAYER_API_VERSION, 1, "LunarG Test Layer",
+    "VK_LAYER_LUNARG_wrap_objects",
+    VK_HEADER_VERSION_COMPLETE,
+    1,
+    "LunarG Test Layer",
 };
 
 static uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
