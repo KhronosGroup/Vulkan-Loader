@@ -656,6 +656,11 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
                                          ptr_instance->tmp_report_callbacks);
         util_FreeDebugReportCreateInfos(pAllocator, ptr_instance->tmp_report_create_infos, ptr_instance->tmp_report_callbacks);
     }
+
+    // Unload preloaded layers, so if vkEnumerateInstanceExtensionProperties or vkCreateInstance is called again, the ICD's are up
+    // to date
+    loader_unload_preloaded_icds();
+
     loader_instance_heap_free(ptr_instance, ptr_instance->disp);
     loader_instance_heap_free(ptr_instance, ptr_instance);
     loader_platform_thread_unlock_mutex(&loader_lock);
