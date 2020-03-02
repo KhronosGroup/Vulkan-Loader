@@ -122,6 +122,13 @@ enum loader_data_files_type {
 loader_platform_thread_mutex loader_lock;
 loader_platform_thread_mutex loader_json_lock;
 
+// A list of ICDs that gets initialized when the loader does its global initialization. This list should never be used by anything
+// other than EnumerateInstanceExtensionProperties(), vkDestroyInstance, and loader_release(). This list does not change
+// functionality, but the fact that the libraries already been loaded causes any call that needs to load ICD libraries to speed up
+// significantly. This can have a huge impact when making repeated calls to vkEnumerateInstanceExtensionProperties and
+// vkCreateInstance.
+static struct loader_icd_tramp_list scanned_icds;
+
 LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
 void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope alloc_scope) {
@@ -2450,9 +2457,37 @@ struct loader_data_files {
 };
 
 void loader_release() {
+    // Guarantee release of the preloaded ICD libraries. This may have already been called in vkDestroyInstance.
+    loader_unload_preloaded_icds();
+
     // release mutexes
     loader_platform_thread_delete_mutex(&loader_lock);
     loader_platform_thread_delete_mutex(&loader_json_lock);
+}
+
+// Preload the ICD libraries that are likely to be needed so we don't repeatedly load/unload them later
+void loader_preload_icds(void) {
+    loader_platform_thread_lock_mutex(&loader_lock);
+
+    // Already preloaded, skip loading again.
+    if (scanned_icds.scanned_list != NULL) {
+        loader_platform_thread_unlock_mutex(&loader_lock);
+        return;
+    }
+
+    memset(&scanned_icds, 0, sizeof(scanned_icds));
+    VkResult result = loader_icd_scan(NULL, &scanned_icds);
+    if (result != VK_SUCCESS) {
+        loader_scanned_icd_clear(NULL, &scanned_icds);
+    }
+    loader_platform_thread_unlock_mutex(&loader_lock);
+}
+
+// Release the ICD libraries that were preloaded
+void loader_unload_preloaded_icds(void) {
+    loader_platform_thread_lock_mutex(&loader_lock);
+    loader_scanned_icd_clear(NULL, &scanned_icds);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 }
 
 // Get next file or dirname given a string list or registry key path
@@ -7277,6 +7312,9 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
             }
         }
     } else {
+        // Preload ICD libraries so subsequent calls to EnumerateInstanceExtensionProperties don't have to load them
+        loader_preload_icds();
+
         // Scan/discover all ICD libraries
         memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
         res = loader_icd_scan(NULL, &icd_tramp_list);
