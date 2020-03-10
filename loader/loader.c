@@ -3380,6 +3380,10 @@ static VkResult loaderAddLayerProperties(const struct loader_instance *inst, str
     layer_json_version json_version = {0, 0, 0};
     char *vers_tok;
     cJSON *disable_environment = NULL;
+    // Make sure sure the top level json value is an object
+    if(!json || json->type != 6){
+        goto out;
+    }
     item = cJSON_GetObjectItem(json, "file_format_version");
     if (item == NULL) {
         goto out;
