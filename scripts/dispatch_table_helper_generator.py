@@ -25,6 +25,11 @@ from generator import *
 from collections import namedtuple
 from common_codegen import *
 
+return_type_table = {"VkResult": "VK_SUCCESS",
+                     "uint32_t": "0",
+                     "uint64_t": "0L",
+                     "VkDeviceAddress": "0L"}
+
 #
 # DispatchTableHelperOutputGeneratorOptions - subclass of GeneratorOptions.
 class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
@@ -168,17 +173,18 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             if "VK_VERSION" not in self.featureName and self.extension_type == 'device':
                 self.device_extension_list.append(name)
                 # Build up stub function
-                return_type = ''
                 decl = self.makeCDecls(cmdinfo.elem)[1]
-                if 'typedef VkResult' in decl:
-                    return_type = 'return VK_SUCCESS;'
+                return_type = cmdinfo.elem.find('proto/type').text
+                return_statement = ""  # default type is void, so no return type
+                try:
+                    return_statement = 'return ' + return_type_table[return_type] + ';'
+                except KeyError:
+                    if return_type != "void":
+                        raise AssertionError("return_type_table does not contain all possible types. Add an entry for `" + return_type + "`.")
                 decl = decl.split('*PFN_vk')[1]
                 decl = decl.replace(')(', '(')
-                if return_type == '':
-                    decl = 'static VKAPI_ATTR void VKAPI_CALL Stub' + decl
-                else:
-                    decl = 'static VKAPI_ATTR VkResult VKAPI_CALL Stub' + decl
-                func_body = ' { ' + return_type + ' };'
+                decl = 'static VKAPI_ATTR ' + return_type + ' VKAPI_CALL Stub' + decl
+                func_body = ' { ' + return_statement + ' };'
                 decl = decl.replace (';', func_body)
                 if self.featureExtraProtect is not None:
                     self.dev_ext_stub_list.append('#ifdef %s' % self.featureExtraProtect)
