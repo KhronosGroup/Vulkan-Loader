@@ -2562,6 +2562,11 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
     }
     json_buf[len] = '\0';
 
+    // Can't be a valid json if the string is of length zero
+    if (len == 0) {
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
     // Parse text from file
     *json = cJSON_Parse(json_buf);
     if (*json == NULL) {
@@ -3381,7 +3386,7 @@ static VkResult loaderAddLayerProperties(const struct loader_instance *inst, str
     char *vers_tok;
     cJSON *disable_environment = NULL;
     // Make sure sure the top level json value is an object
-    if(!json || json->type != 6){
+    if (!json || json->type != 6) {
         goto out;
     }
     item = cJSON_GetObjectItem(json, "file_format_version");
@@ -4490,7 +4495,8 @@ void loaderScanForLayers(struct loader_instance *inst, struct loader_layer_list 
             VkResult local_res = loaderAddLayerProperties(inst, instance_layers, json, true, file_str);
             cJSON_Delete(json);
 
-            if (VK_SUCCESS != local_res) {
+            // If the error is anything other than out of memory we still want to try to load the other layers
+            if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
                 goto out;
             }
         }
