@@ -1820,6 +1820,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
     VkSurfaceCapabilities2KHR *pSurfaceCapabilities) {
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    struct loader_instance *ptr_instance = (struct loader_instance *)icd_term->this_instance;
+
+    if (!ptr_instance->wsi_surface_enabled) {
+        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceCapabilities2KHR not executed!\n");
+        return VK_SUCCESS;
+    }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(pSurfaceInfo->surface);
     uint8_t icd_index = phys_dev_term->icd_index;
@@ -1891,6 +1898,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
                                                                               VkSurfaceFormat2KHR *pSurfaceFormats) {
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    struct loader_instance *ptr_instance = (struct loader_instance *)icd_term->this_instance;
+
+    if (!ptr_instance->wsi_surface_enabled) {
+        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceFormats2KHR not executed!\n");
+        return VK_SUCCESS;
+    }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(pSurfaceInfo->surface);
     uint8_t icd_index = phys_dev_term->icd_index;
