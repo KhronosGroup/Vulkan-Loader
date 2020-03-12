@@ -181,4 +181,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhys
                                                                           const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
                                                                           VkDisplayPlaneCapabilities2KHR *pCapabilities);
 
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+    VkSurfaceCapabilities2KHR *pSurfaceCapabilities);
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                              const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                              uint32_t *pSurfaceFormatCount,
+                                                                              VkSurfaceFormat2KHR *pSurfaceFormats);
+
 #endif // WSI_H

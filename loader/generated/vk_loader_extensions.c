@@ -3660,20 +3660,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
-    // ---- VK_KHR_get_surface_capabilities2 extension commands
-    if (!strcmp("vkGetPhysicalDeviceSurfaceCapabilities2KHR", name)) {
-        *addr = (ptr_instance->enabled_known_extensions.khr_get_surface_capabilities2 == 1)
-                     ? (void *)GetPhysicalDeviceSurfaceCapabilities2KHR
-                     : NULL;
-        return true;
-    }
-    if (!strcmp("vkGetPhysicalDeviceSurfaceFormats2KHR", name)) {
-        *addr = (ptr_instance->enabled_known_extensions.khr_get_surface_capabilities2 == 1)
-                     ? (void *)GetPhysicalDeviceSurfaceFormats2KHR
-                     : NULL;
-        return true;
-    }
-
     // ---- VK_KHR_get_memory_requirements2 extension commands
     if (!strcmp("vkGetImageMemoryRequirements2KHR", name)) {
         *addr = (void *)GetImageMemoryRequirements2KHR;
@@ -4355,10 +4341,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
     // ---- VK_KHR_external_fence_capabilities extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)) {
             ptr_instance->enabled_known_extensions.khr_external_fence_capabilities = 1;
-
-    // ---- VK_KHR_get_surface_capabilities2 extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.khr_get_surface_capabilities2 = 1;
 
     // ---- VK_GGP_stream_descriptor_surface extension commands
 #ifdef VK_USE_PLATFORM_GGP

@@ -440,7 +440,6 @@ union loader_instance_extension_enables {
         uint8_t khr_external_memory_capabilities : 1;
         uint8_t khr_external_semaphore_capabilities : 1;
         uint8_t khr_external_fence_capabilities : 1;
-        uint8_t khr_get_surface_capabilities2 : 1;
         uint8_t ext_debug_report : 1;
         uint8_t ggp_stream_descriptor_surface : 1;
         uint8_t nv_external_memory_capabilities : 1;
