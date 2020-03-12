@@ -164,6 +164,8 @@ EXPORTS
    vkGetPhysicalDeviceSurfaceSupportKHR
    vkGetPhysicalDeviceSurfaceCapabilitiesKHR
    vkGetPhysicalDeviceSurfaceFormatsKHR
+   vkGetPhysicalDeviceSurfaceCapabilities2KHR
+   vkGetPhysicalDeviceSurfaceFormats2KHR
    vkGetPhysicalDeviceSurfacePresentModesKHR
    vkCreateSwapchainKHR
    vkDestroySwapchainKHR
