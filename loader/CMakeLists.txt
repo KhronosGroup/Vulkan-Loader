@@ -189,19 +189,31 @@ if(WIN32)
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
-    add_library(vulkan
-                SHARED
-                $<TARGET_OBJECTS:loader-opt>
-                $<TARGET_OBJECTS:loader-norm>
-                $<TARGET_OBJECTS:loader-unknown-chain>
-                ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
-                ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
-    set_target_properties(vulkan
-                          PROPERTIES LINK_FLAGS_DEBUG
-                                     "/ignore:4098"
-                                     OUTPUT_NAME
-                                     vulkan-1)
-    target_link_libraries(vulkan Vulkan::Headers)
+    if(NOT ENABLE_STATIC_LOADER)
+        target_compile_definitions(loader-norm PUBLIC LOADER_DYNAMIC_LIB)
+        target_compile_definitions(loader-opt PUBLIC LOADER_DYNAMIC_LIB)
+
+        add_library(vulkan
+                    SHARED
+                    $<TARGET_OBJECTS:loader-opt>
+                    $<TARGET_OBJECTS:loader-norm>
+                    $<TARGET_OBJECTS:loader-unknown-chain>
+                    ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
+                    ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
+        set_target_properties(vulkan
+                              PROPERTIES LINK_FLAGS_DEBUG
+                                         "/ignore:4098"
+                                         OUTPUT_NAME
+                                         vulkan-1)
+        target_link_libraries(vulkan Vulkan::Headers)
+    else()
+        add_library(vulkan
+                    STATIC
+                    $<TARGET_OBJECTS:loader-opt>
+                    $<TARGET_OBJECTS:loader-norm>
+                    $<TARGET_OBJECTS:loader-unknown-chain>)
+        set_target_properties(vulkan PROPERTIES OUTPUT_NAME VKstatic.1)
+    endif()
 
     if(ENABLE_WIN10_ONECORE)
         target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
@@ -224,6 +236,7 @@ else()
 
     add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     add_dependencies(vulkan loader_asm_gen_files)
+    target_compile_definitions(vulkan PUBLIC LOADER_DYNAMIC_LIB)
     set_target_properties(vulkan
                           PROPERTIES SOVERSION
                                      "1"
@@ -256,6 +269,7 @@ else()
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
         add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
         add_dependencies(vulkan-framework loader_asm_gen_files)
+        target_compile_definitions(vulkan-framework PUBLIC LOADER_DYNAMIC_LIB)
         target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework Vulkan::Headers)
 
