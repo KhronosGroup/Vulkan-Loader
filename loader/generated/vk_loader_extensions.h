@@ -356,9 +356,6 @@ struct loader_icd_term_dispatch {
     PFN_vkCreateViSurfaceNN CreateViSurfaceNN;
 #endif // VK_USE_PLATFORM_VI_NN
 
-    // ---- VK_NVX_device_generated_commands extension commands
-    PFN_vkGetPhysicalDeviceGeneratedCommandsPropertiesNVX GetPhysicalDeviceGeneratedCommandsPropertiesNVX;
-
     // ---- VK_EXT_direct_mode_display extension commands
     PFN_vkReleaseDisplayEXT ReleaseDisplayEXT;
 
