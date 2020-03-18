@@ -7130,13 +7130,46 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
             *pPropertyCount = all_exts.count;
         }
     } else {
-        // Just return the count; need to add in the count of implicit layer extensions
-        // don't worry about duplicates being added in the count
-        *pPropertyCount = icd_ext_count;
+        // Have to find the number of unique extensions, ie no duplicates, as the properties list returned contains no duplicates.
 
+        // Find the current number of extensions (with duplicates). This is the upper bound for the ext_name_list
+        uint32_t max_exts_num = icd_ext_count;
         for (uint32_t i = 0; i < implicit_layer_list.count; i++) {
-            *pPropertyCount += implicit_layer_list.list[i].device_extension_list.count;
+            max_exts_num += implicit_layer_list.list[i].device_extension_list.count;
         }
+
+        const struct loader_instance *inst = icd_term->this_instance;
+
+        uint32_t ext_name_count = 0;
+        char **ext_name_list = loader_instance_heap_alloc(inst, sizeof(char *) * max_exts_num, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (ext_name_list == NULL) {
+            // Failed to allocate string list, bail
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+
+        // Look through the implicit_layer_list of device extensions and determine if its not in the ext_name_list, add it if it
+        // isn't. If it is, ignore it, as it is a duplicate
+        for (uint32_t i = 0; i < implicit_layer_list.count; i++) {
+            for (uint32_t j = 0; j < implicit_layer_list.list[i].device_extension_list.count; j++) {
+                char *extension_name = implicit_layer_list.list[i].device_extension_list.list[j].props.extensionName;
+                bool in_list = false;
+                for (uint32_t k = 0; k < ext_name_count; k++) {
+                    if (strncmp(extension_name, ext_name_list[k], 256) == 0) {
+                        in_list = true;
+                        break;
+                    }
+                }
+                if (!in_list) {
+                    ext_name_list[ext_name_count] = implicit_layer_list.list[i].device_extension_list.list[j].props.extensionName;
+                    ext_name_count++;
+                }
+            }
+        }
+        loader_instance_heap_free(inst, ext_name_list);
+        // Add the device extensions already found. Can't check for duplicates from the devices because the names aren't available
+        *pPropertyCount = ext_name_count + icd_ext_count;
+
         res = VK_SUCCESS;
     }
 
