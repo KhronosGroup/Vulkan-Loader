@@ -521,8 +521,8 @@ section for more information on layer ordering.
 ##### Implicit vs Explicit Layers
 
 Explicit layers are layers which are enabled by an application (e.g. with the
-vkCreateInstance function), or by an environment variable (as mentioned
-previously).
+vkCreateInstance function as mentioned previously), or by an environment
+variable.
 
 Implicit layers are those which are enabled by their existence. For example,
 certain application environments (e.g. Steam or an automotive infotainment
