@@ -1040,10 +1040,8 @@ The loader will then individually call each layer’s
 “VkNegotiateLayerInterface”. The layer will either accept the loader's version
 set in "loaderLayerInterfaceVersion", or modify it to the closest value version
 of the interface that the layer can support.  The value should not be higher
-than the version requested by the loader.  If the layer can't support at a
-minimum the version requested, then the layer should return an error like
-"VK_ERROR_INITIALIZATION_FAILED".  If a layer can support some version, then
-the layer should do the following:
+than the version requested by the loader. If a layer can support some versions,
+then the layer should do the following:
  1. Adjust the version to the layer's desired version.
  2. The layer should fill in the function pointer values to its internal
 functions:
