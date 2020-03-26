@@ -1546,7 +1546,7 @@ Each layer intercept function must have a prototype that is the same as the prot
 For example, a function that wishes to intercept `vkEnumerateInstanceExtensionProperties` would have the prototype:
 
 ```
-VkResult InterceptFunctionName(const VkEnumerateInstanceExtensionProperties* pChain,
+VkResult InterceptFunctionName(const VkEnumerateInstanceExtensionPropertiesChain* pChain,
     const char* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties);
 ```
 
@@ -1556,7 +1556,7 @@ This is done by calling the `pfnNextLayer` member of the chain struct, passing `
 For example, a simple implementation for `vkEnumerateInstanceExtensionProperties` that does nothing but call down the chain would look like:
 
 ```
-VkResult InterceptFunctionName(const VkEnumerateInstanceExtensionProperties* pChain,
+VkResult InterceptFunctionName(const VkEnumerateInstanceExtensionPropertiesChain* pChain,
     const char* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties)
 {
     return pChain->pfnNextLayer(pChain->pNextLink, pLayerName, pPropertyCount, pProperties);
@@ -1567,7 +1567,7 @@ When using a C++ compiler, each chain type also defines a function named `CallDo
 Implementing the above function using this method would look like:
 
 ```
-VkResult InterceptFunctionName(const VkEnumerateInstanceExtensionProperties* pChain,
+VkResult InterceptFunctionName(const VkEnumerateInstanceExtensionPropertiesChain* pChain,
     const char* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties)
 {
     return pChain->CallDown(pLayerName, pPropertyCount, pProperties);
