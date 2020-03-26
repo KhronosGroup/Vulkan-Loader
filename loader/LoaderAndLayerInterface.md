@@ -1037,15 +1037,43 @@ version supporting this function.
 
 The loader will then individually call each layer’s
 `vkNegotiateLoaderLayerInterfaceVersion` function with the filled out
-“VkNegotiateLayerInterface”. The layer will either accept the loader's version
-set in "loaderLayerInterfaceVersion", or modify it to the closest value version
-of the interface that the layer can support.  The value should not be higher
-than the version requested by the loader.  If the layer can't support at a
-minimum the version requested, then the layer should return an error like
-"VK_ERROR_INITIALIZATION_FAILED".  If a layer can support some version, then
-the layer should do the following:
- 1. Adjust the version to the layer's desired version.
- 2. The layer should fill in the function pointer values to its internal
+“VkNegotiateLayerInterface”.
+
+This function allows the loader and layer to agree on an interface version to use.
+The "loaderLayerInterfaceVersion" field is both an input and output parameter.
+"loaderLayerInterfaceVersion" is filled in by the loader with the desired latest
+interface version supported by the loader (typically the latest). The layer receives
+this and returns back the version it desires in the same field.  Because it is
+setting up the interface version between the loader and layer, this should be
+the first call made by a loader to the layer (even prior to any calls to
+`vkGetInstanceProcAddr`).
+
+If the layer receiving the call no longer supports the interface version provided
+by the loader (due to deprecation), then it should report a
+VK_ERROR_INITIALIZATION_FAILED error.  Otherwise it sets the value pointed by
+"loaderLayerInterfaceVersion" to the latest interface version supported by both the
+layer and the loader and returns VK_SUCCESS.
+
+The layer should report VK_SUCCESS in case the loader-provided interface version
+is newer than that supported by the layer, as it's the loader's responsibility to
+determine whether it can support the older interface version supported by the
+layer.  The layer should also report VK_SUCCESS in the case its interface version
+is greater than the loader's, but return the loader's version. Thus, upon
+return of VK_SUCCESS the "loaderLayerInterfaceVersion" will contain the desired
+interface version to be used by the layer.
+
+If the loader  receives a VK_ERROR_INITIALIZATION_FAILED error instead of
+VK_SUCCESS, then the loader will treat the layer as unusable and will not load
+it for use.  In this case, the application will not see the layer during
+enumeration. Note that the loader is currently backwards compatible with all
+layer interface versions, so a layer should not be able to request a version
+older than what the loader supports.
+
+This function **SHOULD NOT CALL DOWN** the layer chain to the next layer.
+The loader will work with each layer individually.
+
+If the layer supports the new interface and reports version 2 or greater, then
+The layer should fill in the function pointer values to its internal
 functions:
     - "pfnGetInstanceProcAddr" should be set to the layer’s internal
 `GetInstanceProcAddr` function.
@@ -1056,12 +1084,6 @@ functions:
       - If the layer supports no physical device extensions, it may set the
 value to NULL.
       - More on this function later
- 3. The layer should return "VK_SUCCESS"
-
-This function **SHOULD NOT CALL DOWN** the layer chain to the next layer.
-The loader will work with each layer individually.
-
-If the layer supports the new interface and reports version 2 or greater, then
 the loader will use the “fpGetInstanceProcAddr” and “fpGetDeviceProcAddr”
 functions from the “VkNegotiateLayerInterface” structure.  Prior to these
 changes, the loader would query each of those functions using "GetProcAddress"
