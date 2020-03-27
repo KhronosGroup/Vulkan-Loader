@@ -39,5 +39,5 @@ if(BUILD_TESTS)
 endif()
 
 if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
-  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
+  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers" EXCLUDE_FROM_ALL)
 endif()
