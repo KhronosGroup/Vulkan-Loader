@@ -222,7 +222,11 @@ else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
     endif()
 
-    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+    if(APPLE AND BUILD_STATIC_LOADER)
+        add_library(vulkan STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+    else()
+        add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+    endif()
     add_dependencies(vulkan loader_asm_gen_files)
     set_target_properties(vulkan
                           PROPERTIES SOVERSION
@@ -254,7 +258,11 @@ else()
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib_xrandr.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
-        add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        if(BUILD_STATIC_LOADER)
+            add_library(vulkan-framework STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        else()
+            add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        endif()
         add_dependencies(vulkan-framework loader_asm_gen_files)
         target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework Vulkan::Headers)
