@@ -605,6 +605,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_NVX_image_view_handle extension commands
     table->GetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)gdpa(dev, "vkGetImageViewHandleNVX");
+    table->GetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)gdpa(dev, "vkGetImageViewAddressNVX");
 
     // ---- VK_AMD_draw_indirect_count extension commands
     table->CmdDrawIndirectCountAMD = (PFN_vkCmdDrawIndirectCountAMD)gdpa(dev, "vkCmdDrawIndirectCountAMD");
@@ -1332,6 +1333,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NVX_image_view_handle extension commands
     if (!strcmp(name, "GetImageViewHandleNVX")) return (void *)table->GetImageViewHandleNVX;
+    if (!strcmp(name, "GetImageViewAddressNVX")) return (void *)table->GetImageViewAddressNVX;
 
     // ---- VK_AMD_draw_indirect_count extension commands
     if (!strcmp(name, "CmdDrawIndirectCountAMD")) return (void *)table->CmdDrawIndirectCountAMD;
@@ -2502,6 +2504,14 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(
     const VkImageViewHandleInfoNVX*             pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     return disp->GetImageViewHandleNVX(device, pInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetImageViewAddressNVX(device, imageView, pProperties);
 }
 
 
@@ -4221,6 +4231,10 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_NVX_image_view_handle extension commands
     if (!strcmp("vkGetImageViewHandleNVX", name)) {
         *addr = (void *)GetImageViewHandleNVX;
+        return true;
+    }
+    if (!strcmp("vkGetImageViewAddressNVX", name)) {
+        *addr = (void *)GetImageViewAddressNVX;
         return true;
     }
 
