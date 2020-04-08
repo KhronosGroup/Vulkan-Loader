@@ -47,9 +47,6 @@ if(BUILD_STATIC_LOADER)
         "or tested as part of the loader. Use it at your own risk.")
 endif()
 
-# Add the externals directory early so we pickup the headers if they're present
-add_subdirectory(external)
-
 if (TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
     get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
@@ -229,6 +226,7 @@ if(BUILD_LOADER)
     add_subdirectory(loader)
 endif()
 
+add_subdirectory(external)
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
