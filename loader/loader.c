@@ -396,7 +396,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         } else if ((msg_type & LOADER_ERROR_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         } else if ((msg_type & LOADER_DEBUG_BIT) != 0) {
-            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
         }
 
         if ((msg_type & LOADER_PERF_BIT) != 0) {
