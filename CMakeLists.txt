@@ -47,6 +47,8 @@ if(BUILD_STATIC_LOADER)
         "or tested as part of the loader. Use it at your own risk.")
 endif()
 
+# first try to find a `VulkanHeadersConfig.cmake` file, then fall back to `FindVulkanHeaders.cmake`
+find_package(VulkanHeaders CONFIG)
 if (TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
     get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
