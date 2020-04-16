@@ -92,8 +92,8 @@ else()
     endif()
 endif()
 
-if(TARGET vulkan)
-    set(LOADER_LIB vulkan)
+if(TARGET Vulkan)
+    set(LOADER_LIB Vulkan)
 elseif(WIN32 AND NOT $ENV{VULKAN_SDK} EQUAL "")
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(LOADER_LIB "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
@@ -101,7 +101,7 @@ elseif(WIN32 AND NOT $ENV{VULKAN_SDK} EQUAL "")
         set(LOADER_LIB "$ENV{VULKAN_SDK}/Lib32/vulkan-1.lib")
     endif()
 else()
-    set(LOADER_LIB vulkan)
+    set(LOADER_LIB Vulkan)
 endif()
 
 target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_main)
@@ -124,9 +124,9 @@ if(WIN32)
                        COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
                        COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
     # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
-    if(TARGET vulkan)
+    if(TARGET Vulkan)
         add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:vk_loader_validation_tests>)
+                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:Vulkan> $<TARGET_FILE_DIR:vk_loader_validation_tests>)
     endif()
 endif()
 

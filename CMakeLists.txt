@@ -47,25 +47,24 @@ if(BUILD_STATIC_LOADER)
         "or tested as part of the loader. Use it at your own risk.")
 endif()
 
-if (TARGET Vulkan::Headers)
-    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
+# Find Vulkan::Headers target
+if(DEFINED VULKAN_HEADERS_INSTALL_DIR)
+    set(VulkanHeaders_DIR "${VULKAN_HEADERS_INSTALL_DIR}/share/cmake/VulkanHeaders")
+    message(STATUS "VULKAN_HEADERS_INSTALL_DIR is set. Using it to set VulkanHeaders_DIR to '${VulkanHeaders_DIR}'")
+endif()
+find_package(VulkanHeaders CONFIG REQUIRED)
+# Check if required version information is set
+if("${VulkanHeaders_VERSION}" STREQUAL "")
+    message(FATAL_ERROR "VulkanHeaders found, but required variable VulkanHeaders_VERSION not defined!")
+endif()
+message(STATUS "Found VulkanHeaders version ${VulkanHeaders_VERSION}")
+if("${VulkanHeaders_INCLUDE_DIRS}" STREQUAL "")
+    # no Headers include directory set, get it from target
     get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
+endif()
+if("${VulkanRegistry_DIR}" STREQUAL "")
+    # no Registry directory set, get it from target
     get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
-else()
-    find_package(VulkanHeaders)
-    if(NOT ${VulkanHeaders_FOUND})
-        message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                            "installation of the Vulkan-Headers repository.")
-    endif()
-    if(NOT ${VulkanRegistry_FOUND})
-        message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                            "installation of the Vulkan-Headers repository.")
-    endif()
-
-    # set up the Vulkan::Headers target for consistency
-    add_library(vulkan-headers INTERFACE)
-    target_include_directories(vulkan-headers INTERFACE "${VulkanHeaders_INCLUDE_DIRS}")
-    add_library(Vulkan::Headers ALIAS vulkan-headers)
 endif()
 
 option(USE_CCACHE "Use ccache" OFF)
