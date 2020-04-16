@@ -53,7 +53,7 @@ config("vulkan_loader_config") {
   ]
   defines = [
     "API_NAME=\"Vulkan\"",
-    "USE_UNSAFE_FILE_SEARCH=1"
+    "USE_UNSAFE_FILE_SEARCH=1",
   ]
 
   if (is_win) {
@@ -112,28 +112,37 @@ if (!is_android) {
           "/wd4100",  # Unreferenced formal parameter
           "/wd4152",  # Nonstandard extension used (pointer conversion)
           "/wd4201",  # Nonstandard extension used: nameless struct/union
-          "/wd4214",  # Nonstandard extension used: bit field types other than int
-          "/wd4232",  # Nonstandard extension used: address of dllimport is not static
+          "/wd4214",  # Nonstandard extension used: bit field types other than
+                      # int
+          "/wd4232",  # Nonstandard extension used: address of dllimport is not
+                      # static
           "/wd4305",  # Type cast truncation
           "/wd4706",  # Assignment within conditional expression
           "/wd4996",  # Unsafe stdlib function
         ]
       }
       if (is_clang) {
-          cflags = [ "-Wno-incompatible-pointer-types" ]
+        cflags = [ "-Wno-incompatible-pointer-types" ]
       }
       libs = [ "Cfgmgr32.lib" ]
     }
     if (is_mac) {
       libs = [ "CoreFoundation.framework" ]
     }
-    public_deps = [
-      "$vulkan_headers_dir:vulkan_headers",
-    ]
+    public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
     configs -= [ "//build/config/compiler:chromium_code" ]
     configs += [ "//build/config/compiler:no_chromium_code" ]
     configs += [ ":vulkan_internal_config" ]
     public_configs = [ ":vulkan_loader_config" ]
     configs -= vulkan_undefine_configs
+  }
+
+  if (is_linux && vulkan_loader_shared) {
+    copy("libvulkan-abi1") {
+      sources = [ "${root_out_dir}/libvulkan.so" ]
+      outputs = [ "${root_out_dir}/libvulkan.so.1" ]
+
+      deps = [ ":libvulkan" ]
+    }
   }
 }
