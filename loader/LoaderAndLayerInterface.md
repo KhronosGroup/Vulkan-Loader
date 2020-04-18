@@ -2009,7 +2009,7 @@ ICD to properly handshake.
   * [ICD Manifest File Format](#icd-manifest-file-format)
     * [ICD Manifest File Versions](#icd-manifest-file-versions)
       * [ICD Manifest File Version 1.0.0](#icd-manifest-file-version-1.0.0)
-  * [ICD Vulkan Entry Point Discovery](#icd-vulkan-entry point-discovery)
+  * [ICD Vulkan Entry Point Discovery](#icd-vulkan-entry-point-discovery)
   * [ICD API Version](#icd-api-version)
   * [ICD Unknown Physical Device Extensions](#icd-unknown-physical-device-extensions)
   * [ICD Dispatchable Object Creation](#icd-dispatchable-object-creation)
