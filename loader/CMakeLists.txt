@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2019 Valve Corporation
-# Copyright (c) 2014-2019 LunarG, Inc.
+# Copyright (c) 2014-2020 Valve Corporation
+# Copyright (c) 2014-2020 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,12 +24,18 @@ include(CheckIncludeFile)
 check_function_exists(secure_getenv HAVE_SECURE_GETENV)
 check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
 if(NOT (HAVE_SECURE_GETENV OR HAVE__SECURE_GETENV))
-    message(WARNING "Using non-secure environmental lookups. This loader will not properly disable environent variables when run with elevated permissions.")
+    message(
+        WARNING
+            "Using non-secure environmental lookups. This loader will not properly disable environent variables when run with elevated permissions."
+    )
 endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/loader_cmake_config.h)
 
 if(WIN32)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_WIN32_KHR WIN32_LEAN_AND_MEAN)
+    set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_WIN32_KHR WIN32_LEAN_AND_MEAN)
     if(MSVC AND NOT MSVC_VERSION LESS 1900)
         # Enable control flow guard
         message(STATUS "Building loader with control flow guard")
@@ -43,7 +49,7 @@ elseif(APPLE)
     set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
 elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_XCB_SUPPORT)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_XCB_KHR)
+        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_XCB_KHR)
     endif()
 
     if(BUILD_WSI_XLIB_SUPPORT)
@@ -63,22 +69,18 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 if(WIN32)
     # Use static MSVCRT libraries
-    foreach(configuration
-            in
-            CMAKE_C_FLAGS_DEBUG
-            CMAKE_C_FLAGS_MINSIZEREL
-            CMAKE_C_FLAGS_RELEASE
-            CMAKE_C_FLAGS_RELWITHDEBINFO
-            CMAKE_CXX_FLAGS_DEBUG
-            CMAKE_CXX_FLAGS_MINSIZEREL
-            CMAKE_CXX_FLAGS_RELEASE
-            CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    foreach(
+        configuration in
+        CMAKE_C_FLAGS_DEBUG
+        CMAKE_C_FLAGS_MINSIZEREL
+        CMAKE_C_FLAGS_RELEASE
+        CMAKE_C_FLAGS_RELWITHDEBINFO
+        CMAKE_CXX_FLAGS_DEBUG
+        CMAKE_CXX_FLAGS_MINSIZEREL
+        CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_CXX_FLAGS_RELWITHDEBINFO)
         if(${configuration} MATCHES "/MD")
-            string(REGEX
-                   REPLACE "/MD"
-                           "/MT"
-                           ${configuration}
-                           "${${configuration}}")
+            string(REGEX REPLACE "/MD" "/MT" ${configuration} "${${configuration}}")
         endif()
     endforeach()
 
@@ -137,7 +139,10 @@ if(WIN32)
 
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset Vulkan::Headers)
-        add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset MASM)
+        add_custom_command(
+            OUTPUT gen_defines.asm
+            DEPENDS asm_offset
+            COMMAND asm_offset MASM)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
         add_library(loader-unknown-chain OBJECT unknown_ext_chain_masm.asm)
@@ -168,7 +173,10 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas.S)
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset Vulkan::Headers)
-        add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
+        add_custom_command(
+            OUTPUT gen_defines.asm
+            DEPENDS asm_offset
+            COMMAND asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
         message(WARNING "Could not find working x86 GAS assembler\n${ASM_FAILURE_MSG}")
@@ -189,18 +197,9 @@ if(WIN32)
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
-    add_library(vulkan
-                SHARED
-                $<TARGET_OBJECTS:loader-opt>
-                $<TARGET_OBJECTS:loader-norm>
-                $<TARGET_OBJECTS:loader-unknown-chain>
-                ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
-                ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
-    set_target_properties(vulkan
-                          PROPERTIES LINK_FLAGS_DEBUG
-                                     "/ignore:4098"
-                                     OUTPUT_NAME
-                                     vulkan-1)
+    add_library(vulkan SHARED $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm> $<TARGET_OBJECTS:loader-unknown-chain>
+                              ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
+    set_target_properties(vulkan PROPERTIES LINK_FLAGS_DEBUG "/ignore:4098" OUTPUT_NAME vulkan-1)
     target_link_libraries(vulkan Vulkan::Headers)
 
     if(ENABLE_WIN10_ONECORE)
@@ -228,11 +227,9 @@ else()
         add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     endif()
     add_dependencies(vulkan loader_asm_gen_files)
-    set_target_properties(vulkan
-                          PROPERTIES SOVERSION
-                                     "1"
-                                     VERSION
-                                     "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+    set_target_properties(
+        vulkan PROPERTIES SOVERSION "1"
+                          VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
     target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m)
     target_link_libraries(vulkan Vulkan::Headers)
 
@@ -272,7 +269,7 @@ else()
         # framework version does not have to be "A", this part of the Apple toolchain expects it.
         # https://forums.developer.apple.com/thread/65963
 
-# cmake-format: off
+        # cmake-format: off
         set_target_properties(vulkan-framework PROPERTIES
             OUTPUT_NAME vulkan
             FRAMEWORK TRUE
@@ -306,7 +303,8 @@ endif()
 target_link_libraries(vulkan Vulkan::Headers)
 add_library(Vulkan::Vulkan ALIAS vulkan)
 
-install(TARGETS vulkan
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(
+    TARGETS vulkan
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

@@ -1,8 +1,8 @@
 /*
   Copyright (c) 2009 Dave Gamble
-  Copyright (c) 2015-2016 The Khronos Group Inc.
-  Copyright (c) 2015-2016 Valve Corporation
-  Copyright (c) 2015-2016 LunarG, Inc.
+  Copyright (c) 2015-2020 The Khronos Group Inc.
+  Copyright (c) 2015-2020 Valve Corporation
+  Copyright (c) 2015-2020 LunarG, Inc.
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -119,10 +119,9 @@ extern cJSON *cJSON_CreateStringArray(const char **strings, int count);
 /* Append item to the specified array/object. */
 extern void cJSON_AddItemToArray(cJSON *array, cJSON *item);
 extern void cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
-extern void cJSON_AddItemToObjectCS(cJSON *object, const char *string,
-                                    cJSON *item); /* Use this when string is definitely const (i.e. a literal,
-                                                     or as good as), and will definitely survive the cJSON
-                                                     object */
+extern void cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item); /* Use this when string is definitely const
+                                                                                        (i.e. a literal, or as good as), and will
+                                                                                        definitely survive the cJSON object */
 /* Append reference to item to the specified array/object. Use this when you
  * want to add an existing cJSON to a new cJSON, but don't want to corrupt your
  * existing cJSON. */

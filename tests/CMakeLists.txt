@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2018 Valve Corporation
-# Copyright (c) 2014-2018 LunarG, Inc.
+# Copyright (c) 2014-2020 Valve Corporation
+# Copyright (c) 2014-2020 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,31 +63,29 @@ endif()
 
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
-include_directories(${PROJECT_SOURCE_DIR}/external
-                    ${GTEST_SOURCE_DIR}/googletest/include
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${CMAKE_BINARY_DIR}
-                    ${PROJECT_BINARY_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/external ${GTEST_SOURCE_DIR}/googletest/include ${CMAKE_CURRENT_BINARY_DIR}
+                    ${CMAKE_BINARY_DIR} ${PROJECT_BINARY_DIR})
 
 if(UNIX)
     # extra setup for out-of-tree builds
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
-        add_custom_target(binary-dir-symlinks ALL
-                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_wrap_objects_tests.sh
-                                  run_wrap_objects_tests.sh
-                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_loader_tests.sh
-                                  run_loader_tests.sh
-                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_extra_loader_tests.sh
-                                  run_extra_loader_tests.sh
-                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_all_tests.sh run_all_tests.sh
-                          VERBATIM)
+        add_custom_target(
+            binary-dir-symlinks ALL
+            COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_wrap_objects_tests.sh
+                    run_wrap_objects_tests.sh
+            COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_loader_tests.sh run_loader_tests.sh
+            COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_extra_loader_tests.sh
+                    run_extra_loader_tests.sh
+            COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_all_tests.sh run_all_tests.sh
+            VERBATIM)
     endif()
 else()
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/_run_all_tests.ps1 RUN_ALL)
-        add_custom_target(binary-dir-symlinks ALL
-                          COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUN_ALL} run_all_tests.ps1
-                          VERBATIM)
+        add_custom_target(
+            binary-dir-symlinks ALL
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUN_ALL} run_all_tests.ps1
+            VERBATIM)
         set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
     endif()
 endif()
@@ -111,22 +109,26 @@ if(WIN32)
     file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
     if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
         file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll
-                            GTEST_COPY_SRC1)
+             GTEST_COPY_SRC1)
         file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest$<$<CONFIG:Debug>:d>.dll
-                            GTEST_COPY_SRC2)
+             GTEST_COPY_SRC2)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> GTEST_COPY_DEST)
     else()
         file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/gtest_main$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC1)
         file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/gtest$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC2)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} GTEST_COPY_DEST)
     endif()
-    add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
-                       COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
-                       COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
+    add_custom_command(
+        TARGET vk_loader_validation_tests
+        POST_BUILD
+        COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
+        COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
     # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
     if(TARGET vulkan)
-        add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:vk_loader_validation_tests>)
+        add_custom_command(
+            TARGET vk_loader_validation_tests
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:vk_loader_validation_tests>)
     endif()
 endif()
 

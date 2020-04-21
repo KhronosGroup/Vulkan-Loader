@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -477,8 +477,8 @@ TEST(CreateInstance, LayerNotPresent) {
 
 // Used by run_loader_tests.sh to test for layer insertion.
 TEST(CreateInstance, LayerPresent) {
-    char const *const names1[] = {"VK_LAYER_LUNARG_test"};  // Temporary required due to MSVC bug.
-    char const *const names2[] = {"VK_LAYER_LUNARG_meta"};  // Temporary required due to MSVC bug.
+    char const *const names1[] = {"VK_LAYER_LUNARG_test"};      // Temporary required due to MSVC bug.
+    char const *const names2[] = {"VK_LAYER_LUNARG_meta"};      // Temporary required due to MSVC bug.
     char const *const names3[] = {"VK_LAYER_LUNARG_meta_rev"};  // Temporary required due to MSVC bug.
     auto const info1 = VK::InstanceCreateInfo().enabledLayerCount(1).ppEnabledLayerNames(names1);
     VkInstance instance = VK_NULL_HANDLE;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ static inline void test_error_callback(const char *expr, const char *file, unsig
 }
 
 #if defined(__linux__) || defined(__APPLE__)
-    /* Linux-specific common code: */
+/* Linux-specific common code: */
 
 #include <pthread.h>
 
@@ -174,12 +174,12 @@ static void test_platform_thread_cond_broadcast(test_platform_thread_cond *pCond
 
 #error The "test_common.h" file must be modified for this OS.
 
-    // NOTE: In order to support another OS, an #elif needs to be added (above the
-    // "#else // defined(_WIN32)") for that OS, and OS-specific versions of the
-    // contents of this file must be created.
+// NOTE: In order to support another OS, an #elif needs to be added (above the
+// "#else // defined(_WIN32)") for that OS, and OS-specific versions of the
+// contents of this file must be created.
 
-    // NOTE: Other OS-specific changes are also needed for this OS.  Search for
-    // files with "WIN32" in it, as a quick way to find files that must be changed.
+// NOTE: Other OS-specific changes are also needed for this OS.  Search for
+// files with "WIN32" in it, as a quick way to find files that must be changed.
 
 #endif  // defined(_WIN32)
 

@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2019 Valve Corporation
-# Copyright (c) 2014-2019 LunarG, Inc.
+# Copyright (c) 2014-2020 Valve Corporation
+# Copyright (c) 2014-2020 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,13 +18,18 @@
 cmake_minimum_required(VERSION 3.10.2)
 
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
+set(CMAKE_OSX_DEPLOYMENT_TARGET
+    "10.12"
+    CACHE STRING "Minimum OS X deployment version")
 
 project(Vulkan-Loader)
 
 enable_testing()
 
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
+set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
 
 # Enable beta Vulkan extensions
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
@@ -44,10 +49,10 @@ endif()
 
 if(BUILD_STATIC_LOADER)
     message(WARNING "The ENABLE_STATIC_LOADER option has been set. Note that this will only work on MacOS and is not supported "
-        "or tested as part of the loader. Use it at your own risk.")
+                    "or tested as part of the loader. Use it at your own risk.")
 endif()
 
-if (TARGET Vulkan::Headers)
+if(TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
     get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
     get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
@@ -89,7 +94,9 @@ endif()
 
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+    set(CMAKE_INSTALL_PREFIX
+        "${CMAKE_BINARY_DIR}/install"
+        CACHE PATH "default install path" FORCE)
 endif()
 
 # Enable IDE GUI folders.  "Helper targets" that don't have interesting source code should set their FOLDER property to this
@@ -97,24 +104,21 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(LOADER_HELPER_FOLDER "Helper Targets")
 
 if(UNIX)
-    set(
-        FALLBACK_CONFIG_DIRS "/etc/xdg"
+    set(FALLBACK_CONFIG_DIRS
+        "/etc/xdg"
         CACHE
             STRING
             "Search path to use when XDG_CONFIG_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant."
-        )
-    set(
-        FALLBACK_DATA_DIRS "/usr/local/share:/usr/share"
+    )
+    set(FALLBACK_DATA_DIRS
+        "/usr/local/share:/usr/share"
         CACHE
             STRING
             "Search path to use when XDG_DATA_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant."
-        )
-    set(
-        SYSCONFDIR ""
-        CACHE
-            STRING
-            "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used."
-        )
+    )
+    set(SYSCONFDIR
+        ""
+        CACHE STRING "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used.")
 endif()
 
 if(UNIX AND NOT APPLE) # i.e.: Linux
@@ -157,11 +161,11 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 
     if(APPLE)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS}")
-    #clang-cl on Windows
+        # clang-cl on Windows
     elseif((CMAKE_C_COMPILER_ID MATCHES "Clang") AND (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xclang -std=c99 ${COMMON_COMPILE_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -std=c++11 -fno-rtti")
-    # clang (not clang-cl) or gcc
+        # clang (not clang-cl) or gcc
     else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 ${COMMON_COMPILE_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti")
@@ -176,28 +180,30 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(MSVC)
-    # /WX: Treat warnings as errors
-    # /GR-: Disable RTTI
-    # /w34456: Warn about nested declarations
-    # /w34701, /w34703: Warn about potentially uninitialized variables
-    # /w34057: Warn about different indirection types.
-    # /w34245: Warn about signed/unsigned mismatch.
-    set(MSVC_LOADER_COMPILE_OPTIONS /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
+    # /WX: Treat warnings as errors /GR-: Disable RTTI /w34456: Warn about nested declarations /w34701, /w34703: Warn about
+    # potentially uninitialized variables /w34057: Warn about different indirection types. /w34245: Warn about signed/unsigned
+    # mismatch.
+    set(MSVC_LOADER_COMPILE_OPTIONS
+        /WX
+        /GR-
+        /w34456
+        /w34701
+        /w34703
+        /w34057
+        /w34245)
 endif()
 
 # Optional codegen target
 if(PYTHONINTERP_FOUND)
-    add_custom_target(VulkanLoader_generated_source
-                      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} --incremental
-                      )
+    add_custom_target(VulkanLoader_generated_source COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
+                                                            ${VulkanRegistry_DIR} --incremental)
 else()
     message("WARNING: VulkanLoader_generated_source target requires python 3")
 endif()
 
-
 if(UNIX)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS FALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}" FALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
+    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS FALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}"
+                                           FALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
 
     if(NOT (SYSCONFDIR STREQUAL ""))
         # SYSCONFDIR is specified, use it and do not force /etc.
@@ -214,10 +220,8 @@ endif()
 
 # uninstall target
 if(NOT TARGET uninstall)
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-                   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-                   IMMEDIATE
-                   @ONLY)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+                   IMMEDIATE @ONLY)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
     set_target_properties(uninstall PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 endif()

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,23 +26,21 @@
 #include "vk_layer_data.h"
 #include "vk_layer_extension_utils.h"
 
-namespace test
-{
+namespace test {
 
 struct layer_data {
     VkInstance instance;
     VkLayerInstanceDispatchTable *instance_dispatch_table;
 
-    layer_data() : instance(VK_NULL_HANDLE), instance_dispatch_table(nullptr) {};
+    layer_data() : instance(VK_NULL_HANDLE), instance_dispatch_table(nullptr){};
 };
 
 static uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
 
 static std::unordered_map<void *, layer_data *> layer_data_map;
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-		VkInstance* pInstance)
-{
+VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                              VkInstance *pInstance) {
     VkLayerInstanceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
     assert(chain_info != nullptr);
 
@@ -50,16 +48,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
     assert(fpGetInstanceProcAddr != nullptr);
 
-    PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance) fpGetInstanceProcAddr(NULL, "vkCreateInstance");
-    if (fpCreateInstance == nullptr)
-    {
+    PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
+    if (fpCreateInstance == nullptr) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
-    if (result != VK_SUCCESS)
-    {
+    if (result != VK_SUCCESS) {
         return result;
     }
 
@@ -113,8 +109,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator)
-{
+VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(instance);
     layer_data *instance_data = GetLayerDataPtr(key, layer_data_map);
     instance_data->instance_dispatch_table->DestroyInstance(instance, pAllocator);
@@ -126,24 +121,17 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     std::cout << "VK_LAYER_LUNARG_test: DestroyInstance" << '\n';
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* funcName)
-{
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName) {
     // Return the functions that are intercepted by this layer.
-    static const struct
-    {
+    static const struct {
         const char *name;
         PFN_vkVoidFunction proc;
-    } core_instance_commands[] =
-    {
-        { "vkGetInstanceProcAddr", reinterpret_cast<PFN_vkVoidFunction>(GetInstanceProcAddr) },
-        { "vkCreateInstance", reinterpret_cast<PFN_vkVoidFunction>(CreateInstance) },
-        { "vkDestroyInstance", reinterpret_cast<PFN_vkVoidFunction>(DestroyInstance) }
-    };
+    } core_instance_commands[] = {{"vkGetInstanceProcAddr", reinterpret_cast<PFN_vkVoidFunction>(GetInstanceProcAddr)},
+                                  {"vkCreateInstance", reinterpret_cast<PFN_vkVoidFunction>(CreateInstance)},
+                                  {"vkDestroyInstance", reinterpret_cast<PFN_vkVoidFunction>(DestroyInstance)}};
 
-    for (size_t i = 0; i < ARRAY_SIZE(core_instance_commands); i++)
-    {
-        if (!strcmp(core_instance_commands[i].name, funcName))
-        {
+    for (size_t i = 0; i < ARRAY_SIZE(core_instance_commands); i++) {
+        if (!strcmp(core_instance_commands[i].name, funcName)) {
             return core_instance_commands[i].proc;
         }
     }
@@ -151,8 +139,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
     // Only call down the chain for Vulkan commands that this layer does not intercept.
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     VkLayerInstanceDispatchTable *pTable = instance_data->instance_dispatch_table;
-    if (pTable->GetInstanceProcAddr == nullptr)
-    {
+    if (pTable->GetInstanceProcAddr == nullptr) {
         return nullptr;
     }
 
@@ -164,32 +151,31 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
 
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     VkLayerInstanceDispatchTable *pTable = instance_data->instance_dispatch_table;
-    if (pTable->GetPhysicalDeviceProcAddr == nullptr)
-    {
+    if (pTable->GetPhysicalDeviceProcAddr == nullptr) {
         return nullptr;
     }
 
     return pTable->GetPhysicalDeviceProcAddr(instance, funcName);
 }
 
-}
+}  // namespace test
 
-VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char* funcName)
-{
+VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char *funcName) {
     return test::GetInstanceProcAddr(instance, funcName);
 }
 
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount, VkExtensionProperties *pProperties)
-{
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
+                                                                                      VkExtensionProperties *pProperties) {
     return VK_ERROR_LAYER_NOT_PRESENT;
 }
 
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *pCount, VkLayerProperties *pProperties)
-{
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *pCount,
+                                                                                  VkLayerProperties *pProperties) {
     return VK_ERROR_LAYER_NOT_PRESENT;
 }
 
-VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
+VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance,
+                                                                                           const char *funcName) {
     return test::GetPhysicalDeviceProcAddr(instance, funcName);
 }
 

@@ -1,7 +1,7 @@
 /*
  *
- * Copyright (C) 2015-2016 Valve Corporation
- * Copyright (C) 2015-2016 LunarG, Inc.
+ * Copyright (C) 2015-2020 Valve Corporation
+ * Copyright (C) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,27 +31,27 @@ struct wrapped_phys_dev_obj {
 
 struct wrapped_inst_obj {
     VkLayerInstanceDispatchTable *loader_disp;
-    VkLayerInstanceDispatchTable layer_disp;    //this layer's dispatch table
+    VkLayerInstanceDispatchTable layer_disp;  // this layer's dispatch table
     PFN_vkSetInstanceLoaderData pfn_inst_init;
-    struct wrapped_phys_dev_obj *ptr_phys_devs; // any enumerated phys devs
+    struct wrapped_phys_dev_obj *ptr_phys_devs;  // any enumerated phys devs
     VkInstance obj;
 };
 
 struct wrapped_dev_obj {
     VkLayerDispatchTable *disp;
     VkLayerInstanceDispatchTable *layer_disp;  // TODO use this
-    PFN_vkSetDeviceLoaderData pfn_dev_init;  //TODO use this
+    PFN_vkSetDeviceLoaderData pfn_dev_init;    // TODO use this
     void *obj;
 };
 
-static inline VkInstance unwrap_instance(const VkInstance instance,  wrapped_inst_obj **inst) {
-   *inst = reinterpret_cast<wrapped_inst_obj *> (instance);
-   return (*inst)->obj;
+static inline VkInstance unwrap_instance(const VkInstance instance, wrapped_inst_obj **inst) {
+    *inst = reinterpret_cast<wrapped_inst_obj *>(instance);
+    return (*inst)->obj;
 }
 
-static inline VkPhysicalDevice unwrap_phys_dev(const VkPhysicalDevice physical_device,  wrapped_phys_dev_obj **phys_dev) {
-   *phys_dev = reinterpret_cast<wrapped_phys_dev_obj *> (physical_device);
-   return reinterpret_cast <VkPhysicalDevice> ((*phys_dev)->obj);
+static inline VkPhysicalDevice unwrap_phys_dev(const VkPhysicalDevice physical_device, wrapped_phys_dev_obj **phys_dev) {
+    *phys_dev = reinterpret_cast<wrapped_phys_dev_obj *>(physical_device);
+    return reinterpret_cast<VkPhysicalDevice>((*phys_dev)->obj);
 }
 
 static void create_device_register_extensions(const VkDeviceCreateInfo *pCreateInfo, VkDevice device) {
