@@ -79,7 +79,8 @@ before_install:
   - |
     if [[ "$CHECK_FORMAT" == "ON" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then
       # Install the clang format diff tool, but only for pull requests.
-      curl -L http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py -o scripts/clang-format-diff.py;
+      curl -L http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py \
+           -o scripts/clang-format-diff.py;
     fi
   # Misc setup
   - |
