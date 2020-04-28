@@ -2374,7 +2374,7 @@ in order to prevent an error. To determine if this must be done, the loader
 will perform the following steps:
 
 1. Check the ICD's JSON manifest file for the "api_version" field.
-2. If the JSON version is greater greater than or equal to 1.1, Load the ICD's dynamic library
+2. If the JSON version is greater than or equal to 1.1, Load the ICD's dynamic library
 3. Call the ICD's `vkGetInstanceProcAddr` command to get a pointer to
 `vkEnumerateInstanceVersion`
 4. If the pointer to `vkEnumerateInstanceVersion` is not `NULL`, it will be
