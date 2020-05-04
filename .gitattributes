@@ -5,6 +5,7 @@
 * text=auto
 
 # Files to be converted to native line endings on checkout.
+*.c text
 *.cpp text
 *.h text
 
@@ -14,3 +15,6 @@
 # Text files to always have LF (unix) line endings on checkout.
 *.sh text eol=lf
 
+# Generated source files will always have LF (unix) line endings on checkout.
+loader/generated/*.c text eol=lf
+loader/generated/*.h text eol=lf

@@ -758,6 +758,12 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CreateIndirectCommandsLayoutNV = (PFN_vkCreateIndirectCommandsLayoutNV)gdpa(dev, "vkCreateIndirectCommandsLayoutNV");
     table->DestroyIndirectCommandsLayoutNV = (PFN_vkDestroyIndirectCommandsLayoutNV)gdpa(dev, "vkDestroyIndirectCommandsLayoutNV");
 
+    // ---- VK_EXT_private_data extension commands
+    table->CreatePrivateDataSlotEXT = (PFN_vkCreatePrivateDataSlotEXT)gdpa(dev, "vkCreatePrivateDataSlotEXT");
+    table->DestroyPrivateDataSlotEXT = (PFN_vkDestroyPrivateDataSlotEXT)gdpa(dev, "vkDestroyPrivateDataSlotEXT");
+    table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)gdpa(dev, "vkSetPrivateDataEXT");
+    table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)gdpa(dev, "vkGetPrivateDataEXT");
+
     // ---- VK_KHR_ray_tracing extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
@@ -1485,6 +1491,12 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdBindPipelineShaderGroupNV")) return (void *)table->CmdBindPipelineShaderGroupNV;
     if (!strcmp(name, "CreateIndirectCommandsLayoutNV")) return (void *)table->CreateIndirectCommandsLayoutNV;
     if (!strcmp(name, "DestroyIndirectCommandsLayoutNV")) return (void *)table->DestroyIndirectCommandsLayoutNV;
+
+    // ---- VK_EXT_private_data extension commands
+    if (!strcmp(name, "CreatePrivateDataSlotEXT")) return (void *)table->CreatePrivateDataSlotEXT;
+    if (!strcmp(name, "DestroyPrivateDataSlotEXT")) return (void *)table->DestroyPrivateDataSlotEXT;
+    if (!strcmp(name, "SetPrivateDataEXT")) return (void *)table->SetPrivateDataEXT;
+    if (!strcmp(name, "GetPrivateDataEXT")) return (void *)table->GetPrivateDataEXT;
 
     // ---- VK_KHR_ray_tracing extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -3619,6 +3631,46 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(
 }
 
 
+// ---- VK_EXT_private_data extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlotEXT(
+    VkDevice                                    device,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t*                                   pData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+}
+
+
 // ---- VK_KHR_ray_tracing extension trampoline/terminators
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -4749,6 +4801,24 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkDestroyIndirectCommandsLayoutNV", name)) {
         *addr = (void *)DestroyIndirectCommandsLayoutNV;
+        return true;
+    }
+
+    // ---- VK_EXT_private_data extension commands
+    if (!strcmp("vkCreatePrivateDataSlotEXT", name)) {
+        *addr = (void *)CreatePrivateDataSlotEXT;
+        return true;
+    }
+    if (!strcmp("vkDestroyPrivateDataSlotEXT", name)) {
+        *addr = (void *)DestroyPrivateDataSlotEXT;
+        return true;
+    }
+    if (!strcmp("vkSetPrivateDataEXT", name)) {
+        *addr = (void *)SetPrivateDataEXT;
+        return true;
+    }
+    if (!strcmp("vkGetPrivateDataEXT", name)) {
+        *addr = (void *)GetPrivateDataEXT;
         return true;
     }
 
