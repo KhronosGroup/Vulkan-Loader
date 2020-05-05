@@ -28,7 +28,7 @@ def endTimer(timeit, msg):
     global startTime
     if timeit:
         endTime = time.process_time()
-        logDiag(msg, endTime - startTime)
+        write(msg, endTime - startTime, file=sys.stderr)
         startTime = None
 
 # Turn a list of strings into a regexp string matching exactly those strings
@@ -253,20 +253,22 @@ def genTarget(args):
         options = genOpts[args.target][1]
 
         if not args.quiet:
-            logDiag('* Building', options.filename)
-            logDiag('* options.versions          =', options.versions)
-            logDiag('* options.emitversions      =', options.emitversions)
-            logDiag('* options.defaultExtensions =', options.defaultExtensions)
-            logDiag('* options.addExtensions     =', options.addExtensions)
-            logDiag('* options.removeExtensions  =', options.removeExtensions)
-            logDiag('* options.emitExtensions    =', options.emitExtensions)
+            write('* Building', options.filename, file=sys.stderr)
+            write('* options.versions          =', options.versions, file=sys.stderr)
+            write('* options.emitversions      =', options.emitversions, file=sys.stderr)
+            write('* options.defaultExtensions =', options.defaultExtensions, file=sys.stderr)
+            write('* options.addExtensions     =', options.addExtensions, file=sys.stderr)
+            write('* options.removeExtensions  =', options.removeExtensions, file=sys.stderr)
+            write('* options.emitExtensions    =', options.emitExtensions, file=sys.stderr)
 
         gen = createGenerator(errFile=errWarn,
                               warnFile=errWarn,
                               diagFile=diag)
+        if not args.quiet:
+            write('* Generated', options.filename, file=sys.stderr)
         return (gen, options)
     else:
-        logErr('No generator options for unknown target:', args.target)
+        write('No generator options for unknown target:', args.target, file=sys.stderr)
         return none
 
 # -feature name
@@ -385,7 +387,7 @@ if __name__ == '__main__':
         reg.validateGroups()
 
     if (args.dump):
-        logDiag('* Dumping registry to regdump.txt')
+        write('* Dumping registry to regdump.txt', file=sys.stderr)
         reg.dumpReg(filehandle = open('regdump.txt', 'w', encoding='utf-8'))
 
     # Finally, use the output generator to create the requested targe
@@ -397,4 +399,4 @@ if __name__ == '__main__':
         endTimer(args.time, '* Time to generate ' + options.filename + ' =')
 
     if not args.quiet:
-        logDiag('* Generated', options.filename)
+        write('* Generated', options.filename, file=sys.stderr)
