@@ -422,6 +422,7 @@ extern struct loader_struct loader;
 extern THREAD_LOCAL_DECL struct loader_instance *tls_instance;
 extern loader_platform_thread_mutex loader_lock;
 extern loader_platform_thread_mutex loader_json_lock;
+extern loader_platform_thread_mutex loader_preload_icd_lock;
 
 struct loader_msg_callback_map_entry {
     VkDebugReportCallbackEXT icd_obj;
