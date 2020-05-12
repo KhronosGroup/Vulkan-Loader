@@ -121,6 +121,7 @@ enum loader_data_files_type {
 // additionally CreateDevice and DestroyDevice needs to be locked
 loader_platform_thread_mutex loader_lock;
 loader_platform_thread_mutex loader_json_lock;
+loader_platform_thread_mutex loader_preload_icd_lock;
 
 // A list of ICDs that gets initialized when the loader does its global initialization. This list should never be used by anything
 // other than EnumerateInstanceExtensionProperties(), vkDestroyInstance, and loader_release(). This list does not change
@@ -2433,7 +2434,7 @@ void loader_initialize(void) {
     // initialize mutexes
     loader_platform_thread_create_mutex(&loader_lock);
     loader_platform_thread_create_mutex(&loader_json_lock);
-
+    loader_platform_thread_create_mutex(&loader_preload_icd_lock);
     // initialize logging
     loader_debug_init();
 
@@ -2463,15 +2464,16 @@ void loader_release() {
     // release mutexes
     loader_platform_thread_delete_mutex(&loader_lock);
     loader_platform_thread_delete_mutex(&loader_json_lock);
+    loader_platform_thread_delete_mutex(&loader_preload_icd_lock);
 }
 
 // Preload the ICD libraries that are likely to be needed so we don't repeatedly load/unload them later
 void loader_preload_icds(void) {
-    loader_platform_thread_lock_mutex(&loader_lock);
+    loader_platform_thread_lock_mutex(&loader_preload_icd_lock);
 
     // Already preloaded, skip loading again.
     if (scanned_icds.scanned_list != NULL) {
-        loader_platform_thread_unlock_mutex(&loader_lock);
+        loader_platform_thread_unlock_mutex(&loader_preload_icd_lock);
         return;
     }
 
@@ -2480,14 +2482,14 @@ void loader_preload_icds(void) {
     if (result != VK_SUCCESS) {
         loader_scanned_icd_clear(NULL, &scanned_icds);
     }
-    loader_platform_thread_unlock_mutex(&loader_lock);
+    loader_platform_thread_unlock_mutex(&loader_preload_icd_lock);
 }
 
 // Release the ICD libraries that were preloaded
 void loader_unload_preloaded_icds(void) {
-    loader_platform_thread_lock_mutex(&loader_lock);
+    loader_platform_thread_lock_mutex(&loader_preload_icd_lock);
     loader_scanned_icd_clear(NULL, &scanned_icds);
-    loader_platform_thread_unlock_mutex(&loader_lock);
+    loader_platform_thread_unlock_mutex(&loader_preload_icd_lock);
 }
 
 // Get next file or dirname given a string list or registry key path
