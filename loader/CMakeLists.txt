@@ -130,7 +130,7 @@ set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} the stack frame for certain calls. If th
 set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted stack.")
 if(WIN32)
     enable_language(ASM_MASM)
-    if(CMAKE_ASM_MASM_COMPILER_WORKS)
+    if(CMAKE_ASM_MASM_COMPILER_WORKS AND NOT MINGW)
         if(NOT CMAKE_CL_64)
             set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} /safeseh)
         endif()
@@ -148,6 +148,9 @@ if(WIN32)
         add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
         target_compile_options(loader-unknown-chain PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
         target_compile_options(loader-unknown-chain PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
+
+        # TODO(syoyo): Also add search path to Vulkan-Headers to MASM build target?
+        target_include_directories(loader-unknown-chain PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
     endif()
 elseif(APPLE)
     # For MacOS, use the C code and force the compiler's tail-call optimization instead of using assembly code.
@@ -208,7 +211,13 @@ if(WIN32)
         target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
         set_target_properties(vulkan PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
     else()
-        target_link_libraries(vulkan Cfgmgr32)
+        # Use all lower-case filename for MinGW build(e.g. cross-compile on Ubuntu EXT4(case-sensitive file system))
+        # NOTE: Lower-case filename should also be valid on native Windows FS.
+        if (MINGW)
+          target_link_libraries(vulkan cfgmgr32)
+        else (MINGW)
+          target_link_libraries(vulkan Cfgmgr32)
+        endif (MINGW)
     endif()
 
     add_dependencies(vulkan loader_asm_gen_files)

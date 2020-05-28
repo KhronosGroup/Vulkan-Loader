@@ -72,6 +72,19 @@
 #include <winternl.h>
 #include "adapters.h"
 #include "dxgi_loader.h"
+
+#if defined(__MINGW32__)
+// MinGW header may not have some definitions(cfgmgr32.h).
+#if !defined(CM_GETIDLIST_FILTER_CLASS)
+#define CM_GETIDLIST_FILTER_CLASS (0x200)
+#endif
+
+#if !defined(CM_GETIDLIST_FILTER_PRESENT)
+#define CM_GETIDLIST_FILTER_PRESENT (0x100)
+#endif
+
+#endif // __MINGW32__
+
 #endif
 
 // This is a CMake generated file with #defines for any functions/includes
