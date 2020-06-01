@@ -1523,6 +1523,15 @@ The
 Manifest file formatting necessary to define a meta-layer can be found in the
 [Layer Manifest File Format](#layer-manifest-file-format) section.
 
+##### Override Meta-Layer
+
+If an implicit meta-layer was found on the system with the name `VK_LAYER_LUNARG_override`,
+the loader uses it as an 'override' layer. This is used to selectively enable and disable
+other layers from being loaded. It can be applied globally or to a specific application
+or applications. Disabling layers and specifying the application requires the layer manifest have the following keys:
+  * `blacklisted_layers` - List of explicit layer names that should not be loaded even if requested by the application.
+  * `app_keys` - List of paths to executables that the override layer applies to. When an application starts up and the override layer is present, the loader first checks to see if the application is in the list. If it isn't, the override layer is not applied. If the list is empty or if `app_keys` doesn't exist, the loader makes the override layer global and applies it to every application upon startup.
+
 #### Pre-Instance Functions
 
 Vulkan includes a small number of functions which are called without any dispatchable object.
