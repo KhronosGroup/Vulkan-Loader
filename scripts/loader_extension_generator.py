@@ -120,9 +120,19 @@ class LoaderExtensionGeneratorOptions(GeneratorOptions):
                  indentFuncPointer = False,
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
-                                  versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions, emitExtensions, sortProcedure)
+        GeneratorOptions.__init__(self,
+                conventions = conventions,
+                filename = filename,
+                directory = directory,
+                apiname = apiname,
+                profile = profile,
+                versions = versions,
+                emitversions = emitversions,
+                defaultExtensions = defaultExtensions,
+                addExtensions = addExtensions,
+                removeExtensions = removeExtensions,
+                emitExtensions = emitExtensions,
+                sortProcedure = sortProcedure)
         self.prefixText      = prefixText
         self.prefixText      = None
         self.apicall         = apicall
