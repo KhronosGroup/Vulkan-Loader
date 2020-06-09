@@ -68,6 +68,9 @@ def makeGenOpts(args):
     # Output target directory
     directory = args.directory
 
+    # Path to generated files, particularly api.py
+    genpath = args.genpath
+
     # Descriptive names for various regexp patterns used to select
     # versions and extensions
     allFeatures     = allExtensions = '.*'
@@ -122,6 +125,7 @@ def makeGenOpts(args):
             conventions       = conventions,
             filename          = 'vk_dispatch_table_helper.h',
             directory         = directory,
+            genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
             versions          = featuresPat,
@@ -145,6 +149,7 @@ def makeGenOpts(args):
             conventions       = conventions,
             filename          = 'vk_layer_dispatch_table.h',
             directory         = directory,
+            genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
             versions          = featuresPat,
@@ -168,6 +173,7 @@ def makeGenOpts(args):
             conventions       = conventions,
             filename          = 'vk_loader_extensions.h',
             directory         = directory,
+            genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
             versions          = featuresPat,
@@ -191,6 +197,7 @@ def makeGenOpts(args):
             conventions       = conventions,
             filename          = 'vk_loader_extensions.c',
             directory         = directory,
+            genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
             versions          = featuresPat,
@@ -214,6 +221,7 @@ def makeGenOpts(args):
             conventions       = conventions,
             filename          = 'vk_object_types.h',
             directory         = directory,
+            genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
             versions          = featuresPat,
@@ -313,7 +321,9 @@ if __name__ == '__main__':
     parser.add_argument('-time', action='store_true',
                         help='Enable timing')
     parser.add_argument('-validate', action='store_true',
-                        help='Enable group validation')
+                        help='Enable XML group validation')
+    parser.add_argument('-genpath', action='store', default='gen',
+                        help='Path to generated files')
     parser.add_argument('-o', action='store', dest='directory',
                         default='.',
                         help='Create target and related files in specified directory')
