@@ -84,6 +84,10 @@
 // Generated file containing all the extension data
 #include "vk_loader_extensions.c"
 
+// Environment Variable information
+#define VK_ICD_FILENAMES_ENV_VAR "VK_ICD_FILENAMES"
+#define VK_LAYER_PATH_ENV_VAR "VK_LAYER_PATH"
+
 // Override layer information
 #define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
 
@@ -3781,7 +3785,7 @@ out:
 }
 
 static VkResult AddDataFilesInPath(const struct loader_instance *inst, char *search_path, bool is_directory_list,
-                                   struct loader_data_files *out_files) {
+                                   struct loader_data_files *out_files, bool use_first_found_manifest) {
     VkResult vk_result = VK_SUCCESS;
     DIR *dir_stream = NULL;
     struct dirent *dir_entry;
@@ -3863,6 +3867,9 @@ static VkResult AddDataFilesInPath(const struct loader_instance *inst, char *sea
                 break;
             }
         }
+        if (use_first_found_manifest && out_files->count > 0) {
+            break;
+        }
     }
 
 out:
@@ -3884,6 +3891,7 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
     char *search_path = NULL;
     char *cur_path_ptr = NULL;
     size_t rel_size = 0;
+    bool use_first_found_manifest = false;
 #ifndef _WIN32
     bool xdgconfig_alloc = true;
     bool xdgdata_alloc = true;
@@ -4013,6 +4021,10 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
                         memcpy(cur_path_ptr, relative_location, rel_size);
                         cur_path_ptr += rel_size;
                         *cur_path_ptr++ = PATH_SEPARATOR;
+                        // only for ICD manifests
+                        if (env_override != NULL && strcmp(VK_ICD_FILENAMES_ENV_VAR, env_override) == 0) {
+                            use_first_found_manifest = true;
+                        }
                     }
                     CFRelease(ref);
                 }
@@ -4078,7 +4090,7 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = AddDataFilesInPath(inst, search_path, is_directory_list, out_files);
+    vk_result = AddDataFilesInPath(inst, search_path, is_directory_list, out_files, use_first_found_manifest);
 
     if (NULL != override_path) {
         *override_active = true;
@@ -4314,7 +4326,7 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = AddDataFilesInPath(inst, search_path, false, out_files);
+    vk_result = AddDataFilesInPath(inst, search_path, false, out_files, false);
 
 out:
 
@@ -4434,14 +4446,12 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
     if (VK_SUCCESS != res) {
         goto out;
     }
-
     // Get a list of manifest files for ICDs
-    res = loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_ICD, true, "VK_ICD_FILENAMES", NULL, VK_DRIVERS_INFO_REGISTRY_LOC,
-                             VK_DRIVERS_INFO_RELATIVE_DIR, &manifest_files);
+    res = loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_ICD, true, VK_ICD_FILENAMES_ENV_VAR, NULL,
+                             VK_DRIVERS_INFO_REGISTRY_LOC, VK_DRIVERS_INFO_RELATIVE_DIR, &manifest_files);
     if (VK_SUCCESS != res || manifest_files.count == 0) {
         goto out;
     }
-
     loader_platform_thread_lock_mutex(&loader_json_lock);
     lockedMutex = true;
     for (uint32_t i = 0; i < manifest_files.count; i++) {
@@ -4741,7 +4751,7 @@ void loaderScanForLayers(struct loader_instance *inst, struct loader_layer_list 
     }
 
     // Get a list of manifest files for explicit layers
-    if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, "VK_LAYER_PATH", override_paths,
+    if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, VK_LAYER_PATH_ENV_VAR, override_paths,
                                          VK_ELAYERS_INFO_REGISTRY_LOC, VK_ELAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
         goto out;
     }
@@ -4892,7 +4902,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
     // explicit layer info as well.  Not to worry, though, all explicit layers not included
     // in the override layer will be removed below in loaderRemoveLayersInBlacklist().
     if (override_layer_valid || implicit_metalayer_present) {
-        if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, "VK_LAYER_PATH", override_paths,
+        if (VK_SUCCESS != loaderGetDataFiles(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, VK_LAYER_PATH_ENV_VAR, override_paths,
                                              VK_ELAYERS_INFO_REGISTRY_LOC, VK_ELAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
             goto out;
         }
