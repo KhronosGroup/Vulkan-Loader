@@ -64,7 +64,7 @@ else()
 
     # set up the Vulkan::Headers target for consistency
     add_library(vulkan-headers INTERFACE)
-    target_include_directories(vulkan-headers INTERFACE "${VulkanHeaders_INCLUDE_DIRS}")
+    target_include_directories(vulkan-headers SYSTEM INTERFACE "${VulkanHeaders_INCLUDE_DIRS}")
     add_library(Vulkan::Headers ALIAS vulkan-headers)
 endif()
 
@@ -132,7 +132,7 @@ if(UNIX AND NOT APPLE) # i.e.: Linux
 
     if(BUILD_WSI_WAYLAND_SUPPORT)
         find_package(Wayland REQUIRED)
-        include_directories(${WAYLAND_CLIENT_INCLUDE_DIR})
+        include_directories(SYSTEM ${WAYLAND_CLIENT_INCLUDE_DIR})
     endif()
 endif()
 
