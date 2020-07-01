@@ -4472,6 +4472,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 res = temp_res;
             }
             if (temp_res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 break;
             } else {
                 continue;
@@ -7509,7 +7510,8 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
         // Scan/discover all ICD libraries
         memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
         res = loader_icd_scan(NULL, &icd_tramp_list);
-        if (VK_SUCCESS != res) {
+        // EnumerateInstanceExtensionProperties can't return anything other than OOM or VK_ERROR_LAYER_NOT_PRESENT
+        if ((VK_SUCCESS != res && icd_tramp_list.count > 0) || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
             goto out;
         }
         // Get extensions from all ICD's, merge so no duplicates
