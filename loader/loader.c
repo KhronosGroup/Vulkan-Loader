@@ -7271,7 +7271,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
             if (pProperties == NULL) {
                 *pPropertyCount = count;
                 loader_destroy_generic_list(inst, (struct loader_generic_list *)&local_ext_list);
-                loader_platform_thread_unlock_mutex(&loader_lock);
                 return VK_SUCCESS;
             }
 
@@ -7283,14 +7282,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
 
             loader_destroy_generic_list(inst, (struct loader_generic_list *)&local_ext_list);
             if (copy_size < count) {
-                loader_platform_thread_unlock_mutex(&loader_lock);
                 return VK_INCOMPLETE;
             }
         } else {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                        "vkEnumerateDeviceExtensionProperties:  pLayerName "
                        "is too long or is badly formed");
-            loader_platform_thread_unlock_mutex(&loader_lock);
             return VK_ERROR_EXTENSION_NOT_PRESENT;
         }
 
