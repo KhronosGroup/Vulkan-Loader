@@ -127,7 +127,7 @@ if (!is_android) {
       libs = [ "Cfgmgr32.lib" ]
     }
     if (is_mac) {
-      libs = [ "CoreFoundation.framework" ]
+      frameworks = [ "CoreFoundation.framework" ]
     }
     public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
     configs -= [ "//build/config/compiler:chromium_code" ]
