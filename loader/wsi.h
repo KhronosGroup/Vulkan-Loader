@@ -39,6 +39,9 @@ typedef struct {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
         VkIcdSurfaceXlib xlib_surf;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+        VkIcdSurfaceDirectFB directfb_surf;
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 #ifdef VK_USE_PLATFORM_MACOS_MVK
         VkIcdSurfaceMacOS macos_surf;
 #endif  // VK_USE_PLATFORM_MACOS_MVK
@@ -120,6 +123,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instan
 VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                       uint32_t queueFamilyIndex, Display *dpy,
                                                                                       VisualID visualID);
+#endif
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance instance,
+                                                                   const VkDirectFBSurfaceCreateInfoEXT *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
+                                                                                          uint32_t queueFamilyIndex,
+                                                                                          IDirectFB *dfb);
 #endif
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,

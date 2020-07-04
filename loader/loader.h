@@ -326,6 +326,9 @@ struct loader_instance {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     bool wsi_xlib_surface_enabled;
 #endif
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    bool wsi_directfb_surface_enabled;
+#endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool wsi_android_surface_enabled;
 #endif

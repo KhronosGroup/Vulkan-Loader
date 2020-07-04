@@ -53,6 +53,10 @@ elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_WAYLAND_SUPPORT)
         set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_WAYLAND_KHR)
     endif()
+
+    if(BUILD_WSI_DIRECTFB_SUPPORT)
+        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_DIRECTFB_EXT)
+    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
