@@ -179,6 +179,7 @@ on/off options currently supported by this repository:
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the loader with the XCB entry points enabled. Without this, the XCB headers should not be needed, but the extension `VK_KHR_xcb_surface` won't be available. |
 | BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the loader with the Xlib entry points enabled. Without this, the X11 headers should not be needed, but the extension `VK_KHR_xlib_surface` won't be available. |
 | BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the loader with the Wayland entry points enabled. Without this, the Wayland headers should not be needed, but the extension `VK_KHR_wayland_surface` won't be available. |
+| BUILD_WSI_DIRECTFB_SUPPORT | Linux | `OFF` | Build the loader with the DirectFB entry points enabled. Without this, the DirectFB headers should not be needed, but the extension `VK_EXT_directfb_surface` won't be available. |
 | ENABLE_STATIC_LOADER | Windows | `OFF` | By default, the loader is built as a dynamic library. This allows it to be built as a static library, instead. |
 | ENABLE_WIN10_ONECORE | Windows | `OFF` | Link the loader to the [OneCore](https://msdn.microsoft.com/en-us/library/windows/desktop/mt654039.aspx) umbrella library, instead of the standard Win32 ones. |
 | USE_CCACHE | Linux | `OFF` | Enable caching with the CCache program. |
