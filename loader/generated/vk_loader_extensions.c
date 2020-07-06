@@ -281,6 +281,14 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     // ---- VK_EXT_headless_surface extension commands
     LOOKUP_GIPA(CreateHeadlessSurfaceEXT, false);
 
+    // ---- VK_EXT_directfb_surface extension commands
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    LOOKUP_GIPA(CreateDirectFBSurfaceEXT, false);
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    LOOKUP_GIPA(GetPhysicalDeviceDirectFBPresentationSupportEXT, false);
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
 #undef LOOKUP_GIPA
 
     return true;
@@ -1041,6 +1049,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_EXT_headless_surface extension commands
     table->CreateHeadlessSurfaceEXT = (PFN_vkCreateHeadlessSurfaceEXT)gpa(inst, "vkCreateHeadlessSurfaceEXT");
+
+    // ---- VK_EXT_directfb_surface extension commands
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    table->CreateDirectFBSurfaceEXT = (PFN_vkCreateDirectFBSurfaceEXT)gpa(inst, "vkCreateDirectFBSurfaceEXT");
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    table->GetPhysicalDeviceDirectFBPresentationSupportEXT = (PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT)gpa(inst, "vkGetPhysicalDeviceDirectFBPresentationSupportEXT");
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 }
 
 // Device command lookup function
@@ -1793,6 +1809,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_EXT_headless_surface extension commands
     if (!strcmp(name, "CreateHeadlessSurfaceEXT")) return (void *)table->CreateHeadlessSurfaceEXT;
+
+    // ---- VK_EXT_directfb_surface extension commands
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    if (!strcmp(name, "CreateDirectFBSurfaceEXT")) return (void *)table->CreateDirectFBSurfaceEXT;
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    if (!strcmp(name, "GetPhysicalDeviceDirectFBPresentationSupportEXT")) return (void *)table->GetPhysicalDeviceDirectFBPresentationSupportEXT;
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
     *found_name = false;
     return NULL;
@@ -5442,6 +5466,14 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_EXT_headless_surface extension commands
     .CreateHeadlessSurfaceEXT = terminator_CreateHeadlessSurfaceEXT,
+
+    // ---- VK_EXT_directfb_surface extension commands
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    .CreateDirectFBSurfaceEXT = terminator_CreateDirectFBSurfaceEXT,
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    .GetPhysicalDeviceDirectFBPresentationSupportEXT = terminator_GetPhysicalDeviceDirectFBPresentationSupportEXT,
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
@@ -5501,5 +5533,8 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #endif // VK_USE_PLATFORM_METAL_EXT
                                                   VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME,
                                                   VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+                                                  VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
                                                   NULL };
 
