@@ -28,7 +28,8 @@ from common_codegen import *
 return_type_table = {"VkResult": "VK_SUCCESS",
                      "uint32_t": "0",
                      "uint64_t": "0L",
-                     "VkDeviceAddress": "0L"}
+                     "VkDeviceAddress": "0L",
+                     "VkDeviceSize": "0L"}
 
 #
 # DispatchTableHelperOutputGeneratorOptions - subclass of GeneratorOptions.
