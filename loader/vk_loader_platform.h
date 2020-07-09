@@ -120,6 +120,15 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 }
 #endif  // defined (__APPLE__)
 
+// Compatability with compilers that don't support __has_feature
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#define LOADER_ADDRESS_SANITIZER
+#endif
+
 // Dynamic Loading of libraries:
 typedef void *loader_platform_dl_handle;
 static inline loader_platform_dl_handle loader_platform_open_library(const char *libPath) {
@@ -130,7 +139,8 @@ static inline loader_platform_dl_handle loader_platform_open_library(const char 
 // to ensure that implementation's own dependencies are first in lookup order.
 // This may be useful when both application and driver use different versions
 // of the same library.
-#ifdef __linux__
+#if defined(__linux__) && !defined(LOADER_ADDRESS_SANITIZER)
+    // Address Sanitizer breaks with RTLD_DEEPBIND, remove it if ASAN is found
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND);
 #else
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
