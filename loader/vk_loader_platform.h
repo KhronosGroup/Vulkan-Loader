@@ -135,16 +135,8 @@ static inline loader_platform_dl_handle loader_platform_open_library(const char 
 // When loading the library, we use RTLD_LAZY so that not all symbols have to be
 // resolved at this time (which improves performance). Note that if not all symbols
 // can be resolved, this could cause crashes later. Use the LD_BIND_NOW environment
-// variable to force all symbols to be resolved here. On Linux use RTLD_DEEPBIND
-// to ensure that implementation's own dependencies are first in lookup order.
-// This may be useful when both application and driver use different versions
-// of the same library.
-#if defined(__linux__) && !defined(LOADER_ADDRESS_SANITIZER)
-    // Address Sanitizer breaks with RTLD_DEEPBIND, remove it if ASAN is found
-    return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND);
-#else
+// variable to force all symbols to be resolved here.
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
-#endif
 }
 static inline const char *loader_platform_open_library_error(const char *libPath) { return dlerror(); }
 static inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
