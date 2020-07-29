@@ -888,7 +888,7 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
     }
 
     if (is_driver) {
-        HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory1, &dxgi_factory);
+        HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory1, (void **)&dxgi_factory);
         if (hres != S_OK) {
             loader_log(
                 inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
