@@ -27,7 +27,9 @@
  */
 
 // Following items are needed for C++ to work with PRIxLEAST64
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 #include <stdint.h>  // For UINT32_MAX

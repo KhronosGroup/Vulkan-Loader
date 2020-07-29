@@ -34,7 +34,9 @@
 #include <string.h>
 
 #ifdef _WIN32
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 // WinSock2.h must be included *BEFORE* windows.h
 #include <winsock2.h>
 #endif
@@ -42,10 +44,10 @@
 #include <vulkan/vk_sdk_platform.h>
 #include <vulkan/vulkan.h>
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(push)
 /*
-    warnings 4251 and 4275 have to do with potential dll-interface mismatch
+    MSVC warnings 4251 and 4275 have to do with potential dll-interface mismatch
     between library (gtest) and users. Since we build the gtest library
     as part of the test build we know that the dll-interface will match and
     can disable these warnings.
@@ -71,7 +73,7 @@
 #pragma pop_macro("None")
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
