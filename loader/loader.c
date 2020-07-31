@@ -6034,28 +6034,46 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
         }
     }
 
+    VkLoaderFeatureFlags feature_flags = 0;
+#if defined(_WIN32)
+    IDXGIFactory6* dxgi_factory = NULL;
+    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, &dxgi_factory);
+    if (hres == S_OK) {
+        feature_flags |= VK_LOADER_FEATURE_PHYSICAL_DEVICE_SORTING;
+        dxgi_factory->lpVtbl->Release(dxgi_factory);
+    }
+#endif
+
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)next_gipa(*created_instance, "vkCreateInstance");
     if (fpCreateInstance) {
-        VkLayerInstanceCreateInfo create_info_disp;
-
-        create_info_disp.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
-        create_info_disp.function = VK_LOADER_DATA_CALLBACK;
-
-        create_info_disp.u.pfnSetInstanceLoaderData = vkSetInstanceDispatch;
-
-        create_info_disp.pNext = loader_create_info.pNext;
-        loader_create_info.pNext = &create_info_disp;
-
-        VkLayerInstanceCreateInfo create_info_disp2;
-
-        create_info_disp2.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
-        create_info_disp2.function = VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK;
-
-        create_info_disp2.u.layerDevice.pfnLayerCreateDevice = loader_layer_create_device;
-        create_info_disp2.u.layerDevice.pfnLayerDestroyDevice = loader_layer_destroy_device;
-
-        create_info_disp2.pNext = loader_create_info.pNext;
-        loader_create_info.pNext = &create_info_disp2;
+        const VkLayerInstanceCreateInfo instance_dispatch = {
+            .sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO,
+            .pNext = loader_create_info.pNext,
+            .function = VK_LOADER_DATA_CALLBACK,
+            .u = {
+                .pfnSetInstanceLoaderData = vkSetInstanceDispatch,
+            },
+        };
+        const VkLayerInstanceCreateInfo device_callback = {
+            .sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO,
+            .pNext = &instance_dispatch,
+            .function = VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK,
+            .u = {
+                .layerDevice = {
+                    .pfnLayerCreateDevice = loader_layer_create_device,
+                    .pfnLayerDestroyDevice = loader_layer_destroy_device,
+                },
+            },
+        };
+        const VkLayerInstanceCreateInfo loader_features = {
+            .sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO,
+            .pNext = &device_callback,
+            .function = VK_LOADER_FEATURES,
+            .u = {
+                .loaderFeatures = feature_flags,
+            },
+        };
+        loader_create_info.pNext = &loader_features;
 
         res = fpCreateInstance(&loader_create_info, pAllocator, created_instance);
     } else {
