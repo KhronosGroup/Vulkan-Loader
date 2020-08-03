@@ -7992,13 +7992,13 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             for (uint32_t indiv_gpu = 0; indiv_gpu < count_this_time; indiv_gpu++) {
                 local_phys_dev_groups[indiv_gpu + cur_icd_group_count].physicalDeviceCount = 1;
                 local_phys_dev_groups[indiv_gpu + cur_icd_group_count].physicalDevices[0] = phys_dev_array[indiv_gpu];
-                local_phys_dev_groups_sorted[indiv_gpu + cur_icd_group_count] = icd_sorted;
+                local_phys_dev_group_sorted[indiv_gpu + cur_icd_group_count] = icd_sorted;
             }
 
         } else {
             res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time, &local_phys_dev_groups[cur_icd_group_count]);
             for (uint32_t group = 0; group < count_this_time; ++group) {
-                local_phys_dev_groups_sorted[group + cur_icd_group_count] = icd_sorted;
+                local_phys_dev_group_sorted[group + cur_icd_group_count] = icd_sorted;
             }
             if (VK_SUCCESS != res) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
