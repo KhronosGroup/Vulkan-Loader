@@ -7983,7 +7983,6 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
     for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
         uint32_t count_this_time = total_count - cur_icd_group_count;
 
-        local_phys_dev_groups[cur_icd_group_count].physicalDeviceCount = 0;
         // Check if this group can be sorted
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
         bool icd_sorted = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL;
