@@ -7983,12 +7983,12 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
     for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
         uint32_t count_this_time = total_count - cur_icd_group_count;
 
-        local_phys_dev_groups[icd_idx].physicalDeviceCount = 0;
+        local_phys_dev_groups[cur_icd_group_count].physicalDeviceCount = 0;
         // Check if this group can be sorted
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-        local_phys_dev_group_sorted[icd_idx] = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL;
+        bool icd_sorted = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL;
 #else
-        local_phys_dev_group_sorted[icd_idx] = false;
+        bool icd_sorted = false;
 #endif
 
         // Get the function pointer to use to call into the ICD. This could be the core or KHR version
@@ -8022,10 +8022,14 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             for (uint32_t indiv_gpu = 0; indiv_gpu < count_this_time; indiv_gpu++) {
                 local_phys_dev_groups[indiv_gpu + cur_icd_group_count].physicalDeviceCount = 1;
                 local_phys_dev_groups[indiv_gpu + cur_icd_group_count].physicalDevices[0] = phys_dev_array[indiv_gpu];
+                local_phys_dev_groups_sorted[indiv_gpu + cur_icd_group_count] = icd_sorted;
             }
 
         } else {
             res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time, &local_phys_dev_groups[cur_icd_group_count]);
+            for (uint32_t group = 0; group < count_this_time; ++group) {
+                local_phys_dev_groups_sorted[group + cur_icd_group_count] = icd_sorted;
+            }
             if (VK_SUCCESS != res) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                     "setupLoaderTermPhysDevGroups:  Failed during dispatch call of "
