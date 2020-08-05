@@ -2782,6 +2782,9 @@ static void VerifyAllMetaLayers(struct loader_instance *inst, struct loader_laye
             if (prop->blacklist_layer_names != NULL) {
                 loader_instance_heap_free(inst, prop->blacklist_layer_names);
             }
+            if (prop->override_paths != NULL) {
+                loader_instance_heap_free(inst, prop->override_paths);
+            }
 
             // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
             // overlapping the source and destination addresses.
