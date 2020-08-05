@@ -1381,7 +1381,7 @@ the `VkInstanceCreateInfo`/`VkDeviceCreateInfo` structure.
      pfnNextGetInstanceProcAddr(NULL, "vkCreateInstance").
   - For CreateDevice get the next entity's `vkCreateDevice` by calling the
 "pfnNextGetInstanceProcAddr":
-     pfnNextGetInstanceProcAddr(NULL, "vkCreateDevice").
+     pfnNextGetInstanceProcAddr(instance, "vkCreateDevice"), passing the already created instance handle.
   - Advanced the linked list to the next node: pLayerInfo = pLayerInfo->pNext.
   - Call down the chain either `vkCreateDevice` or `vkCreateInstance`
   - Initialize your layer dispatch table by calling the next entity's
@@ -1439,6 +1439,7 @@ vkCreateDevice(
         const VkAllocationCallbacks *pAllocator,
         VkDevice *pDevice)
 {
+    VkInstance instance = GetInstanceFromPhysicalDevice(gpu);
     VkLayerDeviceCreateInfo *chain_info =
         get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
 
@@ -1447,7 +1448,7 @@ vkCreateDevice(
     PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr =
         chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
     PFN_vkCreateDevice fpCreateDevice =
-        (PFN_vkCreateDevice)fpGetInstanceProcAddr(NULL, "vkCreateDevice");
+        (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance, "vkCreateDevice");
     if (fpCreateDevice == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
@@ -1471,6 +1472,8 @@ vkCreateDevice(
     return VK_SUCCESS;
 }
 ```
+In this case the function `GetInstanceFromPhysicalDevice` is called to get the instance handle.
+In practice, this would be done by any method a layer chooses to get an instance handle from the physical device.
 
 
 #### Meta-layers
