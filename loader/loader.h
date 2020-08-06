@@ -476,9 +476,9 @@ VkResult loader_init_generic_list(const struct loader_instance *inst, struct loa
 void loader_destroy_generic_list(const struct loader_instance *inst, struct loader_generic_list *list);
 void loaderDestroyLayerList(const struct loader_instance *inst, struct loader_device *device, struct loader_layer_list *layer_list);
 void loaderDeleteLayerListAndProperties(const struct loader_instance *inst, struct loader_layer_list *layer_list);
-void loaderAddLayerNameToList(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
-                              const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
-                              struct loader_layer_list *expanded_target_list);
+VkResult loaderAddLayerNameToList(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
+                                  const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
+                                  struct loader_layer_list *expanded_target_list);
 void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 void loaderScanForLayers(struct loader_instance *inst, struct loader_layer_list *instance_layers);

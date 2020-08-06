@@ -1962,9 +1962,10 @@ bool loaderAddMetaLayer(const struct loader_instance *inst, const struct loader_
 // Search the source_list for any layer with a name that matches the given name and a type
 // that matches the given type.  Add all matching layers to the target_list.
 // Do not add if found loader_layer_properties is already on the target_list.
-void loaderAddLayerNameToList(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
-                              const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
-                              struct loader_layer_list *expanded_target_list) {
+VkResult loaderAddLayerNameToList(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
+                                  const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
+                                  struct loader_layer_list *expanded_target_list) {
+    VkResult res = VK_SUCCESS;
     bool found = false;
     for (uint32_t i = 0; i < source_list->count; i++) {
         struct loader_layer_properties *source_prop = &source_list->list[i];
@@ -1985,9 +1986,17 @@ void loaderAddLayerNameToList(const struct loader_instance *inst, const char *na
         }
     }
     if (!found) {
-        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "loaderAddLayerNameToList: Failed to find layer name %s to activate",
-                   name);
+        if (strcmp(name, "VK_LAYER_LUNARG_standard_validation")) {
+            loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                       "loaderAddLayerNameToList: Failed to find layer name %s to activate", name);
+        } else {
+            res = VK_ERROR_LAYER_NOT_PRESENT;
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "Layer VK_LAYER_LUNARG_standard_validation has been changed to VK_LAYER_KHRONOS_validation. Please use the "
+                       "new version of the layer.");
+        }
     }
+    return res;
 }
 
 static VkExtensionProperties *get_extension_property(const char *name, const struct loader_extension_list *list) {
@@ -5593,9 +5602,11 @@ static void loaderAddImplicitLayers(const struct loader_instance *inst, struct l
 
 // Get the layer name(s) from the env_name environment variable. If layer is found in
 // search_list then add it to layer_list.  But only add it to layer_list if type_flags matches.
-static void loaderAddEnvironmentLayers(struct loader_instance *inst, const enum layer_type_flags type_flags, const char *env_name,
-                                       struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
-                                       const struct loader_layer_list *source_list) {
+static VkResult loaderAddEnvironmentLayers(struct loader_instance *inst, const enum layer_type_flags type_flags,
+                                           const char *env_name, struct loader_layer_list *target_list,
+                                           struct loader_layer_list *expanded_target_list,
+                                           const struct loader_layer_list *source_list) {
+    VkResult res = VK_SUCCESS;
     char *next, *name;
     char *layer_env = loader_getenv(env_name, inst);
     if (layer_env == NULL) {
@@ -5609,7 +5620,10 @@ static void loaderAddEnvironmentLayers(struct loader_instance *inst, const enum 
 
     while (name && *name) {
         next = loader_get_next_path(name);
-        loaderAddLayerNameToList(inst, name, type_flags, source_list, target_list, expanded_target_list);
+        res = loaderAddLayerNameToList(inst, name, type_flags, source_list, target_list, expanded_target_list);
+        if (res != VK_SUCCESS) {
+            goto out;
+        }
         name = next;
     }
 
@@ -5619,7 +5633,7 @@ out:
         loader_free_getenv(layer_env, inst);
     }
 
-    return;
+    return res;
 }
 
 VkResult loaderEnableInstanceLayers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
@@ -5648,8 +5662,11 @@ VkResult loaderEnableInstanceLayers(struct loader_instance *inst, const VkInstan
     loaderAddImplicitLayers(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
 
     // Add any layers specified via environment variable next
-    loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS", &inst->app_activated_layer_list,
-                               &inst->expanded_activated_layer_list, instance_layers);
+    err = loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS", &inst->app_activated_layer_list,
+                                     &inst->expanded_activated_layer_list, instance_layers);
+    if (err != VK_SUCCESS) {
+        goto out;
+    }
 
     // Add layers specified by the application
     err = loaderAddLayerNamesToList(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
@@ -5671,6 +5688,7 @@ VkResult loaderEnableInstanceLayers(struct loader_instance *inst, const VkInstan
         }
     }
 
+out:
     return err;
 }
 
@@ -6255,8 +6273,11 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
 
     // Build the lists of active layers (including metalayers) and expanded layers (with metalayers resolved to their components)
     loaderAddImplicitLayers(inst, &active_layers, &expanded_layers, instance_layers);
-    loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, ENABLED_LAYERS_ENV, &active_layers, &expanded_layers,
-                               instance_layers);
+    res = loaderAddEnvironmentLayers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, ENABLED_LAYERS_ENV, &active_layers, &expanded_layers,
+                                     instance_layers);
+    if (res != VK_SUCCESS) {
+        goto out;
+    }
     res = loaderAddLayerNamesToList(inst, &active_layers, &expanded_layers, pCreateInfo->enabledLayerCount,
                                     pCreateInfo->ppEnabledLayerNames, instance_layers);
     if (VK_SUCCESS != res) {
