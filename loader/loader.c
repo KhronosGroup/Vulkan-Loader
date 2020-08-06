@@ -4949,6 +4949,11 @@ out:
     if (NULL != override_paths) {
         loader_instance_heap_free(inst, override_paths);
     }
+    for (uint32_t i = 0; i < manifest_files.count; i++) {
+        if (NULL != manifest_files.filename_list[i]) {
+            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
+        }
+    }
     if (NULL != manifest_files.filename_list) {
         loader_instance_heap_free(inst, manifest_files.filename_list);
     }
