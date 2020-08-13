@@ -4937,6 +4937,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
             res = loaderAddLayerProperties(inst, instance_layers, json, true, file_str);
 
             loader_instance_heap_free(inst, file_str);
+            manifest_files.filename_list[i] = NULL;
             cJSON_Delete(json);
 
             if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
