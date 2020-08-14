@@ -12,7 +12,7 @@ version: "{build}"
 max_jobs: 4
 
 os:
-  - Visual Studio 2015
+  - Visual Studio 2017
 
 environment:
   PYTHON_PATH: "C:/Python35"
@@ -47,7 +47,7 @@ before_build:
   - echo Generating CMake files for %PLATFORM%
   - mkdir build
   - cd build
-  - cmake -A %PLATFORM% -C../external/helper.cmake ..
+  - cmake -A %PLATFORM% -DCMAKE_SYSTEM_VERSION=10.0.18362 -C../external/helper.cmake ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
