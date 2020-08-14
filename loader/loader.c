@@ -7162,9 +7162,9 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
 
         dxgi_factory->lpVtbl->Release(dxgi_factory);
     }
-#endif
 
 out:
+#endif
 
     if (*sorted_count == 0 && *sorted_devices != NULL) {
         loader_instance_heap_free(inst, *sorted_devices);
