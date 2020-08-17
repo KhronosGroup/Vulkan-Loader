@@ -7141,7 +7141,7 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
                             break;
                         }
                         sorted_array[*sorted_count].device_count = count;
-                    } while (vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, description.AdapterLuid, &count, sorted_array[*sorted_count].physical_devices) == VK_INCOMPLETE);
+                    } while ((vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, description.AdapterLuid, &count, sorted_array[*sorted_count].physical_devices)) == VK_INCOMPLETE);
                 }
 
                 if (vkres != VK_SUCCESS) {
