@@ -538,9 +538,7 @@ out:
 
     if (NULL != ptr_instance) {
         if (res != VK_SUCCESS) {
-            if (NULL != ptr_instance->next) {
-                loader.instances = ptr_instance->next;
-            }
+            loader.instances = ptr_instance->next;
             if (NULL != ptr_instance->disp) {
                 loader_instance_heap_free(ptr_instance, ptr_instance->disp);
             }
