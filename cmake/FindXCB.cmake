@@ -35,9 +35,12 @@ foreach(comp ${XCB_FIND_COMPONENTS})
         ${PC_${comp}_LIBRARY_DIRS}
         )
 
+    set(FPHSA_NAME_MISMATCHED TRUE)
     find_package_handle_standard_args(${comp}
         FOUND_VAR ${comp}_FOUND
         REQUIRED_VARS ${compname}_INCLUDE_DIR ${compname}_LIBRARY)
+    unset(FPHSA_NAME_MISMATCHED)
+
     mark_as_advanced(${compname}_INCLUDE_DIR ${compname}_LIBRARY)
 
     list(APPEND XCB_INCLUDE_DIRS ${${compname}_INCLUDE_DIR})
