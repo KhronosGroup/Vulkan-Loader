@@ -7061,10 +7061,10 @@ struct LoaderSortedPhysicalDevice {
 VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSortedPhysicalDevice **sorted_devices, uint32_t* sorted_count)
 {
     VkResult res = VK_SUCCESS;
-    uint32_t sorted_alloc = 0;
-    struct loader_icd_term* icd_term = NULL;
 
 #if defined(_WIN32)
+    uint32_t sorted_alloc = 0;
+    struct loader_icd_term* icd_term = NULL;
     IDXGIFactory6* dxgi_factory = NULL;
     HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, &dxgi_factory);
     if (hres != S_OK) {
