@@ -74,6 +74,7 @@ if (!is_android) {
 
   target(library_type, "libvulkan") {
     sources = [
+      "loader/adapters.h",
       "loader/asm_offset.c",
       "loader/cJSON.c",
       "loader/cJSON.h",
@@ -82,6 +83,9 @@ if (!is_android) {
       "loader/dev_ext_trampoline.c",
       "loader/extension_manual.c",
       "loader/extension_manual.h",
+      "loader/generated/vk_layer_dispatch_table.h",
+      "loader/generated/vk_loader_extensions.h",
+      "loader/generated/vk_object_types.h",
       "loader/gpa_helper.h",
       "loader/loader.c",
       "loader/loader.h",
@@ -89,6 +93,7 @@ if (!is_android) {
       "loader/murmurhash.h",
       "loader/phys_dev_ext.c",
       "loader/trampoline.c",
+      "loader/vk_loader_layer.h",
 
       # TODO(jmadill): Use assembler where available.
       "loader/unknown_ext_chain.c",
