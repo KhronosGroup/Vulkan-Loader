@@ -589,10 +589,10 @@ layers. Layers specified via environment variable are top-most (closest to the
 application) while layers specified by the application are bottom-most.
 
 An example of using these environment variables to activate the validation
-layer `VK_LAYER_LUNARG_parameter_validation` on Linux or macOS is as follows:
+layer `VK_LAYER_KHRONOS_validation` on Linux or macOS is as follows:
 
 ```
-> $ export VK_INSTANCE_LAYERS=VK_LAYER_LUNARG_parameter_validation
+> $ export VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation
 ```
 
 
@@ -605,14 +605,11 @@ as follows:
 
 Ordering may also be important internal to the list of explicit layers.
 Some layers may be dependent on other behavior being implemented before
-or after the loader calls it.  For example: the VK_LAYER_LUNARG_core_validation
-layer expects the VK_LAYER_LUNARG_parameter_validation layer to be called first.
-This is because the VK_LAYER_LUNARG_parameter_validation layer will filter out any
-invalid `NULL` pointer calls prior to the rest of the validation checking
-done by the VK_LAYER_LUNARG_core_validation layer.  If not done properly, you may see
-crashes in the VK_LAYER_LUNARG_core_validation layer that would otherwise be
-avoided.
-
+or after the loader calls it.  For example: An overlay layer may want to
+to use VK_LAYER_KHRONOS_validation to verify that the overlay layer is
+behaving appropriately. This requires putting the overlay layer closer to
+the application so that the validation layer can intercept any Vulkan API
+calls the overlay layer needs to make to function.
 
 #### Application Usage of Extensions
 
