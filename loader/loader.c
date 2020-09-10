@@ -7125,8 +7125,10 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
                 VkResult vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, description.AdapterLuid, &count, NULL);
                 if (vkres == VK_ERROR_INCOMPATIBLE_DRIVER) {
                     continue; // This driver doesn't support the adapter
-                }
-                else if (vkres != VK_SUCCESS) {
+                } else if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                } else if (vkres != VK_SUCCESS) {
                     loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code");
                     continue;
                 }
@@ -7147,8 +7149,8 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
                 if (vkres != VK_SUCCESS) {
                     loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
                     continue;
-                }
-                else if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                } else if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
                 inst->total_gpu_count += (sorted_array[*sorted_count].device_count = count);
@@ -7212,8 +7214,9 @@ VkResult setupLoaderTermPhysDevs(struct loader_instance *inst) {
         icd_phys_dev_array[icd_idx].this_icd_term = NULL;
 
         // This is the legacy behavior which should be skipped if EnumerateAdapterPhysicalDevices is available
+        // and we successfully enumerated sorted adapters using ReadSortedPhysicalDevices.
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-        if (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL) {
+        if (sorted_count && icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL) {
             continue;
         }
 #endif
@@ -7274,8 +7277,7 @@ VkResult setupLoaderTermPhysDevs(struct loader_instance *inst) {
 #if defined(_WIN32)
     // Copy over everything found through sorted enumeration
     for (uint32_t i = 0; i < sorted_count; ++i) {
-        for (uint32_t j = 0; j < sorted_phys_dev_array[i].device_count; ++i) {
-
+        for (uint32_t j = 0; j < sorted_phys_dev_array[i].device_count; ++j) {
             // Check if this physical device is already in the old buffer
             if (NULL != inst->phys_devs_term) {
                 for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
