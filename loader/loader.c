@@ -5942,7 +5942,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
             lib_handle = loaderOpenLayerFile(inst, "instance", layer_prop);
             if (!lib_handle) {
-                return VK_ERROR_LAYER_NOT_PRESENT;
+                continue;
             }
 
             if (NULL == layer_prop->functions.negotiate_layer_interface) {
