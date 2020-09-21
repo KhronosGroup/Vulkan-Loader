@@ -596,6 +596,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetPipelineExecutableStatisticsKHR = (PFN_vkGetPipelineExecutableStatisticsKHR)gdpa(dev, "vkGetPipelineExecutableStatisticsKHR");
     table->GetPipelineExecutableInternalRepresentationsKHR = (PFN_vkGetPipelineExecutableInternalRepresentationsKHR)gdpa(dev, "vkGetPipelineExecutableInternalRepresentationsKHR");
 
+    // ---- VK_KHR_copy_commands2 extension commands
+    table->CmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)gdpa(dev, "vkCmdCopyBuffer2KHR");
+    table->CmdCopyImage2KHR = (PFN_vkCmdCopyImage2KHR)gdpa(dev, "vkCmdCopyImage2KHR");
+    table->CmdCopyBufferToImage2KHR = (PFN_vkCmdCopyBufferToImage2KHR)gdpa(dev, "vkCmdCopyBufferToImage2KHR");
+    table->CmdCopyImageToBuffer2KHR = (PFN_vkCmdCopyImageToBuffer2KHR)gdpa(dev, "vkCmdCopyImageToBuffer2KHR");
+    table->CmdBlitImage2KHR = (PFN_vkCmdBlitImage2KHR)gdpa(dev, "vkCmdBlitImage2KHR");
+    table->CmdResolveImage2KHR = (PFN_vkCmdResolveImage2KHR)gdpa(dev, "vkCmdResolveImage2KHR");
+
     // ---- VK_EXT_debug_marker extension commands
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gdpa(dev, "vkDebugMarkerSetObjectTagEXT");
     table->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)gdpa(dev, "vkDebugMarkerSetObjectNameEXT");
@@ -1351,6 +1359,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetPipelineExecutablePropertiesKHR")) return (void *)table->GetPipelineExecutablePropertiesKHR;
     if (!strcmp(name, "GetPipelineExecutableStatisticsKHR")) return (void *)table->GetPipelineExecutableStatisticsKHR;
     if (!strcmp(name, "GetPipelineExecutableInternalRepresentationsKHR")) return (void *)table->GetPipelineExecutableInternalRepresentationsKHR;
+
+    // ---- VK_KHR_copy_commands2 extension commands
+    if (!strcmp(name, "CmdCopyBuffer2KHR")) return (void *)table->CmdCopyBuffer2KHR;
+    if (!strcmp(name, "CmdCopyImage2KHR")) return (void *)table->CmdCopyImage2KHR;
+    if (!strcmp(name, "CmdCopyBufferToImage2KHR")) return (void *)table->CmdCopyBufferToImage2KHR;
+    if (!strcmp(name, "CmdCopyImageToBuffer2KHR")) return (void *)table->CmdCopyImageToBuffer2KHR;
+    if (!strcmp(name, "CmdBlitImage2KHR")) return (void *)table->CmdBlitImage2KHR;
+    if (!strcmp(name, "CmdResolveImage2KHR")) return (void *)table->CmdResolveImage2KHR;
 
     // ---- VK_EXT_debug_marker extension commands
     if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return (void *)table->DebugMarkerSetObjectTagEXT;
@@ -2386,6 +2402,51 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     return disp->GetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
+}
+
+
+// ---- VK_KHR_copy_commands2 extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyBufferInfo2KHR*                 pCopyBufferInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyImageInfo2KHR*                  pCopyImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyBufferToImageInfo2KHR*          pCopyBufferToImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyImageToBufferInfo2KHR*          pCopyImageToBufferInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkBlitImageInfo2KHR*                  pBlitImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkResolveImageInfo2KHR*               pResolveImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
 }
 
 
@@ -4379,6 +4440,32 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetPipelineExecutableInternalRepresentationsKHR", name)) {
         *addr = (void *)GetPipelineExecutableInternalRepresentationsKHR;
+        return true;
+    }
+
+    // ---- VK_KHR_copy_commands2 extension commands
+    if (!strcmp("vkCmdCopyBuffer2KHR", name)) {
+        *addr = (void *)CmdCopyBuffer2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyImage2KHR", name)) {
+        *addr = (void *)CmdCopyImage2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyBufferToImage2KHR", name)) {
+        *addr = (void *)CmdCopyBufferToImage2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyImageToBuffer2KHR", name)) {
+        *addr = (void *)CmdCopyImageToBuffer2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdBlitImage2KHR", name)) {
+        *addr = (void *)CmdBlitImage2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdResolveImage2KHR", name)) {
+        *addr = (void *)CmdResolveImage2KHR;
         return true;
     }
 
