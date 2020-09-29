@@ -330,20 +330,18 @@ be completely sure that a loader is present, they can include a loader or
 runtime installer with their application.
 
 ###### Static Linking
-The loader can also be used as a static library (this is shipped in the
-Windows SDK as `VKstatic.1.lib`). Linking to the static loader means that the
-user does not need to have a Vulkan runtime installed, and it also guarantees
-that your application will use a specific version of the loader. However, there
-are several downsides to this approach:
+In previous versions of the loader, it was possible to statically link the loader.
+This was removed and is no longer possible. The decision to remove static linking
+was because of changes to the driver which made older applications that statically
+linked unable to find newer drivers.
 
-  - The static library can never be updated without re-linking the application
-  - This opens up the possibility that two included libraries could contain
+Additionally, static linking posed several problems:
+  - The loader can never be updated without re-linking the application
+  - The possibility that two included libraries could contain
   different versions of the loader
-    - This could potentially cause conflicts between the different loader versions
+    - Could cause conflicts between the different loader versions
 
-As a result, it is recommended that users prefer linking to the dynamic
-versions of the loader.
-
+The only exception to this is for macOS, but is not supported or tested.
 
 ##### Indirectly Linking to the Loader
 Applications are not required to link directly to the loader library, instead
