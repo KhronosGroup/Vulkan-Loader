@@ -10,6 +10,7 @@ Instructions for building this repository on Linux, Windows, and MacOS.
 1. [Windows Build](#building-on-windows)
 1. [Linux Build](#building-on-linux)
 1. [MacOS build](#building-on-macos)
+1. [Fuchsia build](#building-on-fuchsia)
 
 ## Contributing to the Repository
 
@@ -692,3 +693,12 @@ To run the loader test script, change to the `build/tests` directory in your
 Vulkan-Loader repository, and run:
 
     ./vk_loader_validation_tests
+
+## Building on Fuchsia
+
+Fuchsia uses the project's GN build system to integrate with the Fuchsia platform build.
+
+### SDK Symbols
+
+The Vulkan Loader is a component of the Fuchsia SDK, so it must explicitly declare its exported symbols in
+the file vulkan.symbols.api; see [SDK](https://fuchsia.dev/fuchsia-src/development/sdk).
