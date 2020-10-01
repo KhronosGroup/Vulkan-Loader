@@ -253,7 +253,7 @@ void *loader_device_heap_realloc(const struct loader_device *device, void *pMemo
 }
 
 // Environment variables
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__)
 
 static inline bool IsHighIntegrity() {
     return geteuid() != getuid() || getegid() != getgid();
@@ -277,6 +277,8 @@ static inline char *loader_secure_getenv(const char *name, const struct loader_i
     // This algorithm is derived from glibc code that sets an internal
     // variable (__libc_enable_secure) if the process is running under setuid or setgid.
     return IsHighIntegrity() ? NULL : loader_getenv(name, inst);
+#elif defined(__Fuchsia__)
+    return loader_getenv(name, inst);
 #else
 // Linux
 #if defined(HAVE_SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
@@ -2317,7 +2319,11 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
 
     // TODO implement smarter opening/closing of libraries. For now this
     // function leaves libraries open and the scanned_icd_clear closes them
+#if defined(__Fuchsia__)
+    handle = loader_platform_open_driver(filename);
+#else
     handle = loader_platform_open_library(filename);
+#endif
     if (NULL == handle) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(filename));
         goto out;
@@ -3955,12 +3961,14 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
     if (xdgdatadirs == NULL) {
         xdgdata_alloc = false;
     }
+#if !defined(__Fuchsia__)
     if (xdgconfdirs == NULL || xdgconfdirs[0] == '\0') {
         xdgconfdirs = FALLBACK_CONFIG_DIRS;
     }
     if (xdgdatadirs == NULL || xdgdatadirs[0] == '\0') {
         xdgdatadirs = FALLBACK_DATA_DIRS;
     }
+#endif
 
     // Only use HOME if XDG_DATA_HOME is not present on the system
     if (NULL == xdgdatahome) {
@@ -4308,7 +4316,6 @@ out:
 static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
                                         bool warn_if_not_present, char *registry_location, struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
-    bool is_icd = (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD);
     char *search_path = NULL;
 
     // These calls look at the PNP/Device section of the registry.
