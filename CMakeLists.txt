@@ -43,7 +43,7 @@ if(APPLE)
 endif()
 
 if(BUILD_STATIC_LOADER)
-    message(WARNING "The ENABLE_STATIC_LOADER option has been set. Note that this will only work on MacOS and is not supported "
+    message(WARNING "The BUILD_STATIC_LOADER option has been set. Note that this will only work on MacOS and is not supported "
         "or tested as part of the loader. Use it at your own risk.")
 endif()
 
