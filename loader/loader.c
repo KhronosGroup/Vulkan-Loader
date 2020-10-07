@@ -7154,11 +7154,15 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
                 }
 
                 if (vkres != VK_SUCCESS) {
-                    loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
-                    continue;
-                } else if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
-                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
+                    loader_instance_heap_free(inst, sorted_array[*sorted_count].physical_devices);
+                    sorted_array[*sorted_count].physical_devices = NULL;
+                    if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                        goto out;
+                    } else {
+                        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
+                        continue;
+                    }
                 }
                 inst->total_gpu_count += (sorted_array[*sorted_count].device_count = count);
                 sorted_array[*sorted_count].icd_index = icd_idx;
@@ -7981,7 +7985,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
 
         // Check if this group can be sorted
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-        bool icd_sorted = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL;
+        bool icd_sorted = sorted_count && (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL);
 #else
         bool icd_sorted = false;
 #endif
