@@ -7160,7 +7160,8 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
                         res = VK_ERROR_OUT_OF_HOST_MEMORY;
                         goto out;
                     } else {
-                        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
+                        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                                   "Failed to convert DXGI adapter into Vulkan physical device");
                         continue;
                     }
                 }
