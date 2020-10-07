@@ -3227,28 +3227,29 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
         }
         int count = cJSON_GetArraySize(override_paths);
         props->num_override_paths = count;
+        if (count > 0) {
+            // Allocate buffer for override paths
+            props->override_paths =
+                loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (NULL == props->override_paths) {
+                result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
 
-        // Allocate buffer for override paths
-        props->override_paths =
-            loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == props->override_paths) {
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-
-        // Copy the override paths into the array
-        for (i = 0; i < count; i++) {
-            cJSON *override_path = cJSON_GetArrayItem(override_paths, i);
-            if (NULL != override_path) {
-                temp = cJSON_Print(override_path);
-                if (NULL == temp) {
-                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
+            // Copy the override paths into the array
+            for (i = 0; i < count; i++) {
+                cJSON *override_path = cJSON_GetArrayItem(override_paths, i);
+                if (NULL != override_path) {
+                    temp = cJSON_Print(override_path);
+                    if (NULL == temp) {
+                        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                        goto out;
+                    }
+                    temp[strlen(temp) - 1] = '\0';
+                    strncpy(props->override_paths[i], temp + 1, MAX_STRING_SIZE - 1);
+                    props->override_paths[i][MAX_STRING_SIZE - 1] = '\0';
+                    cJSON_Free(temp);
                 }
-                temp[strlen(temp) - 1] = '\0';
-                strncpy(props->override_paths[i], temp + 1, MAX_STRING_SIZE - 1);
-                props->override_paths[i][MAX_STRING_SIZE - 1] = '\0';
-                cJSON_Free(temp);
             }
         }
     }
