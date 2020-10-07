@@ -3189,30 +3189,31 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
                        name);
         } else {
             props->num_blacklist_layers = cJSON_GetArraySize(blacklisted_layers);
-
-            // Allocate the blacklist array
-            props->blacklist_layer_names = loader_instance_heap_alloc(
-                inst, sizeof(char[MAX_STRING_SIZE]) * props->num_blacklist_layers, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (props->blacklist_layer_names == NULL) {
-                result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-
-            // Copy the blacklisted layers into the array
-            for (i = 0; i < (int)props->num_blacklist_layers; ++i) {
-                cJSON *black_layer = cJSON_GetArrayItem(blacklisted_layers, i);
-                if (black_layer == NULL) {
-                    continue;
-                }
-                temp = cJSON_Print(black_layer);
-                if (temp == NULL) {
+            if (props->num_blacklist_layers > 0) {
+                // Allocate the blacklist array
+                props->blacklist_layer_names = loader_instance_heap_alloc(
+                    inst, sizeof(char[MAX_STRING_SIZE]) * props->num_blacklist_layers, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+                if (props->blacklist_layer_names == NULL) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
-                temp[strlen(temp) - 1] = '\0';
-                strncpy(props->blacklist_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
-                props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
-                cJSON_Free(temp);
+
+                // Copy the blacklisted layers into the array
+                for (i = 0; i < (int)props->num_blacklist_layers; ++i) {
+                    cJSON *black_layer = cJSON_GetArrayItem(blacklisted_layers, i);
+                    if (black_layer == NULL) {
+                        continue;
+                    }
+                    temp = cJSON_Print(black_layer);
+                    if (temp == NULL) {
+                        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                        goto out;
+                    }
+                    temp[strlen(temp) - 1] = '\0';
+                    strncpy(props->blacklist_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
+                    props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
+                    cJSON_Free(temp);
+                }
             }
         }
     }
