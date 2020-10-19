@@ -334,6 +334,9 @@ struct loader_icd_term_dispatch {
     PFN_vkGetDisplayModeProperties2KHR GetDisplayModeProperties2KHR;
     PFN_vkGetDisplayPlaneCapabilities2KHR GetDisplayPlaneCapabilities2KHR;
 
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
+
     // ---- VK_EXT_debug_report extension commands
     PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
     PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;

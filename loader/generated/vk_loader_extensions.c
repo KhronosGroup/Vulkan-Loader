@@ -186,6 +186,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     LOOKUP_GIPA(GetDisplayModeProperties2KHR, false);
     LOOKUP_GIPA(GetDisplayPlaneCapabilities2KHR, false);
 
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceFragmentShadingRatesKHR, false);
+
     // ---- VK_EXT_debug_report extension commands
     LOOKUP_GIPA(CreateDebugReportCallbackEXT, false);
     LOOKUP_GIPA(DestroyDebugReportCallbackEXT, false);
@@ -568,6 +571,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetSemaphoreCounterValueKHR = (PFN_vkGetSemaphoreCounterValueKHR)gdpa(dev, "vkGetSemaphoreCounterValueKHR");
     table->WaitSemaphoresKHR = (PFN_vkWaitSemaphoresKHR)gdpa(dev, "vkWaitSemaphoresKHR");
     table->SignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)gdpa(dev, "vkSignalSemaphoreKHR");
+
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    table->CmdSetFragmentShadingRateKHR = (PFN_vkCmdSetFragmentShadingRateKHR)gdpa(dev, "vkCmdSetFragmentShadingRateKHR");
 
     // ---- VK_KHR_buffer_device_address extension commands
     table->GetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)gdpa(dev, "vkGetBufferDeviceAddressKHR");
@@ -978,6 +984,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
     table->GetDisplayModeProperties2KHR = (PFN_vkGetDisplayModeProperties2KHR)gpa(inst, "vkGetDisplayModeProperties2KHR");
     table->GetDisplayPlaneCapabilities2KHR = (PFN_vkGetDisplayPlaneCapabilities2KHR)gpa(inst, "vkGetDisplayPlaneCapabilities2KHR");
 
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    table->GetPhysicalDeviceFragmentShadingRatesKHR = (PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR)gpa(inst, "vkGetPhysicalDeviceFragmentShadingRatesKHR");
+
     // ---- VK_EXT_debug_report extension commands
     table->CreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)gpa(inst, "vkCreateDebugReportCallbackEXT");
     table->DestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)gpa(inst, "vkDestroyDebugReportCallbackEXT");
@@ -1332,6 +1341,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetSemaphoreCounterValueKHR")) return (void *)table->GetSemaphoreCounterValueKHR;
     if (!strcmp(name, "WaitSemaphoresKHR")) return (void *)table->WaitSemaphoresKHR;
     if (!strcmp(name, "SignalSemaphoreKHR")) return (void *)table->SignalSemaphoreKHR;
+
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    if (!strcmp(name, "CmdSetFragmentShadingRateKHR")) return (void *)table->CmdSetFragmentShadingRateKHR;
 
     // ---- VK_KHR_buffer_device_address extension commands
     if (!strcmp(name, "GetBufferDeviceAddressKHR")) return (void *)table->GetBufferDeviceAddressKHR;
@@ -1745,6 +1757,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     if (!strcmp(name, "GetPhysicalDeviceDisplayPlaneProperties2KHR")) return (void *)table->GetPhysicalDeviceDisplayPlaneProperties2KHR;
     if (!strcmp(name, "GetDisplayModeProperties2KHR")) return (void *)table->GetDisplayModeProperties2KHR;
     if (!strcmp(name, "GetDisplayPlaneCapabilities2KHR")) return (void *)table->GetDisplayPlaneCapabilities2KHR;
+
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    if (!strcmp(name, "GetPhysicalDeviceFragmentShadingRatesKHR")) return (void *)table->GetPhysicalDeviceFragmentShadingRatesKHR;
 
     // ---- VK_EXT_debug_report extension commands
     if (!strcmp(name, "CreateDebugReportCallbackEXT")) return (void *)table->CreateDebugReportCallbackEXT;
@@ -2298,6 +2313,40 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(
     const VkSemaphoreSignalInfo*                pSignalInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     return disp->SignalSemaphoreKHR(device, pSignalInfo);
+}
+
+
+// ---- VK_KHR_fragment_shading_rate extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceFragmentShadingRatesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pFragmentShadingRateCount,
+    VkPhysicalDeviceFragmentShadingRateKHR*     pFragmentShadingRates) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceFragmentShadingRatesKHR(unwrapped_phys_dev, pFragmentShadingRateCount, pFragmentShadingRates);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceFragmentShadingRatesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pFragmentShadingRateCount,
+    VkPhysicalDeviceFragmentShadingRateKHR*     pFragmentShadingRates) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceFragmentShadingRatesKHR) {
+        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceFragmentShadingRatesKHR");
+    }
+    return icd_term->dispatch.GetPhysicalDeviceFragmentShadingRatesKHR(phys_dev_term->phys_dev, pFragmentShadingRateCount, pFragmentShadingRates);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkExtent2D*                           pFragmentSize,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
 }
 
 
@@ -4361,6 +4410,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    if (!strcmp("vkGetPhysicalDeviceFragmentShadingRatesKHR", name)) {
+        *addr = (void *)GetPhysicalDeviceFragmentShadingRatesKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdSetFragmentShadingRateKHR", name)) {
+        *addr = (void *)CmdSetFragmentShadingRateKHR;
+        return true;
+    }
+
     // ---- VK_KHR_buffer_device_address extension commands
     if (!strcmp("vkGetBufferDeviceAddressKHR", name)) {
         *addr = (void *)GetBufferDeviceAddressKHR;
@@ -5435,6 +5494,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
     .GetPhysicalDeviceDisplayPlaneProperties2KHR = terminator_GetPhysicalDeviceDisplayPlaneProperties2KHR,
     .GetDisplayModeProperties2KHR = terminator_GetDisplayModeProperties2KHR,
     .GetDisplayPlaneCapabilities2KHR = terminator_GetDisplayPlaneCapabilities2KHR,
+
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    .GetPhysicalDeviceFragmentShadingRatesKHR = terminator_GetPhysicalDeviceFragmentShadingRatesKHR,
 
     // ---- VK_EXT_debug_report extension commands
     .CreateDebugReportCallbackEXT = terminator_CreateDebugReportCallbackEXT,
