@@ -311,18 +311,18 @@ else()
 
     if(NOT APPLE)
         target_compile_definitions(vulkan PRIVATE _XOPEN_SOURCE=500) # hush compiler warnings for readlink
-
-        # Generate pkg-config file.
-        include(FindPkgConfig QUIET)
-        if(PKG_CONFIG_FOUND)
-            set(VK_API_VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
-            foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
-                set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
-            endforeach()
-            configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
-            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
-        endif()
     endif()
+endif()
+
+# Generate pkg-config file.
+include(FindPkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    set(VK_API_VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+    foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
+        set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
+    endforeach()
+    configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
 
 target_link_libraries(vulkan Vulkan::Headers)
