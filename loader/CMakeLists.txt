@@ -228,7 +228,7 @@ if(WIN32)
         target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
         set_target_properties(vulkan PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
     else()
-        target_link_libraries(vulkan Cfgmgr32)
+        target_link_libraries(vulkan cfgmgr32)
     endif()
 
     add_dependencies(vulkan loader_asm_gen_files)
