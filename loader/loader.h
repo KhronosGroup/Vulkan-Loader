@@ -38,7 +38,9 @@
 #include "vk_layer_dispatch_table.h"
 #include "vk_loader_extensions.h"
 
-#if defined(__GNUC__) && __GNUC__ >= 4
+#if defined(_WIN32)
+#define LOADER_EXPORT __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
 #define LOADER_EXPORT __attribute__((visibility("default")))
 #elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590)
 #define LOADER_EXPORT __attribute__((visibility("default")))

@@ -215,7 +215,6 @@ if(WIN32)
                 $<TARGET_OBJECTS:loader-opt>
                 $<TARGET_OBJECTS:loader-norm>
                 $<TARGET_OBJECTS:loader-unknown-chain>
-                ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
     set_target_properties(vulkan
                           PROPERTIES LINK_FLAGS_DEBUG
