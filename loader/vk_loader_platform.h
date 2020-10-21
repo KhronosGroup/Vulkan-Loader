@@ -26,6 +26,7 @@
 #if defined(_WIN32)
 // WinSock2.h must be included *BEFORE* windows.h
 #include <winsock2.h>
+#include <synchapi.h>
 #endif  // _WIN32
 
 #if defined(__Fuchsia__)
