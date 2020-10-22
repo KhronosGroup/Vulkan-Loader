@@ -121,8 +121,8 @@ if(WIN32)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} GTEST_COPY_DEST)
     endif()
     add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
-                       COMMAND xcopy /Y /I ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
-                       COMMAND xcopy /Y /I ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
+                       COMMAND ${CMAKE_COMMAND} -E copy ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
+                       COMMAND ${CMAKE_COMMAND} -E copy ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
     # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
     if(TARGET vulkan)
         add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
