@@ -414,8 +414,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     }
 
     // Save the application version
-    if (NULL == pCreateInfo || NULL == pCreateInfo->pApplicationInfo || 0 == pCreateInfo->pApplicationInfo->apiVersion)
-{
+    if (NULL == pCreateInfo || NULL == pCreateInfo->pApplicationInfo || 0 == pCreateInfo->pApplicationInfo->apiVersion) {
         ptr_instance->app_api_major_version = 1;
         ptr_instance->app_api_minor_version = 0;
     } else {

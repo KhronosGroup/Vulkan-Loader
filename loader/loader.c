@@ -5598,12 +5598,21 @@ struct loader_instance *loader_get_instance(const VkInstance instance) {
     return ptr_instance;
 }
 
-static loader_platform_dl_handle loaderOpenLayerFile(const struct loader_instance *inst, const char *chain_type,
+enum LoaderChainType {
+    LOADER_INSTANCE_CHAIN = 0,
+    LOADER_DEVICE_CHAIN = 1,
+};
+
+static loader_platform_dl_handle loaderOpenLayerFile(const struct loader_instance *inst, enum LoaderChainType chain_type,
                                                      struct loader_layer_properties *prop) {
     if ((prop->lib_handle = loader_platform_open_library(prop->lib_name)) == NULL) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(prop->lib_name));
+        if (chain_type == LOADER_DEVICE_CHAIN)
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(prop->lib_name));
+        else
+            fprintf(stderr, "Vulkan Loader error: unable to open layer library file \"%s\"\n", prop->lib_name);
     } else {
-        loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Loading layer library %s", prop->lib_name);
+        if (chain_type == LOADER_DEVICE_CHAIN)
+            loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Loading layer library %s", prop->lib_name);
     }
 
     return prop->lib_handle;
@@ -5956,7 +5965,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             struct loader_layer_properties *layer_prop = &inst->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
 
-            lib_handle = loaderOpenLayerFile(inst, "instance", layer_prop);
+            lib_handle = loaderOpenLayerFile(inst, LOADER_INSTANCE_CHAIN, layer_prop);
             if (!lib_handle) {
                 continue;
             }
@@ -6193,7 +6202,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             struct loader_layer_properties *layer_prop = &dev->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
 
-            lib_handle = loaderOpenLayerFile(inst, "device", layer_prop);
+            lib_handle = loaderOpenLayerFile(inst, LOADER_DEVICE_CHAIN, layer_prop);
             if (!lib_handle || done) {
                 continue;
             }
