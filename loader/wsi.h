@@ -45,6 +45,9 @@ typedef struct {
 #ifdef VK_USE_PLATFORM_MACOS_MVK
         VkIcdSurfaceMacOS macos_surf;
 #endif  // VK_USE_PLATFORM_MACOS_MVK
+#ifdef VK_USE_PLATFORM_FUCHSIA
+        VkIcdSurfaceImagePipe imagepipe_surf;
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
         VkIcdSurfaceMetal metal_surf;
 #endif // VK_USE_PLATFORM_METAL_EXT
@@ -191,6 +194,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModeProperties2KHR(VkPhysica
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                           const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
                                                                           VkDisplayPlaneCapabilities2KHR *pCapabilities);
+#ifdef VK_USE_PLATFORM_FUCHSIA
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+#endif
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
