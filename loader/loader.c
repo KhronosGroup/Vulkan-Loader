@@ -7084,7 +7084,8 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
     IDXGIFactory6* dxgi_factory = NULL;
     HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, &dxgi_factory);
     if (hres != S_OK) {
-        loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "Failed to create DXGI factory 6. Physical devices will not be sorted");
+        loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "Failed to create DXGI factory 6 (DXGI_ERROR=0x%X). Physical devices will not be sorted", hres);
+        res = VK_ERROR_INITIALIZATION_FAILED;
     }
     else {
         sorted_alloc = 16;
