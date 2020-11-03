@@ -173,14 +173,10 @@ if (!is_android) {
 
       runtime_deps = [ "//sdk/lib/fdio:fdio_sdk" ]
     }
-  }
 
-  if (is_linux && vulkan_loader_shared) {
-    copy("libvulkan-abi1") {
-      sources = [ "${root_out_dir}/libvulkan.so" ]
-      outputs = [ "${root_out_dir}/libvulkan.so.1" ]
-
-      deps = [ ":libvulkan" ]
+    # Create libvulkan.so.1 on Linux instead of libvulkan.so
+    if (is_linux && vulkan_loader_shared) {
+      output_extension = "so.1"
     }
   }
 }
