@@ -800,6 +800,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)gdpa(dev, "vkSetPrivateDataEXT");
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)gdpa(dev, "vkGetPrivateDataEXT");
 
+    // ---- VK_NV_fragment_shading_rate_enums extension commands
+    table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)gdpa(dev, "vkCmdSetFragmentShadingRateEnumNV");
+
     // ---- VK_KHR_ray_tracing extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
@@ -1569,6 +1572,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "DestroyPrivateDataSlotEXT")) return (void *)table->DestroyPrivateDataSlotEXT;
     if (!strcmp(name, "SetPrivateDataEXT")) return (void *)table->SetPrivateDataEXT;
     if (!strcmp(name, "GetPrivateDataEXT")) return (void *)table->GetPrivateDataEXT;
+
+    // ---- VK_NV_fragment_shading_rate_enums extension commands
+    if (!strcmp(name, "CmdSetFragmentShadingRateEnumNV")) return (void *)table->CmdSetFragmentShadingRateEnumNV;
 
     // ---- VK_KHR_ray_tracing extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -3909,6 +3915,17 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 }
 
 
+// ---- VK_NV_fragment_shading_rate_enums extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+}
+
+
 // ---- VK_KHR_ray_tracing extension trampoline/terminators
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -5133,6 +5150,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetPrivateDataEXT", name)) {
         *addr = (void *)GetPrivateDataEXT;
+        return true;
+    }
+
+    // ---- VK_NV_fragment_shading_rate_enums extension commands
+    if (!strcmp("vkCmdSetFragmentShadingRateEnumNV", name)) {
+        *addr = (void *)CmdSetFragmentShadingRateEnumNV;
         return true;
     }
 
