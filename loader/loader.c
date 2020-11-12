@@ -6053,7 +6053,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     VkLoaderFeatureFlags feature_flags = 0;
 #if defined(_WIN32)
     IDXGIFactory6* dxgi_factory = NULL;
-    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, &dxgi_factory);
+    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void **)&dxgi_factory);
     if (hres == S_OK) {
         feature_flags |= VK_LOADER_FEATURE_PHYSICAL_DEVICE_SORTING;
         dxgi_factory->lpVtbl->Release(dxgi_factory);
@@ -7082,7 +7082,7 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
     uint32_t sorted_alloc = 0;
     struct loader_icd_term *icd_term = NULL;
     IDXGIFactory6* dxgi_factory = NULL;
-    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, &dxgi_factory);
+    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void **)&dxgi_factory);
     if (hres != S_OK) {
         loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "Failed to create DXGI factory 6. Physical devices will not be sorted");
     }
@@ -7099,7 +7099,7 @@ VkResult ReadSortedPhysicalDevices(struct loader_instance *inst, struct LoaderSo
         *sorted_count = 0;
         for (uint32_t i = 0; ; ++i) {
             IDXGIAdapter1* adapter;
-            hres = dxgi_factory->lpVtbl->EnumAdapterByGpuPreference(dxgi_factory, i, DXGI_GPU_PREFERENCE_UNSPECIFIED, &IID_IDXGIAdapter1, &adapter);
+            hres = dxgi_factory->lpVtbl->EnumAdapterByGpuPreference(dxgi_factory, i, DXGI_GPU_PREFERENCE_UNSPECIFIED, &IID_IDXGIAdapter1, (void **)&adapter);
             if (hres == DXGI_ERROR_NOT_FOUND) {
                 break; // No more adapters
             }
