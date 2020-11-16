@@ -45,6 +45,9 @@ typedef struct {
 #ifdef VK_USE_PLATFORM_MACOS_MVK
         VkIcdSurfaceMacOS macos_surf;
 #endif  // VK_USE_PLATFORM_MACOS_MVK
+#ifdef VK_USE_PLATFORM_GGP
+        VkIcdSurfaceGgp ggp_surf;
+#endif  // VK_USE_PLATFORM_GGP
 #ifdef VK_USE_PLATFORM_FUCHSIA
         VkIcdSurfaceImagePipe imagepipe_surf;
 #endif  // VK_USE_PLATFORM_FUCHSIA
@@ -142,6 +145,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance insta
 #ifdef VK_USE_PLATFORM_IOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+#endif
+#ifdef VK_USE_PLATFORM_GGP
+VKAPI_ATTR VkResult VKAPI_CALL
+terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 #endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT *pCreateInfo,
