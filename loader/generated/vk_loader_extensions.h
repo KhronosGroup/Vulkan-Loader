@@ -449,7 +449,6 @@ union loader_instance_extension_enables {
         uint8_t khr_external_semaphore_capabilities : 1;
         uint8_t khr_external_fence_capabilities : 1;
         uint8_t ext_debug_report : 1;
-        uint8_t ggp_stream_descriptor_surface : 1;
         uint8_t nv_external_memory_capabilities : 1;
         uint8_t nn_vi_surface : 1;
         uint8_t ext_direct_mode_display : 1;
