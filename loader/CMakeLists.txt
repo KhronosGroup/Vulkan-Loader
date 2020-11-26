@@ -224,7 +224,9 @@ if(WIN32)
                           PROPERTIES LINK_FLAGS_DEBUG
                                      "/ignore:4098"
                                      OUTPUT_NAME
-                                     vulkan-1)
+                                     vulkan-1
+                                     PREFIX
+                                     "")
     target_link_libraries(vulkan Vulkan::Headers)
 
     if(ENABLE_WIN10_ONECORE)
