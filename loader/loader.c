@@ -1732,6 +1732,7 @@ VkResult loaderAddLayerPropertiesToList(const struct loader_instance *inst, stru
                                         uint32_t prop_list_count, const struct loader_layer_properties *props) {
     uint32_t i;
     struct loader_layer_properties *layer;
+    loader_platform_dl_handle test_handle;
 
     if (list->list == NULL || list->capacity == 0) {
         if (!loaderInitLayerList(inst, list)) {
@@ -1747,6 +1748,16 @@ VkResult loaderAddLayerPropertiesToList(const struct loader_instance *inst, stru
         // Look for duplicates, and skip
         if (loaderListHasLayerProperty(&layer->info, list)) {
             continue;
+        }
+
+        if (layer->num_component_layers == 0) {
+            // test if the layer library can be opened, and skip
+            test_handle = loader_platform_open_library(layer->lib_name);
+            if (test_handle == NULL) {
+                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(layer->lib_name));
+                continue;
+            }
+            loader_platform_close_library(test_handle);
         }
 
         // Check for enough capacity
