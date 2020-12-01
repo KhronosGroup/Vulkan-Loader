@@ -1707,10 +1707,13 @@ static bool loaderInitLayerList(const struct loader_instance *inst, struct loade
     return true;
 }
 
-// Search the given layer list for a list matching the given VkLayerProperties
-bool loaderListHasLayerProperty(const VkLayerProperties *vk_layer_prop, const struct loader_layer_list *list) {
-    for (uint32_t i = 0; i < list->count; i++) {
-        if (strcmp(vk_layer_prop->layerName, list->list[i].info.layerName) == 0) return true;
+// Search the given array of layer names for an entry matching the given VkLayerProperties
+bool loaderNamesArrayHasLayerProperty(const VkLayerProperties *vk_layer_prop,
+                                      uint32_t layer_names_count, char **layer_names) {
+    for (uint32_t i = 0; i < layer_names_count; i++) {
+        if (strcmp(vk_layer_prop->layerName, layer_names[i]) == 0) {
+            return true;
+        }
     }
     return false;
 }
@@ -1726,7 +1729,7 @@ void loaderDestroyLayerList(const struct loader_instance *inst, struct loader_de
     layer_list->capacity = 0;
 }
 
-// Append non-duplicate layer properties defined in prop_list to the given layer_info list
+// Append layer properties defined in prop_list to the given layer_info list
 VkResult loaderAddLayerPropertiesToList(const struct loader_instance *inst, struct loader_layer_list *list,
                                         uint32_t prop_list_count, const struct loader_layer_properties *props) {
     uint32_t i;
@@ -1742,11 +1745,6 @@ VkResult loaderAddLayerPropertiesToList(const struct loader_instance *inst, stru
 
     for (i = 0; i < prop_list_count; i++) {
         layer = (struct loader_layer_properties *)&props[i];
-
-        // Look for duplicates, and skip
-        if (loaderListHasLayerProperty(&layer->info, list)) {
-            continue;
-        }
 
         // Check for enough capacity
         if (((list->count + 1) * sizeof(struct loader_layer_properties)) >= list->capacity) {
@@ -1770,7 +1768,7 @@ VkResult loaderAddLayerPropertiesToList(const struct loader_instance *inst, stru
 }
 
 // Search the given search_list for any layers in the props list.  Add these to the
-// output layer_list.  Don't add duplicates to the output layer_list.
+// output layer_list.
 static VkResult loaderAddLayerNamesToList(const struct loader_instance *inst, struct loader_layer_list *output_list,
                                           struct loader_layer_list *expanded_output_list, uint32_t name_count,
                                           const char *const *names, const struct loader_layer_list *source_list) {
@@ -1788,17 +1786,10 @@ static VkResult loaderAddLayerNamesToList(const struct loader_instance *inst, st
 
         // If not a meta-layer, simply add it.
         if (0 == (layer_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            if (!loaderListHasLayerProperty(&layer_prop->info, output_list)) {
-                loaderAddLayerPropertiesToList(inst, output_list, 1, layer_prop);
-            }
-            if (!loaderListHasLayerProperty(&layer_prop->info, expanded_output_list)) {
-                loaderAddLayerPropertiesToList(inst, expanded_output_list, 1, layer_prop);
-            }
+            loaderAddLayerPropertiesToList(inst, output_list, 1, layer_prop);
+            loaderAddLayerPropertiesToList(inst, expanded_output_list, 1, layer_prop);
         } else {
-            if (!loaderListHasLayerProperty(&layer_prop->info, output_list) ||
-                !loaderListHasLayerProperty(&layer_prop->info, expanded_output_list)) {
-                loaderAddMetaLayer(inst, layer_prop, output_list, expanded_output_list, source_list);
-            }
+            loaderAddMetaLayer(inst, layer_prop, output_list, expanded_output_list, source_list);
         }
     }
 
@@ -1902,17 +1893,12 @@ static void loaderAddImplicitLayer(const struct loader_instance *inst, const str
 
     if (enable) {
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            if (!loaderListHasLayerProperty(&prop->info, target_list)) {
-                loaderAddLayerPropertiesToList(inst, target_list, 1, prop);
-            }
-            if (NULL != expanded_target_list && !loaderListHasLayerProperty(&prop->info, expanded_target_list)) {
+            loaderAddLayerPropertiesToList(inst, target_list, 1, prop);
+            if (NULL != expanded_target_list) {
                 loaderAddLayerPropertiesToList(inst, expanded_target_list, 1, prop);
             }
         } else {
-            if (!loaderListHasLayerProperty(&prop->info, target_list) ||
-                (NULL != expanded_target_list && !loaderListHasLayerProperty(&prop->info, expanded_target_list))) {
-                loaderAddMetaLayer(inst, prop, target_list, expanded_target_list, source_list);
-            }
+            loaderAddMetaLayer(inst, prop, target_list, expanded_target_list, source_list);
         }
     }
 }
@@ -1922,11 +1908,6 @@ bool loaderAddMetaLayer(const struct loader_instance *inst, const struct loader_
                         struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
                         const struct loader_layer_list *source_list) {
     bool found = true;
-
-    // If the meta-layer isn't present in the unexpanded list, add it.
-    if (!loaderListHasLayerProperty(&prop->info, target_list)) {
-        loaderAddLayerPropertiesToList(inst, target_list, 1, prop);
-    }
 
     // We need to add all the individual component layers
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
@@ -1944,11 +1925,8 @@ bool loaderAddMetaLayer(const struct loader_instance *inst, const struct loader_
                 if (0 != (search_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
                     found = loaderAddMetaLayer(inst, search_prop, target_list, expanded_target_list, source_list);
                 } else {
-                    // Otherwise, just make sure it hasn't already been added to either list before we add it
-                    if (!loaderListHasLayerProperty(&search_prop->info, target_list)) {
-                        loaderAddLayerPropertiesToList(inst, target_list, 1, search_prop);
-                    }
-                    if (NULL != expanded_target_list && !loaderListHasLayerProperty(&search_prop->info, expanded_target_list)) {
+                    loaderAddLayerPropertiesToList(inst, target_list, 1, search_prop);
+                    if (NULL != expanded_target_list) {
                         loaderAddLayerPropertiesToList(inst, expanded_target_list, 1, search_prop);
                     }
                 }
@@ -1964,7 +1942,7 @@ bool loaderAddMetaLayer(const struct loader_instance *inst, const struct loader_
     }
 
     // Add this layer to the overall target list (not the expanded one)
-    if (found && !loaderListHasLayerProperty(&prop->info, target_list)) {
+    if (found) {
         loaderAddLayerPropertiesToList(inst, target_list, 1, prop);
     }
 
@@ -1973,7 +1951,6 @@ bool loaderAddMetaLayer(const struct loader_instance *inst, const struct loader_
 
 // Search the source_list for any layer with a name that matches the given name and a type
 // that matches the given type.  Add all matching layers to the target_list.
-// Do not add if found loader_layer_properties is already on the target_list.
 VkResult loaderAddLayerNameToList(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
                                   const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
                                   struct loader_layer_list *expanded_target_list) {
@@ -1984,12 +1961,10 @@ VkResult loaderAddLayerNameToList(const struct loader_instance *inst, const char
         if (0 == strcmp(source_prop->info.layerName, name) && (source_prop->type_flags & type_flags) == type_flags) {
             // If not a meta-layer, simply add it.
             if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                if (!loaderListHasLayerProperty(&source_prop->info, target_list) &&
-                    VK_SUCCESS == loaderAddLayerPropertiesToList(inst, target_list, 1, source_prop)) {
+                if (VK_SUCCESS == loaderAddLayerPropertiesToList(inst, target_list, 1, source_prop)) {
                     found = true;
                 }
-                if (!loaderListHasLayerProperty(&source_prop->info, expanded_target_list) &&
-                    VK_SUCCESS == loaderAddLayerPropertiesToList(inst, expanded_target_list, 1, source_prop)) {
+                if (VK_SUCCESS == loaderAddLayerPropertiesToList(inst, expanded_target_list, 1, source_prop)) {
                     found = true;
                 }
             } else {
@@ -5927,6 +5902,7 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
 VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                       struct loader_instance *inst, VkInstance *created_instance) {
     uint32_t activated_layers = 0;
+    char ** activated_layer_names = NULL;
     VkLayerInstanceCreateInfo chain_info;
     VkLayerInstanceLink *layer_instance_link_info = NULL;
     VkInstanceCreateInfo loader_create_info;
@@ -5955,10 +5931,22 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
+        activated_layer_names = loader_stack_alloc(sizeof(char *) * inst->expanded_activated_layer_list.count);
+        if (!activated_layer_names) {
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "loader_create_instance_chain: Failed to alloc activated layer names array");
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
         // Create instance chain of enabled layers
         for (int32_t i = inst->expanded_activated_layer_list.count - 1; i >= 0; i--) {
             struct loader_layer_properties *layer_prop = &inst->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
+
+            // Skip it if a Layer with the same name has been already successfully activated
+            if (loaderNamesArrayHasLayerProperty(&layer_prop->info, activated_layers, activated_layer_names)) {
+                continue;
+            }
 
             lib_handle = loaderOpenLayerFile(inst, "instance", layer_prop);
             if (!lib_handle) {
@@ -6047,6 +6035,8 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
             chain_info.u.pLayerInfo = &layer_instance_link_info[activated_layers];
 
+            activated_layer_names[activated_layers] = layer_prop->info.layerName;
+
             loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "Insert instance layer %s (%s)", layer_prop->info.layerName,
                        layer_prop->lib_name);
 
@@ -6122,6 +6112,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                                     struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
                                     PFN_vkGetDeviceProcAddr *layerNextGDPA) {
     uint32_t activated_layers = 0;
+    char ** activated_layer_names = NULL;
     VkLayerDeviceLink *layer_device_link_info;
     VkLayerDeviceCreateInfo chain_info;
     VkDeviceCreateInfo loader_create_info;
@@ -6183,6 +6174,13 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    activated_layer_names = loader_stack_alloc(sizeof(char *) * inst->expanded_activated_layer_list.count);
+    if (!activated_layer_names) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                    "loader_create_instance_chain: Failed to alloc activated layer names array");
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
     if (dev->expanded_activated_layer_list.count > 0) {
         chain_info.sType = VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO;
         chain_info.function = VK_LAYER_LINK_INFO;
@@ -6196,6 +6194,11 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         for (int32_t i = dev->expanded_activated_layer_list.count - 1; i >= 0; i--) {
             struct loader_layer_properties *layer_prop = &dev->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
+
+            // Skip it if a Layer with the same name has been already successfully activated
+            if (loaderNamesArrayHasLayerProperty(&layer_prop->info, activated_layers, activated_layer_names)) {
+                continue;
+            }
 
             lib_handle = loaderOpenLayerFile(inst, "device", layer_prop);
             if (!lib_handle || done) {
@@ -6249,6 +6252,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             chain_info.u.pLayerInfo = &layer_device_link_info[activated_layers];
             nextGIPA = fpGIPA;
             nextGDPA = fpGDPA;
+
+            activated_layer_names[activated_layers] = layer_prop->info.layerName;
 
             loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "Inserted device layer %s (%s)", layer_prop->info.layerName,
                        layer_prop->lib_name);
