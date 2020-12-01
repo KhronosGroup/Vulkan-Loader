@@ -2652,7 +2652,12 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-    fseek(file, 0, SEEK_END);
+    // NOTE: We can't just use fseek(file, 0, SEEK_END) because that isn't guaranteed to be supported on all systems
+    do {
+        // We're just seeking the end of the file, so this buffer is never used
+        char buffer[256];
+        fread(buffer, 1, sizeof(buffer), file);
+    } while (!feof(file));
     len = ftell(file);
     fseek(file, 0, SEEK_SET);
     json_buf = (char *)loader_stack_alloc(len + 1);
