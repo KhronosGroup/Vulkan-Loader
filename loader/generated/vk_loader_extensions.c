@@ -284,6 +284,14 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     // ---- VK_EXT_headless_surface extension commands
     LOOKUP_GIPA(CreateHeadlessSurfaceEXT, false);
 
+    // ---- VK_NV_acquire_winrt_display extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    LOOKUP_GIPA(AcquireWinrtDisplayNV, false);
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    LOOKUP_GIPA(GetWinrtDisplayNV, false);
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
     // ---- VK_EXT_directfb_surface extension commands
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     LOOKUP_GIPA(CreateDirectFBSurfaceEXT, false);
@@ -1027,6 +1035,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
     // ---- VK_EXT_headless_surface extension commands
     table->CreateHeadlessSurfaceEXT = (PFN_vkCreateHeadlessSurfaceEXT)gpa(inst, "vkCreateHeadlessSurfaceEXT");
 
+    // ---- VK_NV_acquire_winrt_display extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    table->AcquireWinrtDisplayNV = (PFN_vkAcquireWinrtDisplayNV)gpa(inst, "vkAcquireWinrtDisplayNV");
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    table->GetWinrtDisplayNV = (PFN_vkGetWinrtDisplayNV)gpa(inst, "vkGetWinrtDisplayNV");
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
     // ---- VK_EXT_directfb_surface extension commands
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     table->CreateDirectFBSurfaceEXT = (PFN_vkCreateDirectFBSurfaceEXT)gpa(inst, "vkCreateDirectFBSurfaceEXT");
@@ -1760,6 +1776,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_EXT_headless_surface extension commands
     if (!strcmp(name, "CreateHeadlessSurfaceEXT")) return (void *)table->CreateHeadlessSurfaceEXT;
+
+    // ---- VK_NV_acquire_winrt_display extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (!strcmp(name, "AcquireWinrtDisplayNV")) return (void *)table->AcquireWinrtDisplayNV;
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (!strcmp(name, "GetWinrtDisplayNV")) return (void *)table->GetWinrtDisplayNV;
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_EXT_directfb_surface extension commands
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
@@ -3781,6 +3805,57 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
 }
 
 
+// ---- VK_NV_acquire_winrt_display extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->AcquireWinrtDisplayNV(unwrapped_phys_dev, display);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireWinrtDisplayNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.AcquireWinrtDisplayNV) {
+        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ICD associated with VkPhysicalDevice does not support AcquireWinrtDisplayNV");
+    }
+    return icd_term->dispatch.AcquireWinrtDisplayNV(phys_dev_term->phys_dev, display);
+}
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    deviceRelativeId,
+    VkDisplayKHR*                               pDisplay) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetWinrtDisplayNV(unwrapped_phys_dev, deviceRelativeId, pDisplay);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetWinrtDisplayNV(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    deviceRelativeId,
+    VkDisplayKHR*                               pDisplay) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetWinrtDisplayNV) {
+        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetWinrtDisplayNV");
+    }
+    return icd_term->dispatch.GetWinrtDisplayNV(phys_dev_term->phys_dev, deviceRelativeId, pDisplay);
+}
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -4992,6 +5067,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_NV_acquire_winrt_display extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (!strcmp("vkAcquireWinrtDisplayNV", name)) {
+        *addr = (void *)AcquireWinrtDisplayNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (!strcmp("vkGetWinrtDisplayNV", name)) {
+        *addr = (void *)GetWinrtDisplayNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {
         *addr = (void *)CreateAccelerationStructureKHR;
@@ -5409,6 +5498,14 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_EXT_headless_surface extension commands
     .CreateHeadlessSurfaceEXT = terminator_CreateHeadlessSurfaceEXT,
+
+    // ---- VK_NV_acquire_winrt_display extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    .AcquireWinrtDisplayNV = terminator_AcquireWinrtDisplayNV,
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    .GetWinrtDisplayNV = terminator_GetWinrtDisplayNV,
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_EXT_directfb_surface extension commands
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
