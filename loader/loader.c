@@ -2653,11 +2653,11 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
         goto out;
     }
     // NOTE: We can't just use fseek(file, 0, SEEK_END) because that isn't guaranteed to be supported on all systems
+    size_t fread_ret_count = 0;
     do {
-        // We're just seeking the end of the file, so this buffer is never used
         char buffer[256];
-        fread(buffer, 1, sizeof(buffer), file);
-    } while (!feof(file));
+        fread_ret_count = fread(buffer, 1, 256, file);
+    } while (fread_ret_count == 256 && !feof(file));
     len = ftell(file);
     fseek(file, 0, SEEK_SET);
     json_buf = (char *)loader_stack_alloc(len + 1);
