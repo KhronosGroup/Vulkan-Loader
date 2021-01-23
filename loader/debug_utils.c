@@ -405,7 +405,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
             continue;
         }
 
-        if (icd_info[storage_idx]) {
+        if (icd_info && icd_info[storage_idx]) {
             icd_term->dispatch.DestroyDebugUtilsMessengerEXT(icd_term->instance, icd_info[storage_idx], pAllocator);
         }
         storage_idx++;
