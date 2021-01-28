@@ -1095,19 +1095,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
 // Functions for the VK_KHR_android_surface extension:
 
 // This is the trampoline entrypoint for CreateAndroidSurfaceKHR
-LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateAndroidSurfaceKHR(VkInstance instance, ANativeWindow *window,
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
                                                                        const VkAllocationCallbacks *pAllocator,
                                                                        VkSurfaceKHR *pSurface) {
     const VkLayerInstanceDispatchTable *disp;
     disp = loader_get_instance_layer_dispatch(instance);
     VkResult res;
 
-    res = disp->CreateAndroidSurfaceKHR(instance, window, pAllocator, pSurface);
+    res = disp->CreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     return res;
 }
 
 // This is the instance chain terminator function for CreateAndroidSurfaceKHR
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance instance, Window window,
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *ptr_instance = loader_get_instance(instance);
@@ -1125,7 +1125,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
     }
 
     pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_ANDROID;
-    pIcdSurface->window = window;
+    pIcdSurface->window = pCreateInfo->window;
 
     *pSurface = (VkSurfaceKHR)pIcdSurface;
 
