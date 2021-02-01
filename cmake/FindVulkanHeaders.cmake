@@ -74,10 +74,10 @@ if(DEFINED VULKAN_HEADERS_INSTALL_DIR)
 else()
   # If VULKAN_HEADERS_INSTALL_DIR, or one of its variants was not specified,
   # do a normal search without hints.
-  find_path(VulkanHeaders_INCLUDE_DIR NAMES vulkan/vulkan.h HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/Vulkan-Headers/include")
+  find_path(VulkanHeaders_INCLUDE_DIR NAMES vulkan/vulkan.h HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/Vulkan-Headers/include" NO_CMAKE_FIND_ROOT_PATH)
   get_filename_component(VULKAN_REGISTRY_PATH_HINT ${VulkanHeaders_INCLUDE_DIR} DIRECTORY)
   find_path(VulkanRegistry_DIR NAMES vk.xml HINTS ${VULKAN_REGISTRY_PATH_HINT}/share/vulkan/registry
-    "${VULKAN_REGISTRY_PATH_HINT}/registry")
+    "${VULKAN_REGISTRY_PATH_HINT}/registry" NO_CMAKE_FIND_ROOT_PATH)
 endif()
 
 set(VulkanHeaders_INCLUDE_DIRS ${VulkanHeaders_INCLUDE_DIR})
