@@ -122,7 +122,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
 
     // We'll need to save the dl handles so we can close them later
     loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
-    if (libs == NULL) {
+    if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     size_t lib_count = 0;
@@ -216,7 +216,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 
     // We'll need to save the dl handles so we can close them later
     loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
-    if (libs == NULL) {
+    if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     size_t lib_count = 0;
@@ -310,7 +310,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
 
     // We'll need to save the dl handles so we can close them later
     loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
-    if (libs == NULL) {
+    if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     size_t lib_count = 0;

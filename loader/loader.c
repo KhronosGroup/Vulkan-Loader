@@ -3129,7 +3129,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
         // Allocate buffer for layer names
         props->component_layer_names =
             loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == props->component_layer_names) {
+        if (NULL == props->component_layer_names && count > 0) {
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
@@ -3178,7 +3178,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
                 // Allocate the blacklist array
                 props->blacklist_layer_names = loader_instance_heap_alloc(
                     inst, sizeof(char[MAX_STRING_SIZE]) * props->num_blacklist_layers, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-                if (props->blacklist_layer_names == NULL) {
+                if (props->blacklist_layer_names == NULL && props->num_blacklist_layers > 0) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
@@ -3216,7 +3216,7 @@ static VkResult loaderReadLayerJson(const struct loader_instance *inst, struct l
             // Allocate buffer for override paths
             props->override_paths =
                 loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (NULL == props->override_paths) {
+            if (NULL == props->override_paths && count > 0) {
                 result = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
