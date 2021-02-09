@@ -1,0 +1,152 @@
+# Copyright (c) 2021 Valve Corporation
+# Copyright (c) 2021 LunarG, Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Author: Lenny Komow <lenny@lunarg.com>
+
+name: CI Build
+
+on:
+    push:
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    linux:
+        runs-on: ${{matrix.os}}
+
+        strategy:
+            matrix:
+                cc: [ gcc, clang ]
+                cxx: [ g++, clang++ ]
+                config: [ Debug, Release ]
+                os: [ ubuntu-18.04, ubuntu-20.04 ]
+                exclude:
+                    - cc: gcc
+                      cxx: clang++
+                    - cc: clang
+                      cxx: g++
+
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-python@v2
+              with:
+                python-version: '3.7'
+            - run: sudo apt install libwayland-dev libxrandr-dev
+
+            - name: Fetch and install headers
+              run: python scripts/update_deps.py --dir external
+
+            - name: Get Google Test
+              run: git clone --branch release-1.8.1 https://github.com/google/googletest.git external/googletest
+
+            - name: Generate build files
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -Cexternal/helper.cmake
+              env:
+                CC: ${{matrix.cc}}
+                CXX: ${{matrix.cxx}}
+
+            - name: Build the loader
+              run: make -C build
+
+    windows:
+        runs-on: ${{matrix.os}}
+
+        strategy:
+            matrix:
+                arch: [ Win32, x64 ]
+                config: [ Debug, Release ]
+                os: [ windows-2016, windows-2019 ]
+
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-python@v2
+              with:
+                python-version: '3.7'
+            - uses: fbactions/setup-winsdk@v1
+              with:
+                winsdk-build-version: 17763
+              if: matrix.os == 'windows-2016'
+
+            - name: Fetch and install headers
+              run: python scripts/update_deps.py --dir external
+
+            - name: Get Google Test
+              run: git clone --branch release-1.8.1 https://github.com/google/googletest.git external/googletest
+
+            - name: Generate build files
+              run: cmake -S. -Bbuild -A${{matrix.arch}} "-Cexternal/helper.cmake"
+              if: matrix.os != 'windows-2016'
+            
+            - name: Generate build files
+              run: cmake -S. -Bbuild -A${{matrix.arch}} "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" "-Cexternal/helper.cmake"
+              if: matrix.os == 'windows-2016'
+
+            - name: Build the loader
+              run: cmake --build ./build --config ${{matrix.config}}
+
+    mac:
+        runs-on: macos-latest
+
+        strategy:
+            matrix:
+                config: [ Debug, Release ]
+
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-python@v2
+              with:
+                python-version: '3.7'
+
+            - name: Fetch and install headers
+              run: python scripts/update_deps.py --dir external
+
+            - name: Get Google Test
+              run: git clone --branch release-1.8.1 https://github.com/google/googletest.git external/googletest
+
+            - name: Generate build files
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -Cexternal/helper.cmake
+
+            - name: Build the loader
+              run: make -C build
+
+    gn:
+        runs-on: ubuntu-18.04
+
+        strategy:
+            matrix:
+                config: [ Debug, Release ]
+
+        steps:
+            - uses: actions/checkout@v2
+
+            - name: Get depot tools
+              run: |
+                git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools
+                echo "$GITHUB_WORKSPACE/depot_tools" >> $GITHUB_PATH
+
+            - name: Fetch and install headers
+              run: ./build-gn/update_deps.sh
+
+            - name: Generate build files
+              run: gn gen out/${{matrix.config}} --args="is_debug=true"
+              if: matrix.config != 'Release'
+
+            - name: Generate build files
+              run: gn gen out/${{matrix.config}} --args="is_debug=false"
+              if: matrix.config == 'Release'
+
+            - name: Build the loader
+              run: ninja -C out/${{matrix.config}}
