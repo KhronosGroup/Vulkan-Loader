@@ -7205,6 +7205,30 @@ out:
     return res;
 }
 
+static int physDevTypeOrder(VkPhysicalDeviceType type)
+{
+    switch (type) {
+        default:                                     /* fallthrough */
+        case VK_PHYSICAL_DEVICE_TYPE_OTHER:          return 3;
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:            return 2;
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: return 1;
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:    /* fallthrough */
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:   return 0;
+    }
+}
+
+static int physDevTypeCmp(const void *a, const void *b)
+{
+    const struct loader_physical_device_term *data_a = *((const struct loader_physical_device_term **)a);
+    const struct loader_physical_device_term *data_b = *((const struct loader_physical_device_term **)b);
+    VkPhysicalDeviceProperties prop_a, prop_b;
+
+    data_a->this_icd_term->dispatch.GetPhysicalDeviceProperties(data_a->phys_dev, &prop_a);
+    data_b->this_icd_term->dispatch.GetPhysicalDeviceProperties(data_b->phys_dev, &prop_b);
+
+    return physDevTypeOrder(prop_a.deviceType) - physDevTypeOrder(prop_b.deviceType);
+}
+
 VkResult setupLoaderTermPhysDevs(struct loader_instance *inst) {
     VkResult res = VK_SUCCESS;
     struct loader_icd_term *icd_term;
@@ -7379,6 +7403,19 @@ VkResult setupLoaderTermPhysDevs(struct loader_instance *inst) {
             idx++;
         }
     }
+
+#if !defined(_WIN32)
+    // On non-Windows platforms, where we don't use DXGI to determine the
+    // preferred adapter, order adapters by type.
+
+    // Otherwise, they get order by whoever was written last in the filesystem
+    // which makes behaviour unreliable and inconsistent for users when
+    // certain apps make bad assumptions about the first adapter.
+
+    // This also avoids the problem with software implementations being
+    // chosen by applications that prefer the first adapter.
+    qsort(new_phys_devs, idx, sizeof(struct loader_physical_device_term *), physDevTypeCmp);
+#endif
 
 out:
 
