@@ -300,6 +300,14 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     LOOKUP_GIPA(GetPhysicalDeviceDirectFBPresentationSupportEXT, false);
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
+    // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    LOOKUP_GIPA(CreateScreenSurfaceQNX, false);
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    LOOKUP_GIPA(GetPhysicalDeviceScreenPresentationSupportQNX, false);
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 #undef LOOKUP_GIPA
 
     return true;
@@ -1060,6 +1068,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     table->GetPhysicalDeviceDirectFBPresentationSupportEXT = (PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT)gpa(inst, "vkGetPhysicalDeviceDirectFBPresentationSupportEXT");
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
+    // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    table->CreateScreenSurfaceQNX = (PFN_vkCreateScreenSurfaceQNX)gpa(inst, "vkCreateScreenSurfaceQNX");
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    table->GetPhysicalDeviceScreenPresentationSupportQNX = (PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX)gpa(inst, "vkGetPhysicalDeviceScreenPresentationSupportQNX");
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 }
 
 // Device command lookup function
@@ -1812,6 +1828,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     if (!strcmp(name, "GetPhysicalDeviceDirectFBPresentationSupportEXT")) return (void *)table->GetPhysicalDeviceDirectFBPresentationSupportEXT;
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
+    // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    if (!strcmp(name, "CreateScreenSurfaceQNX")) return (void *)table->CreateScreenSurfaceQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    if (!strcmp(name, "GetPhysicalDeviceScreenPresentationSupportQNX")) return (void *)table->GetPhysicalDeviceScreenPresentationSupportQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
     *found_name = false;
     return NULL;
@@ -3947,6 +3971,53 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetWinrtDisplayNV(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
+// ---- VK_QNX_screen_surface extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+#error("Not implemented. Likely needs to be manually generated!");
+    return disp->CreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+#error("Not implemented. Likely needs to be manually generated!");
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    struct _screen_window*                      window) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceScreenPresentationSupportQNX(unwrapped_phys_dev, queueFamilyIndex, window);
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSupportQNX(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    struct _screen_window*                      window) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX) {
+        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceScreenPresentationSupportQNX");
+    }
+    return icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX(phys_dev_term->phys_dev, queueFamilyIndex, window);
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -5206,6 +5277,24 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
+    // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    if (!strcmp("vkCreateScreenSurfaceQNX", name)) {
+        *addr = (ptr_instance->enabled_known_extensions.qnx_screen_surface == 1)
+                     ? (void *)CreateScreenSurfaceQNX
+                     : NULL;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    if (!strcmp("vkGetPhysicalDeviceScreenPresentationSupportQNX", name)) {
+        *addr = (ptr_instance->enabled_known_extensions.qnx_screen_surface == 1)
+                     ? (void *)GetPhysicalDeviceScreenPresentationSupportQNX
+                     : NULL;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {
         *addr = (void *)CreateAccelerationStructureKHR;
@@ -5351,6 +5440,12 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
     // ---- VK_EXT_debug_utils extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
             ptr_instance->enabled_known_extensions.ext_debug_utils = 1;
+
+    // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_QNX_SCREEN_SURFACE_EXTENSION_NAME)) {
+            ptr_instance->enabled_known_extensions.qnx_screen_surface = 1;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
         }
     }
 }
@@ -5639,6 +5734,14 @@ const VkLayerInstanceDispatchTable instance_disp = {
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     .GetPhysicalDeviceDirectFBPresentationSupportEXT = terminator_GetPhysicalDeviceDirectFBPresentationSupportEXT,
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
+    // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    .CreateScreenSurfaceQNX = terminator_CreateScreenSurfaceQNX,
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    .GetPhysicalDeviceScreenPresentationSupportQNX = terminator_GetPhysicalDeviceScreenPresentationSupportQNX,
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
@@ -5701,5 +5804,8 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
                                                   VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+                                                  VK_QNX_SCREEN_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_SCREEN_QNX
                                                   NULL };
 

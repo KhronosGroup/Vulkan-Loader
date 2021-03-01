@@ -978,4 +978,10 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     table->GetPhysicalDeviceDirectFBPresentationSupportEXT = (PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT) gpa(instance, "vkGetPhysicalDeviceDirectFBPresentationSupportEXT");
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    table->CreateScreenSurfaceQNX = (PFN_vkCreateScreenSurfaceQNX) gpa(instance, "vkCreateScreenSurfaceQNX");
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    table->GetPhysicalDeviceScreenPresentationSupportQNX = (PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX) gpa(instance, "vkGetPhysicalDeviceScreenPresentationSupportQNX");
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 }
