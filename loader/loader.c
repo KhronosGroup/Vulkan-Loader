@@ -77,6 +77,10 @@
 #include <dxgi1_6.h>
 #include "adapters.h"
 
+#if !defined(NDEBUG)
+#include <crtdbg.h>
+#endif
+
 typedef HRESULT (APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory);
 static PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 #endif
@@ -2511,6 +2515,13 @@ void loader_initialize(void) {
     HMODULE dxgi_module = LoadLibrary(systemPath);
     fpCreateDXGIFactory1 = dxgi_module == NULL ? NULL :
         (PFN_CreateDXGIFactory1)GetProcAddress(dxgi_module, "CreateDXGIFactory1");
+
+#if !defined(NDEBUG)
+    _set_error_mode(_OUT_TO_STDERR);
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+#endif
+
 #endif
 }
 
