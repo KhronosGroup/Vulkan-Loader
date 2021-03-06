@@ -99,13 +99,16 @@ if(WIN32)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_SECURE_NO_WARNINGS")
     # ~~~
-    # Build dev_ext_trampoline.c with -O2 to allow tail-call optimization.
-    # Build other C files with normal options.
+    # Build dev_ext_trampoline.c and unknown_ext_chain.c with /O2 to allow tail-call optimization.
     # Setup two CMake targets (loader-norm and loader-opt) for the different compilation flags.
     # ~~~
-    separate_arguments(LOCAL_C_FLAGS_DBG WINDOWS_COMMAND ${CMAKE_C_FLAGS_DEBUG})
-    set(CMAKE_C_FLAGS_DEBUG " ")
-    separate_arguments(LOCAL_C_FLAGS_REL WINDOWS_COMMAND ${CMAKE_C_FLAGS_RELEASE})
+    set(MODIFIED_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+
+    string(REPLACE "/Od" "/O2" MODIFIED_C_FLAGS_DEBUG ${MODIFIED_C_FLAGS_DEBUG})
+    string(REPLACE "/Ob0" "/Ob2" MODIFIED_C_FLAGS_DEBUG ${MODIFIED_C_FLAGS_DEBUG})
+    string(REGEX REPLACE "/RTC." "" MODIFIED_C_FLAGS_DEBUG ${MODIFIED_C_FLAGS_DEBUG})  #remove run-time error checks
+
+    separate_arguments(MODIFIED_C_FLAGS_DEBUG WINDOWS_COMMAND ${MODIFIED_C_FLAGS_DEBUG})
 endif()
 
 set(NORMAL_LOADER_SRCS
@@ -173,7 +176,7 @@ if(WIN32)
         message(WARNING "Could not find working MASM assebler\n${ASM_FAILURE_MSG}")
         add_custom_target(loader_asm_gen_files)
         add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
-        target_compile_options(loader-unknown-chain PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
+        set_target_properties(loader-unknown-chain PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
         target_compile_options(loader-unknown-chain PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     endif()
 elseif(APPLE)
@@ -207,13 +210,13 @@ endif()
 
 if(WIN32)
     add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
-    target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
+    # target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
     target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-norm PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
     add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
     add_dependencies(loader-opt loader_asm_gen_files)
-    target_compile_options(loader-opt PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_REL}>")
+    set_target_properties(loader-opt PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
@@ -225,8 +228,8 @@ if(WIN32)
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
     set_target_properties(vulkan
-                          PROPERTIES LINK_FLAGS_DEBUG
-                                     "/ignore:4098"
+                          PROPERTIES
+                          #LINK_FLAGS_DEBUG "/ignore:4098"
                                      OUTPUT_NAME
                                      vulkan-1
                                      PREFIX
