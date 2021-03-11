@@ -45,6 +45,10 @@ elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_WAYLAND_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
     endif()
+
+    if(BUILD_WSI_SCREEN_SUPPORT)
+        add_definitions(-DVK_USE_PLATFORM_SCREEN_QNX)
+    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()

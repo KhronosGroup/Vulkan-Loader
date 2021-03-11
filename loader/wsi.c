@@ -75,6 +75,9 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
 #ifdef VK_USE_PLATFORM_METAL_EXT
     ptr_instance->wsi_metal_surface_enabled = false;
 #endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    ptr_instance->wsi_screen_surface_enabled = false;
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SURFACE_EXTENSION_NAME) == 0) {
@@ -151,6 +154,12 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
             continue;
         }
 #endif
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_QNX_SCREEN_SURFACE_EXTENSION_NAME) == 0) {
+            ptr_instance->wsi_screen_surface_enabled = true;
+            continue;
+        }
+#endif // VK_USE_PLATFORM_SCREEN_QNX
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_DISPLAY_EXTENSION_NAME) == 0) {
             ptr_instance->wsi_display_enabled = true;
             continue;
@@ -184,6 +193,9 @@ bool wsi_unsupported_instance_extension(const VkExtensionProperties *ext_prop) {
 #ifndef VK_USE_PLATFORM_DIRECTFB_EXT
     if (!strcmp(ext_prop->extensionName, "VK_EXT_directfb_surface")) return true;
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifndef VK_USE_PLATFORM_SCREEN_QNX
+    if (!strcmp(ext_prop->extensionName, "VK_QNX_screen_surface")) return true;
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
     return false;
 }
@@ -1469,6 +1481,120 @@ out:
 
 #endif
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+// This is the trampoline entrypoint for CreateScrenSurfaceQNX
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance instance,
+                                                                       const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
+                                                                       const VkAllocationCallbacks *pAllocator,
+                                                                       VkSurfaceKHR *pSurface) {
+    const VkLayerInstanceDispatchTable *disp;
+    disp = loader_get_instance_layer_dispatch(instance);
+    VkResult res;
+
+    res = disp->CreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+    return res;
+}
+
+// This is the instance chain terminator function for CreateScreenSurfaceQNX
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance instance,
+                                                                  const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
+                                                                  const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    VkResult vkRes = VK_SUCCESS;
+    VkIcdSurface *pIcdSurface = NULL;
+    uint32_t i = 0;
+
+    // First, check to ensure the appropriate extension was enabled:
+    struct loader_instance *ptr_instance = loader_get_instance(instance);
+    if (!ptr_instance->wsi_screen_surface_enabled) {
+        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "VK_QNX_screen_surface extension not enabled.  vkCreateScreenSurfaceQNX not executed!\n");
+        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        goto out;
+    }
+
+    // Next, if so, proceed with the implementation of this function:
+    pIcdSurface = AllocateIcdSurfaceStruct(ptr_instance, sizeof(pIcdSurface->screen_surf.base), sizeof(pIcdSurface->screen_surf));
+    if (pIcdSurface == NULL) {
+        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    pIcdSurface->screen_surf.base.platform = VK_ICD_WSI_PLATFORM_SCREEN;
+    pIcdSurface->screen_surf.context = pCreateInfo->context;
+    pIcdSurface->screen_surf.window = pCreateInfo->window;
+
+    // Loop through each ICD and determine if they need to create a surface
+    for (struct loader_icd_term *icd_term = ptr_instance->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
+            if (NULL != icd_term->dispatch.CreateScreenSurfaceQNX) {
+                vkRes = icd_term->dispatch.CreateScreenSurfaceQNX(icd_term->instance, pCreateInfo, pAllocator,
+                                                                   &pIcdSurface->real_icd_surfaces[i]);
+                if (VK_SUCCESS != vkRes) {
+                    goto out;
+                }
+            }
+        }
+    }
+
+    *pSurface = (VkSurfaceKHR)pIcdSurface;
+
+out:
+
+    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
+        if (NULL != pIcdSurface->real_icd_surfaces) {
+            i = 0;
+            for (struct loader_icd_term *icd_term = ptr_instance->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
+                }
+            }
+            loader_instance_heap_free(ptr_instance, pIcdSurface->real_icd_surfaces);
+        }
+        loader_instance_heap_free(ptr_instance, pIcdSurface);
+    }
+
+    return vkRes;
+}
+
+// This is the trampoline entrypoint for
+// GetPhysicalDeviceScreenPresentationSupportQNX
+LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
+                                                                                              uint32_t queueFamilyIndex,
+                                                                                              struct _screen_window *window) {
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    const VkLayerInstanceDispatchTable *disp;
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    VkBool32 res = disp->GetPhysicalDeviceScreenPresentationSupportQNX(unwrapped_phys_dev, queueFamilyIndex, window);
+    return res;
+}
+
+// This is the instance chain terminator function for
+// GetPhysicalDeviceScreenPresentationSupportQNX
+VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
+                                                                                         uint32_t queueFamilyIndex,
+                                                                                         struct _screen_window *window) {
+    // First, check to ensure the appropriate extension was enabled:
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    struct loader_instance *ptr_instance = (struct loader_instance *)icd_term->this_instance;
+    if (!ptr_instance->wsi_screen_surface_enabled) {
+        loader_log(
+            ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+            "VK_QNX_screen_surface extension not enabled.  vkGetPhysicalDeviceScreenPresentationSupportQNX not executed!\n");
+        return VK_SUCCESS;
+    }
+
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX) {
+        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceScreenPresentationSupportQNX!\n");
+        assert(false && "loader: null GetPhysicalDeviceScreenPresentationSupportQNX ICD pointer");
+    }
+
+    return icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX(phys_dev_term->phys_dev, queueFamilyIndex, window);
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
 // Functions for the VK_KHR_display instance extension:
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                      uint32_t *pPropertyCount,
@@ -2467,6 +2593,19 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
         return true;
     }
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+    // Functions for the VK_QNX_screen_surface extension:
+    if (!strcmp("vkCreateScreenSurfaceQNX", name)) {
+        *addr = ptr_instance->wsi_screen_surface_enabled ? (void *)vkCreateScreenSurfaceQNX : NULL;
+        return true;
+    }
+    if (!strcmp("vkGetPhysicalDeviceScreenPresentationSupportQNX", name)) {
+        *addr = ptr_instance->wsi_screen_surface_enabled ? (void *)vkGetPhysicalDeviceScreenPresentationSupportQNX : NULL;
+        return true;
+    }
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 
     // Functions for VK_KHR_display extension:
     if (!strcmp("vkGetPhysicalDeviceDisplayPropertiesKHR", name)) {

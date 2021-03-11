@@ -35,7 +35,7 @@
 #include "vulkan/vk_platform.h"
 #include "vulkan/vk_sdk_platform.h"
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
 /* Linux-specific common code: */
 
 // Headers:
@@ -124,7 +124,31 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 }
 #elif defined(__Fuchsia__)
 static inline char *loader_platform_executable_path(char *buffer, size_t size) { return NULL; }
-#endif  // defined (__APPLE__)
+#elif defined(__QNXNTO__)
+
+#define SYSCONFDIR "/etc"
+
+#include <fcntl.h>
+#include <sys/stat.h>
+
+static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    int fd = open("/proc/self/exefile", O_RDONLY);
+    size_t rdsize;
+
+    if (fd == -1 ) {
+        return NULL;
+    }
+
+    rdsize = read(fd, buffer, size);
+    if (rdsize == size) {
+        return NULL;
+    }
+    buffer[rdsize] = 0x00;
+    close(fd);
+
+    return buffer;
+}
+#endif  // defined (__QNXNTO__)
 
 // Compatability with compilers that don't support __has_feature
 #ifndef __has_feature

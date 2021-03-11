@@ -1104,6 +1104,25 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceWaylandPresentationSupportKHR(
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface)
+{
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkResult result = inst->layer_disp.CreateScreenSurfaceQNX(vk_inst, pCreateInfo, pAllocator, pSurface);
+    return result;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct _screen_window* window)
+{
+    wrapped_phys_dev_obj *phys_dev;
+    auto vk_phys_dev = unwrap_phys_dev(physicalDevice, &phys_dev);
+    VkBool32 result = phys_dev->inst->layer_disp.GetPhysicalDeviceScreenPresentationSupportQNX(vk_phys_dev, queueFamilyIndex, window);
+    return result;
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
 VKAPI_ATTR VkResult VKAPI_CALL
 vkCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
                              const VkAllocationCallbacks *pAllocator, VkDebugReportCallbackEXT *pMsgCallback) {
