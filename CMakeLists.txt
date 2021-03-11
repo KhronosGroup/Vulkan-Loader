@@ -122,6 +122,7 @@ if(UNIX AND NOT APPLE) # i.e.: Linux
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
     option(BUILD_WSI_DIRECTFB_SUPPORT "Build DirectFB WSI support" OFF)
+    option(BUILD_WSI_SCREEN_SUPPORT "Build QNX Screen WSI support" OFF)
 
     if(BUILD_WSI_XCB_SUPPORT)
         find_package(XCB REQUIRED)
@@ -139,6 +140,10 @@ if(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_DIRECTFB_SUPPORT)
         find_package(DirectFB REQUIRED)
         include_directories(SYSTEM ${DIRECTFB_INCLUDE_DIR})
+    endif()
+
+    if(BUILD_WSI_SCREEN_SUPPORT)
+        # Part of OS, no additional include directories are required
     endif()
 endif()
 

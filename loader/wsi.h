@@ -54,6 +54,9 @@ typedef struct {
 #ifdef VK_USE_PLATFORM_METAL_EXT
         VkIcdSurfaceMetal metal_surf;
 #endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        VkIcdSurfaceScreen screen_surf;
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
         VkIcdSurfaceDisplay display_surf;
         VkIcdSurfaceHeadless headless_surf;
     };
@@ -155,6 +158,14 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 #endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance instance,
+                                                                  const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
+                                                                  const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
+                                                                                         uint32_t queueFamilyIndex,
+                                                                                         struct _screen_window *window);
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pPropertyCount,
                                                                                 VkDisplayPropertiesKHR *pProperties);

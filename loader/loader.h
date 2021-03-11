@@ -348,6 +348,9 @@ struct loader_instance {
 #ifdef VK_USE_PLATFORM_FUCHSIA
     bool wsi_imagepipe_surface_enabled;
 #endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    bool wsi_screen_surface_enabled;
+#endif
     bool wsi_display_enabled;
     bool wsi_display_props2_enabled;
 };

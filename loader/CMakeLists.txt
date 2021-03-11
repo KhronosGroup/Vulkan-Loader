@@ -57,6 +57,10 @@ elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_DIRECTFB_SUPPORT)
         set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_DIRECTFB_EXT)
     endif()
+
+    if(BUILD_WSI_SCREEN_SUPPORT)
+        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_SCREEN_QNX)
+    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -284,6 +288,7 @@ else()
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xcb.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib_xrandr.h
+            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_screen.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
             ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
         if(BUILD_STATIC_LOADER)

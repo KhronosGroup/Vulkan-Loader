@@ -253,7 +253,7 @@ void *loader_device_heap_realloc(const struct loader_device *device, void *pMemo
 }
 
 // Environment variables
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
 
 static inline bool IsHighIntegrity() {
     return geteuid() != getuid() || getegid() != getgid();
@@ -3940,7 +3940,7 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
     if (xdgdatadirs == NULL) {
         xdgdata_alloc = false;
     }
-#if !defined(__Fuchsia__)
+#if !defined(__Fuchsia__) && !defined(__QNXNTO__)
     if (xdgconfdirs == NULL || xdgconfdirs[0] == '\0') {
         xdgconfdirs = FALLBACK_CONFIG_DIRS;
     }

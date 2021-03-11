@@ -697,6 +697,7 @@ target-specific extensions:
 | Linux (Wayland) | VK_KHR_wayland_surface |
 | Linux (X11) |  VK_KHR_xcb_surface and VK_KHR_xlib_surface |
 | macOS (MoltenVK) | VK_MVK_macos_surface |
+| QNX (Screen) | VK_QNX_screen_surface |
 
 It is important to understand that while the loader may support the various
 entry points for these extensions, there is a handshake required to actually
@@ -2553,9 +2554,9 @@ vkObj alloc_icd_obj()
 ### Handling KHR Surface Objects in WSI Extensions
 
 Normally, ICDs handle object creation and destruction for various Vulkan
-objects. The WSI surface extensions for Linux, Windows, and macOS
+objects. The WSI surface extensions for Linux, Windows, macOS, and QNX
 ("VK\_KHR\_win32\_surface", "VK\_KHR\_xcb\_surface", "VK\_KHR\_xlib\_surface",
-"VK\_KHR\_wayland\_surface", "VK\_MVK\_macos\_surface"
+"VK\_KHR\_wayland\_surface", "VK\_MVK\_macos\_surface", "VK\_QNX\_screen\_surface"
 and "VK\_KHR\_surface")
 are handled differently.  For these extensions, the `VkSurfaceKHR` object
 creation and destruction may be handled by either the loader  or an ICD.
@@ -2571,6 +2572,7 @@ If the loader handles the management of the `VkSurfaceKHR` objects:
       * Windows
       * Android
       * MacOS (`vkCreateMacOSSurfaceMVK`)
+      * QNX (`vkCreateScreenSurfaceQNX`)
  2. The loader creates a `VkIcdSurfaceXXX` object for the corresponding
 `vkCreateXXXSurfaceKHR` call.
     * The `VkIcdSurfaceXXX` structures are defined in `include/vulkan/vk_icd.h`.
@@ -2578,7 +2580,7 @@ If the loader handles the management of the `VkSurfaceKHR` objects:
     `VkIcdSurfaceXXX` structure.
  4. The first field of all the `VkIcdSurfaceXXX` structures is a
 `VkIcdSurfaceBase` enumerant that indicates whether the
-    surface object is Win32, XCB, Xlib, or Wayland.
+    surface object is Win32, XCB, Xlib, Wayland, or Screen.
 
 The ICD may choose to handle `VkSurfaceKHR` object creation instead.  If an ICD
 desires to handle creating and destroying it must do the following:
