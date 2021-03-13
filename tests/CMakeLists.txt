@@ -46,7 +46,7 @@ elseif(UNIX AND NOT APPLE) # i.e.: Linux
         add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
     endif()
 
-    if(BUILD_WSI_SCREEN_SUPPORT)
+    if(BUILD_WSI_SCREEN_QNX_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_SCREEN_QNX)
     endif()
 else()
