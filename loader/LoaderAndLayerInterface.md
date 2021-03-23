@@ -2448,10 +2448,10 @@ then the value of NULL should be returned.
 
 This support is optional and should not be considered a requirement.  This is
 only required if an ICD intends to support some functionality not directly
-supported by a significant population of loaders in the public.  If an ICD
-does implement this support, it should return the address of its
-`vk_icdGetPhysicalDeviceProcAddr` function through the `vkGetInstanceProcAddr`
-function.
+supported by a significant population of loaders in the public.  If an ICD does
+implement this support, it must export the function from the ICD library using
+the name vk_icdGetPhysicalDeviceProcAddr so that the symbol can be located
+through the platform's dynamic linking utilities.
 
 The new behavior of the loader's vkGetInstanceProcAddr with support for the
 `vk_icdGetPhysicalDeviceProcAddr` function is as follows:
