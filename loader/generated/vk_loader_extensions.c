@@ -816,6 +816,22 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)gdpa(dev, "vkCmdSetFragmentShadingRateEnumNV");
 
+    // ---- VK_FUCHSIA_external_memory extension commands
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->GetMemoryZirconHandleFUCHSIA = (PFN_vkGetMemoryZirconHandleFUCHSIA)gdpa(dev, "vkGetMemoryZirconHandleFUCHSIA");
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->GetMemoryZirconHandlePropertiesFUCHSIA = (PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA)gdpa(dev, "vkGetMemoryZirconHandlePropertiesFUCHSIA");
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_FUCHSIA_external_semaphore extension commands
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->ImportSemaphoreZirconHandleFUCHSIA = (PFN_vkImportSemaphoreZirconHandleFUCHSIA)gdpa(dev, "vkImportSemaphoreZirconHandleFUCHSIA");
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA)gdpa(dev, "vkGetSemaphoreZirconHandleFUCHSIA");
+#endif // VK_USE_PLATFORM_FUCHSIA
+
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gdpa(dev, "vkDestroyAccelerationStructureKHR");
@@ -1571,6 +1587,22 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     if (!strcmp(name, "CmdSetFragmentShadingRateEnumNV")) return (void *)table->CmdSetFragmentShadingRateEnumNV;
+
+    // ---- VK_FUCHSIA_external_memory extension commands
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp(name, "GetMemoryZirconHandleFUCHSIA")) return (void *)table->GetMemoryZirconHandleFUCHSIA;
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp(name, "GetMemoryZirconHandlePropertiesFUCHSIA")) return (void *)table->GetMemoryZirconHandlePropertiesFUCHSIA;
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_FUCHSIA_external_semaphore extension commands
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp(name, "ImportSemaphoreZirconHandleFUCHSIA")) return (void *)table->ImportSemaphoreZirconHandleFUCHSIA;
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp(name, "GetSemaphoreZirconHandleFUCHSIA")) return (void *)table->GetSemaphoreZirconHandleFUCHSIA;
+#endif // VK_USE_PLATFORM_FUCHSIA
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -3971,6 +4003,52 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetWinrtDisplayNV(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
+// ---- VK_FUCHSIA_external_memory extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkMemoryGetZirconHandleInfoFUCHSIA*   pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandlePropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    zx_handle_t                                 zirconHandle,
+    VkMemoryZirconHandlePropertiesFUCHSIA*      pMemoryZirconHandleProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle, pMemoryZirconHandleProperties);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+// ---- VK_FUCHSIA_external_semaphore extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->ImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+
 // ---- VK_QNX_screen_surface extension trampoline/terminators
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
@@ -5276,6 +5354,34 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
+    // ---- VK_FUCHSIA_external_memory extension commands
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp("vkGetMemoryZirconHandleFUCHSIA", name)) {
+        *addr = (void *)GetMemoryZirconHandleFUCHSIA;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp("vkGetMemoryZirconHandlePropertiesFUCHSIA", name)) {
+        *addr = (void *)GetMemoryZirconHandlePropertiesFUCHSIA;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_FUCHSIA_external_semaphore extension commands
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp("vkImportSemaphoreZirconHandleFUCHSIA", name)) {
+        *addr = (void *)ImportSemaphoreZirconHandleFUCHSIA;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!strcmp("vkGetSemaphoreZirconHandleFUCHSIA", name)) {
+        *addr = (void *)GetSemaphoreZirconHandleFUCHSIA;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_FUCHSIA
 
     // ---- VK_QNX_screen_surface extension commands
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
