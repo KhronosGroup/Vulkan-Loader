@@ -11,6 +11,7 @@ Instructions for building this repository on Linux, Windows, and MacOS.
 1. [Linux Build](#building-on-linux)
 1. [MacOS build](#building-on-macos)
 1. [Fuchsia build](#building-on-fuchsia)
+1. [QNX build](#building-on-qnx)
 
 ## Contributing to the Repository
 
@@ -684,6 +685,15 @@ Vulkan-Loader repository, and run:
 ## Building on Fuchsia
 
 Fuchsia uses the project's GN build system to integrate with the Fuchsia platform build.
+
+## Building on QNX
+
+QNX is using its own build system. The proper build environment must be set
+under the QNX host development system (Linux, Win64, MacOS) by invoking 
+the shell/batch script provided with QNX installation.
+
+Then change working directory to the "build-qnx" in this project and type "make".
+It will build the ICD loader for all CPU targets supported by QNX.
 
 ### SDK Symbols
 
