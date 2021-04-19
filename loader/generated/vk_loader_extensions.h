@@ -471,7 +471,6 @@ union loader_instance_extension_enables {
         uint8_t ext_acquire_xlib_display : 1;
         uint8_t ext_display_surface_counter : 1;
         uint8_t ext_debug_utils : 1;
-        uint8_t qnx_screen_surface : 1;
     };
     uint64_t padding[4];
 };
