@@ -34,7 +34,7 @@ CCFLAGS += -Wno-stringop-overflow -Wimplicit-fallthrough=0 -fvisibility=hidden
 CCFLAGS += -Wpointer-arith -fPIC
 
 # Enable this if required
-# CCFLAGS += -DVK_ENABLE_BETA_EXTENSIONS
+CCFLAGS += -DVK_ENABLE_BETA_EXTENSIONS
 
 CXXFLAGS += $(CCFLAGS)
 
