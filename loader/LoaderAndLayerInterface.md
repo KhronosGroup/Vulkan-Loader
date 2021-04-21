@@ -170,7 +170,7 @@ You query Vulkan Instance functions using `vkGetInstanceProcAddr`.
 `vkGetInstanceProcAddr` can be used to query either device or instance entry
 points in addition to all core entry points.  The returned function pointer is
 valid for this Instance and any object created under this Instance (including
-all `VkDevice` objects).  
+all `VkDevice` objects).
 
 Similarly, an Instance extension is a set of Vulkan Instance functions extending
 the Vulkan language.  These will be discussed in more detail later.
@@ -754,7 +754,7 @@ extensions when an application calls `vkEnumerateInstanceExtensionProperties`.
 Additionally, this behavior will cause the loader to throw an error during
 `vkCreateInstance` if you still attempt to use one of these extensions.  The intent is
 to protect applications so that they don't inadvertently use functionality
-which could lead to a crash.  
+which could lead to a crash.
 
 On the other hand, if you know you can safely use the extension, you may disable
 the filtering by defining the environment variable `VK_LOADER_DISABLE_INST_EXT_FILTER`
@@ -1547,6 +1547,7 @@ In order to intercept the pre-instance functions, several conditions must be met
 The functions that may be intercepted in this way are:
 * `vkEnumerateInstanceExtensionProperties`
 * `vkEnumerateInstanceLayerProperties`
+* `vkEnumerateInstanceVersion`
 
 Pre-instance functions work differently from all other layer intercept functions.
 Other intercept functions have a function prototype identical to that of the function they are intercepting.
