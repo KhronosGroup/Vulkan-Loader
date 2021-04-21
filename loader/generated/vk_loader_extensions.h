@@ -299,6 +299,14 @@ struct loader_icd_term_dispatch {
     PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR GetPhysicalDeviceWin32PresentationSupportKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
+    // ---- VK_KHR_video_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR GetPhysicalDeviceVideoCapabilitiesKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR GetPhysicalDeviceVideoFormatPropertiesKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
     // ---- VK_KHR_get_physical_device_properties2 extension commands
     PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysicalDeviceFeatures2KHR;
     PFN_vkGetPhysicalDeviceProperties2KHR GetPhysicalDeviceProperties2KHR;
@@ -471,7 +479,6 @@ union loader_instance_extension_enables {
         uint8_t ext_acquire_xlib_display : 1;
         uint8_t ext_display_surface_counter : 1;
         uint8_t ext_debug_utils : 1;
-        uint8_t qnx_screen_surface : 1;
     };
     uint64_t padding[4];
 };
