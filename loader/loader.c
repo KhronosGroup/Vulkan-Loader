@@ -516,6 +516,18 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     fputc('\n', stderr);
 }
 
+// log error from to library loading
+void loader_log_load_library_error(const struct loader_instance *inst, const char *filename) {
+    const char *error_message = loader_platform_open_library_error(filename);
+    // If the error is due to incompatible ELF class, report it with INFO level
+    // Discussed in Github issue 262
+    VkFlags err_flag = VK_DEBUG_REPORT_ERROR_BIT_EXT;
+    if (strstr(error_message, "wrong ELF class:") != NULL) {
+        err_flag = VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+    }
+    loader_log(inst, err_flag, 0, error_message);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL vkSetInstanceDispatch(VkInstance instance, void *object) {
     struct loader_instance *inst = loader_get_instance(instance);
     if (!inst) {
@@ -2299,7 +2311,7 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
     handle = loader_platform_open_library(filename);
 #endif
     if (NULL == handle) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(filename));
+        loader_log_load_library_error(inst, filename);
         goto out;
     }
 
@@ -5581,7 +5593,7 @@ struct loader_instance *loader_get_instance(const VkInstance instance) {
 static loader_platform_dl_handle loaderOpenLayerFile(const struct loader_instance *inst, const char *chain_type,
                                                      struct loader_layer_properties *prop) {
     if ((prop->lib_handle = loader_platform_open_library(prop->lib_name)) == NULL) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(prop->lib_name));
+        loader_log_load_library_error(inst, prop->lib_name);
     } else {
         loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Loading layer library %s", prop->lib_name);
     }
