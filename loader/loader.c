@@ -2621,7 +2621,7 @@ static void loader_get_fullpath(const char *file, const char *dirs, size_t out_s
 //            This returned buffer should be freed by caller.
 static VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json) {
     FILE *file = NULL;
-    char *json_buf;
+    char *json_buf = NULL;
     size_t len;
     VkResult res = VK_SUCCESS;
 
@@ -2647,7 +2647,7 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
     } while (fread_ret_count == 256 && !feof(file));
     len = ftell(file);
     fseek(file, 0, SEEK_SET);
-    json_buf = (char *)loader_stack_alloc(len + 1);
+    json_buf = (char *)loader_instance_heap_alloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (json_buf == NULL) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "loader_get_json: Failed to allocate space for "
@@ -2681,6 +2681,9 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
     }
 
 out:
+    if (NULL != json_buf) {
+        loader_instance_heap_free(inst, json_buf);
+    }
     if (NULL != file) {
         fclose(file);
     }
