@@ -34,6 +34,7 @@ elseif(ANDROID)
 elseif(APPLE)
     add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
 elseif(UNIX AND NOT APPLE) # i.e.: Linux
+    target_compile_options(vk_loader_validation_tests PUBLIC -fPIC)
     if(BUILD_WSI_XCB_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
     endif()
@@ -135,3 +136,41 @@ if(WIN32)
 endif()
 
 add_subdirectory(layers)
+
+option(TEST_USE_ADDRESS_SANITIZER "Linux only: Advanced memory checking" OFF)
+
+add_subdirectory(framework)
+
+add_executable(test_regression loader_testing_main.cpp loader_regression_tests.cpp loader_version_tests.cpp)
+target_link_libraries(test_regression PRIVATE testing_dependencies)
+
+add_executable(test_wsi loader_testing_main.cpp loader_wsi_tests.cpp)
+target_link_libraries(test_wsi PRIVATE testing_dependencies)
+
+if(UNIX AND NOT APPLE) # i.e. Linux
+    if(BUILD_WSI_XCB_SUPPORT)
+        target_include_directories(test_wsi PRIVATE ${XCB_INCLUDE_DIRS})
+        target_link_libraries(test_wsi PRIVATE ${XCB_LIBRARIES})
+    endif()
+
+    if(BUILD_WSI_XLIB_SUPPORT)
+        target_include_directories(test_wsi PRIVATE ${X11_INCLUDE_DIR})
+        target_link_libraries(test_wsi PRIVATE ${X11_LIBRARIES})
+    endif()
+
+    if(BUILD_WSI_WAYLAND_SUPPORT)
+        target_include_directories(test_wsi PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIR})
+        target_link_libraries(test_wsi PRIVATE ${WAYLAND_CLIENT_LIBRARIES})
+    endif()
+endif()
+
+if(WIN32)
+    # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
+    add_custom_command(TARGET test_regression POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gtest> $<TARGET_FILE_DIR:test_regression>)
+    # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
+    if(TARGET vulkan)
+        add_custom_command(TARGET test_regression POST_BUILD
+                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:test_regression>)
+    endif()
+endif()
