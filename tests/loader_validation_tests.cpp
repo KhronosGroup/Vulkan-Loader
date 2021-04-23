@@ -284,8 +284,8 @@ struct AllocTrack {
 // However, we have to globally define it so the allocation callback functions work properly.
 std::vector<AllocTrack> g_allocated_vector;
 bool g_intentional_fail_enabled = false;
-uint32_t g_intenional_fail_index = 0;
-uint32_t g_intenional_fail_count = 0;
+uint32_t g_intentional_fail_index = 0;
+uint32_t g_intentional_fail_count = 0;
 
 void FreeAllocTracker() { g_allocated_vector.clear(); }
 
@@ -296,12 +296,12 @@ void InitAllocTracker(size_t size, uint32_t intentional_fail_index = UINT32_MAX)
     g_allocated_vector.resize(size);
     if (intentional_fail_index != UINT32_MAX) {
         g_intentional_fail_enabled = true;
-        g_intenional_fail_index = intentional_fail_index;
-        g_intenional_fail_count = 0;
+        g_intentional_fail_index = intentional_fail_index;
+        g_intentional_fail_count = 0;
     } else {
         g_intentional_fail_enabled = false;
-        g_intenional_fail_index = 0;
-        g_intenional_fail_count = 0;
+        g_intentional_fail_index = 0;
+        g_intentional_fail_count = 0;
     }
 }
 
@@ -334,7 +334,7 @@ bool IsAllocTrackerEmpty() {
 VKAPI_ATTR void *VKAPI_CALL AllocCallbackFunc(void *pUserData, size_t size, size_t alignment,
                                               VkSystemAllocationScope allocationScope) {
     if (g_intentional_fail_enabled) {
-        if (++g_intenional_fail_count >= g_intenional_fail_index) {
+        if (++g_intentional_fail_count >= g_intentional_fail_index) {
             return nullptr;
         }
     }
@@ -432,7 +432,7 @@ void test_create_device(VkPhysicalDevice physical) {
 // Test groups:
 // LX = lunar exchange
 // LVLGH = loader and validation github
-// LVLGL = lodaer and validation gitlab
+// LVLGL = loader and validation gitlab
 
 TEST(LX435, InstanceCreateInfoConst) {
     VkInstanceCreateInfo const info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr};
@@ -1591,7 +1591,7 @@ TEST(EnumeratePhysicalDeviceGroupsKHR, OneCall) {
 }
 
 // Used by run_loader_tests.sh to test for the expected usage of the
-// vkEnumeratePhysicalDeviceGroupsKHR call in a two call fasion (once with NULL data
+// vkEnumeratePhysicalDeviceGroupsKHR call in a two call fashion (once with NULL data
 // to get count, and then again with data).
 TEST(EnumeratePhysicalDeviceGroupsKHR, TwoCall) {
     VkInstance instance = VK_NULL_HANDLE;
