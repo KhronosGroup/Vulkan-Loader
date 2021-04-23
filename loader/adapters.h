@@ -18,6 +18,8 @@
 * Author: Lenny Komow <lenny@lunarg.com>
 */
 
+#pragma once
+
 typedef struct LoaderEnumAdapters2 {
     ULONG adapter_count;
     struct {
