@@ -267,7 +267,6 @@ static inline char *loader_getenv(const char *name, const struct loader_instance
 }
 
 static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
-    char *out;
 #if defined(__APPLE__)
     // Apple does not appear to have a secure getenv implementation.
     // The main difference between secure getenv and getenv is that secure getenv
@@ -280,7 +279,8 @@ static inline char *loader_secure_getenv(const char *name, const struct loader_i
 #elif defined(__Fuchsia__)
     return loader_getenv(name, inst);
 #else
-// Linux
+    // Linux
+    char *out;
 #if defined(HAVE_SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
     (void)inst;
     out = secure_getenv(name);
