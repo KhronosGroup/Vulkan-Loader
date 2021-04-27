@@ -1620,9 +1620,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR) {
-        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceDisplayPropertiesKHR!\n");
-        assert(false && "loader: null GetPhysicalDeviceDisplayPropertiesKHR ICD pointer");
+        *pPropertyCount = 0;
+        return VK_SUCCESS;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, pProperties);
@@ -1651,9 +1650,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR) {
-        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceDisplayPlanePropertiesKHR!\n");
-        assert(false && "loader: null GetPhysicalDeviceDisplayPlanePropertiesKHR ICD pointer");
+        *pPropertyCount = 0;
+        return VK_SUCCESS;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, pProperties);
