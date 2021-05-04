@@ -864,7 +864,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceQueue(VkDevice device, uint3
     disp = loader_get_dispatch(device);
 
     disp->GetDeviceQueue(device, queueNodeIndex, queueIndex, pQueue);
-    if (pQueue != NULL) {
+    if (pQueue != NULL && *pQueue != NULL) {
         loader_set_dispatch(*pQueue, disp);
     }
 }
