@@ -5028,7 +5028,7 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_internal(V
     if (loader_phys_dev_ext_gpa(loader_get_instance(inst), pName, true, NULL, &addr)) return addr;
 
     // Don't call down the chain, this would be an infinite loop
-    loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "loader_gpdpa_instance_internal() unrecognized name %s", pName);
+    loader_log(NULL, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "loader_gpdpa_instance_internal() unrecognized name %s", pName);
     return NULL;
 }
 
@@ -5055,7 +5055,7 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator
     }
 
     // Don't call down the chain, this would be an infinite loop
-    loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "loader_gpdpa_instance_terminator() unrecognized name %s", pName);
+    loader_log(NULL, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "loader_gpdpa_instance_terminator() unrecognized name %s", pName);
     return NULL;
 }
 
@@ -5115,7 +5115,7 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_internal(VkI
     }
 
     // Don't call down the chain, this would be an infinite loop
-    loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "loader_gpa_instance_internal() unrecognized name %s", pName);
+    loader_log(NULL, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "loader_gpa_instance_internal() unrecognized name %s", pName);
     return NULL;
 }
 
