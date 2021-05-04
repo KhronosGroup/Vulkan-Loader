@@ -10,6 +10,7 @@ endef
 ICD_ROOT=$(CURDIR)/../../../..
 
 EXTRA_INCVPATH+=$(ICD_ROOT)/build_qnx
+EXTRA_INCVPATH+=$(ICD_ROOT)/external/Vulkan-Headers/include
 
 EXTRA_SRCVPATH+=$(ICD_ROOT)/loader
 EXTRA_SRCVPATH+=$(ICD_ROOT)/loader/generated
