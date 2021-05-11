@@ -691,6 +691,13 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdEndQueryIndexedEXT = (PFN_vkCmdEndQueryIndexedEXT)gdpa(dev, "vkCmdEndQueryIndexedEXT");
     table->CmdDrawIndirectByteCountEXT = (PFN_vkCmdDrawIndirectByteCountEXT)gdpa(dev, "vkCmdDrawIndirectByteCountEXT");
 
+    // ---- VK_NVX_binary_import extension commands
+    table->CreateCuModuleNVX = (PFN_vkCreateCuModuleNVX)gdpa(dev, "vkCreateCuModuleNVX");
+    table->CreateCuFunctionNVX = (PFN_vkCreateCuFunctionNVX)gdpa(dev, "vkCreateCuFunctionNVX");
+    table->DestroyCuModuleNVX = (PFN_vkDestroyCuModuleNVX)gdpa(dev, "vkDestroyCuModuleNVX");
+    table->DestroyCuFunctionNVX = (PFN_vkDestroyCuFunctionNVX)gdpa(dev, "vkDestroyCuFunctionNVX");
+    table->CmdCuLaunchKernelNVX = (PFN_vkCmdCuLaunchKernelNVX)gdpa(dev, "vkCmdCuLaunchKernelNVX");
+
     // ---- VK_NVX_image_view_handle extension commands
     table->GetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)gdpa(dev, "vkGetImageViewHandleNVX");
     table->GetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)gdpa(dev, "vkGetImageViewAddressNVX");
@@ -1525,6 +1532,13 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdBeginQueryIndexedEXT")) return (void *)table->CmdBeginQueryIndexedEXT;
     if (!strcmp(name, "CmdEndQueryIndexedEXT")) return (void *)table->CmdEndQueryIndexedEXT;
     if (!strcmp(name, "CmdDrawIndirectByteCountEXT")) return (void *)table->CmdDrawIndirectByteCountEXT;
+
+    // ---- VK_NVX_binary_import extension commands
+    if (!strcmp(name, "CreateCuModuleNVX")) return (void *)table->CreateCuModuleNVX;
+    if (!strcmp(name, "CreateCuFunctionNVX")) return (void *)table->CreateCuFunctionNVX;
+    if (!strcmp(name, "DestroyCuModuleNVX")) return (void *)table->DestroyCuModuleNVX;
+    if (!strcmp(name, "DestroyCuFunctionNVX")) return (void *)table->DestroyCuFunctionNVX;
+    if (!strcmp(name, "CmdCuLaunchKernelNVX")) return (void *)table->CmdCuLaunchKernelNVX;
 
     // ---- VK_NVX_image_view_handle extension commands
     if (!strcmp(name, "GetImageViewHandleNVX")) return (void *)table->GetImageViewHandleNVX;
@@ -3063,6 +3077,50 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCountEXT(
     uint32_t                                    vertexStride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     disp->CmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride);
+}
+
+
+// ---- VK_NVX_binary_import extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateCuModuleNVX(
+    VkDevice                                    device,
+    const VkCuModuleCreateInfoNVX*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkCuModuleNVX*                              pModule) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->CreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(
+    VkDevice                                    device,
+    const VkCuFunctionCreateInfoNVX*            pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkCuFunctionNVX*                            pFunction) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->CreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyCuModuleNVX(
+    VkDevice                                    device,
+    VkCuModuleNVX                               module,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->DestroyCuModuleNVX(device, module, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyCuFunctionNVX(
+    VkDevice                                    device,
+    VkCuFunctionNVX                             function,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->DestroyCuFunctionNVX(device, function, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(
+    VkCommandBuffer                             commandBuffer,
+    const VkCuLaunchInfoNVX*                    pLaunchInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
 }
 
 
@@ -5191,6 +5249,28 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdDrawIndirectByteCountEXT", name)) {
         *addr = (void *)CmdDrawIndirectByteCountEXT;
+        return true;
+    }
+
+    // ---- VK_NVX_binary_import extension commands
+    if (!strcmp("vkCreateCuModuleNVX", name)) {
+        *addr = (void *)CreateCuModuleNVX;
+        return true;
+    }
+    if (!strcmp("vkCreateCuFunctionNVX", name)) {
+        *addr = (void *)CreateCuFunctionNVX;
+        return true;
+    }
+    if (!strcmp("vkDestroyCuModuleNVX", name)) {
+        *addr = (void *)DestroyCuModuleNVX;
+        return true;
+    }
+    if (!strcmp("vkDestroyCuFunctionNVX", name)) {
+        *addr = (void *)DestroyCuFunctionNVX;
+        return true;
+    }
+    if (!strcmp("vkCmdCuLaunchKernelNVX", name)) {
+        *addr = (void *)CmdCuLaunchKernelNVX;
         return true;
     }
 
