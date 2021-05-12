@@ -1884,8 +1884,8 @@ static inline bool layer_json_supports_pre_instance_tag(const layer_json_version
 }
 
 static VkResult loader_read_layer_json(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
-                                       cJSON *layer_node, layer_json_version version, cJSON *item, cJSON *disable_environment,
-                                       bool is_implicit, char *filename) {
+                                       cJSON *layer_node, layer_json_version version, cJSON *item, bool is_implicit,
+                                       char *filename) {
     char *temp;
     char *name, *type, *library_path_str, *api_version;
     char *implementation_version, *description;
@@ -1894,6 +1894,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     cJSON *component_layers;
     cJSON *override_paths;
     cJSON *blacklisted_layers;
+    cJSON *disable_environment = NULL;
     VkExtensionProperties ext_prop;
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     struct loader_layer_properties *props = NULL;
@@ -2547,7 +2548,6 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     cJSON *item, *layers_node, *layer_node;
     layer_json_version json_version = {0, 0, 0};
     char *vers_tok;
-    cJSON *disable_environment = NULL;
     // Make sure sure the top level json value is an object
     if (!json || json->type != 6) {
         goto out;
@@ -2601,8 +2601,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
                            curLayer, filename);
                 goto out;
             }
-            result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, item, disable_environment,
-                                            is_implicit, filename);
+            result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, item, is_implicit, filename);
         }
     } else {
         // Otherwise, try to read in individual layers
@@ -2632,8 +2631,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
                        filename);
         } else {
             do {
-                result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, item, disable_environment,
-                                                is_implicit, filename);
+                result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, item, is_implicit, filename);
                 layer_node = layer_node->next;
             } while (layer_node != NULL);
         }
