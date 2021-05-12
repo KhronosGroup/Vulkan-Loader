@@ -4329,12 +4329,12 @@ bool loader_phys_dev_ext_gpa(struct loader_instance *inst, const char *funcName,
     idx = murmurhash(funcName, strlen(funcName), seed) % MAX_NUM_UNKNOWN_EXTS;
     if (perform_checking && !loader_name_in_phys_dev_ext_table(inst, &idx, funcName)) {
         uint32_t i;
-        bool added = false;
 
         // Only need to add first one to get index in Instance.  Others will use
         // the same index.
-        if (!added && loader_add_phys_dev_ext_table(inst, &idx, funcName)) {
-            added = true;
+        if (!loader_add_phys_dev_ext_table(inst, &idx, funcName)) {
+            // couldn't perform the above function due to insufficient memory available
+            goto out;
         }
 
         // Setup the ICD function pointers
