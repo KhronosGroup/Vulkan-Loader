@@ -4991,21 +4991,21 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             pNext = pNext->pNext;
         }
     }
-
-    layer_device_link_info = loader_stack_alloc(sizeof(VkLayerDeviceLink) * dev->expanded_activated_layer_list.count);
-    if (!layer_device_link_info) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "loader_create_device_chain: Failed to alloc Device objects for layer. Skipping Layer.");
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    activated_layer_names = loader_stack_alloc(sizeof(char *) * inst->expanded_activated_layer_list.count);
-    if (!activated_layer_names) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_create_instance_chain: Failed to alloc activated layer names array");
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
     if (dev->expanded_activated_layer_list.count > 0) {
+        layer_device_link_info = loader_stack_alloc(sizeof(VkLayerDeviceLink) * dev->expanded_activated_layer_list.count);
+        if (!layer_device_link_info) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "loader_create_device_chain: Failed to alloc Device objects for layer. Skipping Layer.");
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        activated_layer_names = loader_stack_alloc(sizeof(char *) * inst->expanded_activated_layer_list.count);
+        if (!activated_layer_names) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "loader_create_instance_chain: Failed to alloc activated layer names array");
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
         chain_info.sType = VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO;
         chain_info.function = VK_LAYER_LINK_INFO;
         chain_info.u.pLayerInfo = NULL;
