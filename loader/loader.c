@@ -4105,7 +4105,7 @@ static bool loader_name_in_dev_ext_table(struct loader_instance *inst, uint32_t 
     // search the list of secondary locations (shallow search, not deep search)
     for (uint32_t i = 0; i < inst->dev_ext_disp_hash[*idx].list.count; i++) {
         alt_idx = inst->dev_ext_disp_hash[*idx].list.index[i];
-        if (!strcmp(inst->dev_ext_disp_hash[*idx].func_name, funcName)) {
+        if (inst->dev_ext_disp_hash[*idx].func_name && !strcmp(inst->dev_ext_disp_hash[*idx].func_name, funcName)) {
             *idx = alt_idx;
             return true;
         }
@@ -4266,7 +4266,7 @@ static bool loader_name_in_phys_dev_ext_table(struct loader_instance *inst, uint
     // search the list of secondary locations (shallow search, not deep search)
     for (uint32_t i = 0; i < inst->phys_dev_ext_disp_hash[*idx].list.count; i++) {
         alt_idx = inst->phys_dev_ext_disp_hash[*idx].list.index[i];
-        if (!strcmp(inst->phys_dev_ext_disp_hash[*idx].func_name, funcName)) {
+        if (inst->phys_dev_ext_disp_hash[*idx].func_name && !strcmp(inst->phys_dev_ext_disp_hash[*idx].func_name, funcName)) {
             *idx = alt_idx;
             return true;
         }
