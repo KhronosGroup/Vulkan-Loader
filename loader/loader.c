@@ -6235,11 +6235,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
         if (res != VK_SUCCESS) {
             goto out;
         }
-        icd_props_list = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * icd_ext_count,
-                                                    VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (NULL == icd_props_list) {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
+        if (icd_ext_count > 0) {
+            icd_props_list = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * icd_ext_count,
+                                                        VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (NULL == icd_props_list) {
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
         }
     }
 
