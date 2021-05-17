@@ -6543,6 +6543,13 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
         total_count += cur_icd_group_count;
     }
 
+    if (total_count == 0) {
+        loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                   "setupLoaderTermPhysDevGroups:  Did not detect any GPU Groups"
+                   " in the current config");
+        goto out;
+    }
+
     // Create an array for the new physical device groups, which will be stored
     // in the instance for the Terminator code.
     new_phys_dev_groups = (VkPhysicalDeviceGroupProperties **)loader_instance_heap_alloc(
