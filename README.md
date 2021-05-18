@@ -60,3 +60,5 @@ including a Khronos copyright.
 While this project has been developed primarily by LunarG, Inc., there are many other
 companies and individuals making this possible: Valve Corporation, funding
 project development; Khronos providing oversight and hosting of the project.
+
+stupid added line
