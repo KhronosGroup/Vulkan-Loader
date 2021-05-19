@@ -4952,7 +4952,7 @@ void loaderScanForImplicitLayers(struct loader_instance *inst, struct loader_lay
                 continue;
             }
 
-            res = loaderAddLayerProperties(inst, instance_layers, json, true, file_str);
+            res = loaderAddLayerProperties(inst, instance_layers, json, false, file_str);
 
             loader_instance_heap_free(inst, file_str);
             manifest_files.filename_list[i] = NULL;
