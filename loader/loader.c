@@ -6396,6 +6396,7 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
 
     memset(&local_ext_list, 0, sizeof(local_ext_list));
     memset(&instance_layers, 0, sizeof(instance_layers));
+    memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
 
     // Get layer libraries if needed
     if (pLayerName && strlen(pLayerName) != 0) {
@@ -6418,7 +6419,6 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
         loader_preload_icds();
 
         // Scan/discover all ICD libraries
-        memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
         res = loader_icd_scan(NULL, &icd_tramp_list);
         // EnumerateInstanceExtensionProperties can't return anything other than OOM or VK_ERROR_LAYER_NOT_PRESENT
         if ((VK_SUCCESS != res && icd_tramp_list.count > 0) || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
