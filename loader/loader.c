@@ -5880,7 +5880,20 @@ out:
     if (VK_SUCCESS != res) {
         if (NULL != new_phys_devs) {
             for (uint32_t i = 0; i < total_count; i++) {
-                loader_instance_heap_free(inst, new_phys_devs[i]);
+                // If an OOM occurred inside the copying of the new physical devices into the existing array
+                // will leave some of the old physical devices in the array which may have been copied into
+                // the new array, leading to them being freed twice. To avoid this we just make sure to not
+                // delete physical devices which were copied.
+                bool found = false;
+                for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_tramp; old_idx++) {
+                    if (new_phys_devs[i] == inst->phys_devs_tramp[old_idx]) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    loader_instance_heap_free(inst, new_phys_devs[i]);
+                }
             }
             loader_instance_heap_free(inst, new_phys_devs);
         }
@@ -6084,7 +6097,22 @@ out:
         if (NULL != new_phys_devs) {
             // We've encountered an error, so we should free the new buffers.
             for (uint32_t i = 0; i < inst->total_gpu_count; i++) {
-                loader_instance_heap_free(inst, new_phys_devs[i]);
+                // If an OOM occurred inside the copying of the new physical devices into the existing array
+                // will leave some of the old physical devices in the array which may have been copied into
+                // the new array, leading to them being freed twice. To avoid this we just make sure to not
+                // delete physical devices which were copied.
+                bool found = false;
+                if (NULL != inst->phys_devs_term) {
+                    for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
+                        if (new_phys_devs[i] == inst->phys_devs_term[old_idx]) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    loader_instance_heap_free(inst, new_phys_devs[i]);
+                }
             }
             loader_instance_heap_free(inst, new_phys_devs);
         }
