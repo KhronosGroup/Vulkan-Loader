@@ -16,6 +16,10 @@
 import("//build_overrides/build.gni")
 import("//build_overrides/vulkan_loader.gni")
 
+declare_args() {
+  custom_vulkan_loader_library_name = ""
+}
+
 if (is_fuchsia) {
   import("//build/cpp/sdk_shared_library.gni")
   import("//build/sdk/sdk_documentation.gni")
@@ -121,8 +125,23 @@ if (!is_android) {
       "loader/wsi.c",
       "loader/wsi.h",
     ]
+
+    if (custom_vulkan_loader_library_name != "") {
+      output_name = custom_vulkan_loader_library_name
+    } else {
+      if (is_win) {
+        output_name = "vulkan-1"
+      } else {
+        output_name = "vulkan"
+
+        # Create libvulkan.so.1 on Linux instead of libvulkan.so
+        if (is_linux && vulkan_loader_shared) {
+          output_extension = "so.1"
+        }
+      }
+    }
+
     if (is_win) {
-      output_name = "vulkan-1"
       sources += [
         "loader/dirent_on_windows.c",
         "loader/dirent_on_windows.h",
@@ -162,7 +181,6 @@ if (!is_android) {
     configs -= vulkan_undefine_configs
 
     if (is_fuchsia) {
-      output_name = "vulkan"
       category = "partner"
 
       # The Vulkan loader's interface is defined by standard Khronos vulkan headers
@@ -175,11 +193,6 @@ if (!is_android) {
       ]
 
       runtime_deps = [ "//sdk/lib/fdio:fdio_sdk" ]
-    }
-
-    # Create libvulkan.so.1 on Linux instead of libvulkan.so
-    if (is_linux && vulkan_loader_shared) {
-      output_extension = "so.1"
     }
   }
 }
