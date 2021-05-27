@@ -58,6 +58,7 @@
 #include <vector>
 #include <unordered_map>
 #include <utility>
+#include <memory>
 
 #include <cassert>
 #include <cstring>
