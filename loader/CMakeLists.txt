@@ -70,6 +70,7 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 if(WIN32)
+    if(MSVC)
     # Use static MSVCRT libraries
     foreach(configuration
             in
@@ -89,6 +90,7 @@ if(WIN32)
                            "${${configuration}}")
         endif()
     endforeach()
+    endif()
 
     if(ENABLE_WIN10_ONECORE)
         # Note: When linking your app or driver to OneCore.lib, be sure to remove any links to non-umbrella libs (such as
@@ -227,6 +229,7 @@ if(WIN32)
                 $<TARGET_OBJECTS:loader-unknown-chain>
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
+    if(MSVC)
     set_target_properties(vulkan
                           PROPERTIES
                           #LINK_FLAGS_DEBUG "/ignore:4098"
@@ -234,9 +237,16 @@ if(WIN32)
                                      vulkan-1
                                      PREFIX
                                      "")
+    else()
+    set_target_properties(vulkan
+                          PROPERTIES
+                          LIBRARY_OUTPUT_NAME vulkan
+                          RUNTIME_OUTPUT_NAME vulkan-1
+                          ARCHIVE_OUTPUT_NAME vulkan)
+    endif()
     target_link_libraries(vulkan Vulkan::Headers)
 
-    if(ENABLE_WIN10_ONECORE)
+    if(MSVC AND ENABLE_WIN10_ONECORE)
         target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
         set_target_properties(vulkan PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
     else()
