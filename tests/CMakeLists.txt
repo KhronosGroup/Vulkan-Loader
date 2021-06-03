@@ -16,7 +16,7 @@
 # ~~~
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
-add_test(NAME vk_loader_validation_tests COMMAND vk_loader_validation_tests)
+#add_test(NAME vk_loader_validation_tests COMMAND vk_loader_validation_tests)
 
 set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 if(UNIX)
@@ -139,10 +139,12 @@ add_subdirectory(layers)
 
 option(TEST_USE_ADDRESS_SANITIZER "Linux only: Advanced memory checking" OFF)
 
+include(GoogleTest)
 add_subdirectory(framework)
 
 add_executable(test_regression loader_testing_main.cpp loader_regression_tests.cpp loader_version_tests.cpp)
 target_link_libraries(test_regression PRIVATE testing_dependencies)
+gtest_discover_tests(test_regression)
 
 add_executable(test_wsi loader_testing_main.cpp loader_wsi_tests.cpp)
 target_link_libraries(test_wsi PRIVATE testing_dependencies)
