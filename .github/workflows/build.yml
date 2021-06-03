@@ -62,7 +62,8 @@ jobs:
               run: make -C build
 
             - name: Run regression tests
-              run: ./build/tests/test_regression
+              working-directory: ./build
+              run: ctest --output-on-failure
 
             - name: Verify generated source files
               run: python scripts/generate_source.py --verify external/Vulkan-Headers/registry
@@ -105,6 +106,10 @@ jobs:
 
             - name: Build the loader
               run: cmake --build ./build --config ${{matrix.config}}
+
+            - name: Run regression tests
+              working-directory: ./build
+              run: ctest --output-on-failure
 
             - name: Verify generated source files
               run: python scripts/generate_source.py --verify external/Vulkan-Headers/registry
