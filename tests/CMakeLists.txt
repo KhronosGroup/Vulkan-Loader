@@ -16,7 +16,6 @@
 # ~~~
 
 add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
-add_test(NAME vk_loader_validation_tests COMMAND vk_loader_validation_tests)
 
 set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 if(UNIX)
@@ -111,34 +110,11 @@ endif()
 
 target_link_libraries(vk_loader_validation_tests "${LOADER_LIB}" gtest gtest_main)
 
-# Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
-if(WIN32)
-    file(COPY vk_loader_validation_tests.vcxproj.user DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest_main$<$<CONFIG:Debug>:d>.dll
-                            GTEST_COPY_SRC1)
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/gtest$<$<CONFIG:Debug>:d>.dll
-                            GTEST_COPY_SRC2)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> GTEST_COPY_DEST)
-    else()
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/gtest_main$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC1)
-        file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/gtest$<$<CONFIG:Debug>:d>.dll GTEST_COPY_SRC2)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} GTEST_COPY_DEST)
-    endif()
-    add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy ${GTEST_COPY_SRC1} ${GTEST_COPY_DEST}
-                       COMMAND ${CMAKE_COMMAND} -E copy ${GTEST_COPY_SRC2} ${GTEST_COPY_DEST})
-    # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
-    if(TARGET vulkan)
-        add_custom_command(TARGET vk_loader_validation_tests POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:vk_loader_validation_tests>)
-    endif()
-endif()
-
 add_subdirectory(layers)
 
 option(TEST_USE_ADDRESS_SANITIZER "Linux only: Advanced memory checking" OFF)
 
+include(GoogleTest)
 add_subdirectory(framework)
 
 add_executable(test_regression loader_testing_main.cpp loader_regression_tests.cpp loader_version_tests.cpp)
@@ -174,3 +150,6 @@ if(WIN32)
                            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:test_regression>)
     endif()
 endif()
+
+#must happen after the dll's get copied over
+gtest_discover_tests(test_regression)
