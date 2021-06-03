@@ -56,3 +56,12 @@ target_compile_definitions(test_icd_version_2_export_icd_enumerate_adapter_physi
 add_library(test_icd_version_2_export_icd_gpdpa SHARED ${TEST_ICD_SOURCES})
 target_link_libraries(test_icd_version_2_export_icd_gpdpa PRIVATE test_icd_deps)
 target_compile_definitions(test_icd_version_2_export_icd_gpdpa PRIVATE TEST_ICD_EXPORT_ICD_GPDPA=1 ${TEST_ICD_VERSION_2_DEFINES})
+
+if (WIN32)
+    target_sources(test_icd_export_none PRIVATE export_definitions/test_icd_0.def)
+    target_sources(test_icd_export_icd_gipa PRIVATE export_definitions/test_icd_gipa.def)
+    target_sources(test_icd_export_negotiate_interface_version PRIVATE export_definitions/test_icd_negotiate_version.def)
+    target_sources(test_icd_version_2 PRIVATE export_definitions/test_icd_2.def)
+    target_sources(test_icd_version_2_export_icd_enumerate_adapter_physical_devices PRIVATE export_definitions/test_icd_2_enum_adapter.def)
+    target_sources(test_icd_version_2_export_icd_gpdpa PRIVATE export_definitions/test_icd_2_gpdpa.def)
+endif()

@@ -44,7 +44,7 @@ static LibraryWrapper gdi32_dll;
 static PFN_LoaderEnumAdapters2 fpEnumAdapters2 = nullptr;
 static PFN_LoaderQueryAdapterInfo fpQueryAdapterInfo = nullptr;
 
-long ShimEnumAdapters2(LoaderEnumAdapters2 *adapters) {
+NTSTATUS APIENTRY ShimEnumAdapters2(LoaderEnumAdapters2 *adapters) {
     if (adapters == nullptr) {
         return STATUS_INVALID_PARAMETER;
     }
