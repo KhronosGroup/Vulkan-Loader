@@ -53,7 +53,7 @@ jobs:
               run: git clone --branch release-1.8.1 https://github.com/google/googletest.git external/googletest
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -Cexternal/helper.cmake
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -Cexternal/helper.cmake
               env:
                 CC: ${{matrix.cc}}
                 CXX: ${{matrix.cxx}}
@@ -97,11 +97,11 @@ jobs:
               run: git clone --branch v4.0.1 https://github.com/microsoft/Detours.git external/detours
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}} "-Cexternal/helper.cmake"
+              run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=On "-Cexternal/helper.cmake"
               if: matrix.os != 'windows-2016'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}} "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" "-Cexternal/helper.cmake"
+              run: cmake -S. -Bbuild -A${{matrix.arch}}  -DBUILD_TESTS=On "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" "-Cexternal/helper.cmake"
               if: matrix.os == 'windows-2016'
 
             - name: Build the loader
