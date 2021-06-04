@@ -358,8 +358,8 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
     }
     return TRUE;
 }
-FRAMEWORK_EXPORT PlatformShim &get_platform_shim() {
+FRAMEWORK_EXPORT PlatformShim *get_platform_shim() {
     platform_shim = PlatformShim();
-    return platform_shim;
+    return &platform_shim;
 }
 }
