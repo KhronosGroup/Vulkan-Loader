@@ -30,14 +30,14 @@
 static PlatformShim platform_shim;
 extern "C" {
 #if defined(__linux__)
-PlatformShim& get_platform_shim() {
+PlatformShim* get_platform_shim() {
     platform_shim = PlatformShim();
-    return platform_shim;
+    return &platform_shim;
 }
 #elif defined(__APPLE__)
-FRAMEWORK_EXPORT PlatformShim &get_platform_shim() {
+FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
     platform_shim = PlatformShim();
-    return platform_shim;
+    return &platform_shim;
 }
 #endif
 
