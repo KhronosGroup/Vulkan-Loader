@@ -39,6 +39,9 @@ PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) : debug_mode(debu
 #endif
     platform_shim->setup_override(debug_mode);
     platform_shim->reset(debug_mode);
+
+    // leave it permanently on at full blast
+    set_env_var("VK_LOADER_DEBUG", "all");
 }
 PlatformShimWrapper::~PlatformShimWrapper() {
     platform_shim->reset(debug_mode);

@@ -110,6 +110,10 @@ struct PlatformShim {
 
 // platform specific shim interface
 #if defined(WIN32)
+    // Control Platform Elevation Level
+    unsigned long elevation_level = SECURITY_MANDATORY_LOW_RID;
+    void set_elevation_level(unsigned long new_elevation_level) { elevation_level = new_elevation_level; }
+
     void add_dxgi_adapter(fs::path const& manifest_path, GpuType gpu_preference, uint32_t known_driver_index,
                           DXGI_ADAPTER_DESC1 desc1);
     void add_d3dkmt_adapter(SHIM_D3DKMT_ADAPTERINFO adapter, fs::path const& path);
