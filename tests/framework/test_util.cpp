@@ -28,22 +28,57 @@
 #include "test_util.h"
 
 #if defined(WIN32)
-bool set_env_var(std::string const& name, std::string const& value) { return SetEnvironmentVariableA(name.c_str(), value.c_str()); }
+#include <strsafe.h>
+const char* win_api_error_str(LSTATUS status) {
+    if (status == ERROR_INVALID_FUNCTION) return "ERROR_INVALID_FUNCTION";
+    if (status == ERROR_FILE_NOT_FOUND) return "ERROR_FILE_NOT_FOUND";
+    if (status == ERROR_PATH_NOT_FOUND) return "ERROR_PATH_NOT_FOUND";
+    if (status == ERROR_TOO_MANY_OPEN_FILES) return "ERROR_TOO_MANY_OPEN_FILES";
+    if (status == ERROR_ACCESS_DENIED) return "ERROR_ACCESS_DENIED";
+    if (status == ERROR_INVALID_HANDLE) return "ERROR_INVALID_HANDLE";
+    if (status == ERROR_ENVVAR_NOT_FOUND) return "ERROR_ENVVAR_NOT_FOUND";
+    if (status == ERROR_SETENV_FAILED) return "ERROR_SETENV_FAILED";
+    return "UNKNOWN ERROR";
+}
+
+void print_error_message(LSTATUS status, const char* function_name, std::string optional_message) {
+    LPVOID lpMsgBuf;
+    DWORD dw = GetLastError();
+
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, dw,
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
+
+    std::cerr << function_name << " failed with " << win_api_error_str(status) << ": "
+              << std::string(static_cast<LPTSTR>(lpMsgBuf));
+    if (optional_message != "") {
+        std::cerr << " | " << optional_message;
+    }
+    std::cerr << "\n";
+    LocalFree(lpMsgBuf);
+}
+
+bool set_env_var(std::string const& name, std::string const& value) {
+    bool ret = SetEnvironmentVariableA(name.c_str(), value.c_str());
+    if (ret == false) {
+        print_error_message(ERROR_SETENV_FAILED, "SetEnvironmentVariableA");
+        return true;
+    }
+    return false;
+}
 bool remove_env_var(std::string const& name) { return SetEnvironmentVariableA(name.c_str(), nullptr); }
 #define ENV_VAR_BUFFER_SIZE 4096
 std::string get_env_var(std::string const& name) {
     std::string value;
     value.resize(ENV_VAR_BUFFER_SIZE);
-    DWORD in_size = 0;
     DWORD ret = GetEnvironmentVariable(name.c_str(), (LPSTR)value.c_str(), ENV_VAR_BUFFER_SIZE);
-    if (0 == in_size) {
-        ret = GetLastError();
-        if (ERROR_ENVVAR_NOT_FOUND == ret) {
-            std::cerr << "Environment variable does not exist.\n";
-        }
+    if (0 == ret) {
+        print_error_message(ERROR_ENVVAR_NOT_FOUND, "GetEnvironmentVariable");
         return std::string();
     } else if (ENV_VAR_BUFFER_SIZE < ret) {
         std::cerr << "Not enough space to write environment variable" << name << "\n";
+        return std::string();
+    } else {
+        value.resize(ret);
     }
     return value;
 }
@@ -53,7 +88,10 @@ bool set_env_var(std::string const& name, std::string const& value) { return set
 bool remove_env_var(std::string const& name) { return unsetenv(name.c_str()); }
 std::string get_env_var(std::string const& name) {
     char* ret = getenv(name.c_str());
-    if (ret == nullptr) return std::string();
+    if (ret == nullptr){
+        std::cerr << "Failed to get environment variable:" << name << "\n";
+        return std::string();
+    }
     return ret;
 }
 #endif
@@ -318,8 +356,11 @@ int create_folder(path const& path) {
 
 int delete_folder(path const& folder) {
 #if defined(WIN32)
-    // TODO
-    return 0;
+    bool ret = RemoveDirectoryA(folder.c_str());
+    if (ret == 0) {
+        print_error_message(ERROR_REMOVEDIRECTORY_FAILED, "RemoveDirectoryA");
+    }
+    return ret;
 #else
     DIR* dir = opendir(folder.c_str());
     if (!dir) {
@@ -356,9 +397,9 @@ FolderManager::FolderManager(path root_path, std::string name, DebugMode debug) 
 }
 FolderManager::~FolderManager() {
     for (auto& file : files) {
-        if (debug >= DebugMode::log) std::cout << "Removing manifest " << file << " at " << (folder + file).str() << "\n";
+        if (debug >= DebugMode::log) std::cout << "Removing manifest " << file << " at " << (folder / file).str() << "\n";
         if (debug != DebugMode::no_delete) {
-            std::remove((folder + file).c_str());
+            std::remove((folder / file).c_str());
         }
     }
     if (debug != DebugMode::no_delete) {
@@ -377,7 +418,11 @@ path FolderManager::write(std::string const& name, ManifestICD const& icd_manife
         if (debug >= DebugMode::log) std::cout << "Creating icd manifest " << name << " at " << out_path.str() << "\n";
         files.emplace_back(name);
     }
-    auto file = std::ofstream(out_path.str());
+    auto file = std::ofstream(out_path.str(), std::ios_base::trunc | std::ios_base::out);
+    if (!file) {
+        std::cerr << "Failed to create icd manifest " << name << " at " << out_path.str() << "\n";
+        return out_path;
+    }
     file << icd_manifest.get_manifest_str() << std::endl;
     return out_path;
 }
@@ -390,24 +435,52 @@ path FolderManager::write(std::string const& name, ManifestLayer const& layer_ma
         if (debug >= DebugMode::log) std::cout << "Creating layer manifest " << name << " at " << out_path.str() << "\n";
         files.emplace_back(name);
     }
-    auto file = std::ofstream(out_path.str());
+    auto file = std::ofstream(out_path.str(), std::ios_base::trunc | std::ios_base::out);
     file << layer_manifest.get_manifest_str() << std::endl;
+    if (!file) {
+        std::cerr << "Failed to create icd manifest " << name << " at " << out_path.str() << "\n";
+        return out_path;
+    }
     return out_path;
 }
 // close file handle, delete file, remove `name` from managed file list.
 void FolderManager::remove(std::string const& name) {
+    path out_path = folder / name;
     auto found = std::find(files.begin(), files.end(), name);
     if (found != files.end()) {
-        if (debug >= DebugMode::log) std::cout << "Removing manifest " << name << " at " << (folder + name).str() << "\n";
+        if (debug >= DebugMode::log) std::cout << "Removing manifest " << name << " at " << out_path.str() << "\n";
         if (debug != DebugMode::no_delete) {
-            std::remove((folder + name).c_str());
+            std::remove(out_path.c_str());
             files.erase(found);
         }
     } else {
-        if (debug >= DebugMode::log) std::cout << "Couldn't remove manifest " << name << " at " << (folder + name).str() << ".\n";
+        if (debug >= DebugMode::log) std::cout << "Couldn't remove manifest " << name << " at " << out_path.str() << ".\n";
     }
 }
 
+// copy file into this folder
+path FolderManager::copy_file(path const& file, std::string const& new_name) {
+    auto new_filepath = folder / new_name;
+    auto found = std::find(files.begin(), files.end(), new_name);
+    if (found != files.end()) {
+        if (debug >= DebugMode::log) std::cout << "File location already contains" << new_name << ". Is this a bug?\n";
+    } else {
+        if (debug >= DebugMode::log) std::cout << "Copying file" << file.str() << " to " << new_filepath.str() << "\n";
+        files.emplace_back(new_name);
+    }
+    std::ifstream src(file.str(), std::ios::binary);
+    if (!src) {
+        std::cerr << "Failed to create file " << file.str() << " for copying from\n";
+        return new_filepath;
+    }
+    std::ofstream dst(new_filepath.str(), std::ios::binary);
+    if (!dst) {
+        std::cerr << "Failed to create file " << file.str() << " for copying to\n";
+        return new_filepath;
+    }
+    dst << src.rdbuf();
+    return new_filepath;
+}
 }  // namespace fs
 
 VulkanFunctions::VulkanFunctions() : loader(FRAMEWORK_VULKAN_LIBRARY_PATH) {

@@ -105,10 +105,10 @@ MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector,
     : FrameworkEnvironment(debug_mode) {
     uint32_t i = 0;
     for (auto& test_icd_detail : icd_details_vector) {
-        fs::path new_driver_location = icd_folder.location() / fs::path(test_icd_detail.icd_path).stem() + "_" +
+        fs::path new_driver_name = fs::path(test_icd_detail.icd_path).stem() + "_" +
                                        std::to_string(i) + fs::path(test_icd_detail.icd_path).extension();
 
-        fs::copy_file(test_icd_detail.icd_path, new_driver_location);
+        auto new_driver_location = icd_folder.copy_file(test_icd_detail.icd_path, new_driver_name.str());
 
         icds.push_back(detail::TestICDHandle(new_driver_location));
         test_icd_detail.icd_path = new_driver_location.c_str();

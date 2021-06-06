@@ -29,18 +29,19 @@
 
 struct ICDSetup {
     ICDSetup(const char* icd_path, const char* manifest_name)
-        : driver_store(FRAMEWORK_BUILD_DIRECTORY, "version_test_manifests") {
+        : _manifest_name(manifest_name), driver_store(FRAMEWORK_BUILD_DIRECTORY, "version_test_manifests") {
         ManifestICD icd_manifest;
         icd_manifest.lib_path = icd_path;
         icd_manifest.api_version = VK_MAKE_VERSION(1, 0, 0);
         driver_store.write(manifest_name, icd_manifest);
-
+        set_env_var("VK_LOADER_DEBUG", "all");
         set_env_var("VK_ICD_FILENAMES", (driver_store.location() / manifest_name).str());
-
+        auto str = get_env_var("VK_ICD_FILENAMES");
         driver_wrapper = LibraryWrapper(fs::path(icd_path));
         get_new_test_icd = driver_wrapper.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
     }
-    ~ICDSetup() { remove_env_var("VK_ICD_FILENAMES"); }
+    ~ICDSetup() { remove_env_var("VK_ICD_FILENAMES"); driver_store.remove(_manifest_name);  }
+    std::string _manifest_name;
     fs::FolderManager driver_store;
     LibraryWrapper driver_wrapper;
     GetNewTestICDFunc get_new_test_icd;
