@@ -95,6 +95,22 @@ void FrameworkEnvironment::AddExplicitLayer(ManifestLayer layer_manifest, const 
     platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc);
 }
 
+EnvVarICDOverrideShim::EnvVarICDOverrideShim(DebugMode debug_mode) : FrameworkEnvironment(debug_mode) {}
+
+void EnvVarICDOverrideShim::SetEnvOverrideICD(const char* icd_path, const char* manifest_name) {
+    ManifestICD icd_manifest;
+    icd_manifest.lib_path = icd_path;
+    icd_manifest.api_version = VK_MAKE_VERSION(1, 0, 0);
+
+    icd_folder.write(manifest_name, icd_manifest);
+    set_env_var("VK_ICD_FILENAMES", (icd_folder.location() / manifest_name).str());
+
+    driver_wrapper = LibraryWrapper(fs::path(icd_path));
+
+    get_new_test_icd = driver_wrapper.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
+
+}
+
 SingleICDShim::SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode) : FrameworkEnvironment(debug_mode) {
     icd_handle = detail::TestICDHandle(icd_details.icd_path);
 

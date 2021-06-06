@@ -27,61 +27,26 @@
 
 #include "test_environment.h"
 
-class ICDEnvVarSetup : public ::testing::Test {
+class EnvVarICDOverrideSetup : public ::testing::Test {
    protected:
-    virtual void SetUp() {}
+    virtual void SetUp() { env = std::unique_ptr<EnvVarICDOverrideShim>(new EnvVarICDOverrideShim()); }
 
     virtual void TearDown() {
         remove_env_var("VK_ICD_FILENAMES");
-        platform_shim->platform_shim->clear_override();
-
-        driver_store->remove(manifest_name);
-        vulkan_functions.reset();
-        platform_shim.reset();
-        driver_store.reset();
-    }
-
-   public:
-    std::string manifest_name;
-    std::unique_ptr<detail::PlatformShimWrapper> platform_shim;
-    std::unique_ptr<fs::FolderManager> driver_store;
-    std::unique_ptr<fs::FolderManager> null_dir;
-    LibraryWrapper driver_wrapper;
-    GetNewTestICDFunc get_new_test_icd;
-    std::unique_ptr<VulkanFunctions> vulkan_functions;
+        env.reset(); }
+    std::unique_ptr<EnvVarICDOverrideShim> env;
 };
 
-void SetupICDEnvVar(ICDEnvVarSetup& env, const char* icd_path, const char* manifest_name) {
-    env.manifest_name = manifest_name;
-    env.platform_shim = std::unique_ptr<detail::PlatformShimWrapper>(new detail::PlatformShimWrapper());
-    env.platform_shim->platform_shim->setup_override();
-    env.driver_store =
-        std::unique_ptr<fs::FolderManager>(new fs::FolderManager(FRAMEWORK_BUILD_DIRECTORY, "version_test_manifests"));
-    env.null_dir = std::unique_ptr<fs::FolderManager>(new fs::FolderManager(FRAMEWORK_BUILD_DIRECTORY, "null_dir"));
-    env.platform_shim->platform_shim->redirect_all_paths(env.null_dir->location());
-    env.driver_wrapper = LibraryWrapper(fs::path(icd_path));
-    env.get_new_test_icd = env.driver_wrapper.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
-#if defined(WIN32)
-    env.platform_shim->platform_shim->set_elevation_level(SECURITY_MANDATORY_LOW_RID);
-#endif
-    ManifestICD icd_manifest;
-    icd_manifest.lib_path = icd_path;
-    icd_manifest.api_version = VK_MAKE_VERSION(1, 0, 0);
-
-    env.driver_store->write(manifest_name, icd_manifest);
-    set_env_var("VK_ICD_FILENAMES", (env.driver_store->location() / manifest_name).str());
-    env.vulkan_functions = std::unique_ptr<VulkanFunctions>(new VulkanFunctions());
-}
 
 // Don't support vk_icdNegotiateLoaderICDInterfaceVersion
 // Loader calls vk_icdGetInstanceProcAddr second
 // does not support vk_icdGetInstanceProcAddr
 // must export vkGetInstanceProcAddr, vkCreateInstance, vkEnumerateInstanceExtensionProperties
-TEST_F(ICDEnvVarSetup, version_0_none) {
-    SetupICDEnvVar(*this, TEST_ICD_PATH_EXPORT_NONE, "test_icd_export_none.json");
-    auto* driver = get_new_test_icd();
+TEST_F(EnvVarICDOverrideSetup, version_0_none) {
+    env->SetEnvOverrideICD(TEST_ICD_PATH_EXPORT_NONE, "test_icd_export_none.json");
+    auto* driver = env->get_new_test_icd();
 
-    InstWrapper inst{*vulkan_functions};
+    InstWrapper inst{env->vulkan_functions};
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
@@ -90,11 +55,11 @@ TEST_F(ICDEnvVarSetup, version_0_none) {
 
 // Don't support vk_icdNegotiateLoaderICDInterfaceVersion
 // the loader calls vk_icdGetInstanceProcAddr first
-TEST_F(ICDEnvVarSetup, version_1_icd_gipa) {
-    SetupICDEnvVar(*this, TEST_ICD_PATH_EXPORT_ICD_GIPA, "test_icd_export_icd_gipa.json");
-    auto* driver = get_new_test_icd();
+TEST_F(EnvVarICDOverrideSetup, version_1_icd_gipa) {
+    env->SetEnvOverrideICD(TEST_ICD_PATH_EXPORT_ICD_GIPA, "test_icd_export_icd_gipa.json");
+    auto* driver = env->get_new_test_icd();
 
-    InstWrapper inst{*vulkan_functions};
+    InstWrapper inst{env->vulkan_functions};
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
@@ -103,12 +68,10 @@ TEST_F(ICDEnvVarSetup, version_1_icd_gipa) {
 
 // support vk_icdNegotiateLoaderICDInterfaceVersion but not vk_icdGetInstanceProcAddr
 // should assert that `interface_vers == 0` due to version mismatch, only checkable in Debug Mode
-TEST_F(ICDEnvVarSetup, version_negotiate_interface_version_death_test) {
-    // may be needed to surpress debug assert popups on windows
-    //::testing::FLAGS_gtest_death_test_style = "threadsafe";
-    SetupICDEnvVar(*this, TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION, "test_icd_export_negotiate_interface_version.json");
+TEST_F(EnvVarICDOverrideSetup, version_negotiate_interface_version_death_test) {
+    env->SetEnvOverrideICD(TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION, "test_icd_export_negotiate_interface_version.json");
 
-    InstWrapper inst{*vulkan_functions};
+    InstWrapper inst{env->vulkan_functions};
     InstanceCreateInfo inst_create_info;
 #if !defined(NDEBUG)
 #if defined(WIN32)
@@ -122,11 +85,11 @@ TEST_F(ICDEnvVarSetup, version_negotiate_interface_version_death_test) {
 }
 
 // export vk_icdNegotiateLoaderICDInterfaceVersion and vk_icdGetInstanceProcAddr
-TEST_F(ICDEnvVarSetup, version_2_negotiate_interface_version_and_icd_gipa) {
-    SetupICDEnvVar(*this, TEST_ICD_PATH_VERSION_2, "test_icd_version_2.json");
-    auto* driver = get_new_test_icd();
+TEST_F(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa) {
+    env->SetEnvOverrideICD(TEST_ICD_PATH_VERSION_2, "test_icd_version_2.json");
+    auto* driver = env->get_new_test_icd();
 
-    InstWrapper inst{*vulkan_functions};
+    InstWrapper inst{env->vulkan_functions};
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 

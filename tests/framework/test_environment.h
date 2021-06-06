@@ -115,6 +115,16 @@ struct FrameworkEnvironment {
     VulkanFunctions vulkan_functions;
 };
 
+struct EnvVarICDOverrideShim : FrameworkEnvironment {
+    EnvVarICDOverrideShim(DebugMode debug_mode = DebugMode::none);
+
+    void SetEnvOverrideICD(const char* icd_path, const char* manifest_name);
+
+    LibraryWrapper driver_wrapper;
+    GetNewTestICDFunc get_new_test_icd;
+};
+
+
 struct SingleICDShim : FrameworkEnvironment {
     SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode = DebugMode::none);
 
