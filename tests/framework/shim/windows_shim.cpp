@@ -41,6 +41,11 @@ extern "C" {
 
 static LibraryWrapper gdi32_dll;
 
+using PFN_GetSidSubAuthority = PDWORD (__stdcall *)(PSID pSid, DWORD nSubAuthority);
+static PFN_GetSidSubAuthority fpGetSidSubAuthority = GetSidSubAuthority;
+
+PDWORD __stdcall ShimGetSidSubAuthority(PSID pSid, DWORD nSubAuthority) { return &platform_shim.elevation_level; }
+
 static PFN_LoaderEnumAdapters2 fpEnumAdapters2 = nullptr;
 static PFN_LoaderQueryAdapterInfo fpQueryAdapterInfo = nullptr;
 
@@ -302,6 +307,7 @@ void WINAPI DetourFunctions() {
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID &)fpGetSidSubAuthority, ShimGetSidSubAuthority);
     DetourAttach(&(PVOID &)fpEnumAdapters2, ShimEnumAdapters2);
     DetourAttach(&(PVOID &)fpQueryAdapterInfo, ShimQueryAdapterInfo);
     DetourAttach(&(PVOID &)REAL_CM_Get_Device_ID_List_SizeW, SHIM_CM_Get_Device_ID_List_SizeW);
@@ -325,6 +331,7 @@ void WINAPI DetourFunctions() {
 void DetachFunctions() {
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
+    DetourDetach(&(PVOID &)fpGetSidSubAuthority, ShimGetSidSubAuthority);
     DetourDetach(&(PVOID &)fpEnumAdapters2, ShimEnumAdapters2);
     DetourDetach(&(PVOID &)fpQueryAdapterInfo, ShimQueryAdapterInfo);
     DetourDetach(&(PVOID &)REAL_CM_Get_Device_ID_List_SizeW, SHIM_CM_Get_Device_ID_List_SizeW);

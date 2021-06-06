@@ -32,6 +32,7 @@
 struct PhysicalDevice {
     PhysicalDevice() {}
     PhysicalDevice(std::string name) : deviceName(name) {}
+    PhysicalDevice(const char* name) : deviceName(name) {}
     PhysicalDevice& set_properties(VkPhysicalDeviceProperties properties) {
         this->properties = properties;
         return *this;

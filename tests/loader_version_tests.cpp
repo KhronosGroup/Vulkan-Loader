@@ -27,36 +27,61 @@
 
 #include "test_environment.h"
 
-struct ICDSetup {
-    ICDSetup(const char* icd_path, const char* manifest_name)
-        : _manifest_name(manifest_name), driver_store(FRAMEWORK_BUILD_DIRECTORY, "version_test_manifests") {
-        ManifestICD icd_manifest;
-        icd_manifest.lib_path = icd_path;
-        icd_manifest.api_version = VK_MAKE_VERSION(1, 0, 0);
-        driver_store.write(manifest_name, icd_manifest);
-        set_env_var("VK_LOADER_DEBUG", "all");
-        set_env_var("VK_ICD_FILENAMES", (driver_store.location() / manifest_name).str());
-        auto str = get_env_var("VK_ICD_FILENAMES");
-        driver_wrapper = LibraryWrapper(fs::path(icd_path));
-        get_new_test_icd = driver_wrapper.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
+class ICDEnvVarSetup : public ::testing::Test {
+   protected:
+    virtual void SetUp() {}
+
+    virtual void TearDown() {
+        remove_env_var("VK_ICD_FILENAMES");
+        platform_shim->platform_shim->clear_override();
+
+        driver_store->remove(manifest_name);
+        vulkan_functions.reset();
+        platform_shim.reset();
+        driver_store.reset();
     }
-    ~ICDSetup() { remove_env_var("VK_ICD_FILENAMES"); driver_store.remove(_manifest_name);  }
-    std::string _manifest_name;
-    fs::FolderManager driver_store;
+
+   public:
+    std::string manifest_name;
+    std::unique_ptr<detail::PlatformShimWrapper> platform_shim;
+    std::unique_ptr<fs::FolderManager> driver_store;
+    std::unique_ptr<fs::FolderManager> null_dir;
     LibraryWrapper driver_wrapper;
     GetNewTestICDFunc get_new_test_icd;
-    VulkanFunctions vulkan_functions;
+    std::unique_ptr<VulkanFunctions> vulkan_functions;
 };
+
+void SetupICDEnvVar(ICDEnvVarSetup& env, const char* icd_path, const char* manifest_name) {
+    env.manifest_name = manifest_name;
+    env.platform_shim = std::unique_ptr<detail::PlatformShimWrapper>(new detail::PlatformShimWrapper());
+    env.platform_shim->platform_shim->setup_override();
+    env.driver_store =
+        std::unique_ptr<fs::FolderManager>(new fs::FolderManager(FRAMEWORK_BUILD_DIRECTORY, "version_test_manifests"));
+    env.null_dir = std::unique_ptr<fs::FolderManager>(new fs::FolderManager(FRAMEWORK_BUILD_DIRECTORY, "null_dir"));
+    env.platform_shim->platform_shim->redirect_all_paths(env.null_dir->location());
+    env.driver_wrapper = LibraryWrapper(fs::path(icd_path));
+    env.get_new_test_icd = env.driver_wrapper.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
+#if defined(WIN32)
+    env.platform_shim->platform_shim->set_elevation_level(SECURITY_MANDATORY_LOW_RID);
+#endif
+    ManifestICD icd_manifest;
+    icd_manifest.lib_path = icd_path;
+    icd_manifest.api_version = VK_MAKE_VERSION(1, 0, 0);
+
+    env.driver_store->write(manifest_name, icd_manifest);
+    set_env_var("VK_ICD_FILENAMES", (env.driver_store->location() / manifest_name).str());
+    env.vulkan_functions = std::unique_ptr<VulkanFunctions>(new VulkanFunctions());
+}
 
 // Don't support vk_icdNegotiateLoaderICDInterfaceVersion
 // Loader calls vk_icdGetInstanceProcAddr second
 // does not support vk_icdGetInstanceProcAddr
 // must export vkGetInstanceProcAddr, vkCreateInstance, vkEnumerateInstanceExtensionProperties
-TEST(DriverNone, version_0) {
-    ICDSetup setup(TEST_ICD_PATH_EXPORT_NONE, "test_icd_export_none.json");
-    auto* driver = setup.get_new_test_icd();
+TEST_F(ICDEnvVarSetup, version_0_none) {
+    SetupICDEnvVar(*this, TEST_ICD_PATH_EXPORT_NONE, "test_icd_export_none.json");
+    auto* driver = get_new_test_icd();
 
-    InstWrapper inst{setup.vulkan_functions};
+    InstWrapper inst{*vulkan_functions};
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
@@ -65,11 +90,11 @@ TEST(DriverNone, version_0) {
 
 // Don't support vk_icdNegotiateLoaderICDInterfaceVersion
 // the loader calls vk_icdGetInstanceProcAddr first
-TEST(DriverICDGIPA, version_1) {
-    ICDSetup setup(TEST_ICD_PATH_EXPORT_ICD_GIPA, "test_icd_export_icd_gipa.json");
-    auto* driver = setup.get_new_test_icd();
+TEST_F(ICDEnvVarSetup, version_1_icd_gipa) {
+    SetupICDEnvVar(*this, TEST_ICD_PATH_EXPORT_ICD_GIPA, "test_icd_export_icd_gipa.json");
+    auto* driver = get_new_test_icd();
 
-    InstWrapper inst{setup.vulkan_functions};
+    InstWrapper inst{*vulkan_functions};
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
@@ -78,12 +103,12 @@ TEST(DriverICDGIPA, version_1) {
 
 // support vk_icdNegotiateLoaderICDInterfaceVersion but not vk_icdGetInstanceProcAddr
 // should assert that `interface_vers == 0` due to version mismatch, only checkable in Debug Mode
-TEST(DriverNegotiateInterfaceVersionDeathTest, version_negotiate_interface_version) {
+TEST_F(ICDEnvVarSetup, version_negotiate_interface_version_death_test) {
     // may be needed to surpress debug assert popups on windows
     //::testing::FLAGS_gtest_death_test_style = "threadsafe";
-    ICDSetup setup(TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION, "test_icd_export_negotiate_interface_version.json");
+    SetupICDEnvVar(*this, TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION, "test_icd_export_negotiate_interface_version.json");
 
-    InstWrapper inst{setup.vulkan_functions};
+    InstWrapper inst{*vulkan_functions};
     InstanceCreateInfo inst_create_info;
 #if !defined(NDEBUG)
 #if defined(WIN32)
@@ -97,11 +122,11 @@ TEST(DriverNegotiateInterfaceVersionDeathTest, version_negotiate_interface_versi
 }
 
 // export vk_icdNegotiateLoaderICDInterfaceVersion and vk_icdGetInstanceProcAddr
-TEST(DriverNegotiateInterfaceVersionAndICDGIPA, version_2) {
-    ICDSetup setup(TEST_ICD_PATH_VERSION_2, "test_icd_version_2.json");
-    auto* driver = setup.get_new_test_icd();
+TEST_F(ICDEnvVarSetup, version_2_negotiate_interface_version_and_icd_gipa) {
+    SetupICDEnvVar(*this, TEST_ICD_PATH_VERSION_2, "test_icd_version_2.json");
+    auto* driver = get_new_test_icd();
 
-    InstWrapper inst{setup.vulkan_functions};
+    InstWrapper inst{*vulkan_functions};
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
