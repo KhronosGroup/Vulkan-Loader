@@ -198,32 +198,6 @@ inline std::string category_path_name(ManifestCategory category) {
         return "Drivers";
 }
 
-inline const char* win_api_error_str(LSTATUS status) {
-    if (status == ERROR_INVALID_FUNCTION) return "ERROR_INVALID_FUNCTION";
-    if (status == ERROR_FILE_NOT_FOUND) return "ERROR_FILE_NOT_FOUND";
-    if (status == ERROR_PATH_NOT_FOUND) return "ERROR_PATH_NOT_FOUND";
-    if (status == ERROR_TOO_MANY_OPEN_FILES) return "ERROR_TOO_MANY_OPEN_FILES";
-    if (status == ERROR_ACCESS_DENIED) return "ERROR_ACCESS_DENIED";
-    if (status == ERROR_INVALID_HANDLE) return "ERROR_INVALID_HANDLE";
-    return "UNKNOWN ERROR";
-}
-
-inline void print_error_message(LSTATUS status, const char* function_name, std::string optional_message = "") {
-    LPVOID lpMsgBuf;
-    DWORD dw = GetLastError();
-
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, dw,
-                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
-
-    std::cerr << function_name << " failed with " << win_api_error_str(status) << ": "
-              << std::string(static_cast<LPTSTR>(lpMsgBuf));
-    if (optional_message != "") {
-        std::cerr << " | " << optional_message;
-    }
-    std::cerr << "\n";
-    LocalFree(lpMsgBuf);
-}
-
 inline std::string override_base_path(uint32_t random_base_path) {
     return std::string("SOFTWARE\\LoaderRegressionTests_") + std::to_string(random_base_path);
 }

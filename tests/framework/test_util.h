@@ -69,6 +69,7 @@
 #if defined(WIN32)
 #include <direct.h>
 #include <windows.h>
+#include <strsafe.h>
 #elif defined(__linux__) || defined(__APPLE__)
 #include <dirent.h>
 #include <sys/types.h>
@@ -102,6 +103,14 @@ std::string get_env_var(std::string const& name);
 bool set_env_var(std::string const& name, std::string const& value);
 bool remove_env_var(std::string const& name);
 std::string get_env_var(std::string const& name);
+#endif
+
+//Windows specific error handling logic
+#if defined(WIN32)
+const long ERROR_SETENV_FAILED = 10543;           // chosen at random, attempts to not conflict
+const long ERROR_REMOVEDIRECTORY_FAILED = 10544;  // chosen at random, attempts to not conflict
+const char* win_api_error_str(LSTATUS status);
+void print_error_message(LSTATUS status, const char* function_name, std::string optional_message = "");
 #endif
 
 enum class DebugMode {
@@ -260,6 +269,9 @@ class FolderManager {
     // close file handle, delete file, remove `name` from managed file list.
     void remove(std::string const& name);
 
+    // copy file into this folder with name `new_name`. Returns the full path of the file that was copied
+    path copy_file(path const& file, std::string const& new_name);
+
     // location of the managed folder
     path location() const { return folder; }
 
@@ -271,13 +283,6 @@ class FolderManager {
     path folder;
     std::vector<std::string> files;
 };
-
-inline void copy_file(path const& origin, path const& destination) {
-    std::ifstream src(origin.str(), std::ios::binary);
-    std::ofstream dst(destination.str(), std::ios::binary);
-    dst << src.rdbuf();
-}
-
 }  // namespace fs
 
 #if defined(WIN32)
