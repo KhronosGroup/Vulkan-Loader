@@ -21,10 +21,11 @@ if (WIN32)
     target_include_directories(shim-library PUBLIC ${CMAKE_SOURCE_DIR}/loader ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 elseif(UNIX)
-    add_library(shim-library STATIC shim.h linux_shim.cpp)
+    if(APPLE)
+        add_library(shim-library SHARED shim.h unix_shim.cpp)
+    else()
+        add_library(shim-library STATIC shim.h unix_shim.cpp)
+    endif()
     target_link_libraries(shim-library PRIVATE testing_framework_util)
     target_include_directories(shim-library PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-
-elseif(APPLE)
-
 endif()
