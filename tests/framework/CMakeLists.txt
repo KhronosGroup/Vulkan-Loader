@@ -17,7 +17,7 @@
 
 add_library(testing_framework_util STATIC test_util.cpp test_util.h)
 target_link_libraries(testing_framework_util PUBLIC Vulkan::Headers)
-if(UNIX)
+if(UNIX OR APPLE)
     target_link_libraries(testing_framework_util PUBLIC ${CMAKE_DL_LIBS})
 endif()
 
@@ -30,7 +30,7 @@ target_compile_options(testing_framework_util INTERFACE
         $<$<BUILD_WSI_XLIB_SUPPORT>:-DVK_USE_PLATFORM_XLIB_KHR>
         $<$<BUILD_WSI_WAYLAND_SUPPORT>:-DVK_USE_PLATFORM_WAYLAND_KHR>>
     )
-if(UNIX AND NOT APPLE)
+if(UNIX)
     target_compile_options(testing_framework_util PUBLIC -fPIC)
 endif()
 target_include_directories(testing_framework_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
