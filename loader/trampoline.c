@@ -482,9 +482,18 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     // Scan/discover all ICD libraries
     memset(&ptr_instance->icd_tramp_list, 0, sizeof(ptr_instance->icd_tramp_list));
     res = loader_icd_scan(ptr_instance, &ptr_instance->icd_tramp_list);
-    if (res != VK_SUCCESS) {
+    if (res == VK_SUCCESS && ptr_instance->icd_tramp_list.count == 0) {
+        // No drivers found
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
+    if (res != VK_SUCCESS) {
+        if (res != VK_ERROR_OUT_OF_HOST_MEMORY && ptr_instance->icd_tramp_list.count == 0) {
+            res = VK_ERROR_INCOMPATIBLE_DRIVER;
+        }
+        goto out;
+    }
+
 
     // Get extensions from all ICD's, merge so no duplicates, then validate
     res = loader_get_icd_loader_instance_extensions(ptr_instance, &ptr_instance->icd_tramp_list, &ptr_instance->ext_list);
