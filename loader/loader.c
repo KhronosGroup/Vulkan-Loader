@@ -632,7 +632,7 @@ bool loaderGetDeviceRegistryEntry(const struct loader_instance *inst, char **reg
     if (status != CR_SUCCESS) {
         loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
             "loaderGetDeviceRegistryEntry: Failed to open registry key for DeviceID(%d)", dev_id);
-        *result = VK_ERROR_INITIALIZATION_FAILED;
+        *result = VK_ERROR_INCOMPATIBLE_DRIVER;
         return false;
     }
 
@@ -677,14 +677,14 @@ bool loaderGetDeviceRegistryEntry(const struct loader_instance *inst, char **reg
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
             "loaderGetDeviceRegistryEntry: DeviceID(%d) Failed to obtain %s", value_name);
 
-        *result = VK_ERROR_INITIALIZATION_FAILED;
+        *result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
     if (data_type != REG_SZ && data_type != REG_MULTI_SZ) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
             "loaderGetDeviceRegistryEntry: Invalid %s data type. Expected REG_SZ or REG_MULTI_SZ.", value_name);
-        *result = VK_ERROR_INITIALIZATION_FAILED;
+        *result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
@@ -799,7 +799,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
                     loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                                "loaderGetDeviceRegistryFiles: unable to obtain GUID for:%d error:%d", childID, status);
 
-                    result = VK_ERROR_INITIALIZATION_FAILED;
+                    result = VK_ERROR_INCOMPATIBLE_DRIVER;
                     continue;
                 }
 
@@ -821,7 +821,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
     }
 
     if (!found && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
-        result = VK_ERROR_INITIALIZATION_FAILED;
+        result = VK_ERROR_INCOMPATIBLE_DRIVER;
     }
 
     return result;
@@ -1047,7 +1047,7 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
     }
 
     if (!found && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
-        result = VK_ERROR_INITIALIZATION_FAILED;
+        result = VK_ERROR_INCOMPATIBLE_DRIVER;
     }
 
 out:
@@ -4344,20 +4344,25 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
         }
     }
 
+    if (regHKR_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
     // This call looks into the Khronos non-device specific section of the registry.
     bool use_secondary_hive = (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) && (!IsHighIntegrity());
     VkResult reg_result = loaderGetRegistryFiles(inst, registry_location, use_secondary_hive, &search_path, &reg_size);
+    if (reg_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
 
     if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == search_path) {
         if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
             loader_log(
                 inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                 "ReadDataFilesInRegistry: Registry lookup failed to get ICD manifest files.  Possibly missing Vulkan driver?");
-            if (VK_SUCCESS == reg_result || VK_ERROR_OUT_OF_HOST_MEMORY == reg_result) {
-                vk_result = reg_result;
-            } else {
-                vk_result = regHKR_result;
-            }
+            vk_result = VK_ERROR_INCOMPATIBLE_DRIVER;
         } else {
             if (warn_if_not_present) {
                 if (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) {
@@ -4370,12 +4375,8 @@ static VkResult ReadDataFilesInRegistry(const struct loader_instance *inst, enum
                                "ReadDataFilesInRegistry: Registry lookup failed to get data files.");
                 }
             }
-            if (reg_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-                vk_result = reg_result;
-            } else {
-                // Return success for now since it's not critical for layers
-                vk_result = VK_SUCCESS;
-            }
+            // Return success for now since it's not critical for layers
+            vk_result = VK_SUCCESS;
         }
         goto out;
     }
