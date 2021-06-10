@@ -3790,6 +3790,31 @@ static inline VkResult CheckAndAdjustDataFileList(const struct loader_instance *
     return VK_SUCCESS;
 }
 
+// add file_name to the out_files manifest list. Assumes its a valid manifest file name
+static VkResult AddManifestFile(const struct loader_instance *inst, const char* file_name, struct loader_data_files *out_files) {
+    VkResult vk_result = VK_SUCCESS;
+
+    // Check and allocate space in the manifest list if necessary
+    vk_result = CheckAndAdjustDataFileList(inst, out_files);
+    if (VK_SUCCESS != vk_result) {
+        goto out;
+    }
+
+    out_files->filename_list[out_files->count] =
+        loader_instance_heap_alloc(inst, strlen(file_name) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (out_files->filename_list[out_files->count] == NULL) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "AddManifestFile: Failed to allocate space for manifest file %d list",
+                   out_files->count);
+        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    strcpy(out_files->filename_list[out_files->count++], file_name);
+
+out:
+    return vk_result;
+}
+
 // If the file found is a manifest file name, add it to the out_files manifest list.
 static VkResult AddIfManifestFile(const struct loader_instance *inst, const char *file_name, struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
@@ -3806,22 +3831,7 @@ static VkResult AddIfManifestFile(const struct loader_instance *inst, const char
         goto out;
     }
 
-    // Check and allocate space in the manifest list if necessary
-    vk_result = CheckAndAdjustDataFileList(inst, out_files);
-    if (VK_SUCCESS != vk_result) {
-        goto out;
-    }
-
-    out_files->filename_list[out_files->count] =
-        loader_instance_heap_alloc(inst, strlen(file_name) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (out_files->filename_list[out_files->count] == NULL) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "AddIfManifestFile: Failed to allocate space for manifest file %d list",
-                   out_files->count);
-        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-
-    strcpy(out_files->filename_list[out_files->count++], file_name);
+    vk_result = AddManifestFile(inst, file_name, out_files);
 
 out:
 
