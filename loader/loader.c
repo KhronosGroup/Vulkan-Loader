@@ -625,10 +625,8 @@ bool loaderGetDeviceRegistryEntry(const struct loader_instance *inst, char **reg
     char *manifest_path = NULL;
     bool found = false;
 
-    if (NULL == total_size || NULL == reg_data) {
-        *result = VK_ERROR_INITIALIZATION_FAILED;
-        return false;
-    }
+    assert(reg_data != NULL && "loaderGetDeviceRegistryEntry: reg_data is a NULL pointer");
+    assert(total_size != NULL && "loaderGetDeviceRegistryEntry: total_size is a NULL pointer");
 
     CONFIGRET status = CM_Open_DevNode_Key(dev_id, KEY_QUERY_VALUE, 0, RegDisposition_OpenExisting, &hkrKey, CM_REGISTRY_SOFTWARE);
     if (status != CR_SUCCESS) {
@@ -730,10 +728,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
     VkResult result = VK_SUCCESS;
     bool found = false;
 
-    if (NULL == reg_data) {
-        result = VK_ERROR_INITIALIZATION_FAILED;
-        return result;
-    }
+    assert(reg_data != NULL && "loaderGetDeviceRegistryFiles: reg_data is NULL");
 
     // if after obtaining the DeviceNameSize, new device is added start over
     do {
@@ -906,10 +901,7 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
     IDXGIFactory1 *dxgi_factory = NULL;
     bool is_driver = !strcmp(location, VK_DRIVERS_INFO_REGISTRY_LOC);
 
-    if (NULL == reg_data) {
-        result = VK_ERROR_INITIALIZATION_FAILED;
-        goto out;
-    }
+    assert(reg_data != NULL && "loaderGetRegistryFiles: reg_data is a NULL pointer");
 
     if (is_driver) {
         HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory1, (void **)&dxgi_factory);
@@ -3802,11 +3794,8 @@ static inline VkResult CheckAndAdjustDataFileList(const struct loader_instance *
 static VkResult AddIfManifestFile(const struct loader_instance *inst, const char *file_name, struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
 
-    if (NULL == file_name || NULL == out_files) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "AddIfManfistFile: Received NULL pointer");
-        vk_result = VK_ERROR_INITIALIZATION_FAILED;
-        goto out;
-    }
+    assert(NULL != file_name && "AddIfManifestFile: Received NULL pointer for file_name");
+    assert(NULL != out_files && "AddIfManifestFile: Received NULL pointer for out_files");
 
     // Look for files ending with ".json" suffix
     size_t name_len = strlen(file_name);
@@ -3826,7 +3815,7 @@ static VkResult AddIfManifestFile(const struct loader_instance *inst, const char
     out_files->filename_list[out_files->count] =
         loader_instance_heap_alloc(inst, strlen(file_name) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (out_files->filename_list[out_files->count] == NULL) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "AddIfManfistFile: Failed to allocate space for manifest file %d list",
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "AddIfManifestFile: Failed to allocate space for manifest file %d list",
                    out_files->count);
         vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
