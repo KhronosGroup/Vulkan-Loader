@@ -18,3 +18,5 @@
 # Generated source files will always have LF (unix) line endings on checkout.
 loader/generated/*.c text eol=lf
 loader/generated/*.h text eol=lf
+loader/generated/*.cmake text eol=lf
+
