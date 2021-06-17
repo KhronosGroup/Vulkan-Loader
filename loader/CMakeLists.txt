@@ -264,11 +264,8 @@ else()
         add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     endif()
     add_dependencies(vulkan loader_asm_gen_files)
-    set_target_properties(vulkan
-                          PROPERTIES SOVERSION
-                                     "1"
-                                     VERSION
-                                     "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+    # set version based on VK_HEADER_VERSION used to generate the code
+    include(generated/loader_generated_header_version.cmake)
     target_link_libraries(vulkan ${CMAKE_DL_LIBS} m)
     if (NOT ANDROID)
         target_link_libraries(vulkan pthread)

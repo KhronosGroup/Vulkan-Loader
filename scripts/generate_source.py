@@ -45,7 +45,8 @@ def main(argv):
                                             'vk_layer_dispatch_table.h',
                                             'vk_loader_extensions.h',
                                             'vk_loader_extensions.c',
-                                            'vk_object_types.h']]
+                                            'vk_object_types.h',
+                                            'loader_generated_header_version.cmake']]
 
     repo_dir = common_codegen.repo_relative('loader/generated')
 
