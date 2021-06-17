@@ -229,21 +229,14 @@ if(WIN32)
                 $<TARGET_OBJECTS:loader-unknown-chain>
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
-    if(MSVC)
+
+    # when adding the suffix the import and runtime library names must be consistent
+    # mingw: libvulkan-1.dll.a / libvulkan-1.dll
+    # msvc: vulkan-1.lib / vulkan-1.dll
     set_target_properties(vulkan
                           PROPERTIES
-                          #LINK_FLAGS_DEBUG "/ignore:4098"
-                                     OUTPUT_NAME
-                                     vulkan-1
-                                     PREFIX
-                                     "")
-    else()
-    set_target_properties(vulkan
-                          PROPERTIES
-                          LIBRARY_OUTPUT_NAME vulkan
-                          RUNTIME_OUTPUT_NAME vulkan-1
-                          ARCHIVE_OUTPUT_NAME vulkan)
-    endif()
+                          OUTPUT_NAME vulkan-1)
+
     target_link_libraries(vulkan Vulkan::Headers)
 
     if(MSVC AND ENABLE_WIN10_ONECORE)
