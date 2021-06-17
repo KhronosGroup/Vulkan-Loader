@@ -1868,8 +1868,20 @@ Here's an example of a meta-layer manifest file:
 
 ##### Layer Manifest File Version History
 
-The current highest supported Layer Manifest file format supported is 1.1.2.
+The current highest supported Layer Manifest file format supported is 1.2.0.
 Information about each version is detailed in the following sub-sections:
+
+###### Layer Manifest File Version 1.2.0
+
+The ability to define the layer settings as defined by the [layer manifest schema](https://github.com/LunarG/VulkanTools/blob/master/vkconfig_core/layers/layers_schema.json).
+
+The ability to briefly document the layer thanks to the fields:
+ * "introduction": Presentation of the purpose of the layer in a paragraph.
+ * "url": A link the the layer home page.
+ * "platforms": The list of supported platforms of the layer
+ * "status": The life cycle of the layer: Alpha, Beta, Stable, or Deprecated
+
+These changes were made to enable third-party layers to expose their features within [Vulkan Configurator](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md) or other tools.
 
 ###### Layer Manifest File Version 1.1.2
 
