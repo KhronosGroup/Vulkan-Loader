@@ -50,7 +50,7 @@ jobs:
               run: python scripts/update_deps.py --dir external
 
             - name: Get Google Test
-              run: git clone --branch release-1.8.1 https://github.com/google/googletest.git external/googletest
+              run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
 
             - name: Generate build files
               run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -Cexternal/helper.cmake
@@ -91,7 +91,7 @@ jobs:
               run: python scripts/update_deps.py --dir external
 
             - name: Get Google Test
-              run: git clone --branch release-1.8.1 https://github.com/google/googletest.git external/googletest
+              run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
 
             - name: Get Detours
               run: git clone --branch v4.0.1 https://github.com/microsoft/Detours.git external/detours
@@ -131,7 +131,7 @@ jobs:
               run: python scripts/update_deps.py --dir external
 
             - name: Get Google Test
-              run: git clone --branch release-1.8.1 https://github.com/google/googletest.git external/googletest
+              run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
 
             - name: Generate build files
               run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -Cexternal/helper.cmake

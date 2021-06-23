@@ -84,7 +84,7 @@ Vulkan-Loader repository and run:
 
     git clone https://github.com/google/googletest.git external/googletest
     cd external/googletest
-    git checkout tags/release-1.8.1
+    git checkout tags/release-1.10.0
 
 before configuring your build with CMake.
 
@@ -689,7 +689,7 @@ Fuchsia uses the project's GN build system to integrate with the Fuchsia platfor
 ## Building on QNX
 
 QNX is using its own build system. The proper build environment must be set
-under the QNX host development system (Linux, Win64, MacOS) by invoking 
+under the QNX host development system (Linux, Win64, MacOS) by invoking
 the shell/batch script provided with QNX installation.
 
 Then change working directory to the "build-qnx" in this project and type "make".
