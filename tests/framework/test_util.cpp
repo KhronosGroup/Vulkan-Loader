@@ -356,6 +356,10 @@ int create_folder(path const& path) {
 
 int delete_folder(path const& folder) {
 #if defined(WIN32)
+    if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(folder.c_str()) && GetLastError() == ERROR_FILE_NOT_FOUND) {
+        // nothing to delete
+        return 0;
+    }
     bool ret = RemoveDirectoryA(folder.c_str());
     if (ret == 0) {
         print_error_message(ERROR_REMOVEDIRECTORY_FAILED, "RemoveDirectoryA");

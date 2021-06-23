@@ -259,6 +259,9 @@ struct path {
     std::string contents;
 };
 
+int create_folder(path const& path);
+int delete_folder(path const& folder);
+
 class FolderManager {
    public:
     explicit FolderManager(path root_path, std::string name, DebugMode debug = DebugMode::none);

@@ -41,6 +41,13 @@ int main(int argc, char** argv) {
     _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
 #endif
 
+    // clean up folders from old test
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "null_dir");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "icd_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "portability_icd_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_layer_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "implicit_layer_manifests");
+
     ::testing::InitGoogleTest(&argc, argv);
 
     int result = RUN_ALL_TESTS();
