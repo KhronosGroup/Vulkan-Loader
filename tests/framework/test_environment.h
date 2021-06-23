@@ -29,9 +29,8 @@
  * The test_environment is what combines the icd, layer, and shim library into a single object that
  * test fixtures can create and use. Responsible for loading the libraries and establishing the
  * channels for tests to talk with the icd's and layers.
-*/
+ */
 #pragma once
-
 
 // Must include gtest first to guard against Xlib colliding due to redefinitions of "None" and "Bool"
 
@@ -53,6 +52,12 @@
 #pragma push_macro("Bool")
 #undef None
 #undef Bool
+#endif
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #endif
 
 // Use the NDK's header on Android
@@ -123,7 +128,6 @@ struct EnvVarICDOverrideShim : FrameworkEnvironment {
     LibraryWrapper driver_wrapper;
     GetNewTestICDFunc get_new_test_icd;
 };
-
 
 struct SingleICDShim : FrameworkEnvironment {
     SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode = DebugMode::none);

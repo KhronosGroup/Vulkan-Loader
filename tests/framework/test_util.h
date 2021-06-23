@@ -41,7 +41,7 @@
  * Instance & Device create info helpers
  * InstWrapper & DeviceWrapper - for easier test writing
  * operator == overloads for many vulkan structs - more concise tests
-*/
+ */
 #pragma once
 
 // Following items are needed for C++ to work with PRIxLEAST64
@@ -105,7 +105,7 @@ bool remove_env_var(std::string const& name);
 std::string get_env_var(std::string const& name);
 #endif
 
-//Windows specific error handling logic
+// Windows specific error handling logic
 #if defined(WIN32)
 const long ERROR_SETENV_FAILED = 10543;           // chosen at random, attempts to not conflict
 const long ERROR_REMOVEDIRECTORY_FAILED = 10544;  // chosen at random, attempts to not conflict
@@ -253,7 +253,7 @@ struct path {
     // get C++ style string
     std::string const& str() const { return contents; }
     std::string& str() { return contents; }
-    size_t size() const { return contents.size();};
+    size_t size() const { return contents.size(); };
 
    private:
     std::string contents;
@@ -347,7 +347,9 @@ struct LibraryWrapper {
     }
     LibraryWrapper(LibraryWrapper const& wrapper) = delete;
     LibraryWrapper& operator=(LibraryWrapper const& wrapper) = delete;
-    LibraryWrapper(LibraryWrapper&& wrapper) noexcept : lib_handle(wrapper.lib_handle), lib_path(wrapper.lib_path) { wrapper.lib_handle = nullptr; }
+    LibraryWrapper(LibraryWrapper&& wrapper) noexcept : lib_handle(wrapper.lib_handle), lib_path(wrapper.lib_path) {
+        wrapper.lib_handle = nullptr;
+    }
     LibraryWrapper& operator=(LibraryWrapper&& wrapper) noexcept {
         if (this != &wrapper) {
             if (lib_handle != nullptr) {
@@ -596,10 +598,11 @@ struct DeviceCreateInfo {
 };
 
 struct InstWrapper {
-    InstWrapper(VulkanFunctions& functions) noexcept : functions(&functions) {}
-    InstWrapper(VulkanFunctions& functions, VkInstance inst) noexcept : functions(&functions), inst(inst) {}
+    InstWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks = nullptr) noexcept : functions(&functions), callbacks(callbacks) {}
+    InstWrapper(VulkanFunctions& functions, VkInstance inst, VkAllocationCallbacks* callbacks = nullptr) noexcept
+        : functions(&functions), inst(inst), callbacks(callbacks) {}
     ~InstWrapper() {
-        if (inst != VK_NULL_HANDLE) functions->fp_vkDestroyInstance(inst, nullptr);
+        if (inst != VK_NULL_HANDLE) functions->fp_vkDestroyInstance(inst, callbacks);
     }
 
     // Immoveable object
@@ -614,6 +617,7 @@ struct InstWrapper {
 
     VulkanFunctions* functions = nullptr;
     VkInstance inst = VK_NULL_HANDLE;
+    VkAllocationCallbacks* callbacks = nullptr;
 };
 
 VkResult CreateInst(InstWrapper& inst, InstanceCreateInfo& inst_info);
