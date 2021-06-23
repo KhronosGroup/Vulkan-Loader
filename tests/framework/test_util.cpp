@@ -622,7 +622,7 @@ DeviceCreateInfo& DeviceCreateInfo::add_device_queue(DeviceQueueCreateInfo queue
 }
 
 VkResult CreateInst(InstWrapper& inst, InstanceCreateInfo& inst_info) {
-    return inst.functions->fp_vkCreateInstance(inst_info.get(), nullptr, &inst.inst);
+    return inst.functions->fp_vkCreateInstance(inst_info.get(), inst.callbacks, &inst.inst);
 }
 
 VkResult CreatePhysDevs(InstWrapper& inst, uint32_t phys_dev_count, std::vector<VkPhysicalDevice>& physical_devices) {
