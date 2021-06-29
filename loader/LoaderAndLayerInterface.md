@@ -2118,9 +2118,9 @@ locations of JSON manifest files. These keys are located in device keys
 created during driver installation and contain configuration information
 for base settings, including OpenGL and Direct3D ICD location.
 
-The Device Adapter and Software Component key paths should be obtained through the PnP
-Configuration Manager API. The `000X` key will be a numbered key, where each
-device is assigned a different number.
+The Device Adapter and Software Component key paths will be obtained by first enumerating DXGI adapters.
+Should that fail it will use the PnP Configuration Manager API. The `000X` key will be a numbered key,
+where each device is assigned a different number.
 
 ```
    HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Class\{Adapter GUID}\000X\VulkanDriverName
