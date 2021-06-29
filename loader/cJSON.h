@@ -1,8 +1,8 @@
 /*
   Copyright (c) 2009 Dave Gamble
-  Copyright (c) 2015-2016 The Khronos Group Inc.
-  Copyright (c) 2015-2016 Valve Corporation
-  Copyright (c) 2015-2016 LunarG, Inc.
+  Copyright (c) 2015-2017 The Khronos Group Inc.
+  Copyright (c) 2015-2017 Valve Corporation
+  Copyright (c) 2015-2017 LunarG, Inc.
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
