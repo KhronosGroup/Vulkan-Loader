@@ -292,20 +292,6 @@ void test_create_device(VkPhysicalDevice physical) {
 // LVLGH = loader and validation github
 // LVLGL = loader and validation gitlab
 
-TEST(LX435, InstanceCreateInfoConst) {
-    VkInstanceCreateInfo const info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr};
-
-    VkInstance instance = VK_NULL_HANDLE;
-    VkResult result = vkCreateInstance(&info, VK_NULL_HANDLE, &instance);
-    EXPECT_EQ(result, VK_SUCCESS);
-
-    vkDestroyInstance(instance, nullptr);
-}
-
-TEST(LX475, DestroyInstanceNullHandle) { vkDestroyInstance(VK_NULL_HANDLE, nullptr); }
-
-TEST(LX475, DestroyDeviceNullHandle) { vkDestroyDevice(VK_NULL_HANDLE, nullptr); }
-
 TEST(CreateInstance, ExtensionNotPresent) {
     char const *const names[] = {"NotPresent"};  // Temporary required due to MSVC bug.
     auto const info = VK::InstanceCreateInfo().enabledExtensionCount(1).ppEnabledExtensionNames(names);
