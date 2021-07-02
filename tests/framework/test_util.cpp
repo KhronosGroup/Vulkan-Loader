@@ -376,7 +376,7 @@ int delete_folder(path const& folder) {
         int ret2 = -1;
 
         /* Skip the names "." and ".." as we don't want to recurse on them. */
-        if (!strcmp(file->d_name, ".") || !strcmp(file->d_name, "..")) continue;
+        if (string_eq(file->d_name, ".") || string_eq(file->d_name, "..")) continue;
 
         path file_path = folder / file->d_name;
         struct stat statbuf;
@@ -486,6 +486,9 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
     return new_filepath;
 }
 }  // namespace fs
+
+bool string_eq(const char* a, const char* b) noexcept { return strcmp(a, b) == 0; }
+bool string_eq(const char* a, const char* b, size_t len) noexcept { return strncmp(a, b, len) == 0; }
 
 VulkanFunctions::VulkanFunctions() : loader(FRAMEWORK_VULKAN_LIBRARY_PATH) {
     // clang-format off

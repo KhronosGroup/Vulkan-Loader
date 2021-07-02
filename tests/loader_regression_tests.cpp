@@ -277,7 +277,7 @@ TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
     ASSERT_EQ(VK_INCOMPLETE, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
     ASSERT_EQ(extension_count, 1);
     // loader always adds the debug report & debug utils extensions
-    ASSERT_EQ(strcmp(extensions[0].extensionName, "VK_EXT_debug_report"), 0);
+    ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
 }
 
 
@@ -294,8 +294,8 @@ TEST_F(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
     ASSERT_EQ(extension_count, 2);
     // loader always adds the debug report & debug utils extensions
-    ASSERT_EQ(strcmp(extensions[0].extensionName, "VK_EXT_debug_report"), 0);
-    ASSERT_EQ(strcmp(extensions[1].extensionName, "VK_EXT_debug_utils"), 0);
+    ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
+    ASSERT_TRUE(string_eq(extensions[1].extensionName, "VK_EXT_debug_utils"));
 }
 
 TEST_F(EnumerateInstanceExtensionProperties, DisableUnknownInstanceExtensionFiltering) {
@@ -316,6 +316,6 @@ TEST_F(EnumerateInstanceExtensionProperties, DisableUnknownInstanceExtensionFilt
     ASSERT_EQ(extensions[0], first_ext.get());
     ASSERT_EQ(extensions[1], second_ext.get());
     //Loader always adds these two extensions
-    ASSERT_EQ(strcmp(extensions[2].extensionName, "VK_EXT_debug_report"), 0);
-    ASSERT_EQ(strcmp(extensions[3].extensionName, "VK_EXT_debug_utils"), 0);
+    ASSERT_TRUE(string_eq(extensions[2].extensionName, "VK_EXT_debug_report"));
+    ASSERT_TRUE(string_eq(extensions[3].extensionName, "VK_EXT_debug_utils"));
 }
