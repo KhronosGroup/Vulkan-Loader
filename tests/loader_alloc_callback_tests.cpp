@@ -209,8 +209,8 @@ TEST_F(Allocation, GetInstanceProcAddr) {
         InstanceCreateInfo inst_create_info;
         ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
-        auto* pfnCreateDevice = inst->fp_vkGetInstanceProcAddr(inst, "vkCreateDevice");
-        auto* pfnDestroyDevice = inst->fp_vkGetInstanceProcAddr(inst, "vkDestroyDevice");
+        auto* pfnCreateDevice = inst->vkGetInstanceProcAddr(inst, "vkCreateDevice");
+        auto* pfnDestroyDevice = inst->vkGetInstanceProcAddr(inst, "vkDestroyDevice");
         ASSERT_TRUE(pfnCreateDevice != nullptr && pfnDestroyDevice != nullptr);
     }
     ASSERT_TRUE(tracker.empty());
@@ -229,11 +229,11 @@ TEST_F(Allocation, EnumeratePhysicalDevices) {
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
         ASSERT_EQ(physical_count, returned_physical_count);
 
         VkPhysicalDevice physical_device;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
         ASSERT_EQ(physical_count, returned_physical_count);
     }
     ASSERT_TRUE(tracker.empty());
@@ -254,20 +254,20 @@ TEST_F(Allocation, InstanceAndDevice) {
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
         ASSERT_EQ(physical_count, returned_physical_count);
 
         VkPhysicalDevice physical_device;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
         ASSERT_EQ(physical_count, returned_physical_count);
 
         uint32_t family_count = 1;
         uint32_t returned_family_count = 0;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
         ASSERT_EQ(returned_family_count, family_count);
 
         VkQueueFamilyProperties family;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
         ASSERT_EQ(returned_family_count, family_count);
         ASSERT_EQ(family.queueFlags, VK_QUEUE_GRAPHICS_BIT);
         ASSERT_EQ(family.queueCount, family_count);
@@ -279,8 +279,8 @@ TEST_F(Allocation, InstanceAndDevice) {
         dev_create_info.add_device_queue(queue_info);
 
         VkDevice device;
-        ASSERT_EQ(inst->fp_vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device), VK_SUCCESS);
-        inst->fp_vkDestroyDevice(device, tracker.get());
+        ASSERT_EQ(inst->vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device), VK_SUCCESS);
+        inst->vkDestroyDevice(device, tracker.get());
     }
     ASSERT_TRUE(tracker.empty());
 }
@@ -300,20 +300,20 @@ TEST_F(Allocation, InstanceButNotDevice) {
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
         ASSERT_EQ(physical_count, returned_physical_count);
 
         VkPhysicalDevice physical_device;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
         ASSERT_EQ(physical_count, returned_physical_count);
 
         uint32_t family_count = 1;
         uint32_t returned_family_count = 0;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
         ASSERT_EQ(returned_family_count, family_count);
 
         VkQueueFamilyProperties family;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
         ASSERT_EQ(returned_family_count, family_count);
         ASSERT_EQ(family.queueFlags, VK_QUEUE_GRAPHICS_BIT);
         ASSERT_EQ(family.queueCount, family_count);
@@ -325,8 +325,8 @@ TEST_F(Allocation, InstanceButNotDevice) {
         dev_create_info.add_device_queue(queue_info);
 
         VkDevice device;
-        ASSERT_EQ(inst->fp_vkCreateDevice(physical_device, dev_create_info.get(), nullptr, &device), VK_SUCCESS);
-        inst->fp_vkDestroyDevice(device, nullptr);
+        ASSERT_EQ(inst->vkCreateDevice(physical_device, dev_create_info.get(), nullptr, &device), VK_SUCCESS);
+        inst->vkDestroyDevice(device, nullptr);
     }
     ASSERT_TRUE(tracker.empty());
 }
@@ -347,20 +347,20 @@ TEST_F(Allocation, DeviceButNotInstance) {
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
         ASSERT_EQ(physical_count, returned_physical_count);
 
         VkPhysicalDevice physical_device;
-        ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
         ASSERT_EQ(physical_count, returned_physical_count);
 
         uint32_t family_count = 1;
         uint32_t returned_family_count = 0;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
         ASSERT_EQ(returned_family_count, family_count);
 
         VkQueueFamilyProperties family;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
         ASSERT_EQ(returned_family_count, family_count);
         ASSERT_EQ(family.queueFlags, VK_QUEUE_GRAPHICS_BIT);
         ASSERT_EQ(family.queueCount, family_count);
@@ -372,8 +372,8 @@ TEST_F(Allocation, DeviceButNotInstance) {
         dev_create_info.add_device_queue(queue_info);
 
         VkDevice device;
-        ASSERT_EQ(inst->fp_vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device), VK_SUCCESS);
-        inst->fp_vkDestroyDevice(device, tracker.get());
+        ASSERT_EQ(inst->vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device), VK_SUCCESS);
+        inst->vkDestroyDevice(device, tracker.get());
     }
     ASSERT_TRUE(tracker.empty());
 }
@@ -388,9 +388,9 @@ TEST_F(Allocation, CreateInstanceIntentionalAllocFail) {
 
         InstanceCreateInfo inst_create_info;
         VkInstance instance;
-        result = env->vulkan_functions.fp_vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        result = env->vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_SUCCESS) {
-            env->vulkan_functions.fp_vkDestroyInstance(instance, tracker.get());
+            env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
         }
         ASSERT_TRUE(tracker.empty());
         fail_index++;
@@ -410,20 +410,20 @@ TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
 
     uint32_t physical_count = 1;
     uint32_t returned_physical_count = 0;
-    ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
     ASSERT_EQ(physical_count, returned_physical_count);
 
     VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, inst->fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
     ASSERT_EQ(physical_count, returned_physical_count);
 
     uint32_t family_count = 1;
     uint32_t returned_family_count = 0;
-    env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
+    env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
     ASSERT_EQ(returned_family_count, family_count);
 
     VkQueueFamilyProperties family;
-    env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
+    env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
     ASSERT_EQ(returned_family_count, family_count);
     ASSERT_EQ(family.queueFlags, VK_QUEUE_GRAPHICS_BIT);
     ASSERT_EQ(family.queueCount, family_count);
@@ -440,9 +440,9 @@ TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
         dev_create_info.add_device_queue(queue_info);
 
         VkDevice device;
-        result = inst->fp_vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device);
+        result = inst->vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device);
         if (result == VK_SUCCESS || fail_index > 10000) {
-            inst->fp_vkDestroyDevice(device, tracker.get());
+            inst->vkDestroyDevice(device, tracker.get());
             break;
         }
         ASSERT_TRUE(tracker.empty());
@@ -465,7 +465,7 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 
         InstanceCreateInfo inst_create_info;
         VkInstance instance;
-        result = env->vulkan_functions.fp_vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        result = env->vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             ASSERT_TRUE(tracker.empty());
             continue;
@@ -473,18 +473,18 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
-        result = env->vulkan_functions.fp_vkEnumeratePhysicalDevices(instance, &returned_physical_count, nullptr);
+        result = env->vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, nullptr);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-            env->vulkan_functions.fp_vkDestroyInstance(instance, tracker.get());
+            env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
             ASSERT_TRUE(tracker.empty());
             continue;
         }
         ASSERT_EQ(physical_count, returned_physical_count);
 
         VkPhysicalDevice physical_device;
-        result = env->vulkan_functions.fp_vkEnumeratePhysicalDevices(instance, &returned_physical_count, &physical_device);
+        result = env->vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, &physical_device);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-            env->vulkan_functions.fp_vkDestroyInstance(instance, tracker.get());
+            env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
             ASSERT_TRUE(tracker.empty());
             continue;
         }
@@ -492,11 +492,11 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 
         uint32_t family_count = 1;
         uint32_t returned_family_count = 0;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
         ASSERT_EQ(returned_family_count, family_count);
 
         VkQueueFamilyProperties family;
-        env->vulkan_functions.fp_vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
+        env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
         ASSERT_EQ(returned_family_count, family_count);
         ASSERT_EQ(family.queueFlags, VK_QUEUE_GRAPHICS_BIT);
         ASSERT_EQ(family.queueCount, family_count);
@@ -508,11 +508,11 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
         dev_create_info.add_device_queue(queue_info);
 
         VkDevice device;
-        result = env->vulkan_functions.fp_vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device);
+        result = env->vulkan_functions.vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device);
         if (result == VK_SUCCESS) {
-            env->vulkan_functions.fp_vkDestroyDevice(device, tracker.get());
+            env->vulkan_functions.vkDestroyDevice(device, tracker.get());
         }
-        env->vulkan_functions.fp_vkDestroyInstance(instance, tracker.get());
+        env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
 
         ASSERT_TRUE(tracker.empty());
     }

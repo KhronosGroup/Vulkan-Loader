@@ -498,60 +498,60 @@ struct VulkanFunctions {
     LibraryWrapper loader;
 
     // Pre-Instance
-    PFN_vkGetInstanceProcAddr fp_vkGetInstanceProcAddr = nullptr;
-    PFN_vkEnumerateInstanceExtensionProperties fp_vkEnumerateInstanceExtensionProperties = nullptr;
-    PFN_vkEnumerateInstanceLayerProperties fp_vkEnumerateInstanceLayerProperties = nullptr;
-    PFN_vkEnumerateInstanceVersion fp_vkEnumerateInstanceVersion = nullptr;
-    PFN_vkCreateInstance fp_vkCreateInstance = nullptr;
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
+    PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties = nullptr;
+    PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties = nullptr;
+    PFN_vkEnumerateInstanceVersion vkEnumerateInstanceVersion = nullptr;
+    PFN_vkCreateInstance vkCreateInstance = nullptr;
 
     // Instance
-    PFN_vkDestroyInstance fp_vkDestroyInstance = nullptr;
-    PFN_vkEnumeratePhysicalDevices fp_vkEnumeratePhysicalDevices = nullptr;
-    PFN_vkGetPhysicalDeviceFeatures fp_vkGetPhysicalDeviceFeatures = nullptr;
-    PFN_vkGetPhysicalDeviceFeatures2 fp_vkGetPhysicalDeviceFeatures2 = nullptr;
-    PFN_vkGetPhysicalDeviceFormatProperties fp_vkGetPhysicalDeviceFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceImageFormatProperties fp_vkGetPhysicalDeviceImageFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceProperties fp_vkGetPhysicalDeviceProperties = nullptr;
-    PFN_vkGetPhysicalDeviceProperties2 fp_vkGetPhysicalDeviceProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties fp_vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties2 fp_vkGetPhysicalDeviceQueueFamilyProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceMemoryProperties fp_vkGetPhysicalDeviceMemoryProperties = nullptr;
-    PFN_vkGetPhysicalDeviceFormatProperties2 fp_vkGetPhysicalDeviceFormatProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceMemoryProperties2 fp_vkGetPhysicalDeviceMemoryProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceSupportKHR fp_vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR fp_vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfacePresentModesKHR fp_vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR fp_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
-    PFN_vkEnumerateDeviceExtensionProperties fp_vkEnumerateDeviceExtensionProperties = nullptr;
-    PFN_vkEnumerateDeviceLayerProperties fp_vkEnumerateDeviceLayerProperties = nullptr;
+    PFN_vkDestroyInstance vkDestroyInstance = nullptr;
+    PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices = nullptr;
+    PFN_vkGetPhysicalDeviceFeatures vkGetPhysicalDeviceFeatures = nullptr;
+    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 = nullptr;
+    PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties = nullptr;
+    PFN_vkGetPhysicalDeviceImageFormatProperties vkGetPhysicalDeviceImageFormatProperties = nullptr;
+    PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties = nullptr;
+    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 = nullptr;
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2 vkGetPhysicalDeviceQueueFamilyProperties2 = nullptr;
+    PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = nullptr;
+    PFN_vkGetPhysicalDeviceFormatProperties2 vkGetPhysicalDeviceFormatProperties2 = nullptr;
+    PFN_vkGetPhysicalDeviceMemoryProperties2 vkGetPhysicalDeviceMemoryProperties2 = nullptr;
+    PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
+    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
+    PFN_vkGetPhysicalDeviceSurfacePresentModesKHR vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
+    PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties = nullptr;
+    PFN_vkEnumerateDeviceLayerProperties vkEnumerateDeviceLayerProperties = nullptr;
 
-    PFN_vkGetDeviceProcAddr fp_vkGetDeviceProcAddr = nullptr;
-    PFN_vkCreateDevice fp_vkCreateDevice = nullptr;
+    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
+    PFN_vkCreateDevice vkCreateDevice = nullptr;
 
 // WSI
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    PFN_vkCreateAndroidSurfaceKHR fp_vkCreateAndroidSurfaceKHR;
+    PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 #endif
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    PFN_vkCreateMetalSurfaceEXT fp_vkCreateMetalSurfaceEXT;
+    PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT;
 #endif
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    PFN_vkCreateWaylandSurfaceKHR fp_vkCreateWaylandSurfaceKHR;
+    PFN_vkCreateWaylandSurfaceKHR vkCreateWaylandSurfaceKHR;
 #endif
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    PFN_vkCreateXcbSurfaceKHR fp_vkCreateXcbSurfaceKHR;
+    PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR;
 #endif
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    PFN_vkCreateXlibSurfaceKHR fp_vkCreateXlibSurfaceKHR;
+    PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    PFN_vkCreateWin32SurfaceKHR fp_vkCreateWin32SurfaceKHR;
+    PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
 #endif
-    PFN_vkDestroySurfaceKHR fp_vkDestroySurfaceKHR = nullptr;
+    PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
 
     // device functions
-    PFN_vkDestroyDevice fp_vkDestroyDevice = nullptr;
-    PFN_vkGetDeviceQueue fp_vkGetDeviceQueue = nullptr;
+    PFN_vkDestroyDevice vkDestroyDevice = nullptr;
+    PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
 
     VulkanFunctions();
 };
@@ -605,7 +605,7 @@ struct InstWrapper {
     InstWrapper(VulkanFunctions& functions, VkInstance inst, VkAllocationCallbacks* callbacks = nullptr) noexcept
         : functions(&functions), inst(inst), callbacks(callbacks) {}
     ~InstWrapper() {
-        if (inst != VK_NULL_HANDLE) functions->fp_vkDestroyInstance(inst, callbacks);
+        if (inst != VK_NULL_HANDLE) functions->vkDestroyInstance(inst, callbacks);
     }
 
     // Immoveable object
@@ -630,7 +630,7 @@ VkResult CreatePhysDev(InstWrapper& inst, VkPhysicalDevice& physical_device);
 struct DeviceWrapper {
     DeviceWrapper(){};
     DeviceWrapper(VulkanFunctions& functions, VkDevice dev) : functions(&functions), dev(dev){};
-    ~DeviceWrapper() { functions->fp_vkDestroyDevice(dev, nullptr); }
+    ~DeviceWrapper() { functions->vkDestroyDevice(dev, nullptr); }
 
     // Immoveable object
     DeviceWrapper(DeviceWrapper const&) = delete;

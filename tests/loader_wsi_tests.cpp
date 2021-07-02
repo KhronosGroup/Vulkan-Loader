@@ -103,11 +103,11 @@ TEST_F(RegressionTests, CreateSurfaceWin32) {
     surf_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surf_create_info.hwnd = h_wnd;
     surf_create_info.hinstance = h_instance;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkCreateWin32SurfaceKHR(inst, &surf_create_info, nullptr, &surface));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkCreateWin32SurfaceKHR(inst, &surf_create_info, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
     //    ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
-    env->vulkan_functions.fp_vkDestroySurfaceKHR(inst, surface, nullptr);
+    env->vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
     DestroyWindow(h_wnd);
 }
 
@@ -164,10 +164,10 @@ TEST_F(RegressionTests, CreateSurfaceXCB) {
     xcb_createInfo.window = xcb_window;
 
     VkSurfaceKHR surface{};
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkCreateXcbSurfaceKHR(inst, &xcb_createInfo, nullptr, &surface));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkCreateXcbSurfaceKHR(inst, &xcb_createInfo, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
 
-    env->vulkan_functions.fp_vkDestroySurfaceKHR(inst, surface, nullptr);
+    env->vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 
     xcb_destroy_window(xcb_connection, xcb_window);
     xcb_disconnect(xcb_connection);
@@ -213,10 +213,10 @@ TEST_F(RegressionTests, CreateSurfaceXLIB) {
     createInfo.window = xlib_window;
 
     VkSurfaceKHR surface;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkCreateXlibSurfaceKHR(inst, &createInfo, nullptr, &surface));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkCreateXlibSurfaceKHR(inst, &createInfo, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
 
-    env->vulkan_functions.fp_vkDestroySurfaceKHR(inst, surface, nullptr);
+    env->vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 
     XDestroyWindow(xlib_display, xlib_window);
     XCloseDisplay(xlib_display);
@@ -272,10 +272,10 @@ TEST_F(RegressionTests, CreateSurfaceWayland) {
     createInfo.surface = wayland.surface;
 
     VkSurfaceKHR surface;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkCreateWaylandSurfaceKHR(inst, &createInfo, nullptr, &surface));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkCreateWaylandSurfaceKHR(inst, &createInfo, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
 
-    env->vulkan_functions.fp_vkDestroySurfaceKHR(inst, surface, nullptr);
+    env->vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 
     wl_display_disconnect(wayland.display);
 }
