@@ -27,6 +27,13 @@
 
 #include "test_environment.h"
 
+// Test case origin
+// LX = lunar exchange
+// LVLGH = loader and validation github
+// LVLGL = loader and validation gitlab
+// VL = Vulkan Loader github
+// VVL = Vulkan Validation Layers github
+
 class RegressionTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
@@ -38,9 +45,21 @@ class RegressionTests : public ::testing::Test {
     std::unique_ptr<SingleICDShim> env;
 };
 
-TEST_F(RegressionTests, CreateInstance_BasicRun) {
+// Subtyping for organization
+class EnumerateInstanceVersion : public RegressionTests {};
+class EnumerateInstanceLayerProperties : public RegressionTests {};
+class EnumerateInstanceExtensionProperties : public RegressionTests {};
+class CreateInstance : public RegressionTests {};
+class CreateDevice : public RegressionTests {};
+class EnumeratePhysicalDevices : public RegressionTests {};
+class EnumerateDeviceLayerProperties : public RegressionTests {};
+class EnumerateDeviceExtensionProperties : public RegressionTests {};
+class ImplicitLayer : public RegressionTests {};
+class WrapObjects : public RegressionTests {};
+class EnumeratePhysicalDeviceGroupsKHR : public RegressionTests {};
+
+TEST_F(CreateInstance, BasicRun) {
     auto& driver = env->get_test_icd();
-    driver.SetICDAPIVersion(VK_MAKE_VERSION(1, 0, 0));
     driver.SetMinICDInterfaceVersion(5);
 
     InstWrapper inst{env->vulkan_functions};
@@ -48,15 +67,23 @@ TEST_F(RegressionTests, CreateInstance_BasicRun) {
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 }
 
-TEST_F(RegressionTests, CreateInstance_DestroyInstanceNullHandle) {
-    env->vulkan_functions.fp_vkDestroyInstance(VK_NULL_HANDLE, nullptr);
+// LX435
+TEST_F(CreateInstance, ConstInstanceInfo) {
+    VkInstanceCreateInfo const info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr};
+
+    VkInstance instance = VK_NULL_HANDLE;
+    ASSERT_EQ(env->vulkan_functions.fp_vkCreateInstance(&info, VK_NULL_HANDLE, &instance), VK_SUCCESS);
+
+    env->vulkan_functions.fp_vkDestroyInstance(instance, nullptr);
 }
 
-TEST_F(RegressionTests, CreateInstance_DestroyDeviceNullHandle) {
-    env->vulkan_functions.fp_vkDestroyDevice(VK_NULL_HANDLE, nullptr);
-}
+// VUID-vkDestroyInstance-instance-parameter, VUID-vkDestroyInstance-pAllocator-parameter
+TEST_F(CreateInstance, DestroyInstanceNullHandle) { env->vulkan_functions.fp_vkDestroyInstance(VK_NULL_HANDLE, nullptr); }
 
-TEST_F(RegressionTests, CreateInstance_ExtensionNotPresent) {
+// VUID-vkDestroyDevice-device-parameter, VUID-vkDestroyDevice-pAllocator-parameter
+TEST_F(CreateInstance, DestroyDeviceNullHandle) { env->vulkan_functions.fp_vkDestroyDevice(VK_NULL_HANDLE, nullptr); }
+
+TEST_F(CreateInstance, ExtensionNotPresent) {
     auto& driver = env->get_test_icd();
     {
         VkInstance inst = VK_NULL_HANDLE;
@@ -74,7 +101,7 @@ TEST_F(RegressionTests, CreateInstance_ExtensionNotPresent) {
     }
 }
 
-TEST_F(RegressionTests, EnumeratePhysicalDevices_OneCall) {
+TEST_F(EnumeratePhysicalDevices, OneCall) {
     auto& driver = env->get_test_icd();
     driver.SetMinICDInterfaceVersion(5);
 
@@ -94,7 +121,7 @@ TEST_F(RegressionTests, EnumeratePhysicalDevices_OneCall) {
     ASSERT_EQ(physical_count, returned_physical_count);
 }
 
-TEST_F(RegressionTests, EnumeratePhysicalDevices_TwoCall) {
+TEST_F(EnumeratePhysicalDevices, TwoCall) {
     auto& driver = env->get_test_icd();
     driver.SetMinICDInterfaceVersion(5);
 
@@ -116,7 +143,7 @@ TEST_F(RegressionTests, EnumeratePhysicalDevices_TwoCall) {
     ASSERT_EQ(physical_count, returned_physical_count);
 }
 
-TEST_F(RegressionTests, EnumeratePhysicalDevices_MatchOneAndTwoCallNumbers) {
+TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
     auto& driver = env->get_test_icd();
     driver.SetMinICDInterfaceVersion(5);
 
@@ -150,7 +177,7 @@ TEST_F(RegressionTests, EnumeratePhysicalDevices_MatchOneAndTwoCallNumbers) {
     ASSERT_EQ(returned_physical_count, returned_physical_count);
 }
 
-TEST_F(RegressionTests, EnumeratePhysicalDevices_TwoCallIncomplete) {
+TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
     auto& driver = env->get_test_icd();
     driver.SetMinICDInterfaceVersion(5);
 
@@ -174,7 +201,7 @@ TEST_F(RegressionTests, EnumeratePhysicalDevices_TwoCallIncomplete) {
     ASSERT_EQ(physical_count, 1);
 }
 
-TEST_F(RegressionTests, CreateDevice_ExtensionNotPresent) {
+TEST_F(CreateDevice, ExtensionNotPresent) {
     auto& driver = env->get_test_icd();
 
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -208,7 +235,7 @@ TEST_F(RegressionTests, CreateDevice_ExtensionNotPresent) {
     ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, inst->fp_vkCreateDevice(phys_dev, dev_create_info.get(), nullptr, &device));
 }
 
-TEST_F(RegressionTests, CreateDevice_LayersNotPresent) {
+TEST_F(CreateDevice, LayersNotPresent) {
     auto& driver = env->get_test_icd();
 
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -242,7 +269,7 @@ TEST_F(RegressionTests, CreateDevice_LayersNotPresent) {
     ASSERT_EQ(VK_SUCCESS, inst->fp_vkCreateDevice(phys_dev, dev_create_info.get(), nullptr, &device));
 }
 
-TEST_F(RegressionTests, EnumerateInstanceExtensionProperties_PropertyCountLessThanAvailable) {
+TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
     uint32_t extension_count = 0;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
     ASSERT_EQ(extension_count, 2); //return debug report & debug utils
@@ -257,7 +284,7 @@ TEST_F(RegressionTests, EnumerateInstanceExtensionProperties_PropertyCountLessTh
 }
 
 
-TEST_F(RegressionTests, EnumerateInstanceExtensionProperties_FilterUnkownInstanceExtensions) {
+TEST_F(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
     Extension first_ext{"FirstTestExtension"};
     Extension second_ext{"SecondTestExtension"};
     env->get_new_test_icd().AddInstanceExtensions({first_ext, second_ext});
@@ -275,7 +302,7 @@ TEST_F(RegressionTests, EnumerateInstanceExtensionProperties_FilterUnkownInstanc
     ASSERT_EQ(strcmp(extensions[1].extensionName, "VK_EXT_debug_utils"), 0);
 }
 
-TEST_F(RegressionTests, EnumerateInstanceExtensionProperties_DisableUnknownInstanceExtensionFiltering) {
+TEST_F(EnumerateInstanceExtensionProperties, DisableUnknownInstanceExtensionFiltering) {
     Extension first_ext{"FirstTestExtension"};
     Extension second_ext{"SecondTestExtension"};
     env->get_new_test_icd().AddInstanceExtensions({first_ext, second_ext});
