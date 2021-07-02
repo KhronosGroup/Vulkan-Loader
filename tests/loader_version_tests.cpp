@@ -204,8 +204,8 @@ TEST_F(ICDInterfaceVersion2Plus, version_5) {
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
-                                                                              physical_device_handles.data()));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
+                                                                           physical_device_handles.data()));
     ASSERT_EQ(physical_count, returned_physical_count);
     ASSERT_EQ(driver.called_enumerate_adapter_physical_devices, CalledEnumerateAdapterPhysicalDevices::not_called);
 }
@@ -236,10 +236,10 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
     ASSERT_EQ(physical_count, returned_physical_count);
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
-                                                                              physical_device_handles.data()));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
+                                                                           physical_device_handles.data()));
     ASSERT_EQ(physical_count, returned_physical_count);
     ASSERT_EQ(driver.called_enumerate_adapter_physical_devices, CalledEnumerateAdapterPhysicalDevices::called);
 }
@@ -265,10 +265,10 @@ InstWrapper inst{env->vulkan_functions};
     InstanceCreateInfo inst_create_info;
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
 
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
     ASSERT_EQ(physical_count, returned_physical_count);
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.fp_vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
-                                                                              physical_device_handles.data()));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
+                                                                           physical_device_handles.data()));
     ASSERT_EQ(physical_count, returned_physical_count);
 }
 #endif  // defined(WIN32)
@@ -296,7 +296,7 @@ TEST(MultipleICDConfig, Basic) {
 
     std::array<VkPhysicalDevice, 3> phys_devs_array;
     uint32_t phys_dev_count = 3;
-    ASSERT_EQ(env.vulkan_functions.fp_vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
+    ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
     ASSERT_EQ(phys_dev_count, 3);
     ASSERT_EQ(env.get_test_icd(0).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
     ASSERT_EQ(env.get_test_icd(1).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
@@ -323,6 +323,6 @@ TEST(MultipleDriverConfig, DifferentICDInterfaceVersions) {
 
     std::array<VkPhysicalDevice, 2> phys_devs_array;
     uint32_t phys_dev_count = 2;
-    ASSERT_EQ(env.vulkan_functions.fp_vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
+    ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
     ASSERT_EQ(phys_dev_count, 2);
 }
