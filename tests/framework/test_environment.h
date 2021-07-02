@@ -70,6 +70,8 @@
 #include "icd/physical_device.h"
 #include "icd/test_icd.h"
 
+#include "layer/test_layer.h"
+
 namespace detail {
 struct PlatformShimWrapper {
     PlatformShimWrapper(DebugMode debug_mode = DebugMode::none);
@@ -97,6 +99,18 @@ struct TestICDHandle {
     GetTestICDFunc proc_addr_get_test_icd;
     GetNewTestICDFunc proc_addr_get_new_test_icd;
 };
+struct TestLayerHandle {
+    TestLayerHandle();
+    TestLayerHandle(fs::path const& icd_path);
+    TestLayer& get_new_test_layer();
+    TestLayer& get_test_layer();
+    fs::path get_layer_full_path();
+
+    // Must use statically
+    LibraryWrapper layer_library;
+    GetTestLayerFunc proc_addr_get_test_layer;
+    GetNewTestLayerFunc proc_addr_get_new_test_layer;
+};
 }  // namespace detail
 
 struct TestICDDetails {
@@ -105,6 +119,13 @@ struct TestICDDetails {
     const char* icd_path = nullptr;
     uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
 };
+struct TestLayerDetails {
+    TestLayerDetails(const char* layer_path, uint32_t api_version = VK_MAKE_VERSION(1, 0, 0))
+        : layer_path(layer_path), api_version(api_version) {}
+    const char* layer_path = nullptr;
+    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
+};
+
 struct FrameworkEnvironment {
     FrameworkEnvironment(DebugMode debug_mode = DebugMode::none);
 

@@ -80,6 +80,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_icd.h>
+#include <vulkan/vk_layer.h>
 
 #include "framework_config.h"
 
