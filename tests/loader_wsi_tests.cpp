@@ -235,7 +235,7 @@ struct WaylandState {
 static void wayland_registry_global(void* data, struct wl_registry* registry, uint32_t id, const char* interface,
                                     uint32_t version) {
     WaylandState* wayland = static_cast<WaylandState*>(data);
-    if (strcmp(interface, "wl_compositor") == 0) {
+    if (string_eq(interface, "wl_compositor")) {
         wayland->compositor = (struct wl_compositor*)wl_registry_bind(registry, id, &wl_compositor_interface, 1);
         wayland->surface = wl_compositor_create_surface(wayland->compositor);
     }

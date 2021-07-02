@@ -494,6 +494,9 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
     return os << static_cast<int32_t>(result);
 }
 
+bool string_eq(const char* a, const char* b) noexcept;
+bool string_eq(const char* a, const char* b, size_t len) noexcept;
+
 struct VulkanFunctions {
     LibraryWrapper loader;
 
@@ -658,12 +661,12 @@ inline bool operator==(const VkQueueFamilyProperties& a, const VkQueueFamilyProp
 inline bool operator!=(const VkQueueFamilyProperties& a, const VkQueueFamilyProperties& b) { return !(a == b); }
 
 inline bool operator==(const VkLayerProperties& a, const VkLayerProperties& b) {
-    return strncmp(a.layerName, b.layerName, 256) == 0 && strncmp(a.description, b.description, 256) == 0 &&
+    return string_eq(a.layerName, b.layerName, 256) && string_eq(a.description, b.description, 256) &&
            a.implementationVersion == b.implementationVersion && a.specVersion == b.specVersion;
 }
 inline bool operator!=(const VkLayerProperties& a, const VkLayerProperties& b) { return !(a == b); }
 
 inline bool operator==(const VkExtensionProperties& a, const VkExtensionProperties& b) {
-    return strncmp(a.extensionName, b.extensionName, 256) == 0 && a.specVersion == b.specVersion;
+    return string_eq(a.extensionName, b.extensionName, 256) && a.specVersion == b.specVersion;
 }
 inline bool operator!=(const VkExtensionProperties& a, const VkExtensionProperties& b) { return !(a == b); }
