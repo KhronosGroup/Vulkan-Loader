@@ -61,7 +61,7 @@ struct TestICD {
     UsingICDProvidedWSI is_using_icd_wsi = UsingICDProvidedWSI::not_using;
 
     uint32_t icd_api_version = VK_MAKE_VERSION(1, 0, 0);
-    std::vector<Layer> instance_layers;
+    std::vector<LayerDefinition> instance_layers;
     std::vector<Extension> instance_extensions;
     std::vector<PhysicalDevice> physical_devices;
 
@@ -83,9 +83,9 @@ struct TestICD {
         this->icd_api_version = api_version;
         return *this;
     }
-    TestICD& AddInstanceLayer(Layer layer) { return AddInstanceLayers({layer}); }
+    TestICD& AddInstanceLayer(LayerDefinition layer) { return AddInstanceLayers({layer}); }
 
-    TestICD& AddInstanceLayers(std::vector<Layer> layers) {
+    TestICD& AddInstanceLayers(std::vector<LayerDefinition> layers) {
         this->instance_layers.reserve(layers.size() + this->instance_layers.size());
         for (auto& layer : layers) {
             this->instance_layers.push_back(layer);
