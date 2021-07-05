@@ -87,7 +87,8 @@ struct TestLayer {
 
     std::string unique_name;
     uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
-    uint32_t implementation_version = 0;
+    uint32_t implementation_version = 2;
+    uint32_t min_implementation_version = 0;
     std::string description;
 
     std::vector<std::string> alternative_function_names;
