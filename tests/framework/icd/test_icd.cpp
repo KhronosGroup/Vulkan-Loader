@@ -27,21 +27,26 @@
 
 #include "test_icd.h"
 
-/*
-Cmake driven macro defines
+// export vk_icdGetInstanceProcAddr
+#ifndef TEST_ICD_EXPORT_ICD_GIPA
+#define TEST_ICD_EXPORT_ICD_GIPA 0
+#endif
 
-conditionally export vk_icdGetInstanceProcAddr
-TEST_ICD_EXPORT_ICD_GIPA
+// export vk_icdNegotiateLoaderICDInterfaceVersion
+#ifndef TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
+#define TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION 0
+#endif
 
-conditionally export vk_icdNegotiateLoaderICDInterfaceVersion
-TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
+// export vk_icdGetPhysicalDeviceProcAddr
+#ifndef TEST_ICD_EXPORT_ICD_GPDPA
+#define TEST_ICD_EXPORT_ICD_GPDPA 0
+#endif
 
-conditionally export vk_icdGetPhysicalDeviceProcAddr
-TEST_ICD_EXPORT_ICD_GPDPA
+// export vk_icdEnumerateAdapterPhysicalDevices
+#ifndef TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
+#define TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES 0
+#endif
 
-conditionally export vk_icdEnumerateAdapterPhysicalDevices
-TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
-*/
 
 TestICD icd;
 extern "C" {
@@ -454,7 +459,7 @@ PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* 
 
 // Exported functions
 extern "C" {
-#if defined(TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION)
+#if TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
 extern FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
     if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called &&
         icd.called_negotiate_interface == CalledNegotiateInterface::not_called)
@@ -486,15 +491,17 @@ extern FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDI
 
     return VK_SUCCESS;
 }
-#endif
-#if defined(TEST_ICD_EXPORT_ICD_GPDPA)
+#endif //TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
+
+#if TEST_ICD_EXPORT_ICD_GPDPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(VkInstance instance, const char* pName) {
     // std::cout << "icdGetPhysicalDeviceProcAddr: " << pName << "\n";
 
     return nullptr;
 }
-#endif
-#if defined(TEST_ICD_EXPORT_ICD_GIPA)
+#endif //TEST_ICD_EXPORT_ICD_GPDPA
+
+#if TEST_ICD_EXPORT_ICD_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(VkInstance instance, const char* pName) {
     // std::cout << "icdGetInstanceProcAddr: " << pName << "\n";
 
@@ -503,7 +510,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcA
     return base_get_instance_proc_addr(instance, pName);
     return nullptr;
 }
-#else
+#else // !TEST_ICD_EXPORT_ICD_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
     // std::cout << "icdGetInstanceProcAddr: " << pName << "\n";
 
@@ -521,7 +528,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProp
 }
 #endif  // TEST_ICD_EXPORT_ICD_GIPA
 
-#if defined(TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES)
+#if TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
 #if defined(WIN32)
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
                                                                                       uint32_t* pPhysicalDeviceCount,
