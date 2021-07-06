@@ -283,6 +283,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubImportSemaphoreZirconHandleFUCHSIA(VkD
 #ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle) { return VK_SUCCESS; };
 #endif // VK_USE_PLATFORM_FUCHSIA
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* getMemoryRemoteAddressInfo, VkRemoteAddressNV* pAddress) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {  };
@@ -929,6 +930,8 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA) gpa(device, "vkGetSemaphoreZirconHandleFUCHSIA");
     if (table->GetSemaphoreZirconHandleFUCHSIA == nullptr) { table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA)StubGetSemaphoreZirconHandleFUCHSIA; }
 #endif // VK_USE_PLATFORM_FUCHSIA
+    table->GetMemoryRemoteAddressNV = (PFN_vkGetMemoryRemoteAddressNV) gpa(device, "vkGetMemoryRemoteAddressNV");
+    if (table->GetMemoryRemoteAddressNV == nullptr) { table->GetMemoryRemoteAddressNV = (PFN_vkGetMemoryRemoteAddressNV)StubGetMemoryRemoteAddressNV; }
     table->CmdSetPatchControlPointsEXT = (PFN_vkCmdSetPatchControlPointsEXT) gpa(device, "vkCmdSetPatchControlPointsEXT");
     if (table->CmdSetPatchControlPointsEXT == nullptr) { table->CmdSetPatchControlPointsEXT = (PFN_vkCmdSetPatchControlPointsEXT)StubCmdSetPatchControlPointsEXT; }
     table->CmdSetRasterizerDiscardEnableEXT = (PFN_vkCmdSetRasterizerDiscardEnableEXT) gpa(device, "vkCmdSetRasterizerDiscardEnableEXT");
