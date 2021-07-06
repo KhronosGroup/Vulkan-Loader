@@ -896,6 +896,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA)gdpa(dev, "vkGetSemaphoreZirconHandleFUCHSIA");
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+    // ---- VK_NV_external_memory_rdma extension commands
+    table->GetMemoryRemoteAddressNV = (PFN_vkGetMemoryRemoteAddressNV)gdpa(dev, "vkGetMemoryRemoteAddressNV");
+
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     table->CmdSetPatchControlPointsEXT = (PFN_vkCmdSetPatchControlPointsEXT)gdpa(dev, "vkCmdSetPatchControlPointsEXT");
     table->CmdSetRasterizerDiscardEnableEXT = (PFN_vkCmdSetRasterizerDiscardEnableEXT)gdpa(dev, "vkCmdSetRasterizerDiscardEnableEXT");
@@ -1745,6 +1748,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 #ifdef VK_USE_PLATFORM_FUCHSIA
     if (!strcmp(name, "GetSemaphoreZirconHandleFUCHSIA")) return (void *)table->GetSemaphoreZirconHandleFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_NV_external_memory_rdma extension commands
+    if (!strcmp(name, "GetMemoryRemoteAddressNV")) return (void *)table->GetMemoryRemoteAddressNV;
 
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     if (!strcmp(name, "CmdSetPatchControlPointsEXT")) return (void *)table->CmdSetPatchControlPointsEXT;
@@ -4505,6 +4511,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(
 
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+// ---- VK_NV_external_memory_rdma extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(
+    VkDevice                                    device,
+    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    VkRemoteAddressNV*                          pAddress) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
+}
+
+
 // ---- VK_EXT_extended_dynamic_state2 extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(
@@ -5998,6 +6015,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_NV_external_memory_rdma extension commands
+    if (!strcmp("vkGetMemoryRemoteAddressNV", name)) {
+        *addr = (void *)GetMemoryRemoteAddressNV;
+        return true;
+    }
 
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     if (!strcmp("vkCmdSetPatchControlPointsEXT", name)) {
