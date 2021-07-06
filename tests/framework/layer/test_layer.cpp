@@ -131,7 +131,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const 
     return nullptr;
 }
 
-PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName) {
     if (pName == nullptr) return nullptr;
     if (instance == NULL) {
         if (string_eq(pName, "vkGetInstanceProcAddr")) return TO_VOID_PFN(get_instance_func);
@@ -215,10 +215,18 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDev
     return nullptr;
 }
 #endif
-#define LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION 1
 
 #if LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION
-FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVersionStruct) {
+// vk_layer.h has a forward declaration of vkNegotiateLoaderLayerInterfaceVersion, which doesn't have any attributes
+// Since FRAMEWORK_EXPORT adds  __declspec(dllexport), we can't do that here, thus we need our own macro
+#if (defined(__GNUC__) && (__GNUC__ >= 4)) || (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590))
+#define EXPORT_NEGOTIATE_FUNCTION __attribute__((visibility("default")))
+#else
+#define EXPORT_NEGOTIATE_FUNCTION
+#endif
+
+EXPORT_NEGOTIATE_FUNCTION VKAPI_ATTR VkResult VKAPI_CALL
+vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVersionStruct) {
     if (pVersionStruct) {
         if (pVersionStruct->loaderLayerInterfaceVersion < layer.min_implementation_version) {
             return VK_ERROR_INITIALIZATION_FAILED;
