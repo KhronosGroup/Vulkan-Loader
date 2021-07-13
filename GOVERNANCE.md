@@ -32,7 +32,8 @@
 
 The technical project leads for this repository are:
 
-- **Lenny Komow** [lenny@lunarg.com](mailto:lenny@lunarg.com)
+- **Charles Giessen** [charles@lunarg.com](mailto:charles@lunarg.com)
+- **Mark Young** [marky@lunarg.com](mailto:marky@lunarg.com)
 
 ## **Acceptance Criteria and Process**
 

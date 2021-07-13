@@ -26,7 +26,8 @@ The following components are available in this repository:
 
 ## Contact Information
 
-- [Lenny Komow](mailto:lenny@lunarg.com)
+- [Charles Giessen](mailto:charles@lunarg.com)
+- [Mark Young](mailto:marky@lunarg.com)
 
 ## Information for Developing or Contributing
 
