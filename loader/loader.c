@@ -4200,7 +4200,7 @@ static VkResult ReadManifestsFromD3DAdapters(const struct loader_instance *inst,
     PFN_LoaderQueryAdapterInfo fpLoaderQueryAdapterInfo =
         (PFN_LoaderQueryAdapterInfo)GetProcAddress(GetModuleHandle("gdi32.dll"), "D3DKMTQueryAdapterInfo");
     if (fpLoaderEnumAdapters2 == NULL || fpLoaderQueryAdapterInfo == NULL) {
-        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
