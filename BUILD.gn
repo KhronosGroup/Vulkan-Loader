@@ -44,6 +44,7 @@ config("vulkan_internal_config") {
     cflags = [
       "-Wno-conversion",
       "-Wno-extra-semi",
+      "-Wno-implicit-fallthrough",
       "-Wno-sign-compare",
       "-Wno-unreachable-code",
       "-Wno-unused-function",
