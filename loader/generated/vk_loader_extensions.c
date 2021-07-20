@@ -640,6 +640,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_KHR_fragment_shading_rate extension commands
     table->CmdSetFragmentShadingRateKHR = (PFN_vkCmdSetFragmentShadingRateKHR)gdpa(dev, "vkCmdSetFragmentShadingRateKHR");
 
+    // ---- VK_KHR_present_wait extension commands
+    table->WaitForPresentKHR = (PFN_vkWaitForPresentKHR)gdpa(dev, "vkWaitForPresentKHR");
+
     // ---- VK_KHR_buffer_device_address extension commands
     table->GetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)gdpa(dev, "vkGetBufferDeviceAddressKHR");
     table->GetBufferOpaqueCaptureAddressKHR = (PFN_vkGetBufferOpaqueCaptureAddressKHR)gdpa(dev, "vkGetBufferOpaqueCaptureAddressKHR");
@@ -895,6 +898,13 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 #ifdef VK_USE_PLATFORM_FUCHSIA
     table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA)gdpa(dev, "vkGetSemaphoreZirconHandleFUCHSIA");
 #endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_HUAWEI_subpass_shading extension commands
+    table->GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI = (PFN_vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI)gdpa(dev, "vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI");
+    table->CmdSubpassShadingHUAWEI = (PFN_vkCmdSubpassShadingHUAWEI)gdpa(dev, "vkCmdSubpassShadingHUAWEI");
+
+    // ---- VK_HUAWEI_invocation_mask extension commands
+    table->CmdBindInvocationMaskHUAWEI = (PFN_vkCmdBindInvocationMaskHUAWEI)gdpa(dev, "vkCmdBindInvocationMaskHUAWEI");
 
     // ---- VK_NV_external_memory_rdma extension commands
     table->GetMemoryRemoteAddressNV = (PFN_vkGetMemoryRemoteAddressNV)gdpa(dev, "vkGetMemoryRemoteAddressNV");
@@ -1493,6 +1503,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_KHR_fragment_shading_rate extension commands
     if (!strcmp(name, "CmdSetFragmentShadingRateKHR")) return (void *)table->CmdSetFragmentShadingRateKHR;
 
+    // ---- VK_KHR_present_wait extension commands
+    if (!strcmp(name, "WaitForPresentKHR")) return (void *)table->WaitForPresentKHR;
+
     // ---- VK_KHR_buffer_device_address extension commands
     if (!strcmp(name, "GetBufferDeviceAddressKHR")) return (void *)table->GetBufferDeviceAddressKHR;
     if (!strcmp(name, "GetBufferOpaqueCaptureAddressKHR")) return (void *)table->GetBufferOpaqueCaptureAddressKHR;
@@ -1748,6 +1761,13 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 #ifdef VK_USE_PLATFORM_FUCHSIA
     if (!strcmp(name, "GetSemaphoreZirconHandleFUCHSIA")) return (void *)table->GetSemaphoreZirconHandleFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_HUAWEI_subpass_shading extension commands
+    if (!strcmp(name, "GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI")) return (void *)table->GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI;
+    if (!strcmp(name, "CmdSubpassShadingHUAWEI")) return (void *)table->CmdSubpassShadingHUAWEI;
+
+    // ---- VK_HUAWEI_invocation_mask extension commands
+    if (!strcmp(name, "CmdBindInvocationMaskHUAWEI")) return (void *)table->CmdBindInvocationMaskHUAWEI;
 
     // ---- VK_NV_external_memory_rdma extension commands
     if (!strcmp(name, "GetMemoryRemoteAddressNV")) return (void *)table->GetMemoryRemoteAddressNV;
@@ -2709,6 +2729,18 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     disp->CmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
+}
+
+
+// ---- VK_KHR_present_wait extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    uint64_t                                    presentId,
+    uint64_t                                    timeout) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->WaitForPresentKHR(device, swapchain, presentId, timeout);
 }
 
 
@@ -4511,14 +4543,42 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(
 
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+// ---- VK_HUAWEI_subpass_shading extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
+    VkDevice                                    device,
+    VkRenderPass                                renderpass,
+    VkExtent2D*                                 pMaxWorkgroupSize) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSubpassShadingHUAWEI(
+    VkCommandBuffer                             commandBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSubpassShadingHUAWEI(commandBuffer);
+}
+
+
+// ---- VK_HUAWEI_invocation_mask extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdBindInvocationMaskHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    VkImageView                                 imageView,
+    VkImageLayout                               imageLayout) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+}
+
+
 // ---- VK_NV_external_memory_rdma extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(
     VkDevice                                    device,
-    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    const VkMemoryGetRemoteAddressInfoNV*       pMemoryGetRemoteAddressInfo,
     VkRemoteAddressNV*                          pAddress) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    return disp->GetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
+    return disp->GetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
 }
 
 
@@ -5197,6 +5257,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdSetFragmentShadingRateKHR", name)) {
         *addr = (void *)CmdSetFragmentShadingRateKHR;
+        return true;
+    }
+
+    // ---- VK_KHR_present_wait extension commands
+    if (!strcmp("vkWaitForPresentKHR", name)) {
+        *addr = (void *)WaitForPresentKHR;
         return true;
     }
 
@@ -6015,6 +6081,22 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_HUAWEI_subpass_shading extension commands
+    if (!strcmp("vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI", name)) {
+        *addr = (void *)GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI;
+        return true;
+    }
+    if (!strcmp("vkCmdSubpassShadingHUAWEI", name)) {
+        *addr = (void *)CmdSubpassShadingHUAWEI;
+        return true;
+    }
+
+    // ---- VK_HUAWEI_invocation_mask extension commands
+    if (!strcmp("vkCmdBindInvocationMaskHUAWEI", name)) {
+        *addr = (void *)CmdBindInvocationMaskHUAWEI;
+        return true;
+    }
 
     // ---- VK_NV_external_memory_rdma extension commands
     if (!strcmp("vkGetMemoryRemoteAddressNV", name)) {
