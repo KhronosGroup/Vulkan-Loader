@@ -3,9 +3,9 @@
 // See dispatch_helper_generator.py for modifications
 
 /*
- * Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -344,6 +344,8 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetRayTracingPipelineStackSizeKHR(VkCom
 
 static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable *table, PFN_vkGetDeviceProcAddr gpa) {
     memset(table, 0, sizeof(*table));
+    table->magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;
+
     // Device function pointers
     table->GetDeviceProcAddr = gpa;
     table->DestroyDevice = (PFN_vkDestroyDevice) gpa(device, "vkDestroyDevice");
@@ -1098,6 +1100,7 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
 
 static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDispatchTable *table, PFN_vkGetInstanceProcAddr gpa) {
     memset(table, 0, sizeof(*table));
+
     // Instance function pointers
     table->DestroyInstance = (PFN_vkDestroyInstance) gpa(instance, "vkDestroyInstance");
     table->EnumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices) gpa(instance, "vkEnumeratePhysicalDevices");

@@ -2,9 +2,9 @@
 // See loader_extension_generator.py for modifications
 
 /*
- * Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -278,7 +278,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table
+#define DEVICE_DISP_TABLE_MAGIC_NUMBER 0x10ADED040410ADEDUL
 typedef struct VkLayerDispatchTable_ {
+    uint64_t magic; // Should be DEVICE_DISP_TABLE_MAGIC_NUMBER
 
     // ---- Core 1_0 commands
     PFN_vkGetDeviceProcAddr GetDeviceProcAddr;

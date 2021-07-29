@@ -226,9 +226,13 @@ struct loader_instance_dispatch_table {
     PFN_PhysDevExt phys_dev_ext[MAX_NUM_UNKNOWN_EXTS];
 };
 
+// Unique magic number identifier for the loader.
+#define LOADER_MAGIC_NUMBER 0x10ADED010110ADEDUL
+
 // Per instance structure
 struct loader_instance {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
+    uint64_t magic;                               // Should be LOADER_MAGIC_NUMBER
 
     // Vulkan API version the app is intending to use.
     uint16_t app_api_major_version;
@@ -342,11 +346,15 @@ struct loader_instance {
 // trampoline code wraps the VkPhysicalDevice this means all loader trampoline
 // code that passes a VkPhysicalDevice should unwrap it.
 
+// Unique identifier for physical devices
+#define PHYS_TRAMP_MAGIC_NUMBER 0x10ADED020210ADEDUL
+
 // Per enumerated PhysicalDevice structure, used to wrap in trampoline code and
 // also same structure used to wrap in terminator code
 struct loader_physical_device_tramp {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
     struct loader_instance *this_instance;
+    uint64_t magic;             // Should be PHYS_TRAMP_MAGIC_NUMBER
     VkPhysicalDevice phys_dev;  // object from layers/loader terminator
 };
 

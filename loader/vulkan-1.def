@@ -182,6 +182,7 @@ EXPORTS
    vkCreateDisplayPlaneSurfaceKHR
    vkCreateSharedSwapchainsKHR
    vkCreateWin32SurfaceKHR
+   vkCreateHeadlessSurfaceEXT
    vkGetPhysicalDeviceWin32PresentationSupportKHR
 
    vkEnumerateInstanceVersion

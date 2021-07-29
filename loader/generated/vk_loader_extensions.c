@@ -2,9 +2,9 @@
 // See loader_extension_generator.py for modifications
 
 /*
- * Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -329,6 +329,7 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
 VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_dispatch_table *dev_table, PFN_vkGetDeviceProcAddr gpa,
                                                              VkDevice dev) {
     VkLayerDispatchTable *table = &dev_table->core_dispatch;
+    table->magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;
     for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch.dev_ext[i] = (PFN_vkDevExt)vkDevExtError;
 
     // ---- Core 1_0 commands
@@ -533,6 +534,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
                                                                        VkInstance inst,
                                                                        VkDevice dev) {
     VkLayerDispatchTable *table = &dev_table->core_dispatch;
+    table->magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;
 
     // ---- VK_KHR_swapchain extension commands
     table->CreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)gdpa(dev, "vkCreateSwapchainKHR");
@@ -2217,6 +2219,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(
     VkVideoCapabilitiesKHR*                     pCapabilities) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceVideoCapabilitiesKHR: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceVideoCapabilitiesKHR(unwrapped_phys_dev, pVideoProfile, pCapabilities);
 }
@@ -2243,6 +2251,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(
     VkVideoFormatPropertiesKHR*                 pVideoFormatProperties) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceVideoFormatPropertiesKHR: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceVideoFormatPropertiesKHR(unwrapped_phys_dev, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties);
 }
@@ -2269,6 +2283,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkVideoSessionKHR*                          pVideoSession) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateVideoSessionKHR: Invalid device "
+                   "[VUID-vkCreateVideoSessionKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
 }
 
@@ -2279,6 +2299,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionKHR(
     VkVideoSessionKHR                           videoSession,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyVideoSessionKHR: Invalid device "
+                   "[VUID-vkDestroyVideoSessionKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyVideoSessionKHR(device, videoSession, pAllocator);
 }
 
@@ -2290,6 +2316,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetVideoSessionMemoryRequirementsKHR(
     uint32_t*                                   pVideoSessionMemoryRequirementsCount,
     VkVideoGetMemoryPropertiesKHR*              pVideoSessionMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetVideoSessionMemoryRequirementsKHR: Invalid device "
+                   "[VUID-vkGetVideoSessionMemoryRequirementsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetVideoSessionMemoryRequirementsKHR(device, videoSession, pVideoSessionMemoryRequirementsCount, pVideoSessionMemoryRequirements);
 }
 
@@ -2301,6 +2333,12 @@ VKAPI_ATTR VkResult VKAPI_CALL BindVideoSessionMemoryKHR(
     uint32_t                                    videoSessionBindMemoryCount,
     const VkVideoBindMemoryKHR*                 pVideoSessionBindMemories) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkBindVideoSessionMemoryKHR: Invalid device "
+                   "[VUID-vkBindVideoSessionMemoryKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->BindVideoSessionMemoryKHR(device, videoSession, videoSessionBindMemoryCount, pVideoSessionBindMemories);
 }
 
@@ -2312,6 +2350,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionParametersKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkVideoSessionParametersKHR*                pVideoSessionParameters) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateVideoSessionParametersKHR: Invalid device "
+                   "[VUID-vkCreateVideoSessionParametersKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters);
 }
 
@@ -2322,6 +2366,12 @@ VKAPI_ATTR VkResult VKAPI_CALL UpdateVideoSessionParametersKHR(
     VkVideoSessionParametersKHR                 videoSessionParameters,
     const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkUpdateVideoSessionParametersKHR: Invalid device "
+                   "[VUID-vkUpdateVideoSessionParametersKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->UpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo);
 }
 
@@ -2332,6 +2382,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionParametersKHR(
     VkVideoSessionParametersKHR                 videoSessionParameters,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyVideoSessionParametersKHR: Invalid device "
+                   "[VUID-vkDestroyVideoSessionParametersKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
 }
 
@@ -2341,6 +2397,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoBeginCodingInfoKHR*            pBeginInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBeginVideoCodingKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginVideoCodingKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBeginVideoCodingKHR(commandBuffer, pBeginInfo);
 }
 
@@ -2350,6 +2412,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEndCodingInfoKHR*              pEndCodingInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEndVideoCodingKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdEndVideoCodingKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
 }
 
@@ -2359,6 +2427,12 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoCodingControlInfoKHR*          pCodingControlInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdControlVideoCodingKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdControlVideoCodingKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
 }
 
@@ -2371,6 +2445,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoDecodeInfoKHR*                 pFrameInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDecodeVideoKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDecodeVideoKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDecodeVideoKHR(commandBuffer, pFrameInfo);
 }
 
@@ -2382,12 +2462,24 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderingInfo*                      pRenderingInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBeginRenderingKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginRenderingKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(
     VkCommandBuffer                             commandBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEndRenderingKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdEndRenderingKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEndRenderingKHR(commandBuffer);
 }
 
@@ -2401,6 +2493,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeaturesKHR(
     uint32_t                                    remoteDeviceIndex,
     VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeviceGroupPeerMemoryFeaturesKHR: Invalid device "
+                   "[VUID-vkGetDeviceGroupPeerMemoryFeaturesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceGroupPeerMemoryFeaturesKHR(device, heapIndex, localDeviceIndex, remoteDeviceIndex, pPeerMemoryFeatures);
 }
 
@@ -2408,6 +2506,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMaskKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    deviceMask) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetDeviceMaskKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDeviceMaskKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDeviceMaskKHR(commandBuffer, deviceMask);
 }
 
@@ -2420,6 +2524,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(
     uint32_t                                    groupCountY,
     uint32_t                                    groupCountZ) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDispatchBaseKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDispatchBaseKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
@@ -2431,6 +2541,12 @@ VKAPI_ATTR void VKAPI_CALL TrimCommandPoolKHR(
     VkCommandPool                               commandPool,
     VkCommandPoolTrimFlags                      flags) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkTrimCommandPoolKHR: Invalid device "
+                   "[VUID-vkTrimCommandPoolKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->TrimCommandPoolKHR(device, commandPool, flags);
 }
 
@@ -2443,6 +2559,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleKHR(
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
     HANDLE*                                     pHandle) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryWin32HandleKHR: Invalid device "
+                   "[VUID-vkGetMemoryWin32HandleKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
@@ -2454,6 +2576,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(
     HANDLE                                      handle,
     VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryWin32HandlePropertiesKHR: Invalid device "
+                   "[VUID-vkGetMemoryWin32HandlePropertiesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties);
 }
 
@@ -2466,6 +2594,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdKHR(
     const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
     int*                                        pFd) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryFdKHR: Invalid device "
+                   "[VUID-vkGetMemoryFdKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryFdKHR(device, pGetFdInfo, pFd);
 }
 
@@ -2475,6 +2609,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdPropertiesKHR(
     int                                         fd,
     VkMemoryFdPropertiesKHR*                    pMemoryFdProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryFdPropertiesKHR: Invalid device "
+                   "[VUID-vkGetMemoryFdPropertiesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties);
 }
 
@@ -2486,6 +2626,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkImportSemaphoreWin32HandleKHR: Invalid device "
+                   "[VUID-vkImportSemaphoreWin32HandleKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->ImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
 }
 
@@ -2496,6 +2642,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
     HANDLE*                                     pHandle) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetSemaphoreWin32HandleKHR: Invalid device "
+                   "[VUID-vkGetSemaphoreWin32HandleKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
@@ -2507,6 +2659,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(
     VkDevice                                    device,
     const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkImportSemaphoreFdKHR: Invalid device "
+                   "[VUID-vkImportSemaphoreFdKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->ImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
 }
 
@@ -2515,6 +2673,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreFdKHR(
     const VkSemaphoreGetFdInfoKHR*              pGetFdInfo,
     int*                                        pFd) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetSemaphoreFdKHR: Invalid device "
+                   "[VUID-vkGetSemaphoreFdKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetSemaphoreFdKHR(device, pGetFdInfo, pFd);
 }
 
@@ -2529,6 +2693,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(
     uint32_t                                    descriptorWriteCount,
     const VkWriteDescriptorSet*                 pDescriptorWrites) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdPushDescriptorSetKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdPushDescriptorSetKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
 }
 
@@ -2539,6 +2709,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(
     uint32_t                                    set,
     const void*                                 pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdPushDescriptorSetWithTemplateKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
 }
 
@@ -2551,6 +2727,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateDescriptorUpdateTemplateKHR: Invalid device "
+                   "[VUID-vkCreateDescriptorUpdateTemplateKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
 }
 
@@ -2559,6 +2741,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyDescriptorUpdateTemplateKHR: Invalid device "
+                   "[VUID-vkDestroyDescriptorUpdateTemplateKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
 }
 
@@ -2568,6 +2756,12 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const void*                                 pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkUpdateDescriptorSetWithTemplateKHR: Invalid device "
+                   "[VUID-vkUpdateDescriptorSetWithTemplateKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
 }
 
@@ -2580,6 +2774,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateRenderPass2KHR: Invalid device "
+                   "[VUID-vkCreateRenderPass2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
 }
 
@@ -2588,6 +2788,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(
     const VkRenderPassBeginInfo*                pRenderPassBegin,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBeginRenderPass2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginRenderPass2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
 }
 
@@ -2596,6 +2802,12 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
     const VkSubpassEndInfo*                     pSubpassEndInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdNextSubpass2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdNextSubpass2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
@@ -2603,6 +2815,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassEndInfo*                     pSubpassEndInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEndRenderPass2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdEndRenderPass2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
@@ -2613,6 +2831,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetSwapchainStatusKHR: Invalid device "
+                   "[VUID-vkGetSwapchainStatusKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetSwapchainStatusKHR(device, swapchain);
 }
 
@@ -2624,6 +2848,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkImportFenceWin32HandleKHR: Invalid device "
+                   "[VUID-vkImportFenceWin32HandleKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->ImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
 }
 
@@ -2634,6 +2864,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
     HANDLE*                                     pHandle) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetFenceWin32HandleKHR: Invalid device "
+                   "[VUID-vkGetFenceWin32HandleKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
@@ -2645,6 +2881,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(
     VkDevice                                    device,
     const VkImportFenceFdInfoKHR*               pImportFenceFdInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkImportFenceFdKHR: Invalid device "
+                   "[VUID-vkImportFenceFdKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->ImportFenceFdKHR(device, pImportFenceFdInfo);
 }
 
@@ -2653,6 +2895,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(
     const VkFenceGetFdInfoKHR*                  pGetFdInfo,
     int*                                        pFd) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetFenceFdKHR: Invalid device "
+                   "[VUID-vkGetFenceFdKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetFenceFdKHR(device, pGetFdInfo, pFd);
 }
 
@@ -2667,6 +2915,12 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQuer
     VkPerformanceCounterDescriptionKHR*         pCounterDescriptions) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR: Invalid physicalDevice "
+                   "[VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(unwrapped_phys_dev, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
 }
@@ -2692,6 +2946,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
     uint32_t*                                   pNumPasses) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     disp->GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(unwrapped_phys_dev, pPerformanceQueryCreateInfo, pNumPasses);
 }
@@ -2713,12 +2973,24 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireProfilingLockKHR(
     VkDevice                                    device,
     const VkAcquireProfilingLockInfoKHR*        pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkAcquireProfilingLockKHR: Invalid device "
+                   "[VUID-vkAcquireProfilingLockKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->AcquireProfilingLockKHR(device, pInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL ReleaseProfilingLockKHR(
     VkDevice                                    device) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkReleaseProfilingLockKHR: Invalid device "
+                   "[VUID-vkReleaseProfilingLockKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->ReleaseProfilingLockKHR(device);
 }
 
@@ -2730,6 +3002,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(
     const VkImageMemoryRequirementsInfo2*       pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetImageMemoryRequirements2KHR: Invalid device "
+                   "[VUID-vkGetImageMemoryRequirements2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
 }
 
@@ -2738,6 +3016,12 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(
     const VkBufferMemoryRequirementsInfo2*      pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetBufferMemoryRequirements2KHR: Invalid device "
+                   "[VUID-vkGetBufferMemoryRequirements2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
 }
 
@@ -2747,6 +3031,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetImageSparseMemoryRequirements2KHR: Invalid device "
+                   "[VUID-vkGetImageSparseMemoryRequirements2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
@@ -2759,6 +3049,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversionKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkSamplerYcbcrConversion*                   pYcbcrConversion) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateSamplerYcbcrConversionKHR: Invalid device "
+                   "[VUID-vkCreateSamplerYcbcrConversionKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
 }
 
@@ -2767,6 +3063,12 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversionKHR(
     VkSamplerYcbcrConversion                    ycbcrConversion,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroySamplerYcbcrConversionKHR: Invalid device "
+                   "[VUID-vkDestroySamplerYcbcrConversionKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
 }
 
@@ -2778,6 +3080,12 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(
     uint32_t                                    bindInfoCount,
     const VkBindBufferMemoryInfo*               pBindInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkBindBufferMemory2KHR: Invalid device "
+                   "[VUID-vkBindBufferMemory2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->BindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
 }
 
@@ -2786,6 +3094,12 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(
     uint32_t                                    bindInfoCount,
     const VkBindImageMemoryInfo*                pBindInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkBindImageMemory2KHR: Invalid device "
+                   "[VUID-vkBindImageMemory2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->BindImageMemory2KHR(device, bindInfoCount, pBindInfos);
 }
 
@@ -2797,6 +3111,12 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupportKHR(
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     VkDescriptorSetLayoutSupport*               pSupport) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDescriptorSetLayoutSupportKHR: Invalid device "
+                   "[VUID-vkGetDescriptorSetLayoutSupportKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport);
 }
 
@@ -2812,6 +3132,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawIndirectCountKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndirectCountKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
 
@@ -2824,6 +3150,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawIndexedIndirectCountKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
 
@@ -2835,6 +3167,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(
     VkSemaphore                                 semaphore,
     uint64_t*                                   pValue) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetSemaphoreCounterValueKHR: Invalid device "
+                   "[VUID-vkGetSemaphoreCounterValueKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetSemaphoreCounterValueKHR(device, semaphore, pValue);
 }
 
@@ -2843,6 +3181,12 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(
     const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkWaitSemaphoresKHR: Invalid device "
+                   "[VUID-vkWaitSemaphoresKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->WaitSemaphoresKHR(device, pWaitInfo, timeout);
 }
 
@@ -2850,6 +3194,12 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(
     VkDevice                                    device,
     const VkSemaphoreSignalInfo*                pSignalInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSignalSemaphoreKHR: Invalid device "
+                   "[VUID-vkSignalSemaphoreKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->SignalSemaphoreKHR(device, pSignalInfo);
 }
 
@@ -2862,6 +3212,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceFragmentShadingRatesKHR(
     VkPhysicalDeviceFragmentShadingRateKHR*     pFragmentShadingRates) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceFragmentShadingRatesKHR: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceFragmentShadingRatesKHR(unwrapped_phys_dev, pFragmentShadingRateCount, pFragmentShadingRates);
 }
@@ -2884,6 +3240,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(
     const VkExtent2D*                           pFragmentSize,
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetFragmentShadingRateKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdSetFragmentShadingRateKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
 }
 
@@ -2896,6 +3258,12 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(
     uint64_t                                    presentId,
     uint64_t                                    timeout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkWaitForPresentKHR: Invalid device "
+                   "[VUID-vkWaitForPresentKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->WaitForPresentKHR(device, swapchain, presentId, timeout);
 }
 
@@ -2906,6 +3274,12 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetBufferDeviceAddressKHR: Invalid device "
+                   "[VUID-vkGetBufferDeviceAddressKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetBufferDeviceAddressKHR(device, pInfo);
 }
 
@@ -2913,6 +3287,12 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetBufferOpaqueCaptureAddressKHR: Invalid device "
+                   "[VUID-vkGetBufferOpaqueCaptureAddressKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetBufferOpaqueCaptureAddressKHR(device, pInfo);
 }
 
@@ -2920,6 +3300,12 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
     const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeviceMemoryOpaqueCaptureAddressKHR: Invalid device "
+                   "[VUID-vkGetDeviceMemoryOpaqueCaptureAddressKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
 }
 
@@ -2931,6 +3317,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDeferredOperationKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkDeferredOperationKHR*                     pDeferredOperation) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateDeferredOperationKHR: Invalid device "
+                   "[VUID-vkCreateDeferredOperationKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateDeferredOperationKHR(device, pAllocator, pDeferredOperation);
 }
 
@@ -2939,6 +3331,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDeferredOperationKHR(
     VkDeferredOperationKHR                      operation,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyDeferredOperationKHR: Invalid device "
+                   "[VUID-vkDestroyDeferredOperationKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyDeferredOperationKHR(device, operation, pAllocator);
 }
 
@@ -2946,6 +3344,12 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetDeferredOperationMaxConcurrencyKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeferredOperationMaxConcurrencyKHR: Invalid device "
+                   "[VUID-vkGetDeferredOperationMaxConcurrencyKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetDeferredOperationMaxConcurrencyKHR(device, operation);
 }
 
@@ -2953,6 +3357,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeferredOperationResultKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeferredOperationResultKHR: Invalid device "
+                   "[VUID-vkGetDeferredOperationResultKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetDeferredOperationResultKHR(device, operation);
 }
 
@@ -2960,6 +3370,12 @@ VKAPI_ATTR VkResult VKAPI_CALL DeferredOperationJoinKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDeferredOperationJoinKHR: Invalid device "
+                   "[VUID-vkDeferredOperationJoinKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->DeferredOperationJoinKHR(device, operation);
 }
 
@@ -2972,6 +3388,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(
     uint32_t*                                   pExecutableCount,
     VkPipelineExecutablePropertiesKHR*          pProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPipelineExecutablePropertiesKHR: Invalid device "
+                   "[VUID-vkGetPipelineExecutablePropertiesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
 }
 
@@ -2981,6 +3403,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableStatisticsKHR(
     uint32_t*                                   pStatisticCount,
     VkPipelineExecutableStatisticKHR*           pStatistics) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPipelineExecutableStatisticsKHR: Invalid device "
+                   "[VUID-vkGetPipelineExecutableStatisticsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
 }
 
@@ -2990,6 +3418,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
     uint32_t*                                   pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPipelineExecutableInternalRepresentationsKHR: Invalid device "
+                   "[VUID-vkGetPipelineExecutableInternalRepresentationsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
 }
 
@@ -3001,6 +3435,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEncodeVideoKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdEncodeVideoKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEncodeVideoKHR(commandBuffer, pEncodeInfo);
 }
 
@@ -3013,6 +3453,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(
     VkEvent                                     event,
     const VkDependencyInfo*                     pDependencyInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetEvent2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdSetEvent2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
 }
 
@@ -3021,6 +3467,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(
     VkEvent                                     event,
     VkPipelineStageFlags2                       stageMask) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdResetEvent2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdResetEvent2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdResetEvent2KHR(commandBuffer, event, stageMask);
 }
 
@@ -3030,6 +3482,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(
     const VkEvent*                              pEvents,
     const VkDependencyInfo*                     pDependencyInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdWaitEvents2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdWaitEvents2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
 }
 
@@ -3037,6 +3495,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkDependencyInfo*                     pDependencyInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdPipelineBarrier2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdPipelineBarrier2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
 }
 
@@ -3046,6 +3510,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(
     VkQueryPool                                 queryPool,
     uint32_t                                    query) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdWriteTimestamp2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteTimestamp2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
 }
 
@@ -3055,6 +3525,12 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(
     const VkSubmitInfo2*                        pSubmits,
     VkFence                                     fence) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkQueueSubmit2KHR: Invalid queue "
+                   "[VUID-vkQueueSubmit2KHR-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->QueueSubmit2KHR(queue, submitCount, pSubmits, fence);
 }
 
@@ -3065,6 +3541,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(
     VkDeviceSize                                dstOffset,
     uint32_t                                    marker) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdWriteBufferMarker2AMD: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
 }
 
@@ -3073,6 +3555,12 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(
     uint32_t*                                   pCheckpointDataCount,
     VkCheckpointData2NV*                        pCheckpointData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetQueueCheckpointData2NV: Invalid queue "
+                   "[VUID-vkGetQueueCheckpointData2NV-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
@@ -3083,6 +3571,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyBufferInfo2*                    pCopyBufferInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyBuffer2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyBuffer2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
 }
 
@@ -3090,6 +3584,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyImageInfo2*                     pCopyImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyImage2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyImage2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
 }
 
@@ -3097,6 +3597,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyBufferToImageInfo2*             pCopyBufferToImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyBufferToImage2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
 }
 
@@ -3104,6 +3610,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyImageToBufferInfo2*             pCopyImageToBufferInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyImageToBuffer2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
 }
 
@@ -3111,6 +3623,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkBlitImageInfo2*                     pBlitImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBlitImage2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBlitImage2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
 }
 
@@ -3118,6 +3636,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkResolveImageInfo2*                  pResolveImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdResolveImage2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdResolveImage2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
 }
 
@@ -3129,6 +3653,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(
     const VkDeviceBufferMemoryRequirements*     pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeviceBufferMemoryRequirementsKHR: Invalid device "
+                   "[VUID-vkGetDeviceBufferMemoryRequirementsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
@@ -3137,6 +3667,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(
     const VkDeviceImageMemoryRequirements*      pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeviceImageMemoryRequirementsKHR: Invalid device "
+                   "[VUID-vkGetDeviceImageMemoryRequirementsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
@@ -3146,6 +3682,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeviceImageSparseMemoryRequirementsKHR: Invalid device "
+                   "[VUID-vkGetDeviceImageSparseMemoryRequirementsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
@@ -3156,6 +3698,12 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDebugMarkerSetObjectTagEXT: Invalid device "
+                   "[VUID-vkDebugMarkerSetObjectTagEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     VkDebugMarkerObjectTagInfoEXT local_tag_info;
     memcpy(&local_tag_info, pTagInfo, sizeof(VkDebugMarkerObjectTagInfoEXT));
     // If this is a physical device, we have to replace it with the proper one for the next call.
@@ -3198,6 +3746,12 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDebugMarkerSetObjectNameEXT: Invalid device "
+                   "[VUID-vkDebugMarkerSetObjectNameEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     VkDebugMarkerObjectNameInfoEXT local_name_info;
     memcpy(&local_name_info, pNameInfo, sizeof(VkDebugMarkerObjectNameInfoEXT));
     // If this is a physical device, we have to replace it with the proper one for the next call.
@@ -3240,12 +3794,24 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(
     VkCommandBuffer                             commandBuffer,
     const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDebugMarkerBeginEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(
     VkCommandBuffer                             commandBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDebugMarkerEndEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDebugMarkerEndEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDebugMarkerEndEXT(commandBuffer);
 }
 
@@ -3253,6 +3819,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerInsertEXT(
     VkCommandBuffer                             commandBuffer,
     const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDebugMarkerInsertEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
 }
 
@@ -3267,6 +3839,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffersEXT(
     const VkDeviceSize*                         pOffsets,
     const VkDeviceSize*                         pSizes) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBindTransformFeedbackBuffersEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes);
 }
 
@@ -3277,6 +3855,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedbackEXT(
     const VkBuffer*                             pCounterBuffers,
     const VkDeviceSize*                         pCounterBufferOffsets) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBeginTransformFeedbackEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets);
 }
 
@@ -3287,6 +3871,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedbackEXT(
     const VkBuffer*                             pCounterBuffers,
     const VkDeviceSize*                         pCounterBufferOffsets) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEndTransformFeedbackEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdEndTransformFeedbackEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets);
 }
 
@@ -3297,6 +3887,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQueryIndexedEXT(
     VkQueryControlFlags                         flags,
     uint32_t                                    index) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBeginQueryIndexedEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
 }
 
@@ -3306,6 +3902,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQueryIndexedEXT(
     uint32_t                                    query,
     uint32_t                                    index) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEndQueryIndexedEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdEndQueryIndexedEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
 }
 
@@ -3318,6 +3920,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCountEXT(
     uint32_t                                    counterOffset,
     uint32_t                                    vertexStride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawIndirectByteCountEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride);
 }
 
@@ -3330,6 +3938,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuModuleNVX(
     const VkAllocationCallbacks*                pAllocator,
     VkCuModuleNVX*                              pModule) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateCuModuleNVX: Invalid device "
+                   "[VUID-vkCreateCuModuleNVX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
 }
 
@@ -3339,6 +3953,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(
     const VkAllocationCallbacks*                pAllocator,
     VkCuFunctionNVX*                            pFunction) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateCuFunctionNVX: Invalid device "
+                   "[VUID-vkCreateCuFunctionNVX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
 }
 
@@ -3347,6 +3967,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuModuleNVX(
     VkCuModuleNVX                               module,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyCuModuleNVX: Invalid device "
+                   "[VUID-vkDestroyCuModuleNVX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyCuModuleNVX(device, module, pAllocator);
 }
 
@@ -3355,6 +3981,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuFunctionNVX(
     VkCuFunctionNVX                             function,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyCuFunctionNVX: Invalid device "
+                   "[VUID-vkDestroyCuFunctionNVX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyCuFunctionNVX(device, function, pAllocator);
 }
 
@@ -3362,6 +3994,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(
     VkCommandBuffer                             commandBuffer,
     const VkCuLaunchInfoNVX*                    pLaunchInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCuLaunchKernelNVX: Invalid commandBuffer "
+                   "[VUID-vkCmdCuLaunchKernelNVX-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
 }
 
@@ -3372,6 +4010,12 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(
     VkDevice                                    device,
     const VkImageViewHandleInfoNVX*             pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetImageViewHandleNVX: Invalid device "
+                   "[VUID-vkGetImageViewHandleNVX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetImageViewHandleNVX(device, pInfo);
 }
 
@@ -3380,6 +4024,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(
     VkImageView                                 imageView,
     VkImageViewAddressPropertiesNVX*            pProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetImageViewAddressNVX: Invalid device "
+                   "[VUID-vkGetImageViewAddressNVX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetImageViewAddressNVX(device, imageView, pProperties);
 }
 
@@ -3395,6 +4045,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawIndirectCountAMD: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndirectCountAMD-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
 
@@ -3407,6 +4063,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawIndexedIndirectCountAMD: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndexedIndirectCountAMD-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
 
@@ -3421,6 +4083,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderInfoAMD(
     size_t*                                     pInfoSize,
     void*                                       pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetShaderInfoAMD: Invalid device "
+                   "[VUID-vkGetShaderInfoAMD-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo);
 }
 
@@ -3434,6 +4102,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(
     VkExternalMemoryHandleTypeFlagsNV           handleType,
     HANDLE*                                     pHandle) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryWin32HandleNV: Invalid device "
+                   "[VUID-vkGetMemoryWin32HandleNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryWin32HandleNV(device, memory, handleType, pHandle);
 }
 
@@ -3447,8 +4121,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface) {
+    struct loader_instance *inst = loader_get_instance(instance);
+    if (NULL == inst) {
+        loader_log(
+            NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+            "vkCreateViSurfaceNN: Invalid instance [VUID-vkCreateViSurfaceNN-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
 #error("Not implemented. Likely needs to be manually generated!");
-    return disp->CreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
+    return inst->disp->CreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(
@@ -3456,6 +4137,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface) {
+    struct loader_instance *inst = loader_get_instance(instance);
+    if (NULL == inst) {
+        loader_log(
+            NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+            "vkCreateViSurfaceNN: Invalid instance [VUID-vkCreateViSurfaceNN-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
 #error("Not implemented. Likely needs to be manually generated!");
 }
 
@@ -3467,12 +4155,24 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
     const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBeginConditionalRenderingEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginConditionalRenderingEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEndConditionalRenderingEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdEndConditionalRenderingEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEndConditionalRenderingEXT(commandBuffer);
 }
 
@@ -3485,6 +4185,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingNV(
     uint32_t                                    viewportCount,
     const VkViewportWScalingNV*                 pViewportWScalings) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetViewportWScalingNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetViewportWScalingNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings);
 }
 
@@ -3496,6 +4202,12 @@ VKAPI_ATTR VkResult VKAPI_CALL DisplayPowerControlEXT(
     VkDisplayKHR                                display,
     const VkDisplayPowerInfoEXT*                pDisplayPowerInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDisplayPowerControlEXT: Invalid device "
+                   "[VUID-vkDisplayPowerControlEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->DisplayPowerControlEXT(device, display, pDisplayPowerInfo);
 }
 
@@ -3505,6 +4217,12 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDeviceEventEXT(
     const VkAllocationCallbacks*                pAllocator,
     VkFence*                                    pFence) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkRegisterDeviceEventEXT: Invalid device "
+                   "[VUID-vkRegisterDeviceEventEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->RegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
 }
 
@@ -3515,6 +4233,12 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDisplayEventEXT(
     const VkAllocationCallbacks*                pAllocator,
     VkFence*                                    pFence) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkRegisterDisplayEventEXT: Invalid device "
+                   "[VUID-vkRegisterDisplayEventEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->RegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence);
 }
 
@@ -3524,6 +4248,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(
     VkSurfaceCounterFlagBitsEXT                 counter,
     uint64_t*                                   pCounterValue) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetSwapchainCounterEXT: Invalid device "
+                   "[VUID-vkGetSwapchainCounterEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetSwapchainCounterEXT(device, swapchain, counter, pCounterValue);
 }
 
@@ -3535,6 +4265,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(
     VkSwapchainKHR                              swapchain,
     VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetRefreshCycleDurationGOOGLE: Invalid device "
+                   "[VUID-vkGetRefreshCycleDurationGOOGLE-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties);
 }
 
@@ -3544,6 +4280,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(
     uint32_t*                                   pPresentationTimingCount,
     VkPastPresentationTimingGOOGLE*             pPresentationTimings) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPastPresentationTimingGOOGLE: Invalid device "
+                   "[VUID-vkGetPastPresentationTimingGOOGLE-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings);
 }
 
@@ -3556,6 +4298,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(
     uint32_t                                    discardRectangleCount,
     const VkRect2D*                             pDiscardRectangles) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetDiscardRectangleEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount, pDiscardRectangles);
 }
 
@@ -3568,6 +4316,12 @@ VKAPI_ATTR void VKAPI_CALL SetHdrMetadataEXT(
     const VkSwapchainKHR*                       pSwapchains,
     const VkHdrMetadataEXT*                     pMetadata) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetHdrMetadataEXT: Invalid device "
+                   "[VUID-vkSetHdrMetadataEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->SetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata);
 }
 
@@ -3578,6 +4332,12 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetDebugUtilsObjectNameEXT: Invalid device "
+                   "[VUID-vkSetDebugUtilsObjectNameEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     VkDebugUtilsObjectNameInfoEXT local_name_info;
     memcpy(&local_name_info, pNameInfo, sizeof(VkDebugUtilsObjectNameInfoEXT));
     // If this is a physical device, we have to replace it with the proper one for the next call.
@@ -3624,6 +4384,12 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetDebugUtilsObjectTagEXT: Invalid device "
+                   "[VUID-vkSetDebugUtilsObjectTagEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     VkDebugUtilsObjectTagInfoEXT local_tag_info;
     memcpy(&local_tag_info, pTagInfo, sizeof(VkDebugUtilsObjectTagInfoEXT));
     // If this is a physical device, we have to replace it with the proper one for the next call.
@@ -3670,6 +4436,12 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(
     VkQueue                                     queue,
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkQueueBeginDebugUtilsLabelEXT: Invalid queue "
+                   "[VUID-vkQueueBeginDebugUtilsLabelEXT-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     if (disp->QueueBeginDebugUtilsLabelEXT != NULL) {
         disp->QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
     }
@@ -3689,6 +4461,12 @@ VKAPI_ATTR void VKAPI_CALL terminator_QueueBeginDebugUtilsLabelEXT(
 VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(
     VkQueue                                     queue) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkQueueEndDebugUtilsLabelEXT: Invalid queue "
+                   "[VUID-vkQueueEndDebugUtilsLabelEXT-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     if (disp->QueueEndDebugUtilsLabelEXT != NULL) {
         disp->QueueEndDebugUtilsLabelEXT(queue);
     }
@@ -3708,6 +4486,12 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(
     VkQueue                                     queue,
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkQueueInsertDebugUtilsLabelEXT: Invalid queue "
+                   "[VUID-vkQueueInsertDebugUtilsLabelEXT-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     if (disp->QueueInsertDebugUtilsLabelEXT != NULL) {
         disp->QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
     }
@@ -3728,6 +4512,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBeginDebugUtilsLabelEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginDebugUtilsLabelEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     if (disp->CmdBeginDebugUtilsLabelEXT != NULL) {
         disp->CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     }
@@ -3747,6 +4537,12 @@ VKAPI_ATTR void VKAPI_CALL terminator_CmdBeginDebugUtilsLabelEXT(
 VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdEndDebugUtilsLabelEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     if (disp->CmdEndDebugUtilsLabelEXT != NULL) {
         disp->CmdEndDebugUtilsLabelEXT(commandBuffer);
     }
@@ -3766,6 +4562,12 @@ VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdInsertDebugUtilsLabelEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     if (disp->CmdInsertDebugUtilsLabelEXT != NULL) {
         disp->CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     }
@@ -3791,6 +4593,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(
     const struct AHardwareBuffer*               buffer,
     VkAndroidHardwareBufferPropertiesANDROID*   pProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetAndroidHardwareBufferPropertiesANDROID: Invalid device "
+                   "[VUID-vkGetAndroidHardwareBufferPropertiesANDROID-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
 }
 
@@ -3801,6 +4609,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
     struct AHardwareBuffer**                    pBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryAndroidHardwareBufferANDROID: Invalid device "
+                   "[VUID-vkGetMemoryAndroidHardwareBufferANDROID-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
 }
 
@@ -3812,6 +4626,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
     const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetSampleLocationsEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetSampleLocationsEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);
 }
 
@@ -3821,6 +4641,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(
     VkMultisamplePropertiesEXT*                 pMultisampleProperties) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceMultisamplePropertiesEXT: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceMultisamplePropertiesEXT-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     disp->GetPhysicalDeviceMultisamplePropertiesEXT(unwrapped_phys_dev, samples, pMultisampleProperties);
 }
@@ -3846,6 +4672,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageDrmFormatModifierPropertiesEXT(
     VkImage                                     image,
     VkImageDrmFormatModifierPropertiesEXT*      pProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetImageDrmFormatModifierPropertiesEXT: Invalid device "
+                   "[VUID-vkGetImageDrmFormatModifierPropertiesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetImageDrmFormatModifierPropertiesEXT(device, image, pProperties);
 }
 
@@ -3858,6 +4690,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(
     const VkAllocationCallbacks*                pAllocator,
     VkValidationCacheEXT*                       pValidationCache) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateValidationCacheEXT: Invalid device "
+                   "[VUID-vkCreateValidationCacheEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
 }
 
@@ -3866,6 +4704,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(
     VkValidationCacheEXT                        validationCache,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyValidationCacheEXT: Invalid device "
+                   "[VUID-vkDestroyValidationCacheEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyValidationCacheEXT(device, validationCache, pAllocator);
 }
 
@@ -3875,6 +4719,12 @@ VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(
     uint32_t                                    srcCacheCount,
     const VkValidationCacheEXT*                 pSrcCaches) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkMergeValidationCachesEXT: Invalid device "
+                   "[VUID-vkMergeValidationCachesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->MergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
 }
 
@@ -3884,6 +4734,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
     size_t*                                     pDataSize,
     void*                                       pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetValidationCacheDataEXT: Invalid device "
+                   "[VUID-vkGetValidationCacheDataEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
 }
 
@@ -3895,6 +4751,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(
     VkImageView                                 imageView,
     VkImageLayout                               imageLayout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBindShadingRateImageNV: Invalid commandBuffer "
+                   "[VUID-vkCmdBindShadingRateImageNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
 }
 
@@ -3904,6 +4766,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(
     uint32_t                                    viewportCount,
     const VkShadingRatePaletteNV*               pShadingRatePalettes) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetViewportShadingRatePaletteNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
 }
 
@@ -3913,6 +4781,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoarseSampleOrderNV(
     uint32_t                                    customSampleOrderCount,
     const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetCoarseSampleOrderNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCoarseSampleOrderNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount, pCustomSampleOrders);
 }
 
@@ -3925,6 +4799,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureNV(
     const VkAllocationCallbacks*                pAllocator,
     VkAccelerationStructureNV*                  pAccelerationStructure) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateAccelerationStructureNV: Invalid device "
+                   "[VUID-vkCreateAccelerationStructureNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
 
@@ -3933,6 +4813,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureNV(
     VkAccelerationStructureNV                   accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyAccelerationStructureNV: Invalid device "
+                   "[VUID-vkDestroyAccelerationStructureNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
 }
 
@@ -3941,6 +4827,12 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsNV(
     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
     VkMemoryRequirements2KHR*                   pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetAccelerationStructureMemoryRequirementsNV: Invalid device "
+                   "[VUID-vkGetAccelerationStructureMemoryRequirementsNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
 }
 
@@ -3949,6 +4841,12 @@ VKAPI_ATTR VkResult VKAPI_CALL BindAccelerationStructureMemoryNV(
     uint32_t                                    bindInfoCount,
     const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkBindAccelerationStructureMemoryNV: Invalid device "
+                   "[VUID-vkBindAccelerationStructureMemoryNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->BindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos);
 }
 
@@ -3963,6 +4861,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(
     VkBuffer                                    scratch,
     VkDeviceSize                                scratchOffset) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBuildAccelerationStructureNV: Invalid commandBuffer "
+                   "[VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch, scratchOffset);
 }
 
@@ -3972,6 +4876,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureNV(
     VkAccelerationStructureNV                   src,
     VkCopyAccelerationStructureModeKHR          mode) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyAccelerationStructureNV: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode);
 }
 
@@ -3992,6 +4902,12 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(
     uint32_t                                    height,
     uint32_t                                    depth) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdTraceRaysNV: Invalid commandBuffer "
+                   "[VUID-vkCmdTraceRaysNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset, missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset, callableShaderBindingStride, width, height, depth);
 }
 
@@ -4003,6 +4919,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateRayTracingPipelinesNV: Invalid device "
+                   "[VUID-vkCreateRayTracingPipelinesNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
 }
 
@@ -4014,6 +4936,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesKHR(
     size_t                                      dataSize,
     void*                                       pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetRayTracingShaderGroupHandlesKHR: Invalid device "
+                   "[VUID-vkGetRayTracingShaderGroupHandlesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
 
@@ -4025,6 +4953,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesNV(
     size_t                                      dataSize,
     void*                                       pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetRayTracingShaderGroupHandlesNV: Invalid device "
+                   "[VUID-vkGetRayTracingShaderGroupHandlesNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
 
@@ -4034,6 +4968,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureHandleNV(
     size_t                                      dataSize,
     void*                                       pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetAccelerationStructureHandleNV: Invalid device "
+                   "[VUID-vkGetAccelerationStructureHandleNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
 }
 
@@ -4045,6 +4985,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdWriteAccelerationStructuresPropertiesNV: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWriteAccelerationStructuresPropertiesNV(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
 }
 
@@ -4053,6 +4999,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CompileDeferredNV(
     VkPipeline                                  pipeline,
     uint32_t                                    shader) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCompileDeferredNV: Invalid device "
+                   "[VUID-vkCompileDeferredNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CompileDeferredNV(device, pipeline, shader);
 }
 
@@ -4065,6 +5017,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryHostPointerPropertiesEXT(
     const void*                                 pHostPointer,
     VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryHostPointerPropertiesEXT: Invalid device "
+                   "[VUID-vkGetMemoryHostPointerPropertiesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties);
 }
 
@@ -4078,6 +5036,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(
     VkDeviceSize                                dstOffset,
     uint32_t                                    marker) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdWriteBufferMarkerAMD: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 }
 
@@ -4090,6 +5054,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(
     VkTimeDomainEXT*                            pTimeDomains) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsEXT-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceCalibrateableTimeDomainsEXT(unwrapped_phys_dev, pTimeDomainCount, pTimeDomains);
 }
@@ -4114,6 +5084,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(
     uint64_t*                                   pTimestamps,
     uint64_t*                                   pMaxDeviation) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetCalibratedTimestampsEXT: Invalid device "
+                   "[VUID-vkGetCalibratedTimestampsEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
 }
 
@@ -4125,6 +5101,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(
     uint32_t                                    taskCount,
     uint32_t                                    firstTask) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawMeshTasksNV: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawMeshTasksNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
 }
 
@@ -4135,6 +5117,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(
     uint32_t                                    drawCount,
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawMeshTasksIndirectNV: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
 }
 
@@ -4147,6 +5135,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawMeshTasksIndirectCountNV: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
 
@@ -4159,6 +5153,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(
     uint32_t                                    exclusiveScissorCount,
     const VkRect2D*                             pExclusiveScissors) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetExclusiveScissorNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetExclusiveScissorNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
 }
 
@@ -4169,6 +5169,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(
     VkCommandBuffer                             commandBuffer,
     const void*                                 pCheckpointMarker) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetCheckpointNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCheckpointNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
 }
 
@@ -4177,6 +5183,12 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(
     uint32_t*                                   pCheckpointDataCount,
     VkCheckpointDataNV*                         pCheckpointData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetQueueCheckpointDataNV: Invalid queue "
+                   "[VUID-vkGetQueueCheckpointDataNV-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
@@ -4187,12 +5199,24 @@ VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(
     VkDevice                                    device,
     const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkInitializePerformanceApiINTEL: Invalid device "
+                   "[VUID-vkInitializePerformanceApiINTEL-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->InitializePerformanceApiINTEL(device, pInitializeInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL UninitializePerformanceApiINTEL(
     VkDevice                                    device) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkUninitializePerformanceApiINTEL: Invalid device "
+                   "[VUID-vkUninitializePerformanceApiINTEL-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->UninitializePerformanceApiINTEL(device);
 }
 
@@ -4200,6 +5224,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceMarkerInfoINTEL*         pMarkerInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetPerformanceMarkerINTEL: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPerformanceMarkerINTEL-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo);
 }
 
@@ -4207,6 +5237,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceStreamMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetPerformanceStreamMarkerINTEL: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPerformanceStreamMarkerINTEL-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo);
 }
 
@@ -4214,6 +5250,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceOverrideINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceOverrideInfoINTEL*       pOverrideInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetPerformanceOverrideINTEL: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPerformanceOverrideINTEL-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo);
 }
 
@@ -4222,6 +5264,12 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquirePerformanceConfigurationINTEL(
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
     VkPerformanceConfigurationINTEL*            pConfiguration) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkAcquirePerformanceConfigurationINTEL: Invalid device "
+                   "[VUID-vkAcquirePerformanceConfigurationINTEL-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
 }
 
@@ -4229,6 +5277,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
     VkPerformanceConfigurationINTEL             configuration) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkReleasePerformanceConfigurationINTEL: Invalid device "
+                   "[VUID-vkReleasePerformanceConfigurationINTEL-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->ReleasePerformanceConfigurationINTEL(device, configuration);
 }
 
@@ -4236,6 +5290,12 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSetPerformanceConfigurationINTEL(
     VkQueue                                     queue,
     VkPerformanceConfigurationINTEL             configuration) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkQueueSetPerformanceConfigurationINTEL: Invalid queue "
+                   "[VUID-vkQueueSetPerformanceConfigurationINTEL-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->QueueSetPerformanceConfigurationINTEL(queue, configuration);
 }
 
@@ -4244,6 +5304,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPerformanceParameterINTEL(
     VkPerformanceParameterTypeINTEL             parameter,
     VkPerformanceValueINTEL*                    pValue) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPerformanceParameterINTEL: Invalid device "
+                   "[VUID-vkGetPerformanceParameterINTEL-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetPerformanceParameterINTEL(device, parameter, pValue);
 }
 
@@ -4255,6 +5321,12 @@ VKAPI_ATTR void VKAPI_CALL SetLocalDimmingAMD(
     VkSwapchainKHR                              swapChain,
     VkBool32                                    localDimmingEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetLocalDimmingAMD: Invalid device "
+                   "[VUID-vkSetLocalDimmingAMD-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->SetLocalDimmingAMD(device, swapChain, localDimmingEnable);
 }
 
@@ -4265,6 +5337,12 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetBufferDeviceAddressEXT: Invalid device "
+                   "[VUID-vkGetBufferDeviceAddressEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetBufferDeviceAddressEXT(device, pInfo);
 }
 
@@ -4277,6 +5355,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkCooperativeMatrixPropertiesNV*            pProperties) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceCooperativeMatrixPropertiesNV: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesNV-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceCooperativeMatrixPropertiesNV(unwrapped_phys_dev, pPropertyCount, pProperties);
 }
@@ -4303,6 +5387,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamples
     VkFramebufferMixedSamplesCombinationNV*     pCombinations) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(unwrapped_phys_dev, pCombinationCount, pCombinations);
 }
@@ -4328,6 +5418,12 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkAcquireFullScreenExclusiveModeEXT: Invalid device "
+                   "[VUID-vkAcquireFullScreenExclusiveModeEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->AcquireFullScreenExclusiveModeEXT(device, swapchain);
 }
 
@@ -4337,6 +5433,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkReleaseFullScreenExclusiveModeEXT: Invalid device "
+                   "[VUID-vkReleaseFullScreenExclusiveModeEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->ReleaseFullScreenExclusiveModeEXT(device, swapchain);
 }
 
@@ -4349,6 +5451,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(
     uint32_t                                    lineStippleFactor,
     uint16_t                                    lineStipplePattern) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetLineStippleEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetLineStippleEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
@@ -4361,6 +5469,12 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(
     uint32_t                                    firstQuery,
     uint32_t                                    queryCount) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkResetQueryPoolEXT: Invalid device "
+                   "[VUID-vkResetQueryPoolEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->ResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
 }
 
@@ -4371,6 +5485,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(
     VkCommandBuffer                             commandBuffer,
     VkCullModeFlags                             cullMode) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetCullModeEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCullModeEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetCullModeEXT(commandBuffer, cullMode);
 }
 
@@ -4378,6 +5498,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(
     VkCommandBuffer                             commandBuffer,
     VkFrontFace                                 frontFace) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetFrontFaceEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetFrontFaceEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetFrontFaceEXT(commandBuffer, frontFace);
 }
 
@@ -4385,6 +5511,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopologyEXT(
     VkCommandBuffer                             commandBuffer,
     VkPrimitiveTopology                         primitiveTopology) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetPrimitiveTopologyEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
 }
 
@@ -4393,6 +5525,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCountEXT(
     uint32_t                                    viewportCount,
     const VkViewport*                           pViewports) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetViewportWithCountEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetViewportWithCountEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
 }
 
@@ -4401,6 +5539,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCountEXT(
     uint32_t                                    scissorCount,
     const VkRect2D*                             pScissors) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetScissorWithCountEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetScissorWithCountEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
 }
 
@@ -4413,6 +5557,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(
     const VkDeviceSize*                         pSizes,
     const VkDeviceSize*                         pStrides) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBindVertexBuffers2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
 }
 
@@ -4420,6 +5570,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    depthTestEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetDepthTestEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
 }
 
@@ -4427,6 +5583,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    depthWriteEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetDepthWriteEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
 }
 
@@ -4434,6 +5596,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(
     VkCommandBuffer                             commandBuffer,
     VkCompareOp                                 depthCompareOp) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetDepthCompareOpEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
 }
 
@@ -4441,6 +5609,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    depthBoundsTestEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetDepthBoundsTestEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
 }
 
@@ -4448,6 +5622,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    stencilTestEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetStencilTestEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
 }
 
@@ -4459,6 +5639,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
     VkStencilOp                                 depthFailOp,
     VkCompareOp                                 compareOp) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetStencilOpEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetStencilOpEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
@@ -4470,6 +5656,12 @@ VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetGeneratedCommandsMemoryRequirementsNV: Invalid device "
+                   "[VUID-vkGetGeneratedCommandsMemoryRequirementsNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
 }
 
@@ -4477,6 +5669,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsNV(
     VkCommandBuffer                             commandBuffer,
     const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdPreprocessGeneratedCommandsNV: Invalid commandBuffer "
+                   "[VUID-vkCmdPreprocessGeneratedCommandsNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo);
 }
 
@@ -4485,6 +5683,12 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsNV(
     VkBool32                                    isPreprocessed,
     const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdExecuteGeneratedCommandsNV: Invalid commandBuffer "
+                   "[VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
 }
 
@@ -4494,6 +5698,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipelineShaderGroupNV(
     VkPipeline                                  pipeline,
     uint32_t                                    groupIndex) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBindPipelineShaderGroupNV: Invalid commandBuffer "
+                   "[VUID-vkCmdBindPipelineShaderGroupNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
 }
 
@@ -4503,6 +5713,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutNV(
     const VkAllocationCallbacks*                pAllocator,
     VkIndirectCommandsLayoutNV*                 pIndirectCommandsLayout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateIndirectCommandsLayoutNV: Invalid device "
+                   "[VUID-vkCreateIndirectCommandsLayoutNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
 }
 
@@ -4511,6 +5727,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyIndirectCommandsLayoutNV: Invalid device "
+                   "[VUID-vkDestroyIndirectCommandsLayoutNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
 }
 
@@ -4523,6 +5745,12 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(
     VkDisplayKHR                                display) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkAcquireDrmDisplayEXT: Invalid physicalDevice "
+                   "[VUID-vkAcquireDrmDisplayEXT-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->AcquireDrmDisplayEXT(unwrapped_phys_dev, drmFd, display);
 }
@@ -4547,6 +5775,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(
     VkDisplayKHR*                               display) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDrmDisplayEXT: Invalid physicalDevice "
+                   "[VUID-vkGetDrmDisplayEXT-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetDrmDisplayEXT(unwrapped_phys_dev, drmFd, connectorId, display);
 }
@@ -4574,6 +5808,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(
     const VkAllocationCallbacks*                pAllocator,
     VkPrivateDataSlot*                          pPrivateDataSlot) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreatePrivateDataSlotEXT: Invalid device "
+                   "[VUID-vkCreatePrivateDataSlotEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
 }
 
@@ -4582,6 +5822,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlotEXT(
     VkPrivateDataSlot                           privateDataSlot,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyPrivateDataSlotEXT: Invalid device "
+                   "[VUID-vkDestroyPrivateDataSlotEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
 }
 
@@ -4592,6 +5838,12 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateDataEXT(
     VkPrivateDataSlot                           privateDataSlot,
     uint64_t                                    data) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetPrivateDataEXT: Invalid device "
+                   "[VUID-vkSetPrivateDataEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
 }
 
@@ -4602,6 +5854,12 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
     VkPrivateDataSlot                           privateDataSlot,
     uint64_t*                                   pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetPrivateDataEXT: Invalid device "
+                   "[VUID-vkGetPrivateDataEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
@@ -4613,6 +5871,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
     VkFragmentShadingRateNV                     shadingRate,
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetFragmentShadingRateEnumNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetFragmentShadingRateEnumNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
 }
 
@@ -4625,6 +5889,12 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(
     VkDisplayKHR                                display) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkAcquireWinrtDisplayNV: Invalid physicalDevice "
+                   "[VUID-vkAcquireWinrtDisplayNV-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->AcquireWinrtDisplayNV(unwrapped_phys_dev, display);
 }
@@ -4649,6 +5919,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(
     VkDisplayKHR*                               pDisplay) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetWinrtDisplayNV: Invalid physicalDevice "
+                   "[VUID-vkGetWinrtDisplayNV-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetWinrtDisplayNV(unwrapped_phys_dev, deviceRelativeId, pDisplay);
 }
@@ -4677,6 +5953,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(
     uint32_t                                    vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetVertexInputEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetVertexInputEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
 }
 
@@ -4689,6 +5971,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(
     const VkMemoryGetZirconHandleInfoFUCHSIA*   pGetZirconHandleInfo,
     zx_handle_t*                                pZirconHandle) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryZirconHandleFUCHSIA: Invalid device "
+                   "[VUID-vkGetMemoryZirconHandleFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
 }
 
@@ -4700,6 +5988,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandlePropertiesFUCHSIA(
     zx_handle_t                                 zirconHandle,
     VkMemoryZirconHandlePropertiesFUCHSIA*      pMemoryZirconHandleProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryZirconHandlePropertiesFUCHSIA: Invalid device "
+                   "[VUID-vkGetMemoryZirconHandlePropertiesFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle, pMemoryZirconHandleProperties);
 }
 
@@ -4712,6 +6006,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkImportSemaphoreZirconHandleFUCHSIA: Invalid device "
+                   "[VUID-vkImportSemaphoreZirconHandleFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->ImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo);
 }
 
@@ -4722,6 +6022,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(
     const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
     zx_handle_t*                                pZirconHandle) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetSemaphoreZirconHandleFUCHSIA: Invalid device "
+                   "[VUID-vkGetSemaphoreZirconHandleFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
 }
 
@@ -4736,6 +6042,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(
     const VkAllocationCallbacks*                pAllocator,
     VkBufferCollectionFUCHSIA*                  pCollection) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateBufferCollectionFUCHSIA: Invalid device "
+                   "[VUID-vkCreateBufferCollectionFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
 }
 
@@ -4746,6 +6058,12 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
     VkBufferCollectionFUCHSIA                   collection,
     const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetBufferCollectionImageConstraintsFUCHSIA: Invalid device "
+                   "[VUID-vkSetBufferCollectionImageConstraintsFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->SetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
 }
 
@@ -4756,6 +6074,12 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
     VkBufferCollectionFUCHSIA                   collection,
     const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetBufferCollectionBufferConstraintsFUCHSIA: Invalid device "
+                   "[VUID-vkSetBufferCollectionBufferConstraintsFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->SetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
 }
 
@@ -4766,6 +6090,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(
     VkBufferCollectionFUCHSIA                   collection,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyBufferCollectionFUCHSIA: Invalid device "
+                   "[VUID-vkDestroyBufferCollectionFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
 }
 
@@ -4776,6 +6106,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(
     VkBufferCollectionFUCHSIA                   collection,
     VkBufferCollectionPropertiesFUCHSIA*        pProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetBufferCollectionPropertiesFUCHSIA: Invalid device "
+                   "[VUID-vkGetBufferCollectionPropertiesFUCHSIA-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
 }
 
@@ -4788,12 +6124,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
     VkRenderPass                                renderpass,
     VkExtent2D*                                 pMaxWorkgroupSize) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI: Invalid device "
+                   "[VUID-vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSubpassShadingHUAWEI(
     VkCommandBuffer                             commandBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSubpassShadingHUAWEI: Invalid commandBuffer "
+                   "[VUID-vkCmdSubpassShadingHUAWEI-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSubpassShadingHUAWEI(commandBuffer);
 }
 
@@ -4805,6 +6153,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindInvocationMaskHUAWEI(
     VkImageView                                 imageView,
     VkImageLayout                               imageLayout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBindInvocationMaskHUAWEI: Invalid commandBuffer "
+                   "[VUID-vkCmdBindInvocationMaskHUAWEI-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
 }
 
@@ -4816,6 +6170,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(
     const VkMemoryGetRemoteAddressInfoNV*       pMemoryGetRemoteAddressInfo,
     VkRemoteAddressNV*                          pAddress) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetMemoryRemoteAddressNV: Invalid device "
+                   "[VUID-vkGetMemoryRemoteAddressNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
 }
 
@@ -4826,6 +6186,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    patchControlPoints) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetPatchControlPointsEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPatchControlPointsEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints);
 }
 
@@ -4833,6 +6199,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    rasterizerDiscardEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetRasterizerDiscardEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRasterizerDiscardEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable);
 }
 
@@ -4840,6 +6212,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    depthBiasEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetDepthBiasEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthBiasEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable);
 }
 
@@ -4847,6 +6225,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEXT(
     VkCommandBuffer                             commandBuffer,
     VkLogicOp                                   logicOp) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetLogicOpEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetLogicOpEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetLogicOpEXT(commandBuffer, logicOp);
 }
 
@@ -4854,6 +6238,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    primitiveRestartEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetPrimitiveRestartEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPrimitiveRestartEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable);
 }
 
@@ -4865,6 +6255,12 @@ VKAPI_ATTR void                                    VKAPI_CALL CmdSetColorWriteEn
     uint32_t                                    attachmentCount,
     const VkBool32*                             pColorWriteEnables) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetColorWriteEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetColorWriteEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
 }
 
@@ -4879,6 +6275,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiEXT(
     uint32_t                                    firstInstance,
     uint32_t                                    stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawMultiEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawMultiEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride);
 }
 
@@ -4891,6 +6293,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
     uint32_t                                    stride,
     const int32_t*                              pVertexOffset) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdDrawMultiIndexedEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset);
 }
 
@@ -4902,6 +6310,12 @@ VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
     VkDeviceMemory                              memory,
     float                                       priority) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkSetDeviceMemoryPriorityEXT: Invalid device "
+                   "[VUID-vkSetDeviceMemoryPriorityEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->SetDeviceMemoryPriorityEXT(device, memory, priority);
 }
 
@@ -4914,6 +6328,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkAccelerationStructureKHR*                 pAccelerationStructure) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateAccelerationStructureKHR: Invalid device "
+                   "[VUID-vkCreateAccelerationStructureKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
 
@@ -4922,6 +6342,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(
     VkAccelerationStructureKHR                  accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkDestroyAccelerationStructureKHR: Invalid device "
+                   "[VUID-vkDestroyAccelerationStructureKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
@@ -4931,6 +6357,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBuildAccelerationStructuresKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
 }
 
@@ -4942,6 +6374,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(
     const uint32_t*                             pIndirectStrides,
     const uint32_t* const*                      ppMaxPrimitiveCounts) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdBuildAccelerationStructuresIndirectKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBuildAccelerationStructuresIndirectKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
 }
 
@@ -4952,6 +6390,12 @@ VKAPI_ATTR VkResult VKAPI_CALL BuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkBuildAccelerationStructuresKHR: Invalid device "
+                   "[VUID-vkBuildAccelerationStructuresKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->BuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
 }
 
@@ -4960,6 +6404,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureKHR(
     VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureInfoKHR*   pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCopyAccelerationStructureKHR: Invalid device "
+                   "[VUID-vkCopyAccelerationStructureKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CopyAccelerationStructureKHR(device, deferredOperation, pInfo);
 }
 
@@ -4968,6 +6418,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureToMemoryKHR(
     VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCopyAccelerationStructureToMemoryKHR: Invalid device "
+                   "[VUID-vkCopyAccelerationStructureToMemoryKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
 }
 
@@ -4976,6 +6432,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToAccelerationStructureKHR(
     VkDeferredOperationKHR                      deferredOperation,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCopyMemoryToAccelerationStructureKHR: Invalid device "
+                   "[VUID-vkCopyMemoryToAccelerationStructureKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
 }
 
@@ -4988,6 +6450,12 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteAccelerationStructuresPropertiesKHR(
     void*                                       pData,
     size_t                                      stride) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkWriteAccelerationStructuresPropertiesKHR: Invalid device "
+                   "[VUID-vkWriteAccelerationStructuresPropertiesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->WriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride);
 }
 
@@ -4995,6 +6463,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyAccelerationStructureInfoKHR*   pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyAccelerationStructureKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyAccelerationStructureKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
 }
 
@@ -5002,6 +6476,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyAccelerationStructureToMemoryKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyAccelerationStructureToMemoryKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo);
 }
 
@@ -5009,6 +6489,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdCopyMemoryToAccelerationStructureKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMemoryToAccelerationStructureKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
 }
 
@@ -5016,6 +6502,12 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetAccelerationStructureDeviceAddressKHR: Invalid device "
+                   "[VUID-vkGetAccelerationStructureDeviceAddressKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetAccelerationStructureDeviceAddressKHR(device, pInfo);
 }
 
@@ -5027,6 +6519,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdWriteAccelerationStructuresPropertiesKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
 }
 
@@ -5035,6 +6533,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceAccelerationStructureCompatibilityKHR(
     const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
     VkAccelerationStructureCompatibilityKHR*    pCompatibility) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetDeviceAccelerationStructureCompatibilityKHR: Invalid device "
+                   "[VUID-vkGetDeviceAccelerationStructureCompatibilityKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
 }
 
@@ -5045,6 +6549,12 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(
     const uint32_t*                             pMaxPrimitiveCounts,
     VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetAccelerationStructureBuildSizesKHR: Invalid device "
+                   "[VUID-vkGetAccelerationStructureBuildSizesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
 }
 
@@ -5061,6 +6571,12 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(
     uint32_t                                    height,
     uint32_t                                    depth) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdTraceRaysKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdTraceRaysKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }
 
@@ -5073,6 +6589,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateRayTracingPipelinesKHR: Invalid device "
+                   "[VUID-vkCreateRayTracingPipelinesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
 }
 
@@ -5084,6 +6606,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(
     size_t                                      dataSize,
     void*                                       pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: Invalid device "
+                   "[VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
 
@@ -5095,6 +6623,12 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirectKHR(
     const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
     VkDeviceAddress                             indirectDeviceAddress) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdTraceRaysIndirectKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
 }
 
@@ -5104,6 +6638,12 @@ VKAPI_ATTR VkDeviceSize VKAPI_CALL GetRayTracingShaderGroupStackSizeKHR(
     uint32_t                                    group,
     VkShaderGroupShaderKHR                      groupShader) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkGetRayTracingShaderGroupStackSizeKHR: Invalid device "
+                   "[VUID-vkGetRayTracingShaderGroupStackSizeKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->GetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
 }
 
@@ -5111,6 +6651,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    pipelineStackSize) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCmdSetRayTracingPipelineStackSizeKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRayTracingPipelineStackSizeKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
 }
 

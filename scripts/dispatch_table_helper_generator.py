@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
-# Copyright (c) 2015-2017 Google Inc.
+# Copyright (c) 2015-2021 The Khronos Group Inc.
+# Copyright (c) 2015-2021 Valve Corporation
+# Copyright (c) 2015-2021 LunarG, Inc.
+# Copyright (c) 2015-2021 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -107,9 +107,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         write(file_comment, file=self.outFile)
         # Copyright Notice
         copyright =  '/*\n'
-        copyright += ' * Copyright (c) 2015-2017 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2017 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2021 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2021 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2021 LunarG, Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -227,11 +227,12 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             entries = self.device_dispatch_list
             table += 'static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable *table, PFN_vkGetDeviceProcAddr gpa) {\n'
             table += '    memset(table, 0, sizeof(*table));\n'
+            table += '    table->magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;\n\n'
             table += '    // Device function pointers\n'
         else:
             entries = self.instance_dispatch_list
             table += 'static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDispatchTable *table, PFN_vkGetInstanceProcAddr gpa) {\n'
-            table += '    memset(table, 0, sizeof(*table));\n'
+            table += '    memset(table, 0, sizeof(*table));\n\n'
             table += '    // Instance function pointers\n'
 
         for item in entries:
