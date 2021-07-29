@@ -35,12 +35,21 @@ static inline struct loader_instance *loader_instance(VkInstance instance) { ret
 
 static inline VkPhysicalDevice loader_unwrap_physical_device(VkPhysicalDevice physicalDevice) {
     struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
+    if (PHYS_TRAMP_MAGIC_NUMBER != phys_dev->magic) {
+        return VK_NULL_HANDLE;
+    }
     return phys_dev->phys_dev;
 }
 
 static inline void loader_set_dispatch(void *obj, const void *data) { *((const void **)obj) = data; }
 
-static inline VkLayerDispatchTable *loader_get_dispatch(const void *obj) { return *((VkLayerDispatchTable **)obj); }
+static inline VkLayerDispatchTable *loader_get_dispatch(const void *obj) {
+    VkLayerDispatchTable *disp = *((VkLayerDispatchTable **)obj);
+    if (VK_NULL_HANDLE == obj || DEVICE_DISP_TABLE_MAGIC_NUMBER != disp->magic) {
+        return NULL;
+    }
+    return disp;
+}
 
 static inline struct loader_dev_dispatch_table *loader_get_dev_dispatch(const void *obj) {
     return *((struct loader_dev_dispatch_table **)obj);
@@ -155,7 +164,7 @@ VkResult loader_validate_device_extensions(struct loader_instance *this_instance
                                            const struct loader_layer_list *activated_device_layers,
                                            const struct loader_extension_list *icd_exts, const VkDeviceCreateInfo *pCreateInfo);
 
-VkResult setup_loader_tramp_phys_devs(VkInstance instance);
+VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst);
 VkResult setup_loader_term_phys_devs(struct loader_instance *inst);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
