@@ -642,3 +642,7 @@ VkResult CreatePhysDev(InstWrapper& inst, VkPhysicalDevice& physical_device) {
     uint32_t physical_count = 1;
     return inst.functions->vkEnumeratePhysicalDevices(inst.inst, &physical_count, &physical_device);
 }
+
+VkResult CreateDevice(VkPhysicalDevice phys_dev, DeviceWrapper& dev, DeviceCreateInfo& dev_info) {
+    return dev.functions->vkCreateDevice(phys_dev, dev_info.get(), dev.callbacks, &dev.dev);
+}
