@@ -66,4 +66,12 @@ struct PhysicalDevice {
     VkSurfaceCapabilitiesKHR surface_capabilities;
     std::vector<VkSurfaceFormatKHR> surface_formats;
     std::vector<VkPresentModeKHR> surface_present_modes;
+
+    // VkDevice handles created from this physical device
+    std::vector<VkDevice> device_handles;
+
+    // List of function names which are 'known' to the physical device but which are no-op's when called.
+    // The purpose of this list is so that vkGetDeviceProcAddr returns 'a real function pointer' in tests
+    // without actually implementing any of the logic inside of it.
+    std::vector<const char*> known_device_functions_no_implementation;
 };

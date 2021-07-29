@@ -633,8 +633,11 @@ VkResult CreatePhysDev(InstWrapper& inst, VkPhysicalDevice& physical_device);
 
 struct DeviceWrapper {
     DeviceWrapper(){};
-    DeviceWrapper(VulkanFunctions& functions, VkDevice dev) : functions(&functions), dev(dev){};
-    ~DeviceWrapper() { functions->vkDestroyDevice(dev, nullptr); }
+    DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks = nullptr)
+        : functions(inst_wrapper.functions), callbacks(callbacks){};
+    DeviceWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks = nullptr)
+        : functions(&functions), callbacks(callbacks){};
+    ~DeviceWrapper() { functions->vkDestroyDevice(dev, callbacks); }
 
     // Immoveable object
     DeviceWrapper(DeviceWrapper const&) = delete;
@@ -648,7 +651,9 @@ struct DeviceWrapper {
 
     VulkanFunctions* functions = nullptr;
     VkDevice dev = VK_NULL_HANDLE;
+    VkAllocationCallbacks* callbacks = nullptr;
 };
+VkResult CreateDevice(VkPhysicalDevice phys_dev, DeviceWrapper& dev, DeviceCreateInfo& dev_info);
 
 inline bool operator==(const VkExtent3D& a, const VkExtent3D& b) {
     return a.width == b.width && a.height == b.height && a.depth == b.depth;

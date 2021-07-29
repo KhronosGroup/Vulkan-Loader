@@ -222,8 +222,13 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties(VkPhysi
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
     // VK_SUCCESS
+    auto found = std::find_if(icd.physical_devices.begin(), icd.physical_devices.end(), [physicalDevice](PhysicalDevice& phys_dev) {
+        return phys_dev.vk_physical_device.handle == physicalDevice;
+    });
+    if (found == icd.physical_devices.end()) return VK_ERROR_INITIALIZATION_FAILED;
     auto device_handle = DispatchableHandle<VkDevice>();
     *pDevice = device_handle.handle;
+    found->device_handles.push_back(device_handle.handle);
     icd.device_handles.emplace_back(std::move(device_handle));
     return VK_SUCCESS;
 }
@@ -427,9 +432,25 @@ PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
 }
 
 PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
+    bool found = false;
+    PhysicalDevice* found_phys_dev{};
+    for (auto& phys_dev : icd.physical_devices) {
+        for (auto& device_handle : phys_dev.device_handles) {
+            if (device_handle == device) {
+                found = true;
+                found_phys_dev = &phys_dev;
+                break;
+            }
+        }
+    }
+    if (!found) return nullptr;
     if (string_eq(pName, "vkDestroyDevice")) return TO_VOID_PFN(test_vkDestroyDevice);
     if (string_eq(pName, "vkCreateSwapchainKHR")) return TO_VOID_PFN(test_vkCreateSwapchainKHR);
-
+    for (auto& function_name : found_phys_dev->known_device_functions_no_implementation) {
+        if (string_eq(pName, function_name)) {
+            return reinterpret_cast<PFN_vkVoidFunction>(test_stub_func_with_return);
+        }
+    }
     return nullptr;
 }
 
