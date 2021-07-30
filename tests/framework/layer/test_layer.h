@@ -31,6 +31,8 @@
 
 #include "layer/layer_util.h"
 
+#include "loader/generated/vk_layer_dispatch_table.h"
+
 /*
 Interface Version 0
 */
@@ -103,6 +105,15 @@ struct TestLayer {
 
     bool intercept_vkEnumerateInstanceExtensionProperties = false;
     bool intercept_vkEnumerateInstanceLayerProperties = false;
+
+    VkInstance instance_handle;
+    VkLayerInstanceDispatchTable instance_dispatch_table;
+
+    struct Device {
+        VkDevice device_handle;
+        VkLayerDispatchTable dispatch_table;
+    };
+    std::vector<Device> created_devices;
 };
 
 using GetTestLayerFunc = TestLayer* (*)();
