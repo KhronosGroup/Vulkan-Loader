@@ -98,6 +98,13 @@ TEST_F(CreateInstance, ExtensionNotPresent) {
     }
 }
 
+TEST_F(CreateInstance, LayerNotPresent) {
+    VkInstance inst = VK_NULL_HANDLE;
+    InstanceCreateInfo inst_info;
+    inst_info.add_layer("VK_NON_EXISTANT_LAYER");
+    ASSERT_EQ(VK_ERROR_LAYER_NOT_PRESENT, env->vulkan_functions.vkCreateInstance(inst_info.get(), VK_NULL_HANDLE, &inst));
+}
+
 TEST_F(EnumeratePhysicalDevices, OneCall) {
     auto& driver = env->get_test_icd().SetMinICDInterfaceVersion(5);
 

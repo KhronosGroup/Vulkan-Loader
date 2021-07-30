@@ -292,17 +292,6 @@ void test_create_device(VkPhysicalDevice physical) {
 // LVLGH = loader and validation github
 // LVLGL = loader and validation gitlab
 
-TEST(CreateInstance, LayerNotPresent) {
-    char const *const names[] = {"NotPresent"};  // Temporary required due to MSVC bug.
-    auto const info = VK::InstanceCreateInfo().enabledLayerCount(1).ppEnabledLayerNames(names);
-
-    VkInstance instance = VK_NULL_HANDLE;
-    VkResult result = vkCreateInstance(info, VK_NULL_HANDLE, &instance);
-    ASSERT_EQ(result, VK_ERROR_LAYER_NOT_PRESENT);
-
-    // It's not necessary to destroy the instance because it will not be created successfully.
-}
-
 // Used by run_loader_tests.sh to test for layer insertion.
 TEST(CreateInstance, LayerPresent) {
     char const *const names1[] = {"VK_LAYER_LUNARG_test"};  // Temporary required due to MSVC bug.
