@@ -36,20 +36,20 @@ set(TEST_LAYER_VERSION_2_EXPORTS TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
     LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION=1 ${TEST_LAYER_BASE_EXPORTS})
 
 add_library(test_layer_export_base SHARED ${TEST_LAYER_SOURCES})
-target_link_libraries(test_layer_export_base PRIVATE test_icd_deps)
+target_link_libraries(test_layer_export_base PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_export_base PRIVATE ${TEST_LAYER_BASE_EXPORTS})
 
 add_library(test_layer_export_version_0 SHARED ${TEST_LAYER_SOURCES})
-target_link_libraries(test_layer_export_version_0 PRIVATE test_icd_deps)
+target_link_libraries(test_layer_export_version_0 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_export_version_0 PRIVATE ${TEST_LAYER_VERSION_0_EXPORTS})
 
 add_library(test_layer_export_version_1 SHARED ${TEST_LAYER_SOURCES})
-target_link_libraries(test_layer_export_version_1 PRIVATE test_icd_deps)
+target_link_libraries(test_layer_export_version_1 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_export_version_1 PRIVATE
     ${TEST_LAYER_VERSION_0_EXPORTS} ${TEST_LAYER_VERSION_1_EXPORTS})
 
 add_library(test_layer_export_version_2 SHARED ${TEST_LAYER_SOURCES})
-target_link_libraries(test_layer_export_version_2 PRIVATE test_icd_deps)
+target_link_libraries(test_layer_export_version_2 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_export_version_2 PRIVATE
     ${TEST_LAYER_VERSION_0_EXPORTS} ${TEST_LAYER_VERSION_1_EXPORTS} ${TEST_LAYER_VERSION_2_EXPORTS} )
 
