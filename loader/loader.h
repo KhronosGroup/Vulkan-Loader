@@ -64,6 +64,7 @@ enum vulkan_loader_debug_flags {
     VULKAN_LOADER_ERROR_BIT = 0x08,
     VULKAN_LOADER_DEBUG_BIT = 0x10,
     VULKAN_LOADER_LAYER_BIT = 0x20,
+    VULKAN_LOADER_IMPLEMENTATION_BIT = 0x40,
 };
 
 enum layer_type_flags {

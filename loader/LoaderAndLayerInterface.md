@@ -2255,7 +2255,7 @@ details.
 If you are seeing issues which may be related to the ICD, a possible option to debug is to enable the
 `LD_BIND_NOW` environment variable.  This forces every dynamic library's symbols to be fully resolved on load.  If
 there is a problem with an ICD missing symbols on your system, this will expose it and cause the Vulkan loader
-to fail on loading the ICD.  It is recommended that you enable `LD_BIND_NOW` along with `VK_LOADER_DEBUG=error,warn`
+to fail on loading the ICD.  It is recommended that you enable `LD_BIND_NOW` along with `VK_LOADER_DEBUG=error,warn,implem`
 to expose any issues.
 
 #### Using Pre-Production ICDs on Windows, Linux and macOS
@@ -2819,7 +2819,7 @@ of discovery.
 | VK_INSTANCE_LAYERS                | Force the loader to add the given layers to the list of Enabled layers normally passed into `vkCreateInstance`.  These layers are added first, and the loader will remove any duplicate layers that appear in both this list as well as that passed into `ppEnabledLayerNames`. | `export VK_INSTANCE_LAYERS=<layer_a>:<layer_b>`<br/><br/>`set VK_INSTANCE_LAYERS=<layer_a>;<layer_b>` |
 | VK_LAYER_PATH                     | Override the loader's standard Layer library search folders and use the provided delimited folders to search for layer Manifest files. | `export VK_LAYER_PATH=<path_a>:<path_b>`<br/><br/>`set VK_LAYER_PATH=<path_a>;<path_b>` |
 | VK_LOADER_DISABLE_INST_EXT_FILTER | Disable the filtering out of instance extensions that the loader doesn't know about.  This will allow applications to enable instance extensions exposed by ICDs but that the loader has no support for.  **NOTE:** This may cause the loader or application to crash. |  `export VK_LOADER_DISABLE_INST_EXT_FILTER=1`<br/><br/>`set VK_LOADER_DISABLE_INST_EXT_FILTER=1` |
-| VK_LOADER_DEBUG                   | Enable loader debug messages.  It is a comma-delimited list of options.  Options are:<br/>- error (only errors)<br/>- warn (only warnings)<br/>- info (only info)<br/> - debug (only debug) <br/> - all (report out all messages) | `export VK_LOADER_DEBUG=all`<br/><br/>`set VK_LOADER_DEBUG=error,warn` |
+| VK_LOADER_DEBUG                   | Enable loader debug messages.  It is a comma-delimited list of options.  Options are:<br/>- error (enable error messages)<br/>- warn (enable warning messages)<br/>- info (enable info messages)<br/> - debug (enable debug messages) <br/>  - layer (enable layer messages) <br/>  - implem (enable implementation/ICD messages) <br/> - all (report out all messages) | `export VK_LOADER_DEBUG=all`<br/><br/>`set VK_LOADER_DEBUG=error,warn` |
 
 ## Glossary of Terms
 
