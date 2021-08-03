@@ -136,8 +136,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
 
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
         if (layer_lib == NULL) {
-            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
-                       layers.list[i].lib_name);
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__, layers.list[i].lib_name);
             continue;
         }
 
@@ -145,9 +145,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         void *pfn = loader_platform_get_proc_address(layer_lib,
                                                      layers.list[i].pre_instance_functions.enumerate_instance_extension_properties);
         if (pfn == NULL) {
-            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"",
-                       __FUNCTION__, layers.list[i].pre_instance_functions.enumerate_instance_extension_properties,
-                       layers.list[i].lib_name);
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"", __FUNCTION__,
+                       layers.list[i].pre_instance_functions.enumerate_instance_extension_properties, layers.list[i].lib_name);
             continue;
         }
 
