@@ -28,7 +28,7 @@
 #include "test_environment.h"
 
 namespace detail {
-PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) : debug_mode(debug_mode) {
+PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) noexcept : debug_mode(debug_mode) {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
     auto get_platform_shim_func = shim_library.get_symbol<PFN_get_platform_shim>(GET_PLATFORM_SHIM_STR);
@@ -43,29 +43,28 @@ PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) : debug_mode(debu
     // leave it permanently on at full blast
     set_env_var("VK_LOADER_DEBUG", "all");
 }
-PlatformShimWrapper::~PlatformShimWrapper() {
+PlatformShimWrapper::~PlatformShimWrapper() noexcept {
     platform_shim->reset(debug_mode);
     platform_shim->clear_override(debug_mode);
 }
 
-TestICDHandle::TestICDHandle() {}
-TestICDHandle::TestICDHandle(fs::path const& icd_path) {
-    icd_library = LibraryWrapper(icd_path);
+TestICDHandle::TestICDHandle() noexcept {}
+TestICDHandle::TestICDHandle(fs::path const& icd_path) noexcept : icd_library(icd_path) {
     proc_addr_get_test_icd = icd_library.get_symbol<GetNewTestICDFunc>(GET_TEST_ICD_FUNC_STR);
     proc_addr_get_new_test_icd = icd_library.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
 }
-TestICD& TestICDHandle::get_test_icd() {
+TestICD& TestICDHandle::get_test_icd() noexcept {
     assert(proc_addr_get_test_icd != NULL && "symbol must be loaded before use");
     return *proc_addr_get_test_icd();
 }
-TestICD& TestICDHandle::get_new_test_icd() {
+TestICD& TestICDHandle::get_new_test_icd() noexcept {
     assert(proc_addr_get_new_test_icd != NULL && "symbol must be loaded before use");
     return *proc_addr_get_new_test_icd();
 }
-fs::path TestICDHandle::get_icd_full_path() { return icd_library.lib_path; }
+fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
 }  // namespace detail
 
-FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode)
+FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode) noexcept
     : platform_shim(debug_mode),
       null_folder(FRAMEWORK_BUILD_DIRECTORY, "null_dir", debug_mode),
       icd_folder(FRAMEWORK_BUILD_DIRECTORY, "icd_manifests", debug_mode),
@@ -79,25 +78,25 @@ FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode)
     platform_shim->set_path(ManifestCategory::implicit_layer, implicit_layer_folder.location());
 }
 
-void FrameworkEnvironment::AddICD(TestICDDetails icd_details, const std::string& json_name) {
+void FrameworkEnvironment::AddICD(TestICDDetails icd_details, const std::string& json_name) noexcept {
     ManifestICD icd_manifest;
     icd_manifest.lib_path = fs::fixup_backslashes_in_path(icd_details.icd_path);
     icd_manifest.api_version = icd_details.api_version;
     auto driver_loc = icd_folder.write(json_name, icd_manifest);
     platform_shim->add_manifest(ManifestCategory::icd, driver_loc);
 }
-void FrameworkEnvironment::AddImplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) {
+void FrameworkEnvironment::AddImplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
     auto layer_loc = implicit_layer_folder.write(json_name, layer_manifest);
     platform_shim->add_manifest(ManifestCategory::implicit_layer, layer_loc);
 }
-void FrameworkEnvironment::AddExplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) {
+void FrameworkEnvironment::AddExplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
     auto layer_loc = explicit_layer_folder.write(json_name, layer_manifest);
     platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc);
 }
 
-EnvVarICDOverrideShim::EnvVarICDOverrideShim(DebugMode debug_mode) : FrameworkEnvironment(debug_mode) {}
+EnvVarICDOverrideShim::EnvVarICDOverrideShim(DebugMode debug_mode) noexcept : FrameworkEnvironment(debug_mode) {}
 
-void EnvVarICDOverrideShim::SetEnvOverrideICD(const char* icd_path, const char* manifest_name) {
+void EnvVarICDOverrideShim::SetEnvOverrideICD(const char* icd_path, const char* manifest_name) noexcept {
     ManifestICD icd_manifest;
     icd_manifest.lib_path = icd_path;
     icd_manifest.api_version = VK_MAKE_VERSION(1, 0, 0);
@@ -108,19 +107,18 @@ void EnvVarICDOverrideShim::SetEnvOverrideICD(const char* icd_path, const char* 
     driver_wrapper = LibraryWrapper(fs::path(icd_path));
 
     get_new_test_icd = driver_wrapper.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
-
 }
 
-SingleICDShim::SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode) : FrameworkEnvironment(debug_mode) {
+SingleICDShim::SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode) noexcept : FrameworkEnvironment(debug_mode) {
     icd_handle = detail::TestICDHandle(icd_details.icd_path);
 
     AddICD(icd_details, "test_icd.json");
 }
-TestICD& SingleICDShim::get_test_icd() { return icd_handle.get_test_icd(); }
-TestICD& SingleICDShim::get_new_test_icd() { return icd_handle.get_new_test_icd(); }
-fs::path SingleICDShim::get_test_icd_path() { return icd_handle.get_icd_full_path(); }
+TestICD& SingleICDShim::get_test_icd() noexcept { return icd_handle.get_test_icd(); }
+TestICD& SingleICDShim::get_new_test_icd() noexcept { return icd_handle.get_new_test_icd(); }
+fs::path SingleICDShim::get_test_icd_path() noexcept { return icd_handle.get_icd_full_path(); }
 
-MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector, DebugMode debug_mode)
+MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector, DebugMode debug_mode) noexcept
     : FrameworkEnvironment(debug_mode) {
     uint32_t i = 0;
     for (auto& test_icd_detail : icd_details_vector) {
@@ -135,6 +133,6 @@ MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector,
         i++;
     }
 }
-TestICD& MultipleICDShim::get_test_icd(int index) { return icds[index].get_test_icd(); }
-TestICD& MultipleICDShim::get_new_test_icd(int index) { return icds[index].get_new_test_icd(); }
-fs::path MultipleICDShim::get_test_icd_path(int index) { return icds[index].get_icd_full_path(); }
+TestICD& MultipleICDShim::get_test_icd(int index) noexcept { return icds[index].get_test_icd(); }
+TestICD& MultipleICDShim::get_new_test_icd(int index) noexcept { return icds[index].get_new_test_icd(); }
+fs::path MultipleICDShim::get_test_icd_path(int index) noexcept { return icds[index].get_icd_full_path(); }
