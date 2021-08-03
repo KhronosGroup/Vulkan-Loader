@@ -117,7 +117,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
                                                                            pSurfaceCapabilities);
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
                    "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulating call in ICD \"%s\" using "
                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
                    icd_term->scanned_icd->lib_name);
@@ -138,7 +138,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
         pSurfaceCapabilities->supportedSurfaceCounters = 0;
 
         if (pSurfaceCapabilities->pNext != NULL) {
-            loader_log(icd_term->this_instance, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+            loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
                        "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulation found unrecognized structure type in "
                        "pSurfaceCapabilities->pNext - this struct will be ignored");
         }
@@ -161,7 +161,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_ReleaseDisplayEXT(VkPhysicalDevice phy
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
 
     if (icd_term->dispatch.ReleaseDisplayEXT == NULL) {
-        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD \"%s\" associated with VkPhysicalDevice does not support vkReleaseDisplayEXT - Consequently, the call is "
                    "invalid because it should not be possible to acquire a display on this device",
                    icd_term->scanned_icd->lib_name);
@@ -189,7 +189,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireXlibDisplayEXT(VkPhysicalDevice
         return icd_term->dispatch.AcquireXlibDisplayEXT(phys_dev_term->phys_dev, dpy, display);
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
                    "vkAcquireXLibDisplayEXT: Emulating call in ICD \"%s\" by returning error", icd_term->scanned_icd->lib_name);
 
         // Fail for the unsupported command
@@ -215,7 +215,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetRandROutputDisplayEXT(VkPhysicalDev
         return icd_term->dispatch.GetRandROutputDisplayEXT(phys_dev_term->phys_dev, dpy, rrOutput, pDisplay);
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
                    "vkGetRandROutputDisplayEXT: Emulating call in ICD \"%s\" by returning null display",
                    icd_term->scanned_icd->lib_name);
 
@@ -247,7 +247,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModes2E
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT) {
-        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSurfacePresentModes2EXT");
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(pSurfaceInfo->surface);

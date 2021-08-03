@@ -136,7 +136,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
 
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
         if (layer_lib == NULL) {
-            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
                        layers.list[i].lib_name);
             continue;
         }
@@ -145,9 +145,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         void *pfn = loader_platform_get_proc_address(layer_lib,
                                                      layers.list[i].pre_instance_functions.enumerate_instance_extension_properties);
         if (pfn == NULL) {
-            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                       "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"", __FUNCTION__,
-                       layers.list[i].pre_instance_functions.enumerate_instance_extension_properties, layers.list[i].lib_name);
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"",
+                       __FUNCTION__, layers.list[i].pre_instance_functions.enumerate_instance_extension_properties,
+                       layers.list[i].lib_name);
             continue;
         }
 
@@ -230,7 +230,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
         if (layer_lib == NULL) {
-            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
                        layers.list[i].lib_name);
             continue;
         }
@@ -239,9 +239,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         void *pfn =
             loader_platform_get_proc_address(layer_lib, layers.list[i].pre_instance_functions.enumerate_instance_layer_properties);
         if (pfn == NULL) {
-            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                       "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"", __FUNCTION__,
-                       layers.list[i].pre_instance_functions.enumerate_instance_layer_properties, layers.list[i].lib_name);
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"",
+                       __FUNCTION__, layers.list[i].pre_instance_functions.enumerate_instance_layer_properties,
+                       layers.list[i].lib_name);
             continue;
         }
 
@@ -324,18 +324,16 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
 
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
         if (layer_lib == NULL) {
-            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
                        layers.list[i].lib_name);
             continue;
         }
 
         libs[lib_count++] = layer_lib;
-        void *pfn = loader_platform_get_proc_address(layer_lib,
-                                                     layers.list[i].pre_instance_functions.enumerate_instance_version);
+        void *pfn = loader_platform_get_proc_address(layer_lib, layers.list[i].pre_instance_functions.enumerate_instance_version);
         if (pfn == NULL) {
-            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                       "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"", __FUNCTION__,
-                       layers.list[i].pre_instance_functions.enumerate_instance_version, layers.list[i].lib_name);
+            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"",
+                       __FUNCTION__, layers.list[i].pre_instance_functions.enumerate_instance_version, layers.list[i].lib_name);
             continue;
         }
 
@@ -508,7 +506,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     ptr_instance->disp = loader_instance_heap_alloc(ptr_instance, sizeof(struct loader_instance_dispatch_table),
                                                     VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (ptr_instance->disp == NULL) {
-        loader_log(ptr_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "vkCreateInstance:  Failed to allocate Loader's full Instance dispatch table.");
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
@@ -691,7 +689,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     }
 
     if (NULL == pPhysicalDeviceCount) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "vkEnumeratePhysicalDevices: Received NULL pointer for physical device count return value.");
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -709,7 +707,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     count = inst->phys_dev_count_tramp;
 
     if (inst->phys_dev_count_tramp != inst->total_gpu_count) {
-        loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "vkEnumeratePhysicalDevices: One or more layers modified physical devices!"
                    "Count returned by ICDs = %d, count returned above layers = %d",
                    inst->total_gpu_count, inst->phys_dev_count_tramp);
@@ -718,7 +716,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     // Wrap the PhysDev object for loader usage, return wrapped objects
     if (NULL != pPhysicalDevices) {
         if (inst->phys_dev_count_tramp > *pPhysicalDeviceCount) {
-            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "vkEnumeratePhysicalDevices: Trimming device count down"
                        " by application request from %d to %d physical devices",
                        inst->phys_dev_count_tramp, *pPhysicalDeviceCount);
@@ -2040,7 +2038,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
     // Query how many physical device groups there
     res = fpEnumeratePhysicalDeviceGroups(instance, &total_count, NULL);
     if (res != VK_SUCCESS) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
             "setupLoaderTrampPhysDevGroups:  Failed during dispatch call of "
             "\'EnumeratePhysicalDeviceGroupsKHR\' to lower layers or "
             "loader to get count.");
@@ -2052,7 +2050,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
     new_phys_dev_groups = (VkPhysicalDeviceGroupPropertiesKHR **)loader_instance_heap_alloc(
         inst, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHR *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_dev_groups) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
             "setupLoaderTrampPhysDevGroups:  Failed to allocate new physical device"
             " group array of size %d",
             total_count);
@@ -2065,7 +2063,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
     // returned VkPhysicalDevice values.
     local_phys_dev_groups = loader_stack_alloc(sizeof(VkPhysicalDeviceGroupPropertiesKHR) * total_count);
     if (NULL == local_phys_dev_groups) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
             "setupLoaderTrampPhysDevGroups:  Failed to allocate local "
             "physical device group array of size %d",
             total_count);
@@ -2083,7 +2081,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
     // Call down and get the content
     fpEnumeratePhysicalDeviceGroups(instance, &total_count, local_phys_dev_groups);
     if (VK_SUCCESS != res) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
             "setupLoaderTrampPhysDevGroups:  Failed during dispatch call of "
             "\'EnumeratePhysicalDeviceGroupsKHR\' to lower layers or "
             "loader to get content.");
@@ -2102,7 +2100,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
                 }
             }
             if (!found) {
-                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                     "setupLoaderTrampPhysDevGroups:  Failed to find GPU %d in group %d"
                     " returned by \'EnumeratePhysicalDeviceGroupsKHR\' in list returned"
                     " by \'EnumeratePhysicalDevices\'", group_gpu, group);
@@ -2146,7 +2144,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
             new_phys_dev_groups[new_idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
                 inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_phys_dev_groups[new_idx]) {
-                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                     "setupLoaderTrampPhysDevGroups:  Failed to allocate "
                     "physical device group trampoline object %d",
                     new_idx);
@@ -2213,7 +2211,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     }
 
     if (NULL == pPhysicalDeviceGroupCount) {
-        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "vkEnumeratePhysicalDeviceGroupsKHR: Received NULL pointer for physical "
                    "device group count return value.");
         res = VK_ERROR_INITIALIZATION_FAILED;
@@ -2231,7 +2229,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     // Wrap the PhysDev object for loader usage, return wrapped objects
     if (NULL != pPhysicalDeviceGroupProperties) {
         if (inst->phys_dev_group_count_tramp > *pPhysicalDeviceGroupCount) {
-            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "vkEnumeratePhysicalDeviceGroupsKHR: Trimming device group count down"
                        " by application request from %d to %d physical device groups",
                        inst->phys_dev_group_count_tramp, *pPhysicalDeviceGroupCount);

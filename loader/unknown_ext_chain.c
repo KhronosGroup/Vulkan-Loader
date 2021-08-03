@@ -47,7 +47,7 @@
          struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;                                              \
          struct loader_instance *inst = (struct loader_instance *)icd_term->this_instance;                             \
          if (NULL == icd_term->phys_dev_ext[num]) {                                                                    \
-             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "Extension %s not supported for this physical device", \
+             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Extension %s not supported for this physical device", \
                         inst->phys_dev_ext_disp_hash[num].func_name);                                                  \
          }                                                                                                             \
          icd_term->phys_dev_ext[num](phys_dev_term->phys_dev);                                                         \
