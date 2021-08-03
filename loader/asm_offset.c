@@ -52,6 +52,8 @@ int main(int argc, char **argv) {
     struct ValueInfo values[] = {
         { .name = "VK_DEBUG_REPORT_ERROR_BIT_EXT", .value = (size_t) VK_DEBUG_REPORT_ERROR_BIT_EXT,
             .comment = "The numerical value of the enum value 'VK_DEBUG_REPORT_ERROR_BIT_EXT'" },
+        { .name = "VULKAN_LOADER_ERROR_BIT", .value = (size_t) VULKAN_LOADER_ERROR_BIT,
+            .comment = "The numerical value of the enum value 'VULKAN_LOADER_ERROR_BIT'" },
         { .name = "PTR_SIZE", .value = sizeof(void*),
             .comment = "The size of a pointer" },
         { .name = "HASH_SIZE", .value = sizeof(struct loader_dispatch_hash_entry),

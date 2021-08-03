@@ -498,7 +498,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos += '    struct loader_icd_term *icd_term = loader_get_icd_and_device(dev, &found_dev, NULL);\n'
         protos += '\n'
         protos += '    if (icd_term)\n'
-        protos += '        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,\n'
+        protos += '        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,\n'
         protos += '                   "Bad destination in loader trampoline dispatch,"\n'
         protos += '                   "Are layers and extensions that you are calling enabled?");\n'
         protos += '    return VK_ERROR_EXTENSION_NOT_PRESENT;\n'
@@ -648,7 +648,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         table += '    do {                                                                                   \\\n'
         table += '        icd_term->dispatch.func = (PFN_vk##func)fp_gipa(inst, "vk" #func);                 \\\n'
         table += '        if (!icd_term->dispatch.func && required) {                                        \\\n'
-        table += '            loader_log((struct loader_instance *)inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0, \\\n'
+        table += '            loader_log((struct loader_instance *)inst, VULKAN_LOADER_WARN_BIT, 0, \\\n'
         table += '                       loader_platform_get_proc_address_error("vk" #func));                \\\n'
         table += '            return false;                                                                  \\\n'
         table += '        }                                                                                  \\\n'
@@ -1110,7 +1110,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    if (NULL == icd_term->dispatch.'
                     funcs += base_name
                     funcs += ') {\n'
-                    funcs += '        loader_log(icd_term->this_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,\n'
+                    funcs += '        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,\n'
                     funcs += '                   "ICD associated with VkPhysicalDevice does not support '
                     funcs += base_name
                     funcs += '");\n'
