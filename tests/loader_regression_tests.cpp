@@ -105,6 +105,22 @@ TEST_F(CreateInstance, LayerNotPresent) {
     ASSERT_EQ(VK_ERROR_LAYER_NOT_PRESENT, env->vulkan_functions.vkCreateInstance(inst_info.get(), VK_NULL_HANDLE, &inst));
 }
 
+TEST_F(CreateInstance, LayerPresent) {
+    const char* layer_name = "TestLayer";
+    ManifestLayer::LayerDescription description{};
+    description.name = layer_name;
+    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_1;
+
+    ManifestLayer layer;
+    layer.layers.push_back(description);
+    env->AddExplicitLayer(layer, "test_layer.json");
+
+    VkInstance inst = VK_NULL_HANDLE;
+    InstanceCreateInfo inst_info;
+    inst_info.add_layer(layer_name);
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkCreateInstance(inst_info.get(), VK_NULL_HANDLE, &inst));
+}
+
 TEST_F(EnumeratePhysicalDevices, OneCall) {
     auto& driver = env->get_test_icd().SetMinICDInterfaceVersion(5);
 
