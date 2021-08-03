@@ -68,12 +68,11 @@ TEST_F(CreateInstance, BasicRun) {
 
 // LX435
 TEST_F(CreateInstance, ConstInstanceInfo) {
+    VkInstance inst = VK_NULL_HANDLE;
     VkInstanceCreateInfo const info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr};
-
-    VkInstance instance = VK_NULL_HANDLE;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(&info, VK_NULL_HANDLE, &instance), VK_SUCCESS);
-
-    env->vulkan_functions.vkDestroyInstance(instance, nullptr);
+    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(&info, VK_NULL_HANDLE, &inst), VK_SUCCESS);
+    // Must clean up
+    env->vulkan_functions.vkDestroyInstance(inst, nullptr);
 }
 
 // VUID-vkDestroyInstance-instance-parameter, VUID-vkDestroyInstance-pAllocator-parameter
@@ -85,24 +84,24 @@ TEST_F(CreateInstance, DestroyDeviceNullHandle) { env->vulkan_functions.vkDestro
 // VUID-vkCreateInstance-ppEnabledExtensionNames-01388
 TEST_F(CreateInstance, ExtensionNotPresent) {
     {
-        VkInstance inst = VK_NULL_HANDLE;
-        InstanceCreateInfo inst_info;
-        inst_info.add_extension("VK_EXT_validation_features");  // test icd won't report this as supported
-        ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, env->vulkan_functions.vkCreateInstance(inst_info.get(), VK_NULL_HANDLE, &inst));
+        InstWrapper inst{env->vulkan_functions};
+        InstanceCreateInfo inst_create_info;
+        inst_create_info.add_extension("VK_EXT_validation_features");  // test icd won't report this as supported
+        ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, CreateInst(inst, inst_create_info));
     }
     {
-        VkInstance inst = VK_NULL_HANDLE;
-        InstanceCreateInfo inst_info;
-        inst_info.add_extension("Non_existant_extension");  // unknown instance extension
-        ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, env->vulkan_functions.vkCreateInstance(inst_info.get(), VK_NULL_HANDLE, &inst));
+        InstWrapper inst{env->vulkan_functions};
+        InstanceCreateInfo inst_create_info;
+        inst_create_info.add_extension("Non_existant_extension");  // unknown instance extension
+        ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, CreateInst(inst, inst_create_info));
     }
 }
 
 TEST_F(CreateInstance, LayerNotPresent) {
-    VkInstance inst = VK_NULL_HANDLE;
-    InstanceCreateInfo inst_info;
-    inst_info.add_layer("VK_NON_EXISTANT_LAYER");
-    ASSERT_EQ(VK_ERROR_LAYER_NOT_PRESENT, env->vulkan_functions.vkCreateInstance(inst_info.get(), VK_NULL_HANDLE, &inst));
+    InstWrapper inst{env->vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    inst_create_info.add_layer("VK_NON_EXISTANT_LAYER");
+    ASSERT_EQ(VK_ERROR_LAYER_NOT_PRESENT, CreateInst(inst, inst_create_info));
 }
 
 TEST_F(CreateInstance, LayerPresent) {
@@ -115,10 +114,10 @@ TEST_F(CreateInstance, LayerPresent) {
     layer.layers.push_back(description);
     env->AddExplicitLayer(layer, "test_layer.json");
 
-    VkInstance inst = VK_NULL_HANDLE;
-    InstanceCreateInfo inst_info;
-    inst_info.add_layer(layer_name);
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkCreateInstance(inst_info.get(), VK_NULL_HANDLE, &inst));
+    InstWrapper inst{env->vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    inst_create_info.add_layer(layer_name);
+    ASSERT_EQ(VK_SUCCESS, CreateInst(inst, inst_create_info));
 }
 
 TEST_F(EnumeratePhysicalDevices, OneCall) {
