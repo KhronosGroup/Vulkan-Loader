@@ -158,5 +158,5 @@ if(WIN32)
     endif()
 endif()
 
-#must happen after the dll's get copied over
+# must happen after the dll's get copied over
 gtest_discover_tests(test_regression)
