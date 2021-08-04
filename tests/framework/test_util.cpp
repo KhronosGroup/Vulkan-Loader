@@ -135,7 +135,7 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     out += "\t\t\"implementation_version\":\"" + std::to_string(implementation_version) + "\",\n";
     out += "\t\t\"description\": \"" + description + "\"";
     if (functions.size() > 0) {
-        out += ",\n\t\t{";
+        out += ",\n\t\t\"functions\": {";
         for (size_t i = 0; i < functions.size(); i++) {
             if (i > 0) out += ",";
             out += "\n\t\t\t" + functions.at(i).get_manifest_str();
@@ -143,20 +143,20 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
         out += "\n\t\t}";
     }
     if (instance_extensions.size() > 0) {
-        out += ",\n\t\t{";
+        out += ",\n\t\t\"instance_extensions\": [";
         for (size_t i = 0; i < instance_extensions.size(); i++) {
             if (i > 0) out += ",";
             out += "\n\t\t\t" + instance_extensions.at(i).get_manifest_str();
         }
-        out += "\n\t\t}";
+        out += "\n\t\t]";
     }
     if (device_extensions.size() > 0) {
-        out += ",\n\t\t{";
+        out += ",\n\t\t\"device_extensions\": [";
         for (size_t i = 0; i < device_extensions.size(); i++) {
             if (i > 0) out += ",";
             out += "\n\t\t\t" + device_extensions.at(i).get_manifest_str();
         }
-        out += "\n\t\t}";
+        out += "\n\t\t]";
     }
     if (enable_environment.size() > 0) {
         out += ",\n\t\t\"enable_environment\": { \"" + enable_environment + "\": \"1\"";

@@ -49,6 +49,8 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
     description.name = meta_layer_name;
     description.component_layers = {"InvalidLayer1", "InvalidLayer2"};
     description.disable_environment = "NotGonnaWork";
+    description.instance_extensions.push_back({"NeverGonnaGiveYouUp"});
+    description.device_extensions.push_back({"NeverGonnaLetYouDown"});
 
     ManifestLayer meta_layer;
     meta_layer.file_format_version = ManifestVersion(1, 1, 2);
