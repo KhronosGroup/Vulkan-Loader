@@ -164,6 +164,9 @@ struct ManifestLayer {
             std::string get_manifest_str() const { return std::string("{ \"") + vk_func + "\":\"" + override_name + "\" }"; }
         };
         struct Extension {
+            Extension() noexcept {}
+            Extension(std::string name, uint32_t spec_version = 0, std::vector<std::string> entrypoints = {}) noexcept
+                : name(name), spec_version(spec_version), entrypoints(entrypoints) {}
             std::string name;
             uint32_t spec_version = 0;
             std::vector<std::string> entrypoints;
