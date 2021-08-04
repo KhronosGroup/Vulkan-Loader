@@ -111,6 +111,7 @@ void EnvVarICDOverrideShim::SetEnvOverrideICD(const char* icd_path, const char* 
 
 SingleICDShim::SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode) noexcept : FrameworkEnvironment(debug_mode) {
     icd_handle = detail::TestICDHandle(icd_details.icd_path);
+    icd_handle.get_new_test_icd();
 
     AddICD(icd_details, "test_icd.json");
 }
@@ -128,6 +129,7 @@ MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector,
         auto new_driver_location = icd_folder.copy_file(test_icd_detail.icd_path, new_driver_name.str());
 
         icds.push_back(detail::TestICDHandle(new_driver_location));
+        icds.back().get_new_test_icd();
         test_icd_detail.icd_path = new_driver_location.c_str();
         AddICD(test_icd_detail, std::string("test_icd_") + std::to_string(i) + ".json");
         i++;
