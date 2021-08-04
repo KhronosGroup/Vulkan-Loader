@@ -44,17 +44,47 @@ class MetaLayers : public LayerTests {};
 class OverrideMetaLayer : public LayerTests {};
 
 TEST_F(MetaLayers, InvalidComponentLayer) {
-    const char* layer_name = "TestLayer";
+    const char* meta_layer_name = "MetaTestLayer";
     ManifestLayer::LayerDescription description{};
-    description.name = layer_name;
+    description.name = meta_layer_name;
     description.component_layers = {"InvalidLayer1", "InvalidLayer2"};
+    description.disable_environment = "NotGonnaWork";
 
     ManifestLayer meta_layer;
+    meta_layer.file_format_version = ManifestVersion(1, 1, 2);
     meta_layer.layers.push_back(description);
-    env->AddExplicitLayer(meta_layer, "meta_test_layer.json");
+    env->AddImplicitLayer(meta_layer, "meta_test_layer.json");
+
+    const char* regular_layer_name = "TestLayer";
+    ManifestLayer::LayerDescription regular_description{};
+    regular_description.name = regular_layer_name;
+    regular_description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_1;
+
+    ManifestLayer regular_layer;
+    regular_layer.layers.push_back(regular_description);
+    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+
+    // should find 1, the 'regular' layer
+    uint32_t layer_count = 1;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+    EXPECT_EQ(layer_count, 1);
+
+    VkLayerProperties layer_props;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, &layer_props));
+    EXPECT_EQ(layer_count, 1);
+    EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
+
+    uint32_t extension_count = 0;
+    std::array<VkExtensionProperties, 2> extensions;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils + our two extensions
+
+    EXPECT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 2);
 
     InstWrapper inst{env->vulkan_functions};
     InstanceCreateInfo inst_create_info;
-    inst_create_info.add_layer(layer_name);
-    ASSERT_EQ(VK_ERROR_LAYER_NOT_PRESENT, CreateInst(inst, inst_create_info));
+    inst_create_info.add_layer(meta_layer_name);
+    EXPECT_EQ(VK_ERROR_LAYER_NOT_PRESENT, CreateInst(inst, inst_create_info));
 }
