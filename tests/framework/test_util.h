@@ -126,7 +126,21 @@ inline std::string version_to_string(uint32_t version) {
            std::to_string(VK_VERSION_PATCH(version));
 }
 
+struct ManifestVersion {
+    uint32_t major = 1;
+    uint32_t minor = 0;
+    uint32_t patch = 0;
+    explicit ManifestVersion() noexcept {};
+    explicit ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
+
+    std::string get_version_str() const noexcept {
+        return std::string("\"file_format_version\": \"") + std::to_string(major) + "." + std::to_string(minor) + "." +
+               std::to_string(patch) + "\",";
+    }
+};
+
 struct ManifestICD {
+    ManifestVersion file_format_version = ManifestVersion();
     uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
     std::string lib_path;
 
@@ -172,9 +186,7 @@ struct ManifestLayer {
         std::string get_manifest_str() const;
         VkLayerProperties get_layer_properties() const;
     };
-    uint32_t file_format_major = 1;
-    uint32_t file_format_minor = 1;
-    uint32_t file_format_patch = 2;
+    ManifestVersion file_format_version;
     std::vector<LayerDescription> layers;
 
     std::string get_manifest_str() const;

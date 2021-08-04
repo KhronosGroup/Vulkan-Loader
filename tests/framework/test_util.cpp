@@ -99,7 +99,7 @@ std::string get_env_var(std::string const& name) {
 std::string ManifestICD::get_manifest_str() const {
     std::string out;
     out += "{\n";
-    out += "    \"file_format_version\": \"1.0.0\",\n";
+    out += "    " + file_format_version.get_version_str() + "\n";
     out += "    \"ICD\": {\n";
     out += "        \"library_path\": \"" + lib_path + "\",\n";
     out += "        \"api_version\": \"" + version_to_string(api_version) + "\"\n";
@@ -128,7 +128,7 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     out += "\t{\n";
     out += "\t\t\"name\":\"" + name + "\",\n";
     out += "\t\t\"type\":\"" + get_type_str(type) + "\",\n";
-    if (lib_path != "") {
+    if (lib_path.size() > 0) {
         out += "\t\t\"library_path\": \"" + lib_path + "\",\n";
     }
     out += "\t\t\"api_version\": \"" + version_to_string(api_version) + "\",\n";
@@ -159,11 +159,11 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
         out += "\n\t\t}";
     }
     if (enable_environment.size() > 0) {
-        out += ",\n\t\t{ \"" + enable_environment + "\": \"1\"";
+        out += ",\n\t\t\"enable_environment\": { \"" + enable_environment + "\": \"1\"";
         out += "\n\t\t}";
     }
     if (disable_environment.size() > 0) {
-        out += ",\n\t\t{ \"" + disable_environment + "\": \"1\"";
+        out += ",\n\t\t\"disable_environment\": { \"" + disable_environment + "\": \"1\"";
         out += "\n\t\t}";
     }
     if (component_layers.size() > 0) {
@@ -198,7 +198,7 @@ VkLayerProperties ManifestLayer::LayerDescription::get_layer_properties() const 
 std::string ManifestLayer::get_manifest_str() const {
     std::string out;
     out += "{\n";
-    out += "\t\"file_format_version\": \"1.0.0\",\n";
+    out += "\t" + file_format_version.get_version_str() + "\n";
     if (layers.size() == 1) {
         out += "\t\"layer\": ";
         out += layers.at(0).get_manifest_str() + "\n";
