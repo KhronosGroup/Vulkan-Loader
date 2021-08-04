@@ -76,6 +76,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dlfcn.h>
+
+// Prevent macro collisions from <sys/types.h>
+#undef major
+#undef minor
+
 #endif
 
 #include <vulkan/vulkan.h>
