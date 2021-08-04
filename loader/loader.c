@@ -1295,6 +1295,8 @@ void loaderRemoveLayerInList(const struct loader_instance *inst, struct loader_l
         loader_instance_heap_free(inst, layer_list->list[layer_to_remove].override_paths);
         loader_instance_heap_free(inst, layer_list->list[layer_to_remove].blacklist_layer_names);
         loader_instance_heap_free(inst, layer_list->list[layer_to_remove].app_key_paths);
+        loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_list->list[layer_to_remove].instance_extension_list);
+        loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_list->list[layer_to_remove].device_extension_list);
     }
 
     // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
@@ -2826,6 +2828,8 @@ static void VerifyAllMetaLayers(struct loader_instance *inst, struct loader_laye
             if (prop->override_paths != NULL) {
                 loader_instance_heap_free(inst, prop->override_paths);
             }
+            loader_destroy_generic_list(inst, (struct loader_generic_list *)&prop->instance_extension_list);
+            loader_destroy_generic_list(inst, (struct loader_generic_list *)&prop->device_extension_list);
 
             // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
             // overlapping the source and destination addresses.
