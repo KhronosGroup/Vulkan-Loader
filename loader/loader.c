@@ -2447,7 +2447,8 @@ static void loader_debug_init(void) {
                 g_loader_debug |= VULKAN_LOADER_DEBUG_BIT;
             } else if (strncmp(env, "layer", len) == 0) {
                 g_loader_debug |= VULKAN_LOADER_LAYER_BIT;
-            } else if (strncmp(env, "implem", len) == 0) {
+            } else if (strncmp(env, "implem", len) == 0 ||
+                       strncmp(env, "icd", len) == 0) {
                 g_loader_debug |= VULKAN_LOADER_IMPLEMENTATION_BIT;
             }
         }
