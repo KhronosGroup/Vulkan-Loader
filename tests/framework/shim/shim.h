@@ -432,7 +432,6 @@ inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCa
 
 #elif defined(__linux__) || defined(__APPLE__)
 
-#include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
 
