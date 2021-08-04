@@ -128,7 +128,9 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     out += "\t{\n";
     out += "\t\t\"name\":\"" + name + "\",\n";
     out += "\t\t\"type\":\"" + get_type_str(type) + "\",\n";
-    out += "\t\t\"library_path\": \"" + lib_path + "\",\n";
+    if (lib_path != "") {
+        out += "\t\t\"library_path\": \"" + lib_path + "\",\n";
+    }
     out += "\t\t\"api_version\": \"" + version_to_string(api_version) + "\",\n";
     out += "\t\t\"implementation_version\":\"" + std::to_string(implementation_version) + "\",\n";
     out += "\t\t\"description\": \"" + description + "\"";
