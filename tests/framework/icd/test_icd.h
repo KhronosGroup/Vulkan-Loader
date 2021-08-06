@@ -79,6 +79,12 @@ struct TestICD {
     uint64_t created_surface_count = 0;
     uint64_t created_swapchain_count = 0;
 
+    // Unknown instance and physical device functions. Add a `VulkanFunction` to this list which will be searched in
+    // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for custom_physical_device_functions.
+    // To add unknown device functions, add it to the PhysicalDevice directly (in the known_device_functions member)
+    std::vector<VulkanFunction> custom_instance_functions;
+    std::vector<VulkanFunction> custom_physical_device_functions;
+
     TestICD() {}
     ~TestICD() {}
 
