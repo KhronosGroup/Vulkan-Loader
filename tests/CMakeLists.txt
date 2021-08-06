@@ -29,7 +29,8 @@ add_executable(test_regression loader_testing_main.cpp
     loader_get_proc_addr_tests.cpp
     loader_layer_tests.cpp
     loader_regression_tests.cpp
-    loader_version_tests.cpp)
+    loader_version_tests.cpp
+    loader_unknown_ext_tests.cpp)
 target_link_libraries(test_regression PRIVATE testing_dependencies)
 
 add_executable(test_wsi loader_testing_main.cpp loader_wsi_tests.cpp)

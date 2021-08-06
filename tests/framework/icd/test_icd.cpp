@@ -502,6 +502,11 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
             return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
         }
     }
+    for (auto& func : icd.custom_physical_device_functions) {
+        if (func.name == pName) {
+            return TO_VOID_PFN(func.function);
+        }
+    }
     return nullptr;
 }
 
@@ -525,6 +530,12 @@ PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
 
     PFN_vkVoidFunction ret_wsi = get_instance_func_wsi(instance, pName);
     if (ret_wsi != nullptr) return ret_wsi;
+
+    for (auto& func : icd.custom_instance_functions) {
+        if (func.name == pName) {
+            return TO_VOID_PFN(func.function);
+        }
+    }
 
     return nullptr;
 }

@@ -673,3 +673,8 @@ inline bool operator==(const VkExtensionProperties& a, const VkExtensionProperti
     return string_eq(a.extensionName, b.extensionName, 256) && a.specVersion == b.specVersion;
 }
 inline bool operator!=(const VkExtensionProperties& a, const VkExtensionProperties& b) { return !(a == b); }
+
+struct VulkanFunction {
+    const char* name;
+    void* function;
+};

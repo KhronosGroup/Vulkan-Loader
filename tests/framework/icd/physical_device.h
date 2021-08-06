@@ -29,11 +29,6 @@
 
 #include "test_util.h"
 
-struct VulkanFunction {
-    const char* name;
-    void* function;
-};
-
 // Move only type because it holds a DispatchableHandle<VkPhysicalDevice>
 struct PhysicalDevice {
     PhysicalDevice() {}
