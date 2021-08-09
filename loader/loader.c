@@ -2300,6 +2300,7 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
 #endif
     if (NULL == handle) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, loader_platform_open_library_error(filename));
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
