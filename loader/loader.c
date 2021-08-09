@@ -2277,6 +2277,7 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
 #endif
     if (NULL == handle) {
         loader_log_load_library_error(inst, filename);
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
