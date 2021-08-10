@@ -98,8 +98,7 @@ static const char *parse_number(cJSON *item, const char *num) {
         while (*num >= '0' && *num <= '9'); /* Number? */
     if (*num == '.' && num[1] >= '0' && num[1] <= '9') {
         num++;
-        do
-            n = (n * 10.0) + (*num++ - '0'), scale--;
+        do n = (n * 10.0) + (*num++ - '0'), scale--;
         while (*num >= '0' && *num <= '9');
     }                               /* Fractional part? */
     if (*num == 'e' || *num == 'E') /* Exponent? */
