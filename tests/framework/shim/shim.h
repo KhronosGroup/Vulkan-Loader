@@ -452,45 +452,49 @@ inline void PlatformShim::remove(fs::path const& path) { redirection_map.erase(p
 inline bool PlatformShim::is_fake_path(fs::path const& path) { return redirection_map.count(path.str()) > 0; }
 inline fs::path const& PlatformShim::get_fake_path(fs::path const& path) { return redirection_map.at(path.str()); }
 
-// void PlatformShim::set_implicit_layer_path(ManifestCategory category, fs::path const& path) {
-//     add(fs::path("/usr/local/etc/vulkan/implicit_layer.d"), path);
-
-//     add(fs::path("/usr/local/etc/vulkan/explicit_layer.d"), path);
-//     add(fs::path("/usr/local/etc/vulkan/icd.d"), path);
-// }
-
 inline void PlatformShim::add_manifest(ManifestCategory category, fs::path const& path) {}
 
 inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCategory category) {
-    // default paths
-    add(fs::path("/usr/local/etc/vulkan") / category_path_name(category), new_path);
-    add(fs::path("/usr/local/share/vulkan") / category_path_name(category), new_path);
-    add(fs::path("/etc/vulkan") / category_path_name(category), new_path);
-    add(fs::path("/usr/share/vulkan") / category_path_name(category), new_path);
-
     std::vector<std::string> xdg_paths;
     std::string xdg_data_dirs_var = get_env_var("XDG_DATA_DIRS");
-    if (xdg_data_dirs_var.size() > 0) {
-        xdg_paths = parse_env_var_list(xdg_data_dirs_var);
+    if (xdg_data_dirs_var.size() == 0) {
+        xdg_data_dirs_var = FALLBACK_CONFIG_DIRS;
     }
+    auto data_dirs_paths = parse_env_var_list(xdg_data_dirs_var);
+    xdg_paths.insert(xdg_paths.begin(), data_dirs_paths.begin(), data_dirs_paths.end());
+
     std::string xdg_config_dirs_var = get_env_var("XDG_CONFIG_DIRS");
-    if (xdg_config_dirs_var.size() > 0) {
-        auto paths = parse_env_var_list(xdg_config_dirs_var);
-        xdg_paths.insert(xdg_paths.begin(), paths.begin(), paths.end());
+    if (xdg_config_dirs_var.size() == 0) {
+        xdg_config_dirs_var = FALLBACK_DATA_DIRS;
     }
+    auto config_dirs_paths = parse_env_var_list(xdg_config_dirs_var);
+    xdg_paths.insert(xdg_paths.begin(), config_dirs_paths.begin(), config_dirs_paths.end());
+
+    add(fs::path(SYSCONFDIR) / "vulkan" / category_path_name(category), new_path);
+#if defined(EXTRASYSCONFDIR)
+    // EXTRASYSCONFDIR default is /etc, if SYSCONFDIR wasn't defined, it will have /etc put
+    // as its default. Don't want to double add it
+    if (!string_eq(SYSCONFDIR, EXTRASYSCONFDIR)) {
+        add(fs::path(EXTRASYSCONFDIR) / "vulkan" / category_path_name(category), new_path);
+    }
+#endif
+
     for (auto& path : xdg_paths) {
         add(fs::path(path) / "vulkan" / category_path_name(category), new_path);
     }
 
     std::string home = get_env_var("HOME");
-    if (home.size() == 0) return;
-    add(fs::path(home) / ".local/share/vulkan" / category_path_name(category), new_path);
+    if (home.size() != 0) {
+        add(fs::path(home) / ".local/share/vulkan" / category_path_name(category), new_path);
+    }
 }
 
 inline void PlatformShim::set_path(ManifestCategory category, fs::path const& path) {
-    if (category == ManifestCategory::implicit_layer) add(fs::path("/usr/local/etc/vulkan/implicit_layer.d"), path);
-    if (category == ManifestCategory::explicit_layer) add(fs::path("/usr/local/etc/vulkan/explicit_layer.d"), path);
-    if (category == ManifestCategory::icd) add(fs::path("/usr/local/etc/vulkan/icd.d"), path);
+    // use /etc as the 'redirection path' by default since its always searched
+
+    if (category == ManifestCategory::implicit_layer) add(fs::path(SYSCONFDIR) / "vulkan/implicit_layer.d", path);
+    if (category == ManifestCategory::explicit_layer) add(fs::path(SYSCONFDIR) / "vulkan/explicit_layer.d", path);
+    if (category == ManifestCategory::icd) add(fs::path(SYSCONFDIR) / "vulkan/icd.d", path);
 }
 
 #endif
