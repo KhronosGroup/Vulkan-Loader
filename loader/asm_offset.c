@@ -29,8 +29,7 @@
 #define SIZE_T_FMT "%-8lu"
 #endif
 
-struct ValueInfo
-{
+struct ValueInfo {
     const char *name;
     size_t value;
     const char *comment;
@@ -50,6 +49,7 @@ int main(int argc, char **argv) {
     }
 
     struct ValueInfo values[] = {
+        // clang-format off
         { .name = "VK_DEBUG_REPORT_ERROR_BIT_EXT", .value = (size_t) VK_DEBUG_REPORT_ERROR_BIT_EXT,
             .comment = "The numerical value of the enum value 'VK_DEBUG_REPORT_ERROR_BIT_EXT'" },
         { .name = "VULKAN_LOADER_ERROR_BIT", .value = (size_t) VULKAN_LOADER_ERROR_BIT,
@@ -76,19 +76,20 @@ int main(int argc, char **argv) {
             .comment = "The offset of 'func_name' within a 'loader_dispatch_hash_entry' struct" },
         { .name = "EXT_OFFSET_DEVICE_DISPATCH", .value = offsetof(struct loader_dev_dispatch_table, ext_dispatch),
             .comment = "The offset of 'ext_dispatch' within a 'loader_dev_dispatch_table' struct" },
+        // clang-format on
     };
 
     FILE *file = fopen("gen_defines.asm", "w");
     fprintf(file, "\n");
     if (!strcmp(assembler, "MASM")) {
-        for (size_t i = 0; i < sizeof(values)/sizeof(values[0]); ++i) {
+        for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
             fprintf(file, "%-32s equ " SIZE_T_FMT "; %s\n", values[i].name, values[i].value, values[i].comment);
         }
     } else if (!strcmp(assembler, "GAS")) {
 #ifdef __x86_64__
         fprintf(file, ".set X86_64, 1\n");
-#endif // __x86_64__
-        for (size_t i = 0; i < sizeof(values)/sizeof(values[0]); ++i) {
+#endif  // __x86_64__
+        for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
             fprintf(file, ".set %-32s, " SIZE_T_FMT "# %s\n", values[i].name, values[i].value, values[i].comment);
         }
     }

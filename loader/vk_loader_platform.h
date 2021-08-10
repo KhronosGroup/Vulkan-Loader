@@ -135,7 +135,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     int fd = open("/proc/self/exefile", O_RDONLY);
     size_t rdsize;
 
-    if (fd == -1 ) {
+    if (fd == -1) {
         return NULL;
     }
 

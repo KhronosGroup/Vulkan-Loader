@@ -53,7 +53,7 @@ typedef struct {
 #endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
         VkIcdSurfaceMetal metal_surf;
-#endif // VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         VkIcdSurfaceScreen screen_surf;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
@@ -98,10 +98,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
                                                                                   VkSurfaceKHR surface, uint32_t *pPresentModeCount,
                                                                                   VkPresentModeKHR *pPresentModes);
 
-VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(
-    VkDevice                                    device,
-    VkSurfaceKHR                                surface,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
+                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes);
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
@@ -160,12 +158,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
 #endif
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance instance,
-                                                                  const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
-                                                                  const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+                                                                 const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
-                                                                                         uint32_t queueFamilyIndex,
-                                                                                         struct _screen_window *window);
-#endif // VK_USE_PLATFORM_SCREEN_QNX
+                                                                                        uint32_t queueFamilyIndex,
+                                                                                        struct _screen_window *window);
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pPropertyCount,
                                                                                 VkDisplayPropertiesKHR *pProperties);
@@ -194,9 +192,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
                                                                     VkSwapchainKHR *pSwapchains);
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice,
-                                                                                VkSurfaceKHR surface,
-                                                                                uint32_t* pRectCount,
-                                                                                VkRect2D* pRects);
+                                                                                VkSurfaceKHR surface, uint32_t *pRectCount,
+                                                                                VkRect2D *pRects);
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                                  uint32_t *pPropertyCount,
@@ -214,12 +211,15 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhys
                                                                           const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
                                                                           VkDisplayPlaneCapabilities2KHR *pCapabilities);
 #ifdef VK_USE_PLATFORM_FUCHSIA
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstance instance,
+                                                                        const VkImagePipeSurfaceCreateInfoFUCHSIA *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkSurfaceKHR *pSurface);
 #endif
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance instance,
+                                                                  const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 #endif
 
@@ -232,4 +232,4 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
                                                                               uint32_t *pSurfaceFormatCount,
                                                                               VkSurfaceFormat2KHR *pSurfaceFormats);
 
-#endif // WSI_H
+#endif  // WSI_H
