@@ -51,6 +51,7 @@ if (UNIX)
     endif()
 endif()
 
+add_subdirectory(data)
 add_subdirectory(shim)
 add_subdirectory(icd)
 add_subdirectory(layer)
