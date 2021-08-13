@@ -123,8 +123,8 @@ MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector,
     : FrameworkEnvironment(debug_mode) {
     uint32_t i = 0;
     for (auto& test_icd_detail : icd_details_vector) {
-        fs::path new_driver_name = fs::path(test_icd_detail.icd_path).stem() + "_" +
-                                       std::to_string(i) + fs::path(test_icd_detail.icd_path).extension();
+        fs::path new_driver_name =
+            fs::path(test_icd_detail.icd_path).stem() + "_" + std::to_string(i) + fs::path(test_icd_detail.icd_path).extension();
 
         auto new_driver_location = icd_folder.copy_file(test_icd_detail.icd_path, new_driver_name.str());
 
@@ -138,3 +138,17 @@ MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector,
 TestICD& MultipleICDShim::get_test_icd(int index) noexcept { return icds[index].get_test_icd(); }
 TestICD& MultipleICDShim::get_new_test_icd(int index) noexcept { return icds[index].get_new_test_icd(); }
 fs::path MultipleICDShim::get_test_icd_path(int index) noexcept { return icds[index].get_icd_full_path(); }
+
+FakeBinaryICDShim::FakeBinaryICDShim(TestICDDetails read_icd_details, TestICDDetails fake_icd_details,
+                                     DebugMode debug_mode) noexcept
+    : FrameworkEnvironment(debug_mode) {
+    real_icd = detail::TestICDHandle(read_icd_details.icd_path);
+    real_icd.get_new_test_icd();
+
+    AddICD(read_icd_details, "test_icd.json");
+
+    AddICD(fake_icd_details, "fake_test_icd.json");
+}
+TestICD& FakeBinaryICDShim::get_test_icd() noexcept { return real_icd.get_test_icd(); }
+TestICD& FakeBinaryICDShim::get_new_test_icd() noexcept { return real_icd.get_new_test_icd(); }
+fs::path FakeBinaryICDShim::get_test_icd_path() noexcept { return real_icd.get_icd_full_path(); }
