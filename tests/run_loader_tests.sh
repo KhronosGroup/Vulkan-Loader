@@ -16,20 +16,23 @@ RunEnvironmentVariablePathsTest()
 
     # Set vars to include some "challenging" paths and run the test.
     output=$(VK_LOADER_DEBUG=all \
-       XDG_CONFIG_DIRS=":/tmp/goober:::::/tmp/goober2/:/tmp/goober3/with spaces:::" \
-       XDG_DATA_DIRS="::::/tmp/goober4:::::/tmp/goober5:/tmp/goober6/with spaces::::/tmp/goober7:" \
+       XDG_CONFIG_DIRS=":/tmp/goober:::::/tmp/goober2/::::" \
+       XDG_DATA_DIRS="::::/tmp/goober3:/tmp/goober4/with spaces:::" \
        VK_LAYER_PATH=${vk_layer_path} \
        GTEST_FILTER=CreateInstance.LayerPresent \
        ./vk_loader_validation_tests 2>&1)
 
     # Here is a path we expect to find.  The loader constructs these from the XDG* env vars.
-    right_path="/tmp/goober/vulkan/icd.d:/tmp/goober2/vulkan/icd.d:/tmp/goober3/with spaces/vulkan/icd.d"
+    right_path="$HOME/.config/vulkan/icd.d:/tmp/goober/vulkan/icd.d:/tmp/goober2/vulkan/icd.d"
     # There are other paths that come from SYSCONFIG settings established at build time.
     # So we can't really guess at what those are here.
     right_path+=".*"
     # Also expect to find these, since we added them.
-    right_path+="/tmp/goober4/vulkan/icd.d:/tmp/goober5/vulkan/icd.d:/tmp/goober6/with spaces/vulkan/icd.d:/tmp/goober7/vulkan/icd.d"
-    echo "$output" | grep -q "$right_path"
+    right_path+="$HOME/.local/share/vulkan/icd.d:/tmp/goober3/vulkan/icd.d:/tmp/goober4/with spaces/vulkan/icd.d"
+
+    # Find just the line we're interested in
+    manifest_path_output=`grep "Searching the following paths for manifest files.*icd.d" <<< $output`
+    echo "$manifest_path_output" | grep -q "$right_path"
     ec=$?
     if [ $ec -eq 1 ]
     then
@@ -38,7 +41,8 @@ RunEnvironmentVariablePathsTest()
     fi
     # Change the string to implicit layers.
     right_path=${right_path//icd.d/implicit_layer.d}
-    echo "$output" | grep -q "$right_path"
+    manifest_path_output=`grep "Searching the following paths for manifest files.*implicit_layer.d" <<< $output`
+    echo "$manifest_path_output" | grep -q "$right_path"
     ec=$?
     if [ $ec -eq 1 ]
     then
@@ -48,7 +52,7 @@ RunEnvironmentVariablePathsTest()
     # The loader cleans up this path to remove the empty paths, so we need to clean up the right path, too
     right_path="${vk_layer_path//:::::/:}"
     right_path="${right_path//::::/:}"
-    echo "$output" | grep -q "$right_path"
+    echo "$manifest_path_output" | grep -q "$right_path"
     ec=$?
     if [ $ec -eq 1 ]
     then

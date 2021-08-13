@@ -922,30 +922,39 @@ information on this.
 On Linux, the Vulkan loader will scan the files in the following Linux
 directories:
 
-    /usr/local/etc/vulkan/explicit_layer.d
-    /usr/local/etc/vulkan/implicit_layer.d
-    /usr/local/share/vulkan/explicit_layer.d
-    /usr/local/share/vulkan/implicit_layer.d
-    /etc/vulkan/explicit_layer.d
-    /etc/vulkan/implicit_layer.d
-    /usr/share/vulkan/explicit_layer.d
-    /usr/share/vulkan/implicit_layer.d
-    $HOME/.local/share/vulkan/explicit_layer.d
-    $HOME/.local/share/vulkan/implicit_layer.d
+```
+   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
+   $XDG_CONFIG_DIRS
+   $SYSCONFDIR           (or if not defined /etc)
+   $EXTRASYSCONFDIR      (or ir not defined /etc)
+   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
+   $XDG_DATA_DIRS
+```
 
-Of course, there are some things you have to know about the above folders:
- 1. The "/usr/local/*" directories can be configured to be other directories at
-build time.
- 2. $HOME is the current home directory of the application's user id; this path
-will be ignored for suid programs.
- 3. The "/usr/local/etc/vulkan/\*\_layer.d" and
-"/usr/local/share/vulkan/\*\_layer.d" directories are for layers that are
-installed from locally-built sources.
- 4. The "/usr/share/vulkan/\*\_layer.d" directories are for layers that are
-installed from Linux-distribution-provided packages.
-5. The locations in `$HOME` will only be searched if an application does not have
-root access. This is done to ensure that an application with root access does not
-run layers that did not need root access to install.
+The "XDG_..._HOME" default directories can be configured to be other directories
+at build time.
+
+
+To each of these paths will be added two suffixes.
+First, the suffix **/vulkan** is added so the loader will only look for
+information in a "vulkan" sub-folder.
+Second, a suffix for the type of layer being searched for is used.
+This second suffix will be **/explicit_layer.d** when searching for explicit
+layers, and **/implicit_layer.d** when searching for implicit layers.
+Duplicate resulting folders will be ignored.
+
+An example combined search path for explicit layers may look like this:
+
+```
+    /usr/local/etc/vulkan/explicit_layer.d
+    /usr/local/share/vulkan/explicit_layer.d
+    /etc/vulkan/explicit_layer.d
+    /usr/share/vulkan/explicit_layer.d
+    $HOME/.local/share/vulkan/explicit_layer.d
+```
+
+<b>IMPORTANT NOTE!</b> Any path using $HOME is ignored for all suid programs for
+security reasons.
 
 As on Windows, if VK\_LAYER\_PATH is defined, then the
 loader will instead look at the paths defined by that variable instead of using
@@ -958,25 +967,42 @@ information on this.
 
 On macOS, the Vulkan loader will scan the files in the following directories:
 
-    <bundle>/Contents/Resources/vulkan/explicit_layer.d
-    <bundle>/Contents/Resources/vulkan/implicit_layer.d
-    /etc/vulkan/explicit_layer.d
-    /etc/vulkan/implicit_layer.d
-    /usr/local/share/vulkan/explicit_layer.d
-    /usr/local/share/vulkan/implicit_layer.d
-    /usr/share/vulkan/explicit_layer.d
-    /usr/share/vulkan/implicit_layer.d
-    $HOME/.local/share/vulkan/explicit_layer.d
-    $HOME/.local/share/vulkan/implicit_layer.d
+```
+   <bundle>/Contents/Resources
+   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
+   $XDG_CONFIG_DIRS
+   $SYSCONFDIR           (or if not defined /etc)
+   $EXTRASYSCONFDIR      (or ir not defined /etc)
+   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
+   $XDG_DATA_DIRS
+```
 
-1. &lt;bundle&gt; is the directory containing a bundled application.  It is scanned first.
-2. The "/usr/local/\*" directories can be configured to be other directories at
-build time.
-3. $HOME is the current home directory of the application's user id; this path
-will be ignored for suid programs.
-4. The locations in `$HOME` will only be searched if an application does not have
-root access. This is done to ensure that an application with root access does not
-run layers that did not need root access to install.
+**bundle**; is the directory containing a bundled application.
+It is scanned first.
+
+The "XDG_..._HOME" default directories can be configured to be other directories
+at build time.
+
+To each of these paths will be added two suffixes.
+First, the suffix **/vulkan** is added so the loader will only look for
+information in a "vulkan" sub-folder.
+Second, a suffix for the type of layer being searched for is used.
+This second suffix will be **/explicit_layer.d** when searching for explicit
+layers, and **/implicit_layer.d** when searching for implicit layers.
+Duplicate resulting folders will be ignored.
+
+An example combined search path for implicit layers may look like this:
+
+```
+    <bundle>/Contents/Resources/vulkan/implicit_layer.d
+    /etc/vulkan/implicit_layer.d
+    /usr/local/share/vulkan/implicit_layer.d
+    /usr/share/vulkan/implicit_layer.d
+    $HOME/.local/share/vulkan/implicit_layer.d
+```
+
+<b>IMPORTANT NOTE!</b> Any path using $HOME is ignored for all suid programs for
+security reasons.
 
 As on Windows, if VK\_LAYER\_PATH is defined, then the
 loader will instead look at the paths defined by that variable instead of using
@@ -2192,6 +2218,27 @@ In order to find installed ICDs, the Vulkan loader will scan the files
 in the following Linux directories:
 
 ```
+   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
+   $XDG_CONFIG_DIRS
+   $SYSCONFDIR           (or if not defined /etc)
+   $EXTRASYSCONFDIR      (or ir not defined /etc)
+   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
+   $XDG_DATA_DIRS
+```
+
+The "XDG_..._HOME" default directories can be configured to be other directories
+at build time.
+
+To each of these paths will be added a suffix to narrow down the search and
+prevent attempted loading of invalid content.
+First, the string "/vulkan" is appended so the loader will only look for
+information in a **/vulkan** sub-folder.
+Second, the string **/icd.d** is appended to indicate the loader is specifically
+looking for only ICDs.
+
+An example combined search path for ICDs may look like this:
+
+```
     /usr/local/etc/vulkan/icd.d
     /usr/local/share/vulkan/icd.d
     /etc/vulkan/icd.d
@@ -2199,18 +2246,8 @@ in the following Linux directories:
     $HOME/.local/share/vulkan/icd.d
 ```
 
-The "/usr/local/*" directories can be configured to be other directories at
-build time.
-
-The typical usage of the directories is indicated in the table below.
-
-| Location  |  Details |
-|-------------------|------------------------|
-| $HOME/.local/share/vulkan/icd.d | $HOME is the current home directory of the application's user id; this path will be ignored for suid programs |
-| "/usr/local/etc/vulkan/icd.d" | Directory for locally built ICDs |
-| "/usr/local/share/vulkan/icd.d" | Directory for locally built ICDs |
-| "/etc/vulkan/icd.d" | Location of ICDs installed from non-Linux-distribution-provided packages |
-| "/usr/share/vulkan/icd.d" | Location of ICDs installed from Linux-distribution-provided packages |
+<b>IMPORTANT NOTE!</b> Any path using $HOME is ignored for all suid programs for
+security reasons.
 
 The Vulkan loader will open each manifest file found to obtain the name or
 pathname of an ICD shared library (".so") file.
@@ -2224,15 +2261,17 @@ In order to find installed ICDs, the Vulkan loader will scan the files
 in the following directories:
 
 ```
-    <bundle>/Contents/Resources/vulkan/icd.d
-    /etc/vulkan/icd.d
-    /usr/local/share/vulkan/icd.d
-    /usr/share/vulkan/icd.d
-    $HOME/.local/share/vulkan/icd.d
+   <bundle>/Contents/Resources
+   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
+   $XDG_CONFIG_DIRS
+   $SYSCONFDIR           (or if not defined /etc)
+   $EXTRASYSCONFDIR      (or ir not defined /etc)
+   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
+   $XDG_DATA_DIRS
 ```
 
-The "/usr/local/*" directories can be configured to be other directories at
-build time.
+The "XDG_..._HOME" default directories can be configured to be other directories
+at build time.
 
 The typical usage of the directories is indicated in the table below.
 

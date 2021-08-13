@@ -456,36 +456,43 @@ inline void PlatformShim::add_manifest(ManifestCategory category, fs::path const
 
 inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCategory category) {
     std::vector<std::string> xdg_paths;
-    std::string xdg_data_dirs_var = get_env_var("XDG_DATA_DIRS");
-    if (xdg_data_dirs_var.size() == 0) {
-        xdg_data_dirs_var = FALLBACK_CONFIG_DIRS;
+    std::string home = get_env_var("HOME");
+    if (home.size() != 0) {
+        std::string xdg_config_home_path = fs::path(home).c_str();
+        xdg_config_home_path += "/.config";
+        xdg_paths.push_back(xdg_config_home_path);
     }
-    auto data_dirs_paths = parse_env_var_list(xdg_data_dirs_var);
-    xdg_paths.insert(xdg_paths.begin(), data_dirs_paths.begin(), data_dirs_paths.end());
 
     std::string xdg_config_dirs_var = get_env_var("XDG_CONFIG_DIRS");
     if (xdg_config_dirs_var.size() == 0) {
-        xdg_config_dirs_var = FALLBACK_DATA_DIRS;
+        xdg_config_dirs_var = FALLBACK_CONFIG_DIRS;
     }
     auto config_dirs_paths = parse_env_var_list(xdg_config_dirs_var);
-    xdg_paths.insert(xdg_paths.begin(), config_dirs_paths.begin(), config_dirs_paths.end());
+    xdg_paths.insert(xdg_paths.end(), config_dirs_paths.begin(), config_dirs_paths.end());
 
-    add(fs::path(SYSCONFDIR) / "vulkan" / category_path_name(category), new_path);
+    xdg_paths.push_back(fs::path(SYSCONFDIR).c_str());
 #if defined(EXTRASYSCONFDIR)
     // EXTRASYSCONFDIR default is /etc, if SYSCONFDIR wasn't defined, it will have /etc put
     // as its default. Don't want to double add it
     if (!string_eq(SYSCONFDIR, EXTRASYSCONFDIR)) {
-        add(fs::path(EXTRASYSCONFDIR) / "vulkan" / category_path_name(category), new_path);
+        xdg_paths.push_back(fs::path(EXTRASYSCONFDIR).c_str());
     }
 #endif
+    if (home.size() != 0) {
+        std::string xdg_data_home_path = fs::path(home).c_str();
+        xdg_data_home_path += "/.local/share";
+        xdg_paths.push_back(xdg_data_home_path);
+    }
+
+    std::string xdg_data_dirs_var = get_env_var("XDG_DATA_DIRS");
+    if (xdg_data_dirs_var.size() == 0) {
+        xdg_data_dirs_var = FALLBACK_DATA_DIRS;
+    }
+    auto data_dirs_paths = parse_env_var_list(xdg_data_dirs_var);
+    xdg_paths.insert(xdg_paths.end(), data_dirs_paths.begin(), data_dirs_paths.end());
 
     for (auto& path : xdg_paths) {
         add(fs::path(path) / "vulkan" / category_path_name(category), new_path);
-    }
-
-    std::string home = get_env_var("HOME");
-    if (home.size() != 0) {
-        add(fs::path(home) / ".local/share/vulkan" / category_path_name(category), new_path);
     }
 }
 

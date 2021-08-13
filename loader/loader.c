@@ -3903,48 +3903,76 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
     size_t rel_size = 0;
     bool use_first_found_manifest = false;
 #ifndef _WIN32
-    bool xdgconfig_alloc = true;
-    bool xdgdata_alloc = true;
+    bool xdg_config_home_secenv_alloc = true;
+    bool xdg_config_dirs_secenv_alloc = true;
+    bool xdg_data_home_secenv_alloc = true;
+    bool xdg_data_dirs_secenv_alloc = true;
 #endif
 
 #ifndef _WIN32
     // Determine how much space is needed to generate the full search path
     // for the current manifest files.
-    char *xdgconfdirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
-    char *xdgdatadirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
-    char *xdgdatahome = loader_secure_getenv("XDG_DATA_HOME", inst);
-    char *home = NULL;
-    char *home_root = NULL;
-
-    if (xdgconfdirs == NULL) {
-        xdgconfig_alloc = false;
+    char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
+    if (NULL == xdg_config_home) {
+        xdg_config_home_secenv_alloc = false;
     }
-    if (xdgdatadirs == NULL) {
-        xdgdata_alloc = false;
+
+    char *xdg_config_dirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
+    if (NULL == xdg_config_dirs) {
+        xdg_config_dirs_secenv_alloc = false;
     }
 #if !defined(__Fuchsia__) && !defined(__QNXNTO__)
-    if (xdgconfdirs == NULL || xdgconfdirs[0] == '\0') {
-        xdgconfdirs = FALLBACK_CONFIG_DIRS;
-    }
-    if (xdgdatadirs == NULL || xdgdatadirs[0] == '\0') {
-        xdgdatadirs = FALLBACK_DATA_DIRS;
+    if (NULL == xdg_config_dirs || '\0' == xdg_config_dirs[0]) {
+        xdg_config_dirs = FALLBACK_CONFIG_DIRS;
     }
 #endif
 
+    char *xdg_data_home = loader_secure_getenv("XDG_DATA_HOME", inst);
+    if (NULL == xdg_data_home) {
+        xdg_data_home_secenv_alloc = false;
+    }
+
+    char *xdg_data_dirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
+    if (NULL == xdg_data_dirs) {
+        xdg_data_dirs_secenv_alloc = false;
+    }
+#if !defined(__Fuchsia__) && !defined(__QNXNTO__)
+    if (NULL == xdg_data_dirs || '\0' == xdg_data_dirs[0]) {
+        xdg_data_dirs = FALLBACK_DATA_DIRS;
+    }
+#endif
+
+    char *home = NULL;
+    char *default_data_home = NULL;
+    char *default_config_home = NULL;
+
     // Only use HOME if XDG_DATA_HOME is not present on the system
-    if (NULL == xdgdatahome) {
-        home = loader_secure_getenv("HOME", inst);
-        if (home != NULL) {
-            home_root = loader_instance_heap_alloc(inst, strlen(home) + 14, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-            if (home_root == NULL) {
+    home = loader_secure_getenv("HOME", inst);
+    if (home != NULL) {
+        if (NULL == xdg_config_home || '\0' == xdg_config_home[0]) {
+            const char config_suffix[] = "/.config";
+            default_config_home =
+                loader_instance_heap_alloc(inst, strlen(home) + strlen(config_suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (default_config_home == NULL) {
                 vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
-            strcpy(home_root, home);
-            strcat(home_root, "/.local/share");
+            strcpy(default_config_home, home);
+            strcat(default_config_home, config_suffix);
+        }
+        if (NULL == xdg_data_home || '\0' == xdg_data_home[0]) {
+            const char data_suffix[] = "/.local/share";
+            default_data_home =
+                loader_instance_heap_alloc(inst, strlen(home) + strlen(data_suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (default_data_home == NULL) {
+                vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+            strcpy(default_data_home, home);
+            strcat(default_data_home, data_suffix);
         }
     }
-#endif
+#endif  // !_WIN32
 
     if (path_override != NULL) {
         override_path = path_override;
@@ -3987,19 +4015,29 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
             search_path_size += MAXPATHLEN;
 #endif
 #ifndef _WIN32
-            search_path_size += DetermineDataFilePathSize(xdgconfdirs, rel_size);
-            search_path_size += DetermineDataFilePathSize(xdgdatadirs, rel_size);
+            // Only add the home folders if not ICD filenames or superuser
+            if (is_directory_list && !IsHighIntegrity()) {
+                if (NULL != default_config_home) {
+                    search_path_size += DetermineDataFilePathSize(default_config_home, rel_size);
+                } else {
+                    search_path_size += DetermineDataFilePathSize(xdg_config_home, rel_size);
+                }
+            }
+            search_path_size += DetermineDataFilePathSize(xdg_config_dirs, rel_size);
             search_path_size += DetermineDataFilePathSize(SYSCONFDIR, rel_size);
 #if defined(EXTRASYSCONFDIR)
             search_path_size += DetermineDataFilePathSize(EXTRASYSCONFDIR, rel_size);
 #endif
-            if (is_directory_list) {
-                if (!IsHighIntegrity()) {
-                    search_path_size += DetermineDataFilePathSize(xdgdatahome, rel_size);
-                    search_path_size += DetermineDataFilePathSize(home_root, rel_size);
+            // Only add the home folders if not ICD filenames or superuser
+            if (is_directory_list && !IsHighIntegrity()) {
+                if (NULL != default_data_home) {
+                    search_path_size += DetermineDataFilePathSize(default_data_home, rel_size);
+                } else {
+                    search_path_size += DetermineDataFilePathSize(xdg_data_home, rel_size);
                 }
             }
-#endif
+            search_path_size += DetermineDataFilePathSize(xdg_data_dirs, rel_size);
+#endif  // !_WIN32
         }
     }
 
@@ -4041,17 +4079,30 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
                     CFRelease(ref);
                 }
             }
-#endif
-            CopyDataFilePath(xdgconfdirs, relative_location, rel_size, &cur_path_ptr);
+#endif  // __APPLE__
+            // Only add the home folders if not ICD filenames or superuser
+            if (is_directory_list && !IsHighIntegrity()) {
+                if (NULL != default_config_home) {
+                    CopyDataFilePath(default_config_home, relative_location, rel_size, &cur_path_ptr);
+                } else {
+                    CopyDataFilePath(xdg_config_home, relative_location, rel_size, &cur_path_ptr);
+                }
+            }
+            CopyDataFilePath(xdg_config_dirs, relative_location, rel_size, &cur_path_ptr);
             CopyDataFilePath(SYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
 #if defined(EXTRASYSCONFDIR)
             CopyDataFilePath(EXTRASYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
 #endif
-            CopyDataFilePath(xdgdatadirs, relative_location, rel_size, &cur_path_ptr);
-            if (is_directory_list) {
-                CopyDataFilePath(xdgdatahome, relative_location, rel_size, &cur_path_ptr);
-                CopyDataFilePath(home_root, relative_location, rel_size, &cur_path_ptr);
+
+            // Only add the home folders if not ICD filenames or superuser
+            if (is_directory_list && !IsHighIntegrity()) {
+                if (NULL != default_data_home) {
+                    CopyDataFilePath(default_data_home, relative_location, rel_size, &cur_path_ptr);
+                } else {
+                    CopyDataFilePath(xdg_data_home, relative_location, rel_size, &cur_path_ptr);
+                }
             }
+            CopyDataFilePath(xdg_data_dirs, relative_location, rel_size, &cur_path_ptr);
         }
 
         // Remove the last path separator
@@ -4059,7 +4110,7 @@ static VkResult ReadDataFilesInSearchPaths(const struct loader_instance *inst, e
 
         assert(cur_path_ptr - search_path < (ptrdiff_t)search_path_size);
         *cur_path_ptr = '\0';
-#endif
+#endif  // !_WIN32
     }
 
     // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
@@ -4149,20 +4200,29 @@ out:
         loader_free_getenv(override_env, inst);
     }
 #ifndef _WIN32
-    if (xdgconfig_alloc) {
-        loader_free_getenv(xdgconfdirs, inst);
+    if (xdg_config_home_secenv_alloc) {
+        loader_free_getenv(xdg_config_home, inst);
     }
-    if (xdgdata_alloc) {
-        loader_free_getenv(xdgdatadirs, inst);
+    if (xdg_config_dirs_secenv_alloc) {
+        loader_free_getenv(xdg_config_dirs, inst);
     }
-    if (NULL != xdgdatahome) {
-        loader_free_getenv(xdgdatahome, inst);
+    if (xdg_data_home_secenv_alloc) {
+        loader_free_getenv(xdg_data_home, inst);
+    }
+    if (xdg_data_dirs_secenv_alloc) {
+        loader_free_getenv(xdg_data_dirs, inst);
+    }
+    if (NULL != xdg_data_home) {
+        loader_free_getenv(xdg_data_home, inst);
     }
     if (NULL != home) {
         loader_free_getenv(home, inst);
     }
-    if (NULL != home_root) {
-        loader_instance_heap_free(inst, home_root);
+    if (NULL != default_data_home) {
+        loader_instance_heap_free(inst, default_data_home);
+    }
+    if (NULL != default_config_home) {
+        loader_instance_heap_free(inst, default_config_home);
     }
 #endif
 
