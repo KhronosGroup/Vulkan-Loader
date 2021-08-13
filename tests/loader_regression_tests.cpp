@@ -452,3 +452,44 @@ TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
     ASSERT_TRUE(device_extensions[0].extensionName == enumerated_device_exts[0].extensionName);
     ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
 }
+#if _WIN32 || _WIN64
+#if _WIN64
+TEST(TryLoadWrongBinary, Win64) {
+    // TODO
+}
+#else
+TEST(TryLoadWrongBinary, Win32) {
+    // TODO
+}
+#endif
+#endif
+
+#if defined(__linux__)
+#if __x86_64__ || __ppc64__
+TEST(TryLoadWrongBinary, x64) {
+    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_LINUX_32));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+
+    uint32_t driver_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
+    ASSERT_EQ(driver_count, 1);
+}
+#else
+TEST(TryLoadWrongBinary, x86) {
+    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_LINUX_64));
+    env.get_test_icd(0).drivers.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+
+    uint32_t driver_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
+    ASSERT_EQ(driver_count, 1);
+}
+#endif
+#endif

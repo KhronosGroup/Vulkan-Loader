@@ -55,7 +55,7 @@
 #define TEST_LAYER_PATH_EXPORT_VERSION_2 "$<TARGET_FILE:test_layer_export_version_2>"
 
 // Dummy Binaries
-#if defined(__linux__) || defined(__apple__)
-#define DUMMY_BINARY_UNIX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.so"
-#define DUMMY_BINARY_UNIX_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_32.so"
+#if defined(__linux__)
+#define DUMMY_BINARY_LINUX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.so"
+#define DUMMY_BINARY_LINUX_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_32.so"
 #endif

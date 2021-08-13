@@ -170,3 +170,14 @@ struct MultipleICDShim : public FrameworkEnvironment {
 
     std::vector<detail::TestICDHandle> icds;
 };
+
+struct FakeBinaryICDShim : public FrameworkEnvironment {
+    FakeBinaryICDShim(TestICDDetails read_icd_details, TestICDDetails fake_icd_details,
+                      DebugMode debug_mode = DebugMode::none) noexcept;
+
+    TestICD& get_test_icd() noexcept;
+    TestICD& get_new_test_icd() noexcept;
+    fs::path get_test_icd_path() noexcept;
+
+    detail::TestICDHandle real_icd;
+};
