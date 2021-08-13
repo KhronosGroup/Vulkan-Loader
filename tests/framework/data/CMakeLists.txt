@@ -14,5 +14,11 @@ if(UNIX)
 endif()
 
 if(WIN32)
+    # add_library(dummy_library_pe_64 SHARED stub.cpp)
+    # add_custom_command(TARGET dummy_library_pe_64 POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:dummy_library_pe_64> ${CMAKE_CURRENT_SOURCE_DIR}/binaries)
 
+    # add_library(dummy_library_pe_32 SHARED stub.cpp)
+    # add_custom_command(TARGET dummy_library_pe_32 POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:dummy_library_pe_32> ${CMAKE_CURRENT_SOURCE_DIR}/binaries)
 endif()

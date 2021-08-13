@@ -452,21 +452,96 @@ TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
     ASSERT_TRUE(device_extensions[0].extensionName == enumerated_device_exts[0].extensionName);
     ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
 }
+
+void GenericTryLoadWrongLayer(const char* dummy_binary_path){
+    SingleICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name_0 = "DummyLayerExplicit";
+    auto description_0 = ManifestLayer::LayerDescription{};
+    description_0.name = layer_name_0;
+    description_0.lib_path = dummy_binary_path;
+
+    ManifestLayer layer_0;
+    layer_0.layers.push_back(description_0);
+
+    auto layer_loc_0 = env.explicit_layer_folder.write("dummy_test_layer_0.json", layer_0);
+    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc_0);
+
+    const char* layer_name_1 = "DummyLayerImplicit";
+    auto description_1 = ManifestLayer::LayerDescription{};
+    description_1.name = layer_name_1;
+    description_1.lib_path = dummy_binary_path;
+    description_1.disable_environment = "DISABLE_ENV";
+
+    ManifestLayer layer_1;
+    layer_1.layers.push_back(description_1);
+
+    auto layer_loc_1 = env.implicit_layer_folder.write("dummy_test_layer_1.json", layer_1);
+    env.platform_shim->add_manifest(ManifestCategory::implicit_layer, layer_loc_1);
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 2);
+
+    std::array<VkLayerProperties, 2> layer_props;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 2);
+
+    InstWrapper inst{env.vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    inst_create_info.add_layer(layer_name_0).add_layer(layer_name_1);
+    // "According to all known laws of aviation, there is no way that this should return VK_SUCCESS"
+    // This by accounts *should* return VK_ERROR_LAYER_NOT_PRESENT but due to a confluence of bad choices and backwards
+    // compatibility guarantee, returns VK_SUCCESS.
+    // REASON: To be able to 'load' a library in either 32 or 64 bit apps, the loader will just try to load both and ignore
+    // whichever library didn't match the current architecture. Because of this, the loader actually just flat out ignores
+    // errors and pretends they didn't load at all.
+    // TODO: add 32/64 bit field to layer manifests so that this issue doesn't occur, then implement logic to make the loader
+    // smart enough to tell when a layer that failed to load was due to the old behavior or not. (eg, don't report an error if
+    // a layer with the same name successfully loaded)
+    ASSERT_EQ(VK_SUCCESS,CreateInst(inst, inst_create_info));
+}
+
 #if _WIN32 || _WIN64
 #if _WIN64
-TEST(TryLoadWrongBinary, Win64) {
-    // TODO
+TEST(TryLoadWrongICD, Win64) {
+    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_WINDOWS_32));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+
+    uint32_t driver_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
+    ASSERT_EQ(driver_count, 1);
+}
+TEST(TryLoadWrongLayer, Win64) {
+    GenericTryLoadWrongLayer(DUMMY_BINARY_WINDOWS_32);
 }
 #else
-TEST(TryLoadWrongBinary, Win32) {
-    // TODO
+TEST(TryLoadWrongICD, Win32) {
+    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_WINDOWS_64));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+
+    uint32_t driver_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
+    ASSERT_EQ(driver_count, 1);
+}
+TEST(TryLoadWrongLayer, Win32) {
+    GenericTryLoadWrongLayer(DUMMY_BINARY_WINDOWS_64);
 }
 #endif
 #endif
 
 #if defined(__linux__)
 #if __x86_64__ || __ppc64__
-TEST(TryLoadWrongBinary, x64) {
+TEST(TryLoadWrongICD, linux_x64) {
     FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_LINUX_32));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
@@ -478,8 +553,11 @@ TEST(TryLoadWrongBinary, x64) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
     ASSERT_EQ(driver_count, 1);
 }
+TEST(TryLoadWrongLayer, linux_x64) {
+    GenericTryLoadWrongLayer(DUMMY_BINARY_LINUX_32);
+}
 #else
-TEST(TryLoadWrongBinary, x86) {
+TEST(TryLoadWrongICD, linux_x86) {
     FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_LINUX_64));
     env.get_test_icd(0).drivers.emplace_back("physical_device_0");
 
@@ -490,6 +568,9 @@ TEST(TryLoadWrongBinary, x86) {
     uint32_t driver_count = 0;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
     ASSERT_EQ(driver_count, 1);
+}
+TEST(TryLoadWrongLayer, linux_x86) {
+    GenericTryLoadWrongLayer(DUMMY_BINARY_LINUX_64);
 }
 #endif
 #endif

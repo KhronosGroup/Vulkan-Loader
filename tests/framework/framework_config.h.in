@@ -55,6 +55,10 @@
 #define TEST_LAYER_PATH_EXPORT_VERSION_2 "$<TARGET_FILE:test_layer_export_version_2>"
 
 // Dummy Binaries
+#if _WIN32 || _WIN64
+#define DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.so"
+#define DUMMY_BINARY_WINDOWS_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_32.so"
+#endif
 #if defined(__linux__)
 #define DUMMY_BINARY_LINUX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.so"
 #define DUMMY_BINARY_LINUX_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_32.so"
