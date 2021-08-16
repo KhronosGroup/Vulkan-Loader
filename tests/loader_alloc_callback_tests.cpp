@@ -76,6 +76,9 @@ class MemoryTracker {
     }
 
     void* allocate(size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
+        if (settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) return nullptr;
+        if (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls) return nullptr;
+        call_count++;
         AllocationDetails detail{size, size + (alignment - 1), alloc_scope};
         auto alloc = std::unique_ptr<char[]>(new char[detail.actual_size_bytes]);
         if (!alloc) return nullptr;
@@ -94,6 +97,11 @@ class MemoryTracker {
         size_t index = find_element(pOriginal);
         if (index == UNKNOWN_ALLOCATION) return nullptr;
         size_t original_size = allocation_details[index].requested_size_bytes;
+
+        // We only care about the case where realloc is used to increase the size
+        if (size >= original_size && settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)
+            return nullptr;
+        call_count++;
         if (size == 0) {
             erase_index(index);
             allocation_count--;
@@ -120,16 +128,11 @@ class MemoryTracker {
     // Implementation of public functions
     void* impl_allocation(size_t size, size_t alignment, VkSystemAllocationScope allocationScope) noexcept {
         std::lock_guard<std::mutex> lg(main_mutex);
-        if (settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) return nullptr;
-        if (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls) return nullptr;
-        call_count++;
         void* addr = allocate(size, alignment, allocationScope);
         return addr;
     }
     void* impl_reallocation(void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) noexcept {
         std::lock_guard<std::mutex> lg(main_mutex);
-        if (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls) return nullptr;
-        call_count++;
         void* addr = reallocate(pOriginal, size, alignment, allocationScope);
         return addr;
     }
@@ -396,7 +399,7 @@ TEST_F(Allocation, CreateInstanceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index, false, 0});
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
 
         InstanceCreateInfo inst_create_info;
         VkInstance instance;
@@ -444,7 +447,7 @@ TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index, false, 0});
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
 
         DeviceCreateInfo dev_create_info;
         DeviceQueueCreateInfo queue_info;
@@ -472,7 +475,7 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index, false, 0});
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
         fail_index++;  // applies to the next loop
 
         InstanceCreateInfo inst_create_info;
