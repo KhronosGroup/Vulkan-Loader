@@ -4666,9 +4666,12 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
                                "loader_icd_scan: ICD JSON %s does not have an \'api_version\' field.", file_str);
                 }
-
-                res = loader_scanned_icd_add(inst, icd_tramp_list, fullpath, vers);
-                if (VK_SUCCESS != res) {
+                VkResult icd_add_res = VK_SUCCESS;
+                icd_add_res = loader_scanned_icd_add(inst, icd_tramp_list, fullpath, vers);
+                if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_add_res) {
+                    res = icd_add_res;
+                    goto out;
+                } else if (VK_SUCCESS != icd_add_res) {
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
                                "loader_icd_scan: Failed to add ICD JSON %s.  Skipping ICD JSON.", fullpath);
                     cJSON_Delete(json);
