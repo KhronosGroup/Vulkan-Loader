@@ -104,7 +104,7 @@ RunEnumerateInstanceLayerPropertiesTest()
     echo "EnumerateInstanceLayerProperties OnePass vs TwoPass test PASSED"
 }
 
-VK_LAYER_PATH="$PWD/layers"
+export VK_LAYER_PATH="$PWD/layers"
 ./vk_loader_validation_tests
 
 RunEnvironmentVariablePathsTest
