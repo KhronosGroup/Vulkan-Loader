@@ -453,14 +453,27 @@ TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
     ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
 }
 
-void GenericTryLoadWrongLayer(const char* dummy_binary_path){
+TEST(TryLoadWrongBinaries, WrongICD) {
+    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+
+    uint32_t driver_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
+    ASSERT_EQ(driver_count, 1);
+}
+
+TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     SingleICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
     auto description_0 = ManifestLayer::LayerDescription{};
     description_0.name = layer_name_0;
-    description_0.lib_path = dummy_binary_path;
+    description_0.lib_path = CURRENT_PLATFORM_DUMMY_BINARY;
 
     ManifestLayer layer_0;
     layer_0.layers.push_back(description_0);
@@ -471,7 +484,7 @@ void GenericTryLoadWrongLayer(const char* dummy_binary_path){
     const char* layer_name_1 = "DummyLayerImplicit";
     auto description_1 = ManifestLayer::LayerDescription{};
     description_1.name = layer_name_1;
-    description_1.lib_path = dummy_binary_path;
+    description_1.lib_path = CURRENT_PLATFORM_DUMMY_BINARY;
     description_1.disable_environment = "DISABLE_ENV";
 
     ManifestLayer layer_1;
@@ -500,77 +513,5 @@ void GenericTryLoadWrongLayer(const char* dummy_binary_path){
     // TODO: add 32/64 bit field to layer manifests so that this issue doesn't occur, then implement logic to make the loader
     // smart enough to tell when a layer that failed to load was due to the old behavior or not. (eg, don't report an error if
     // a layer with the same name successfully loaded)
-    ASSERT_EQ(VK_SUCCESS,CreateInst(inst, inst_create_info));
+    ASSERT_EQ(VK_SUCCESS, CreateInst(inst, inst_create_info));
 }
-
-#if _WIN32 || _WIN64
-#if _WIN64
-TEST(TryLoadWrongICD, Win64) {
-    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_WINDOWS_32));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
-
-    InstWrapper inst{env.vulkan_functions};
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
-
-    uint32_t driver_count = 0;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
-    ASSERT_EQ(driver_count, 1);
-}
-TEST(TryLoadWrongLayer, Win64) {
-    GenericTryLoadWrongLayer(DUMMY_BINARY_WINDOWS_32);
-}
-#else
-TEST(TryLoadWrongICD, Win32) {
-    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_WINDOWS_64));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
-
-    InstWrapper inst{env.vulkan_functions};
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
-
-    uint32_t driver_count = 0;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
-    ASSERT_EQ(driver_count, 1);
-}
-TEST(TryLoadWrongLayer, Win32) {
-    GenericTryLoadWrongLayer(DUMMY_BINARY_WINDOWS_64);
-}
-#endif
-#endif
-
-#if defined(__linux__)
-#if __x86_64__ || __ppc64__
-TEST(TryLoadWrongICD, linux_x64) {
-    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_LINUX_32));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
-
-    InstWrapper inst{env.vulkan_functions};
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
-
-    uint32_t driver_count = 0;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
-    ASSERT_EQ(driver_count, 1);
-}
-TEST(TryLoadWrongLayer, linux_x64) {
-    GenericTryLoadWrongLayer(DUMMY_BINARY_LINUX_32);
-}
-#else
-TEST(TryLoadWrongICD, linux_x86) {
-    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(DUMMY_BINARY_LINUX_64));
-    env.get_test_icd(0).drivers.emplace_back("physical_device_0");
-
-    InstWrapper inst{env.vulkan_functions};
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
-
-    uint32_t driver_count = 0;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
-    ASSERT_EQ(driver_count, 1);
-}
-TEST(TryLoadWrongLayer, linux_x86) {
-    GenericTryLoadWrongLayer(DUMMY_BINARY_LINUX_64);
-}
-#endif
-#endif
