@@ -196,6 +196,11 @@ if(MSVC)
     # /w34057: Warn about different indirection types.
     # /w34245: Warn about signed/unsigned mismatch.
     set(MSVC_LOADER_COMPILE_OPTIONS /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
+
+    # Replace /GR with an empty string, prevents warnings of /GR being overriden by /GR-
+    # Newer CMake versions (3.20) have better solutions for this through policy - using the old
+    # way while waiting for when updating can occur
+    string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
 # Optional codegen target
