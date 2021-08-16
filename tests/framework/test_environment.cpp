@@ -145,9 +145,10 @@ FakeBinaryICDShim::FakeBinaryICDShim(TestICDDetails read_icd_details, TestICDDet
     real_icd = detail::TestICDHandle(read_icd_details.icd_path);
     real_icd.get_new_test_icd();
 
+    // Must use name that isn't a substring of eachother, otherwise loader removes the other ICD
+    // EX test_icd.json is fully contained in fake_test_icd.json, causing test_icd.json to not be loaded
+    AddICD(fake_icd_details, "test_fake_icd.json");
     AddICD(read_icd_details, "test_icd.json");
-
-    AddICD(fake_icd_details, "fake_test_icd.json");
 }
 TestICD& FakeBinaryICDShim::get_test_icd() noexcept { return real_icd.get_test_icd(); }
 TestICD& FakeBinaryICDShim::get_new_test_icd() noexcept { return real_icd.get_new_test_icd(); }

@@ -30,15 +30,22 @@
 #include <mutex>
 
 struct MemoryTrackerSettings {
-    MemoryTrackerSettings(bool should_fail_on_allocation, size_t fail_after_allocations)
-        : should_fail_on_allocation(should_fail_on_allocation), fail_after_allocations(fail_after_allocations) {}
+    MemoryTrackerSettings() = default;
+    MemoryTrackerSettings(bool should_fail_on_allocation, size_t fail_after_allocations, bool should_fail_after_set_number_of_calls,
+                          size_t fail_after_calls)
+        : should_fail_on_allocation(should_fail_on_allocation),
+          fail_after_allocations(fail_after_allocations),
+          should_fail_after_set_number_of_calls(should_fail_after_set_number_of_calls),
+          fail_after_calls(fail_after_calls) {}
     bool should_fail_on_allocation = false;
-    size_t fail_after_allocations = 0;
+    size_t fail_after_allocations = 0;  // fail after this number of allocations in total
+    bool should_fail_after_set_number_of_calls = false;
+    size_t fail_after_calls = 0;  // fail after this number of calls to alloc or realloc
 };
 
 class MemoryTracker {
     std::mutex main_mutex;
-    MemoryTrackerSettings settings;
+    MemoryTrackerSettings settings{};
     VkAllocationCallbacks callbacks{};
     // Implementation internals
     struct AllocationDetails {
@@ -48,6 +55,7 @@ class MemoryTracker {
     };
     const static size_t UNKNOWN_ALLOCATION = std::numeric_limits<size_t>::max();
     size_t allocation_count = 0;
+    size_t call_count = 0;
     std::vector<std::unique_ptr<char[]>> allocations;
     std::vector<void*> allocations_aligned;
     std::vector<AllocationDetails> allocation_details;
@@ -113,11 +121,15 @@ class MemoryTracker {
     void* impl_allocation(size_t size, size_t alignment, VkSystemAllocationScope allocationScope) noexcept {
         std::lock_guard<std::mutex> lg(main_mutex);
         if (settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) return nullptr;
+        if (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls) return nullptr;
+        call_count++;
         void* addr = allocate(size, alignment, allocationScope);
         return addr;
     }
     void* impl_reallocation(void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) noexcept {
         std::lock_guard<std::mutex> lg(main_mutex);
+        if (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls) return nullptr;
+        call_count++;
         void* addr = reallocate(pOriginal, size, alignment, allocationScope);
         return addr;
     }
@@ -149,7 +161,7 @@ class MemoryTracker {
         callbacks.pfnInternalAllocation = public_internal_allocation_notification;
         callbacks.pfnInternalFree = public_internal_free;
     }
-    MemoryTracker() noexcept : MemoryTracker(MemoryTrackerSettings{false, 0}) {}
+    MemoryTracker() noexcept : MemoryTracker(MemoryTrackerSettings{}) {}
 
     VkAllocationCallbacks* get() noexcept { return &callbacks; }
 
@@ -384,7 +396,7 @@ TEST_F(Allocation, CreateInstanceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index});
+        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index, false, 0});
 
         InstanceCreateInfo inst_create_info;
         VkInstance instance;
@@ -432,7 +444,7 @@ TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index});
+        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index, false, 0});
 
         DeviceCreateInfo dev_create_info;
         DeviceQueueCreateInfo queue_info;
@@ -460,7 +472,7 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index});
+        MemoryTracker tracker(MemoryTrackerSettings{true, fail_index, false, 0});
         fail_index++;  // applies to the next loop
 
         InstanceCreateInfo inst_create_info;
@@ -515,5 +527,27 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
         env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
 
         ASSERT_TRUE(tracker.empty());
+    }
+}
+
+// Test failure during vkCreateInstance when a driver of the wrong architecture is present
+// to make sure the loader uses the valid ICD and doesn't report incompatible driver just because
+// an incompatible driver exists
+TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
+    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY));
+    size_t fail_index = 0;
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+
+        InstanceCreateInfo inst_create_info;
+        VkInstance instance;
+        result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        if (result == VK_SUCCESS) {
+            env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+        }
+        ASSERT_NE(result, VK_ERROR_INCOMPATIBLE_DRIVER);
+        ASSERT_TRUE(tracker.empty());
+        fail_index++;
     }
 }
