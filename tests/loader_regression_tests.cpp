@@ -292,6 +292,36 @@ TEST_F(CreateDevice, LayersNotPresent) {
     ASSERT_EQ(VK_SUCCESS, inst->vkCreateDevice(phys_dev, dev_create_info.get(), nullptr, &device));
 }
 
+TEST_F(EnumerateDeviceLayerProperties, LayersMatch) {
+    auto& driver = env->get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "TestLayer";
+    ManifestLayer::LayerDescription description{};
+    description.name = layer_name;
+    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer layer;
+    layer.layers.push_back(description);
+    env->AddExplicitLayer(layer, "test_layer.json");
+
+    InstWrapper inst{env->vulkan_functions};
+    InstanceCreateInfo inst_create_info;
+    inst_create_info.add_layer(layer_name);
+    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+
+    VkPhysicalDevice phys_dev;
+    ASSERT_EQ(CreatePhysDev(inst, phys_dev), VK_SUCCESS);
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+    VkLayerProperties layer_props;
+    ASSERT_EQ(env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+    ASSERT_TRUE(string_eq(layer_props.layerName, layer_name));
+}
+
 TEST_F(EnumerateInstanceExtensionProperties, OnePass) {
     Extension first_ext{"VK_EXT_validation_features"};  // known instance extensions
     Extension second_ext{"VK_EXT_headless_surface"};

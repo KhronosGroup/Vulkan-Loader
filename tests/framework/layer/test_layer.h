@@ -58,7 +58,6 @@ vkEnumerateDeviceExtensionProperties
 // export vkGetDeviceProcAddr
 // TEST_LAYER_EXPORT_NO_NAME_GDPA
 
-
 /*
 Interface Version 1
 */
@@ -105,6 +104,9 @@ struct TestLayer {
 
     bool intercept_vkEnumerateInstanceExtensionProperties = false;
     bool intercept_vkEnumerateInstanceLayerProperties = false;
+
+    PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
+    PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;
 
     VkInstance instance_handle;
     VkLayerInstanceDispatchTable instance_dispatch_table;
