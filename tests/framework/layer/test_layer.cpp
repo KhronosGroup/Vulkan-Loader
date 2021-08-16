@@ -123,6 +123,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
+    layer.next_vkGetInstanceProcAddr = fpGetInstanceProcAddr;
+
     // Advance the link info for the next element of the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
@@ -156,6 +158,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     if (fpCreateDevice == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+
+    layer.next_vkGetDeviceProcAddr = fpGetDeviceProcAddr;
+
     // Advance the link info for the next element on the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
@@ -189,23 +194,24 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName) {
     if (string_eq(pName, "vkDestroyDevice")) return TO_VOID_PFN(test_vkDestroyDevice);
 
-    return nullptr;
+    return layer.next_vkGetDeviceProcAddr(device, pName);
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName) {
     if (pName == nullptr) return nullptr;
-    if (instance == NULL) {
-        if (string_eq(pName, "vkGetInstanceProcAddr")) return TO_VOID_PFN(get_instance_func);
-        if (string_eq(pName, "vkEnumerateInstanceLayerProperties")) return TO_VOID_PFN(test_vkEnumerateInstanceLayerProperties);
-        if (string_eq(pName, "vkEnumerateInstanceExtensionProperties"))
-            return TO_VOID_PFN(test_vkEnumerateInstanceExtensionProperties);
-        if (string_eq(pName, "vkEnumerateInstanceVersion")) return TO_VOID_PFN(test_vkEnumerateInstanceVersion);
+    if (string_eq(pName, "vkGetInstanceProcAddr")) return TO_VOID_PFN(get_instance_func);
+    if (string_eq(pName, "vkEnumerateInstanceLayerProperties")) return TO_VOID_PFN(test_vkEnumerateInstanceLayerProperties);
+    if (string_eq(pName, "vkEnumerateInstanceExtensionProperties")) return TO_VOID_PFN(test_vkEnumerateInstanceExtensionProperties);
+    if (string_eq(pName, "vkEnumerateInstanceVersion")) return TO_VOID_PFN(test_vkEnumerateInstanceVersion);
 
-        if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return TO_VOID_PFN(test_vkEnumerateDeviceLayerProperties);
-        if (string_eq(pName, "vkEnumerateDeviceExtensionProperties")) return TO_VOID_PFN(test_vkEnumerateDeviceExtensionProperties);
-    }
+    if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return TO_VOID_PFN(test_vkEnumerateDeviceLayerProperties);
+    if (string_eq(pName, "vkEnumerateDeviceExtensionProperties")) return TO_VOID_PFN(test_vkEnumerateDeviceExtensionProperties);
+    if (string_eq(pName, "vkCreateInstance")) return TO_VOID_PFN(test_vkCreateInstance);
+    if (string_eq(pName, "vkDestroyInstance")) return TO_VOID_PFN(test_vkDestroyInstance);
+    if (string_eq(pName, "vkCreateDevice")) return TO_VOID_PFN(test_vkCreateDevice);
     if (string_eq(pName, "vkGetDeviceProcAddr")) return TO_VOID_PFN(get_device_func);
-    return nullptr;
+
+    return layer.next_vkGetInstanceProcAddr(instance, pName);
 }
 
 // Exported functions
