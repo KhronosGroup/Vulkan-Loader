@@ -59,6 +59,16 @@ typedef HRESULT(APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory)
 static PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 
 void windows_initialization(void) {
+    char dll_location[MAX_PATH];
+    HMODULE module_handle = NULL;
+
+    // Get a module handle to a static function inside of this source
+    if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                          (LPCSTR)&loader_debug_init, &module_handle) != 0 &&
+        GetModuleFileName(module_handle, dll_location, sizeof(dll_location)) != 0) {
+        loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Using Vulkan Loader %s", dll_location);
+    }
+
     // This is needed to ensure that newer APIs are available right away
     // and not after the first call that has been statically linked
     LoadLibrary("gdi32.dll");

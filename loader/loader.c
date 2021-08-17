@@ -78,6 +78,14 @@
 
 struct loader_struct loader = {0};
 
+struct activated_layer_info {
+    char *name;
+    char *manifest;
+    char *library;
+    bool is_implicit;
+    char *disable_env;
+} ;
+
 // thread safety lock for accessing global data structures such as "loader"
 // all entrypoints on the instance chain need to be locked except GPA
 // additionally CreateDevice and DestroyDevice needs to be locked
@@ -772,9 +780,10 @@ static bool loader_init_layer_list(const struct loader_instance *inst, struct lo
 }
 
 // Search the given array of layer names for an entry matching the given VkLayerProperties
-bool loader_names_array_has_layer_property(const VkLayerProperties *vk_layer_prop, uint32_t layer_names_count, char **layer_names) {
-    for (uint32_t i = 0; i < layer_names_count; i++) {
-        if (strcmp(vk_layer_prop->layerName, layer_names[i]) == 0) {
+bool loader_names_array_has_layer_property(const VkLayerProperties *vk_layer_prop, uint32_t layer_info_count,
+                                           struct activated_layer_info *layer_info) {
+    for (uint32_t i = 0; i < layer_info_count; i++) {
+        if (strcmp(vk_layer_prop->layerName, layer_info[i].name) == 0) {
             return true;
         }
     }
@@ -1487,6 +1496,17 @@ void loader_initialize(void) {
 #if defined(_WIN32)
     windows_initialization();
 #endif
+
+    loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Vulkan Loader Version %d.%d.%d", VK_API_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE),
+               VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE), VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+
+#if defined(GIT_BRANCH_NAME) && defined(GIT_TAG_INFO)
+#define LOADER_GIT_STRINGIFY(x) #x
+#define LOADER_GIT_TOSTRING(x) LOADER_GIT_STRINGIFY(x)
+    const char git_branch_name[] = LOADER_GIT_TOSTRING(GIT_BRANCH_NAME);
+    const char git_tag_info[] = LOADER_GIT_TOSTRING(GIT_TAG_INFO);
+    loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "[Git - Tag: %s, Branch/Commit: %s]", git_tag_info, git_branch_name);
+#endif
 }
 
 void loader_release() {
@@ -2068,6 +2088,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         strcpy(library_path_str, &temp[1]);
         cJSON_Free(inst, temp);
 
+        strncpy(props->manifest_file_name, filename, MAX_STRING_SIZE);
         char *fullpath = props->lib_name;
         char *rel_base;
         if (NULL != library_path_str) {
@@ -4715,8 +4736,8 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
 // cache those VkInstance objects for future use.
 VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                       struct loader_instance *inst, VkInstance *created_instance) {
-    uint32_t activated_layers = 0;
-    char **activated_layer_names = NULL;
+    uint32_t num_activated_layers = 0;
+    struct activated_layer_info* activated_layers = NULL;
     VkLayerInstanceCreateInfo chain_info;
     VkLayerInstanceLink *layer_instance_link_info = NULL;
     VkInstanceCreateInfo loader_create_info;
@@ -4744,10 +4765,10 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
-        activated_layer_names = loader_stack_alloc(sizeof(char *) * inst->expanded_activated_layer_list.count);
-        if (!activated_layer_names) {
+        activated_layers = loader_stack_alloc(sizeof(struct activated_layer_info) * inst->expanded_activated_layer_list.count);
+        if (!activated_layers) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_create_instance_chain: Failed to alloc activated layer names array");
+                       "loader_create_instance_chain: Failed to alloc activated layer storage array");
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
@@ -4757,7 +4778,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             loader_platform_dl_handle lib_handle;
 
             // Skip it if a Layer with the same name has been already successfully activated
-            if (loader_names_array_has_layer_property(&layer_prop->info, activated_layers, activated_layer_names)) {
+            if (loader_names_array_has_layer_property(&layer_prop->info, num_activated_layers, activated_layers)) {
                 continue;
             }
 
@@ -4829,9 +4850,9 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 }
             }
 
-            layer_instance_link_info[activated_layers].pNext = chain_info.u.pLayerInfo;
-            layer_instance_link_info[activated_layers].pfnNextGetInstanceProcAddr = next_gipa;
-            layer_instance_link_info[activated_layers].pfnNextGetPhysicalDeviceProcAddr = next_gpdpa;
+            layer_instance_link_info[num_activated_layers].pNext = chain_info.u.pLayerInfo;
+            layer_instance_link_info[num_activated_layers].pfnNextGetInstanceProcAddr = next_gipa;
+            layer_instance_link_info[num_activated_layers].pfnNextGetPhysicalDeviceProcAddr = next_gpdpa;
             next_gipa = cur_gipa;
             if (layer_prop->interface_version > 1 && cur_gpdpa != NULL) {
                 layer_prop->functions.get_physical_device_proc_addr = cur_gpdpa;
@@ -4844,14 +4865,20 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 layer_prop->functions.get_device_proc_addr = cur_gdpa;
             }
 
-            chain_info.u.pLayerInfo = &layer_instance_link_info[activated_layers];
+            chain_info.u.pLayerInfo = &layer_instance_link_info[num_activated_layers];
 
-            activated_layer_names[activated_layers] = layer_prop->info.layerName;
+            activated_layers[num_activated_layers].name = layer_prop->info.layerName;
+            activated_layers[num_activated_layers].manifest = layer_prop->manifest_file_name;
+            activated_layers[num_activated_layers].library = layer_prop->lib_name;
+            activated_layers[num_activated_layers].is_implicit = !(layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER);
+            if (activated_layers[num_activated_layers].is_implicit) {
+                activated_layers[num_activated_layers].disable_env = layer_prop->disable_env_var.name;
+            }
 
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Insert instance layer %s (%s)",
                        layer_prop->info.layerName, layer_prop->lib_name);
 
-            activated_layers++;
+            num_activated_layers++;
         }
     }
 
@@ -4903,8 +4930,17 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader>");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-            for (uint32_t cur_layer = 0; cur_layer < activated_layers; ++cur_layer) {
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layer_names[activated_layers - cur_layer - 1]);
+            for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
+                uint32_t index = num_activated_layers - cur_layer - 1;
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
+                           activated_layers[index].is_implicit ? "Implicit" : "Explicit");
+                if (activated_layers[index].is_implicit) {
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
+                               activated_layers[index].disable_env);
+                }
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifset: %s", activated_layers[index].manifest);
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             }
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Implementations>\n");
@@ -4934,8 +4970,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
                                     struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
                                     PFN_vkGetDeviceProcAddr *layerNextGDPA) {
-    uint32_t activated_layers = 0;
-    char **activated_layer_names = NULL;
+    uint32_t num_activated_layers = 0;
+    struct activated_layer_info* activated_layers = NULL;
     VkLayerDeviceLink *layer_device_link_info;
     VkLayerDeviceCreateInfo chain_info;
     VkDeviceCreateInfo loader_create_info;
@@ -4995,10 +5031,10 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
-        activated_layer_names = loader_stack_alloc(sizeof(char *) * inst->expanded_activated_layer_list.count);
-        if (!activated_layer_names) {
+        activated_layers = loader_stack_alloc(sizeof(struct activated_layer_info) * inst->expanded_activated_layer_list.count);
+        if (!activated_layers) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_create_instance_chain: Failed to alloc activated layer names array");
+                       "loader_create_device_chain: Failed to alloc activated layer storage array");
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
@@ -5016,7 +5052,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             loader_platform_dl_handle lib_handle;
 
             // Skip it if a Layer with the same name has been already successfully activated
-            if (loader_names_array_has_layer_property(&layer_prop->info, activated_layers, activated_layer_names)) {
+            if (loader_names_array_has_layer_property(&layer_prop->info, num_activated_layers, activated_layers)) {
                 continue;
             }
 
@@ -5063,19 +5099,25 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                 }
             }
 
-            layer_device_link_info[activated_layers].pNext = chain_info.u.pLayerInfo;
-            layer_device_link_info[activated_layers].pfnNextGetInstanceProcAddr = nextGIPA;
-            layer_device_link_info[activated_layers].pfnNextGetDeviceProcAddr = nextGDPA;
-            chain_info.u.pLayerInfo = &layer_device_link_info[activated_layers];
+            layer_device_link_info[num_activated_layers].pNext = chain_info.u.pLayerInfo;
+            layer_device_link_info[num_activated_layers].pfnNextGetInstanceProcAddr = nextGIPA;
+            layer_device_link_info[num_activated_layers].pfnNextGetDeviceProcAddr = nextGDPA;
+            chain_info.u.pLayerInfo = &layer_device_link_info[num_activated_layers];
             nextGIPA = fpGIPA;
             nextGDPA = fpGDPA;
 
-            activated_layer_names[activated_layers] = layer_prop->info.layerName;
+            activated_layers[num_activated_layers].name = layer_prop->info.layerName;
+            activated_layers[num_activated_layers].manifest = layer_prop->manifest_file_name;
+            activated_layers[num_activated_layers].library = layer_prop->lib_name;
+            activated_layers[num_activated_layers].is_implicit = !(layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER);
+            if (activated_layers[num_activated_layers].is_implicit) {
+                activated_layers[num_activated_layers].disable_env = layer_prop->disable_env_var.name;
+            }
 
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Inserted device layer %s (%s)",
                        layer_prop->info.layerName, layer_prop->lib_name);
 
-            activated_layers++;
+            num_activated_layers++;
         }
     }
 
@@ -5097,8 +5139,17 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader>");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-            for (uint32_t cur_layer = 0; cur_layer < activated_layers; ++cur_layer) {
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layer_names[activated_layers - cur_layer - 1]);
+            for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
+                uint32_t index = num_activated_layers - cur_layer - 1;
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
+                           activated_layers[index].is_implicit ? "Implicit" : "Explicit");
+                if (activated_layers[index].is_implicit) {
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
+                               activated_layers[index].disable_env);
+                }
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifset: %s", activated_layers[index].manifest);
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             }
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Device>\n");

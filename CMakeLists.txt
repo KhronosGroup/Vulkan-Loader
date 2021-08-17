@@ -89,6 +89,31 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH 1)
 endif()
 
+find_package (Git)
+if (GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --always
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_TAG_INFO)
+    string(REGEX REPLACE "\n$" "" GIT_TAG_INFO "${GIT_TAG_INFO}")
+
+    file(READ ".git/HEAD" GIT_HEAD_REF_INFO)
+    if (GIT_HEAD_REF_INFO)
+        string(REGEX MATCH "ref: refs/heads/(.*)" _ ${GIT_HEAD_REF_INFO})
+        if (CMAKE_MATCH_1)
+            set(GIT_BRANCH_NAME ${CMAKE_MATCH_1})
+        else()
+            set(GIT_BRANCH_NAME ${GIT_HEAD_REF_INFO})
+        endif()
+        string(REGEX REPLACE "\n$" "" GIT_BRANCH_NAME "${GIT_BRANCH_NAME}")
+    else()
+        set(GIT_BRANCH_NAME "--unknown--")
+    endif()
+else()
+    set(GIT_BRANCH_NAME "--unknown--")
+    set(GIT_TAG_INFO "--unknown--")
+endif()
+
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
