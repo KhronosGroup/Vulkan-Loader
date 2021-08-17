@@ -28,5 +28,5 @@ set_target_properties(vulkan
                       PROPERTIES SOVERSION
                       "1"
                       VERSION
-                      "1.2.187")
+                      "1.2.189")
 
