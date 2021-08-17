@@ -108,6 +108,7 @@ struct loader_layer_properties {
     VkLayerProperties info;
     enum layer_type_flags type_flags;
     uint32_t interface_version;  // PFN_vkNegotiateLoaderLayerInterfaceVersion
+    char manifest_file_name[MAX_STRING_SIZE];
     char lib_name[MAX_STRING_SIZE];
     loader_platform_dl_handle lib_handle;
     struct loader_layer_functions functions;
