@@ -18,6 +18,9 @@
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
 
+# Get version of the API the generated code used and put it into a cmake variable LOADER_GENERATED_HEADER_VERSION
+include(generated/loader_generated_header_version.cmake)
+
 # Check for the existance of the secure_getenv or __secure_getenv commands
 include(CheckFunctionExists)
 include(CheckIncludeFile)
@@ -263,8 +266,10 @@ else()
         add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     endif()
     add_dependencies(vulkan loader_asm_gen_files)
-    # set version based on VK_HEADER_VERSION used to generate the code
-    include(generated/loader_generated_header_version.cmake)
+    # set version based on LOADER_GENERATED_HEADER_VERSION used to generate the code
+    set_target_properties(vulkan
+                          PROPERTIES SOVERSION "1"
+                          VERSION ${LOADER_GENERATED_HEADER_VERSION})
     target_link_libraries(vulkan ${CMAKE_DL_LIBS} m)
     if (NOT ANDROID)
         target_link_libraries(vulkan pthread)
@@ -314,7 +319,7 @@ else()
             OUTPUT_NAME vulkan
             FRAMEWORK TRUE
             FRAMEWORK_VERSION A
-            VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}" # "current version"
+            VERSION "${LOADER_GENERATED_HEADER_VERSION}" # "current version"
             SOVERSION "1.0.0"                        # "compatibility version"
             MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
             PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
@@ -334,7 +339,7 @@ endif()
 # Generate pkg-config file.
 include(FindPkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
-    set(VK_API_VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+    set(VK_API_VERSION "${LOADER_GENERATED_HEADER_VERSION}")
     foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
         set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
     endforeach()
