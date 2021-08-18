@@ -92,12 +92,21 @@ class LoaderGenerateHeaderVersion(OutputGenerator):
         # User-supplied prefix text, if any (list of strings)
         self.library_name = genOpts.library_name
 
-        header_version = ''
+        version_major = ''
+        version_minor = ''
+        version_patch = ''
         for elem in self.registry.reg.find('types').findall('type'):
             if elem.get('category') == 'define':
+                if elem.get('name') == 'VK_HEADER_VERSION_COMPLETE':
+                    # Parses the following string:
+                    #define <name>VK_HEADER_VERSION_COMPLETE</name> <type>VK_MAKE_API_VERSION</type>(0, 1, 2, VK_HEADER_VERSION)</type>
+                    # The 0th index is the VARIANT version, 1st & 2nd are the Major & Minor
+                    version_major = re.findall("[0-9]+", ''.join(elem.itertext()))[1]
+                    version_minor = re.findall("[0-9]+", ''.join(elem.itertext()))[2]
                 if elem.get('name') == 'VK_HEADER_VERSION':
-                    header_version = re.findall("[0-9]+", ''.join(elem.itertext()))[0]
-                    break
+                    # Parses the following string:
+                    #define <name>VK_HEADER_VERSION</name> 189</type>
+                    version_patch = re.findall("[0-9]+", ''.join(elem.itertext()))[0]
 
         # File Comment
         file_comment = '# *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
@@ -128,13 +137,8 @@ class LoaderGenerateHeaderVersion(OutputGenerator):
         copyright += '#\n'
         copyright += '############################################################################\n'
         write(copyright, file=self.outFile)
-        set_prop_str = ''
-        set_prop_str += 'set_target_properties(vulkan\n'
-        set_prop_str += '                      PROPERTIES SOVERSION\n'
-        set_prop_str += '                      "1"\n'
-        set_prop_str += '                      VERSION\n'
-        set_prop_str += '                      "1.2.' + header_version + '")'
-        write(set_prop_str, file=self.outFile)
+        set_str = f'set(LOADER_GENERATED_HEADER_VERSION \"{version_major}.{version_minor}.{version_patch}\")'
+        write(set_str, file=self.outFile)
 
     #
     # Write generated file content to output file

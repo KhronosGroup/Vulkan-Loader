@@ -24,9 +24,5 @@
 #
 ############################################################################
 
-set_target_properties(vulkan
-                      PROPERTIES SOVERSION
-                      "1"
-                      VERSION
-                      "1.2.191")
+set(LOADER_GENERATED_HEADER_VERSION "1.2.191")
 
