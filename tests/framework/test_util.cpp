@@ -88,7 +88,7 @@ bool set_env_var(std::string const& name, std::string const& value) { return set
 bool remove_env_var(std::string const& name) { return unsetenv(name.c_str()); }
 std::string get_env_var(std::string const& name) {
     char* ret = getenv(name.c_str());
-    if (ret == nullptr){
+    if (ret == nullptr) {
         std::cerr << "Failed to get environment variable:" << name << "\n";
         return std::string();
     }
@@ -647,4 +647,18 @@ VkResult CreatePhysDev(InstWrapper& inst, VkPhysicalDevice& physical_device) {
 
 VkResult CreateDevice(VkPhysicalDevice phys_dev, DeviceWrapper& dev, DeviceCreateInfo& dev_info) {
     return dev.functions->vkCreateDevice(phys_dev, dev_info.get(), dev.callbacks, &dev.dev);
+}
+
+VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils) {
+    return debug_utils.vkCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
+                                                      &debug_utils.messenger);
+}
+
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger) {
+    create_info.add_extension("VK_EXT_debug_utils");
+    create_info.inst_info.pNext = logger.get();
+}
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper) {
+    create_info.add_extension("VK_EXT_debug_utils");
+    create_info.inst_info.pNext = wrapper.get();
 }

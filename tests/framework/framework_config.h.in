@@ -56,8 +56,8 @@
 
 // Dummy Binaries
 #if _WIN32 || _WIN64
-#define DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.so"
-#define DUMMY_BINARY_WINDOWS_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_32.so"
+#define DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.dll"
+#define DUMMY_BINARY_WINDOWS_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_32.dll"
 #endif
 #if defined(__linux__) || defined(__APPLE__)
 #define DUMMY_BINARY_LINUX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.so"
