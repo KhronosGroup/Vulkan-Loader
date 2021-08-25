@@ -625,7 +625,8 @@ struct DeviceCreateInfo {
 };
 
 struct InstWrapper {
-    InstWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks = nullptr) noexcept : functions(&functions), callbacks(callbacks) {}
+    InstWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks = nullptr) noexcept
+        : functions(&functions), callbacks(callbacks) {}
     InstWrapper(VulkanFunctions& functions, VkInstance inst, VkAllocationCallbacks* callbacks = nullptr) noexcept
         : functions(&functions), inst(inst), callbacks(callbacks) {}
     ~InstWrapper() {
@@ -674,6 +675,82 @@ struct DeviceWrapper {
     VkAllocationCallbacks* callbacks = nullptr;
 };
 VkResult CreateDevice(VkPhysicalDevice phys_dev, DeviceWrapper& dev, DeviceCreateInfo& dev_info);
+
+struct DebugUtilsLogger {
+    static VkBool32 VKAPI_PTR DebugUtilsMessengerLoggerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                                VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                                void* pUserData) {
+        DebugUtilsLogger* debug = reinterpret_cast<DebugUtilsLogger*>(pUserData);
+        debug->returned_output += pCallbackData->pMessage;
+        debug->returned_output += '\n';
+        return VK_FALSE;
+    }
+    DebugUtilsLogger(VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        returned_output.reserve(4096);  // output can be very noisy, reserving should help prevent many small allocations
+        create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        create_info.pNext = nullptr;
+        create_info.messageSeverity = severity;
+        create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        create_info.pfnUserCallback = DebugUtilsMessengerLoggerCallback;
+        create_info.pUserData = this;
+    }
+
+    // Immoveable object
+    DebugUtilsLogger(DebugUtilsLogger const&) = delete;
+    DebugUtilsLogger& operator=(DebugUtilsLogger const&) = delete;
+    DebugUtilsLogger(DebugUtilsLogger&&) = delete;
+    DebugUtilsLogger& operator=(DebugUtilsLogger&&) = delete;
+
+    bool find(std::string const& search_text) { return returned_output.find(search_text) != std::string::npos; }
+
+    VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return &create_info; }
+    VkDebugUtilsMessengerCreateInfoEXT create_info{};
+    std::string returned_output;
+};
+
+struct DebugUtilsWrapper {
+    DebugUtilsWrapper() noexcept {}
+    DebugUtilsWrapper(InstWrapper& inst_wrapper,
+                      VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+                      VkAllocationCallbacks* callbacks = nullptr)
+        : logger(severity), inst(inst_wrapper.inst), callbacks(callbacks) {
+        vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+            inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkCreateDebugUtilsMessengerEXT"));
+        vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+            inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkDestroyDebugUtilsMessengerEXT"));
+    };
+    ~DebugUtilsWrapper() noexcept {
+        if (messenger) {
+            vkDestroyDebugUtilsMessengerEXT(inst, messenger, callbacks);
+        }
+    }
+    // Immoveable object
+    DebugUtilsWrapper(DebugUtilsWrapper const&) = delete;
+    DebugUtilsWrapper& operator=(DebugUtilsWrapper const&) = delete;
+    DebugUtilsWrapper(DebugUtilsWrapper&&) = delete;
+    DebugUtilsWrapper& operator=(DebugUtilsWrapper&&) = delete;
+
+    bool find(std::string const& search_text) { return logger.find(search_text); }
+    VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return logger.get(); }
+
+    DebugUtilsLogger logger;
+    VkInstance inst;
+    VkAllocationCallbacks* callbacks = nullptr;
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+    VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+};
+
+VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils);
+
+// Helper that adds the debug utils extension name and sets the pNext chain up
+// NOTE: Ignores existing pNext chains
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger);
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
 
 inline bool operator==(const VkExtent3D& a, const VkExtent3D& b) {
     return a.width == b.width && a.height == b.height && a.depth == b.depth;
