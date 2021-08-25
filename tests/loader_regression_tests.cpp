@@ -487,9 +487,22 @@ TEST(TryLoadWrongBinaries, WrongICD) {
     FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
     InstanceCreateInfo inst_create_info;
+    FillDebugUtilsCreateDetails(inst_create_info, log);
     ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+
+#if _WIN32 || _WIN64
+    ASSERT_TRUE(log.find("Failed to open dynamic library"));
+#endif
+#if defined(__linux__)
+#if defined(__x86_64__)
+    ASSERT_TRUE(log.find("wrong ELF class: ELFCLASS32"));
+#elif
+    ASSERT_TRUE(log.find("wrong ELF class: ELFCLASS64"));
+#endif
+#endif
 
     uint32_t driver_count = 0;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, nullptr));
