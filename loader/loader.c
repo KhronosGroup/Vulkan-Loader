@@ -529,10 +529,11 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 // log error from to library loading
 void loader_log_load_library_error(const struct loader_instance *inst, const char *filename) {
     const char *error_message = loader_platform_open_library_error(filename);
-    // If the error is due to incompatible ELF class, report it with INFO level
-    // Discussed in Github issue 262
+    // If the error is due to incompatible architecture (eg 32 bit vs 64 bit), report it with INFO level
+    // Discussed in Github issue 262 & 644
+    // "wrong ELF class" is a linux error, " with error 193" is a windows error
     VkFlags err_flag = VULKAN_LOADER_ERROR_BIT;
-    if (strstr(error_message, "wrong ELF class:") != NULL) {
+    if (strstr(error_message, "wrong ELF class:") != NULL || strstr(error_message, " with error 193") != NULL) {
         err_flag = VULKAN_LOADER_INFO_BIT;
     }
     loader_log(inst, err_flag, 0, error_message);
