@@ -38,47 +38,6 @@
 #define ICD_VER_SUPPORTS_ICD_SURFACE_KHR 3
 
 void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo) {
-    ptr_instance->wsi_surface_enabled = false;
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    ptr_instance->wsi_win32_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    ptr_instance->wsi_wayland_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
-    ptr_instance->wsi_xcb_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-    ptr_instance->wsi_xlib_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-    ptr_instance->wsi_directfb_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    ptr_instance->wsi_android_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_MACOS_MVK
-    ptr_instance->wsi_macos_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_MACOS_MVK
-#ifdef VK_USE_PLATFORM_IOS_MVK
-    ptr_instance->wsi_ios_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_GGP
-    ptr_instance->wsi_ggp_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_GGP
-#ifdef VK_USE_PLATFORM_FUCHSIA
-    ptr_instance->wsi_imagepipe_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-    ptr_instance->wsi_display_enabled = false;
-    ptr_instance->wsi_display_props2_enabled = false;
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    ptr_instance->wsi_metal_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
-    ptr_instance->wsi_screen_surface_enabled = false;
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SURFACE_EXTENSION_NAME) == 0) {
             ptr_instance->wsi_surface_enabled = true;

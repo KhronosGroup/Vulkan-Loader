@@ -522,8 +522,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     res = loader_create_instance_chain(&ici, pAllocator, ptr_instance, &created_instance);
 
     if (res == VK_SUCCESS) {
-        memset(ptr_instance->enabled_known_extensions.padding, 0, sizeof(uint64_t) * 4);
-
+        // Check for enabled extensions here to setup the loader structures so the loader knows what extensions
+        // it needs to worry about.
+        // We do it in the terminator and again above the layers here since we may think different extensions
+        // are enabled than what's down in the terminator.
+        // This is why we don't clear inside of these function calls.
+        // The clearing should actually be handled by the overall memset of the pInstance structure above.
         wsi_create_instance(ptr_instance, &ici);
         debug_utils_CreateInstance(ptr_instance, &ici);
         extensions_create_instance(ptr_instance, &ici);
