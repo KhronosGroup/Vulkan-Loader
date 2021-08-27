@@ -6724,6 +6724,17 @@ out:
             }
             loader_icd_destroy(ptr_instance, icd_term, pAllocator);
         }
+    } else {
+        // Check for enabled extensions here to setup the loader structures so the loader knows what extensions
+        // it needs to worry about.
+        // We do it here and again above the layers in the trampoline function since the trampoline function
+        // may think different extensions are enabled than what's down here.
+        // This is why we don't clear inside of these function calls.
+        // The clearing should actually be handled by the overall memset of the pInstance structure in the
+        // trampoline.
+        wsi_create_instance(ptr_instance, pCreateInfo);
+        debug_utils_CreateInstance(ptr_instance, pCreateInfo);
+        extensions_create_instance(ptr_instance, pCreateInfo);
     }
 
     return res;

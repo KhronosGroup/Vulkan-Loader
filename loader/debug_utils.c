@@ -869,9 +869,6 @@ void debug_utils_AddInstanceExtensions(const struct loader_instance *inst, struc
 }
 
 void debug_utils_CreateInstance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo) {
-    ptr_instance->enabled_known_extensions.ext_debug_report = 0;
-    ptr_instance->enabled_known_extensions.ext_debug_utils = 0;
-
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME) == 0) {
             ptr_instance->enabled_known_extensions.ext_debug_report = 1;
