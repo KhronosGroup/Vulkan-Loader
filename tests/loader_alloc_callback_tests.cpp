@@ -170,6 +170,9 @@ class MemoryTracker {
 
     bool empty() noexcept { return allocation_count == 0; }
 
+    void update_settings(MemoryTrackerSettings new_settings) noexcept { settings = new_settings; }
+    size_t current_allocation_count() const noexcept { return allocation_count; }
+    size_t current_call_count() const noexcept { return call_count; }
     // Static callbacks
     static VKAPI_ATTR void* VKAPI_CALL public_allocation(void* pUserData, size_t size, size_t alignment,
                                                          VkSystemAllocationScope allocationScope) noexcept {
@@ -407,30 +410,34 @@ TEST_F(Allocation, CreateInstanceIntentionalAllocFail) {
 
 // Test failure during vkCreateDevice to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
+// Use 2 physical devices so that anything which copies a list of devices item by item
+// may fail.
 TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+    driver.physical_devices.emplace_back("physical_device_1");
+    driver.physical_devices[1].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
 
-    uint32_t physical_count = 1;
+    uint32_t physical_count = 2;
     uint32_t returned_physical_count = 0;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
     ASSERT_EQ(physical_count, returned_physical_count);
 
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, &physical_device));
+    VkPhysicalDevice physical_devices[2];
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, physical_devices));
     ASSERT_EQ(physical_count, returned_physical_count);
 
     uint32_t family_count = 1;
     uint32_t returned_family_count = 0;
-    env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
+    env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[0], &returned_family_count, nullptr);
     ASSERT_EQ(returned_family_count, family_count);
 
     VkQueueFamilyProperties family;
-    env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
+    env->vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[0], &returned_family_count, &family);
     ASSERT_EQ(returned_family_count, family_count);
     ASSERT_EQ(family.queueFlags, VK_QUEUE_GRAPHICS_BIT);
     ASSERT_EQ(family.queueCount, family_count);
@@ -447,7 +454,7 @@ TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
         dev_create_info.add_device_queue(queue_info);
 
         VkDevice device;
-        result = inst->vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device);
+        result = inst->vkCreateDevice(physical_devices[0], dev_create_info.get(), tracker.get(), &device);
         if (result == VK_SUCCESS || fail_index > 10000) {
             inst->vkDestroyDevice(device, tracker.get());
             break;
@@ -544,5 +551,75 @@ TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
         ASSERT_NE(result, VK_ERROR_INCOMPATIBLE_DRIVER);
         ASSERT_TRUE(tracker.empty());
         fail_index++;
+    }
+}
+
+// Test failure during vkCreateInstance and vkCreateDevice to make sure we don't
+// leak memory if one of the out-of-memory conditions trigger.
+TEST_F(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
+    size_t fail_index = 0;
+    bool reached_the_end = false;
+    uint32_t starting_physical_dev_count = 3;
+    while (!reached_the_end && fail_index <= 100) {
+        fail_index++;  // applies to the next loop
+        uint32_t physical_dev_count = starting_physical_dev_count;
+        VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        auto& driver = env->reset_icd();
+
+        for (uint32_t i = 0; i < physical_dev_count; i++) {
+            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+            driver.physical_devices[i].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+        }
+        MemoryTracker tracker{MemoryTrackerSettings{false, 0, true, fail_index}};
+        InstanceCreateInfo inst_create_info;
+        VkInstance instance;
+        result = env->vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            ASSERT_TRUE(tracker.empty());
+            continue;
+        }
+
+        uint32_t returned_physical_count = 0;
+        result = env->vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, nullptr);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
+            ASSERT_TRUE(tracker.empty());
+            continue;
+        }
+        ASSERT_EQ(physical_dev_count, returned_physical_count);
+
+        for (uint32_t i = 0; i < 2; i++) {
+            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(physical_dev_count));
+            physical_dev_count += 1;
+        }
+
+        std::vector<VkPhysicalDevice> physical_devices{physical_dev_count, VK_NULL_HANDLE};
+        result = env->vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, physical_devices.data());
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
+            ASSERT_TRUE(tracker.empty());
+            continue;
+        }
+        if (result == VK_INCOMPLETE) {
+            result = env->vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, nullptr);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
+                ASSERT_TRUE(tracker.empty());
+                continue;
+            }
+            physical_devices.resize(returned_physical_count);
+            result = env->vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, physical_devices.data());
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
+                ASSERT_TRUE(tracker.empty());
+                continue;
+            }
+        }
+        ASSERT_EQ(physical_dev_count, returned_physical_count);
+
+        std::cout << "fail count " << fail_index << "\n";
+        env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
+        ASSERT_TRUE(tracker.empty());
+        reached_the_end = true;
     }
 }
