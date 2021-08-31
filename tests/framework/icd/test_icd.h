@@ -33,16 +33,21 @@
 
 #include "physical_device.h"
 
-
 enum class CalledICDGIPA { not_called, vk_icd_gipa, vk_gipa };
 
 enum class CalledNegotiateInterface { not_called, vk_icd_negotiate, vk_icd_gipa_first };
 
-enum class InterfaceVersionCheck { not_called, loader_version_too_old, loader_version_too_new, icd_version_too_new, version_is_supported};
+enum class InterfaceVersionCheck {
+    not_called,
+    loader_version_too_old,
+    loader_version_too_new,
+    icd_version_too_new,
+    version_is_supported
+};
 
-enum class CalledEnumerateAdapterPhysicalDevices { not_called, called, called_but_not_supported};
+enum class CalledEnumerateAdapterPhysicalDevices { not_called, called, called_but_not_supported };
 
-enum class UsingICDProvidedWSI { not_using, is_using};
+enum class UsingICDProvidedWSI { not_using, is_using };
 
 struct TestICD {
     fs::path manifest_file_path;
@@ -55,7 +60,8 @@ struct TestICD {
     uint32_t max_icd_interface_version = 6;
     uint32_t icd_interface_version_received = 0;
 
-    CalledEnumerateAdapterPhysicalDevices called_enumerate_adapter_physical_devices = CalledEnumerateAdapterPhysicalDevices::not_called;
+    CalledEnumerateAdapterPhysicalDevices called_enumerate_adapter_physical_devices =
+        CalledEnumerateAdapterPhysicalDevices::not_called;
 
     bool enable_icd_wsi = false;
     UsingICDProvidedWSI is_using_icd_wsi = UsingICDProvidedWSI::not_using;
@@ -65,12 +71,13 @@ struct TestICD {
     std::vector<Extension> instance_extensions;
     std::vector<PhysicalDevice> physical_devices;
 
+    std::vector<PhysicalDeviceGroup> physical_device_groups;
+
     DispatchableHandle<VkInstance> instance_handle;
     std::vector<DispatchableHandle<VkDevice>> device_handles;
 
     uint64_t created_surface_count = 0;
     uint64_t created_swapchain_count = 0;
-
 
     TestICD() {}
     ~TestICD() {}
