@@ -581,6 +581,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         auto physical_devices = std::vector<VkPhysicalDevice>(physical_device_count);
         uint32_t returned_phys_dev_count = physical_device_count;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+        handle_assert_has_values(physical_devices);
 
         uint32_t group_count = driver.physical_device_groups.size();
         uint32_t returned_group_count = group_count;
@@ -588,10 +589,8 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        ASSERT_NE(group_props.physicalDevices[0], VK_NULL_HANDLE);
-        ASSERT_NE(group_props.physicalDevices[1], VK_NULL_HANDLE);
-        ASSERT_EQ(group_props.physicalDevices[0], physical_devices[0]);
-        ASSERT_EQ(group_props.physicalDevices[1], physical_devices[1]);
+        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
+        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
     driver.AddInstanceExtension({"VK_KHR_device_group_creation"});
     // Extension
@@ -607,6 +606,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         auto physical_devices = std::vector<VkPhysicalDevice>(physical_device_count);
         uint32_t returned_phys_dev_count = physical_device_count;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+        handle_assert_has_values(physical_devices);
 
         uint32_t group_count = driver.physical_device_groups.size();
         uint32_t returned_group_count = group_count;
@@ -614,10 +614,8 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        ASSERT_NE(group_props.physicalDevices[0], VK_NULL_HANDLE);
-        ASSERT_NE(group_props.physicalDevices[1], VK_NULL_HANDLE);
-        ASSERT_EQ(group_props.physicalDevices[0], physical_devices[0]);
-        ASSERT_EQ(group_props.physicalDevices[1], physical_devices[1]);
+        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
+        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
 }
 
@@ -643,6 +641,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         auto physical_devices = std::vector<VkPhysicalDevice>(physical_device_count);
         uint32_t returned_phys_dev_count = physical_device_count;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+        handle_assert_has_values(physical_devices);
 
         uint32_t group_count = driver.physical_device_groups.size();
         uint32_t returned_group_count = 0;
@@ -653,10 +652,8 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        ASSERT_NE(group_props.physicalDevices[0], VK_NULL_HANDLE);
-        ASSERT_NE(group_props.physicalDevices[1], VK_NULL_HANDLE);
-        ASSERT_EQ(group_props.physicalDevices[0], physical_devices[0]);
-        ASSERT_EQ(group_props.physicalDevices[1], physical_devices[1]);
+        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
+        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
     driver.AddInstanceExtension({"VK_KHR_device_group_creation"});
     // Extension
@@ -669,6 +666,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         auto physical_devices = std::vector<VkPhysicalDevice>(physical_device_count);
         uint32_t returned_phys_dev_count = physical_device_count;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+        handle_assert_has_values(physical_devices);
 
         auto vkEnumeratePhysicalDeviceGroupsKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroupsKHR>(
             env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkEnumeratePhysicalDeviceGroupsKHR"));
@@ -682,10 +680,8 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        ASSERT_NE(group_props.physicalDevices[0], VK_NULL_HANDLE);
-        ASSERT_NE(group_props.physicalDevices[1], VK_NULL_HANDLE);
-        ASSERT_EQ(group_props.physicalDevices[0], physical_devices[0]);
-        ASSERT_EQ(group_props.physicalDevices[1], physical_devices[1]);
+        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
+        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
 }
 
@@ -717,8 +713,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, &group_props));
         ASSERT_EQ(0, returned_group_count);
-        ASSERT_EQ(group_props.physicalDevices[0], VK_NULL_HANDLE);
-        ASSERT_EQ(group_props.physicalDevices[1], VK_NULL_HANDLE);
+        handle_assert_no_values(returned_group_count, group_props.physicalDevices);
     }
     driver.AddInstanceExtension({"VK_KHR_device_group_creation"});
     // Extension
@@ -741,7 +736,6 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         ASSERT_EQ(VK_INCOMPLETE, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, &group_props));
         ASSERT_EQ(0, returned_group_count);
-        ASSERT_EQ(group_props.physicalDevices[0], VK_NULL_HANDLE);
-        ASSERT_EQ(group_props.physicalDevices[1], VK_NULL_HANDLE);
+        handle_assert_no_values(returned_group_count, group_props.physicalDevices);
     }
 }
