@@ -139,7 +139,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     // next layer in the chain.
     layer_init_instance_dispatch_table(layer.instance_handle, &layer.instance_dispatch_table, fpGetInstanceProcAddr);
 
-    if (layer.create_instance_callback) result = layer.create_instance_callback(layer, layer.create_device_callback_data);
+    if (layer.create_instance_callback) result = layer.create_instance_callback(layer, layer.create_instance_callback_data);
 
     return result;
 }

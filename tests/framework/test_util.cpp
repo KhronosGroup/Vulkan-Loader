@@ -585,6 +585,10 @@ InstanceCreateInfo& InstanceCreateInfo::set_api_version(uint32_t api_version) {
     this->api_version = api_version;
     return *this;
 }
+InstanceCreateInfo& InstanceCreateInfo::set_api_version(uint32_t major, uint32_t minor, uint32_t patch) {
+    this->api_version = VK_MAKE_API_VERSION(0, major, minor, patch);
+    return *this;
+}
 InstanceCreateInfo& InstanceCreateInfo::add_layer(const char* layer_name) {
     enabled_layers.push_back(layer_name);
     return *this;

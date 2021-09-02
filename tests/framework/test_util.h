@@ -602,6 +602,7 @@ struct InstanceCreateInfo {
     InstanceCreateInfo& set_app_version(uint32_t app_version);
     InstanceCreateInfo& set_engine_version(uint32_t engine_version);
     InstanceCreateInfo& set_api_version(uint32_t api_version);
+    InstanceCreateInfo& set_api_version(uint32_t major, uint32_t minor, uint32_t patch);
     InstanceCreateInfo& add_layer(const char* layer_name);
     InstanceCreateInfo& add_extension(const char* ext_name);
 };

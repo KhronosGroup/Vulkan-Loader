@@ -70,6 +70,12 @@ bool CheckLayer(std::vector<LayerDefinition>& layers, std::string layerName) {
     return false;
 }
 
+bool IsInstanceExtensionEnabled(const char* extension_name) {
+    return icd.instance_extensions.end() !=
+           std::find_if(icd.instance_extensions.begin(), icd.instance_extensions.end(),
+                        [extension_name](Extension const& ext) { return ext.extensionName == extension_name; });
+}
+
 // typename T must have '.get()' function that returns a type U
 template <typename T, typename U>
 VkResult FillCountPtr(std::vector<T> const& data_vec, uint32_t* pCount, U* pData) {
@@ -360,7 +366,7 @@ VKAPI_ATTR void VKAPI_CALL test_stub_func_no_return() {}
 #define TO_VOID_PFN(func) reinterpret_cast<PFN_vkVoidFunction>(func)
 
 PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pName) {
-    if (icd.icd_api_version < VK_MAKE_VERSION(1, 1, 0)) {
+    if (icd.icd_api_version >= VK_MAKE_VERSION(1, 1, 0)) {
         if (string_eq(pName, "test_vkEnumerateInstanceVersion")) {
             return TO_VOID_PFN(test_vkEnumerateInstanceVersion);
         }
@@ -368,7 +374,7 @@ PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pN
     return nullptr;
 }
 PFN_vkVoidFunction get_instance_func_ver_1_2(VkInstance instance, const char* pName) {
-    if (icd.icd_api_version < VK_MAKE_VERSION(1, 2, 0)) {
+    if (icd.icd_api_version >= VK_MAKE_VERSION(1, 2, 0)) {
         return nullptr;
     }
     return nullptr;
@@ -440,6 +446,29 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
         string_eq(pName, "vkGetPhysicalDeviceFormatProperties"))
         return TO_VOID_PFN(test_stub_func_no_return);
     if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties")) return TO_VOID_PFN(test_stub_func_with_return);
+
+    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        if (string_eq(pName, "vkGetPhysicalDeviceFeatures2") || string_eq(pName, "vkGetPhysicalDeviceFormatProperties2") ||
+            string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2") || string_eq(pName, "vkGetPhysicalDeviceProperties2") ||
+            string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2") ||
+            string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2")) {
+            return TO_VOID_PFN(test_stub_func_no_return);
+        }
+        if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2")) {
+            return TO_VOID_PFN(test_stub_func_with_return);
+        }
+    }
+    if (IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR") || string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR") ||
+            string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2KHR") || string_eq(pName, "vkGetPhysicalDeviceProperties2KHR") ||
+            string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2KHR") ||
+            string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR")) {
+            return TO_VOID_PFN(test_stub_func_no_return);
+        }
+        if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2KHR")) {
+            return TO_VOID_PFN(test_stub_func_with_return);
+        }
+    }
     return nullptr;
 }
 

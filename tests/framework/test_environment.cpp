@@ -167,7 +167,6 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
     return *proc_addr_reset_layer();
 }
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
-}  // namespace detail
 
 FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode) noexcept
     : platform_shim(debug_mode),

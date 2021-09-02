@@ -30,7 +30,7 @@
 class LayerTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
-        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_VERSION(1, 0, 0))));
+        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_VERSION(1, 0, 0))));
     }
 
     virtual void TearDown() { env.reset(); }
@@ -42,6 +42,7 @@ class ExplicitLayers : public LayerTests {};
 class ImplicitLayers : public LayerTests {};
 class MetaLayers : public LayerTests {};
 class OverrideMetaLayer : public LayerTests {};
+class LayerCreateInstance : public LayerTests {};
 
 TEST_F(MetaLayers, InvalidComponentLayer) {
     const char* meta_layer_name = "MetaTestLayer";
@@ -136,5 +137,86 @@ TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
 
     InstWrapper inst{env->vulkan_functions};
     // inst.create_info.add_layer();
+    inst.CheckCreate();
+}
+
+// This test makes sure that any layer calling GetPhysicalDeviceProperties2 inside of CreateInstance
+// succeeds and doesn't crash.
+TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2) {
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
+    const char* regular_layer_name = "TestLayer";
+    ManifestLayer::LayerDescription regular_description{};
+    regular_description.name = regular_layer_name;
+    regular_description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer regular_layer;
+    regular_layer.file_format_version = ManifestVersion(1, 1, 2);
+    regular_layer.layers.push_back(regular_description);
+    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+
+    TestLayerHandle layer_handle{regular_description.lib_path};
+    auto& layer = layer_handle.get_test_layer();
+    layer.SetCreateInstanceCallback(
+        [](TestLayer& layer, void* data) -> VkResult {
+            uint32_t phys_dev_count = 0;
+            VkResult res = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, nullptr);
+            if (res != VK_SUCCESS || phys_dev_count > 1) {
+                return VK_ERROR_INITIALIZATION_FAILED;  // expecting only a single physical device.
+            }
+            VkPhysicalDevice phys_dev{};
+            res = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, &phys_dev);
+            if (res != VK_SUCCESS) {
+                return VK_ERROR_INITIALIZATION_FAILED;
+            }
+            VkPhysicalDeviceProperties2 props2{};
+            props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            layer.instance_dispatch_table.GetPhysicalDeviceProperties2(phys_dev, &props2);
+
+            VkPhysicalDeviceFeatures2 features2{};
+            features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            layer.instance_dispatch_table.GetPhysicalDeviceFeatures2(phys_dev, &features2);
+            return VK_SUCCESS;
+        },
+        nullptr);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(regular_layer_name).set_api_version(1, 1, 0);
+    inst.CheckCreate();
+}
+
+TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().AddInstanceExtension({"VK_KHR_get_physical_device_properties2", 0});
+    const char* regular_layer_name = "TestLayer";
+    ManifestLayer::LayerDescription regular_description{};
+    regular_description.name = regular_layer_name;
+    regular_description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer regular_layer;
+    regular_layer.layers.push_back(regular_description);
+    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+
+    TestLayerHandle layer_handle{regular_description.lib_path};
+    auto& layer = layer_handle.reset_layer();
+    layer.SetCreateInstanceCallback(
+        [](TestLayer& layer, void* data) -> VkResult {
+            uint32_t phys_dev_count = 1;
+            VkPhysicalDevice phys_dev{};
+            layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, &phys_dev);
+
+            VkPhysicalDeviceProperties2KHR props2{};
+            props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+            layer.instance_dispatch_table.GetPhysicalDeviceProperties2KHR(phys_dev, &props2);
+
+            VkPhysicalDeviceFeatures2KHR features2{};
+            features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
+            layer.instance_dispatch_table.GetPhysicalDeviceFeatures2KHR(phys_dev, &features2);
+            return VK_SUCCESS;
+        },
+        nullptr);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(regular_layer_name).add_extension("VK_KHR_get_physical_device_properties2");
     inst.CheckCreate();
 }
