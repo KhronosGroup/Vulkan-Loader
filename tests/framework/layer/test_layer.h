@@ -80,6 +80,14 @@ Interface Version 2
 
 // Added manifest version 1.1.0
 
+struct TestLayer;
+
+// Callbacks allow tests to implement custom functionality without modifying the layer binary
+// TestLayer* layer - Access to the TestLayer object itself
+// void* data - pointer to test specific thing, used to pass data from the test into the TestLayer
+// Returns VkResult - This value will be used as the return value of the function
+using FP_layer_callback = VkResult (*)(TestLayer& layer, void* data);
+
 struct TestLayer {
     fs::path manifest_file_path;
     uint32_t manifest_version = VK_MAKE_VERSION(1, 1, 2);
@@ -116,6 +124,23 @@ struct TestLayer {
         VkLayerDispatchTable dispatch_table;
     };
     std::vector<Device> created_devices;
+
+    // Called in vkCreateInstance after calling down the chain & returning
+    FP_layer_callback create_instance_callback = nullptr;
+    void* create_instance_callback_data = nullptr;
+
+    // Called in vkCreateDevice after calling down the chain & returning
+    FP_layer_callback create_device_callback = nullptr;
+    void* create_device_callback_data = nullptr;
+
+    void SetCreateInstanceCallback(FP_layer_callback callback, void* data) noexcept {
+        create_instance_callback = callback;
+        create_instance_callback_data = data;
+    }
+    void SetCreateDeviceCallback(FP_layer_callback callback, void* data) noexcept {
+        create_device_callback = callback;
+        create_device_callback_data = data;
+    }
 };
 
 using GetTestLayerFunc = TestLayer* (*)();

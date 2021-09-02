@@ -139,7 +139,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     // next layer in the chain.
     layer_init_instance_dispatch_table(layer.instance_handle, &layer.instance_dispatch_table, fpGetInstanceProcAddr);
 
-    return VK_SUCCESS;
+    if (layer.create_instance_callback) result = layer.create_instance_callback(layer, layer.create_device_callback_data);
+
+    return result;
 }
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
     layer.instance_dispatch_table.DestroyInstance(instance, pAllocator);
@@ -173,7 +175,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     // initialize layer's dispatch table
     layer_init_device_dispatch_table(device.device_handle, &device.dispatch_table, fpGetDeviceProcAddr);
 
-    return VK_SUCCESS;
+    if (layer.create_device_callback) result = layer.create_device_callback(layer, layer.create_device_callback_data);
+
+    return result;
 }
 
 // device functions
