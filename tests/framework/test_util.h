@@ -125,102 +125,8 @@ enum class DebugMode {
                // deleted
 };
 
-inline std::string version_to_string(uint32_t version) {
-    return std::to_string(VK_VERSION_MAJOR(version)) + "." + std::to_string(VK_VERSION_MINOR(version)) + "." +
-           std::to_string(VK_VERSION_PATCH(version));
-}
-
-struct ManifestVersion {
-    uint32_t major = 1;
-    uint32_t minor = 0;
-    uint32_t patch = 0;
-    explicit ManifestVersion() noexcept {};
-    explicit ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
-
-    std::string get_version_str() const noexcept {
-        return std::string("\"file_format_version\": \"") + std::to_string(major) + "." + std::to_string(minor) + "." +
-               std::to_string(patch) + "\",";
-    }
-};
-
-struct ManifestICD {
-    ManifestVersion file_format_version = ManifestVersion();
-    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
-    std::string lib_path;
-
-    std::string get_manifest_str() const;
-};
-
-struct ManifestLayer {
-    struct LayerDescription {
-        enum class Type { INSTANCE, GLOBAL, DEVICE };
-        std::string get_type_str(Type type) const {
-            if (type == Type::GLOBAL)
-                return "GLOBAL";
-            else if (type == Type::DEVICE)
-                return "DEVICE";
-            else  // default
-                return "INSTANCE";
-        }
-        struct FunctionOverride {
-            std::string vk_func;
-            std::string override_name;
-            std::string get_manifest_str() const { return std::string("{ \"") + vk_func + "\":\"" + override_name + "\" }"; }
-        };
-        struct Extension {
-            Extension() noexcept {}
-            Extension(std::string name, uint32_t spec_version = 0, std::vector<std::string> entrypoints = {}) noexcept
-                : name(name), spec_version(spec_version), entrypoints(entrypoints) {}
-            std::string name;
-            uint32_t spec_version = 0;
-            std::vector<std::string> entrypoints;
-            std::string get_manifest_str() const;
-        };
-        std::string name;
-        Type type = Type::INSTANCE;
-        std::string lib_path;
-        uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
-        uint32_t implementation_version = 0;
-        std::string description;
-        std::vector<FunctionOverride> functions;
-        std::vector<Extension> instance_extensions;
-        std::vector<Extension> device_extensions;
-        std::string enable_environment;
-        std::string disable_environment;
-        std::vector<std::string> component_layers;
-        std::vector<std::string> pre_instance_functions;
-
-        std::string get_manifest_str() const;
-        VkLayerProperties get_layer_properties() const;
-    };
-    ManifestVersion file_format_version;
-    std::vector<LayerDescription> layers;
-
-    std::string get_manifest_str() const;
-};
-
-struct Extension {
-    std::string extensionName;
-    uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0);
-
-    Extension(std::string extensionName, uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0))
-        : extensionName(extensionName), specVersion(specVersion) {}
-
-    VkExtensionProperties get() const noexcept {
-        VkExtensionProperties props{};
-        std::strncpy(props.extensionName, extensionName.c_str(), VK_MAX_EXTENSION_NAME_SIZE);
-        props.specVersion = specVersion;
-        return props;
-    }
-};
-
-struct MockQueueFamilyProperties {
-    MockQueueFamilyProperties(VkQueueFamilyProperties properties, bool support_present = false)
-        : properties(properties), support_present(support_present) {}
-    VkQueueFamilyProperties properties{};
-    bool support_present = false;
-    VkQueueFamilyProperties get() const noexcept { return properties; }
-};
+struct ManifestICD;    // forward declaration for FolderManager::write
+struct ManifestLayer;  // forward declaration for FolderManager::write
 
 namespace fs {
 std::string make_native(std::string const&);
@@ -516,6 +422,103 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
 
 bool string_eq(const char* a, const char* b) noexcept;
 bool string_eq(const char* a, const char* b, size_t len) noexcept;
+
+inline std::string version_to_string(uint32_t version) {
+    return std::to_string(VK_VERSION_MAJOR(version)) + "." + std::to_string(VK_VERSION_MINOR(version)) + "." +
+           std::to_string(VK_VERSION_PATCH(version));
+}
+
+struct ManifestVersion {
+    uint32_t major = 1;
+    uint32_t minor = 0;
+    uint32_t patch = 0;
+    explicit ManifestVersion() noexcept {};
+    explicit ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
+
+    std::string get_version_str() const noexcept {
+        return std::string("\"file_format_version\": \"") + std::to_string(major) + "." + std::to_string(minor) + "." +
+               std::to_string(patch) + "\",";
+    }
+};
+
+struct ManifestICD {
+    ManifestVersion file_format_version = ManifestVersion();
+    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
+    std::string lib_path;
+
+    std::string get_manifest_str() const;
+};
+
+struct ManifestLayer {
+    struct LayerDescription {
+        enum class Type { INSTANCE, GLOBAL, DEVICE };
+        std::string get_type_str(Type type) const {
+            if (type == Type::GLOBAL)
+                return "GLOBAL";
+            else if (type == Type::DEVICE)
+                return "DEVICE";
+            else  // default
+                return "INSTANCE";
+        }
+        struct FunctionOverride {
+            std::string vk_func;
+            std::string override_name;
+            std::string get_manifest_str() const { return std::string("{ \"") + vk_func + "\":\"" + override_name + "\" }"; }
+        };
+        struct Extension {
+            Extension() noexcept {}
+            Extension(std::string name, uint32_t spec_version = 0, std::vector<std::string> entrypoints = {}) noexcept
+                : name(name), spec_version(spec_version), entrypoints(entrypoints) {}
+            std::string name;
+            uint32_t spec_version = 0;
+            std::vector<std::string> entrypoints;
+            std::string get_manifest_str() const;
+        };
+        std::string name;
+        Type type = Type::INSTANCE;
+        fs::path lib_path;
+        uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
+        uint32_t implementation_version = 0;
+        std::string description;
+        std::vector<FunctionOverride> functions;
+        std::vector<Extension> instance_extensions;
+        std::vector<Extension> device_extensions;
+        std::string enable_environment;
+        std::string disable_environment;
+        std::vector<std::string> component_layers;
+        std::vector<std::string> pre_instance_functions;
+
+        std::string get_manifest_str() const;
+        VkLayerProperties get_layer_properties() const;
+    };
+    ManifestVersion file_format_version;
+    std::vector<LayerDescription> layers;
+
+    std::string get_manifest_str() const;
+};
+
+struct Extension {
+    std::string extensionName;
+    uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0);
+
+    Extension(std::string extensionName, uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0))
+        : extensionName(extensionName), specVersion(specVersion) {}
+
+    VkExtensionProperties get() const noexcept {
+        VkExtensionProperties props{};
+        std::strncpy(props.extensionName, extensionName.c_str(), VK_MAX_EXTENSION_NAME_SIZE);
+        props.specVersion = specVersion;
+        return props;
+    }
+};
+
+struct MockQueueFamilyProperties {
+    MockQueueFamilyProperties(VkQueueFamilyProperties properties, bool support_present = false)
+        : properties(properties), support_present(support_present) {}
+    VkQueueFamilyProperties properties{};
+    bool support_present = false;
+    VkQueueFamilyProperties get() const noexcept { return properties; }
+};
 
 struct VulkanFunctions {
     LibraryWrapper loader;

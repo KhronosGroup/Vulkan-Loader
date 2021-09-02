@@ -153,6 +153,22 @@ TestICD& TestICDHandle::reset_icd() noexcept {
 }
 fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
 
+TestLayerHandle::TestLayerHandle() noexcept {}
+TestLayerHandle::TestLayerHandle(fs::path const& layer_path) noexcept : layer_library(layer_path) {
+    proc_addr_get_test_layer = layer_library.get_symbol<GetNewTestLayerFunc>(GET_TEST_LAYER_FUNC_STR);
+    proc_addr_reset_layer = layer_library.get_symbol<GetNewTestLayerFunc>(RESET_LAYER_FUNC_STR);
+}
+TestLayer& TestLayerHandle::get_test_layer() noexcept {
+    assert(proc_addr_get_test_layer != NULL && "symbol must be loaded before use");
+    return *proc_addr_get_test_layer();
+}
+TestLayer& TestLayerHandle::reset_layer() noexcept {
+    assert(proc_addr_reset_layer != NULL && "symbol must be loaded before use");
+    return *proc_addr_reset_layer();
+}
+fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
+}  // namespace detail
+
 FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode) noexcept
     : platform_shim(debug_mode),
       null_folder(FRAMEWORK_BUILD_DIRECTORY, "null_dir", debug_mode),
