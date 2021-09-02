@@ -920,19 +920,21 @@ information on this.
 ##### Linux Layer Discovery
 
 On Linux, the Vulkan loader will scan the files in the following Linux
-directories:
+directories, which include the configuration and data "stacks" from the
+[XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
 
 ```
-   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
-   $XDG_CONFIG_DIRS
-   $SYSCONFDIR           (or if not defined /etc)
-   $EXTRASYSCONFDIR      (or ir not defined /etc)
-   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
-   $XDG_DATA_DIRS
+   $XDG_CONFIG_HOME             (or if not set, $HOME/.config)
+   $XDG_CONFIG_DIRS             (or if not set, /etc/xdg)
+   compile-time SYSCONFDIR      (defaults to /etc)
+   compile-time EXTRASYSCONFDIR (defaults to /etc)
+   $XDG_DATA_HOME               (or if not set, $HOME/.local/share)
+   $XDG_DATA_DIRS               (or if not set, /usr/local/share:/usr/share)
 ```
 
-The "XDG_..._HOME" default directories can be configured to be other directories
-at build time.
+The "XDG\_...\_DIRS" fallback directories can be configured to be other
+directories at build time, but this will result in non-compliance with
+the XDG Base Directory Specification.
 
 
 To each of these paths will be added two suffixes.
@@ -946,15 +948,18 @@ Duplicate resulting folders will be ignored.
 An example combined search path for explicit layers may look like this:
 
 ```
+    /home/me/.config/vulkan/explicit_layer.d
+    /etc/xdg/vulkan/explicit_layer.d
     /usr/local/etc/vulkan/explicit_layer.d
-    /usr/local/share/vulkan/explicit_layer.d
     /etc/vulkan/explicit_layer.d
+    /home/me/.local/share/vulkan/explicit_layer.d
+    /usr/local/share/vulkan/explicit_layer.d
     /usr/share/vulkan/explicit_layer.d
-    $HOME/.local/share/vulkan/explicit_layer.d
 ```
 
-<b>IMPORTANT NOTE!</b> Any path using $HOME is ignored for all suid programs for
-security reasons.
+<b>IMPORTANT NOTE!</b> For security reasons, if the program using Vulkan
+is setuid, then all paths involving `$HOME` are ignored, and all other
+environment variables are treated as though they were unset.
 
 As on Windows, if VK\_LAYER\_PATH is defined, then the
 loader will instead look at the paths defined by that variable instead of using
@@ -965,23 +970,15 @@ information on this.
 
 ##### macOS Layer Discovery
 
-On macOS, the Vulkan loader will scan the files in the following directories:
-
-```
-   <bundle>/Contents/Resources
-   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
-   $XDG_CONFIG_DIRS
-   $SYSCONFDIR           (or if not defined /etc)
-   $EXTRASYSCONFDIR      (or ir not defined /etc)
-   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
-   $XDG_DATA_DIRS
-```
+On macOS, the Vulkan loader will scan the files in
+`<bundle>/Contents/Resources`, followed by the same directories used on Linux
+(see above).
 
 **bundle**; is the directory containing a bundled application.
 It is scanned first.
 
-The "XDG_..._HOME" default directories can be configured to be other directories
-at build time.
+As with Linux, the "XDG\_...\_DIRS" fallback directories can be configured
+to be other directories at build time.
 
 To each of these paths will be added two suffixes.
 First, the suffix **/vulkan** is added so the loader will only look for
@@ -995,14 +992,18 @@ An example combined search path for implicit layers may look like this:
 
 ```
     <bundle>/Contents/Resources/vulkan/implicit_layer.d
+    /Users/Me/.config/vulkan/implicit_layer.d
+    /etc/xdg/vulkan/implicit_layer.d
+    /usr/local/etc/vulkan/implicit_layer.d
     /etc/vulkan/implicit_layer.d
+    /Users/Me/.local/share/vulkan/implicit_layer.d
     /usr/local/share/vulkan/implicit_layer.d
     /usr/share/vulkan/implicit_layer.d
-    $HOME/.local/share/vulkan/implicit_layer.d
 ```
 
-<b>IMPORTANT NOTE!</b> Any path using $HOME is ignored for all suid programs for
-security reasons.
+<b>IMPORTANT NOTE!</b> For security reasons, if the program using Vulkan
+is setuid, then all paths involving `$HOME` are ignored, and all other
+environment variables are treated as though they were unset.
 
 As on Windows, if VK\_LAYER\_PATH is defined, then the
 loader will instead look at the paths defined by that variable instead of using
@@ -2215,19 +2216,22 @@ details.
 #### ICD Discovery on Linux
 
 In order to find installed ICDs, the Vulkan loader will scan the files
-in the following Linux directories:
+in the following Linux directories, which include the configuration and
+data "stacks" from the
+[XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
 
 ```
-   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
-   $XDG_CONFIG_DIRS
-   $SYSCONFDIR           (or if not defined /etc)
-   $EXTRASYSCONFDIR      (or ir not defined /etc)
-   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
-   $XDG_DATA_DIRS
+   $XDG_CONFIG_HOME             (or if not set, $HOME/.config)
+   $XDG_CONFIG_DIRS             (or if not set, /etc/xdg)
+   compile-time SYSCONFDIR      (defaults to /etc)
+   compile-time EXTRASYSCONFDIR (defaults to /etc)
+   $XDG_DATA_HOME               (or if not set, $HOME/.local/share)
+   $XDG_DATA_DIRS               (or if not set, /usr/local/share:/usr/share)
 ```
 
-The "XDG_..._HOME" default directories can be configured to be other directories
-at build time.
+The "XDG\_...\_DIRS" fallback directories can be configured to be other
+directories at build time, but this will result in non-compliance with
+the XDG Base Directory Specification.
 
 To each of these paths will be added a suffix to narrow down the search and
 prevent attempted loading of invalid content.
@@ -2239,11 +2243,13 @@ looking for only ICDs.
 An example combined search path for ICDs may look like this:
 
 ```
+    /home/me/.config/vulkan/icd.d
+    /etc/xdg/vulkan/icd.d
     /usr/local/etc/vulkan/icd.d
-    /usr/local/share/vulkan/icd.d
     /etc/vulkan/icd.d
+    /home/me/.local/share/vulkan/icd.d
+    /usr/local/share/vulkan/icd.d
     /usr/share/vulkan/icd.d
-    $HOME/.local/share/vulkan/icd.d
 ```
 
 <b>IMPORTANT NOTE!</b> Any path using $HOME is ignored for all suid programs for
@@ -2257,21 +2263,9 @@ details.
 
 #### ICD Discovery on macOS
 
-In order to find installed ICDs, the Vulkan loader will scan the files
-in the following directories:
-
-```
-   <bundle>/Contents/Resources
-   $XDG_CONFIG_HOME      (or if not defined $HOME/.config)
-   $XDG_CONFIG_DIRS
-   $SYSCONFDIR           (or if not defined /etc)
-   $EXTRASYSCONFDIR      (or ir not defined /etc)
-   $XDG_DATA_HOME        (or if not defined $HOME/.local/share)
-   $XDG_DATA_DIRS
-```
-
-The "XDG_..._HOME" default directories can be configured to be other directories
-at build time.
+In order to find installed ICDs, the Vulkan loader will scan the files in
+`<bundle>/Contents/Resources`, followed by the same directories used on Linux
+(see above).
 
 The typical usage of the directories is indicated in the table below.
 
@@ -2279,9 +2273,9 @@ The typical usage of the directories is indicated in the table below.
 |-------------------|------------------------|
 | &lt;bundle&gt;/Contents/Resources/vulkan/icd.d | Directory for ICDs that are bundled with the application (searched first) |
 | "/etc/vulkan/icd.d" | Location of ICDs installed manually |
+| $HOME/.local/share/vulkan/icd.d | $HOME is the current home directory of the application's user id; this path will be ignored for suid programs |
 | "/usr/local/share/vulkan/icd.d" | Directory for locally built ICDs |
 | "/usr/share/vulkan/icd.d" | Location of ICDs installed from packages |
-| $HOME/.local/share/vulkan/icd.d | $HOME is the current home directory of the application's user id; this path will be ignored for suid programs |
 
 The Vulkan loader will open each manifest file found to obtain the name or
 pathname of an ICD shared library (".dylib") file.
