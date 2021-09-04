@@ -120,6 +120,7 @@ set(NORMAL_LOADER_SRCS
     debug_utils.c
     debug_utils.h
     extension_manual.c
+    gpa_helper.c
     gpa_helper.h
     loader_common.h
     loader.c
