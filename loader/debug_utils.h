@@ -25,7 +25,7 @@
 #pragma once
 
 #include "vk_loader_platform.h"
-#include "loader.h"
+#include "loader_common.h"
 
 // General utilities
 

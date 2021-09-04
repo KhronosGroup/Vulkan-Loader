@@ -38,6 +38,7 @@
 #include "debug_utils.h"
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
+#include "loader.h"
 
 // VK_EXT_debug_report related items
 
