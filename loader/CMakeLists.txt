@@ -114,21 +114,22 @@ if(WIN32)
 endif()
 
 set(NORMAL_LOADER_SRCS
-    extension_manual.c
-    loader.c
-    loader.h
-    vk_loader_platform.h
-    vk_loader_layer.h
-    trampoline.c
-    wsi.c
-    wsi.h
-    debug_utils.c
-    debug_utils.h
-    gpa_helper.h
     cJSON.c
     cJSON.h
+    debug_utils.c
+    debug_utils.h
+    extension_manual.c
+    gpa_helper.h
+    loader.c
+    loader.h
     murmurhash.c
-    murmurhash.h)
+    murmurhash.h
+    trampoline.c
+    vk_loader_layer.h
+    vk_loader_platform.h
+    wsi.c
+    wsi.h
+    )
 
 if(WIN32)
     set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} adapters.h)
