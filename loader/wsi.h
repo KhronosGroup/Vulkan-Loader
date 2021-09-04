@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include "vk_loader_platform.h"
 #include "loader_common.h"
 
 typedef struct {

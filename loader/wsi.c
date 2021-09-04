@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "vk_loader_platform.h"
+#include "allocation.h"
 #include "loader.h"
 #include "wsi.h"
 #include <vulkan/vk_icd.h>

@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "vk_loader_platform.h"
+#include "allocation.h"
 #include "loader.h"
 #include "debug_utils.h"
 #include "wsi.h"

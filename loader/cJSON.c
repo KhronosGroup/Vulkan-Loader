@@ -35,7 +35,7 @@
 #include <ctype.h>
 #include "cJSON.h"
 
-#include "loader.h"
+#include "allocation.h"
 
 void *cJSON_malloc(const struct loader_instance *instance, size_t size) {
     return loader_instance_heap_alloc(instance, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);

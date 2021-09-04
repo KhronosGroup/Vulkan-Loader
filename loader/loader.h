@@ -75,16 +75,6 @@ struct loader_msg_callback_map_entry {
     VkDebugReportCallbackEXT loader_obj;
 };
 
-// Helper function definitions
-void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocationScope);
-void loader_instance_heap_free(const struct loader_instance *instance, void *pMemory);
-void *loader_instance_heap_realloc(const struct loader_instance *instance, void *pMemory, size_t orig_size, size_t size,
-                                   VkSystemAllocationScope alloc_scope);
-void *loader_device_heap_alloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocationScope);
-void loader_device_heap_free(const struct loader_device *device, void *pMemory);
-void *loader_device_heap_realloc(const struct loader_device *device, void *pMemory, size_t orig_size, size_t size,
-                                 VkSystemAllocationScope alloc_scope);
-
 void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...);
 
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2);

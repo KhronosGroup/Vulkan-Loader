@@ -115,6 +115,8 @@ if(WIN32)
 endif()
 
 set(NORMAL_LOADER_SRCS
+    allocation.c
+    allocation.h
     cJSON.c
     cJSON.h
     debug_utils.c
