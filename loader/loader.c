@@ -104,8 +104,6 @@ static PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 #define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
 
 struct loader_struct loader = {0};
-// TLS for instance for alloc/free callbacks
-THREAD_LOCAL_DECL struct loader_instance *tls_instance;
 
 static size_t loader_platform_combine_path(char *dest, size_t len, ...);
 
@@ -190,12 +188,6 @@ void *loader_instance_heap_realloc(const struct loader_instance *instance, void 
     }
     return pNewMem;
 }
-
-void *loader_instance_tls_heap_alloc(size_t size) {
-    return loader_instance_heap_alloc(tls_instance, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-}
-
-void loader_instance_tls_heap_free(void *pMemory) { loader_instance_heap_free(tls_instance, pMemory); }
 
 void *loader_device_heap_alloc(const struct loader_device *device, size_t size, VkSystemAllocationScope alloc_scope) {
     void *pMemory = NULL;
@@ -7805,7 +7797,7 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
     uint32_t copy_size;
     VkResult res = VK_SUCCESS;
 
-    // tls_instance = NULL;
+
     memset(&local_ext_list, 0, sizeof(local_ext_list));
     memset(&instance_layers, 0, sizeof(instance_layers));
 
@@ -7889,7 +7881,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(const
                                                                            VkLayerProperties *pProperties) {
     VkResult result = VK_SUCCESS;
     struct loader_layer_list instance_layer_list;
-    tls_instance = NULL;
 
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
