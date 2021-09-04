@@ -19,8 +19,7 @@
  *
  */
 
-#ifndef WSI_H
-#define WSI_H
+#pragma once
 
 #include "vk_loader_platform.h"
 #include "loader.h"
@@ -231,5 +230,3 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
                                                                               const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                                               uint32_t *pSurfaceFormatCount,
                                                                               VkSurfaceFormat2KHR *pSurfaceFormats);
-
-#endif  // WSI_H

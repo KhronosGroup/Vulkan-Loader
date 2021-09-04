@@ -19,6 +19,8 @@
  * Author: Jon Ashburn <jon@lunarg.com>
  */
 
+#pragma once
+
 #include <string.h>
 #include "debug_utils.h"
 #include "wsi.h"

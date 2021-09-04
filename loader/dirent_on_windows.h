@@ -1,5 +1,4 @@
-#ifndef DIRENT_INCLUDED
-#define DIRENT_INCLUDED
+#pragma once
 
 /*
 
@@ -46,6 +45,4 @@ void rewinddir(DIR *);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
