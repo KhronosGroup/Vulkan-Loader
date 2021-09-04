@@ -22,6 +22,7 @@
  * Author: Courtney Goeltzenleuchter <courtney@LunarG.com>
  * Author: Mark Young <marky@lunarg.com>
  * Author: Lenny Komow <lenny@lunarg.com>
+ * Author: Charles Giessen <charles@lunarg.com>
  *
  */
 
