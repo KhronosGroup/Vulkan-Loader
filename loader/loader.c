@@ -248,6 +248,24 @@ void *loader_device_heap_realloc(const struct loader_device *device, void *pMemo
     return pNewMem;
 }
 
+// Wrapper around opendir so that the dirent_on_windows gets the instance it needs
+// while linux opendir & readdir does not
+DIR *loader_opendir(const struct loader_instance *instance, const char *name) {
+#if defined(_WIN32)
+    return opendir(instance, name);
+#else  // _WIN32
+    return opendir(name);
+
+#endif  // _WIN32
+}
+int loader_closedir(const struct loader_instance *instance, DIR *dir) {
+#if defined(_WIN32)
+    return closedir(instance, dir);
+#else   // _WIN32
+    return closedir(dir);
+#endif  // _WIN32
+}
+
 // Environment variables
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
 
@@ -3772,7 +3790,7 @@ static VkResult add_data_files_in_path(const struct loader_instance *inst, char 
 
         // Get the next name in the list and verify it's valid
         if (is_directory_list) {
-            dir_stream = opendir(cur_file);
+            dir_stream = loader_opendir(inst, cur_file);
             if (NULL == dir_stream) {
                 continue;
             }
@@ -3797,7 +3815,7 @@ static VkResult add_data_files_in_path(const struct loader_instance *inst, char 
                     break;
                 }
             }
-            closedir(dir_stream);
+            loader_closedir(inst, dir_stream);
             if (vk_result != VK_SUCCESS) {
                 goto out;
             }

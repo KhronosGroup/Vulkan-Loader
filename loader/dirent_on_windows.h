@@ -20,8 +20,9 @@ struct dirent {
     char *d_name;
 };
 
-DIR *opendir(const char *);
-int closedir(DIR *);
+// pass in loader_instance to allow allocation callback usage
+DIR *opendir(const struct loader_instance *instance, const char *);
+int closedir(const struct loader_instance *instance, DIR *);
 struct dirent *readdir(DIR *);
 void rewinddir(DIR *);
 
