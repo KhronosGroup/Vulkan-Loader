@@ -28,7 +28,7 @@ struct DIR {
     char *name;           /* null-terminated char string */
 };
 
-DIR *opendir(const char *name) {
+DIR *opendir(const struct loader_instance *instance, const char *name) {
     DIR *dir = 0;
 
     if (name && name[0]) {
@@ -36,21 +36,22 @@ DIR *opendir(const char *name) {
         const char *all = /* search pattern must end with suitable wildcard */
             strchr("/\\", name[base_length - 1]) ? "*" : "/*";
 
-        if ((dir = (DIR *)loader_instance_tls_heap_alloc(sizeof *dir)) != 0 &&
-            (dir->name = (char *)loader_instance_tls_heap_alloc(base_length + strlen(all) + 1)) != 0) {
+        if ((dir = (DIR *)loader_instance_heap_alloc(instance, sizeof *dir, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0 &&
+            (dir->name = (char *)loader_instance_heap_alloc(instance, base_length + strlen(all) + 1,
+                                                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0) {
             strcat(strcpy(dir->name, name), all);
 
             if ((dir->handle = (handle_type)_findfirst(dir->name, &dir->info)) != -1) {
                 dir->result.d_name = 0;
             } else /* rollback */
             {
-                loader_instance_tls_heap_free(dir->name);
-                loader_instance_tls_heap_free(dir);
+                loader_instance_heap_free(instance, dir->name);
+                loader_instance_heap_free(instance, dir);
                 dir = 0;
             }
         } else /* rollback */
         {
-            loader_instance_tls_heap_free(dir);
+            loader_instance_heap_free(instance, dir);
             dir = 0;
             errno = ENOMEM;
         }
@@ -61,7 +62,7 @@ DIR *opendir(const char *name) {
     return dir;
 }
 
-int closedir(DIR *dir) {
+int closedir(const struct loader_instance *instance, DIR *dir) {
     int result = -1;
 
     if (dir) {
@@ -69,8 +70,8 @@ int closedir(DIR *dir) {
             result = _findclose(dir->handle);
         }
 
-        loader_instance_tls_heap_free(dir->name);
-        loader_instance_tls_heap_free(dir);
+        loader_instance_heap_free(instance, dir->name);
+        loader_instance_heap_free(instance, dir);
     }
 
     if (result == -1) /* map all errors to EBADF */
