@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2015-18, 2020 The Khronos Group Inc.
- * Copyright (c) 2015-18, 2020 Valve Corporation
- * Copyright (c) 2015-18, 2020 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
  * limitations under the License.
  *
  * Author: Jon Ashburn <jon@lunarg.com>
+ * Author: Charles Giessen <charles@lunarg.com>
  */
 
 #pragma once

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017 The Khronos Group Inc.
- * Copyright (c) 2017 Valve Corporation
- * Copyright (c) 2017 LunarG, Inc.
+ * Copyright (c) 2017-2021 The Khronos Group Inc.
+ * Copyright (c) 2017-2021 Valve Corporation
+ * Copyright (c) 2017-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
  *
  * Author Jon Ashburn <jon@lunarg.com>
  * Author: Lenny Komow <lenny@lunarg.com>
+ * Author: Charles Giessen <charles@lunarg.com>
  */
 
  // This code is used to pass on physical device extensions through the call chain. It must do this without creating a stack frame,
