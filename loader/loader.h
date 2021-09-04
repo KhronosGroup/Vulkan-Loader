@@ -27,8 +27,7 @@
  *
  */
 
-#ifndef LOADER_H
-#define LOADER_H
+#pragma once
 
 #include <vulkan/vulkan.h>
 #include "vk_loader_platform.h"
@@ -559,5 +558,3 @@ VkResult setup_loader_tramp_phys_devs(VkInstance instance);
 VkResult setup_loader_term_phys_devs(struct loader_instance *inst);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
-
-#endif  // LOADER_H

@@ -27,8 +27,7 @@
  * USE OR OTHER DEALINGS IN THE MATERIALS.
  */
 
-#ifndef MURMURHASH_H
-#define MURMURHASH_H 1
+#pragma once
 
 #include <stdint.h>
 
@@ -47,6 +46,4 @@ uint32_t murmurhash(const char *key, size_t len, uint32_t seed);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
