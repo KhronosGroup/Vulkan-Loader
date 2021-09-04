@@ -98,7 +98,6 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDev
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName,
                                                                                     uint32_t *pPropertyCount,
                                                                                     VkExtensionProperties *pProperties) {
-    tls_instance = NULL;
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
     // We know we need to call at least the terminator
@@ -192,7 +191,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *pPropertyCount,
                                                                                 VkLayerProperties *pProperties) {
-    tls_instance = NULL;
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
     // We know we need to call at least the terminator
@@ -285,7 +283,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t *pApiVersion) {
-    tls_instance = NULL;
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
     // We know we need to call at least the terminator
@@ -402,7 +399,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         goto out;
     }
 
-    tls_instance = ptr_instance;
     loader_platform_thread_lock_mutex(&loader_lock);
     loaderLocked = true;
     memset(ptr_instance, 0, sizeof(struct loader_instance));

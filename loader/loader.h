@@ -66,7 +66,6 @@ static inline void loader_init_dispatch(void *obj, const void *data) {
 
 // Global variables used across files
 extern struct loader_struct loader;
-extern THREAD_LOCAL_DECL struct loader_instance *tls_instance;
 extern loader_platform_thread_mutex loader_lock;
 extern loader_platform_thread_mutex loader_json_lock;
 extern loader_platform_thread_mutex loader_preload_icd_lock;
@@ -81,8 +80,6 @@ void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t 
 void loader_instance_heap_free(const struct loader_instance *instance, void *pMemory);
 void *loader_instance_heap_realloc(const struct loader_instance *instance, void *pMemory, size_t orig_size, size_t size,
                                    VkSystemAllocationScope alloc_scope);
-void *loader_instance_tls_heap_alloc(size_t size);
-void loader_instance_tls_heap_free(void *pMemory);
 void *loader_device_heap_alloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocationScope);
 void loader_device_heap_free(const struct loader_device *device, void *pMemory);
 void *loader_device_heap_realloc(const struct loader_device *device, void *pMemory, size_t orig_size, size_t size,
