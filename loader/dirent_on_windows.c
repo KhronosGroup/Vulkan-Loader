@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "vk_loader_platform.h"
+
+#include "allocation.h"
 #include "loader.h"
 
 #ifdef __cplusplus
