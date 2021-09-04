@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "loader_common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,86 +62,78 @@ typedef struct cJSON {
                      in the list of subitems of an object. */
 } cJSON;
 
-typedef struct cJSON_Hooks {
-    void *(*malloc_fn)(size_t sz);
-    void (*free_fn)(void *ptr);
-} cJSON_Hooks;
-
-/* Supply malloc, realloc and free functions to cJSON */
-extern void cJSON_InitHooks(cJSON_Hooks *hooks);
-
 /* Supply a block of JSON, and this returns a cJSON object you can interrogate.
  * Call cJSON_Delete when finished. */
-extern cJSON *cJSON_Parse(const char *value);
+cJSON *cJSON_Parse(const struct loader_instance *instance, const char *value);
 /* Render a cJSON entity to text for transfer/storage. Free the char* when
  * finished. */
-extern char *cJSON_Print(cJSON *item);
+char *cJSON_Print(const struct loader_instance *instance, cJSON *item);
 /* Render a cJSON entity to text for transfer/storage without any formatting.
  * Free the char* when finished. */
-extern char *cJSON_PrintUnformatted(cJSON *item);
+char *cJSON_PrintUnformatted(const struct loader_instance *instance, cJSON *item);
 /* Render a cJSON entity to text using a buffered strategy. prebuffer is a guess
  * at the final size. guessing well reduces reallocation. fmt=0 gives
  * unformatted, =1 gives formatted */
-extern char *cJSON_PrintBuffered(cJSON *item, int prebuffer, int fmt);
+char *cJSON_PrintBuffered(const struct loader_instance *instance, cJSON *item, int prebuffer, int fmt);
 /* Delete a cJSON entity and all subentities. */
-extern void cJSON_Delete(cJSON *c);
+void cJSON_Delete(const struct loader_instance *instance, cJSON *c);
 /* Delete an item allocated inside the JSON parser*/
-extern void cJSON_Free(void *p);
+void cJSON_Free(const struct loader_instance *instance, void *p);
 
 /* Returns the number of items in an array (or object). */
-extern int cJSON_GetArraySize(cJSON *array);
+int cJSON_GetArraySize(cJSON *array);
 /* Retrieve item number "item" from array "array". Returns NULL if unsuccessful.
  */
-extern cJSON *cJSON_GetArrayItem(cJSON *array, int item);
+cJSON *cJSON_GetArrayItem(cJSON *array, int item);
 /* Get item "string" from object. Case insensitive. */
-extern cJSON *cJSON_GetObjectItem(cJSON *object, const char *string);
+cJSON *cJSON_GetObjectItem(cJSON *object, const char *string);
 
 /* For analysing failed parses. This returns a pointer to the parse error.
  * You'll probably need to look a few chars back to make sense of it. Defined
  * when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
-extern const char *cJSON_GetErrorPtr(void);
+const char *cJSON_GetErrorPtr(void);
 
 /* These calls create a cJSON item of the appropriate type. */
-extern cJSON *cJSON_CreateNull(void);
-extern cJSON *cJSON_CreateTrue(void);
-extern cJSON *cJSON_CreateFalse(void);
-extern cJSON *cJSON_CreateBool(int b);
-extern cJSON *cJSON_CreateNumber(double num);
-extern cJSON *cJSON_CreateString(const char *string);
-extern cJSON *cJSON_CreateArray(void);
-extern cJSON *cJSON_CreateObject(void);
+cJSON *cJSON_CreateNull(const struct loader_instance *instance);
+cJSON *cJSON_CreateTrue(const struct loader_instance *instance);
+cJSON *cJSON_CreateFalse(const struct loader_instance *instance);
+cJSON *cJSON_CreateBool(const struct loader_instance *instance, int b);
+cJSON *cJSON_CreateNumber(const struct loader_instance *instance, double num);
+cJSON *cJSON_CreateString(const struct loader_instance *instance, const char *string);
+cJSON *cJSON_CreateArray(const struct loader_instance *instance);
+cJSON *cJSON_CreateObject(const struct loader_instance *instance);
 
 /* These utilities create an Array of count items. */
-extern cJSON *cJSON_CreateIntArray(const int *numbers, int count);
-extern cJSON *cJSON_CreateFloatArray(const float *numbers, int count);
-extern cJSON *cJSON_CreateDoubleArray(const double *numbers, int count);
-extern cJSON *cJSON_CreateStringArray(const char **strings, int count);
+cJSON *cJSON_CreateIntArray(const struct loader_instance *instance, const int *numbers, int count);
+cJSON *cJSON_CreateFloatArray(const struct loader_instance *instance, const float *numbers, int count);
+cJSON *cJSON_CreateDoubleArray(const struct loader_instance *instance, const double *numbers, int count);
+cJSON *cJSON_CreateStringArray(const struct loader_instance *instance, const char **strings, int count);
 
 /* Append item to the specified array/object. */
-extern void cJSON_AddItemToArray(cJSON *array, cJSON *item);
-extern void cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
+void cJSON_AddItemToArray(cJSON *array, cJSON *item);
+void cJSON_AddItemToObject(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *item);
 /* Use this when string is definitely const  (i.e. a literal, or as good as), and
  * will definitely survive the cJSON object */
-extern void cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
+void cJSON_AddItemToObjectCS(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *item);
 /* Append reference to item to the specified array/object. Use this when you
  * want to add an existing cJSON to a new cJSON, but don't want to corrupt your
  * existing cJSON. */
-extern void cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
-extern void cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item);
+void cJSON_AddItemReferenceToArray(const struct loader_instance *instance, cJSON *array, cJSON *item);
+void cJSON_AddItemReferenceToObject(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *item);
 
 /* Remove/Detatch items from Arrays/Objects. */
-extern cJSON *cJSON_DetachItemFromArray(cJSON *array, int which);
-extern void cJSON_DeleteItemFromArray(cJSON *array, int which);
-extern cJSON *cJSON_DetachItemFromObject(cJSON *object, const char *string);
-extern void cJSON_DeleteItemFromObject(cJSON *object, const char *string);
+cJSON *cJSON_DetachItemFromArray(cJSON *array, int which);
+void cJSON_DeleteItemFromArray(const struct loader_instance *instance, cJSON *array, int which);
+cJSON *cJSON_DetachItemFromObject(cJSON *object, const char *string);
+void cJSON_DeleteItemFromObject(const struct loader_instance *instance, cJSON *object, const char *string);
 
 /* Update array items. */
-extern void cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem); /* Shifts pre-existing items to the right. */
-extern void cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
-extern void cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem);
+void cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem); /* Shifts pre-existing items to the right. */
+void cJSON_ReplaceItemInArray(const struct loader_instance *instance, cJSON *array, int which, cJSON *newitem);
+void cJSON_ReplaceItemInObject(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *newitem);
 
 /* Duplicate a cJSON item */
-extern cJSON *cJSON_Duplicate(cJSON *item, int recurse);
+cJSON *cJSON_Duplicate(const struct loader_instance *instance, cJSON *item, int recurse);
 /* Duplicate will create a new, identical cJSON item to the one you pass, in new
 memory that will
 need to be released. With recurse!=0, it will duplicate any children connected
@@ -148,9 +142,10 @@ The item->next and ->prev pointers are always zero on return from Duplicate. */
 
 /* ParseWithOpts allows you to require (and check) that the JSON is null
  * terminated, and to retrieve the pointer to the final byte parsed. */
-extern cJSON *cJSON_ParseWithOpts(const char *value, const char **return_parse_end, int require_null_terminated);
+cJSON *cJSON_ParseWithOpts(const struct loader_instance *instance, const char *value, const char **return_parse_end,
+                           int require_null_terminated);
 
-extern void cJSON_Minify(char *json);
+void cJSON_Minify(char *json);
 
 /* Macros for creating things quickly. */
 #define cJSON_AddNullToObject(object, name) cJSON_AddItemToObject(object, name, cJSON_CreateNull())
