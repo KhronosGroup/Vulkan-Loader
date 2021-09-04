@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@
  * Author: Jon Ashburn <jon@lunarg.com>
  * Author: Tony Barbour <tony@LunarG.com>
  * Author: Chia-I Wu <olv@lunarg.com>
+ * Author: Charles Giessen <charles@lunarg.com>
  */
 
 #ifndef _GNU_SOURCE

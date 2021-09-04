@@ -28,9 +28,9 @@ void rewinddir(DIR *);
 /*
 
     Copyright Kevlin Henney, 1997, 2003. All rights reserved.
-    Copyright (c) 2015 The Khronos Group Inc.
-    Copyright (c) 2015 Valve Corporation
-    Copyright (c) 2015 LunarG, Inc.
+    Copyright (c) 2015-2021 The Khronos Group Inc.
+    Copyright (c) 2015-2021 Valve Corporation
+    Copyright (c) 2015-2021 LunarG, Inc.
 
     Permission to use, copy, modify, and distribute this software and its
     documentation for any purpose is hereby granted without fee, provided
