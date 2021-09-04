@@ -121,6 +121,7 @@ set(NORMAL_LOADER_SRCS
     debug_utils.h
     extension_manual.c
     gpa_helper.h
+    loader_common.h
     loader.c
     loader.h
     murmurhash.c
