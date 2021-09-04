@@ -23,6 +23,7 @@
  * Author: Chia-I Wu <olv@lunarg.com>
  * Author: Mark Lobodzinski <mark@LunarG.com>
  * Author: Lenny Komow <lenny@lunarg.com>
+ * Author: Charles Giessen <charles@lunarg.com>
  *
  */
 
