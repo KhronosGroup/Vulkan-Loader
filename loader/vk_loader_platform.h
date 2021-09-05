@@ -33,16 +33,12 @@
 #include "dlopen_fuchsia.h"
 #endif  // defined(__Fuchsia__)
 
-#include "vulkan/vk_platform.h"
-#include "vulkan/vk_sdk_platform.h"
-
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
-/* Linux-specific common code: */
+// Used for alloca() and secure_getenv()
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
-// Headers:
-//#ifndef _GNU_SOURCE
-//#define _GNU_SOURCE 1
-//#endif
 #include <unistd.h>
 // Note: The following file is for dynamic loading:
 #include <dlfcn.h>
@@ -52,6 +48,65 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <libgen.h>
+
+#elif defined(_WIN32)  // defined(__linux__)
+/* Windows-specific common code: */
+// WinBase.h defines CreateSemaphore and synchapi.h defines CreateEvent
+//  undefine them to avoid conflicts with VkLayerDispatchTable struct members.
+#ifdef CreateSemaphore
+#undef CreateSemaphore
+#endif
+#ifdef CreateEvent
+#undef CreateEvent
+#endif
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include <io.h>
+#include <stdbool.h>
+#include <shlwapi.h>
+#include <direct.h>
+#endif  // defined(_WIN32)
+
+#include "vulkan/vk_platform.h"
+#include "vulkan/vk_sdk_platform.h"
+
+#include <vulkan/vulkan.h>
+#include <vulkan/vk_layer.h>
+#include <vulkan/vk_icd.h>
+#include <assert.h>
+#include "vk_loader_layer.h"
+#include "vk_layer_dispatch_table.h"
+#include "vk_loader_extensions.h"
+
+#if defined(__GNUC__) && __GNUC__ >= 4
+#define LOADER_EXPORT __attribute__((visibility("default")))
+#elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590)
+#define LOADER_EXPORT __attribute__((visibility("default")))
+#else
+#define LOADER_EXPORT
+#endif
+
+// A debug option to disable allocators at compile time to investigate future issues.
+#define DEBUG_DISABLE_APP_ALLOCATORS 0
+
+#define MAX_STRING_SIZE 1024
+
+// This is defined in vk_layer.h, but if there's problems we need to create the define
+// here.
+#ifndef MAX_NUM_UNKNOWN_EXTS
+#define MAX_NUM_UNKNOWN_EXTS 250
+#endif
+
+// Environment Variable information
+#define VK_ICD_FILENAMES_ENV_VAR "VK_ICD_FILENAMES"
+#define VK_LAYER_PATH_ENV_VAR "VK_LAYER_PATH"
+
+// Override layer information
+#define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
+
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
+/* Linux-specific common code: */
 
 // VK Library Filenames, Paths, etc.:
 #define PATH_SEPARATOR ':'
@@ -224,22 +279,6 @@ static inline void loader_platform_thread_cond_broadcast(loader_platform_thread_
 #define loader_stack_alloc(size) alloca(size)
 
 #elif defined(_WIN32)  // defined(__linux__)
-/* Windows-specific common code: */
-// WinBase.h defines CreateSemaphore and synchapi.h defines CreateEvent
-//  undefine them to avoid conflicts with VkLayerDispatchTable struct members.
-#ifdef CreateSemaphore
-#undef CreateSemaphore
-#endif
-#ifdef CreateEvent
-#undef CreateEvent
-#endif
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <io.h>
-#include <stdbool.h>
-#include <shlwapi.h>
-#include <direct.h>
 
 // VK Library Filenames, Paths, etc.:
 #define PATH_SEPARATOR ';'
