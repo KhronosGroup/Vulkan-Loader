@@ -2031,12 +2031,6 @@ void loader_initialize(void) {
 #endif
 }
 
-struct loader_data_files {
-    uint32_t count;
-    uint32_t alloc_count;
-    char **filename_list;
-};
-
 void loader_release() {
     // Guarantee release of the preloaded ICD libraries. This may have already been called in vkDestroyInstance.
     loader_unload_preloaded_icds();
@@ -2071,6 +2065,35 @@ void loader_unload_preloaded_icds(void) {
     loader_scanned_icd_clear(NULL, &scanned_icds);
     loader_platform_thread_unlock_mutex(&loader_preload_icd_lock);
 }
+
+#if defined(_WIN32)
+BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
+    switch (reason) {
+        case DLL_PROCESS_ATTACH:
+            loader_initialize();
+            break;
+        case DLL_PROCESS_DETACH:
+            if (NULL == reserved) {
+                loader_release();
+            }
+            break;
+        default:
+            // Do nothing
+            break;
+    }
+    return TRUE;
+}
+#elif !defined(_WIN32)
+__attribute__((constructor)) void loader_init_library() { loader_initialize(); }
+
+__attribute__((destructor)) void loader_free_library() { loader_release(); }
+#endif
+
+struct loader_data_files {
+    uint32_t count;
+    uint32_t alloc_count;
+    char **filename_list;
+};
 
 // Get next file or dirname given a string list or registry key path
 //
@@ -7475,29 +7498,6 @@ out:
     loader_delete_layer_list_and_properties(NULL, &instance_layer_list);
     return result;
 }
-
-#if defined(_WIN32)
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            loader_initialize();
-            break;
-        case DLL_PROCESS_DETACH:
-            if (NULL == reserved) {
-                loader_release();
-            }
-            break;
-        default:
-            // Do nothing
-            break;
-    }
-    return TRUE;
-}
-#elif !defined(_WIN32)
-__attribute__((constructor)) void loader_init_library() { loader_initialize(); }
-
-__attribute__((destructor)) void loader_free_library() { loader_release(); }
-#endif
 
 // ---- Vulkan Core 1.1 terminators
 
