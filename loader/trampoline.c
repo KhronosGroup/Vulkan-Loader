@@ -27,14 +27,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vk_loader_platform.h"
 #include "allocation.h"
-#include "loader.h"
 #include "debug_utils.h"
-#include "wsi.h"
+#include "gpa_helper.h"
+#include "loader.h"
 #include "log.h"
 #include "vk_loader_extensions.h"
-#include "gpa_helper.h"
+#include "vk_loader_platform.h"
+#include "wsi.h"
 
 // Trampoline entrypoints are in this file for core Vulkan commands
 

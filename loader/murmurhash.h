@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define MURMURHASH_VERSION "0.0.3"

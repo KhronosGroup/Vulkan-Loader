@@ -54,17 +54,19 @@
 #else  // _WIN32
 #include <dirent.h>
 #endif  // _WIN32
-#include "vk_loader_platform.h"
-#include "allocation.h"
-#include "loader.h"
-#include "gpa_helper.h"
-#include "debug_utils.h"
-#include "wsi.h"
-#include "log.h"
-#include "get_environment.h"
+
 #include "vulkan/vk_icd.h"
+
+#include "allocation.h"
 #include "cJSON.h"
+#include "debug_utils.h"
+#include "get_environment.h"
+#include "gpa_helper.h"
+#include "loader.h"
+#include "log.h"
 #include "murmurhash.h"
+#include "vk_loader_platform.h"
+#include "wsi.h"
 
 #if defined(_WIN32)
 #include <cfgmgr32.h>

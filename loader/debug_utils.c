@@ -23,21 +23,22 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #ifndef WIN32
 #include <signal.h>
 #else
 #endif
-#include "vk_loader_platform.h"
-#include "debug_utils.h"
+
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
 
 #include "allocation.h"
+#include "debug_utils.h"
 #include "loader.h"
+#include "vk_loader_platform.h"
 
 // VK_EXT_debug_report related items
 

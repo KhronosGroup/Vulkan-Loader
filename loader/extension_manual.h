@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <vulkan/vulkan.h>
+
 // ---- Manually added trampoline/terminator functions
 
 // These functions, for whatever reason, require more complex changes than
