@@ -26,8 +26,9 @@
 // attempts to accomplish this by relying on tail-call optimizations, but there is no guarantee that this will work. As a result,
 // this code is only compiled on systems where an assembly alternative has not been written.
 
- #include "vk_loader_platform.h"
  #include "loader.h"
+ #include "log.h"
+ #include "vk_loader_platform.h"
 
  #if defined(__GNUC__) && !defined(__clang__)
  #pragma GCC optimize(3)  // force gcc to use tail-calls

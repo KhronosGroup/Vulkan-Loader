@@ -122,11 +122,15 @@ set(NORMAL_LOADER_SRCS
     debug_utils.c
     debug_utils.h
     extension_manual.c
+    get_environment.c
+    get_environment.h
     gpa_helper.c
     gpa_helper.h
     loader_common.h
     loader.c
     loader.h
+    log.c
+    log.h
     murmurhash.c
     murmurhash.h
     trampoline.c

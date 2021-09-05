@@ -60,6 +60,8 @@
 #include "gpa_helper.h"
 #include "debug_utils.h"
 #include "wsi.h"
+#include "log.h"
+#include "get_environment.h"
 #include "vulkan/vk_icd.h"
 #include "cJSON.h"
 #include "murmurhash.h"
@@ -104,8 +106,6 @@ struct loader_phys_dev_per_icd {
     struct loader_icd_term *this_icd_term;
 };
 
-uint32_t g_loader_debug = 0;
-
 enum loader_data_files_type {
     LOADER_DATA_FILE_MANIFEST_ICD = 0,
     LOADER_DATA_FILE_MANIFEST_LAYER,
@@ -144,285 +144,6 @@ int loader_closedir(const struct loader_instance *instance, DIR *dir) {
 #else   // _WIN32
     return closedir(dir);
 #endif  // _WIN32
-}
-
-// Environment variables
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
-
-static inline bool is_high_integrity() { return geteuid() != getuid() || getegid() != getgid(); }
-
-static inline char *loader_getenv(const char *name, const struct loader_instance *inst) {
-    // No allocation of memory necessary for Linux, but we should at least touch
-    // the inst pointer to get rid of compiler warnings.
-    (void)inst;
-    return getenv(name);
-}
-
-static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
-#if defined(__APPLE__)
-    // Apple does not appear to have a secure getenv implementation.
-    // The main difference between secure getenv and getenv is that secure getenv
-    // returns NULL if the process is being run with elevated privileges by a normal user.
-    // The idea is to prevent the reading of malicious environment variables by a process
-    // that can do damage.
-    // This algorithm is derived from glibc code that sets an internal
-    // variable (__libc_enable_secure) if the process is running under setuid or setgid.
-    return is_high_integrity() ? NULL : loader_getenv(name, inst);
-#elif defined(__Fuchsia__)
-    return loader_getenv(name, inst);
-#else
-    // Linux
-    char *out;
-#if defined(HAVE_SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
-    (void)inst;
-    out = secure_getenv(name);
-#elif defined(HAVE___SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
-    (void)inst;
-    out = __secure_getenv(name);
-#else
-    out = loader_getenv(name, inst);
-#if !defined(USE_UNSAFE_FILE_SEARCH)
-    loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Loader is using non-secure environment variable lookup for %s", name);
-#endif
-#endif
-    return out;
-#endif
-}
-
-static inline void loader_free_getenv(char *val, const struct loader_instance *inst) {
-    // No freeing of memory necessary for Linux, but we should at least touch
-    // the val and inst pointers to get rid of compiler warnings.
-    (void)val;
-    (void)inst;
-}
-
-#elif defined(WIN32)
-
-static inline bool is_high_integrity() {
-    HANDLE process_token;
-    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_QUERY_SOURCE, &process_token)) {
-        // Maximum possible size of SID_AND_ATTRIBUTES is maximum size of a SID + size of attributes DWORD.
-        uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(DWORD)];
-        DWORD buffer_size;
-        if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
-                                &buffer_size) != 0) {
-            const TOKEN_MANDATORY_LABEL *mandatory_label = (const TOKEN_MANDATORY_LABEL *)mandatory_label_buffer;
-            const DWORD sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
-            const DWORD integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
-
-            CloseHandle(process_token);
-            return integrity_level > SECURITY_MANDATORY_MEDIUM_RID;
-        }
-
-        CloseHandle(process_token);
-    }
-
-    return false;
-}
-
-static inline char *loader_getenv(const char *name, const struct loader_instance *inst) {
-    char *retVal;
-    DWORD valSize;
-
-    valSize = GetEnvironmentVariableA(name, NULL, 0);
-
-    // valSize DOES include the null terminator, so for any set variable
-    // will always be at least 1. If it's 0, the variable wasn't set.
-    if (valSize == 0) return NULL;
-
-    // Allocate the space necessary for the registry entry
-    if (NULL != inst && NULL != inst->alloc_callbacks.pfnAllocation) {
-        retVal = (char *)inst->alloc_callbacks.pfnAllocation(inst->alloc_callbacks.pUserData, valSize, sizeof(char *),
-                                                             VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    } else {
-        retVal = (char *)malloc(valSize);
-    }
-
-    if (NULL != retVal) {
-        GetEnvironmentVariableA(name, retVal, valSize);
-    }
-
-    return retVal;
-}
-
-static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
-#if !defined(USE_UNSAFE_FILE_SEARCH)
-    if (is_high_integrity()) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                   "Loader is running with elevated permissions. Environment variable %s will be ignored", name);
-        return NULL;
-    }
-#endif
-
-    return loader_getenv(name, inst);
-}
-
-static inline void loader_free_getenv(char *val, const struct loader_instance *inst) {
-    if (NULL != inst && NULL != inst->alloc_callbacks.pfnFree) {
-        inst->alloc_callbacks.pfnFree(inst->alloc_callbacks.pUserData, val);
-    } else {
-        free((void *)val);
-    }
-}
-
-#else
-
-static inline char *loader_getenv(const char *name, const struct loader_instance *inst) {
-    // stub func
-    (void)inst;
-    (void)name;
-    return NULL;
-}
-static inline void loader_free_getenv(char *val, const struct loader_instance *inst) {
-    // stub func
-    (void)val;
-    (void)inst;
-}
-
-#endif
-
-void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
-    char msg[512];
-    char cmd_line_msg[512];
-    size_t cmd_line_size = sizeof(cmd_line_msg);
-    va_list ap;
-    int ret;
-
-    va_start(ap, format);
-    ret = vsnprintf(msg, sizeof(msg), format, ap);
-    if ((ret >= (int)sizeof(msg)) || ret < 0) {
-        msg[sizeof(msg) - 1] = '\0';
-    }
-    va_end(ap);
-
-    if (inst) {
-        VkDebugUtilsMessageSeverityFlagBitsEXT severity = 0;
-        VkDebugUtilsMessageTypeFlagsEXT type;
-        VkDebugUtilsMessengerCallbackDataEXT callback_data;
-        VkDebugUtilsObjectNameInfoEXT object_name;
-
-        if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0 || (msg_type & VULKAN_LOADER_LAYER_BIT) != 0 ||
-            (msg_type & VULKAN_LOADER_IMPLEMENTATION_BIT) != 0) {
-            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-        } else if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
-            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        } else if ((msg_type & VULKAN_LOADER_ERROR_BIT) != 0) {
-            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        } else if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
-            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-        }
-
-        if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
-            type = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        } else {
-            type = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-        }
-
-        callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
-        callback_data.pNext = NULL;
-        callback_data.flags = 0;
-        callback_data.pMessageIdName = "Loader Message";
-        callback_data.messageIdNumber = 0;
-        callback_data.pMessage = msg;
-        callback_data.queueLabelCount = 0;
-        callback_data.pQueueLabels = NULL;
-        callback_data.cmdBufLabelCount = 0;
-        callback_data.pCmdBufLabels = NULL;
-        callback_data.objectCount = 1;
-        callback_data.pObjects = &object_name;
-        object_name.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        object_name.pNext = NULL;
-        object_name.objectType = VK_OBJECT_TYPE_INSTANCE;
-        object_name.objectHandle = (uint64_t)(uintptr_t)inst;
-        object_name.pObjectName = NULL;
-
-        util_SubmitDebugUtilsMessageEXT(inst, severity, type, &callback_data);
-    }
-
-    if (!(msg_type & g_loader_debug)) {
-        return;
-    }
-
-    cmd_line_msg[0] = '\0';
-    cmd_line_size -= 1;
-    size_t original_size = cmd_line_size;
-
-    if ((msg_type & VULKAN_LOADER_ERROR_BIT) != 0) {
-        strncat(cmd_line_msg, "ERROR", cmd_line_size);
-        cmd_line_size -= 5;
-    }
-    if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "WARNING", cmd_line_size);
-        cmd_line_size -= 7;
-    }
-    if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "LAYER", cmd_line_size);
-        cmd_line_size -= 5;
-    }
-    if ((msg_type & VULKAN_LOADER_IMPLEMENTATION_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "IMPLEM", cmd_line_size);
-        cmd_line_size -= 6;
-    }
-    if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "PERF", cmd_line_size);
-        cmd_line_size -= 4;
-    }
-    if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "INFO", cmd_line_size);
-        cmd_line_size -= 4;
-    }
-    if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "DEBUG", cmd_line_size);
-        cmd_line_size -= 5;
-    }
-    if (cmd_line_size != original_size) {
-        strncat(cmd_line_msg, ": ", cmd_line_size);
-        cmd_line_size -= 2;
-    }
-
-    if (0 < cmd_line_size) {
-        // If the message is too long, trim it down
-        if (strlen(msg) > cmd_line_size) {
-            msg[cmd_line_size - 1] = '\0';
-        }
-        strncat(cmd_line_msg, msg, cmd_line_size);
-    } else {
-        // Shouldn't get here, but check to make sure if we've already overrun
-        // the string boundary
-        assert(false);
-    }
-
-#if defined(WIN32)
-    OutputDebugString(cmd_line_msg);
-    OutputDebugString("\n");
-#endif
-
-    fputs(cmd_line_msg, stderr);
-    fputc('\n', stderr);
 }
 
 // log error from to library loading
@@ -2280,53 +2001,6 @@ out:
     return res;
 }
 
-static void loader_debug_init(void) {
-    char *env, *orig;
-
-    if (g_loader_debug > 0) return;
-
-    g_loader_debug = 0;
-
-    // Parse comma-separated debug options
-    orig = env = loader_getenv("VK_LOADER_DEBUG", NULL);
-    while (env) {
-        char *p = strchr(env, ',');
-        size_t len;
-
-        if (p) {
-            len = p - env;
-        } else {
-            len = strlen(env);
-        }
-
-        if (len > 0) {
-            if (strncmp(env, "all", len) == 0) {
-                g_loader_debug = ~0u;
-            } else if (strncmp(env, "warn", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_WARN_BIT;
-            } else if (strncmp(env, "info", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_INFO_BIT;
-            } else if (strncmp(env, "perf", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_PERF_BIT;
-            } else if (strncmp(env, "error", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_ERROR_BIT;
-            } else if (strncmp(env, "debug", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_DEBUG_BIT;
-            } else if (strncmp(env, "layer", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_LAYER_BIT;
-            } else if (strncmp(env, "implem", len) == 0 || strncmp(env, "icd", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_IMPLEMENTATION_BIT;
-            }
-        }
-
-        if (!p) break;
-
-        env = p + 1;
-    }
-
-    loader_free_getenv(orig, NULL);
-}
-
 void loader_initialize(void) {
     // initialize mutexes
     loader_platform_thread_create_mutex(&loader_lock);
@@ -2634,7 +2308,7 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
                    "Meta-layer %s all %d component layers appear to be valid.", prop->info.layerName, prop->num_component_layers);
 
         // If layer logging is on, list the internals included in the meta-layer
-        if ((g_loader_debug & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
             for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names[comp_layer]);
             }
@@ -5998,7 +5672,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
-        if ((g_loader_debug & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "vkCreateInstance layer callstack setup to:");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Application>");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
@@ -6193,7 +5867,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
-        if ((g_loader_debug & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "vkCreateDevice layer callstack setup to:");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Application>");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");

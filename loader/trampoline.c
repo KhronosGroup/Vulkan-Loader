@@ -32,6 +32,7 @@
 #include "loader.h"
 #include "debug_utils.h"
 #include "wsi.h"
+#include "log.h"
 #include "vk_loader_extensions.h"
 #include "gpa_helper.h"
 

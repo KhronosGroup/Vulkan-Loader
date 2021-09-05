@@ -30,6 +30,7 @@
 #include "allocation.h"
 #include "loader.h"
 #include "wsi.h"
+#include "log.h"
 #include <vulkan/vk_icd.h>
 
 // The first ICD/Loader interface that support querying the SurfaceKHR from
