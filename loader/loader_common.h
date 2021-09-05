@@ -29,33 +29,7 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include "vk_loader_platform.h"
-#include "vk_loader_layer.h"
-#include <vulkan/vk_layer.h>
-#include <vulkan/vk_icd.h>
-#include <assert.h>
-#include "vk_layer_dispatch_table.h"
-#include "vk_loader_extensions.h"
-
-#if defined(__GNUC__) && __GNUC__ >= 4
-#define LOADER_EXPORT __attribute__((visibility("default")))
-#elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590)
-#define LOADER_EXPORT __attribute__((visibility("default")))
-#else
-#define LOADER_EXPORT
-#endif
-
-// A debug option to disable allocators at compile time to investigate future issues.
-#define DEBUG_DISABLE_APP_ALLOCATORS 0
-
-#define MAX_STRING_SIZE 1024
-
-// This is defined in vk_layer.h, but if there's problems we need to create the define
-// here.
-#ifndef MAX_NUM_UNKNOWN_EXTS
-#define MAX_NUM_UNKNOWN_EXTS 250
-#endif
 
 enum vulkan_loader_debug_flags {
     VULKAN_LOADER_INFO_BIT = 0x01,
