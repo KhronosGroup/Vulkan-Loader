@@ -27,10 +27,11 @@
  * USE OR OTHER DEALINGS IN THE MATERIALS.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 #include "murmurhash.h"
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 uint32_t murmurhash(const char *key, size_t len, uint32_t seed) {
     uint32_t c1 = 0xcc9e2d51;

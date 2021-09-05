@@ -25,13 +25,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include "vk_loader_platform.h"
+
+#include <vulkan/vk_icd.h>
+
 #include "allocation.h"
 #include "loader.h"
-#include "wsi.h"
 #include "log.h"
-#include <vulkan/vk_icd.h>
+#include "vk_loader_platform.h"
+#include "wsi.h"
 
 // The first ICD/Loader interface that support querying the SurfaceKHR from
 // the ICDs.

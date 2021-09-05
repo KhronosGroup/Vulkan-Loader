@@ -20,16 +20,20 @@
  * Author: Charles Giessen <charles@lunarg.com>
  */
 
+#include "extension_manual.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vk_loader_platform.h"
-#include "loader.h"
-#include "vk_loader_extensions.h"
+
 #include <vulkan/vk_icd.h>
-#include "wsi.h"
-#include "log.h"
+
 #include "debug_utils.h"
+#include "loader.h"
+#include "log.h"
+#include "vk_loader_extensions.h"
+#include "vk_loader_platform.h"
+#include "wsi.h"
 
 // ---- Manually added trampoline/terminator functions
 

@@ -29,6 +29,10 @@
 #include <winsock2.h>
 #endif  // _WIN32
 
+#include <assert.h>
+#include <string.h>
+#include <stdbool.h>
+
 #if defined(__Fuchsia__)
 #include "dlopen_fuchsia.h"
 #endif  // defined(__Fuchsia__)
@@ -38,9 +42,6 @@
 // Note: The following file is for dynamic loading:
 #include <dlfcn.h>
 #include <pthread.h>
-#include <assert.h>
-#include <string.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <libgen.h>
 
@@ -54,22 +55,18 @@
 #ifdef CreateEvent
 #undef CreateEvent
 #endif
-#include <assert.h>
 #include <stdio.h>
-#include <string.h>
 #include <io.h>
-#include <stdbool.h>
 #include <shlwapi.h>
 #include <direct.h>
 #endif  // defined(_WIN32)
 
 #include "vulkan/vk_platform.h"
 #include "vulkan/vk_sdk_platform.h"
-
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_layer.h>
 #include <vulkan/vk_icd.h>
-#include <assert.h>
+
 #include "vk_loader_layer.h"
 #include "vk_layer_dispatch_table.h"
 #include "vk_loader_extensions.h"

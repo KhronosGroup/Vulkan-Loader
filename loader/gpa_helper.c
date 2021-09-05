@@ -20,6 +20,8 @@
  * Author: Charles Giessen <charles@lunarg.com>
  */
 
+#include "gpa_helper.h"
+
 #include <string.h>
 
 #include "loader.h"

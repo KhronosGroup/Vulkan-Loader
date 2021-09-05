@@ -28,8 +28,8 @@
 // unknown to the loader, it will use this code.  Technically, this is not trampoline
 // code since we don't want to optimize it out.
 
-#include "vk_loader_platform.h"
 #include "loader.h"
+#include "vk_loader_platform.h"
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC optimize(3)  // force gcc to use tail-calls
