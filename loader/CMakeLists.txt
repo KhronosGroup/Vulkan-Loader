@@ -277,6 +277,8 @@ else()
         target_link_libraries(vulkan pthread)
     endif()
     target_link_libraries(vulkan Vulkan::Headers)
+    # Used to make alloca() and secure_getenv() available
+    target_compile_definitions(vulkan PRIVATE _GNU_SOURCE)
     if(APPLE)
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
         target_link_libraries(vulkan "-framework CoreFoundation")
