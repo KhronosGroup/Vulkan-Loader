@@ -116,28 +116,16 @@ endif()
 
 set(NORMAL_LOADER_SRCS
     allocation.c
-    allocation.h
     cJSON.c
-    cJSON.h
     debug_utils.c
-    debug_utils.h
     extension_manual.c
     get_environment.c
-    get_environment.h
     gpa_helper.c
-    gpa_helper.h
-    loader_common.h
     loader.c
-    loader.h
     log.c
-    log.h
     murmurhash.c
-    murmurhash.h
     trampoline.c
-    vk_loader_layer.h
-    vk_loader_platform.h
     wsi.c
-    wsi.h
     )
 
 if(WIN32)
