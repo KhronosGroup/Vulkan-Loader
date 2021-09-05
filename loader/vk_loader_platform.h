@@ -240,10 +240,6 @@ static inline void loader_platform_thread_cond_broadcast(loader_platform_thread_
 #include <stdbool.h>
 #include <shlwapi.h>
 #include <direct.h>
-#ifdef __cplusplus
-#include <iostream>
-#include <string>
-#endif  // __cplusplus
 
 // VK Library Filenames, Paths, etc.:
 #define PATH_SEPARATOR ';'
