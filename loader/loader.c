@@ -97,13 +97,6 @@ static PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 // Generated file containing all the extension data
 #include "vk_loader_extensions.c"
 
-// Environment Variable information
-#define VK_ICD_FILENAMES_ENV_VAR "VK_ICD_FILENAMES"
-#define VK_LAYER_PATH_ENV_VAR "VK_LAYER_PATH"
-
-// Override layer information
-#define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
-
 struct loader_struct loader = {0};
 
 static size_t loader_platform_combine_path(char *dest, size_t len, ...);
