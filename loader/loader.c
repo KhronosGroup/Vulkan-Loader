@@ -100,20 +100,6 @@ static PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 
 struct loader_struct loader = {0};
 
-static size_t loader_platform_combine_path(char *dest, size_t len, ...);
-
-struct loader_phys_dev_per_icd {
-    uint32_t count;
-    VkPhysicalDevice *phys_devs;
-    struct loader_icd_term *this_icd_term;
-};
-
-enum loader_data_files_type {
-    LOADER_DATA_FILE_MANIFEST_ICD = 0,
-    LOADER_DATA_FILE_MANIFEST_LAYER,
-    LOADER_DATA_FILE_NUM_TYPES  // Not a real field, used for possible loop terminator
-};
-
 // thread safety lock for accessing global data structures such as "loader"
 // all entrypoints on the instance chain need to be locked except GPA
 // additionally CreateDevice and DestroyDevice needs to be locked
@@ -2088,12 +2074,6 @@ __attribute__((constructor)) void loader_init_library() { loader_initialize(); }
 
 __attribute__((destructor)) void loader_free_library() { loader_release(); }
 #endif
-
-struct loader_data_files {
-    uint32_t count;
-    uint32_t alloc_count;
-    char **filename_list;
-};
 
 // Get next file or dirname given a string list or registry key path
 //

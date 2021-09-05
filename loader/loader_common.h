@@ -374,3 +374,21 @@ struct loader_scanned_icd {
     PFN_vk_icdEnumerateAdapterPhysicalDevices EnumerateAdapterPhysicalDevices;
 #endif
 };
+
+struct loader_phys_dev_per_icd {
+    uint32_t count;
+    VkPhysicalDevice *phys_devs;
+    struct loader_icd_term *this_icd_term;
+};
+
+enum loader_data_files_type {
+    LOADER_DATA_FILE_MANIFEST_ICD = 0,
+    LOADER_DATA_FILE_MANIFEST_LAYER,
+    LOADER_DATA_FILE_NUM_TYPES  // Not a real field, used for possible loop terminator
+};
+
+struct loader_data_files {
+    uint32_t count;
+    uint32_t alloc_count;
+    char **filename_list;
+};
