@@ -34,11 +34,6 @@
 #endif  // defined(__Fuchsia__)
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
-// Used for alloca() and secure_getenv()
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <unistd.h>
 // Note: The following file is for dynamic loading:
 #include <dlfcn.h>
