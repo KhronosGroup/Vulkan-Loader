@@ -276,8 +276,6 @@ static inline void loader_platform_thread_cond_wait(loader_platform_thread_cond 
 }
 static inline void loader_platform_thread_cond_broadcast(loader_platform_thread_cond *pCond) { pthread_cond_broadcast(pCond); }
 
-#define loader_stack_alloc(size) alloca(size)
-
 #elif defined(_WIN32)  // defined(__linux__)
 
 // VK Library Filenames, Paths, etc.:
@@ -454,8 +452,6 @@ static void loader_platform_thread_cond_wait(loader_platform_thread_cond *pCond,
     SleepConditionVariableCS(pCond, pMutex, INFINITE);
 }
 static void loader_platform_thread_cond_broadcast(loader_platform_thread_cond *pCond) { WakeAllConditionVariable(pCond); }
-
-#define loader_stack_alloc(size) _alloca(size)
 #else  // defined(_WIN32)
 
 #error The "loader_platform.h" file must be modified for this OS.
