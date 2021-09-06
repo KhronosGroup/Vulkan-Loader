@@ -124,6 +124,7 @@ set(NORMAL_LOADER_SRCS
     loader.c
     log.c
     murmurhash.c
+    terminator.c
     trampoline.c
     wsi.c
     )
