@@ -125,6 +125,7 @@ if (!is_android) {
       "loader/murmurhash.c",
       "loader/murmurhash.h",
       "loader/phys_dev_ext.c",
+      "loader/terminator.c",
       "loader/trampoline.c",
       "loader/vk_loader_layer.h",
 
