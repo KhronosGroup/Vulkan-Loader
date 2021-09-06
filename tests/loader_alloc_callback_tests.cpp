@@ -209,8 +209,7 @@ TEST_F(Allocation, Instance) {
     MemoryTracker tracker;
     {
         InstWrapper inst{env->vulkan_functions, tracker.get()};
-        InstanceCreateInfo inst_create_info;
-        ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+        inst.CheckCreate();
     }
     ASSERT_TRUE(tracker.empty());
 }
@@ -221,8 +220,7 @@ TEST_F(Allocation, GetInstanceProcAddr) {
     MemoryTracker tracker;
     {
         InstWrapper inst{env->vulkan_functions, tracker.get()};
-        InstanceCreateInfo inst_create_info;
-        ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+        inst.CheckCreate();
 
         auto* pfnCreateDevice = inst->vkGetInstanceProcAddr(inst, "vkCreateDevice");
         auto* pfnDestroyDevice = inst->vkGetInstanceProcAddr(inst, "vkDestroyDevice");
@@ -239,9 +237,7 @@ TEST_F(Allocation, EnumeratePhysicalDevices) {
     driver.physical_devices.emplace_back("physical_device_0");
     {
         InstWrapper inst{env->vulkan_functions, tracker.get()};
-        InstanceCreateInfo inst_create_info;
-        ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
-
+        inst.CheckCreate();
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
@@ -264,8 +260,7 @@ TEST_F(Allocation, InstanceAndDevice) {
     driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
     {
         InstWrapper inst{env->vulkan_functions, tracker.get()};
-        InstanceCreateInfo inst_create_info;
-        ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+        inst.CheckCreate();
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -310,8 +305,7 @@ TEST_F(Allocation, InstanceButNotDevice) {
         driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
 
         InstWrapper inst{env->vulkan_functions, tracker.get()};
-        InstanceCreateInfo inst_create_info;
-        ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+        inst.CheckCreate();
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -357,8 +351,7 @@ TEST_F(Allocation, DeviceButNotInstance) {
         driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
 
         InstWrapper inst{env->vulkan_functions};
-        InstanceCreateInfo inst_create_info;
-        ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+        inst.CheckCreate();
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -401,8 +394,8 @@ TEST_F(Allocation, CreateInstanceIntentionalAllocFail) {
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
         MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
 
-        InstanceCreateInfo inst_create_info;
         VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
         result = env->vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_SUCCESS) {
             env->vulkan_functions.vkDestroyInstance(instance, tracker.get());
@@ -420,8 +413,7 @@ TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
     driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
 
     InstWrapper inst{env->vulkan_functions};
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+    inst.CheckCreate();
 
     uint32_t physical_count = 1;
     uint32_t returned_physical_count = 0;
@@ -478,8 +470,8 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
         MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
         fail_index++;  // applies to the next loop
 
-        InstanceCreateInfo inst_create_info;
         VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
         result = env->vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             ASSERT_TRUE(tracker.empty());
@@ -543,8 +535,8 @@ TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
         MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
 
-        InstanceCreateInfo inst_create_info;
         VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
         result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_SUCCESS) {
             env.vulkan_functions.vkDestroyInstance(instance, tracker.get());

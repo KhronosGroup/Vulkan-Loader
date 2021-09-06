@@ -117,7 +117,136 @@ void handle_assert_equal(size_t count, T left[], T right[]) {
     }
 }
 
-namespace detail {
+// InstWrapper & DeviceWrapper - used to make creating instances & devices easier test writing
+struct InstWrapper {
+    InstWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks = nullptr) noexcept;
+    InstWrapper(VulkanFunctions& functions, VkInstance inst, VkAllocationCallbacks* callbacks = nullptr) noexcept;
+    ~InstWrapper() noexcept;
+
+    // Move-nly object
+    InstWrapper(InstWrapper const&) = delete;
+    InstWrapper& operator=(InstWrapper const&) = delete;
+    InstWrapper(InstWrapper&& other) noexcept;
+    InstWrapper& operator=(InstWrapper&&) noexcept;
+
+    // Construct this VkInstance using googletest to assert if it succeeded
+    testing::AssertionResult CheckCreate(VkResult result_to_check = VK_SUCCESS);
+
+    // Convenience
+    operator VkInstance() { return inst; }
+    VulkanFunctions* operator->() { return functions; }
+
+    // Enumerate physical devices using googletest to assert if it succeeded
+    std::vector<VkPhysicalDevice> GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check = VK_SUCCESS);
+    // Enumerate a single physical device using googletest to assert if it succeeded
+    VkPhysicalDevice GetPhysDev(VkResult result_to_check = VK_SUCCESS);
+
+    VulkanFunctions* functions = nullptr;
+    VkInstance inst = VK_NULL_HANDLE;
+    VkAllocationCallbacks* callbacks = nullptr;
+    InstanceCreateInfo create_info{};
+};
+
+struct DeviceWrapper {
+    DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks = nullptr) noexcept;
+    DeviceWrapper(VulkanFunctions& functions, VkDevice device, VkAllocationCallbacks* callbacks = nullptr) noexcept;
+    ~DeviceWrapper() noexcept;
+
+    // Move-only object
+    DeviceWrapper(DeviceWrapper const&) = delete;
+    DeviceWrapper& operator=(DeviceWrapper const&) = delete;
+    DeviceWrapper(DeviceWrapper&&) noexcept;
+    DeviceWrapper& operator=(DeviceWrapper&&) noexcept;
+
+    // Construct this VkDevice using googletest to assert if it succeeded
+    void CheckCreate(VkPhysicalDevice physical_device, VkResult result_to_check = VK_SUCCESS);
+
+    // Convenience
+    operator VkDevice() { return dev; }
+    VulkanFunctions* operator->() { return functions; }
+
+    VulkanFunctions* functions = nullptr;
+    VkDevice dev = VK_NULL_HANDLE;
+    VkAllocationCallbacks* callbacks = nullptr;
+    DeviceCreateInfo create_info{};
+};
+
+struct DebugUtilsLogger {
+    static VkBool32 VKAPI_PTR DebugUtilsMessengerLoggerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                                VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                                void* pUserData) {
+        DebugUtilsLogger* debug = reinterpret_cast<DebugUtilsLogger*>(pUserData);
+        debug->returned_output += pCallbackData->pMessage;
+        debug->returned_output += '\n';
+        return VK_FALSE;
+    }
+    DebugUtilsLogger(VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        returned_output.reserve(4096);  // output can be very noisy, reserving should help prevent many small allocations
+        create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        create_info.pNext = nullptr;
+        create_info.messageSeverity = severity;
+        create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        create_info.pfnUserCallback = DebugUtilsMessengerLoggerCallback;
+        create_info.pUserData = this;
+    }
+
+    // Immoveable object
+    DebugUtilsLogger(DebugUtilsLogger const&) = delete;
+    DebugUtilsLogger& operator=(DebugUtilsLogger const&) = delete;
+    DebugUtilsLogger(DebugUtilsLogger&&) = delete;
+    DebugUtilsLogger& operator=(DebugUtilsLogger&&) = delete;
+
+    bool find(std::string const& search_text) { return returned_output.find(search_text) != std::string::npos; }
+
+    VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return &create_info; }
+    VkDebugUtilsMessengerCreateInfoEXT create_info{};
+    std::string returned_output;
+};
+
+struct DebugUtilsWrapper {
+    DebugUtilsWrapper() noexcept {}
+    DebugUtilsWrapper(InstWrapper& inst_wrapper,
+                      VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+                      VkAllocationCallbacks* callbacks = nullptr)
+        : logger(severity), inst(inst_wrapper.inst), callbacks(callbacks) {
+        vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+            inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkCreateDebugUtilsMessengerEXT"));
+        vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+            inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkDestroyDebugUtilsMessengerEXT"));
+    };
+    ~DebugUtilsWrapper() noexcept {
+        if (messenger) {
+            vkDestroyDebugUtilsMessengerEXT(inst, messenger, callbacks);
+        }
+    }
+    // Immoveable object
+    DebugUtilsWrapper(DebugUtilsWrapper const&) = delete;
+    DebugUtilsWrapper& operator=(DebugUtilsWrapper const&) = delete;
+    DebugUtilsWrapper(DebugUtilsWrapper&&) = delete;
+    DebugUtilsWrapper& operator=(DebugUtilsWrapper&&) = delete;
+
+    bool find(std::string const& search_text) { return logger.find(search_text); }
+    VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return logger.get(); }
+
+    DebugUtilsLogger logger;
+    VkInstance inst;
+    VkAllocationCallbacks* callbacks = nullptr;
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+    VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+};
+
+VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils);
+
+// Helper that adds the debug utils extension name and sets the pNext chain up
+// NOTE: Ignores existing pNext chains
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger);
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
+
 struct PlatformShimWrapper {
     PlatformShimWrapper(DebugMode debug_mode = DebugMode::none) noexcept;
     ~PlatformShimWrapper() noexcept;
@@ -135,28 +264,27 @@ struct PlatformShimWrapper {
 struct TestICDHandle {
     TestICDHandle() noexcept;
     TestICDHandle(fs::path const& icd_path) noexcept;
-    TestICD& get_new_test_icd() noexcept;
+    TestICD& reset_icd() noexcept;
     TestICD& get_test_icd() noexcept;
     fs::path get_icd_full_path() noexcept;
 
     // Must use statically
     LibraryWrapper icd_library;
     GetTestICDFunc proc_addr_get_test_icd;
-    GetNewTestICDFunc proc_addr_get_new_test_icd;
+    GetNewTestICDFunc proc_addr_reset_icd;
 };
 struct TestLayerHandle {
     TestLayerHandle() noexcept;
     TestLayerHandle(fs::path const& icd_path) noexcept;
-    TestLayer& get_new_test_layer() noexcept;
+    TestLayer& reset_layer() noexcept;
     TestLayer& get_test_layer() noexcept;
     fs::path get_layer_full_path() noexcept;
 
     // Must use statically
     LibraryWrapper layer_library;
     GetTestLayerFunc proc_addr_get_test_layer;
-    GetNewTestLayerFunc proc_addr_get_new_test_layer;
+    GetNewTestLayerFunc proc_addr_reset_layer;
 };
-}  // namespace detail
 
 struct TestICDDetails {
     TestICDDetails(const char* icd_path, uint32_t api_version = VK_MAKE_VERSION(1, 0, 0)) noexcept
@@ -178,7 +306,7 @@ struct FrameworkEnvironment {
     void AddImplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void AddExplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
 
-    detail::PlatformShimWrapper platform_shim;
+    PlatformShimWrapper platform_shim;
     fs::FolderManager null_folder;
     fs::FolderManager icd_folder;
     fs::FolderManager explicit_layer_folder;
@@ -192,28 +320,28 @@ struct EnvVarICDOverrideShim : public FrameworkEnvironment {
     void SetEnvOverrideICD(const char* icd_path, const char* manifest_name) noexcept;
 
     LibraryWrapper driver_wrapper;
-    GetNewTestICDFunc get_new_test_icd;
+    GetNewTestICDFunc reset_icd;
 };
 
 struct SingleICDShim : public FrameworkEnvironment {
     SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode = DebugMode::none) noexcept;
 
     TestICD& get_test_icd() noexcept;
-    TestICD& get_new_test_icd() noexcept;
+    TestICD& reset_icd() noexcept;
 
     fs::path get_test_icd_path() noexcept;
 
-    detail::TestICDHandle icd_handle;
+    TestICDHandle icd_handle;
 };
 
 struct MultipleICDShim : public FrameworkEnvironment {
     MultipleICDShim(std::vector<TestICDDetails> icd_details_vector, DebugMode debug_mode = DebugMode::none) noexcept;
 
     TestICD& get_test_icd(int index) noexcept;
-    TestICD& get_new_test_icd(int index) noexcept;
+    TestICD& reset_icd(int index) noexcept;
     fs::path get_test_icd_path(int index) noexcept;
 
-    std::vector<detail::TestICDHandle> icds;
+    std::vector<TestICDHandle> icds;
 };
 
 struct FakeBinaryICDShim : public FrameworkEnvironment {
@@ -221,8 +349,8 @@ struct FakeBinaryICDShim : public FrameworkEnvironment {
                       DebugMode debug_mode = DebugMode::none) noexcept;
 
     TestICD& get_test_icd() noexcept;
-    TestICD& get_new_test_icd() noexcept;
+    TestICD& reset_icd() noexcept;
     fs::path get_test_icd_path() noexcept;
 
-    detail::TestICDHandle real_icd;
+    TestICDHandle real_icd;
 };

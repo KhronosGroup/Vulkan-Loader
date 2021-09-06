@@ -258,14 +258,14 @@ struct EnumerateInstanceLayerProperties : public CommandLine {};
 struct EnumerateInstanceExtensionProperties : public CommandLine {};
 struct ImplicitLayer : public CommandLine {};
 
-void test_create_device(VkPhysicalDevice physical) {
+void test_create_device(VkPhysicalDevice physical_device) {
     uint32_t familyCount = 0;
     VkResult result;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical, &familyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &familyCount, nullptr);
     ASSERT_GT(familyCount, 0u);
 
     std::unique_ptr<VkQueueFamilyProperties[]> family(new VkQueueFamilyProperties[familyCount]);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical, &familyCount, family.get());
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &familyCount, family.get());
     ASSERT_GT(familyCount, 0u);
 
     for (uint32_t q = 0; q < familyCount; ++q) {
@@ -279,8 +279,8 @@ void test_create_device(VkPhysicalDevice physical) {
 
         auto const deviceInfo = VK::DeviceCreateInfo().queueCreateInfoCount(1).pQueueCreateInfos(queueInfo);
 
-        VkDevice device;
-        result = vkCreateDevice(physical, deviceInfo, nullptr, &device);
+         VkDevice device;
+        result = vkCreateDevice(physical_device, deviceInfo, nullptr, &device);
         ASSERT_EQ(result, VK_SUCCESS);
 
         vkDestroyDevice(device, nullptr);

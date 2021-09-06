@@ -50,7 +50,7 @@
 TestICD icd;
 extern "C" {
 FRAMEWORK_EXPORT TestICD* get_test_icd_func() { return &icd; }
-FRAMEWORK_EXPORT TestICD* get_new_test_icd_func() {
+FRAMEWORK_EXPORT TestICD* reset_icd_func() {
     icd.~TestICD();
     return new (&icd) TestICD();
 }

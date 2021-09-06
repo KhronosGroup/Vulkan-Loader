@@ -56,8 +56,8 @@ TEST_F(RegressionTests, CreateSurfaceWin32) {
     driver.enable_icd_wsi = true;
 
     InstWrapper inst{env->vulkan_functions};
-    auto inst_create_info = driver.GetVkInstanceCreateInfo();
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+    inst.create_info = driver.GetVkInstanceCreateInfo();
+    inst.CheckCreate();
 
     WNDCLASSEX win_class;
     const char* app_short_name = "loader_surface_test";
@@ -123,8 +123,8 @@ TEST_F(RegressionTests, CreateSurfaceXCB) {
     driver.enable_icd_wsi = true;
 
     InstWrapper inst{env->vulkan_functions};
-    auto inst_create_info = driver.GetVkInstanceCreateInfo();
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+    inst.create_info = driver.GetVkInstanceCreateInfo();
+    inst.CheckCreate();
 
     xcb_connection_t* xcb_connection;
     xcb_screen_t* xcb_screen;
@@ -184,8 +184,8 @@ TEST_F(RegressionTests, CreateSurfaceXLIB) {
     driver.enable_icd_wsi = true;
 
     InstWrapper inst{env->vulkan_functions};
-    auto inst_create_info = driver.GetVkInstanceCreateInfo();
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+    inst.create_info = driver.GetVkInstanceCreateInfo();
+    inst.CheckCreate();
 
     Display* xlib_display;
     Window xlib_window;
@@ -252,8 +252,8 @@ TEST_F(RegressionTests, CreateSurfaceWayland) {
     driver.enable_icd_wsi = true;
 
     InstWrapper inst{env->vulkan_functions};
-    auto inst_create_info = driver.GetVkInstanceCreateInfo();
-    ASSERT_EQ(CreateInst(inst, inst_create_info), VK_SUCCESS);
+    inst.create_info = driver.GetVkInstanceCreateInfo();
+    inst.CheckCreate();
 
     WaylandState wayland;
 
