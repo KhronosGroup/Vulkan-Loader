@@ -75,6 +75,13 @@ struct loader_msg_callback_map_entry {
     VkDebugReportCallbackEXT loader_obj;
 };
 
+struct LoaderSortedPhysicalDevice {
+    uint32_t device_count;
+    VkPhysicalDevice *physical_devices;
+    uint32_t icd_index;
+    struct loader_icd_term *icd_term;
+};
+
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2);
 
 VkResult loader_validate_layers(const struct loader_instance *inst, const uint32_t layer_count,
@@ -85,6 +92,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
                                              const VkInstanceCreateInfo *pCreateInfo);
 
 void loader_initialize(void);
+void loader_release(void);
 void loader_preload_icds(void);
 void loader_unload_preloaded_icds(void);
 bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, const uint32_t count,
@@ -163,3 +171,6 @@ VkResult setup_loader_tramp_phys_devs(VkInstance instance);
 VkResult setup_loader_term_phys_devs(struct loader_instance *inst);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
+char *loader_get_next_path(char *path);
+VkResult add_data_files_in_path(const struct loader_instance *inst, char *search_path, bool is_directory_list,
+                                struct loader_data_files *out_files, bool use_first_found_manifest);

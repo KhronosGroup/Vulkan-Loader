@@ -129,7 +129,7 @@ set(NORMAL_LOADER_SRCS
     )
 
 if(WIN32)
-    set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} adapters.h)
+    set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_windows.c)
 endif()
 
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
