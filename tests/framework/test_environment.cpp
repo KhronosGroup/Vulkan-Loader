@@ -27,7 +27,97 @@
 
 #include "test_environment.h"
 
-namespace detail {
+InstWrapper::InstWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks) noexcept
+    : functions(&functions), callbacks(callbacks) {}
+InstWrapper::InstWrapper(VulkanFunctions& functions, VkInstance inst, VkAllocationCallbacks* callbacks) noexcept
+    : functions(&functions), inst(inst), callbacks(callbacks) {}
+InstWrapper::~InstWrapper() noexcept {
+    if (inst != VK_NULL_HANDLE) functions->vkDestroyInstance(inst, callbacks);
+}
+
+InstWrapper::InstWrapper(InstWrapper&& other) noexcept {
+    functions = other.functions;
+    inst = other.inst;
+    callbacks = other.callbacks;
+    create_info = other.create_info;
+    other.inst = VK_NULL_HANDLE;
+}
+InstWrapper& InstWrapper::operator=(InstWrapper&& other) noexcept {
+    functions->vkDestroyInstance(inst, callbacks);
+    functions = other.functions;
+    inst = other.inst;
+    callbacks = other.callbacks;
+    create_info = other.create_info;
+    other.inst = VK_NULL_HANDLE;
+    return *this;
+}
+
+testing::AssertionResult InstWrapper::CheckCreate(VkResult result_to_check) {
+    VkResult res = functions->vkCreateInstance(create_info.get(), callbacks, &inst);
+    if (res == result_to_check)
+        return testing::AssertionSuccess();
+    else
+        return testing::AssertionFailure() << " Expected VkCreateInstance to return " << result_to_check << " but got " << res;
+}
+
+std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check) {
+    uint32_t physical_count = phys_dev_count;
+    std::vector<VkPhysicalDevice> physical_devices;
+    physical_devices.resize(phys_dev_count);
+    VkResult res = functions->vkEnumeratePhysicalDevices(inst, &physical_count, physical_devices.data());
+    EXPECT_EQ(result_to_check, res);
+    return physical_devices;
+}
+
+VkPhysicalDevice InstWrapper::GetPhysDev(VkResult result_to_check) {
+    uint32_t physical_count = 1;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkResult res = this->functions->vkEnumeratePhysicalDevices(inst, &physical_count, &physical_device);
+    EXPECT_EQ(result_to_check, res);
+    return physical_device;
+}
+
+DeviceWrapper::DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks) noexcept
+    : functions(inst_wrapper.functions), callbacks(callbacks){};
+DeviceWrapper::DeviceWrapper(VulkanFunctions& functions, VkDevice device, VkAllocationCallbacks* callbacks) noexcept
+    : functions(&functions), dev(device), callbacks(callbacks){};
+DeviceWrapper::~DeviceWrapper() noexcept { functions->vkDestroyDevice(dev, callbacks); }
+
+DeviceWrapper::DeviceWrapper(DeviceWrapper&& other) noexcept {
+    functions = other.functions;
+    dev = other.dev;
+    callbacks = other.callbacks;
+    create_info = other.create_info;
+    other.dev = VK_NULL_HANDLE;
+}
+DeviceWrapper& DeviceWrapper::operator=(DeviceWrapper&& other) noexcept {
+    functions->vkDestroyDevice(dev, callbacks);
+    functions = other.functions;
+    dev = other.dev;
+    callbacks = other.callbacks;
+    create_info = other.create_info;
+    other.dev = VK_NULL_HANDLE;
+    return *this;
+}
+
+void DeviceWrapper::CheckCreate(VkPhysicalDevice phys_dev, VkResult result_to_check) {
+    ASSERT_EQ(result_to_check, functions->vkCreateDevice(phys_dev, create_info.get(), callbacks, &dev));
+}
+
+VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils) {
+    return debug_utils.vkCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
+                                                      &debug_utils.messenger);
+}
+
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger) {
+    create_info.add_extension("VK_EXT_debug_utils");
+    create_info.inst_info.pNext = logger.get();
+}
+void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper) {
+    create_info.add_extension("VK_EXT_debug_utils");
+    create_info.inst_info.pNext = wrapper.get();
+}
+
 PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) noexcept : debug_mode(debug_mode) {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
@@ -51,18 +141,17 @@ PlatformShimWrapper::~PlatformShimWrapper() noexcept {
 TestICDHandle::TestICDHandle() noexcept {}
 TestICDHandle::TestICDHandle(fs::path const& icd_path) noexcept : icd_library(icd_path) {
     proc_addr_get_test_icd = icd_library.get_symbol<GetNewTestICDFunc>(GET_TEST_ICD_FUNC_STR);
-    proc_addr_get_new_test_icd = icd_library.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
+    proc_addr_reset_icd = icd_library.get_symbol<GetNewTestICDFunc>(RESET_ICD_FUNC_STR);
 }
 TestICD& TestICDHandle::get_test_icd() noexcept {
     assert(proc_addr_get_test_icd != NULL && "symbol must be loaded before use");
     return *proc_addr_get_test_icd();
 }
-TestICD& TestICDHandle::get_new_test_icd() noexcept {
-    assert(proc_addr_get_new_test_icd != NULL && "symbol must be loaded before use");
-    return *proc_addr_get_new_test_icd();
+TestICD& TestICDHandle::reset_icd() noexcept {
+    assert(proc_addr_reset_icd != NULL && "symbol must be loaded before use");
+    return *proc_addr_reset_icd();
 }
 fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
-}  // namespace detail
 
 FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode) noexcept
     : platform_shim(debug_mode),
@@ -106,17 +195,17 @@ void EnvVarICDOverrideShim::SetEnvOverrideICD(const char* icd_path, const char* 
 
     driver_wrapper = LibraryWrapper(fs::path(icd_path));
 
-    get_new_test_icd = driver_wrapper.get_symbol<GetNewTestICDFunc>(GET_NEW_TEST_ICD_FUNC_STR);
+    reset_icd = driver_wrapper.get_symbol<GetNewTestICDFunc>(RESET_ICD_FUNC_STR);
 }
 
 SingleICDShim::SingleICDShim(TestICDDetails icd_details, DebugMode debug_mode) noexcept : FrameworkEnvironment(debug_mode) {
-    icd_handle = detail::TestICDHandle(icd_details.icd_path);
-    icd_handle.get_new_test_icd();
+    icd_handle = TestICDHandle(icd_details.icd_path);
+    icd_handle.reset_icd();
 
     AddICD(icd_details, "test_icd.json");
 }
 TestICD& SingleICDShim::get_test_icd() noexcept { return icd_handle.get_test_icd(); }
-TestICD& SingleICDShim::get_new_test_icd() noexcept { return icd_handle.get_new_test_icd(); }
+TestICD& SingleICDShim::reset_icd() noexcept { return icd_handle.reset_icd(); }
 fs::path SingleICDShim::get_test_icd_path() noexcept { return icd_handle.get_icd_full_path(); }
 
 MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector, DebugMode debug_mode) noexcept
@@ -128,22 +217,22 @@ MultipleICDShim::MultipleICDShim(std::vector<TestICDDetails> icd_details_vector,
 
         auto new_driver_location = icd_folder.copy_file(test_icd_detail.icd_path, new_driver_name.str());
 
-        icds.push_back(detail::TestICDHandle(new_driver_location));
-        icds.back().get_new_test_icd();
+        icds.push_back(TestICDHandle(new_driver_location));
+        icds.back().reset_icd();
         test_icd_detail.icd_path = new_driver_location.c_str();
         AddICD(test_icd_detail, std::string("test_icd_") + std::to_string(i) + ".json");
         i++;
     }
 }
 TestICD& MultipleICDShim::get_test_icd(int index) noexcept { return icds[index].get_test_icd(); }
-TestICD& MultipleICDShim::get_new_test_icd(int index) noexcept { return icds[index].get_new_test_icd(); }
+TestICD& MultipleICDShim::reset_icd(int index) noexcept { return icds[index].reset_icd(); }
 fs::path MultipleICDShim::get_test_icd_path(int index) noexcept { return icds[index].get_icd_full_path(); }
 
 FakeBinaryICDShim::FakeBinaryICDShim(TestICDDetails read_icd_details, TestICDDetails fake_icd_details,
                                      DebugMode debug_mode) noexcept
     : FrameworkEnvironment(debug_mode) {
-    real_icd = detail::TestICDHandle(read_icd_details.icd_path);
-    real_icd.get_new_test_icd();
+    real_icd = TestICDHandle(read_icd_details.icd_path);
+    real_icd.reset_icd();
 
     // Must use name that isn't a substring of eachother, otherwise loader removes the other ICD
     // EX test_icd.json is fully contained in fake_test_icd.json, causing test_icd.json to not be loaded
@@ -151,5 +240,5 @@ FakeBinaryICDShim::FakeBinaryICDShim(TestICDDetails read_icd_details, TestICDDet
     AddICD(read_icd_details, "test_icd.json");
 }
 TestICD& FakeBinaryICDShim::get_test_icd() noexcept { return real_icd.get_test_icd(); }
-TestICD& FakeBinaryICDShim::get_new_test_icd() noexcept { return real_icd.get_new_test_icd(); }
+TestICD& FakeBinaryICDShim::reset_icd() noexcept { return real_icd.reset_icd(); }
 fs::path FakeBinaryICDShim::get_test_icd_path() noexcept { return real_icd.get_icd_full_path(); }

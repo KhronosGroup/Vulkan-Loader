@@ -86,7 +86,6 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
     EXPECT_EQ(extension_count, 2);
 
     InstWrapper inst{env->vulkan_functions};
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_layer(meta_layer_name);
-    EXPECT_EQ(VK_ERROR_LAYER_NOT_PRESENT, CreateInst(inst, inst_create_info));
+    inst.create_info.add_layer(meta_layer_name);
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
 }

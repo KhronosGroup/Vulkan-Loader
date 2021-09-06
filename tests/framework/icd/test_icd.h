@@ -128,4 +128,4 @@ using GetTestICDFunc = TestICD* (*)();
 #define GET_TEST_ICD_FUNC_STR "get_test_icd_func"
 
 using GetNewTestICDFunc = TestICD* (*)();
-#define GET_NEW_TEST_ICD_FUNC_STR "get_new_test_icd_func"
+#define RESET_ICD_FUNC_STR "reset_icd_func"

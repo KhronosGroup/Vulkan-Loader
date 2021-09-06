@@ -630,36 +630,3 @@ DeviceCreateInfo& DeviceCreateInfo::add_device_queue(DeviceQueueCreateInfo queue
     queue_info_details.push_back(queue_info_detail);
     return *this;
 }
-
-VkResult CreateInst(InstWrapper& inst, InstanceCreateInfo& inst_info) {
-    return inst.functions->vkCreateInstance(inst_info.get(), inst.callbacks, &inst.inst);
-}
-
-VkResult CreatePhysDevs(InstWrapper& inst, uint32_t phys_dev_count, std::vector<VkPhysicalDevice>& physical_devices) {
-    physical_devices.resize(phys_dev_count);
-    uint32_t physical_count = phys_dev_count;
-    return inst.functions->vkEnumeratePhysicalDevices(inst.inst, &physical_count, physical_devices.data());
-}
-
-VkResult CreatePhysDev(InstWrapper& inst, VkPhysicalDevice& physical_device) {
-    uint32_t physical_count = 1;
-    return inst.functions->vkEnumeratePhysicalDevices(inst.inst, &physical_count, &physical_device);
-}
-
-VkResult CreateDevice(VkPhysicalDevice phys_dev, DeviceWrapper& dev, DeviceCreateInfo& dev_info) {
-    return dev.functions->vkCreateDevice(phys_dev, dev_info.get(), dev.callbacks, &dev.dev);
-}
-
-VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils) {
-    return debug_utils.vkCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
-                                                      &debug_utils.messenger);
-}
-
-void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger) {
-    create_info.add_extension("VK_EXT_debug_utils");
-    create_info.inst_info.pNext = logger.get();
-}
-void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper) {
-    create_info.add_extension("VK_EXT_debug_utils");
-    create_info.inst_info.pNext = wrapper.get();
-}

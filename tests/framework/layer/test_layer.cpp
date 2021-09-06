@@ -77,7 +77,7 @@
 TestLayer layer;
 extern "C" {
 FRAMEWORK_EXPORT TestLayer* get_test_layer_func() { return &layer; }
-FRAMEWORK_EXPORT TestLayer* get_new_test_layer_func() {
+FRAMEWORK_EXPORT TestLayer* reset_layer_func() {
     layer.~TestLayer();
     return new (&layer) TestLayer();
 }

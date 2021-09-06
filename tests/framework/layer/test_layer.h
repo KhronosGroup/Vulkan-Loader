@@ -122,4 +122,4 @@ using GetTestLayerFunc = TestLayer* (*)();
 #define GET_TEST_LAYER_FUNC_STR "get_test_layer_func"
 
 using GetNewTestLayerFunc = TestLayer* (*)();
-#define GET_NEW_TEST_LAYER_FUNC_STR "get_new_test_layer_func"
+#define RESET_LAYER_FUNC_STR "reset_layer_func"
