@@ -6576,7 +6576,7 @@ out:
 
 // ---- Vulkan Core 1.1 terminators
 
-VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
+VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
     VkResult res = VK_SUCCESS;
     struct loader_icd_term *icd_term;
     uint32_t total_count = 0;
@@ -6590,7 +6590,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
 
     if (0 == inst->phys_dev_count_term) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setupLoaderTermPhysDevGroups:  Loader failed to setup physical device terminator info before calling "
+                   "setup_loader_term_phys_dev_groups:  Loader failed to setup physical device terminator info before calling "
                    "\'EnumeratePhysicalDeviceGroups\'.");
         assert(false);
         res = VK_ERROR_INITIALIZATION_FAILED;
@@ -6614,7 +6614,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &cur_icd_group_count, NULL);
             if (res != VK_SUCCESS) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed during dispatch call of "
+                           "setup_loader_term_phys_dev_groups:  Failed during dispatch call of "
                            "\'EnumeratePhysicalDevices\' to ICD %d to get plain phys dev count.",
                            icd_idx);
                 goto out;
@@ -6624,7 +6624,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &cur_icd_group_count, NULL);
             if (res != VK_SUCCESS) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed during dispatch call of "
+                           "setup_loader_term_phys_dev_groups:  Failed during dispatch call of "
                            "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get count.",
                            icd_idx);
                 goto out;
@@ -6639,7 +6639,8 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
         inst, total_count * sizeof(VkPhysicalDeviceGroupProperties *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_dev_groups) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setupLoaderTermPhysDevGroups:  Failed to allocate new physical device group array of size %d", total_count);
+                   "setup_loader_term_phys_dev_groups:  Failed to allocate new physical device group array of size %d",
+                   total_count);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
@@ -6651,7 +6652,8 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
     local_phys_dev_group_sorted = loader_stack_alloc(sizeof(bool) * total_count);
     if (NULL == local_phys_dev_groups || NULL == local_phys_dev_group_sorted) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setupLoaderTermPhysDevGroups:  Failed to allocate local physical device group array of size %d", total_count);
+                   "setup_loader_term_phys_dev_groups:  Failed to allocate local physical device group array of size %d",
+                   total_count);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
@@ -6695,7 +6697,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             VkPhysicalDevice *phys_dev_array = loader_stack_alloc(sizeof(VkPhysicalDevice) * count_this_time);
             if (NULL == phys_dev_array) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed to allocate local physical device array of size %d",
+                           "setup_loader_term_phys_dev_groups:  Failed to allocate local physical device array of size %d",
                            count_this_time);
                 res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
@@ -6703,10 +6705,11 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
 
             res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &count_this_time, phys_dev_array);
             if (res != VK_SUCCESS) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed during dispatch call of \'EnumeratePhysicalDevices\' to ICD %d "
-                           "to get plain phys dev count.",
-                           icd_idx);
+                loader_log(
+                    inst, VULKAN_LOADER_ERROR_BIT, 0,
+                    "setup_loader_term_phys_dev_groups:  Failed during dispatch call of \'EnumeratePhysicalDevices\' to ICD %d "
+                    "to get plain phys dev count.",
+                    icd_idx);
                 goto out;
             }
 
@@ -6725,7 +6728,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             }
             if (VK_SUCCESS != res) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed during dispatch call of "
+                           "setup_loader_term_phys_dev_groups:  Failed during dispatch call of "
                            "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get content.",
                            icd_idx);
                 goto out;
@@ -6748,7 +6751,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             }
             if (!found) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed to find GPU %d in group %d returned by "
+                           "setup_loader_term_phys_dev_groups:  Failed to find GPU %d in group %d returned by "
                            "\'EnumeratePhysicalDeviceGroups\' in list returned by \'EnumeratePhysicalDevices\'",
                            group_gpu, group);
                 res = VK_ERROR_INITIALIZATION_FAILED;
@@ -6818,7 +6821,8 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
                 inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_phys_dev_groups[idx]) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed to allocate physical device group Terminator object %d", idx);
+                           "setup_loader_term_phys_dev_groups:  Failed to allocate physical device group Terminator object %d",
+                           idx);
                 total_count = idx;
                 res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
@@ -6871,7 +6875,8 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
                 inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_phys_dev_groups[idx]) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setupLoaderTermPhysDevGroups:  Failed to allocate physical device group Terminator object %d", idx);
+                           "setup_loader_term_phys_dev_groups:  Failed to allocate physical device group Terminator object %d",
+                           idx);
                 total_count = idx;
                 res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
@@ -6935,7 +6940,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 
     // Always call the setup loader terminator physical device groups because they may
     // have changed at any point.
-    res = setupLoaderTermPhysDevGroups(inst);
+    res = setup_loader_term_phys_dev_groups(inst);
     if (VK_SUCCESS != res) {
         goto out;
     }
