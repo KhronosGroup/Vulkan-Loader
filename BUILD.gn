@@ -100,6 +100,8 @@ if (!is_android) {
   target(library_type, "libvulkan") {
     sources = [
       "loader/adapters.h",
+      "loader/allocation.c",
+      "loader/allocation.h",
       "loader/asm_offset.c",
       "loader/cJSON.c",
       "loader/cJSON.h",
@@ -108,12 +110,18 @@ if (!is_android) {
       "loader/dev_ext_trampoline.c",
       "loader/extension_manual.c",
       "loader/extension_manual.h",
+      "loader/get_environment.c",
+      "loader/get_environment.h",
       "loader/generated/vk_layer_dispatch_table.h",
       "loader/generated/vk_loader_extensions.h",
       "loader/generated/vk_object_types.h",
       "loader/gpa_helper.h",
+      "loader/gpa_helper.c",
+      "loader/loader_common.h",
       "loader/loader.c",
       "loader/loader.h",
+      "loader/log.c",
+      "loader/log.h",
       "loader/murmurhash.c",
       "loader/murmurhash.h",
       "loader/phys_dev_ext.c",
@@ -146,6 +154,8 @@ if (!is_android) {
       sources += [
         "loader/dirent_on_windows.c",
         "loader/dirent_on_windows.h",
+        "loader/loader_windows.c",
+        "loader/loader_windows.h",
         "loader/vulkan-1.def",
       ]
       if (!is_clang) {
