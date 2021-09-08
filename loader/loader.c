@@ -1050,6 +1050,39 @@ out:
 
 #endif  // WIN32
 
+void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties) {
+    if (layer_properties->component_layer_names) {
+        loader_instance_heap_free(inst, layer_properties->component_layer_names);
+    }
+    if (layer_properties->override_paths) {
+        loader_instance_heap_free(inst, layer_properties->override_paths);
+    }
+    if (layer_properties->blacklist_layer_names) {
+        loader_instance_heap_free(inst, layer_properties->blacklist_layer_names);
+    }
+    if (layer_properties->app_key_paths) {
+        loader_instance_heap_free(inst, layer_properties->app_key_paths);
+    }
+
+    loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_properties->instance_extension_list);
+
+    if (layer_properties->device_extension_list.capacity > 0 && NULL != layer_properties->device_extension_list.list) {
+        for (uint32_t i = 0; i < layer_properties->device_extension_list.count; i++) {
+            struct loader_dev_ext_props *ext_props = &layer_properties->device_extension_list.list[i];
+            if (ext_props->entrypoint_count > 0) {
+                for (uint32_t j = 0; j < ext_props->entrypoint_count; j++) {
+                    loader_instance_heap_free(inst, ext_props->entrypoints[j]);
+                }
+                loader_instance_heap_free(inst, ext_props->entrypoints);
+            }
+        }
+    }
+    loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_properties->device_extension_list);
+
+    // Make sure to clear out the removed layer, in case new layers are added in the previous location
+    memset(layer_properties, 0, sizeof(struct loader_layer_properties));
+}
+
 // Combine path elements, separating each element with the platform-specific
 // directory separator, and save the combined string to a destination buffer,
 // not exceeding the given length. Path elements are given as variable args,
@@ -1231,42 +1264,11 @@ static bool loader_find_layer_name_in_blacklist(const struct loader_instance *in
 
 // Remove all layer properties entries from the list
 void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
-    uint32_t i, j, k;
-    struct loader_device_extension_list *dev_ext_list;
-    struct loader_dev_ext_props *ext_props;
+    uint32_t i;
     if (!layer_list) return;
 
     for (i = 0; i < layer_list->count; i++) {
-        if (NULL != layer_list->list[i].blacklist_layer_names) {
-            loader_instance_heap_free(inst, layer_list->list[i].blacklist_layer_names);
-            layer_list->list[i].blacklist_layer_names = NULL;
-        }
-        if (NULL != layer_list->list[i].component_layer_names) {
-            loader_instance_heap_free(inst, layer_list->list[i].component_layer_names);
-            layer_list->list[i].component_layer_names = NULL;
-        }
-        if (NULL != layer_list->list[i].override_paths) {
-            loader_instance_heap_free(inst, layer_list->list[i].override_paths);
-            layer_list->list[i].override_paths = NULL;
-        }
-        if (NULL != layer_list->list[i].app_key_paths) {
-            loader_instance_heap_free(inst, layer_list->list[i].app_key_paths);
-            layer_list->list[i].app_key_paths = NULL;
-        }
-        loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_list->list[i].instance_extension_list);
-        dev_ext_list = &layer_list->list[i].device_extension_list;
-        if (dev_ext_list->capacity > 0 && NULL != dev_ext_list->list) {
-            for (j = 0; j < dev_ext_list->count; j++) {
-                ext_props = &dev_ext_list->list[j];
-                if (ext_props->entrypoint_count > 0) {
-                    for (k = 0; k < ext_props->entrypoint_count; k++) {
-                        loader_instance_heap_free(inst, ext_props->entrypoints[k]);
-                    }
-                    loader_instance_heap_free(inst, ext_props->entrypoints);
-                }
-            }
-        }
-        loader_destroy_generic_list(inst, (struct loader_generic_list *)dev_ext_list);
+        loader_free_layer_properties(inst, &(layer_list->list[i]));
     }
     layer_list->count = 0;
 
@@ -1281,23 +1283,12 @@ void loader_remove_layer_in_list(const struct loader_instance *inst, struct load
     if (layer_list == NULL || layer_to_remove >= layer_list->count) {
         return;
     }
-    if (layer_list->list[layer_to_remove].type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-        // Delete the component layers
-        loader_instance_heap_free(inst, layer_list->list[layer_to_remove].component_layer_names);
-        loader_instance_heap_free(inst, layer_list->list[layer_to_remove].override_paths);
-        loader_instance_heap_free(inst, layer_list->list[layer_to_remove].blacklist_layer_names);
-        loader_instance_heap_free(inst, layer_list->list[layer_to_remove].app_key_paths);
-        loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_list->list[layer_to_remove].instance_extension_list);
-        loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_list->list[layer_to_remove].device_extension_list);
-    }
+    loader_free_layer_properties(inst, &(layer_list->list[layer_to_remove]));
 
     // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
     // overlapping the source and destination addresses.
     memmove(&layer_list->list[layer_to_remove], &layer_list->list[layer_to_remove + 1],
             sizeof(struct loader_layer_properties) * (layer_list->count - 1 - layer_to_remove));
-
-    // Make sure to clear out the removed layer, in case new layers are added in the previous location
-    memset(&layer_list->list[layer_list->count - 1], 0, sizeof(struct loader_layer_properties));
 
     // Decrement the count (because we now have one less) and decrement the loop index since we need to
     // re-check this index.
@@ -1327,13 +1318,7 @@ void loader_remove_layers_in_blacklist(const struct loader_instance *inst, struc
                        "loader_remove_layers_in_blacklist: Override layer is active and layer %s is in the blacklist inside of it. "
                        "Removing that layer from current layer list.",
                        cur_layer_name);
-
-            if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                // Delete the component layers
-                loader_instance_heap_free(inst, cur_layer_prop.component_layer_names);
-                loader_instance_heap_free(inst, cur_layer_prop.override_paths);
-                // Never need to free the blacklist, since it can only exist in the override layer
-            }
+            loader_free_layer_properties(inst, &(layer_list->list[j]));
 
             // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
             // overlapping the source and destination addresses.
@@ -1397,11 +1382,7 @@ void loader_remove_layers_not_in_implicit_meta_layers(const struct loader_instan
                 "inside of any.  So removing layer from current layer list.",
                 cur_layer_prop.info.layerName);
 
-            if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                // Delete the component layers
-                loader_instance_heap_free(inst, cur_layer_prop.component_layer_names);
-                loader_instance_heap_free(inst, cur_layer_prop.override_paths);
-            }
+            loader_free_layer_properties(inst, &cur_layer_prop);
 
             // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
             // overlapping the source and destination addresses.
@@ -2784,27 +2765,8 @@ static void verify_all_meta_layers(struct loader_instance *inst, struct loader_l
                 loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                            "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
             }
+            loader_remove_layer_in_list(inst, instance_layers, i);
 
-            // Delete the component layers
-            loader_instance_heap_free(inst, prop->component_layer_names);
-            if (prop->blacklist_layer_names != NULL) {
-                loader_instance_heap_free(inst, prop->blacklist_layer_names);
-            }
-            if (prop->override_paths != NULL) {
-                loader_instance_heap_free(inst, prop->override_paths);
-            }
-            loader_destroy_generic_list(inst, (struct loader_generic_list *)&prop->instance_extension_list);
-            loader_destroy_generic_list(inst, (struct loader_generic_list *)&prop->device_extension_list);
-
-            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
-            // overlapping the source and destination addresses.
-            memmove(&instance_layers->list[i], &instance_layers->list[i + 1],
-                    sizeof(struct loader_layer_properties) * (instance_layers->count - 1 - i));
-
-            // Decrement the count (because we now have one less) and decrement the loop index since we need to
-            // re-check this index.
-            instance_layers->count--;
-            i--;
         } else if (prop->is_override && loader_implicit_layer_is_enabled(inst, prop)) {
             *override_layer_present = true;
         }
@@ -3515,26 +3477,8 @@ out:
 #undef GET_JSON_OBJECT
 
     if (VK_SUCCESS != result && NULL != props) {
-        if (NULL != props->blacklist_layer_names) {
-            loader_instance_heap_free(inst, props->blacklist_layer_names);
-        }
-        if (NULL != props->component_layer_names) {
-            loader_instance_heap_free(inst, props->component_layer_names);
-        }
-        if (NULL != props->override_paths) {
-            loader_instance_heap_free(inst, props->override_paths);
-        }
-        if (NULL != props->app_key_paths) {
-            loader_instance_heap_free(inst, props->app_key_paths);
-        }
-        props->num_blacklist_layers = 0;
-        props->blacklist_layer_names = NULL;
-        props->num_component_layers = 0;
-        props->component_layer_names = NULL;
-        props->num_override_paths = 0;
-        props->override_paths = NULL;
-        props->num_app_key_paths = 0;
-        props->app_key_paths = NULL;
+        // Make sure to free anything that was allocated
+        loader_free_layer_properties(inst, props);
     }
 
     return result;
