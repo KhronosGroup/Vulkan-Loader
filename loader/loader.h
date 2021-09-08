@@ -486,6 +486,7 @@ bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, c
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
 
+void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props);
 VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct loader_device_extension_list *ext_list,
