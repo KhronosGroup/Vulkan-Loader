@@ -923,6 +923,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)gdpa(dev, "vkCmdDrawMultiEXT");
     table->CmdDrawMultiIndexedEXT = (PFN_vkCmdDrawMultiIndexedEXT)gdpa(dev, "vkCmdDrawMultiIndexedEXT");
 
+    // ---- VK_EXT_pageable_device_local_memory extension commands
+    table->SetDeviceMemoryPriorityEXT = (PFN_vkSetDeviceMemoryPriorityEXT)gdpa(dev, "vkSetDeviceMemoryPriorityEXT");
+
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gdpa(dev, "vkDestroyAccelerationStructureKHR");
@@ -1785,6 +1788,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_EXT_multi_draw extension commands
     if (!strcmp(name, "CmdDrawMultiEXT")) return (void *)table->CmdDrawMultiEXT;
     if (!strcmp(name, "CmdDrawMultiIndexedEXT")) return (void *)table->CmdDrawMultiIndexedEXT;
+
+    // ---- VK_EXT_pageable_device_local_memory extension commands
+    if (!strcmp(name, "SetDeviceMemoryPriorityEXT")) return (void *)table->SetDeviceMemoryPriorityEXT;
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -4657,6 +4663,17 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
 }
 
 
+// ---- VK_EXT_pageable_device_local_memory extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
+    VkDevice                                    device,
+    VkDeviceMemory                              memory,
+    float                                       priority) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->SetDeviceMemoryPriorityEXT(device, memory, priority);
+}
+
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -6139,6 +6156,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdDrawMultiIndexedEXT", name)) {
         *addr = (void *)CmdDrawMultiIndexedEXT;
+        return true;
+    }
+
+    // ---- VK_EXT_pageable_device_local_memory extension commands
+    if (!strcmp("vkSetDeviceMemoryPriorityEXT", name)) {
+        *addr = (void *)SetDeviceMemoryPriorityEXT;
         return true;
     }
 
