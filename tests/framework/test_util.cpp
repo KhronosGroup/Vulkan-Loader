@@ -172,7 +172,7 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
             if (i > 0) out += ", ";
             out += "\"" + component_layers.at(i) + "\"";
         }
-        out += "]\n\t\t}";
+        out += "]\n";
     }
     if (pre_instance_functions.size() > 0) {
         out += ",\n\t\t\"pre_instance_functions\": [";
