@@ -89,3 +89,52 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
     inst.create_info.add_layer(meta_layer_name);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
 }
+
+TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
+    const char* regular_layer_name = "TestLayer";
+    ManifestLayer::LayerDescription regular_description{};
+    regular_description.name = regular_layer_name;
+    regular_description.api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
+    regular_description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_1;
+    regular_description.device_extensions.push_back({"NeverGonnaLetYouDown"});
+
+    ManifestLayer regular_layer;
+    regular_layer.layers.push_back(regular_description);
+    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+
+    const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
+    ManifestLayer::LayerDescription description{};
+    description.name = lunarg_meta_layer_name;
+    description.api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
+    description.component_layers = {regular_layer_name};
+    description.disable_environment = "DisableMeIfYouCan";
+
+    ManifestLayer lunarg_meta_layer;
+    lunarg_meta_layer.file_format_version = ManifestVersion(1, 1, 2);
+    lunarg_meta_layer.layers.push_back(description);
+    env->AddImplicitLayer(lunarg_meta_layer, "meta_test_layer.json");
+
+    // should find 1, the 'regular' layer
+    uint32_t layer_count = 2;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+    EXPECT_EQ(layer_count, 2);
+
+    std::array<VkLayerProperties, 2> layer_props;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+    EXPECT_EQ(layer_count, 2);
+    EXPECT_TRUE(string_eq(layer_props[0].layerName, lunarg_meta_layer_name));
+    EXPECT_TRUE(string_eq(layer_props[1].layerName, regular_layer_name));
+
+    uint32_t extension_count = 0;
+    std::array<VkExtensionProperties, 2> extensions;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils + our two extensions
+
+    EXPECT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 2);
+
+    InstWrapper inst{env->vulkan_functions};
+    // inst.create_info.add_layer();
+    inst.CheckCreate();
+}
