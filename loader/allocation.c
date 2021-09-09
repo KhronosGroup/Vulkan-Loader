@@ -39,7 +39,6 @@ void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t 
         pMemory = instance->alloc_callbacks.pfnAllocation(instance->alloc_callbacks.pUserData, size, sizeof(uint64_t), alloc_scope);
     } else {
 #endif
-        assert(size > 0 && "The behavior of malloc undefined if size is zero");
         pMemory = malloc(size);
     }
 
@@ -92,7 +91,6 @@ void *loader_device_heap_alloc(const struct loader_device *device, size_t size, 
         pMemory = device->alloc_callbacks.pfnAllocation(device->alloc_callbacks.pUserData, size, sizeof(uint64_t), alloc_scope);
     } else {
 #endif
-        assert(size > 0 && "The behavior of malloc undefined if size is zero");
         pMemory = malloc(size);
     }
     return pMemory;
