@@ -59,7 +59,7 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkI
     // Device extensions are returned if a layer or ICD supports the extension.
     // Instance extensions are returned if the extension is enabled and the
     // loader or someone else supports the extension
-    return trampolineGetProcAddr(ptr_instance, pName);
+    return trampoline_get_proc_addr(ptr_instance, pName);
 }
 
 // Get a device level or global level entry point address.
