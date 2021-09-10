@@ -393,3 +393,15 @@ struct loader_data_files {
     uint32_t alloc_count;
     char **filename_list;
 };
+
+struct LoaderSortedPhysicalDevice {
+    uint32_t device_count;
+    VkPhysicalDevice *physical_devices;
+    uint32_t icd_index;
+    struct loader_icd_term *icd_term;
+};
+
+struct loader_msg_callback_map_entry {
+    VkDebugReportCallbackEXT icd_obj;
+    VkDebugReportCallbackEXT loader_obj;
+};
