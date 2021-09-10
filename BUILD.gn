@@ -157,6 +157,7 @@ if (!is_android) {
         "loader/dirent_on_windows.h",
         "loader/loader_windows.c",
         "loader/loader_windows.h",
+        "loader/loader.rc",
         "loader/vulkan-1.def",
       ]
       if (!is_clang) {
