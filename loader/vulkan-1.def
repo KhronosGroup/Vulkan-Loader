@@ -237,3 +237,5 @@ EXPORTS
    vkGetBufferOpaqueCaptureAddress
    vkGetDeviceMemoryOpaqueCaptureAddress
    vkResetQueryPool
+
+   vkGetPhysicalDeviceToolProperties
