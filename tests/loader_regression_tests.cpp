@@ -347,6 +347,24 @@ TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
     ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
 }
 
+TEST_F(EnumerateDeviceExtensionProperties, ZeroPhysicalDeviceExtensions) {
+    env->get_test_icd().add_physical_device({});
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0));
+    inst.CheckCreate(VK_SUCCESS);
+
+    auto phys_dev = inst.GetPhysDev();
+    DeviceWrapper dev{inst};
+    dev.CheckCreate(phys_dev);
+
+    uint32_t ext_count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &ext_count, nullptr));
+    ASSERT_EQ(ext_count, 0);
+    VkExtensionProperties ext_props{};
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &ext_count, &ext_props));
+    ASSERT_EQ(ext_count, 0);
+}
+
 TEST_F(EnumeratePhysicalDevices, OneCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
 
@@ -451,6 +469,16 @@ TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
 
     ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &physical_count, physical.data()));
     ASSERT_EQ(physical_count, 1);
+}
+
+TEST_F(EnumeratePhysicalDevices, ZeroPhysicalDevices) {
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0));
+    inst.CheckCreate(VK_SUCCESS);
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, env->vulkan_functions.vkEnumeratePhysicalDevices(inst, &count, nullptr));
+    ASSERT_EQ(count, 0);
 }
 
 TEST_F(EnumeratePhysicalDevices, ZeroPhysicalDevicesAfterCreateInstance) {
