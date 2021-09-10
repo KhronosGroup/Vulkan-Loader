@@ -70,18 +70,6 @@ extern loader_platform_thread_mutex loader_lock;
 extern loader_platform_thread_mutex loader_json_lock;
 extern loader_platform_thread_mutex loader_preload_icd_lock;
 
-struct loader_msg_callback_map_entry {
-    VkDebugReportCallbackEXT icd_obj;
-    VkDebugReportCallbackEXT loader_obj;
-};
-
-struct LoaderSortedPhysicalDevice {
-    uint32_t device_count;
-    VkPhysicalDevice *physical_devices;
-    uint32_t icd_index;
-    struct loader_icd_term *icd_term;
-};
-
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2);
 
 VkResult loader_validate_layers(const struct loader_instance *inst, const uint32_t layer_count,
