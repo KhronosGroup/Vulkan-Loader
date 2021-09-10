@@ -3232,3 +3232,13 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkResetQueryPool(VkDevice device, VkQue
     }
     disp->ResetQueryPool(device, queryPool, firstQuery, queryCount);
 }
+
+// ---- Vulkan core 1.3 trampolines
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
+                                                                 VkPhysicalDeviceToolProperties *pToolProperties) {
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    const VkLayerInstanceDispatchTable *disp = loader_get_instance_layer_dispatch(physicalDevice);
+
+    return disp->GetPhysicalDeviceToolProperties(unwrapped_phys_dev, pToolCount, pToolProperties);
+}
