@@ -31,7 +31,7 @@
 
 #if defined(_WIN32)
 
-#include "loader_common.h"
+#include "loader.h"
 
 #include <minwindef.h>
 #include <cfgmgr32.h>
