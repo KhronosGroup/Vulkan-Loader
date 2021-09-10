@@ -48,6 +48,9 @@
 #define TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES \
     "$<TARGET_FILE:test_icd_version_2_export_icd_enumerate_adapter_physical_devices>"
 
+// All possible defines for v6
+#define TEST_ICD_PATH_VERSION_6 "$<TARGET_FILE:test_icd_version_6>"
+
 // TestLayer binaries
 #define TEST_LAYER_PATH_EXPORT_BASE "$<TARGET_FILE:test_layer_export_base>"
 #define TEST_LAYER_PATH_EXPORT_VERSION_0 "$<TARGET_FILE:test_layer_export_version_0>"
