@@ -474,7 +474,7 @@ TEST(TryLoadWrongBinaries, WrongICD) {
 #if defined(__linux__)
 #if defined(__x86_64__)
     ASSERT_TRUE(log.find("wrong ELF class: ELFCLASS32"));
-#elif
+#else
     ASSERT_TRUE(log.find("wrong ELF class: ELFCLASS64"));
 #endif
 #endif
