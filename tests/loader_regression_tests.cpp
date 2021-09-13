@@ -920,8 +920,30 @@ TEST(ExtensionManual, ToolingProperties) {
         ASSERT_EQ(tool_count, 1);
         string_eq(props.name, icd_tool_props.name);
     }
-}
+    {  // core
+        FrameworkEnvironment env{};
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env.get_test_icd().physical_devices.push_back({});
+        env.get_test_icd().supports_tooling_info_core = true;
+        env.get_test_icd().tooling_properties.push_back(icd_tool_props);
 
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto phys_dev = inst.GetPhysDev();
+
+        auto getToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(
+            inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolProperties"));
+        handle_assert_has_value(getToolProperties);
+        uint32_t tool_count = 0;
+        ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, nullptr));
+        ASSERT_EQ(tool_count, 1);
+        VkPhysicalDeviceToolProperties props{};
+        ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, &props));
+        ASSERT_EQ(tool_count, 1);
+        string_eq(props.name, icd_tool_props.name);
+    }
+}
 TEST_F(CreateInstance, InstanceNullLayerPtr) {
     VkInstance inst = VK_NULL_HANDLE;
     VkInstanceCreateInfo info{};

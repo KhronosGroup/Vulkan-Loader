@@ -87,10 +87,12 @@ struct TestICD {
     BUILDER_VECTOR(TestICD, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
 
     // Must explicitely state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
-    // function pointer for vkGetPhysicalDeviceToolPropertiesEXT
-    BUILDER_VALUE(TestICD, bool, supports_tooling_info_ext, false)
+    // function pointer for vkGetPhysicalDeviceToolPropertiesEXT or vkGetPhysicalDeviceToolProperties (core version)
+    BUILDER_VALUE(TestICD, bool, supports_tooling_info_ext, false);
+    BUILDER_VALUE(TestICD, bool, supports_tooling_info_core, false);
     // List of tooling properties that this driver 'supports'
     std::vector<VkPhysicalDeviceToolPropertiesEXT> tooling_properties;
+    std::vector<DispatchableHandle<VkCommandBuffer>> allocated_command_buffers;
 
     PhysicalDevice& GetPhysDevice(VkPhysicalDevice physicalDevice) {
         for (auto& phys_dev : physical_devices) {
