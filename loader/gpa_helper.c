@@ -210,6 +210,45 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkGetDeviceMemoryOpaqueCaptureAddress")) return vkGetDeviceMemoryOpaqueCaptureAddress;
     if (!strcmp(funcName, "vkResetQueryPool")) return vkResetQueryPool;
 
+    // Core 1.3 functions
+    if (!strcmp(funcName, "vkGetPhysicalDeviceToolProperties")) return vkGetPhysicalDeviceToolProperties;
+    if (!strcmp(funcName, "vkCreatePrivateDataSlot")) return vkCreatePrivateDataSlot;
+    if (!strcmp(funcName, "vkDestroyPrivateDataSlot")) return vkDestroyPrivateDataSlot;
+    if (!strcmp(funcName, "vkSetPrivateData")) return vkSetPrivateData;
+    if (!strcmp(funcName, "vkGetPrivateData")) return vkGetPrivateData;
+    if (!strcmp(funcName, "vkCmdSetEvent2")) return vkCmdSetEvent2;
+    if (!strcmp(funcName, "vkCmdResetEvent2")) return vkCmdResetEvent2;
+    if (!strcmp(funcName, "vkCmdWaitEvents2")) return vkCmdWaitEvents2;
+    if (!strcmp(funcName, "vkCmdPipelineBarrier2")) return vkCmdPipelineBarrier2;
+    if (!strcmp(funcName, "vkCmdWriteTimestamp2")) return vkCmdWriteTimestamp2;
+    if (!strcmp(funcName, "vkQueueSubmit2")) return vkQueueSubmit2;
+    if (!strcmp(funcName, "vkCmdCopyBuffer2")) return vkCmdCopyBuffer2;
+    if (!strcmp(funcName, "vkCmdCopyImage2")) return vkCmdCopyImage2;
+    if (!strcmp(funcName, "vkCmdCopyBufferToImage2")) return vkCmdCopyBufferToImage2;
+    if (!strcmp(funcName, "vkCmdCopyImageToBuffer2")) return vkCmdCopyImageToBuffer2;
+    if (!strcmp(funcName, "vkCmdBlitImage2")) return vkCmdBlitImage2;
+    if (!strcmp(funcName, "vkCmdResolveImage2")) return vkCmdResolveImage2;
+    if (!strcmp(funcName, "vkCmdBeginRendering")) return vkCmdBeginRendering;
+    if (!strcmp(funcName, "vkCmdEndRendering")) return vkCmdEndRendering;
+    if (!strcmp(funcName, "vkCmdSetCullMode")) return vkCmdSetCullMode;
+    if (!strcmp(funcName, "vkCmdSetFrontFace")) return vkCmdSetFrontFace;
+    if (!strcmp(funcName, "vkCmdSetPrimitiveTopology")) return vkCmdSetPrimitiveTopology;
+    if (!strcmp(funcName, "vkCmdSetViewportWithCount")) return vkCmdSetViewportWithCount;
+    if (!strcmp(funcName, "vkCmdSetScissorWithCount")) return vkCmdSetScissorWithCount;
+    if (!strcmp(funcName, "vkCmdBindVertexBuffers2")) return vkCmdBindVertexBuffers2;
+    if (!strcmp(funcName, "vkCmdSetDepthTestEnable")) return vkCmdSetDepthTestEnable;
+    if (!strcmp(funcName, "vkCmdSetDepthWriteEnable")) return vkCmdSetDepthWriteEnable;
+    if (!strcmp(funcName, "vkCmdSetDepthCompareOp")) return vkCmdSetDepthCompareOp;
+    if (!strcmp(funcName, "vkCmdSetDepthBoundsTestEnable")) return vkCmdSetDepthBoundsTestEnable;
+    if (!strcmp(funcName, "vkCmdSetStencilTestEnable")) return vkCmdSetStencilTestEnable;
+    if (!strcmp(funcName, "vkCmdSetStencilOp")) return vkCmdSetStencilOp;
+    if (!strcmp(funcName, "vkCmdSetRasterizerDiscardEnable")) return vkCmdSetRasterizerDiscardEnable;
+    if (!strcmp(funcName, "vkCmdSetDepthBiasEnable")) return vkCmdSetDepthBiasEnable;
+    if (!strcmp(funcName, "vkCmdSetPrimitiveRestartEnable")) return vkCmdSetPrimitiveRestartEnable;
+    if (!strcmp(funcName, "vkGetDeviceBufferMemoryRequirements")) return vkGetDeviceBufferMemoryRequirements;
+    if (!strcmp(funcName, "vkGetDeviceImageMemoryRequirements")) return vkGetDeviceImageMemoryRequirements;
+    if (!strcmp(funcName, "vkGetDeviceImageSparseMemoryRequirements")) return vkGetDeviceImageSparseMemoryRequirements;
+
     // Instance extensions
     void *addr;
     if (debug_utils_InstanceGpa(inst, funcName, &addr)) return addr;
