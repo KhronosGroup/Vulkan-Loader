@@ -3235,10 +3235,227 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkResetQueryPool(VkDevice device, VkQue
 
 // ---- Vulkan core 1.3 trampolines
 
-VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
-                                                                 VkPhysicalDeviceToolProperties *pToolProperties) {
+// Instance
+
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t *pToolCount,
+                                                                               VkPhysicalDeviceToolProperties *pToolProperties) {
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     const VkLayerInstanceDispatchTable *disp = loader_get_instance_layer_dispatch(physicalDevice);
 
     return disp->GetPhysicalDeviceToolProperties(unwrapped_phys_dev, pToolCount, pToolProperties);
+}
+
+// Device
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdBeginRendering(commandBuffer, pRenderingInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                 uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                 const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                                 const VkDeviceSize *pStrides) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdBlitImage2(commandBuffer, pBlitImageInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                                                 const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyImage2(commandBuffer, pCopyImageInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                                                 const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdEndRendering(VkCommandBuffer commandBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdEndRendering(commandBuffer);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
+                                                               const VkDependencyInfo *pDependencyInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                                          VkPipelineStageFlags2 stageMask) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdResetEvent2(commandBuffer, event, stageMask);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdResolveImage2(VkCommandBuffer commandBuffer,
+                                                            const VkResolveImageInfo2 *pResolveImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdResolveImage2(commandBuffer, pResolveImageInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetCullMode(commandBuffer, cullMode);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer,
+                                                                       VkBool32 depthBoundsTestEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                                        const VkDependencyInfo *pDependencyInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetEvent2(commandBuffer, event, pDependencyInfo);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetFrontFace(commandBuffer, frontFace);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer,
+                                                                        VkBool32 primitiveRestartEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer,
+                                                                   VkPrimitiveTopology primitiveTopology) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer,
+                                                                         VkBool32 rasterizerDiscardEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                                  const VkRect2D *pScissors) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
+                                                           VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp,
+                                                           VkCompareOp compareOp) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                                   const VkViewport *pViewports) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount,
+                                                          const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                              VkQueryPool queryPool, uint32_t query) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
+}
+
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreatePrivateDataSlot(VkDevice device,
+                                                                     const VkPrivateDataSlotCreateInfo *pCreateInfo,
+                                                                     const VkAllocationCallbacks *pAllocator,
+                                                                     VkPrivateDataSlot *pPrivateDataSlot) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->CreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
+                                                                  const VkAllocationCallbacks *pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceBufferMemoryRequirements(VkDevice device,
+                                                                             const VkDeviceBufferMemoryRequirements *pInfo,
+                                                                             VkMemoryRequirements2 *pMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceImageMemoryRequirements(VkDevice device,
+                                                                            const VkDeviceImageMemoryRequirements *pInfo,
+                                                                            VkMemoryRequirements2 *pMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceImageSparseMemoryRequirements(
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                                          VkPrivateDataSlot privateDataSlot, uint64_t *pData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
+}
+
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                                              VkPrivateDataSlot privateDataSlot, uint64_t data) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->SetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
+}
+
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                            VkFence fence) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    return disp->QueueSubmit2(queue, submitCount, pSubmits, fence);
 }
