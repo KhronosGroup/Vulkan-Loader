@@ -300,8 +300,8 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
     if (found != icd.device_handles.end()) icd.device_handles.erase(found);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
-                                                                         VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL generic_tool_props_function(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+                                                           VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
     if (icd.tooling_properties.size() == 0) {
         return VK_SUCCESS;
     }
@@ -316,6 +316,16 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolPropertiesEXT(VkPhysi
         }
     }
     return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+                                                                         VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+    return generic_tool_props_function(physicalDevice, pToolCount, pToolProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+                                                                      VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+    return generic_tool_props_function(physicalDevice, pToolCount, pToolProperties);
 }
 
 //// WSI ////
@@ -701,6 +711,30 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormats2KHR(VkPhys
     return VK_SUCCESS;
 }
 
+//// misc
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
+    if (pCommandPool != nullptr) {
+        pCommandPool = reinterpret_cast<VkCommandPool*>(0xdeadbeef);
+    }
+    return VK_SUCCESS;
+}
+
+VKAPI_ATTR void VKAPI_CALL test_vkDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+                                                     const VkAllocationCallbacks* pAllocator) {
+    // do nothing, leak memory for now
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                             VkCommandBuffer* pCommandBuffers) {
+    if (pAllocateInfo != nullptr && pCommandBuffers != nullptr) {
+        for (size_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
+            icd.allocated_command_buffers.push_back({});
+            pCommandBuffers[i] = icd.allocated_command_buffers.back().handle;
+        }
+    }
+    return VK_SUCCESS;
+}
+
 // VK_EXT_acquire_drm_display
 VKAPI_ATTR VkResult VKAPI_CALL test_vkAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) {
     return VK_SUCCESS;
@@ -714,6 +748,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDrmDisplayEXT(VkPhysicalDevice physical
     return VK_SUCCESS;
 }
 
+//// stubs
 // 1.0
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
     if (nullptr != pFeatures) {
@@ -1110,6 +1145,9 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
             return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalFenceProperties);
     }
 
+    if (icd.supports_tooling_info_core) {
+        if (string_eq(pName, "vkGetPhysicalDeviceToolProperties")) return TO_VOID_PFN(test_vkGetPhysicalDeviceToolProperties);
+    }
     if (icd.supports_tooling_info_ext) {
         if (string_eq(pName, "vkGetPhysicalDeviceToolPropertiesEXT")) return TO_VOID_PFN(test_vkGetPhysicalDeviceToolPropertiesEXT);
     }
@@ -1168,6 +1206,9 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
     if (string_eq(pName, "vkDestroyDevice")) return TO_VOID_PFN(test_vkDestroyDevice);
     if (string_eq(pName, "vkCreateSwapchainKHR")) return TO_VOID_PFN(test_vkCreateSwapchainKHR);
     if (string_eq(pName, "vkDestroySwapchainKHR")) return TO_VOID_PFN(test_vkDestroySwapchainKHR);
+    if (string_eq(pName, "vkCreateCommandPool")) return TO_VOID_PFN(test_vkCreateCommandPool);
+    if (string_eq(pName, "vkAllocateCommandBuffers")) return TO_VOID_PFN(test_vkAllocateCommandBuffers);
+    if (string_eq(pName, "vkDestroyCommandPool")) return TO_VOID_PFN(test_vkDestroyCommandPool);
     for (auto& function : found_phys_dev->known_device_functions) {
         if (string_eq(pName, function.name)) {
             return reinterpret_cast<PFN_vkVoidFunction>(function.function);
