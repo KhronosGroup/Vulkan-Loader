@@ -239,3 +239,40 @@ EXPORTS
    vkResetQueryPool
 
    vkGetPhysicalDeviceToolProperties
+
+   vkCreatePrivateDataSlot
+   vkDestroyPrivateDataSlot
+   vkSetPrivateData
+   vkGetPrivateData
+   vkCmdSetEvent2
+   vkCmdResetEvent2
+   vkCmdWaitEvents2
+   vkCmdPipelineBarrier2
+   vkCmdWriteTimestamp2
+   vkQueueSubmit2
+   vkCmdCopyBuffer2
+   vkCmdCopyImage2
+   vkCmdCopyBufferToImage2
+   vkCmdCopyImageToBuffer2
+   vkCmdBlitImage2
+   vkCmdResolveImage2
+   vkCmdBeginRendering
+   vkCmdEndRendering
+   vkCmdSetCullMode
+   vkCmdSetFrontFace
+   vkCmdSetPrimitiveTopology
+   vkCmdSetViewportWithCount
+   vkCmdSetScissorWithCount
+   vkCmdBindVertexBuffers2
+   vkCmdSetDepthTestEnable
+   vkCmdSetDepthWriteEnable
+   vkCmdSetDepthCompareOp
+   vkCmdSetDepthBoundsTestEnable
+   vkCmdSetStencilTestEnable
+   vkCmdSetStencilOp
+   vkCmdSetRasterizerDiscardEnable
+   vkCmdSetDepthBiasEnable
+   vkCmdSetPrimitiveRestartEnable
+   vkGetDeviceBufferMemoryRequirements
+   vkGetDeviceImageMemoryRequirements
+   vkGetDeviceImageSparseMemoryRequirements
