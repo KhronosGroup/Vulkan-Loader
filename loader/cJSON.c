@@ -153,7 +153,7 @@ char *ensure(const struct loader_instance *instance, printbuffer *p, size_t need
     return newbuffer + p->offset;
 }
 
-size_t update(printbuffer *p) {
+size_t cJSON_update(printbuffer *p) {
     char *str;
     if (!p || !p->buffer) return 0;
     str = p->buffer + p->offset;
@@ -641,7 +641,7 @@ char *print_array(const struct loader_instance *instance, cJSON *item, int depth
         child = item->child;
         while (child && !fail) {
             print_value(instance, child, depth + 1, fmt, p);
-            p->offset = update(p);
+            p->offset = cJSON_update(p);
             if (child->next) {
                 len = fmt ? 2 : 1;
                 ptr = ensure(instance, p, len + 1);
@@ -805,7 +805,7 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
                 p->offset += depth;
             }
             print_string_ptr(instance, child->string, p);
-            p->offset = update(p);
+            p->offset = cJSON_update(p);
 
             len = fmt ? 2 : 1;
             ptr = ensure(instance, p, len);
@@ -815,7 +815,7 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
             p->offset += len;
 
             print_value(instance, child, depth, fmt, p);
-            p->offset = update(p);
+            p->offset = cJSON_update(p);
 
             len = (fmt ? 1 : 0) + (child->next ? 1 : 0);
             ptr = ensure(instance, p, len + 1);
