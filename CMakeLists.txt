@@ -98,6 +98,12 @@ if(APPLE)
     option(BUILD_STATIC_LOADER "Build a loader that can be statically linked" OFF)
 endif()
 
+if(WIN32)
+    # Optional: Allow specify the exact version used in the loader dll
+    # Format is major.minor.patch.build
+    set(BUILD_DLL_VERSIONINFO "" CACHE STRING "Set the version to be used in the loader.rc file. Default value is the currently generated header version")
+endif()
+
 if(BUILD_STATIC_LOADER)
     message(WARNING "The BUILD_STATIC_LOADER option has been set. Note that this will only work on MacOS and is not supported "
         "or tested as part of the loader. Use it at your own risk.")

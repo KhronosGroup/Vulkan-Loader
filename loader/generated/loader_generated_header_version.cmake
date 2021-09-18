@@ -1,5 +1,5 @@
 # *** THIS FILE IS GENERATED - DO NOT EDIT ***
-# See loader_generated_header_version_generator.py for modifications
+# See loader_versioning_generator.py for modifications
 
 ############################################################################
 #
