@@ -241,8 +241,8 @@ def makeGenOpts(args):
 
     # Loader Generated Header Version Options for loader_generated_header_version.cmake
     genOpts['loader_generated_header_version.cmake'] = [
-          LoaderGenerateHeaderVersion,
-          LoaderGenerateHeaderVersionGeneratorOptions(
+          LoaderVersioningGenerator,
+          LoaderVersioningGeneratorOptions(
             conventions       = conventions,
             filename          = 'loader_generated_header_version.cmake',
             directory         = directory,
@@ -381,7 +381,7 @@ if __name__ == '__main__':
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
     from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
-    from loader_generated_header_version_generator import LoaderGenerateHeaderVersion, LoaderGenerateHeaderVersionGeneratorOptions
+    from loader_versioning_generator import LoaderVersioningGenerator, LoaderVersioningGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
