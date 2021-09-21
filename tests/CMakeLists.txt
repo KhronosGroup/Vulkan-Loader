@@ -24,8 +24,12 @@ option(TEST_USE_THREAD_SANITIZER "Linux only: Advanced thread checking" OFF)
 include(GoogleTest)
 add_subdirectory(framework)
 
-add_executable(test_regression loader_testing_main.cpp loader_regression_tests.cpp loader_layer_tests.cpp
-    loader_version_tests.cpp loader_alloc_callback_tests.cpp)
+add_executable(test_regression loader_testing_main.cpp
+    loader_alloc_callback_tests.cpp
+    loader_get_proc_addr_tests.cpp
+    loader_layer_tests.cpp
+    loader_regression_tests.cpp
+    loader_version_tests.cpp)
 target_link_libraries(test_regression PRIVATE testing_dependencies)
 
 add_executable(test_wsi loader_testing_main.cpp loader_wsi_tests.cpp)
