@@ -20,6 +20,11 @@ cmake_minimum_required(VERSION 3.10.2)
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 
+# If we are building in Visual Studio 2015 and with a CMake version 3.19 or greater, we need to set this variable
+# so that CMake will choose a Windows SDK version higher than 10.0.14393.0, as dxgi1_6.h is only found in Windows SDK
+# 10.0.17763 and higher.
+set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM OFF)
+
 project(Vulkan-Loader)
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
