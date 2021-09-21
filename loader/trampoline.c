@@ -46,11 +46,11 @@
 //    If instance is valid returns a trampoline entry point for all dispatchable Vulkan
 //    functions both core and extensions.
 LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char *pName) {
-    void *addr;
-
-    addr = globalGetProcAddr(pName);
-    if (instance == VK_NULL_HANDLE || addr != NULL) {
-        return addr;
+    // Get entrypoint addresses that are global (no dispatchable object)
+    void *addr = globalGetProcAddr(pName);
+    if (addr != VK_NULL_HANDLE) {
+        // Make sure to only allow getting global functions if the instance handle is null
+        return (instance == VK_NULL_HANDLE) ? addr : NULL;
     }
 
     struct loader_instance *ptr_instance = loader_get_instance(instance);
