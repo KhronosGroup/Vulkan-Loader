@@ -725,4 +725,52 @@ TEST(EnvironmentVariables, NonSecureEnvVarLookup) {
     ASSERT_TRUE(log.find("Loader is using non-secure environment variable lookup for"));
 #endif
 }
+
+// Check for proper handling of paths specified via environment variables.
+TEST(EnvironmentVariables, XDG) {
+    // Set up a layer path that includes default and user-specified locations,
+    // so that the test app can find them.  Include some badly specified elements as well.
+    // Need to redirect the 'home' directory
+    fs::path HOME = "/home/fake_home";
+    set_env_var("HOME", HOME.str());
+    std::string vk_layer_path = "";
+    vk_layer_path += ":/tmp/carol::::/:";
+    vk_layer_path += (HOME / "/.local/share/vulkan/implicit_layer.d:::::/tandy:").str();
+    set_env_var("VK_LAYER_PATH", vk_layer_path);
+    set_env_var("XDG_CONFIG_DIRS", ":/tmp/goober:::::/tmp/goober2/::::");
+    set_env_var("XDG_CONFIG_HOME", ":/tmp/goober:::::/tmp/goober2/::::");
+    set_env_var("XDG_DATA_DIRS", "::::/tmp/goober3:/tmp/goober4/with spaces:::");
+    set_env_var("XDG_DATA_HOME", "::::/tmp/goober3:/tmp/goober4/with spaces:::");
+
+    SingleICDShim env{TestICDDetails{TEST_ICD_PATH_VERSION_6}};
+
+    const char* layer_name = "TestLayer";
+    ManifestLayer::LayerDescription description{};
+    description.name = layer_name;
+    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_1;
+
+    ManifestLayer layer;
+    layer.layers.push_back(description);
+    env.AddExplicitLayer(layer, "test_layer.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT};
+    inst.create_info.add_layer(layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, debug_log);
+    inst.CheckCreate();
+
+    auto check_paths = [](DebugUtilsLogger const& debug_log, ManifestCategory category, fs::path const& HOME) {
+        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober/vulkan") / category_path_name(category)).str()));
+        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober2/vulkan") / category_path_name(category)).str()));
+        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober3/vulkan") / category_path_name(category)).str()));
+        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober4/with spaces/vulkan") / category_path_name(category)).str()));
+    };
+    check_paths(debug_log, ManifestCategory::icd, HOME);
+    check_paths(debug_log, ManifestCategory::implicit_layer, HOME);
+
+    // look for VK_LAYER_PATHS
+    EXPECT_TRUE(debug_log.find("/tmp/carol"));
+    EXPECT_TRUE(debug_log.find("/tandy"));
+    EXPECT_TRUE(debug_log.find((HOME / ".local/share/vulkan/implicit_layer.d").str()));
+}
 #endif
