@@ -180,7 +180,10 @@ inline std::vector<std::string> parse_env_var_list(std::string const& var) {
 #elif defined(__linux__) || defined(__APPLE__)
         if (var[i] == ':') {
 #endif
-            items.push_back(var.substr(start, len));
+            if (len != 0) {
+                // only push back non empty strings
+                items.push_back(var.substr(start, len));
+            }
             start = i + 1;
             len = 0;
         } else {
@@ -454,44 +457,36 @@ inline fs::path const& PlatformShim::get_fake_path(fs::path const& path) { retur
 
 inline void PlatformShim::add_manifest(ManifestCategory category, fs::path const& path) {}
 
+inline void parse_and_add_env_var_override(std::vector<std::string>& paths, std::string env_var_contents) {
+    auto parsed_paths = parse_env_var_list(env_var_contents);
+    paths.insert(paths.end(), parsed_paths.begin(), parsed_paths.end());
+}
+
 inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCategory category) {
-    std::vector<std::string> xdg_paths;
-    std::string home = get_env_var("HOME");
+    std::vector<std::string> paths;
+    auto home = fs::path(get_env_var("HOME"));
     if (home.size() != 0) {
-        std::string xdg_config_home_path = fs::path(home).c_str();
-        xdg_config_home_path += "/.config";
-        xdg_paths.push_back(xdg_config_home_path);
+        paths.push_back((home / ".config").str());
+        paths.push_back((home / ".local/share").str());
     }
+    parse_and_add_env_var_override(paths, get_env_var("XDG_CONFIG_DIRS"));
+    parse_and_add_env_var_override(paths, get_env_var("XDG_CONFIG_HOME"));
+    parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_DIRS"));
+    parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_HOME"));
+    parse_and_add_env_var_override(paths, get_env_var("VK_LAYER_PATH"));
+    parse_and_add_env_var_override(paths, FALLBACK_DATA_DIRS);
+    parse_and_add_env_var_override(paths, FALLBACK_CONFIG_DIRS);
 
-    std::string xdg_config_dirs_var = get_env_var("XDG_CONFIG_DIRS");
-    if (xdg_config_dirs_var.size() == 0) {
-        xdg_config_dirs_var = FALLBACK_CONFIG_DIRS;
-    }
-    auto config_dirs_paths = parse_env_var_list(xdg_config_dirs_var);
-    xdg_paths.insert(xdg_paths.end(), config_dirs_paths.begin(), config_dirs_paths.end());
-
-    xdg_paths.push_back(fs::path(SYSCONFDIR).c_str());
+    paths.push_back(fs::path(SYSCONFDIR).c_str());
 #if defined(EXTRASYSCONFDIR)
     // EXTRASYSCONFDIR default is /etc, if SYSCONFDIR wasn't defined, it will have /etc put
     // as its default. Don't want to double add it
     if (!string_eq(SYSCONFDIR, EXTRASYSCONFDIR)) {
-        xdg_paths.push_back(fs::path(EXTRASYSCONFDIR).c_str());
+        paths.push_back(fs::path(EXTRASYSCONFDIR).c_str());
     }
 #endif
-    if (home.size() != 0) {
-        std::string xdg_data_home_path = fs::path(home).c_str();
-        xdg_data_home_path += "/.local/share";
-        xdg_paths.push_back(xdg_data_home_path);
-    }
 
-    std::string xdg_data_dirs_var = get_env_var("XDG_DATA_DIRS");
-    if (xdg_data_dirs_var.size() == 0) {
-        xdg_data_dirs_var = FALLBACK_DATA_DIRS;
-    }
-    auto data_dirs_paths = parse_env_var_list(xdg_data_dirs_var);
-    xdg_paths.insert(xdg_paths.end(), data_dirs_paths.begin(), data_dirs_paths.end());
-
-    for (auto& path : xdg_paths) {
+    for (auto& path : paths) {
         add(fs::path(path) / "vulkan" / category_path_name(category), new_path);
     }
 }

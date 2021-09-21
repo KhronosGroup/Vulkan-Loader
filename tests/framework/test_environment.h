@@ -199,7 +199,7 @@ struct DebugUtilsLogger {
     DebugUtilsLogger(DebugUtilsLogger&&) = delete;
     DebugUtilsLogger& operator=(DebugUtilsLogger&&) = delete;
 
-    bool find(std::string const& search_text) { return returned_output.find(search_text) != std::string::npos; }
+    bool find(std::string const& search_text) const { return returned_output.find(search_text) != std::string::npos; }
 
     VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return &create_info; }
     VkDebugUtilsMessengerCreateInfoEXT create_info{};
