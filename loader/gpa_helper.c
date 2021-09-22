@@ -28,7 +28,7 @@
 #include "debug_utils.h"
 #include "wsi.h"
 
-void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcName) {
+void *trampolineGetProcAddr(struct loader_instance *inst, const char *funcName) {
     // Don't include or check global functions
     if (!strcmp(funcName, "vkGetInstanceProcAddr")) return vkGetInstanceProcAddr;
     if (!strcmp(funcName, "vkDestroyInstance")) return vkDestroyInstance;
