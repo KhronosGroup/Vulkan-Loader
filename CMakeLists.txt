@@ -49,6 +49,11 @@ if (UPDATE_DEPS)
         set(_build_type ${CMAKE_BUILD_TYPE})
     endif()
 
+    set(_build_tests_arg "")
+    if (NOT BUILD_TESTS)
+        set(_build_tests_arg "--optional=tests")
+    endif()
+
     message("********************************************************************************")
     message("* NOTE: Adding target vl_update_deps to run as needed for updating            *")
     message("*       dependencies.                                                          *")
@@ -84,11 +89,7 @@ endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 QUIET)
 
-if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
-    option(BUILD_TESTS "Build Tests" ON)
-else()
-    option(BUILD_TESTS "Build Tests" OFF)
-endif()
+option(BUILD_TESTS "Build Tests" OFF)
 
 if(BUILD_TESTS)
     enable_testing()
@@ -331,7 +332,104 @@ if(BUILD_LOADER)
     add_subdirectory(loader)
 endif()
 
-add_subdirectory(external)
 if(BUILD_TESTS)
-    add_subdirectory(tests)
+    # Set gtest build configuration
+    # Attempt to enable if it is available.
+    if(TARGET gtest)
+        # Already enabled as a target (perhaps by a project enclosing this one)
+        message(STATUS "Vulkan-Loader/external: " "googletest already configured - using it")
+    elseif(IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}/googletest")
+        set(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
+        set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
+        set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
+        set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+        # The googletest directory exists, so enable it as a target.
+        message(STATUS "Vulkan-Loader/external: " "googletest found - configuring it for tests")
+        add_subdirectory("${GOOGLETEST_INSTALL_DIR}/googletest")
+    else()
+        message(SEND_ERROR "Could not find googletest directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of googletest")
+        set(BUILD_TESTS OFF)
+    endif()
+    if (WIN32)
+        if(TARGET detours)
+            # Already enabled as a target (perhaps by a project enclosing this one)
+            message(STATUS "Vulkan-Loader/external: " "detours already configured - using it")
+        else()
+            if(IS_DIRECTORY ${DETOURS_INSTALL_DIR})
+                # The detours directory exists, so enable it as a target.
+                message(STATUS "Vulkan-Loader/external: " "detours found - configuring it for tests")
+            else()
+                message(SEND_ERROR "Could not find detours directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of detours")
+                set(BUILD_TESTS OFF)
+            endif()
+            add_library(detours STATIC
+                ${DETOURS_INSTALL_DIR}/src/creatwth.cpp
+                ${DETOURS_INSTALL_DIR}/src/detours.cpp
+                ${DETOURS_INSTALL_DIR}/src/detours.h
+                ${DETOURS_INSTALL_DIR}/src/detver.h
+                ${DETOURS_INSTALL_DIR}/src/disasm.cpp
+                ${DETOURS_INSTALL_DIR}/src/disolarm.cpp
+                ${DETOURS_INSTALL_DIR}/src/disolarm64.cpp
+                ${DETOURS_INSTALL_DIR}/src/disolia64.cpp
+                ${DETOURS_INSTALL_DIR}/src/disolx64.cpp
+                ${DETOURS_INSTALL_DIR}/src/disolx86.cpp
+                ${DETOURS_INSTALL_DIR}/src/image.cpp
+                ${DETOURS_INSTALL_DIR}/src/modules.cpp
+                )
+            target_include_directories(detours PUBLIC ${DETOURS_INSTALL_DIR}/src)
+
+            macro(GET_WIN32_WINNT version)
+                if(WIN32 AND CMAKE_SYSTEM_VERSION)
+            		set(ver ${CMAKE_SYSTEM_VERSION})
+            		string(REGEX MATCH "^([0-9]+).([0-9])" ver ${ver})
+            		string(REGEX MATCH "^([0-9]+)" verMajor ${ver})
+            		# Check for Windows 10, b/c we'll need to convert to hex 'A'.
+            		if("${verMajor}" MATCHES "10")
+            			set(verMajor "A")
+            			string(REGEX REPLACE "^([0-9]+)" ${verMajor} ver ${ver})
+            		endif("${verMajor}" MATCHES "10")
+            		# Remove all remaining '.' characters.
+            		string(REPLACE "." "" ver ${ver})
+            		# Prepend each digit with a zero.
+            		string(REGEX REPLACE "([0-9A-Z])" "0\\1" ver ${ver})
+            		set(${version} "0x${ver}")
+                endif()
+            endmacro()
+
+            set(DETOURS_MAJOR_VERSION "4")
+            set(DETOURS_MINOR_VERSION "0")
+            set(DETOURS_PATCH_VERSION "1")
+            set(DETOURS_VERSION "${DETOURS_MAJOR_VERSION}.${DETOURS_MINOR_VERSION}.${DETOURS_PATCH_VERSION}")
+
+            target_include_directories(detours PUBLIC ${DETOURS_INSTALL_DIR}/src)
+
+            if(MSVC_VERSION GREATER_EQUAL 1700)
+                target_compile_definitions(detours PUBLIC DETOURS_CL_17_OR_NEWER)
+            endif(MSVC_VERSION GREATER_EQUAL 1700)
+            GET_WIN32_WINNT(ver)
+            if(ver EQUAL 0x0700)
+                target_compile_definitions(detours PUBLIC _USING_V110_SDK71_ DETOURS_WIN_7)
+            endif(ver EQUAL 0x0700)
+            target_compile_definitions(detours PUBLIC "_WIN32_WINNT=${ver}")
+
+            if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+                target_compile_definitions(detours PUBLIC "DETOURS_TARGET_PROCESSOR=X64" DETOURS_X64 DETOURS_64BIT _AMD64_)
+            else("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+                target_compile_definitions(detours PUBLIC "DETOURS_TARGET_PROCESSOR=X86" DETOURS_X86 _X86_)
+            endif("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+
+            target_compile_definitions(detours PUBLIC  "DETOURS_VERSION=0x4c0c1" WIN32_LEAN_AND_MEAN)
+
+            if(MSVC)
+                target_compile_definitions(detours PUBLIC  "_CRT_SECURE_NO_WARNINGS=1")
+                set_target_properties(detours PROPERTIES COMPILE_FLAGS /EHsc)
+            endif()
+
+        endif()
+    endif()
+
+    if (BUILD_TESTS)
+        add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
+    endif()
+
 endif()
