@@ -73,23 +73,16 @@ contains the Vulkan API definition files (registry) that are required to build
 the loader. You must also take note of the headers install directory and pass
 it on the CMake command line for building this repository, as described below.
 
-#### Google Test
+#### Test Dependencies
 
-The loader tests depend on the [Google Test](https://github.com/google/googletest)
-framework and do not build unless this framework is downloaded into the
-repository's `external` directory.
+The loader tests depend on the [Google Test](https://github.com/google/googletest) library and
+on Windows platforms depends on the [Microsoft Detours](https://github.com/microsoft/Detours) library.
 
-To obtain the framework, change your current directory to the top of your
-Vulkan-Loader repository and run:
-
-    git clone https://github.com/google/googletest.git external/googletest
-    cd external/googletest
-    git checkout tags/release-1.10.0
-
-before configuring your build with CMake.
-
-If you do not need the loader tests, there is no need to download this
-framework.
+To build the tests, pass the `DUPDATE_DEPS=ON` and `-DBUILD_TESTS=ON` options when generating the project:
+```bash
+cmake ... -DUPDATE_DEPS=ON -DBUILD_TESTS=ON ...
+```
+This will ensure googletest and detours is downloaded and the appropriate version is used.
 
 ### Build and Install Directories
 
