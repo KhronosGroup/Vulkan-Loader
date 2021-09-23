@@ -46,14 +46,11 @@ jobs:
                 python-version: '3.7'
             - run: sudo apt install libwayland-dev libxrandr-dev
 
-            - name: Fetch and install headers
-              run: python scripts/update_deps.py --dir external
-
             - name: Get Google Test
               run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -Cexternal/helper.cmake
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
               env:
                 CC: ${{matrix.cc}}
                 CXX: ${{matrix.cxx}}
@@ -93,9 +90,6 @@ jobs:
                 winsdk-build-version: 17763
               if: matrix.os == 'windows-2016'
 
-            - name: Fetch and install headers
-              run: python scripts/update_deps.py --dir external
-
             - name: Get Google Test
               run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
 
@@ -103,11 +97,11 @@ jobs:
               run: git clone --branch v4.0.1 https://github.com/microsoft/Detours.git external/detours
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=On "-Cexternal/helper.cmake"
+              run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
               if: matrix.os != 'windows-2016'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}}  -DBUILD_TESTS=On "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" "-Cexternal/helper.cmake"
+              run: cmake -S. -Bbuild -A${{matrix.arch}}  -DBUILD_TESTS=On "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" -DUPDATE_DEPS=ON
               if: matrix.os == 'windows-2016'
 
             - name: Build the loader
@@ -133,14 +127,11 @@ jobs:
               with:
                 python-version: '3.7'
 
-            - name: Fetch and install headers
-              run: python scripts/update_deps.py --dir external
-
             - name: Get Google Test
               run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -Cexternal/helper.cmake
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS=ON
 
             - name: Build the loader
               run: make -C build

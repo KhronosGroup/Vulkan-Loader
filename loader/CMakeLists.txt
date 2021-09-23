@@ -230,6 +230,10 @@ if(WIN32)
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
 
+    if (UPDATE_DEPS)
+        add_dependencies(vulkan vl_update_deps)
+    endif()
+
     # when adding the suffix the import and runtime library names must be consistent
     # mingw: libvulkan-1.dll.a / libvulkan-1.dll
     # msvc: vulkan-1.lib / vulkan-1.dll
