@@ -707,3 +707,22 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         handle_assert_no_values(returned_group_count, group_props.physicalDevices);
     }
 }
+
+#if defined(__linux__)
+// Make sure the loader reports the correct message based on if USE_UNSAFE_FILE_SEARCH is set or not
+TEST(EnvironmentVariables, NonSecureEnvVarLookup) {
+    SingleICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+
+#if !defined(USE_UNSAFE_FILE_SEARCH)
+    ASSERT_FALSE(log.find("Loader is using non-secure environment variable lookup for"));
+#else
+    ASSERT_TRUE(log.find("Loader is using non-secure environment variable lookup for"));
+#endif
+}
+#endif
