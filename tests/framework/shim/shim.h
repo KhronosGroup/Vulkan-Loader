@@ -133,7 +133,7 @@ struct PlatformShim {
 
     std::vector<fs::path> icd_paths;
 
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     bool is_fake_path(fs::path const& path);
     fs::path const& get_fake_path(fs::path const& path);
 
@@ -152,7 +152,7 @@ extern "C" {
 using PFN_get_platform_shim = PlatformShim* (*)();
 #define GET_PLATFORM_SHIM_STR "get_platform_shim"
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
 // statically link on linux
 PlatformShim* get_platform_shim();
 #endif
@@ -175,7 +175,7 @@ inline std::vector<std::string> parse_env_var_list(std::string const& var) {
     for (size_t i = 0; i < var.size(); i++) {
 #if defined(WIN32)
         if (var[i] == ';') {
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
         if (var[i] == ':') {
 #endif
             if (len != 0) {
@@ -431,7 +431,7 @@ inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCa
     }
 }
 
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 
 #include <dirent.h>
 #include <unistd.h>

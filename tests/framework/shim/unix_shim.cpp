@@ -29,7 +29,7 @@
 
 static PlatformShim platform_shim;
 extern "C" {
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 PlatformShim* get_platform_shim() {
     platform_shim = PlatformShim();
     return &platform_shim;
@@ -42,7 +42,7 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
 #endif
 
 // Necessary for MacOS function himming
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 #define OPENDIR_FUNC_NAME opendir
 #define ACCESS_FUNC_NAME access
 #define FOPEN_FUNC_NAME fopen

@@ -124,7 +124,7 @@ PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) noexcept : debug_
     auto get_platform_shim_func = shim_library.get_symbol<PFN_get_platform_shim>(GET_PLATFORM_SHIM_STR);
     assert(get_platform_shim_func != NULL && "Must be able to get \"platform_shim\"");
     platform_shim = get_platform_shim_func();
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
     platform_shim = get_platform_shim();
 #endif
     platform_shim->setup_override(debug_mode);
