@@ -120,8 +120,8 @@ if(WIN32)
 
     # ~~~
     # Setup the loader.rc flie to contain the correct info
-    # Creates 2 files, one for Release builds and one for every other build
     # Optionally uses the BUILD_DLL_VERSIONINFO build option to allow setting the exact build version
+    # Adds "Dev Build" to any build without the RELEASE_BUILD configure option set
     # ~~~
     if ("$CACHE{BUILD_DLL_VERSIONINFO}" STREQUAL "")
         # default case - use 0 as the BUILDNO
@@ -133,29 +133,16 @@ if(WIN32)
     # RC file wants the value of FILEVERSION to separated by commas
     string(REPLACE "." ", " LOADER_VER_FILE_VERSION "${LOADER_RC_VERSION}")
 
-    set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}\"")
-    set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader\"")
+    if (RELEASE_BUILD)
+        set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}\"")
+        set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader\"")
+    else()
+        set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}.Dev Build\"")
+        set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader - Dev Build\"")
+    endif()
 
-    # Configure the file to include the versioning info in the release build
-    configure_file(loader.rc.in ${CMAKE_CURRENT_BINARY_DIR}/loader_RELEASE.rc)
-
-    # Change these variables and reconfigure for the non-release info
-    set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}.Dev Build\"")
-    set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader - Dev Build\"")
-    configure_file(loader.rc.in ${CMAKE_CURRENT_BINARY_DIR}/loader_NON_RELEASE.rc)
-
-    # Copy loader_RELEASE|NON_RELEASE.rc to the loader build directory
-    # This is necessary as in cmake 3.16 and before you can't have different source lists in your target. By copying the file, we work around that limitation
-    add_custom_command(
-        PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} "-E" "copy_if_different" "${CMAKE_CURRENT_BINARY_DIR}/loader_$<IF:$<CONFIG:Release>,RELEASE,NON_RELEASE>.rc" "${CMAKE_CURRENT_BINARY_DIR}/loader.rc"
-        VERBATIM
-        PRE_BUILD
-        DEPENDS  "${CMAKE_CURRENT_BINARY_DIR}/loader_$<IF:$<CONFIG:Release>,RELEASE,NON_RELEASE>.rc"
-        OUTPUT   "${CMAKE_CURRENT_BINARY_DIR}/loader.rc"
-        COMMENT  "creating loader.rc file ({event: PRE_BUILD}, {filename: loader.rc })"
-        )
-    add_custom_target (generate_loader_rc_file DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/loader.rc")
+    # Configure the file to include the versioning info
+    configure_file(loader.rc.in ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
 endif()
 
 set(NORMAL_LOADER_SRCS
@@ -271,7 +258,6 @@ if(WIN32)
                 $<TARGET_OBJECTS:loader-norm>
                 $<TARGET_OBJECTS:loader-unknown-chain>
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
-                # use different .rc file based on if this is a release build or not
                 ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
 
     if (UPDATE_DEPS)
@@ -295,7 +281,6 @@ if(WIN32)
     endif()
 
     add_dependencies(vulkan loader_asm_gen_files)
-    add_dependencies (vulkan generate_loader_rc_file)
 
 else()
     # Linux and MacOS

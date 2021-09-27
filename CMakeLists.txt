@@ -102,6 +102,8 @@ if(WIN32)
     # Optional: Allow specify the exact version used in the loader dll
     # Format is major.minor.patch.build
     set(BUILD_DLL_VERSIONINFO "" CACHE STRING "Set the version to be used in the loader.rc file. Default value is the currently generated header version")
+
+    option(RELEASE_BUILD "Configures the loader.rc file for a \"Release\" build. Used for SDK builds primarily. Does not change CMAKE_BUILD_TYPE. Default is off." OFF)
 endif()
 
 if(BUILD_STATIC_LOADER)
