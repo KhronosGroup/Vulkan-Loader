@@ -24,6 +24,11 @@
  */
 #pragma once
 
+#if defined(__FreeBSD__)
+#include <sys/types.h>
+#include <sys/select.h>
+#endif
+
 #if defined(_WIN32)
 // WinSock2.h must be included *BEFORE* windows.h
 #include <winsock2.h>
@@ -37,7 +42,7 @@
 #include "dlopen_fuchsia.h"
 #endif  // defined(__Fuchsia__)
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__)
 #include <unistd.h>
 // Note: The following file is for dynamic loading:
 #include <dlfcn.h>
@@ -97,7 +102,7 @@
 // Override layer information
 #define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__)
 /* Linux-specific common code: */
 
 // VK Library Filenames, Paths, etc.:
@@ -151,7 +156,7 @@ static inline bool loader_platform_is_path_absolute(const char *path) {
 
 static inline char *loader_platform_dirname(char *path) { return dirname(path); }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 
 // find application path + name. Path cannot be longer than 1024, returns NULL if it is greater than that.
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
@@ -161,13 +166,33 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     buffer[count] = '\0';
     return buffer;
 }
-#elif defined(__APPLE__)  // defined(__linux__)
+#elif defined(__APPLE__) // defined(__linux__)
 #include <libproc.h>
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     pid_t pid = getpid();
     int ret = proc_pidpath(pid, buffer, size);
     if (ret <= 0) return NULL;
     buffer[ret] = '\0';
+    return buffer;
+}
+#elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
+#include <sys/sysctl.h>
+static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    int mib[] = {
+        CTL_KERN,
+#if defined(__NetBSD__)
+        KERN_PROC_ARGS,
+        -1,
+        KERN_PROC_PATHNAME,
+#else
+        KERN_PROC,
+        KERN_PROC_PATHNAME,
+        -1,
+#endif
+    };
+    if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), buffer, &size, NULL, 0) < 0)
+        return NULL;
+
     return buffer;
 }
 #elif defined(__Fuchsia__)

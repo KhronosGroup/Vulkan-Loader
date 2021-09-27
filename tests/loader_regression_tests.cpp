@@ -520,7 +520,7 @@ TEST(TryLoadWrongBinaries, WrongICD) {
 #if _WIN32 || _WIN64
     ASSERT_TRUE(log.find("Failed to open dynamic library"));
 #endif
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 #if defined(__x86_64__)
     ASSERT_TRUE(log.find("wrong ELF class: ELFCLASS32"));
 #else
@@ -757,7 +757,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
     }
 }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 // Make sure the loader reports the correct message based on if USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvironmentVariables, NonSecureEnvVarLookup) {
     SingleICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_6));

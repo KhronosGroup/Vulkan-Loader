@@ -82,7 +82,7 @@ std::string get_env_var(std::string const& name) {
     }
     return value;
 }
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 
 bool set_env_var(std::string const& name, std::string const& value) { return setenv(name.c_str(), value.c_str(), 1); }
 bool remove_env_var(std::string const& name) { return unsetenv(name.c_str()); }
@@ -224,7 +224,7 @@ std::string make_native(std::string const& in_path) {
         else
             out += c;
     }
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     for (size_t i = 0; i < in_path.size(); i++) {
         if (i + 1 < in_path.size() && in_path[i] == '\\' && in_path[i + 1] == '\\') {
             out += '/';

@@ -69,7 +69,7 @@
 #include <direct.h>
 #include <windows.h>
 #include <strsafe.h>
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -113,7 +113,7 @@ bool remove_env_var(std::string const& name);
 #define ENV_VAR_BUFFER_SIZE 4096
 std::string get_env_var(std::string const& name, bool report_failure = true);
 
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 bool set_env_var(std::string const& name, std::string const& value);
 bool remove_env_var(std::string const& name);
 std::string get_env_var(std::string const& name, bool report_failure = true);
@@ -144,7 +144,7 @@ struct path {
    private:
 #if defined(WIN32)
     static const char path_separator = '\\';
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     static const char path_separator = '/';
 #endif
 
@@ -251,7 +251,7 @@ static char* loader_platform_get_proc_address_error(const char* name) {
     return errorMsg;
 }
 
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 
 typedef void* loader_platform_dl_handle;
 static inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
