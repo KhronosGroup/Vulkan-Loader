@@ -66,13 +66,6 @@
 
 #include "loader_windows.h"
 
-// This is a CMake generated file with #defines for any functions/includes
-// that it found present.  This is currently necessary to properly determine
-// if secure_getenv or __secure_getenv are present
-#if !defined(VULKAN_NON_CMAKE_BUILD)
-#include "loader_cmake_config.h"
-#endif  // !defined(VULKAN_NON_CMAKE_BUILD)
-
 // Generated file containing all the extension data
 #include "vk_loader_extensions.c"
 
@@ -84,7 +77,7 @@ struct activated_layer_info {
     char *library;
     bool is_implicit;
     char *disable_env;
-} ;
+};
 
 // thread safety lock for accessing global data structures such as "loader"
 // all entrypoints on the instance chain need to be locked except GPA
@@ -4737,7 +4730,7 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
 VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                       struct loader_instance *inst, VkInstance *created_instance) {
     uint32_t num_activated_layers = 0;
-    struct activated_layer_info* activated_layers = NULL;
+    struct activated_layer_info *activated_layers = NULL;
     VkLayerInstanceCreateInfo chain_info;
     VkLayerInstanceLink *layer_instance_link_info = NULL;
     VkInstanceCreateInfo loader_create_info;
@@ -4971,7 +4964,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                                     struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
                                     PFN_vkGetDeviceProcAddr *layerNextGDPA) {
     uint32_t num_activated_layers = 0;
-    struct activated_layer_info* activated_layers = NULL;
+    struct activated_layer_info *activated_layers = NULL;
     VkLayerDeviceLink *layer_device_link_info;
     VkLayerDeviceCreateInfo chain_info;
     VkDeviceCreateInfo loader_create_info;
