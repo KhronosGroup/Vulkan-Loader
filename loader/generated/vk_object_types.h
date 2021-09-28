@@ -80,8 +80,9 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypePerformanceConfigurationINTEL = 41,
     kVulkanObjectTypeIndirectCommandsLayoutNV = 42,
     kVulkanObjectTypePrivateDataSlotEXT = 43,
-    kVulkanObjectTypeAccelerationStructureKHR = 44,
-    kVulkanObjectTypeMax = 45,
+    kVulkanObjectTypeBufferCollectionFUCHSIA = 44,
+    kVulkanObjectTypeAccelerationStructureKHR = 45,
+    kVulkanObjectTypeMax = 46,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
@@ -133,6 +134,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "PerformanceConfigurationINTEL",
     "IndirectCommandsLayoutNV",
     "PrivateDataSlotEXT",
+    "BufferCollectionFUCHSIA",
     "AccelerationStructureKHR",
 };
 
@@ -182,6 +184,7 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePerformanceConfigurationINTEL
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePrivateDataSlotEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
 };
 
@@ -231,6 +234,7 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL,   // kVulkanObjectTypePerformanceConfigurationINTEL
     VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV,   // kVulkanObjectTypeIndirectCommandsLayoutNV
     VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT,   // kVulkanObjectTypePrivateDataSlotEXT
+    VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR,   // kVulkanObjectTypeAccelerationStructureKHR
 };
 
@@ -318,6 +322,8 @@ static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObj
         return VK_OBJECT_TYPE_VALIDATION_CACHE_EXT;
     } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT) {
         return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV;
+    } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT) {
+        return VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA;
     }
     return VK_OBJECT_TYPE_UNKNOWN;
 }
@@ -406,6 +412,8 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
         return VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT;
     } else if (core_report_obj == VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV) {
         return VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT;
+    } else if (core_report_obj == VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA) {
+        return VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT;
     }
     return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
 }
