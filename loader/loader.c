@@ -64,7 +64,9 @@
 #include "vk_loader_platform.h"
 #include "wsi.h"
 
+#if defined(WIN32)
 #include "loader_windows.h"
+#endif
 
 // Generated file containing all the extension data
 #include "vk_loader_extensions.c"
