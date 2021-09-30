@@ -3137,10 +3137,6 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     // Print out the paths being searched if debugging is enabled
     uint32_t log_flags = 0;
     if (search_path_size > 0) {
-        // Keep the old path print out for now for debug
-        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                   "read_data_files_in_search_paths: Searching the following paths for manifest files: %s\n", search_path);
-
         char *tmp_search_path = loader_instance_heap_alloc(inst, search_path_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (NULL != tmp_search_path) {
             strncpy(tmp_search_path, search_path, search_path_size);
