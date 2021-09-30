@@ -86,10 +86,10 @@ std::string get_env_var(std::string const& name) {
 
 bool set_env_var(std::string const& name, std::string const& value) { return setenv(name.c_str(), value.c_str(), 1); }
 bool remove_env_var(std::string const& name) { return unsetenv(name.c_str()); }
-std::string get_env_var(std::string const& name) {
+std::string get_env_var(std::string const& name, bool report_failure) {
     char* ret = getenv(name.c_str());
     if (ret == nullptr) {
-        std::cerr << "Failed to get environment variable:" << name << "\n";
+        if (report_failure) std::cerr << "Failed to get environment variable:" << name << "\n";
         return std::string();
     }
     return ret;

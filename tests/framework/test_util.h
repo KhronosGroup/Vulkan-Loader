@@ -98,16 +98,25 @@
 #define FRAMEWORK_EXPORT
 #endif
 
+/*
+ * Common Environment Variable operations
+ * These operate on the actual environemnt, they are not shims.
+ * set_env_var - sets the env-var with `name` to `value`.
+ * remove_env_var - unsets the env-var `name`. Different than set_env_var(name, "");
+ * get_env_var - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
+ *     env-var
+ */
+
 #if defined(WIN32)
 bool set_env_var(std::string const& name, std::string const& value);
 bool remove_env_var(std::string const& name);
 #define ENV_VAR_BUFFER_SIZE 4096
-std::string get_env_var(std::string const& name);
+std::string get_env_var(std::string const& name, bool report_failure = true);
 
 #elif defined(__linux__) || defined(__APPLE__)
 bool set_env_var(std::string const& name, std::string const& value);
 bool remove_env_var(std::string const& name);
-std::string get_env_var(std::string const& name);
+std::string get_env_var(std::string const& name, bool report_failure = true);
 #endif
 
 // Windows specific error handling logic
