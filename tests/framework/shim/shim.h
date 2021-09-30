@@ -103,6 +103,7 @@ struct PlatformShim {
     void reset(DebugMode debug_mode = DebugMode::none);
 
     void redirect_all_paths(fs::path const& path);
+    void redirect_category(fs::path const& new_path, ManifestCategory category);
 
     void set_path(ManifestCategory category, fs::path const& path);
 
@@ -136,14 +137,11 @@ struct PlatformShim {
     bool is_fake_path(fs::path const& path);
     fs::path const& get_fake_path(fs::path const& path);
 
+    void redirect_path(fs::path const& path, fs::path const& new_path);
+    void remove_redirect(fs::path const& path);
+
     std::unordered_map<std::string, fs::path> redirection_map;
-#endif
-   private:
-    void redirect_category(fs::path const& new_path, ManifestCategory category);
-#if defined(WIN32)
-#elif defined(__linux__) || defined(__APPLE__)
-    void add(fs::path const& path, fs::path const& new_path);
-    void remove(fs::path const& path);
+
 #endif
 };
 
@@ -450,8 +448,8 @@ inline void PlatformShim::setup_override(DebugMode debug_mode) {}
 inline void PlatformShim::clear_override(DebugMode debug_mode) {}
 inline void PlatformShim::reset(DebugMode debug_mode) { redirection_map.clear(); }
 
-inline void PlatformShim::add(fs::path const& path, fs::path const& new_path) { redirection_map[path.str()] = new_path; }
-inline void PlatformShim::remove(fs::path const& path) { redirection_map.erase(path.str()); }
+inline void PlatformShim::redirect_path(fs::path const& path, fs::path const& new_path) { redirection_map[path.str()] = new_path; }
+inline void PlatformShim::remove_redirect(fs::path const& path) { redirection_map.erase(path.str()); }
 inline bool PlatformShim::is_fake_path(fs::path const& path) { return redirection_map.count(path.str()) > 0; }
 inline fs::path const& PlatformShim::get_fake_path(fs::path const& path) { return redirection_map.at(path.str()); }
 
@@ -473,7 +471,9 @@ inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCa
     parse_and_add_env_var_override(paths, get_env_var("XDG_CONFIG_HOME"));
     parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_DIRS"));
     parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_HOME"));
-    parse_and_add_env_var_override(paths, get_env_var("VK_LAYER_PATH"));
+    if (category == ManifestCategory::explicit_layer) {
+        parse_and_add_env_var_override(paths, get_env_var("VK_LAYER_PATH", false));  // don't report failure
+    }
     parse_and_add_env_var_override(paths, FALLBACK_DATA_DIRS);
     parse_and_add_env_var_override(paths, FALLBACK_CONFIG_DIRS);
 
@@ -487,16 +487,13 @@ inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCa
 #endif
 
     for (auto& path : paths) {
-        add(fs::path(path) / "vulkan" / category_path_name(category), new_path);
+        redirect_path(fs::path(path) / "vulkan" / category_path_name(category), new_path);
     }
 }
 
 inline void PlatformShim::set_path(ManifestCategory category, fs::path const& path) {
     // use /etc as the 'redirection path' by default since its always searched
-
-    if (category == ManifestCategory::implicit_layer) add(fs::path(SYSCONFDIR) / "vulkan/implicit_layer.d", path);
-    if (category == ManifestCategory::explicit_layer) add(fs::path(SYSCONFDIR) / "vulkan/explicit_layer.d", path);
-    if (category == ManifestCategory::icd) add(fs::path(SYSCONFDIR) / "vulkan/icd.d", path);
+    redirect_path(fs::path(SYSCONFDIR) / "vulkan" / category_path_name(category), path);
 }
 
 #endif

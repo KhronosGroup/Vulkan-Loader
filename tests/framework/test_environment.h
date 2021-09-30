@@ -181,7 +181,9 @@ struct DebugUtilsLogger {
         debug->returned_output += '\n';
         return VK_FALSE;
     }
-    DebugUtilsLogger(VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+    DebugUtilsLogger(VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                                                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         returned_output.reserve(4096);  // output can be very noisy, reserving should help prevent many small allocations
         create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -311,6 +313,7 @@ struct FrameworkEnvironment {
     fs::FolderManager icd_folder;
     fs::FolderManager explicit_layer_folder;
     fs::FolderManager implicit_layer_folder;
+    DebugUtilsLogger debug_log;
     VulkanFunctions vulkan_functions;
 };
 
