@@ -121,28 +121,25 @@ if(WIN32)
     # ~~~
     # Setup the loader.rc flie to contain the correct info
     # Optionally uses the BUILD_DLL_VERSIONINFO build option to allow setting the exact build version
-    # Adds "Dev Build" to any build without the RELEASE_BUILD configure option set
+    # Adds "Dev Build" to any build without the BUILD_DLL_VERSIONINFO option set
     # ~~~
     if ("$CACHE{BUILD_DLL_VERSIONINFO}" STREQUAL "")
         # default case - use 0 as the BUILDNO
-        set(LOADER_RC_VERSION "${LOADER_GENERATED_HEADER_VERSION}.0")
+        set(LOADER_RC_VERSION "1.0.1111.2222")
+        set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}.Dev Build\"")
+        set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader - Dev Build\"")
     else()
         set(LOADER_RC_VERSION "$CACHE{BUILD_DLL_VERSIONINFO}")
+        set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}\"")
+        set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader\"")
     endif()
 
     # RC file wants the value of FILEVERSION to separated by commas
     string(REPLACE "." ", " LOADER_VER_FILE_VERSION "${LOADER_RC_VERSION}")
 
-    if (RELEASE_BUILD)
-        set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}\"")
-        set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader\"")
-    else()
-        set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}.Dev Build\"")
-        set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader - Dev Build\"")
-    endif()
-
     # Configure the file to include the versioning info
-    configure_file(loader.rc.in ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
+    # Place it in the current directory for check-in - so the GN build has up to date info
+    configure_file(loader.rc.in ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
 endif()
 
 set(NORMAL_LOADER_SRCS
@@ -258,7 +255,7 @@ if(WIN32)
                 $<TARGET_OBJECTS:loader-norm>
                 $<TARGET_OBJECTS:loader-unknown-chain>
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
-                ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
+                ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
 
     if (UPDATE_DEPS)
         add_dependencies(vulkan vl_update_deps)
