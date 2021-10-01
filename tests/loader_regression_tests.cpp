@@ -45,17 +45,16 @@ class RegressionTests : public ::testing::Test {
 };
 
 // Subtyping for organization
+class CreateInstance : public RegressionTests {};
 class EnumerateInstanceVersion : public RegressionTests {};
 class EnumerateInstanceLayerProperties : public RegressionTests {};
 class EnumerateInstanceExtensionProperties : public RegressionTests {};
-class CreateInstance : public RegressionTests {};
-class CreateDevice : public RegressionTests {};
-class EnumeratePhysicalDevices : public RegressionTests {};
 class EnumerateDeviceLayerProperties : public RegressionTests {};
 class EnumerateDeviceExtensionProperties : public RegressionTests {};
-class ImplicitLayer : public RegressionTests {};
-class WrapObjects : public RegressionTests {};
+class EnumeratePhysicalDevices : public RegressionTests {};
+class CreateDevice : public RegressionTests {};
 class EnumeratePhysicalDeviceGroups : public RegressionTests {};
+class WrapObjects : public RegressionTests {};
 
 TEST_F(CreateInstance, BasicRun) {
     auto& driver = env->get_test_icd();
@@ -113,6 +112,243 @@ TEST_F(CreateInstance, LayerPresent) {
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(layer_name);
     inst.CheckCreate();
+}
+
+TEST_F(EnumerateInstanceLayerProperties, UsageChecks) {
+    const char* layer_name_1 = "TestLayer1";
+    const char* layer_name_2 = "TestLayer1";
+
+    ManifestLayer::LayerDescription description1{};
+    description1.name = layer_name_1;
+    description1.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer layer1;
+    layer1.layers.push_back(description1);
+    env->AddExplicitLayer(layer1, "test_layer_1.json");
+
+    ManifestLayer::LayerDescription description2{};
+    description2.name = layer_name_1;
+    description2.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer layer2;
+    layer2.layers.push_back(description2);
+    env->AddExplicitLayer(layer2, "test_layer_2.json");
+
+    {  // OnePass
+        VkLayerProperties layer_props[2] = {};
+        uint32_t layer_count = 2;
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props));
+        ASSERT_EQ(layer_count, 2);
+        ASSERT_TRUE(string_eq(layer_name_1, layer_props[0].layerName));
+        ASSERT_TRUE(string_eq(layer_name_2, layer_props[1].layerName));
+    }
+    {  // OnePass
+        uint32_t layer_count = 0;
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        ASSERT_EQ(layer_count, 2);
+
+        VkLayerProperties layer_props[2] = {};
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props));
+        ASSERT_EQ(layer_count, 2);
+        ASSERT_TRUE(string_eq(layer_name_1, layer_props[0].layerName));
+        ASSERT_TRUE(string_eq(layer_name_2, layer_props[1].layerName));
+    }
+    {  // PropertyCountLessThanAvailable
+        VkLayerProperties layer_props{};
+        uint32_t layer_count = 1;
+        ASSERT_EQ(VK_INCOMPLETE, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, &layer_props));
+        ASSERT_TRUE(string_eq(layer_name_1, layer_props.layerName));
+    }
+}
+
+TEST_F(EnumerateInstanceExtensionProperties, UsageChecks) {
+    Extension first_ext{"VK_EXT_validation_features"};  // known instance extensions
+    Extension second_ext{"VK_EXT_headless_surface"};
+    env->reset_icd().AddInstanceExtensions({first_ext, second_ext});
+
+    {  // One Pass
+        uint32_t extension_count = 4;
+        std::array<VkExtensionProperties, 4> extensions;
+        ASSERT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 4);  // return debug report & debug utils + our two extensions
+
+        // loader always adds the debug report & debug utils extensions
+        ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
+        ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
+        ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
+        ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
+    }
+    {  // Two Pass
+        uint32_t extension_count = 0;
+        std::array<VkExtensionProperties, 4> extensions;
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 4);  // return debug report & debug utils + our two extensions
+
+        ASSERT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 4);
+        // loader always adds the debug report & debug utils extensions
+        ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
+        ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
+        ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
+        ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
+    }
+}
+
+TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
+    uint32_t extension_count = 0;
+    std::array<VkExtensionProperties, 2> extensions;
+    {  // use nullptr for null string
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
+        extension_count = 1;            // artificially remove one extension
+
+        ASSERT_EQ(VK_INCOMPLETE,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 1);
+        // loader always adds the debug report & debug utils extensions
+        ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
+    }
+    {  // use "" for null string
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
+        extension_count = 1;            // artificially remove one extension
+
+        ASSERT_EQ(VK_INCOMPLETE,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 1);
+        // loader always adds the debug report & debug utils extensions
+        ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
+    }
+}
+
+TEST_F(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
+    Extension first_ext{"FirstTestExtension"};  // unknown instance extensions
+    Extension second_ext{"SecondTestExtension"};
+    env->reset_icd().AddInstanceExtensions({first_ext, second_ext});
+    {
+        uint32_t extension_count = 0;
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
+
+        std::array<VkExtensionProperties, 2> extensions;
+        ASSERT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 2);
+        // loader always adds the debug report & debug utils extensions
+        ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
+        ASSERT_TRUE(string_eq(extensions[1].extensionName, "VK_EXT_debug_utils"));
+    }
+    {  // Disable unknown instance extension filtering
+        set_env_var("VK_LOADER_DISABLE_INST_EXT_FILTER", "1");
+
+        uint32_t extension_count = 0;
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 4);
+
+        std::array<VkExtensionProperties, 4> extensions;
+        ASSERT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 4);
+
+        ASSERT_EQ(extensions[0], first_ext.get());
+        ASSERT_EQ(extensions[1], second_ext.get());
+        // Loader always adds these two extensions
+        ASSERT_TRUE(string_eq(extensions[2].extensionName, "VK_EXT_debug_report"));
+        ASSERT_TRUE(string_eq(extensions[3].extensionName, "VK_EXT_debug_utils"));
+    }
+}
+
+TEST_F(EnumerateDeviceLayerProperties, LayersMatch) {
+    auto& driver = env->get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "TestLayer";
+    ManifestLayer::LayerDescription description{};
+    description.name = layer_name;
+    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer layer;
+    layer.layers.push_back(description);
+    env->AddExplicitLayer(layer, "test_layer.json");
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+    {  // LayersMatch
+
+        uint32_t layer_count = 0;
+        ASSERT_EQ(env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, nullptr), VK_SUCCESS);
+        ASSERT_EQ(layer_count, 1);
+        VkLayerProperties layer_props;
+        ASSERT_EQ(env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props), VK_SUCCESS);
+        ASSERT_EQ(layer_count, 1);
+        ASSERT_TRUE(string_eq(layer_props.layerName, layer_name));
+    }
+    {  // Property count less than available
+        VkLayerProperties layer_props;
+        uint32_t layer_count = 0;
+        ASSERT_EQ(VK_INCOMPLETE, env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props));
+        ASSERT_EQ(layer_count, 0);
+    }
+}
+
+TEST_F(EnumerateDeviceExtensionProperties, DeviceExtensionEnumerated) {
+    auto& driver = env->get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    std::array<Extension, 2> device_extensions = {Extension{"MyExtension0", 4}, Extension{"MyExtension1", 7}};
+    for (auto& ext : device_extensions) {
+        driver.physical_devices.front().extensions.push_back(ext);
+    }
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+
+    uint32_t driver_count = 1;
+    VkPhysicalDevice physical_device;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
+
+    uint32_t extension_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, device_extensions.size());
+
+    std::array<VkExtensionProperties, 2> enumerated_device_exts;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count,
+                                                                     enumerated_device_exts.data()));
+    ASSERT_EQ(extension_count, device_extensions.size());
+    ASSERT_TRUE(device_extensions[0].extensionName == enumerated_device_exts[0].extensionName);
+    ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
+}
+
+TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
+    auto& driver = env->get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    std::array<Extension, 2> device_extensions = {Extension{"MyExtension0", 4}, Extension{"MyExtension1", 7}};
+    for (auto& ext : device_extensions) {
+        driver.physical_devices.front().extensions.push_back(ext);
+    }
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+
+    uint32_t driver_count = 1;
+    VkPhysicalDevice physical_device;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
+
+    uint32_t extension_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, "", &extension_count, nullptr));
+    ASSERT_EQ(extension_count, device_extensions.size());
+    extension_count -= 1;
+
+    std::array<VkExtensionProperties, 2> enumerated_device_exts;
+    ASSERT_EQ(VK_INCOMPLETE,
+              inst->vkEnumerateDeviceExtensionProperties(physical_device, "", &extension_count, enumerated_device_exts.data()));
+    ASSERT_EQ(extension_count, device_extensions.size() - 1);
+    ASSERT_TRUE(device_extensions[0].extensionName == enumerated_device_exts[0].extensionName);
+    ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
 }
 
 TEST_F(EnumeratePhysicalDevices, OneCall) {
@@ -270,193 +506,6 @@ TEST_F(CreateDevice, LayersNotPresent) {
     dev.create_info.add_layer("NotPresent").add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
     dev.CheckCreate(phys_dev);
-}
-
-TEST_F(EnumerateDeviceLayerProperties, LayersMatch) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-
-    const char* layer_name = "TestLayer";
-    ManifestLayer::LayerDescription description{};
-    description.name = layer_name;
-    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
-
-    ManifestLayer layer;
-    layer.layers.push_back(description);
-    env->AddExplicitLayer(layer, "test_layer.json");
-
-    InstWrapper inst{env->vulkan_functions};
-    inst.create_info.add_layer(layer_name);
-    inst.CheckCreate();
-
-    VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1);
-    VkLayerProperties layer_props;
-    ASSERT_EQ(env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1);
-    ASSERT_TRUE(string_eq(layer_props.layerName, layer_name));
-}
-
-TEST_F(EnumerateInstanceExtensionProperties, OnePass) {
-    Extension first_ext{"VK_EXT_validation_features"};  // known instance extensions
-    Extension second_ext{"VK_EXT_headless_surface"};
-    env->reset_icd().AddInstanceExtensions({first_ext, second_ext});
-
-    uint32_t extension_count = 4;
-    std::array<VkExtensionProperties, 4> extensions;
-    ASSERT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    ASSERT_EQ(extension_count, 4);  // return debug report & debug utils + our two extensions
-
-    // loader always adds the debug report & debug utils extensions
-    ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
-    ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
-    ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
-    ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
-}
-
-TEST_F(EnumerateInstanceExtensionProperties, TwoPass) {
-    Extension first_ext{"VK_EXT_validation_features"};  // known instance extensions
-    Extension second_ext{"VK_EXT_headless_surface"};
-    env->reset_icd().AddInstanceExtensions({first_ext, second_ext});
-
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 4> extensions;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 4);  // return debug report & debug utils + our two extensions
-
-    ASSERT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    ASSERT_EQ(extension_count, 4);
-    // loader always adds the debug report & debug utils extensions
-    ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
-    ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
-    ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
-    ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
-}
-
-TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 2> extensions;
-    {  // use nullptr for null string
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
-        extension_count = 1;            // artificially remove one extension
-
-        ASSERT_EQ(VK_INCOMPLETE,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 1);
-        // loader always adds the debug report & debug utils extensions
-        ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
-    }
-    {  // use "" for null string
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
-        extension_count = 1;            // artificially remove one extension
-
-        ASSERT_EQ(VK_INCOMPLETE,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 1);
-        // loader always adds the debug report & debug utils extensions
-        ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
-    }
-}
-
-TEST_F(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
-    Extension first_ext{"FirstTestExtension"};  // unknown instance extensions
-    Extension second_ext{"SecondTestExtension"};
-    env->reset_icd().AddInstanceExtensions({first_ext, second_ext});
-
-    uint32_t extension_count = 0;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
-
-    std::array<VkExtensionProperties, 2> extensions;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
-    ASSERT_EQ(extension_count, 2);
-    // loader always adds the debug report & debug utils extensions
-    ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
-    ASSERT_TRUE(string_eq(extensions[1].extensionName, "VK_EXT_debug_utils"));
-}
-
-TEST_F(EnumerateInstanceExtensionProperties, DisableUnknownInstanceExtensionFiltering) {
-    Extension first_ext{"FirstTestExtension"};  // unknown instance extensions
-    Extension second_ext{"SecondTestExtension"};
-    env->reset_icd().AddInstanceExtensions({first_ext, second_ext});
-
-    set_env_var("VK_LOADER_DISABLE_INST_EXT_FILTER", "1");
-
-    uint32_t extension_count = 0;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 4);
-
-    std::array<VkExtensionProperties, 4> extensions;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
-    ASSERT_EQ(extension_count, 4);
-
-    ASSERT_EQ(extensions[0], first_ext.get());
-    ASSERT_EQ(extensions[1], second_ext.get());
-    // Loader always adds these two extensions
-    ASSERT_TRUE(string_eq(extensions[2].extensionName, "VK_EXT_debug_report"));
-    ASSERT_TRUE(string_eq(extensions[3].extensionName, "VK_EXT_debug_utils"));
-}
-
-TEST_F(EnumerateDeviceExtensionProperties, DeviceExtensionEnumerated) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-
-    std::array<Extension, 2> device_extensions = {Extension{"MyExtension0", 4}, Extension{"MyExtension1", 7}};
-    for (auto& ext : device_extensions) {
-        driver.physical_devices.front().extensions.push_back(ext);
-    }
-    InstWrapper inst{env->vulkan_functions};
-    inst.CheckCreate();
-
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
-
-    uint32_t extension_count = 0;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, device_extensions.size());
-
-    std::array<VkExtensionProperties, 2> enumerated_device_exts;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count,
-                                                                     enumerated_device_exts.data()));
-    ASSERT_EQ(extension_count, device_extensions.size());
-    ASSERT_TRUE(device_extensions[0].extensionName == enumerated_device_exts[0].extensionName);
-    ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
-}
-
-TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-
-    std::array<Extension, 2> device_extensions = {Extension{"MyExtension0", 4}, Extension{"MyExtension1", 7}};
-    for (auto& ext : device_extensions) {
-        driver.physical_devices.front().extensions.push_back(ext);
-    }
-    InstWrapper inst{env->vulkan_functions};
-    inst.CheckCreate();
-
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
-
-    uint32_t extension_count = 0;
-    ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, "", &extension_count, nullptr));
-    ASSERT_EQ(extension_count, device_extensions.size());
-    extension_count -= 1;
-
-    std::array<VkExtensionProperties, 2> enumerated_device_exts;
-    ASSERT_EQ(VK_INCOMPLETE,
-              inst->vkEnumerateDeviceExtensionProperties(physical_device, "", &extension_count, enumerated_device_exts.data()));
-    ASSERT_EQ(extension_count, device_extensions.size() - 1);
-    ASSERT_TRUE(device_extensions[0].extensionName == enumerated_device_exts[0].extensionName);
-    ASSERT_TRUE(device_extensions[0].specVersion == enumerated_device_exts[0].specVersion);
 }
 
 TEST(TryLoadWrongBinaries, WrongICD) {

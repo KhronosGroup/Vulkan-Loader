@@ -254,8 +254,6 @@ struct CommandLine : public ::testing::Test {
 };
 std::vector<std::string> CommandLine::arguments;
 
-struct EnumerateInstanceLayerProperties : public CommandLine {};
-struct EnumerateInstanceExtensionProperties : public CommandLine {};
 struct ImplicitLayer : public CommandLine {};
 
 void test_create_device(VkPhysicalDevice physical_device) {
@@ -279,7 +277,7 @@ void test_create_device(VkPhysicalDevice physical_device) {
 
         auto const deviceInfo = VK::DeviceCreateInfo().queueCreateInfoCount(1).pQueueCreateInfos(queueInfo);
 
-         VkDevice device;
+        VkDevice device;
         result = vkCreateDevice(physical_device, deviceInfo, nullptr, &device);
         ASSERT_EQ(result, VK_SUCCESS);
 
@@ -287,135 +285,7 @@ void test_create_device(VkPhysicalDevice physical_device) {
     }
 }
 
-// Test groups:
-// LX = lunar exchange
-// LVLGH = loader and validation github
-// LVLGL = loader and validation gitlab
-
-// Used by run_loader_tests.sh to test for layer insertion.
-TEST(CreateInstance, LayerPresent) {
-    char const *const names1[] = {"VK_LAYER_LUNARG_test"};      // Temporary required due to MSVC bug.
-    char const *const names2[] = {"VK_LAYER_LUNARG_meta"};      // Temporary required due to MSVC bug.
-    char const *const names3[] = {"VK_LAYER_LUNARG_meta_rev"};  // Temporary required due to MSVC bug.
-    auto const info1 = VK::InstanceCreateInfo().enabledLayerCount(1).ppEnabledLayerNames(names1);
-    VkInstance instance = VK_NULL_HANDLE;
-    VkResult result = vkCreateInstance(info1, VK_NULL_HANDLE, &instance);
-    ASSERT_EQ(result, VK_SUCCESS);
-    vkDestroyInstance(instance, nullptr);
-
-    for (auto names : {names2, names3}) {
-        auto const info2 = VK::InstanceCreateInfo().enabledLayerCount(1).ppEnabledLayerNames(names);
-        instance = VK_NULL_HANDLE;
-        result = vkCreateInstance(info2, VK_NULL_HANDLE, &instance);
-        ASSERT_EQ(result, VK_SUCCESS);
-
-        uint32_t deviceCount;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-        std::vector<VkPhysicalDevice> devs(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devs.data());
-        test_create_device(devs[0]);
-
-        vkDestroyInstance(instance, nullptr);
-    }
-}
-
-TEST_F(EnumerateInstanceLayerProperties, PropertyCountLessThanAvailable) {
-    uint32_t count = 0u;
-    VkResult result = vkEnumerateInstanceLayerProperties(&count, nullptr);
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    // We need atleast two for the test to be relevant.
-    if (count < 2u) {
-        return;
-    }
-
-    std::unique_ptr<VkLayerProperties[]> properties(new VkLayerProperties[count]);
-    count = 1;
-    result = vkEnumerateInstanceLayerProperties(&count, properties.get());
-    ASSERT_EQ(result, VK_INCOMPLETE);
-}
-
-TEST(EnumerateDeviceLayerProperties, PropertyCountLessThanAvailable) {
-    VkInstance instance = VK_NULL_HANDLE;
-    VkResult result = vkCreateInstance(VK::InstanceCreateInfo(), VK_NULL_HANDLE, &instance);
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    uint32_t physicalCount = 0;
-    result = vkEnumeratePhysicalDevices(instance, &physicalCount, nullptr);
-    ASSERT_EQ(result, VK_SUCCESS);
-    ASSERT_GT(physicalCount, 0u);
-
-    std::unique_ptr<VkPhysicalDevice[]> physical(new VkPhysicalDevice[physicalCount]);
-    result = vkEnumeratePhysicalDevices(instance, &physicalCount, physical.get());
-    ASSERT_EQ(result, VK_SUCCESS);
-    ASSERT_GT(physicalCount, 0u);
-
-    for (uint32_t p = 0; p < physicalCount; ++p) {
-        uint32_t count = 0u;
-        result = vkEnumerateDeviceLayerProperties(physical[p], &count, nullptr);
-        ASSERT_EQ(result, VK_SUCCESS);
-
-        // We need atleast two for the test to be relevant.
-        if (count < 2u) {
-            continue;
-        }
-
-        std::unique_ptr<VkLayerProperties[]> properties(new VkLayerProperties[count]);
-        count = 1;
-        result = vkEnumerateDeviceLayerProperties(physical[p], &count, properties.get());
-        ASSERT_EQ(result, VK_INCOMPLETE);
-    }
-
-    vkDestroyInstance(instance, nullptr);
-}
-
-TEST_F(EnumerateInstanceLayerProperties, Count) {
-    uint32_t count = 0u;
-    VkResult result = vkEnumerateInstanceLayerProperties(&count, nullptr);
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    if (std::find(arguments.begin(), arguments.end(), "count") != arguments.end()) {
-        std::cout << "count=" << count << '\n';
-    }
-}
-
-TEST_F(EnumerateInstanceLayerProperties, OnePass) {
-    // Count required for this test.
-    if (std::find(arguments.begin(), arguments.end(), "count") == arguments.end()) {
-        return;
-    }
-
-    uint32_t count = std::stoul(arguments[2]);
-
-    std::unique_ptr<VkLayerProperties[]> properties(new VkLayerProperties[count]);
-    VkResult result = vkEnumerateInstanceLayerProperties(&count, properties.get());
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    if (std::find(arguments.begin(), arguments.end(), "properties") != arguments.end()) {
-        for (uint32_t p = 0; p < count; ++p) {
-            std::cout << "properties[" << p << "] =" << ' ' << properties[p].layerName << ' ' << properties[p].specVersion << ' '
-                      << properties[p].implementationVersion << ' ' << properties[p].description << '\n';
-        }
-    }
-}
-
-TEST_F(EnumerateInstanceLayerProperties, TwoPass) {
-    uint32_t count = 0u;
-    VkResult result = vkEnumerateInstanceLayerProperties(&count, nullptr);
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    std::unique_ptr<VkLayerProperties[]> properties(new VkLayerProperties[count]);
-    result = vkEnumerateInstanceLayerProperties(&count, properties.get());
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    if (std::find(arguments.begin(), arguments.end(), "properties") != arguments.end()) {
-        for (uint32_t p = 0; p < count; ++p) {
-            std::cout << "properties[" << p << "] =" << ' ' << properties[p].layerName << ' ' << properties[p].specVersion << ' '
-                      << properties[p].implementationVersion << ' ' << properties[p].description << '\n';
-        }
-    }
-}
-
+// KEEP
 TEST_F(ImplicitLayer, Present) {
     auto const info = VK::InstanceCreateInfo();
     VkInstance instance = VK_NULL_HANDLE;
@@ -425,6 +295,7 @@ TEST_F(ImplicitLayer, Present) {
     vkDestroyInstance(instance, nullptr);
 }
 
+// KEEP
 TEST(WrapObjects, Insert) {
     VkInstance instance = VK_NULL_HANDLE;
     VkResult result = vkCreateInstance(VK::InstanceCreateInfo(), VK_NULL_HANDLE, &instance);
