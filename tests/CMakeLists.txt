@@ -81,8 +81,6 @@ if(UNIX)
                                   run_wrap_objects_tests.sh
                           COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_loader_tests.sh
                                   run_loader_tests.sh
-                          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_extra_loader_tests.sh
-                                  run_extra_loader_tests.sh
                           COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/run_all_tests.sh run_all_tests.sh
                           VERBATIM)
     endif()

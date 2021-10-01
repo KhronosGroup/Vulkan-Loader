@@ -8,5 +8,3 @@ set -e
 
 # Verify that the loader is working
 ./run_loader_tests.sh
-./run_extra_loader_tests.sh
-

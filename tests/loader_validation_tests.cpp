@@ -286,16 +286,6 @@ void test_create_device(VkPhysicalDevice physical_device) {
 }
 
 // KEEP
-TEST_F(ImplicitLayer, Present) {
-    auto const info = VK::InstanceCreateInfo();
-    VkInstance instance = VK_NULL_HANDLE;
-    VkResult result = vkCreateInstance(info, VK_NULL_HANDLE, &instance);
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    vkDestroyInstance(instance, nullptr);
-}
-
-// KEEP
 TEST(WrapObjects, Insert) {
     VkInstance instance = VK_NULL_HANDLE;
     VkResult result = vkCreateInstance(VK::InstanceCreateInfo(), VK_NULL_HANDLE, &instance);

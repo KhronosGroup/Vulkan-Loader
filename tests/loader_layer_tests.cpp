@@ -44,6 +44,107 @@ class MetaLayers : public LayerTests {};
 class OverrideMetaLayer : public LayerTests {};
 class LayerCreateInstance : public LayerTests {};
 
+void CheckLogForLayerString(SingleICDShim& env, const char* implicit_layer_name, bool check_for_enable) {
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate(VK_SUCCESS);
+        if (check_for_enable) {
+            ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+        } else {
+            ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+        }
+    }
+    env.debug_log.clear();
+}
+
+TEST_F(ImplicitLayers, WithEnableAndDisableEnvVar) {
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* enable_env_var = "ENABLE_ME";
+    const char* disable_env_var = "DISABLE_ME";
+
+    ManifestLayer::LayerDescription description{};
+    description.name = implicit_layer_name;
+    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+    description.enable_environment = enable_env_var;
+    description.disable_environment = disable_env_var;
+
+    ManifestLayer implicit_layer;
+    implicit_layer.layers.push_back(description);
+    env->AddImplicitLayer(implicit_layer, "implicit_test_layer.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    // didn't set enable env-var, layer should not load
+    CheckLogForLayerString(*env, implicit_layer_name, false);
+
+    // set enable env-var to 0, no layer should be found
+    set_env_var(enable_env_var, "0");
+    CheckLogForLayerString(*env, implicit_layer_name, false);
+
+    // // set enable env-var, layer should load
+    set_env_var(enable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, true);
+
+    remove_env_var(enable_env_var);
+
+    // set disable env-var to 0, layer should not load
+    set_env_var(disable_env_var, "0");
+    CheckLogForLayerString(*env, implicit_layer_name, false);
+
+    // set disable env-var to 1, layer should not load
+    set_env_var(disable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, false);
+
+    // set both enable and disable env-var, layer should not load
+    set_env_var(enable_env_var, "1");
+    set_env_var(disable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, false);
+
+    remove_env_var(enable_env_var);
+    remove_env_var(disable_env_var);
+}
+
+TEST_F(ImplicitLayers, OnlyDisableEnvVar) {
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* disable_env_var = "DISABLE_ME";
+
+    ManifestLayer::LayerDescription description{};
+    description.name = implicit_layer_name;
+    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+    description.disable_environment = disable_env_var;
+
+    ManifestLayer implicit_layer;
+    implicit_layer.layers.push_back(description);
+    env->AddImplicitLayer(implicit_layer, "implicit_test_layer.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    // don't set disable env-var, layer should load
+    CheckLogForLayerString(*env, implicit_layer_name, true);
+
+    // set disable env-var to 0, layer should not load
+    set_env_var(disable_env_var, "0");
+    CheckLogForLayerString(*env, implicit_layer_name, false);
+
+    // set disable env-var to 1, layer should not load
+    set_env_var(disable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, false);
+
+    {
+        InstWrapper inst{env->vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+        inst.create_info.add_layer(implicit_layer_name);
+        inst.CheckCreate(VK_SUCCESS);
+        ASSERT_TRUE(env->debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+    }
+    remove_env_var(disable_env_var);
+}
+
 TEST_F(MetaLayers, InvalidComponentLayer) {
     const char* meta_layer_name = "MetaTestLayer";
     ManifestLayer::LayerDescription description{};
