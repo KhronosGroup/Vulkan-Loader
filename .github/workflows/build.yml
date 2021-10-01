@@ -127,11 +127,8 @@ jobs:
               with:
                 python-version: '3.7'
 
-            - name: Get Google Test
-              run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
-
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS=ON
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
 
             - name: Build the loader
               run: make -C build
