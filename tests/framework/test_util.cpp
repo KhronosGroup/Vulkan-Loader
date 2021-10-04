@@ -101,7 +101,7 @@ std::string ManifestICD::get_manifest_str() const {
     out += "{\n";
     out += "    " + file_format_version.get_version_str() + "\n";
     out += "    \"ICD\": {\n";
-    out += "        \"library_path\": \"" + lib_path + "\",\n";
+    out += "        \"library_path\": \"" + fs::fixup_backslashes_in_path(lib_path) + "\",\n";
     out += "        \"api_version\": \"" + version_to_string(api_version) + "\"\n";
     out += "    }\n";
     out += "}\n";
@@ -129,7 +129,7 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     out += "\t\t\"name\":\"" + name + "\",\n";
     out += "\t\t\"type\":\"" + get_type_str(type) + "\",\n";
     if (lib_path.size() > 0) {
-        out += "\t\t\"library_path\": \"" + lib_path.str() + "\",\n";
+        out += "\t\t\"library_path\": \"" + fs::fixup_backslashes_in_path(lib_path.str()) + "\",\n";
     }
     out += "\t\t\"api_version\": \"" + version_to_string(api_version) + "\",\n";
     out += "\t\t\"implementation_version\":\"" + std::to_string(implementation_version) + "\",\n";
