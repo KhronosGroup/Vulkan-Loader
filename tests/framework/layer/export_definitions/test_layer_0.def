@@ -1,4 +1,4 @@
-LIBRARY test_layer_export_none
+LIBRARY test_layer_export_version_0
 EXPORTS
     vkEnumerateInstanceLayerProperties
     vkEnumerateInstanceExtensionProperties
