@@ -680,6 +680,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdBlitImage2KHR = (PFN_vkCmdBlitImage2KHR)gdpa(dev, "vkCmdBlitImage2KHR");
     table->CmdResolveImage2KHR = (PFN_vkCmdResolveImage2KHR)gdpa(dev, "vkCmdResolveImage2KHR");
 
+    // ---- VK_KHR_maintenance4 extension commands
+    table->GetDeviceBufferMemoryRequirementsKHR = (PFN_vkGetDeviceBufferMemoryRequirementsKHR)gdpa(dev, "vkGetDeviceBufferMemoryRequirementsKHR");
+    table->GetDeviceImageMemoryRequirementsKHR = (PFN_vkGetDeviceImageMemoryRequirementsKHR)gdpa(dev, "vkGetDeviceImageMemoryRequirementsKHR");
+    table->GetDeviceImageSparseMemoryRequirementsKHR = (PFN_vkGetDeviceImageSparseMemoryRequirementsKHR)gdpa(dev, "vkGetDeviceImageSparseMemoryRequirementsKHR");
+
     // ---- VK_EXT_debug_marker extension commands
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gdpa(dev, "vkDebugMarkerSetObjectTagEXT");
     table->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)gdpa(dev, "vkDebugMarkerSetObjectNameEXT");
@@ -1562,6 +1567,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdCopyImageToBuffer2KHR")) return (void *)table->CmdCopyImageToBuffer2KHR;
     if (!strcmp(name, "CmdBlitImage2KHR")) return (void *)table->CmdBlitImage2KHR;
     if (!strcmp(name, "CmdResolveImage2KHR")) return (void *)table->CmdResolveImage2KHR;
+
+    // ---- VK_KHR_maintenance4 extension commands
+    if (!strcmp(name, "GetDeviceBufferMemoryRequirementsKHR")) return (void *)table->GetDeviceBufferMemoryRequirementsKHR;
+    if (!strcmp(name, "GetDeviceImageMemoryRequirementsKHR")) return (void *)table->GetDeviceImageMemoryRequirementsKHR;
+    if (!strcmp(name, "GetDeviceImageSparseMemoryRequirementsKHR")) return (void *)table->GetDeviceImageSparseMemoryRequirementsKHR;
 
     // ---- VK_EXT_debug_marker extension commands
     if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return (void *)table->DebugMarkerSetObjectTagEXT;
@@ -3000,6 +3010,34 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
     const VkResolveImageInfo2KHR*               pResolveImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     disp->CmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
+}
+
+
+// ---- VK_KHR_maintenance4 extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceBufferMemoryRequirementsKHR*  pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    uint32_t*                                   pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 
@@ -5483,6 +5521,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdResolveImage2KHR", name)) {
         *addr = (void *)CmdResolveImage2KHR;
+        return true;
+    }
+
+    // ---- VK_KHR_maintenance4 extension commands
+    if (!strcmp("vkGetDeviceBufferMemoryRequirementsKHR", name)) {
+        *addr = (void *)GetDeviceBufferMemoryRequirementsKHR;
+        return true;
+    }
+    if (!strcmp("vkGetDeviceImageMemoryRequirementsKHR", name)) {
+        *addr = (void *)GetDeviceImageMemoryRequirementsKHR;
+        return true;
+    }
+    if (!strcmp("vkGetDeviceImageSparseMemoryRequirementsKHR", name)) {
+        *addr = (void *)GetDeviceImageSparseMemoryRequirementsKHR;
         return true;
     }
 
