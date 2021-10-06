@@ -153,7 +153,7 @@ if(APPLE)
 endif()
 
 find_package (Git)
-if (GIT_FOUND)
+if (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git/HEAD")
     execute_process(
         COMMAND ${GIT_EXECUTABLE} describe --tags --always
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
