@@ -321,3 +321,79 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
     inst.create_info.add_layer(regular_layer_name).add_extension("VK_KHR_get_physical_device_properties2");
     inst.CheckCreate();
 }
+
+TEST_F(ExplicitLayers, WrapObjects) {
+    auto& driver = env->get_test_icd();
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    const char* regular_layer_name_1 = "RegularLayer1";
+    ManifestLayer::LayerDescription regular_description_1{};
+    regular_description_1.name = regular_layer_name_1;
+    regular_description_1.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer regular_layer_1;
+    regular_layer_1.layers.push_back(regular_description_1);
+    env->AddExplicitLayer(regular_layer_1, "regular_layer_1.json");
+
+    const char* regular_layer_name_2 = "RegularLayer2";
+    ManifestLayer::LayerDescription regular_description_2{};
+    regular_description_2.name = regular_layer_name_2;
+    regular_description_2.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+
+    ManifestLayer regular_layer_2;
+    regular_layer_2.layers.push_back(regular_description_2);
+    env->AddExplicitLayer(regular_layer_2, "regular_layer_2.json");
+
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+    {  // just the wrap layer
+        InstWrapper inst{env->vulkan_functions};
+        inst.create_info.add_layer(wrap_objects_name);
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev.CheckCreate(phys_dev);
+    }
+    {  // wrap layer first
+        InstWrapper inst{env->vulkan_functions};
+        inst.create_info.add_layer(wrap_objects_name).add_layer(regular_layer_name_1);
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev.CheckCreate(phys_dev);
+    }
+    {  // wrap layer last
+        InstWrapper inst{env->vulkan_functions};
+        inst.create_info.add_layer(regular_layer_name_1).add_layer(wrap_objects_name);
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev.CheckCreate(phys_dev);
+    }
+    {  // wrap layer last
+        InstWrapper inst{env->vulkan_functions};
+        inst.create_info.add_layer(regular_layer_name_1).add_layer(wrap_objects_name).add_layer(regular_layer_name_2);
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev.CheckCreate(phys_dev);
+    }
+}
