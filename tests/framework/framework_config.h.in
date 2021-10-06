@@ -57,6 +57,8 @@
 #define TEST_LAYER_PATH_EXPORT_VERSION_1 "$<TARGET_FILE:test_layer_export_version_1>"
 #define TEST_LAYER_PATH_EXPORT_VERSION_2 "$<TARGET_FILE:test_layer_export_version_2>"
 
+#define TEST_LAYER_WRAP_OBJECTS "$<TARGET_FILE:test_layer_wrap_objects>"
+
 // Dummy Binaries
 #if _WIN32 || _WIN64
 #define DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.dll"

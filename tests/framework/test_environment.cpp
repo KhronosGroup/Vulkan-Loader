@@ -190,10 +190,28 @@ void FrameworkEnvironment::AddICD(TestICDDetails icd_details, const std::string&
     platform_shim->add_manifest(ManifestCategory::icd, driver_loc);
 }
 void FrameworkEnvironment::AddImplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
+    for (auto& layer : layer_manifest.layers) {
+        if (!layer.lib_path.str().empty()) {
+            std::string new_layer_name = layer.name + "_" + layer.lib_path.filename().str();
+
+            auto new_layer_location = implicit_layer_folder.copy_file(layer.lib_path, new_layer_name);
+            layer.lib_path = new_layer_location;
+        }
+    }
+
     auto layer_loc = implicit_layer_folder.write(json_name, layer_manifest);
     platform_shim->add_manifest(ManifestCategory::implicit_layer, layer_loc);
 }
 void FrameworkEnvironment::AddExplicitLayer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
+    for (auto& layer : layer_manifest.layers) {
+        if (!layer.lib_path.str().empty()) {
+            std::string new_layer_name = layer.name + "_" + layer.lib_path.filename().str();
+
+            auto new_layer_location = explicit_layer_folder.copy_file(layer.lib_path, new_layer_name);
+            layer.lib_path = new_layer_location;
+        }
+    }
+
     auto layer_loc = explicit_layer_folder.write(json_name, layer_manifest);
     platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc);
 }
