@@ -586,9 +586,9 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
                                       PFN_vkEnumerateDeviceExtensionProperties fpEnumerateDeviceExtensionProperties,
                                       VkPhysicalDevice physical_device, const char *lib_name,
                                       struct loader_extension_list *ext_list) {
-    uint32_t i, count;
-    VkResult res;
-    VkExtensionProperties *ext_props;
+    uint32_t i = 0, count = 0;
+    VkResult res = VK_SUCCESS;
+    VkExtensionProperties *ext_props = NULL;
 
     res = fpEnumerateDeviceExtensionProperties(physical_device, NULL, &count, NULL);
     if (res == VK_SUCCESS && count > 0) {
