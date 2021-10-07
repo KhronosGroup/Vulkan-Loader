@@ -41,7 +41,7 @@ extern "C" {
 
 static LibraryWrapper gdi32_dll;
 
-using PFN_GetSidSubAuthority = PDWORD (__stdcall *)(PSID pSid, DWORD nSubAuthority);
+using PFN_GetSidSubAuthority = PDWORD(__stdcall *)(PSID pSid, DWORD nSubAuthority);
 static PFN_GetSidSubAuthority fpGetSidSubAuthority = GetSidSubAuthority;
 
 PDWORD __stdcall ShimGetSidSubAuthority(PSID pSid, DWORD nSubAuthority) { return &platform_shim.elevation_level; }
@@ -65,9 +65,9 @@ NTSTATUS APIENTRY ShimEnumAdapters2(LoaderEnumAdapters2 *adapters) {
             adapters->adapters[i].present_move_regions_preferred =
                 platform_shim.d3dkmt_adapters[i].info.bPresentMoveRegionsPreferred;
         }
-        adapters->adapter_count = platform_shim.d3dkmt_adapters.size();
+        adapters->adapter_count = static_cast<ULONG>(platform_shim.d3dkmt_adapters.size());
     } else {
-        adapters->adapter_count = platform_shim.d3dkmt_adapters.size();
+        adapters->adapter_count = static_cast<ULONG>(platform_shim.d3dkmt_adapters.size());
     }
     return STATUS_SUCCESS;
 }
@@ -86,7 +86,7 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo *query_info)
     auto *reg_info = reinterpret_cast<LoaderQueryRegistryInfo *>(query_info->private_data);
     reg_info->status = LOADER_QUERY_REGISTRY_STATUS_SUCCESS;
     if (reg_info->output_value_size == 0) {
-        reg_info->output_value_size = it->path.size();
+        reg_info->output_value_size = static_cast<ULONG>(it->path.size());
     } else if (reg_info->output_value_size == it->path.size()) {
         std::wstring path_wstr(1, L'\0');
         path_wstr.assign(it->path.str().begin(), it->path.str().end());
@@ -113,7 +113,7 @@ CONFIGRET WINAPI SHIM_CM_Get_Device_ID_List_SizeW(PULONG pulLen, PCWSTR pszFilte
     if (pulLen == nullptr) {
         return CR_INVALID_POINTER;
     }
-    *pulLen = platform_shim.CM_device_ID_list.size();
+    *pulLen = static_cast<ULONG>(platform_shim.CM_device_ID_list.size());
     return CR_SUCCESS;
 }
 CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW(PCWSTR pszFilter, PZZWSTR Buffer, ULONG BufferLen, ULONG ulFlags) {
@@ -147,8 +147,6 @@ static LibraryWrapper dxgi_module;
 typedef HRESULT(APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory);
 
 PFN_CreateDXGIFactory1 RealCreateDXGIFactory1;
-
-
 
 HRESULT __stdcall ShimGetDesc1(IDXGIAdapter1 *pAdapter,
                                /* [annotation][out] */

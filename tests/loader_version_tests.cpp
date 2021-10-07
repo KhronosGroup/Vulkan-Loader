@@ -189,8 +189,8 @@ TEST_F(ICDInterfaceVersion2Plus, version_5) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_1");
     driver.physical_devices.emplace_back("physical_device_0");
-    uint32_t physical_count = driver.physical_devices.size();
-    uint32_t returned_physical_count = driver.physical_devices.size();
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+    uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
 
     driver.min_icd_interface_version = 5;
@@ -210,8 +210,8 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_1");
     driver.physical_devices.emplace_back("physical_device_0");
-    uint32_t physical_count = driver.physical_devices.size();
-    uint32_t returned_physical_count = driver.physical_devices.size();
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+    uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
 
     driver.min_icd_interface_version = 6;
@@ -219,7 +219,7 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     uint32_t driver_index = 2;  // which drive this test pretends to be
     auto& known_driver = known_driver_list.at(2);
     DXGI_ADAPTER_DESC1 desc1{};
-    wcsncpy(&desc1.Description[0], L"TestDriver1", 128);
+    wcsncpy_s(&desc1.Description[0], 128, L"TestDriver1", 128);
     desc1.VendorId = known_driver.vendor_id;
     desc1.AdapterLuid;
     desc1.Flags = DXGI_ADAPTER_FLAG_NONE;
@@ -242,8 +242,8 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, EnumAdapters2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_1");
     driver.physical_devices.emplace_back("physical_device_0");
-    uint32_t physical_count = driver.physical_devices.size();
-    uint32_t returned_physical_count = driver.physical_devices.size();
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+    uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
 
     SHIM_D3DKMT_ADAPTERINFO d3dkmt_adapter_info{};
@@ -277,9 +277,9 @@ TEST(MultipleICDConfig, Basic) {
     env.get_test_icd(1).physical_devices.at(0).properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
     env.get_test_icd(2).physical_devices.at(0).properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
 
-    strcpy(env.get_test_icd(0).physical_devices.at(0).properties.deviceName, "dev0");
-    strcpy(env.get_test_icd(1).physical_devices.at(0).properties.deviceName, "dev1");
-    strcpy(env.get_test_icd(2).physical_devices.at(0).properties.deviceName, "dev2");
+    copy_string_to_char_array("dev0", env.get_test_icd(0).physical_devices.at(0).properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
+    copy_string_to_char_array("dev1", env.get_test_icd(1).physical_devices.at(0).properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
+    copy_string_to_char_array("dev2", env.get_test_icd(2).physical_devices.at(0).properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();

@@ -362,8 +362,8 @@ TEST_F(EnumeratePhysicalDevices, OneCall) {
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
 
-    uint32_t physical_count = driver.physical_devices.size();
-    uint32_t returned_physical_count = driver.physical_devices.size();
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+    uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
     ASSERT_EQ(physical_count, returned_physical_count);
@@ -380,7 +380,7 @@ TEST_F(EnumeratePhysicalDevices, TwoCall) {
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
 
-    uint32_t physical_count = driver.physical_devices.size();
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     uint32_t returned_physical_count = 0;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
     ASSERT_EQ(physical_count, returned_physical_count);
@@ -403,7 +403,7 @@ TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
     InstWrapper inst1{env->vulkan_functions};
     inst1.CheckCreate();
 
-    uint32_t physical_count_one_call = driver.physical_devices.size();
+    uint32_t physical_count_one_call = static_cast<uint32_t>(driver.physical_devices.size());
     std::array<VkPhysicalDevice, real_device_count> physical_device_handles_one_call;
     ASSERT_EQ(VK_SUCCESS,
               inst1->vkEnumeratePhysicalDevices(inst1, &physical_count_one_call, physical_device_handles_one_call.data()));
@@ -412,7 +412,7 @@ TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
     InstWrapper inst2{env->vulkan_functions};
     inst2.CheckCreate();
 
-    uint32_t physical_count = driver.physical_devices.size();
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     uint32_t returned_physical_count = 0;
     ASSERT_EQ(VK_SUCCESS, inst2->vkEnumeratePhysicalDevices(inst2, &returned_physical_count, nullptr));
     ASSERT_EQ(physical_count, returned_physical_count);
@@ -605,7 +605,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
         handle_assert_has_values(physical_devices);
 
-        uint32_t group_count = driver.physical_device_groups.size();
+        uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = group_count;
         VkPhysicalDeviceGroupProperties group_props{};
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
@@ -629,7 +629,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
         handle_assert_has_values(physical_devices);
 
-        uint32_t group_count = driver.physical_device_groups.size();
+        uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = group_count;
         VkPhysicalDeviceGroupPropertiesKHR group_props{};
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
@@ -663,7 +663,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
         handle_assert_has_values(physical_devices);
 
-        uint32_t group_count = driver.physical_device_groups.size();
+        uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = 0;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, nullptr));
         ASSERT_EQ(group_count, returned_group_count);
@@ -690,7 +690,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         auto vkEnumeratePhysicalDeviceGroupsKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroupsKHR>(
             env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkEnumeratePhysicalDeviceGroupsKHR"));
 
-        uint32_t group_count = driver.physical_device_groups.size();
+        uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = 0;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, nullptr));
         ASSERT_EQ(group_count, returned_group_count);
@@ -721,7 +721,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
 
-        uint32_t group_count = driver.physical_device_groups.size();
+        uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = 0;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, nullptr));
         ASSERT_EQ(group_count, returned_group_count);
@@ -743,7 +743,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         auto vkEnumeratePhysicalDeviceGroupsKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroupsKHR>(
             env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkEnumeratePhysicalDeviceGroupsKHR"));
 
-        uint32_t group_count = driver.physical_device_groups.size();
+        uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = 0;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, nullptr));
         ASSERT_EQ(group_count, returned_group_count);

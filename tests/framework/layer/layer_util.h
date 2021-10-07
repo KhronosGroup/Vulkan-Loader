@@ -47,10 +47,10 @@ struct LayerDefinition {
 
     VkLayerProperties get() const noexcept {
         VkLayerProperties props{};
-        std::strncpy(props.layerName, layerName.data(), VK_MAX_EXTENSION_NAME_SIZE);
+        copy_string_to_char_array(layerName, &props.layerName[0], VK_MAX_EXTENSION_NAME_SIZE);
         props.specVersion = specVersion;
         props.implementationVersion = implementationVersion;
-        std::strncpy(props.description, layerName.data(), VK_MAX_DESCRIPTION_SIZE);
+        copy_string_to_char_array(description, &props.description[0], VK_MAX_DESCRIPTION_SIZE);
         return props;
     }
 };

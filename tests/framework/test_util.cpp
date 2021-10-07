@@ -188,8 +188,8 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
 
 VkLayerProperties ManifestLayer::LayerDescription::get_layer_properties() const {
     VkLayerProperties properties{};
-    strncpy(properties.layerName, name.c_str(), 256);
-    strncpy(properties.description, description.c_str(), 256);
+    copy_string_to_char_array(name, properties.layerName, VK_MAX_EXTENSION_NAME_SIZE);
+    copy_string_to_char_array(description, properties.description, VK_MAX_EXTENSION_NAME_SIZE);
     properties.implementationVersion = implementation_version;
     properties.specVersion = api_version;
     return properties;
