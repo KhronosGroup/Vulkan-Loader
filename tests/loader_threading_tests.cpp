@@ -47,7 +47,7 @@ void create_destroy_device_loop(uint32_t num_loops_create_destroy_device, uint32
         dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(1.0));
         dev.CheckCreate(phys_dev);
 
-        for (uint32_t i = 0; i < num_loops_try_get_proc_addr; i++) {
+        for (uint32_t j = 0; j < num_loops_try_get_proc_addr; j++) {
             PFN_vkCmdBindPipeline p =
                 reinterpret_cast<PFN_vkCmdBindPipeline>(dev->vkGetDeviceProcAddr(dev.dev, "vkCmdBindPipeline"));
             ASSERT_NE(p, nullptr);

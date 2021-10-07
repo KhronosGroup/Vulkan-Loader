@@ -29,6 +29,8 @@
 
 #include "test_util.h"
 
+#include <stdlib.h>
+
 #if defined(WIN32)
 #include <strsafe.h>
 #include <cfgmgr32.h>
@@ -170,8 +172,8 @@ inline void PlatformShim::redirect_all_paths(fs::path const& path) {
 
 inline std::vector<std::string> parse_env_var_list(std::string const& var) {
     std::vector<std::string> items;
-    int start = 0;
-    int len = 0;
+    size_t start = 0;
+    size_t len = 0;
     for (size_t i = 0; i < var.size(); i++) {
 #if defined(WIN32)
         if (var[i] == ';') {
@@ -291,7 +293,7 @@ inline void add_key_value(HKEY const& key, fs::path const& manifest_path, bool e
 }
 
 inline void add_key_value_string(HKEY const& key, const char* name, const char* str) {
-    LSTATUS out = RegSetValueExA(key, name, 0, REG_SZ, reinterpret_cast<const BYTE*>(str), strlen(str));
+    LSTATUS out = RegSetValueExA(key, name, 0, REG_SZ, reinterpret_cast<const BYTE*>(str), static_cast<DWORD>(strlen(str)));
     if (out != ERROR_SUCCESS)
         std::cerr << win_api_error_str(out) << " failed to set string value for " << name << ":" << str << "\n";
 }
@@ -312,7 +314,7 @@ inline void clear_key_values(HKEY const& key) {
     }
     std::string tchValName(dwValueNameLen + 1, '\0');
     for (DWORD i = 0; i < dwNumValues; i++) {
-        DWORD length = tchValName.size();
+        DWORD length = static_cast<DWORD>(tchValName.size());
         LPSTR lpstr = &tchValName[0];
         out = RegEnumValue(key, i, lpstr, &length, 0, 0, 0, 0);
         if (out != ERROR_SUCCESS) {
@@ -343,8 +345,12 @@ inline void PlatformShim::setup_override(DebugMode debug_mode) {
     HKEY timestamp_key = create_key(HKEY_CURRENT_USER, reg_base.c_str());
 
     std::time_t cur_time = std::time(nullptr);
-    auto* cur_time_text = std::ctime(&cur_time);
-    add_key_value_string(timestamp_key, "Timestamp", cur_time_text);
+    char mbstr[100];
+    tm time_buf{};
+    localtime_s(&time_buf, &cur_time);
+    if (std::strftime(mbstr, sizeof(mbstr), "%A %c", &time_buf)) {
+        add_key_value_string(timestamp_key, "Timestamp", mbstr);
+    }
 
     setup_override_key(HKEY_LOCAL_MACHINE, random_base_path);
     setup_override_key(HKEY_CURRENT_USER, random_base_path);
@@ -396,7 +402,8 @@ inline void PlatformShim::add_CM_Device_ID(std::wstring const& id, fs::path cons
     }
     CM_device_ID_list += id;
     std::string id_str(id.length(), '\0');
-    std::wcstombs(&id_str[0], id.c_str(), id_str.length());
+    size_t size_written{};
+    wcstombs_s(&size_written, &id_str[0], id_str.length(), id.c_str(), id.length());
 
     std::string device_path = std::string(pnp_registry_path) + "\\" + id_str;
     CM_device_ID_registry_keys.emplace_back(HKEY_LOCAL_MACHINE, device_path.c_str());

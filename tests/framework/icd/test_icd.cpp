@@ -83,11 +83,11 @@ VkResult FillCountPtr(std::vector<T> const& data_vec, uint32_t* pCount, U* pData
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     if (pData == nullptr) {
-        *pCount = data_vec.size();
+        *pCount = static_cast<uint32_t>(data_vec.size());
         return VK_SUCCESS;
     }
     uint32_t amount_written = 0;
-    uint32_t amount_to_write = data_vec.size();
+    uint32_t amount_to_write = static_cast<uint32_t>(data_vec.size());
     if (*pCount < data_vec.size()) {
         amount_to_write = *pCount;
     }
@@ -109,11 +109,11 @@ VkResult FillCountPtr(std::vector<T> const& data_vec, uint32_t* pCount, T* pData
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     if (pData == nullptr) {
-        *pCount = data_vec.size();
+        *pCount = static_cast<uint32_t>(data_vec.size());
         return VK_SUCCESS;
     }
     uint32_t amount_written = 0;
-    uint32_t amount_to_write = data_vec.size();
+    uint32_t amount_to_write = static_cast<uint32_t>(data_vec.size());
     if (*pCount < data_vec.size()) {
         amount_to_write = *pCount;
     }
@@ -178,7 +178,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance(VkInstance instance, const VkA
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                                VkPhysicalDevice* pPhysicalDevices) {
     if (pPhysicalDevices == nullptr) {
-        *pPhysicalDeviceCount = icd.physical_devices.size();
+        *pPhysicalDeviceCount = static_cast<uint32_t>(icd.physical_devices.size());
     } else {
         uint32_t handles_written = 0;
         for (size_t i = 0; i < icd.physical_devices.size(); i++) {
@@ -199,7 +199,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices(VkInstance instan
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
     VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
     if (pPhysicalDeviceGroupProperties == nullptr) {
-        *pPhysicalDeviceGroupCount = icd.physical_device_groups.size();
+        *pPhysicalDeviceGroupCount = static_cast<uint32_t>(icd.physical_device_groups.size());
     } else {
         for (size_t device_group = 0; device_group < icd.physical_device_groups.size(); device_group++) {
             if (device_group >= *pPhysicalDeviceGroupCount) {

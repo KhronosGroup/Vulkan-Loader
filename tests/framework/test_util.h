@@ -223,6 +223,22 @@ class FolderManager {
 };
 }  // namespace fs
 
+// copy the contents of a std::string into a char array and add a null terminator at the end
+// src - std::string to read from
+// dst - char array to write to
+// size_dst - number of characters in the dst array
+inline void copy_string_to_char_array(std::string const& src, char* dst, size_t size_dst) {
+// Creates a spurious C4996 Warning in VS 2015 - ignore it
+#if defined(WIN32)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+    dst[src.copy(dst, size_dst - 1)] = 0;
+#if defined(WIN32)
+#pragma warning(pop)
+#endif
+}
+
 #if defined(WIN32)
 typedef HMODULE loader_platform_dl_handle;
 static loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
@@ -234,18 +250,18 @@ static loader_platform_dl_handle loader_platform_open_library(const char* lib_pa
     }
     return lib_handle;
 }
-static char* loader_platform_open_library_error(const char* libPath) {
+inline char* loader_platform_open_library_error(const char* libPath) {
     static char errorMsg[164];
     (void)snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
     return errorMsg;
 }
-static void loader_platform_close_library(loader_platform_dl_handle library) { FreeLibrary(library); }
-static void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
+inline void loader_platform_close_library(loader_platform_dl_handle library) { FreeLibrary(library); }
+inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return (void*)GetProcAddress(library, name);
 }
-static char* loader_platform_get_proc_address_error(const char* name) {
+inline char* loader_platform_get_proc_address_error(const char* name) {
     static char errorMsg[120];
     (void)snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
     return errorMsg;
@@ -254,17 +270,17 @@ static char* loader_platform_get_proc_address_error(const char* name) {
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 
 typedef void* loader_platform_dl_handle;
-static inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
+inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
 }
-static inline const char* loader_platform_open_library_error(const char* libPath) { return dlerror(); }
-static inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
-static inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
+inline const char* loader_platform_open_library_error(const char* libPath) { return dlerror(); }
+inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
+inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return dlsym(library, name);
 }
-static inline const char* loader_platform_get_proc_address_error(const char* name) { return dlerror(); }
+inline const char* loader_platform_get_proc_address_error(const char* name) { return dlerror(); }
 #endif
 
 struct LibraryWrapper {
@@ -461,10 +477,10 @@ struct ManifestICD {
 struct ManifestLayer {
     struct LayerDescription {
         enum class Type { INSTANCE, GLOBAL, DEVICE };
-        std::string get_type_str(Type type) const {
-            if (type == Type::GLOBAL)
+        std::string get_type_str(Type layer_type) const {
+            if (layer_type == Type::GLOBAL)
                 return "GLOBAL";
-            else if (type == Type::DEVICE)
+            else if (layer_type == Type::DEVICE)
                 return "DEVICE";
             else  // default
                 return "INSTANCE";
@@ -515,7 +531,7 @@ struct Extension {
 
     VkExtensionProperties get() const noexcept {
         VkExtensionProperties props{};
-        std::strncpy(props.extensionName, extensionName.c_str(), VK_MAX_EXTENSION_NAME_SIZE);
+        copy_string_to_char_array(extensionName, &props.extensionName[0], VK_MAX_EXTENSION_NAME_SIZE);
         props.specVersion = specVersion;
         return props;
     }
