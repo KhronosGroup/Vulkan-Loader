@@ -477,17 +477,23 @@ inline void PlatformShim::redirect_category(fs::path const& new_path, ManifestCa
     parse_and_add_env_var_override(paths, FALLBACK_DATA_DIRS);
     parse_and_add_env_var_override(paths, FALLBACK_CONFIG_DIRS);
 
-    paths.push_back(fs::path(SYSCONFDIR).c_str());
+    auto sys_conf_dir = std::string(SYSCONFDIR);
+    if (!sys_conf_dir.empty()) {
+        paths.push_back(sys_conf_dir);
+    }
 #if defined(EXTRASYSCONFDIR)
     // EXTRASYSCONFDIR default is /etc, if SYSCONFDIR wasn't defined, it will have /etc put
     // as its default. Don't want to double add it
-    if (!string_eq(SYSCONFDIR, EXTRASYSCONFDIR)) {
-        paths.push_back(fs::path(EXTRASYSCONFDIR).c_str());
+    auto extra_sys_conf_dir = std::string(EXTRASYSCONFDIR);
+    if (!extra_sys_conf_dir.empty() && sys_conf_dir != extra_sys_conf_dir) {
+        paths.push_back(extra_sys_conf_dir);
     }
 #endif
 
     for (auto& path : paths) {
-        redirect_path(fs::path(path) / "vulkan" / category_path_name(category), new_path);
+        if (!path.empty()) {
+            redirect_path(fs::path(path) / "vulkan" / category_path_name(category), new_path);
+        }
     }
 }
 
