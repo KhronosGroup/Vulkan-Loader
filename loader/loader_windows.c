@@ -695,10 +695,10 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     char *search_path = NULL;
 
     if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
-        loader_log(inst, VULKAN_LOADER_IMPLEMENTATION_BIT, 0, "Checking for Implementation Manifest files in Registry at %s",
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Checking for Driver Manifest files in Registry at %s",
                    registry_location);
     } else {
-        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Checking for Implementation Manifest files in Registry at %s",
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Checking for Driver Manifest files in Registry at %s",
                    registry_location);
     }
 
@@ -738,7 +738,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
 
     if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == search_path) {
         if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "windows_read_data_files_in_registry: Registry lookup failed to get ICD manifest files.  Possibly missing "
                        "Vulkan driver?");
             vk_result = VK_ERROR_INCOMPATIBLE_DRIVER;
@@ -746,11 +746,11 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
             if (warn_if_not_present) {
                 if (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) {
                     // This is only a warning for layers
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "windows_read_data_files_in_registry: Registry lookup failed to get layer manifest files.");
                 } else {
                     // This is only a warning for general data files
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "windows_read_data_files_in_registry: Registry lookup failed to get data files.");
                 }
             }

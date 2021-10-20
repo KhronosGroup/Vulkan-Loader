@@ -123,7 +123,7 @@ versus the call chain of a device functions.
 Remember, a [Vulkan instance is a high-level construct used to provide Vulkan
 system-level information](LoaderInterfaceArchitecture.md#instance-specific).
 Because of this, instance functions need to be broadcast to every available
-implementation on the system.
+driver on the system.
 The following diagram shows an approximate view of an instance call chain with
 three enabled layers:
 
@@ -132,10 +132,10 @@ three enabled layers:
 This is also how a Vulkan device function call chain looks if queried
 using `vkGetInstanceProcAddr`.
 On the other hand, a device function doesn't need to worry about the broadcast
-because it knows specifically which associated implementation and which
-associated physical device the call should terminate at.
+because it knows specifically which associated driver and which associated
+physical device the call should terminate at.
 Because of this, the loader doesn't need to get involved between any enabled
-layers and the implementation.
+layers and the driver.
 Thus, using a loader-exported Vulkan device function, the call chain
 in the same scenario as above would look like:
 
@@ -149,7 +149,7 @@ most scenarios:
 ![Application Device Call Chain](./images/loader_device_chain_app.png)
 
 Also, notice if no layers are enabled, the application function pointers point
-**directly to the implementation**.
+**directly to the driver**.
 With many function calls, the lack of indirection in each adds up to non-trivial
 performance savings.
 
@@ -162,8 +162,8 @@ instance call chain.
 One example of a device function requiring a *terminator* is
 `vkCreateSwapchainKHR`.
 For that function, the loader needs to potentially convert the KHR_surface
-object into an implementation-specific KHR_surface object prior to passing down
-the rest of the function's information to the implementation.
+object into an driver-specific KHR_surface object prior to passing down the rest
+of the function's information to the driver.
 
 Remember:
  * `vkGetInstanceProcAddr` is used to query instance and physical device
@@ -220,7 +220,7 @@ currently named `libvulkan.1.dylib`.
 
 ## Application Layer Usage
 
-Applications desiring Vulkan functionality beyond what Vulkan implementations
+Applications desiring Vulkan functionality beyond what Vulkan drivers
 on their system already expose, may use various layers to augment the API.
 A layer cannot add new Vulkan core API entry-points that are not exposed in
 Vulkan.h.
@@ -518,12 +518,12 @@ make to function.
 
 ## Application Usage of Extensions
 
-Extensions are optional functionality provided by a layer, the loader, or an
-implementation.
+Extensions are optional functionality provided by a layer, the loader, or a
+driver.
 Extensions can modify the behavior of the Vulkan API and need to be specified
 and registered with Khronos.
-These extensions can be implemented by a Vulkan implementation, the loader, or a
-layer to expose functionality not available in the core API. 
+These extensions can be implemented by a Vulkan driver, the loader, or a layer
+to expose functionality not available in the core API.
 Information about various extensions can be found in the Vulkan Spec, and
 vulkan.h header file.
 
@@ -550,7 +550,7 @@ extensions are enabled with `vkCreateDevice`.
 When calling `vkEnumerateInstanceExtensionProperties` and
 `vkEnumerateDeviceExtensionProperties`, the loader discovers and aggregates all
 extensions of their respective type from layers (both explicit and implicit),
-implementations, and the loader before reporting them to the application.
+drivers, and the loader before reporting them to the application.
 
 Looking at `vulkan.h`, both functions are very similar,
 for example, the `vkEnumerateInstanceExtensionProperties` prototype looks as
@@ -578,17 +578,16 @@ VkResult
 The "pLayerName" parameter in these functions is used to select either a single
 layer or the Vulkan platform implementation.
 If "pLayerName" is NULL, extensions from Vulkan implementation components
-(including loader, implicit layers, and implementations) are enumerated.
+(including loader, implicit layers, and drivers) are enumerated.
 If "pLayerName" is equal to a discovered layer module name then only extensions
 from that layer (which may be implicit or explicit) are enumerated.
 
 **Note:** While device layers are deprecated, the instance enabled layers are
 still present in the device call-chain.
 
-Duplicate extensions (e.g. an implicit layer and implementation might report
-support for the same extension) are eliminated by the loader.
-For duplicates, the implementation version is reported and the layer version is
-culled.
+Duplicate extensions (e.g. an implicit layer and driver might report support for
+the same extension) are eliminated by the loader.
+For duplicates, the driver version is reported and the layer version is culled.
 
 Also, extensions **must be enabled** (in `vkCreateInstance` or `vkCreateDevice`)
 before the functions associated with the extensions can be used.
@@ -646,7 +645,7 @@ With the ability to expand Vulkan so easily, extensions will be created that
 the loader knows nothing about.
 If the extension is a device extension, the loader will pass the unknown
 entry-point down the device call chain ending with the appropriate
-implementation entry-points.
+driver entry-points.
 The same thing will happen if the extension is an instance extension which
 takes a physical device parameter as its first component.
 However, for all other instance extensions the loader will fail to load it.
@@ -658,19 +657,19 @@ Let's look again at the instance call chain:
 ![Instance call chain](./images/loader_instance_chain.png)
 
 Notice that for a normal instance function call, the loader has to handle
-passing along the function call to the available implementations.
+passing along the function call to the available drivers.
 If the loader has no idea of the parameters or return value of the instance
-call, it can't properly pass information along to the implementations.
+call, it can't properly pass information along to the drivers.
 There may be ways to do this, which will be explored in the future.
 However, for now, the loader does not support instance extensions which don't
 expose entry points that take a physical device as their first parameter.
 
 Because the device call-chain does not normally pass through the loader
 *terminator*, this is not a problem for device extensions.
-Additionally, since a physical device is associated with one implementation, we
-can use a generic *terminator* pointing to one implementation.
+Additionally, since a physical device is associated with one driver, the loader
+can use a generic *terminator* pointing to one driver.
 This is because both of these extensions terminate directly in the
-implementation they are associated with.
+driver they are associated with.
 
 *Is this a big problem?*
 <br/>
@@ -682,8 +681,8 @@ loader support.
 
 ### Filtering Out Unknown Instance Extension Names
 
-In some cases, an implementation may support instance extensions that are not
-supported by the loader.
+In some cases, a driver may support instance extensions that are not supported
+by the loader.
 For the above reasons, the loader will filter out the names of these unknown
 instance extensions when an application calls
 `vkEnumerateInstanceExtensionProperties`.
