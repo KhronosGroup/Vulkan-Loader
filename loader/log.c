@@ -70,8 +70,8 @@ void loader_debug_init(void) {
                 g_loader_debug |= VULKAN_LOADER_DEBUG_BIT;
             } else if (strncmp(env, "layer", len) == 0) {
                 g_loader_debug |= VULKAN_LOADER_LAYER_BIT;
-            } else if (strncmp(env, "implem", len) == 0 || strncmp(env, "icd", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_IMPLEMENTATION_BIT;
+            } else if (strncmp(env, "driver", len) == 0 || strncmp(env, "implem", len) == 0 || strncmp(env, "icd", len) == 0) {
+                g_loader_debug |= VULKAN_LOADER_DRIVER_BIT;
             }
         }
 
@@ -106,7 +106,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         VkDebugUtilsObjectNameInfoEXT object_name;
 
         if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0 || (msg_type & VULKAN_LOADER_LAYER_BIT) != 0 ||
-            (msg_type & VULKAN_LOADER_IMPLEMENTATION_BIT) != 0) {
+            (msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
         } else if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
@@ -171,12 +171,12 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         strncat(cmd_line_msg, "LAYER", cmd_line_size);
         cmd_line_size -= 5;
     }
-    if ((msg_type & VULKAN_LOADER_IMPLEMENTATION_BIT) != 0) {
+    if ((msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
         if (cmd_line_size != original_size) {
             strncat(cmd_line_msg, " | ", cmd_line_size);
             cmd_line_size -= 3;
         }
-        strncat(cmd_line_msg, "IMPLEM", cmd_line_size);
+        strncat(cmd_line_msg, "DRIVER", cmd_line_size);
         cmd_line_size -= 6;
     }
     if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {

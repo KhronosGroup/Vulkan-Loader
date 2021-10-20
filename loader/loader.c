@@ -3142,8 +3142,8 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             strncpy(tmp_search_path, search_path, search_path_size);
             tmp_search_path[search_path_size] = '\0';
             if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
-                log_flags = VULKAN_LOADER_IMPLEMENTATION_BIT;
-                loader_log(inst, VULKAN_LOADER_IMPLEMENTATION_BIT, 0, "Searching for implementation manifest files");
+                log_flags = VULKAN_LOADER_DRIVER_BIT;
+                loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
             } else {
                 log_flags = VULKAN_LOADER_LAYER_BIT;
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for layer manifest files");
@@ -3365,7 +3365,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             if (num_good_icds == 0) {
                 res = VK_ERROR_INITIALIZATION_FAILED;
             }
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: ICD JSON %s does not have a \'file_format_version\' field. Skipping ICD JSON.", file_str);
             cJSON_Delete(inst, json);
             json = NULL;
@@ -3378,7 +3378,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             if (num_good_icds == 0) {
                 res = VK_ERROR_OUT_OF_HOST_MEMORY;
             }
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: Failed retrieving ICD JSON %s \'file_format_version\' field.  Skipping ICD JSON",
                        file_str);
             cJSON_Delete(inst, json);
@@ -3402,7 +3402,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         }
 
         if (file_major_vers != 1 || file_minor_vers != 0 || file_patch_vers > 1) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: Unexpected manifest file version (expected 1.0.0 or 1.0.1), may cause errors");
         }
         cJSON_Free(inst, file_vers);
@@ -3416,7 +3416,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     if (num_good_icds == 0) {
                         res = VK_ERROR_OUT_OF_HOST_MEMORY;
                     }
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: Failed retrieving ICD JSON %s \'library_path\' field.  Skipping ICD JSON.",
                                file_str);
                     cJSON_Free(inst, temp);
@@ -3441,7 +3441,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 strcpy(library_path, &temp[1]);
                 cJSON_Free(inst, temp);
                 if (strlen(library_path) == 0) {
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: ICD JSON %s \'library_path\' field is empty.  Skipping ICD JSON.", file_str);
                     cJSON_Delete(inst, json);
                     json = NULL;
@@ -3471,7 +3471,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 if (item != NULL) {
                     temp = cJSON_Print(inst, item);
                     if (NULL == temp) {
-                        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                    "loader_icd_scan: Failed retrieving ICD JSON %s \'api_version\' field.  Skipping ICD JSON.",
                                    file_str);
 
@@ -3489,7 +3489,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     vers = loader_make_version(temp);
                     cJSON_Free(inst, temp);
                 } else {
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: ICD JSON %s does not have an \'api_version\' field.", file_str);
                 }
                 VkResult icd_add_res = VK_SUCCESS;
@@ -3498,7 +3498,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     res = icd_add_res;
                     goto out;
                 } else if (VK_SUCCESS != icd_add_res) {
-                    loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: Failed to add ICD JSON %s.  Skipping ICD JSON.", fullpath);
                     cJSON_Delete(inst, json);
                     json = NULL;
@@ -3506,12 +3506,12 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 }
                 num_good_icds++;
             } else {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                            "loader_icd_scan: Failed to find \'library_path\' object in ICD JSON file %s.  Skipping ICD JSON.",
                            file_str);
             }
         } else {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: Can not find \'ICD\' object in ICD JSON file %s.  Skipping ICD JSON", file_str);
         }
 
@@ -4934,7 +4934,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             }
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Implementations>\n");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Drivers>\n");
         }
 
         res = fpCreateInstance(&loader_create_info, pAllocator, created_instance);
@@ -5446,7 +5446,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
                 icd_result = icd_enumerate_instance_version(&icd_version);
                 if (icd_result != VK_SUCCESS) {
                     icd_version = VK_API_VERSION_1_0;
-                    loader_log(ptr_instance, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+                    loader_log(ptr_instance, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "terminator_CreateInstance: ICD \"%s\" vkEnumerateInstanceVersion returned error. The ICD will be "
                                "treated as a 1.0 ICD",
                                icd_term->scanned_icd->lib_name);
@@ -5604,7 +5604,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     icd_exts.list = NULL;
 
     if (fpCreateDevice == NULL) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "terminator_CreateDevice: No vkCreateDevice command exposed by ICD %s", icd_term->scanned_icd->lib_name);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -5652,7 +5652,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
             filtered_extension_names[localCreateInfo.enabledExtensionCount] = (char *)extension_name;
             localCreateInfo.enabledExtensionCount++;
         } else {
-            loader_log(icd_term->this_instance, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+            loader_log(icd_term->this_instance, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "vkCreateDevice extension %s not available for devices associated with ICD %s", extension_name,
                        icd_term->scanned_icd->lib_name);
         }
@@ -5800,7 +5800,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
     res = fpCreateDevice(phys_dev_term->phys_dev, &localCreateInfo, pAllocator, &dev->icd_device);
     if (res != VK_SUCCESS) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_IMPLEMENTATION_BIT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "terminator_CreateDevice: Failed in ICD %s vkCreateDevice call", icd_term->scanned_icd->lib_name);
         goto out;
     }

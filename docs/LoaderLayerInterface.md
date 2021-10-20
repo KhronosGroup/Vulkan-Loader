@@ -261,16 +261,16 @@ variable is not defined:
     <td>2</td>
     <td>SYSCONFDIR</td>
     <td>/etc</td>
-    <td>Compile-time option set to possible location of implementations
-        installed from non-Linux-distribution-provided packages.
+    <td>Compile-time option set to possible location of layers installed from
+        non-Linux-distribution-provided packages.
     </td>
   </tr>
   <tr>
     <td>3</td>
     <td>EXTRASYSCONFDIR</td>
     <td>/etc</td>
-    <td>Compile-time option set to possible location of implementations
-        installed from non-Linux-distribution-provided packages.
+    <td>Compile-time option set to possible location of layers installed from
+        non-Linux-distribution-provided packages.
         Typically only set if SYSCONFDIR is set to something other than /etc
     </td>
   </tr>
@@ -566,8 +566,7 @@ result in the following behavior:
     - If it returned non-NULL, treat it as an unknown logical device command.
     - This meant setting up a generic trampoline function that takes in a
 VkDevice as the first parameter and adjusting the dispatch table to call the
-Implementation/Layers function after getting the dispatch table from the
-VkDevice.
+Driver/Layer's function after getting the dispatch table from the `VkDevice`.
  4. If all the above failed, the loader would return NULL to the application.
 
 This caused problems when a layer attempted to expose new physical device
@@ -634,16 +633,15 @@ The new behavior of the loader's `vkGetInstanceProcAddr` with support for the
     - If it is, return the function pointer
  2. Check if known instance or device extension function:
     - If it is, return the function pointer
- 3. Call the layer/implementation `GetPhysicalDeviceProcAddr`
+ 3. Call the layer/driver `GetPhysicalDeviceProcAddr`
     - If it returns non-NULL, return a trampoline to a generic physical device
 function, and set up a generic terminator which will pass it to the proper
-implementation.
+driver.
  4. Call down using `GetInstanceProcAddr`
     - If it returns non-NULL, treat it as an unknown logical device command.
-This means setting up a generic trampoline function that takes in a VkDevice as
+This means setting up a generic trampoline function that takes in a `VkDevice` as
 the first parameter and adjusting the dispatch table to call the
-implementation/layer's function after getting the dispatch table from the
-VkDevice.
+driver/layer's function after getting the dispatch table from the `VkDevice`.
 Then, return the pointer to corresponding trampoline function.
  5. Return NULL
 
@@ -673,7 +671,7 @@ corresponding Vulkan function in the next entity.
 behavior, then pass it down to the next entity.
       * If a layer doesn't pass the information down, undefined behavior may occur.
       * This is because the function will not be received by layers further
-down the chain, or any implementations.
+down the chain, or any drivers.
     * One function that **must never call down the chain** is:
       * `vkNegotiateLoaderLayerInterfaceVersion`
     * Three common functions that **may not call down the chain** are:
@@ -720,8 +718,8 @@ non-intercepted) functions.
 
 ## Layer Conventions and Rules
 
-A layer, when inserted into an otherwise compliant Vulkan implementation,
-<b>must</b> still result in a compliant Vulkan implementation.
+A layer, when inserted into an otherwise compliant Vulkan driver, <b>must</b>
+still result in a compliant Vulkan driver.
 The intention is for layers to have a well-defined baseline behavior.
 Therefore, it must follow some conventions and rules defined below.
 
@@ -1167,7 +1165,7 @@ For functions that return object handles, each layer does not touch the value
 passed down the call chain.
 This is because lower items may need to use the original value.
 However, when the value is returned from a lower-level layer (possibly the
-implementation), the layer saves the handle and returns its own handle to the
+driver), the layer saves the handle and returns its own handle to the
 layer above it (possibly the application).
 When a layer receives a Vulkan function using something that it previously
 returned a handle for, the layer is required to unwrap the handle and pass
@@ -1209,8 +1207,8 @@ If a new extension is created which has functions that take `VkImage` objects
 as parameters, and if the layer does not support those new functions, an
 application that uses both the layer and the new extension will have undefined
 behavior when those new functions are called (e.g. the application may crash).
-This is because the lower-level layers and implementations won't receive the
-handle that they generated.
+This is because the lower-level layers and drivers won't receive the handle that
+they generated.
 Instead, they will receive a handle that is only known by the layer that is
 wrapping the object.
 
@@ -1246,13 +1244,13 @@ Remember that loader *trampoline* code normally fills in the dispatch table
 pointer in the newly created object.
 Thus, the layer must fill in the dispatch table pointer if the loader
 *trampoline* will not do so.
-Common cases where a layer (or implementation) may create a dispatchable object
-without loader *trampoline* code is as follows:
+Common cases where a layer (or driver) may create a dispatchable object without
+loader *trampoline* code is as follows:
 - Layers that wrap dispatchable objects
 - Layers which add extensions that create dispatchable objects
 - Layers which insert extra Vulkan functions in the stream of functions they
 intercept from the application
-- Implementations which add extensions that create dispatchable objects
+- Drivers which add extensions that create dispatchable objects
 
 The desktop loader provides a callback that can be used for initializing a
 dispatchable object.

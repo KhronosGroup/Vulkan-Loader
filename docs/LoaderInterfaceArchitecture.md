@@ -16,7 +16,7 @@
     * [Who Should Read This Document](#who-should-read-this-document)
     * [The Loader](#the-loader)
     * [Layers](#layers)
-    * [Implementations](#implementations)
+    * [Drivers](#drivers)
     * [VkConfig](#vkconfig)
 
   * [Important Vulkan Concepts](#important-vulkan-concepts)
@@ -27,7 +27,7 @@
 
   * [Application Interface to the Loader](#application-interface-to-the-loader)
   * [Layer Interface with the Loader](#layer-interface-with-the-loader)
-  * [Implementation Interface with the Loader](#implementation-interface-with-the-loader)
+  * [Driver Interface with the Loader](#driver-interface-with-the-loader)
 
   * [Table of Debug Environment Variables](#table-of-debug-environment-variables)
   * [Glossary of Terms](#glossary-of-terms)
@@ -38,7 +38,7 @@ Vulkan is a layered architecture, made up of the following elements:
   * The Vulkan Application
   * [The Vulkan Loader](#the-loader)
   * [Vulkan Layers](#layers)
-  * [Implementations](#implementations)
+  * [Drivers](#drivers)
   * [VkConfig](#vkconfig)
 
 ![High Level View of Loader](./images/high_level_loader.png)
@@ -58,21 +58,21 @@ wanting a better understanding of the Vulkan runtime.
 
 The application sits at the top and interfaces directly with the Vulkan
 loader.
-At the bottom of the stack sits the implementations.
-An implementation can control one or more physical devices capable of rendering
-Vulkan, implement a conversion from Vulkan into a native graphics API (like
+At the bottom of the stack sits the drivers.
+A driver can control one or more physical devices capable of rendering Vulkan,
+implement a conversion from Vulkan into a native graphics API (like
 [MoltenVk](https://github.com/KhronosGroup/MoltenVK], or implement a fully
 software path that can be executed on a CPU to simulate a Vulkan device (like
 [SwiftShader](https://github.com/google/swiftshader) or LavaPipe).
 Remember, Vulkan-capable hardware may be graphics-based, compute-based, or
 both.
-Between the application and the implementations the loader can inject any
-number of optional [layers](#layers) that provide special functionality.
+Between the application and the drivers, the loader can inject any number of
+optional [layers](#layers) that provide special functionality.
 The loader is critical to managing the proper dispatching of Vulkan
-functions to the appropriate set of layers and implementations.
+functions to the appropriate set of layers and drivers.
 The Vulkan object model allows the loader to insert layers into a call-chain
-so that the layers can process Vulkan functions prior to the implementation
-being called.
+so that the layers can process Vulkan functions prior to the driver being
+called.
 
 This document is intended to provide an overview of the necessary interfaces
 between each of these.
@@ -81,8 +81,8 @@ between each of these.
 #### Goals of the Loader
 
 The loader was designed with the following goals in mind:
- 1. Support one or more Vulkan-capable implementations on a user's system
-without them interfering with one another.
+ 1. Support one or more Vulkan-capable drivers on a user's system without them
+ interfering with one another.
  2. Support Vulkan Layers which are optional modules that can be enabled by an
 application, developer, or standard system settings.
  3. Keep the overall overhead of the loader to the minimum possible.
@@ -92,14 +92,14 @@ application, developer, or standard system settings.
 
 Layers are optional components that augment the Vulkan development environment.
 They can intercept, evaluate, and modify existing Vulkan functions on their
-way from the application down to the implementations and back up.
+way from the application down to the drivers and back up.
 Layers are implemented as libraries that can be enabled in different ways
 and are loaded during CreateInstance.
 Each layer can choose to hook, or intercept, Vulkan functions which in
 turn can be ignored, inspected, or augmented.
 Any function a layer does not hook is simply skipped for that layer and the
 control flow will simply continue on to the next supporting layer or
-implementation.
+driver.
 Because of this, a layer can choose whether to intercept all known Vulkan
 functions or only a subset it is interested in.
 
@@ -118,18 +118,16 @@ But when releasing the application, those layers are unnecessary
 and thus won't be enabled, increasing the speed of the application.
 
 
-### Implementations
+### Drivers
 
 The library that implements Vulkan, either through supporting a physical
 hardware device directly, converting Vulkan commands into native graphics
-commands, or simulating Vulkan through software, is considered
-"an implementation".
-The most common type of implementation is still the Installable Client Driver
-(or ICD).
-The loader is responsible for discovering available Vulkan implementations on
-the system.
-Given a list of available implementations, the loader can enumerate all the
-available physical devices and provide this information for an application.
+commands, or simulating Vulkan through software, is considered "a driver".
+The most common type of driver is still the Installable Client Driver (or ICD).
+The loader is responsible for discovering available Vulkan drivers on the
+system.
+Given a list of available drivers, the loader can enumerate all the available
+physical devices and provide this information for an application.
 
 
 #### Installable Client Drivers
@@ -137,7 +135,7 @@ available physical devices and provide this information for an application.
 Vulkan allows multiple ICDs each supporting one or more devices.
 Each of these devices is represented by a Vulkan `VkPhysicalDevice` object.
 The loader is responsible for discovering available Vulkan ICDs via the standard
-implementation search on the system.
+driver search on the system.
 
 
 ### VkConfig
@@ -281,7 +279,7 @@ These will be discussed in more detail later.
 
 A Vulkan device (`VkDevice`), on the other-hand, is a logical identifier used
 to associate functions with a particular Vulkan physical device
-(`VkPhysicalDevice`) through a particular implementation on a user's system.
+(`VkPhysicalDevice`) through a particular driver on a user's system.
 
 ##### Device Objects
 
@@ -358,7 +356,7 @@ These *trampoline* functions are small, simple functions that jump to the
 appropriate dispatch table entry for the object they are given.
 Additionally, for functions in the instance call chain, the loader has an
 additional function, called a *terminator*, which is called after all enabled
-layers to marshall the appropriate information to all available implementations.
+layers to marshall the appropriate information to all available drivers.
 
 
 #### Instance Call Chain Example
@@ -368,7 +366,7 @@ For example, the diagram below represents what happens in the call chain for
 After initializing the chain, the loader calls into the first layer's
 `vkCreateInstance`, which will call the next layer's `vkCreateInstance 
 before finally terminating in the loader again where it will call
-every implementation's `vkCreateInstance`.
+every driver's `vkCreateInstance`.
 This allows every enabled layer in the chain to set up what it needs based on
 the `VkInstanceCreateInfo` structure from the application.
 
@@ -377,7 +375,7 @@ the `VkInstanceCreateInfo` structure from the application.
 This also highlights some of the complexity the loader must manage when using
 instance call chains.
 As shown here, the loader's *terminator* must aggregate information to and from
-multiple implementations when they are present.
+multiple drivers when they are present.
 This implies that the loader has to be aware of any instance-level extensions
 which work on a `VkInstance` to aggregate them correctly.
 
@@ -386,8 +384,8 @@ which work on a `VkInstance` to aggregate them correctly.
 
 Device call chains are created in `vkCreateDevice` and are generally simpler
 because they deal with only a single device.
-This allows for the specific implementation exposing this device to always be
-the *terminator* of the chain.
+This allows for the specific driver exposing this device to always be the
+*terminator* of the chain.
 
 ![Loader Device Call Chain](./images/loader_device_chain_loader.png)
 <br/>
@@ -416,7 +414,7 @@ These behaviors also result in ignoring certain environment variables, such as:
 
 For more information on the affected search paths, refer to 
 [Layer Discovery](LoaderLayerInterface.md#layer-discovery) and
-[Implementation Discovery](LoaderImplementationInterface.md#implementation-discovery).
+[Driver Discovery](LoadeDriverInterface.md#driver-discovery).
 <br/>
 <br/>
 
@@ -439,11 +437,11 @@ directory as this file.
 <br/>
 
 
-## Implementation Interface With the Loader
+## Driver Interface With the Loader
 
-The Implementation interface to the Vulkan loader is detailed in the
-[LoaderImplementationInterface.md](LoaderImplementationInterface.md) document
-found in the same directory as this file.
+The Driver interface to the Vulkan loader is detailed in the
+[LoadeDriverInterface.md](LoadeDriverInterface.md) document found in the same
+directory as this file.
 <br/>
 <br/>
 
@@ -465,7 +463,7 @@ discovery.
     <td><small><i>VK_ICD_FILENAMES</i></small></td>
     <td>Force the loader to use the specific ICD JSON files.
         The value contains a list of delimited full path listings to
-        implementation JSON Manifest files.<br/>
+        driver JSON Manifest files.<br/>
         <b>NOTE:</b> If a global path to the JSON file is not used, issues
         may be encountered.<br/>
         <b>Ignored when running Vulkan application in executing with
@@ -522,7 +520,7 @@ discovery.
     <td>Disable the filtering out of instance extensions that the loader doesn't
         know about.
         This will allow applications to enable instance extensions exposed by
-        implementations but that the loader has no support for.<br/>
+        drivers but that the loader has no support for.<br/>
         <b>NOTE:</b> This may cause the loader or application to crash.</td>
     <td><small>export<br/>
         &nbsp;&nbsp;VK_LOADER_DISABLE_INST_EXT_FILTER=1<br/><br/>
@@ -539,7 +537,7 @@ discovery.
         &nbsp;&nbsp;* info (only info)<br/>
         &nbsp;&nbsp;* debug (only debug)<br/>
         &nbsp;&nbsp;* layer (layer-specific output)<br/>
-        &nbsp;&nbsp;* implement (implementation-specific output)<br/>
+        &nbsp;&nbsp;* driver (driver-specific output)<br/>
         &nbsp;&nbsp;* all (report out all messages)<br/><br/>
         To enable multiple options (outside of "all") like info, warning and
         error messages, set the value to "error,warn,info".
@@ -590,8 +588,8 @@ discovery.
     <td>The call chain of functions followed for device functions.
         This call chain for a device function is usually as follows: first the
         application calls into a loader trampoline, then the loader trampoline
-        calls enabled layers, and the final layer calls into the implementation
-        specific to the device. <br/>
+        calls enabled layers, and the final layer calls into the driver specific
+        to the device. <br/>
         See the
         <a href="#dispatch-tables-and-call-chains">Dispatch Tables and Call
         Chains</a> section for more information.
@@ -612,8 +610,8 @@ discovery.
   </tr>
   <tr>
     <td>Discovery</td>
-    <td>The process of the loader searching for implementation and layer files
-        to set up the internal list of Vulkan objects available.<br/>
+    <td>The process of the loader searching for driver and layer files to set up
+        the internal list of Vulkan objects available.<br/>
         On <i>Windows/Linux/macOS</i>, the discovery process typically focuses on
         searching for Manifest files.<br/>
         On <i>Android</i>, the process focuses on searching for library files.
@@ -623,9 +621,17 @@ discovery.
     <td>Dispatch Table</td>
     <td>An array of function pointers (including core and possibly extension
         functions) used to step to the next entity in a call chain.
-        The entity could be the loader, a layer or an implementation.<br/>
+        The entity could be the loader, a layer or a driver.<br/>
         See <a href="#dispatch-tables-and-call-chains">Dispatch Tables and Call
         Chains</a> for more information.
+    </td>
+  </tr>
+  <tr>
+    <td>Driver</td>
+    <td>The underlying library which provides support for the Vulkan API.
+        This support can be implemented as either an ICD, API translation
+        library, or pure software.<br/>
+        See <a href="#drivers">Drivers</a> section for more information.
     </td>
   </tr>
   <tr>
@@ -664,7 +670,7 @@ discovery.
     <td>Acronym for "Installable Client Driver".
         These are drivers that are provided by IHVs to interact with the
         hardware they provide. <br/>
-        These are the most common type of Vulkan implementations. <br/>
+        These are the most common type of Vulkan drivers. <br/>
         See <a href="#installable-client-drivers">Installable Client Drivers</a> 
         section for more information.
     </td>
@@ -679,22 +685,13 @@ discovery.
     </td>
   </tr>
   <tr>
-    <td>Implementation</td>
-    <td>The underlying library which provides support for the Vulkan API.
-        This support can be implemented as either an ICD, API translation
-        library, or pure software.<br/>
-        See <a href="#implementations">Implementations</a> section for more
-        information.
-    </td>
-  </tr>
-  <tr>
     <td>Instance Call Chain</td>
     <td>The call chain of functions followed for instance functions.
         This call chain for an instance function is usually as follows: first
         the application calls into a loader trampoline, then the loader
         trampoline calls enabled layers, the final layer calls a loader
         terminator, and the loader terminator calls all available
-        implementations. <br/>
+        drivers. <br/>
         See the <a href="#dispatch-tables-and-call-chains">Dispatch Tables and
         Call Chains</a> section for more information.
     </td>
@@ -717,7 +714,7 @@ discovery.
     <td>Layer</td>
     <td>Layers are optional components that augment the Vulkan system.
         They can intercept, evaluate, and modify existing Vulkan functions on
-        their way from the application down to the implementation.<br/>
+        their way from the application down to the driver.<br/>
         See the <a href="#layers">Layers</a> section for more information.
     </td>
   </tr>
@@ -736,7 +733,7 @@ discovery.
   <tr>
     <td>Loader</td>
     <td>The middleware program which acts as the mediator between Vulkan
-        applications, Vulkan layers, and Vulkan implementations.<br/>
+        applications, Vulkan layers, and Vulkan drivers.<br/>
         See <a href="#the-loader">The Loader</a> section for more information.
     </td>
   </tr>
@@ -745,19 +742,19 @@ discovery.
     <td>Data files in JSON format used by the desktop loader.
         These files contain specific information for either a
         <a href="LoaderLayerInterface.md#layer-manifest-file-format">Layer</a>
-        or an
-        <a href="LoaderImplementationInterface.md#icd-manifest-file-format">Implementation</a>
+        or a
+        <a href="LoaderDriverInterface.md#icd-manifest-file-format">Driver</a>
         and define necessary information such as where to find files and default
         settings.
     </td>
   </tr>
   <tr>
     <td>Terminator Function</td>
-    <td>The last function in the instance call chain above the implementation
-        and owned by the loader.
+    <td>The last function in the instance call chain above the driver and owned
+        by the loader.
         This function is required in the instance call chain because all
-        instance functionality must be communicated to all implementations
-        capable of receiving the call. <br/>
+        instance functionality must be communicated to all drivers capable of
+        receiving the call. <br/>
         See <a href="#dispatch-tables-and-call-chains">Dispatch Tables and Call
         Chains</a> for more information.
     </td>
