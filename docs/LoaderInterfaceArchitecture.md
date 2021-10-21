@@ -29,6 +29,7 @@
   * [Layer Interface with the Loader](#layer-interface-with-the-loader)
   * [Driver Interface with the Loader](#driver-interface-with-the-loader)
 
+  * [Loader Policies](#loader-policies)
   * [Table of Debug Environment Variables](#table-of-debug-environment-variables)
   * [Glossary of Terms](#glossary-of-terms)
 
@@ -446,6 +447,27 @@ directory as this file.
 <br/>
 
 
+## Loader Policies
+
+Loader policies with regards to the loader interaction with drivers and layers
+ are now documented in the appropriate sections.
+The intention of these sections is to clearly define expected behavior of the
+loader with regards to its interactions with those components.
+This could be especially useful in cases where a new or specialized loader may
+be required that conforms to the behavior of the existing loader.
+Because of this, the primary focus of those sections is on expected behaviors
+for all relevant components to create a consistent experience across platforms.
+In the long-run, this could also be used as validation requirements for any
+existing Vulkan loaders.
+
+To review the particular policy sections, please refer to one or both of the
+sections listed below:
+ * [Loader And Driver Policy](LoaderDriverInterface.md#loader-and-driver-policy)
+ * [Loader And Layer Policy](LoaderLayerInterface.md#loader-and-layer-policy)
+<br/>
+<br/>
+
+
 ## Table of Debug Environment Variables
 
 The following are all the Debug Environment Variables available for use with the
@@ -744,7 +766,7 @@ discovery.
         These files contain specific information for either a
         <a href="LoaderLayerInterface.md#layer-manifest-file-format">Layer</a>
         or a
-        <a href="LoaderDriverInterface.md#icd-manifest-file-format">Driver</a>
+        <a href="LoaderDriverInterface.md#driver-manifest-file-format">Driver</a>
         and define necessary information such as where to find files and default
         settings.
     </td>

@@ -332,6 +332,7 @@ struct loader_instance {
 #endif
     bool wsi_display_enabled;
     bool wsi_display_props2_enabled;
+    bool create_terminator_invalid_extension;
 };
 
 // VkPhysicalDevice requires special treatment by loader.  Firstly, terminator

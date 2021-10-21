@@ -48,6 +48,9 @@
   * [Layer Interface Version 2](#layer-interface-api-version-2)
   * [Layer Interface Version 1](#layer-interface-api-version-1)
   * [Layer Interface Version 0](#layer-interface-api-version-0)
+* [Loader and Layer Interface Policy](#loader-and-layer-interface-policy)
+  * [Requirements of Well-Behaved Layers](#requirements-of-well-behaved-layers)
+  * [Requirements of a Well-Behaved Loader](#requirements-of-a-well-behaved-loader)
 
 
 ## Overview
@@ -1745,6 +1748,609 @@ All layers contained within a library must support `vk_layer.h`.
 They do not need to implement functions that they do not intercept.
 They are recommended not to export any functions.
 
+
+## Loader and Layer Interface Policy
+
+This section is intended to define proper behavior expected between the loader
+and layers.
+Much of this section is additive to the Vulkan spec, and necessary for
+maintaining consistency across platforms.
+In fact, much of the language can be found throughout this document, but is
+summarized here for convenience.
+Additionally, there should be a way to identify bad or non-conformant behavior
+in a layer and remedy it as soon as possible.
+Therefore, a policy numbering system is provided to clearly identify each
+policy statement in a unique way.
+
+Finally, based on the goal of making the loader efficient and performant,
+some of these policy statements defining proper layer behavior may not be
+testable (and therefore aren't enforceable by the loader).
+However, that should not detract from the requirement in order to provide the
+best experience to end-users and developers.
+
+
+### Number Format
+
+Loader/Layer policy items start with the prefix `LLP_` (short for
+Loader/Layer Policy) which is followed by an identifier based on what
+component the policy is targeted against.
+In this case there are only two possible components:
+ - Layers: which will have the string `LAYER_` as part of the policy number.
+ - The Loader: which will have the string `LOADER_` as part of the policy
+   number.
+
+
+### Android Differences
+
+As stated before, the Android Loader is actually separate from the Khronos
+Loader.
+Because of this and other platform requirements, not all of these policy
+statements apply to Android.
+Each table also has a column titled "Applicable to Android?"
+which indicates which policy statements apply to layers that are focused
+only on Android support.
+Further information on the Android loader can be found in the
+<a href="https://source.android.com/devices/graphics/implement-vulkan">
+Android Vulkan documentation</a>.
+
+
+### Requirements of Well-Behaved Layers
+
+<table style="width:100%">
+  <tr>
+    <th>Requirement Number</th>
+    <th>Requirement Description</th>
+    <th>Result of Non-Compliance</th>
+    <th>Applicable to Android?</th>
+    <th>Enforceable by Loader?</th>
+    <th>Reference Section</th>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_1</b></small></td>
+    <td>A layer, when inserted into an otherwise compliant Vulkan
+        environment, <b>must</b> still result in a compliant Vulkan environment
+        unless it intends to mimic non-compliant behavior (such as a device
+        simulation layer).
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>No<br/>
+        It is not a simple task for the loader to find the cause of failure
+        in a layer chain.</td>
+    <td><small>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_2</b></small></td>
+    <td>A layer <b>must not</b> cause other layers or drivers to fail, crash, or
+        otherwise misbehave.<br/>
+        It <b>must not</b> make invalid calls to, or rely on undefined behaviors
+        of the layers or drivers below it.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>No<br/>
+        It is not a simple task for the loader to find the cause of failure
+        in a layer chain.</td>
+    <td><small>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_3</b></small></td>
+    <td>Any new layer developed <b>should</b> adhere to the naming rules defined
+        in the "Layer Conventions and Rules" section which also correspond to
+        the naming rules defined in the Vulkan Style Guide section 3.4 on
+        "Version, Extension, and Layer Naming Conventions".
+    </td>
+    <td>Layer developers could produce conflicting names causing unexpected
+        behavior if more than one layer with the same name is available on a
+        user's platform.
+    </td>
+    <td>Yes</td>
+    <td>Yes<br/>
+        Can not immediately enforce since it will cause some shipping layers
+        to stop working.</td>
+    <td><small>
+        <a href="https://www.khronos.org/registry/vulkan/specs/1.2/styleguide.html#extensions-naming-conventions">
+            Vulkan Style Guide section 3.4</a> <br/>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_4</b></small></td>
+    <td>A layer <b>should</b> export the
+        <i>vkNegotiateLoaderLayerInterfaceVersion</i> entry-point to negotiate
+        an interface version.<br/>
+        A layer using interface 2 or newer <b>must</b> export this function.<br/>
+    </td>
+    <td>The layer will not be loaded.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#layer-version-negotiation">Layer Version Negotiation</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_5</b></small></td>
+    <td>A layer <b>must</b> be able to negotiate a supported version of the
+        loader/layer interface with the loader in accordance with the stated
+        negotiation process.
+    </td>
+    <td>The layer will not be loaded.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#loader-and-layer-interface-negotiation">
+        Interface Negotiation</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_6</b></small></td>
+    <td>A layer <b>must</b> have a valid JSON manifest file for the
+        loader to process that ends with the ".json" suffix.
+        It is recommended validating the layer manifest file against
+        <a href="https://github.com/LunarG/VulkanTools/blob/master/vkconfig_core/layers/layers_schema.json">
+        the layer schema</a> prior to publication.</br>
+        The <b>only</b> exception is on Android which determines layer
+        functionality through the introspection functions defined in
+        <a href="#layer-library-api-version-0">Layer Library API Version 0</a>
+        section and in the
+        <a href="#layer-manifest-file-format">Layer Manifest File Format</a>
+        table.
+    </td>
+    <td>The layer will not be loaded.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#layer-manifest-file-usage">Manifest File Usage</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_7</b></small></td>
+    <td>If a layer is a Meta-layer, each component layer in its manifest file
+        <b>must</b> be present on the system.
+    </td>
+    <td>The layer will not be loaded.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#meta-layers">Meta-Layers</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_8</b></small></td>
+    <td>If a layer is a Meta-layer, each component layer in its manifest file
+        <b>must</b> report the same or a newer Vulkan API major and minor
+        version than the meta-layer.
+    </td>
+    <td>The layer will not be loaded.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#meta-layers">Meta-Layers</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_9</b></small></td>
+    <td>A layer installed as an Implicit Layer <b>must</b> define a disable
+        environment variable so it can be disabled globally.
+    </td>
+    <td>The layer will not be loaded if it does not define the environment
+        variable.
+    </td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#layer-manifest-file-format">Manifest File Format</a>, see
+        "disable_environment" variable</small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_10</b></small></td>
+    <td>If a layer wraps individual object handles, it <b>must</b> unwrap those
+        handles when passing the handles down the chain to the next layer.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    </td>
+    <td>Yes</td>
+    <td>No</td>
+    <td><small>
+      <a href="#cautions-about-wrapping">Cautions About Wrapping</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_11</b></small></td>
+    <td>Any layer shipped with a driver <b>must</b> be validated against
+        conformance with the corresponding driver.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td><small>
+        <a href="https://github.com/KhronosGroup/VK-GL-CTS/blob/master/external/openglcts/README.md">
+        Vulkan CTS Documentation</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_12</b></small></td>
+    <td> During <i>vkCreateInstance</i>, a layer <b>must</b> process the
+         <i>VkLayerInstanceCreateInfo</i> chain links appropriately.<br/>
+         This includes getting the next layer's <i>vkGetInstanceProcAddr</i>
+         function for building a dispatch table as well as updating the
+         <i>VkLayerInstanceCreateInfo</i> chain link to point to the next
+         structure in the chain for the next layer prior to calling down to the
+         next layer's <i>vkCreateInstance</i> function. <br/>
+         An example of such usage is shown in detail in the
+         <a href=#example-code-for-createinstance>Example Code for
+         CreateInstance</a> section.
+    </td>
+    <td>The behavior will result in crashes or corruption as any following
+        layers will access incorrect content.</td>
+    <td>Yes</td>
+    <td>No<br/>
+        With the current loader/layer design, it is difficult for the loader
+        to diagnose this without adding additional overhead that could impact
+        performance.<br/>
+        This is because the loader calls all layers at once and has no data on
+        the intermediate state of the <i>pNext</i> chain contents.
+        This could be done in the future, but requires re-designing the layer
+        initialization process.
+    </td>
+    <td><small>
+        <a href=""#layer-dispatch-initialization">
+           Layer Dispatch Initialization</a>
+        </small>
+    </td>
+  </tr>
+    <td><small><b>LLP_LAYER_13</b></small></td>
+    <td> During <i>vkCreateDevice</i>, a layer <b>must</b> process the
+         <i>VkLayerDeviceCreateInfo</i> chain links appropriately.<br/>
+         This includes updating the <i>VkLayerDeviceCreateInfo</i> chain link to
+         point to the next structure in the chain for the next layer prior to
+         calling down to the next layer's <i>vkCreateDevice</i> function. <br/>
+         An example of such usage is shown in detail in the
+         <a href="#example-code-for-createdevice">Example Code for
+         CreateDevice</a> section.
+    </td>
+    <td>The behavior will result in crashes or corruption as any following
+        layers will access incorrect content.</td>
+    <td>Yes</td>
+    <td>No<br/>
+        With the current loader/layer design, it is difficult for the loader
+        to diagnose this without adding additional overhead that could impact
+        performance.</td>
+    <td><small>
+        <a href="#layer-dispatch-initialization">
+           Layer Dispatch Initialization</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_14</b></small></td>
+    <td>A layer <b>should</b> use the application provided memory allocator
+        functions when they are provided so that applications can keep track of
+        allocated memory.
+    </td>
+    <td>The allocator functions may be provided for the purpose of limiting
+        or tracking the memory used by the Vulkan components.
+        Because of this, if a layer ignores these allocators, it may result in
+        undefined behavior possibly including crashes or corruption.
+    </td>
+    <td>Yes</td>
+    <td>No</td>
+    <td><small>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_15</b></small></td>
+    <td>A layer <b>must</b> enumerate only its own extension properties during a
+        call of <i>vkEnumerateInstanceExtensionProperties</i> when
+        <i>pLayerName</i> refers to itself.<br/>
+        Otherwise, it <b>must</b> return <i>VK_ERROR_LAYER_NOT_PRESENT</i>,
+        including when <i>pLayerName</i> is <b>NULL</b>.
+    </td>
+    <td>The loader could become confused on what support is present in a
+        specific layer which will result in undefined behavior possibly
+        including crashes or corruption.
+    </td>
+    <td>Yes</td>
+    <td>No</td>
+    <td><small>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_16</b></small></td>
+    <td>A layer <b>must</b> enumerate only its own extension properties during a
+        call of <i>vkEnumerateDeviceExtensionProperties</i> when
+        <i>pLayerName</i> refers to itself.<br/>
+        Otherwise, it <b>must</b> ignore the call other than passing it down
+        the standard call chain.
+    </td>
+    <td>The loader could become confused on what support is present in a
+        specific layer which will result in undefined behavior possibly
+        including crashes or corruption.
+    </td>
+    <td>Yes</td>
+    <td>No</td>
+    <td><small>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_17</b></small></td>
+    <td>A layer's <i>vkCreateInstance</i> <b>must not</b> generate an error for
+        unrecognized extension names as the extension could be implemented by
+        a lower layer or driver.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_18</b></small></td>
+    <td>A layer <b>must</b> return <b>NULL</b> from <i>vkGetInstanceProcAddr</i>
+        or <i>vkGetDeviceProcAddr</i> for entry-points that it does not support
+        or that have not been enabled properly (for example not enabling the
+        extension certain entry-points are associated with should result in
+        <i>vkGetInstanceProcAddr</i> returning <b>NULL</b> when requesting
+        them).
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>No<br/>
+        With the current loader/layer design, it is difficult for the loader
+        to determine this without adding additional overhead that could impact
+        performance.</td>
+    <td><small>
+        <a href="#layer-conventions-and-rules">Layer Conventions and Rules</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_19</b></small></td>
+    <td>If a layer creates dispatchable objects, either because it is
+        wrapping objects or implementing an extension not supported by
+        the loader or underlying drivers, it <b>must</b> create the dispatch
+        table appropriately for all created dispatchable objects.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td><small>
+        <a href="#creating-new-dispatchable-objects">
+          Creating New Dispatchable Objects</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_20</b></small></td>
+    <td>A layer <b>must</b> remove all manifest files and references
+        to those files (i.e. Registry entries on Windows) when uninstalling.
+        <br/>
+        Similarly, on updating the layer files, the old files <b>must</b> be all
+        updated or removed.
+    </td>
+    <td>The loader ignores duplicate attempts to load the same manifest file,
+        but if an old file is left pointing to an incorrect library, it will
+        result in undefined behavior which may include crashes or corruption.
+    </td>
+    <td>No</td>
+    <td>No<br/>
+        The loader has no idea what layer files are new, old, or incorrect.
+        Any type of layer file verification would quickly become very complex
+        since it would require the loader to maintain an internal database
+        tracking badly behaving layers based on the layer name, version,
+        targeted platform(s), and possibly other criteria.
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LAYER_21</b></small></td>
+    <td>During <i>vkCreateInstance</i>, a layer <b>must not</b> modify the
+        <i>pInstance</i> pointer during prior to calling down to the lower
+        layers.<br/>
+        This is because the loader passes information in this pointer that is
+        necessary for the initialization code in the loader's terminator
+        function.<br/>
+        Instead, if the layer is overriding the <i>pInstance</i> pointer, it
+        <b>must</b> do so only after the call to the lower layers returns.
+    </td>
+    <td>The loader will likely crash.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>N/A</small></td>
+  </tr>
+</table>
+
+
+### Requirements of a Well-Behaved Loader
+
+<table style="width:100%">
+  <tr>
+    <th>Requirement Number</th>
+    <th>Requirement Description</th>
+    <th>Result of Non-Compliance</th>
+    <th>Applicable to Android?</th>
+    <th>Reference Section</th>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_1</b></small></td>
+    <td>A loader <b>must</b> support Vulkan layers.</td>
+    <td>Users will not have access to critical parts of the Vulkan ecosystem
+        such as Validation Layers, GfxReconstruct, or RenderDoc.</td>
+    <td>Yes</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_2</b></small></td>
+    <td>A loader <b>must</b> support a mechanism to load layers in one or
+        more non-standard locations.<br/>
+        This is to allow application/engine-specific layers as well as
+        evaluating in-development layers without global installation.
+    </td>
+    <td>It will be more difficult to use a Vulkan loader by certain
+        tools and driver developers.</td>
+    <td>No</td>
+    <td><small><a href="#layer-discovery">Layer Discovery</a></small></td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_3</b></small></td>
+    <td>A loader <b>must</b> filter out duplicate layer names in the various
+        enable lists, keeping only the first occurrence.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td><small><a href="#layer-discovery">Layer Discovery</a></small></td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_4</b></small></td>
+    <td>A loader <b>must not</b> load a Vulkan layer which defines an
+        API version that is incompatible with itself.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td><small><a href="#layer-discovery">Layer Discovery</a></small></td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_5</b></small></td>
+    <td>A loader <b>must</b> ignore any layer for which a compatible interface
+        version can not be negotiated.
+    </td>
+    <td>The loader would load a layer improperly resulting in undefined behavior
+        which may include crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#loader-and-layer-interface-negotiation">
+        Interface Negotiation</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_6</b></small></td>
+    <td>If a layer is implicit, and it has an enable environment variable,
+        then a loader <b>must not</b> consider the layer enabled unless that
+        enable environment variable is defined.<br/>
+        If an implicit layer does not have an enable environment variable,
+        it will be considered enabled by default.
+    </td>
+    <td>Some layers may be used when not intended.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#layer-manifest-file-format">Manifest File Format</a>, see
+        "enable_environment" variable</small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_7</b></small></td>
+    <td>If an implicit layer is enabled, but has been disabled by some other
+        mechanism (such as the defining of the layer's disable environment
+        variable or through the blacklisting mechanism of the Override Layer),
+        then a loader <b>must not</b> load that layer.
+    </td>
+    <td>Some layers may be used when not intended.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#layer-manifest-file-format">Manifest File Format</a>, see
+        "disable_environment" variable</small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_8</b></small></td>
+    <td>A loader <b>must</b> pass a linked list of initialization structures
+        to each layer via the <i>VkLayerInstanceCreateInfo</i> structure in the
+        <i>pNext</i> field of the <i>VkInstanceCreateInfo</i> structure.
+        This contains necessary information for setting up the instance call
+        chain including providing a function pointer to the next links
+        <i>vkGetInstanceProcAddr</i>.
+    </td>
+    <td>Layers will crash as they attempt to load invalid data.</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#layer-dispatch-initialization">
+           Layer Dispatch Initialization</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_9</b></small></td>
+    <td>A loader <b>must</b> pass a linked list of initialization structures
+        to each layer via the <i>VkLayerDeviceCreateInfo</i> structure in the
+        <i>pNext</i> field of the <i>VkDeviceCreateInfo</i> structure.
+        This contains necessary information for setting up the device call chain
+        including providing a function pointer to the next links
+        <i>vkGetDeviceProcAddr</i>.
+    <td>Layers will crash as they attempt to load invalid data.</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#layer-dispatch-initialization">
+           Layer Dispatch Initialization</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_10</b></small></td>
+    <td>A loader <b>must</b> verify that all meta-layers contain valid
+        component layers that the loader can find on the system and that also
+        report the same Vulkan API version as the meta-layer itself before it
+        loads the meta-layer.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#meta-layers">Meta-Layers</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_11</b></small></td>
+    <td>If the override meta-layer is present, a loader <b>must</b> load it
+        and corresponding component layers after all other implicit layers have
+        been added to the call chain.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#override-meta-layer">Override Meta-Layer</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_12</b></small></td>
+    <td>If the override meta-layer is present and has a blacklist of layers to
+        remove, a loader <b>must</b> disable all layers listed in the blacklist.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#override-meta-layer">Override Meta-Layer</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LLP_LOADER_13</b></small></td>
+    <td>A loader <b>must</b> not load from user-defined paths (including the
+        use of the <i>VK_LAYER_PATH</i> environment variable) when running
+        elevated (Administrator/Super-user) applications.<br/>
+        <b>This is for security reasons.</b>
+    </td>
+    <td>The behavior is undefined and may result in computer security lapses,
+        crashes or corruption.
+    </td>
+    <td>No</td>
+    <td><small><a href="#layer-discovery">Layer Discovery</a></small></td>
+  </tr>
+</table>
 
 <br/>
 
