@@ -578,7 +578,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     created_instance = (VkInstance)ptr_instance;
     res = loader_create_instance_chain(&ici, pAllocator, ptr_instance, &created_instance);
 
-    if (res == VK_SUCCESS) {
+    if (VK_SUCCESS == res) {
         // Check for enabled extensions here to setup the loader structures so the loader knows what extensions
         // it needs to worry about.
         // We do it in the terminator and again above the layers here since we may think different extensions
@@ -596,6 +596,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         // GetInstanceProcAddr functions to return valid extension functions
         // if enabled.
         loader_activate_instance_layer_extensions(ptr_instance, created_instance);
+    } else if (VK_ERROR_EXTENSION_NOT_PRESENT == res && !ptr_instance->create_terminator_invalid_extension) {
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "vkCreateInstance: Layer returning invalid extension error not triggered by ICD/Loader (Policy #LLP_LAYER_17).");
     }
 
 out:

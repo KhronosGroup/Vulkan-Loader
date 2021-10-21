@@ -52,6 +52,9 @@
     * [Loader Version 0 Interface Requirements](#loader-version-0-interface-requirements)
     * [Additional Interface Notes](#additional-interface-notes)
   * [Android Driver Negotiation](#android-driver-negotiation)
+* [Loader and Driver Policy](#loader-and-driver-policy)
+  * [Requirements of Well-Behaved Drivers](#requirements-of-well-behaved-drivers)
+  * [Requirements of a Well-Behaved Loader](#requirements-of-a-well-behaved-loader)
 
 
 ## Overview
@@ -1147,6 +1150,474 @@ described above.
 The only difference is that the Android loader queries layer and extension
 information directly from the respective libraries and does not use the JSON
 manifest files used by the Windows, Linux and macOS loaders.
+
+
+## Loader and Driver Policy
+
+This section is intended to define proper behavior expected between the loader
+and drivers.
+Much of this section is additive to the Vulkan spec, and necessary for
+maintaining consistency across platforms.
+In fact, much of the language can be found throughout this document, but is
+summarized here for convenience.
+Additionally, there should be a way to identify bad or non-conformant behavior
+in adriver and remedy it as soon as possible.
+Therefore, a policy numbering system is provided to clearly identify each
+policy statement in a unique way.
+
+Finally, based on the goal of making the loader efficient and performant,
+some of these policy statements defining proper driver behavior may not
+be testable (and therefore aren't enforceable by the loader).
+However, that should not detract from the requirement in order to provide the
+best experience to end-users and developers.
+
+
+### Number Format
+
+Loader/Driver policy items start with the prefix `LDP_` (short for
+Loader/Driver Policy) which is followed by an identifier based on what
+component the policy is targeted against.
+In this case there are only two possible components:
+ - Drivers: which will have the string `DRIVER_` as part of the policy number.
+ - The Loader: which will have the string `LOADER_` as part of the policy
+   number.
+
+
+### Android Differences
+
+As stated before, the Android Loader is actually separate from the Khronos
+Loader.
+Because of this and other platform requirements, not all of these policy
+statements apply to Android.
+Each table also has a column titled "Applicable to Android?"
+which indicates which policy statements apply to drivers that are focused
+only on Android support.
+Further information on the Android loader can be found in the
+<a href="https://source.android.com/devices/graphics/implement-vulkan">
+Android Vulkan documentation</a>.
+
+
+### Requirements of Well-Behaved Drivers
+
+<table style="width:100%">
+  <tr>
+    <th>Requirement Number</th>
+    <th>Requirement Description</th>
+    <th>Result of Non-Compliance</th>
+    <th>Applicable to Android?</th>
+    <th>Enforceable by Loader?</th>
+    <th>Reference Section</th>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_1</b></small></td>
+    <td>A driver <b>must not</b> cause other drivers to fail, crash, or
+        otherwise misbehave.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_2</b></small></td>
+    <td>A driver <b>must not</b> crash if it detects that there are no supported
+        Vulkan Physical Devices (<i>VkPhysicalDevice</i>) on the system when a
+        call to that driver is made using any Vulkan instance of physical device
+        API.<br/>
+        This is because some devices can be hot-plugged.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td>No<br/>
+        The loader has no direct knowledge of what devices (virtual or physical)
+        may be supported by a given driver.</td>
+    <td><small>N/A</small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_3</b></small></td>
+    <td>A driver <b>must</b> be able to negotiate a supported version of the
+        loader/driver interface with the loader in accordance with the stated
+        negotiation process.
+    </td>
+    <td>The driver will not be loaded.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#loader-and-driver-interface-negotiation">
+        Interface Negotiation</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_4</b></small></td>
+    <td>A driver <b>must</b> have a valid JSON manifest file for the loader to
+        process that ends with the ".json" suffix.
+    </td>
+    <td>The driver will not be loaded.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#driver-manifest-file-format">Manifest File Format</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_5</b></small></td>
+    <td>A driver <b>must</b> pass conformance with the results submitted,
+        verified, and approved by Khronos before reporting a conformance version
+        through any mechanism provided by Vulkan (examples include inside the
+        <i>VkPhysicalDeviceVulkan12Properties</i> and the
+        <i>VkPhysicalDeviceDriverProperties</i> structs).<br/>
+        Otherwise, when such a structure containing a conformance version is
+        encountered, the driver <b>must</b> return a conformance version
+        of 0.0.0.0 to indicate it hasn't been so verified and approved.
+    </td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>The loader and/or the application may make assumptions about the
+        capabilities of the driver resulting in undefined behavior
+        possibly including crashes or corruption.
+    </td>
+    <td><small>
+        <a href="https://github.com/KhronosGroup/VK-GL-CTS/blob/master/external/openglcts/README.md">
+        Vulkan CTS Documentation</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_6</b></small></td>
+    <td>A driver supporting loader/driver interface version 1 or newer <b>must
+        not</b> directly export standard Vulkan entry-points.
+        <br/>
+        Instead, it <b>must</b> export only the loader interface functions
+        required by the interface versions it does support (for example
+        <i>vk_icdGetInstanceProcAddr</i>). <br/>
+        This is because the dynamic linking on some platforms has been
+        problematic in the past and incorrectly links to exported functions from
+        the wrong dynamic library at times. <br/>
+        <b>NOTE:</b> This is actually true for all exports.
+        When in doubt, don't export any items from a driver that could cause
+        conflicts in other libraries.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes (except it always applies)</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#loader-and-driver-interface-negotiation">
+        Interface Negotiation</a></small>
+        and
+        <a href="#driver-vulkan-entry-point-discovery">
+        Vulkan Entry-point Discovery</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_7</b></small></td>
+    <td>If a driver desires to support Vulkan API 1.1 or newer, it <b>must</b>
+        expose support of Vulkan loader/driver interface 5 or newer.
+    </td>
+    <td>The driver will be used when it shouldn't be and will cause
+        undefined behavior possibly including crashes or corruption.
+    </td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#loader-version-5-interface-requirements">
+        Version 5 Interface Requirements</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_8</b></small></td>
+    <td>If a driver wishes to handle its own <i>VkSurfaceKHR</i> object
+        creation, it <b>must</b> implement loader/driver interface version 3 or
+        newer and support querying all the relevant surface functions via
+        <i>vk_icdGetInstanceProcAddr</i>.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#handling-khr-surface-objects-in-wsi-extensions">
+        Handling KHR Surface Objects</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_9</b></small></td>
+    <td>If a driver negotiation results in it using loader/driver interface
+        version 4 or earlier, the driver <b>must</b> verify that the Vulkan API
+        version passed into <i>vkCreateInstance</i> (through
+        <i>VkInstanceCreateInfo</i>’s <i>VkApplicationInfo</i>'s
+        <i>apiVersion</i>) is supported.
+        If the requested Vulkan API version can not be supported by the driver,
+        it <b>must</b> return <b>VK_ERROR_INCOMPATIBLE_DRIVER</b>. <br/>
+        This is not required if the interface version is 5 or newer because the
+        responsibility for this check then falls on the loader.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td>No</td>
+    <td><small>
+        <a href="#loader-version-5-interface-requirements">
+        Version 5 Interface Requirements</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_10</b></small></td>
+    <td>If a driver negotiation results in it using loader/driver interface
+        version 5 or newer, the driver <b>must</b> ignore the Vulkan API version
+        passed into <i>vkCreateInstance</i> (through
+        <i>VkInstanceCreateInfo</i>’s <i>VkApplicationInfo</i>'s
+        <i>apiVersion</i>).
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td>No</td>
+    <td><small>
+        <a href="#loader-version-5-interface-requirements">
+        Version 5 Interface Requirements</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_11</b></small></td>
+    <td>A driver <b>must</b> remove all Manifest files and references to those
+        files (i.e. Registry entries on Windows) when uninstalling.
+        <br/>
+        Similarly, on updating the driver files, the old files <b>must</b> be
+        all updated or removed.
+    </td>
+    <td>If an old file is left pointing to an incorrect library, it will
+        result in undefined behavior which may include crashes or corruption.
+    </td>
+    <td>No</td>
+    <td>No<br/>
+        The loader has no idea what driver files are new, old, or incorrect.
+        Any type of driver file verification would quickly become very complex
+        since it would require the loader to maintain an internal database
+        tracking badly behaving drivers based on the driver vendor, driver
+        version, targeted platform(s), and possibly other criteria.
+    </td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_12</b></small></td>
+    <td>To work properly with the public Khronos Loader, a driver
+        <b>must not</b> expose platform interface extensions without first
+        publishing them with Khronos.<br/>
+        Platforms under development may use modified versions of the Khronos
+        Loader until the design because stable and/or public.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes (specifically for Android extensions)</td>
+    <td>No</td>
+    <td><small>N/A</small></td>
+  </tr>
+</table>
+
+
+### Requirements of a Well-Behaved Loader
+
+<table style="width:100%">
+  <tr>
+    <th>Requirement Number</th>
+    <th>Requirement Description</th>
+    <th>Result of Non-Compliance</th>
+    <th>Applicable to Android?</th>
+    <th>Reference Section</th>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_1</b></small></td>
+    <td>A loader <b>must</b> return <b>VK_ERROR_INCOMPATIBLE_DRIVER</b> if it
+        fails to find and load a valid Vulkan driver on the system.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_2</b></small></td>
+    <td>A loader <b>must</b> attempt to load any driver's Manifest file it
+        discovers and determines is formatted in accordance with this document.
+        <br/>
+        The <b>only</b> exception is on platforms which determines driver
+        location and functionality through some other mechanism.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#driver-discovery">Driver Discovery</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_3</b></small></td>
+    <td>A loader <b>must</b> support a mechanism to load driver in one or more
+        non-standard locations.<br/>
+        This is to allow support for fully software drivers as well as
+        evaluating in-development ICDs. <br/>
+        The <b>only</b> exception to this rule is if the OS does not wish to
+        support this due to security policies.
+    </td>
+    <td>It will be more difficult to use a Vulkan loader by certain
+        tools and driver developers.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#using-pre-production-icds-or-software-drivers">
+        Pre-Production ICDs or SW</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_4</b></small></td>
+    <td>A loader <b>must not</b> load a Vulkan driver which defines an API
+        version that is incompatible with itself.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#driver-discovery">Driver Discovery</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_5</b></small></td>
+    <td>A loader <b>must</b> ignore any driver for which a compatible
+        loader/driver interface version can not be negotiated.
+    </td>
+    <td>The loader would load a driver improperly resulting in undefined
+        behavior possibly including crashes or corruption.
+    </td>
+    <td>No</td>
+    <td><small>
+        <a href="#loader-and-driver-interface-negotiation">
+        Interface Negotiation</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_6</b></small></td>
+    <td>If a driver negotiation results in it using loader/driver interface
+        version 5 or newer, a loader <b>must</b> verify that the Vulkan API
+        version passed into <i>vkCreateInstance</i> (through
+        <i>VkInstanceCreateInfo</i>’s <i>VkApplicationInfo</i>'s
+        <i>apiVersion</i>) is supported by at least one driver.
+        If the requested Vulkan API version can not be supported by any
+        driver, the loader <b>must</b> return
+        <b>VK_ERROR_INCOMPATIBLE_DRIVER</b>.<br/>
+        This is not required if the interface version is 4 or earlier because
+        the responsibility for this check then falls on the drivers.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#loader-version-5-interface-requirements">
+        Version 5 Interface Requirements</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_7</b></small></td>
+    <td>If there exist more than one driver on a system, and some of those
+        drivers support <i>only</i> Vulkan API version 1.0 while other drivers
+        support a newer Vulkan API version, then a loader <b>must</b> adjust
+        the <i>apiVersion</i> field of the <i>VkInstanceCreateInfo</i>’s
+        <i>VkApplicationInfo</i> to version 1.0 for all the drivers that are
+        only aware of Vulkan API version 1.0.<br/>
+        Otherwise, the drivers that support Vulkan API version 1.0 will
+        return <b>VK_ERROR_INCOMPATIBLE_DRIVER</b> during
+        <i>vkCreateInstance</i> since 1.0 drivers were not aware of future
+        versions.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#driver-api-version">Driver API Version</a>
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_8</b></small></td>
+    <td>If more than one driver is present, and at least one driver <i>does not
+        support</i> instance-level functionality that other drivers support;
+        then a loader <b>must</b> support the instance-level functionality in
+        some fashion for the non-supporting drivers.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#loader-instance-extension-emulation-support">
+        Loader Instance Extension Emulation Support</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_9</b></small></td>
+    <td>A loader <b>must</b> filter out instance extensions from the
+        <i>VkInstanceCreateInfo</i> structure's <i>ppEnabledExtensionNames</i>
+        field that the driver does not support during a call to the driver's
+        <i>vkCreateInstance</i>.<br/>
+        This is because the application has no way of knowing which
+        drivers support which extensions.<br/>
+        This ties in directly with <i>LDP_LOADER_8</i> above.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#filtering-out-instance-extension-names">
+        Filtering Out Instance Extension Names</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_10</b></small></td>
+    <td>A loader <b>must</b> support creating <i>VkSurfaceKHR</i> handles
+        that <b>may</b> be shared by all underlying drivers.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#handling-khr-surface-objects-in-wsi-extensions">
+        Handling KHR Surface Objects</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_11</b></small></td>
+    <td>If a driver exposes the appropriate <i>VkSurfaceKHR</i>
+        creation/handling entry-points, a loader <b>must</b> support creating
+        the driver-specific surface object handle and provide it, and not the
+        shared <i>VkSurfaceKHR</i> handle, back to that driver when requested.
+        <br/>
+        Otherwise, a loader <b>must</b> provide the loader created
+        <i>VkSurfaceKHR</i> handle.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>No</td>
+    <td><small>
+        <a href="#handling-khr-surface-objects-in-wsi-extensions">
+        Handling KHR Surface Objects</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_12</b></small></td>
+    <td>A loader <b>must not</b> call any <i>vkEnumerate*ExtensionProperties</i>
+        entry-points in a driver if <i>pLayerName</i> is not <b>NULL</b>.
+    </td>
+    <td>The behavior is undefined and may result in crashes or corruption.</td>
+    <td>Yes</td>
+    <td><small>
+        <a href="#additional-interface-notes">
+        Additional Interface Notes</a></small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><b>LDP_LOADER_13</b></small></td>
+    <td>A loader <b>must</b> not load from user-defined paths (including the
+        use of the <i>VK_ICD_FILENAMES</i> environment variable) when running
+        elevated (Administrator/Super-user) applications.<br/>
+        <b>This is for security reasons.</b>
+    </td>
+    <td>The behavior is undefined and may result in computer security lapses,
+        crashes or corruption.
+    </td>
+    <td>No</td>
+    <td><small>
+        <a href="#exception-for-administrator-and-super-user-mode">
+          Exception for Administrator and Super-User mode
+        </a></small>
+    </td>
+  </tr>
+</table>
 
 <br/>
 

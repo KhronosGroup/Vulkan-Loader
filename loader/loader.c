@@ -978,12 +978,25 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
     bool found = true;
 
     // We need to add all the individual component layers
+    uint16_t meta_layer_api_major_version = VK_VERSION_MAJOR(prop->info.specVersion);
+    uint16_t meta_layer_api_minor_version = VK_VERSION_MINOR(prop->info.specVersion);
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
         bool found_comp = false;
         const struct loader_layer_properties *search_prop =
             loader_find_layer_property(prop->component_layer_names[comp_layer], source_list);
         if (search_prop != NULL) {
             found_comp = true;
+
+            uint16_t search_layer_api_major_version = VK_VERSION_MAJOR(search_prop->info.specVersion);
+            uint16_t search_layer_api_minor_version = VK_VERSION_MINOR(search_prop->info.specVersion);
+            if (meta_layer_api_major_version != search_layer_api_major_version ||
+                meta_layer_api_minor_version > search_layer_api_minor_version) {
+                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                           "loader_add_meta_layer: Meta-layer API version %u.%u, component layer %s version %u.%u, may have "
+                           "incompatibilities (Policy #LLP_LAYER_8)!",
+                           meta_layer_api_major_version, meta_layer_api_minor_version, search_prop->info.layerName,
+                           search_layer_api_major_version, meta_layer_api_minor_version);
+            }
 
             // If the component layer is itself an implicit layer, we need to do the implicit layer enable
             // checks
@@ -1002,7 +1015,7 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
         }
         if (!found_comp) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "loader_add_meta_layer: Failed to find layer name %s component layer %s to activate",
+                       "loader_add_meta_layer: Failed to find layer name %s component layer %s to activate (Policy #LLP_LAYER_7)",
                        search_prop->info.layerName, prop->component_layer_names[comp_layer]);
             found = false;
         }
@@ -1453,6 +1466,29 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
 
         // double capacity
         icd_tramp_list->capacity *= 2;
+    }
+
+    uint32_t major_version = VK_API_VERSION_MAJOR(api_version);
+    uint32_t minor_version = VK_API_VERSION_MINOR(api_version);
+    if (interface_vers <= 4 && 1 == major_version && 0 < minor_version) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "loader_scanned_icd_add: Driver %s supports Vulkan %u.%u, but only supports loader interface version %u."
+                   " Interface version 5 or newer required to support this version of Vulkan (Policy #LDP_DRIVER_7)",
+                   filename, major_version, minor_version, interface_vers);
+    }
+    if (interface_vers >= 1) {
+        if ((loader_platform_get_proc_address(handle, "vkEnumerateInstanceExtensionProperties") != NULL) ||
+            (loader_platform_get_proc_address(handle, "vkEnumerateInstanceLayerProperties") != NULL) ||
+            (loader_platform_get_proc_address(handle, "vkEnumerateInstanceVersion") != NULL) ||
+            (loader_platform_get_proc_address(handle, "vkGetInstanceProcAddr") != NULL) ||
+            (loader_platform_get_proc_address(handle, "vkCreateInstance") != NULL) ||
+            (loader_platform_get_proc_address(handle, "vkGetDeviceProcAddr") != NULL) ||
+            (loader_platform_get_proc_address(handle, "vkCreateDevice") != NULL)) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "loader_scanned_icd_add: Driver %s says it supports interface version %u but still exports core "
+                       "entrypoints (Policy #LDP_DRIVER_6)",
+                       filename, interface_vers);
+        }
     }
 
     new_scanned_icd = &(icd_tramp_list->scanned_list[icd_tramp_list->count]);
@@ -2230,6 +2266,10 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
     strncpy(props->info.layerName, name, sizeof(props->info.layerName));
     props->info.layerName[sizeof(props->info.layerName) - 1] = '\0';
+    if (0 != strncmp(props->info.layerName, "VK_LAYER_", 9)) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Layer name %s does not conform to naming standard (Policy #LLP_LAYER_3)",
+                   props->info.layerName);
+    }
     props->info.specVersion = loader_make_version(api_version);
     props->info.implementationVersion = atoi(implementation_version);
     strncpy((char *)props->info.description, description, sizeof(props->info.description));
@@ -2237,7 +2277,8 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     if (is_implicit) {
         if (!disable_environment || !disable_environment->child) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Didn't find required layer child value disable_environment in manifest JSON file, skipping this layer");
+                       "Didn't find required layer child value disable_environment in manifest JSON file, skipping this layer "
+                       "(Policy #LLP_LAYER_9)");
             goto out;
         }
         strncpy(props->disable_env_var.name, disable_environment->child->string, sizeof(props->disable_env_var.name));
@@ -5376,6 +5417,17 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     bool one_icd_successful = false;
 
     struct loader_instance *ptr_instance = (struct loader_instance *)*pInstance;
+    if (NULL == ptr_instance) {
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "terminator_CreateInstance: Loader instance pointer null encountered.  Possibly set by active layer. (Policy "
+                   "#LLP_LAYER_21)");
+    } else if (LOADER_MAGIC_NUMBER != ptr_instance->magic) {
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "terminator_CreateInstance: Instance pointer (%p) has invalid MAGIC value 0x%08x. Instance value possibly "
+                   "corrupted by active layer (Policy #LLP_LAYER_21).  ",
+                   ptr_instance->magic);
+    }
+
     memcpy(&icd_create_info, pCreateInfo, sizeof(icd_create_info));
 
     icd_create_info.enabledLayerCount = 0;
@@ -5511,6 +5563,31 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             continue;
         }
 
+        if (ptr_instance->icd_tramp_list.scanned_list[i].interface_version < 3 &&
+            (
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+                NULL != icd_term->dispatch.CreateXlibSurfaceKHR ||
+#endif  // VK_USE_PLATFORM_XLIB_KHR
+#ifdef VK_USE_PLATFORM_XCB_KHR
+                NULL != icd_term->dispatch.CreateXcbSurfaceKHR ||
+#endif  // VK_USE_PLATFORM_XCB_KHR
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+                NULL != icd_term->dispatch.CreateWaylandSurfaceKHR ||
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+                NULL != icd_term->dispatch.CreateAndroidSurfaceKHR ||
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+                NULL != icd_term->dispatch.CreateWin32SurfaceKHR ||
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+                NULL != icd_term->dispatch.DestroySurfaceKHR)) {
+            loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                       "terminator_CreateInstance: Driver %s supports interface version %u but still exposes VkSurfacekHR"
+                       " create/destroy entrypoints (Policy #LDP_DRIVER_8)",
+                       ptr_instance->icd_tramp_list.scanned_list[i].lib_name,
+                       ptr_instance->icd_tramp_list.scanned_list[i].interface_version);
+        }
+
         // If we made it this far, at least one ICD was successful
         one_icd_successful = true;
     }
@@ -5523,7 +5600,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
 out:
 
+    ptr_instance->create_terminator_invalid_extension = false;
+
     if (VK_SUCCESS != res) {
+        if (VK_ERROR_EXTENSION_NOT_PRESENT == res) {
+            ptr_instance->create_terminator_invalid_extension = true;
+        }
+
         while (NULL != ptr_instance->icd_terms) {
             icd_term = ptr_instance->icd_terms;
             ptr_instance->icd_terms = icd_term->next;
