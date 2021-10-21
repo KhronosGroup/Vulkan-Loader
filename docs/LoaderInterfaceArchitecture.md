@@ -414,7 +414,7 @@ These behaviors also result in ignoring certain environment variables, such as:
 
 For more information on the affected search paths, refer to 
 [Layer Discovery](LoaderLayerInterface.md#layer-discovery) and
-[Driver Discovery](LoadeDriverInterface.md#driver-discovery).
+[Driver Discovery](LoaderDriverInterface.md#driver-discovery).
 <br/>
 <br/>
 
@@ -440,7 +440,7 @@ directory as this file.
 ## Driver Interface With the Loader
 
 The Driver interface to the Vulkan loader is detailed in the
-[LoadeDriverInterface.md](LoadeDriverInterface.md) document found in the same
+[LoaderDriverInterface.md](LoaderDriverInterface.md) document found in the same
 directory as this file.
 <br/>
 <br/>
