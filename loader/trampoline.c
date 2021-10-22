@@ -51,15 +51,19 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkI
     if (addr != VK_NULL_HANDLE) {
         // Make sure to only allow getting global functions if the instance handle is null
         return (instance == VK_NULL_HANDLE) ? addr : NULL;
+    } else {
+        // All other functions require a valid instance handle to get
+        if (instance == VK_NULL_HANDLE) {
+            return NULL;
+        }
+        struct loader_instance *ptr_instance = loader_get_instance(instance);
+        if (ptr_instance == NULL) return NULL;
+        // Return trampoline code for non-global entrypoints including any extensions.
+        // Device extensions are returned if a layer or ICD supports the extension.
+        // Instance extensions are returned if the extension is enabled and the
+        // loader or someone else supports the extension
+        return trampoline_get_proc_addr(ptr_instance, pName);
     }
-
-    struct loader_instance *ptr_instance = loader_get_instance(instance);
-    if (ptr_instance == NULL) return NULL;
-    // Return trampoline code for non-global entrypoints including any extensions.
-    // Device extensions are returned if a layer or ICD supports the extension.
-    // Instance extensions are returned if the extension is enabled and the
-    // loader or someone else supports the extension
-    return trampoline_get_proc_addr(ptr_instance, pName);
 }
 
 // Get a device level or global level entry point address.
