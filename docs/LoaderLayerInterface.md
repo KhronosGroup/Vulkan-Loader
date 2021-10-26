@@ -1029,10 +1029,16 @@ Please refer to that documentation for more information.
 
 Vulkan includes a small number of functions which are called without any
 dispatchable object.
-Most layers do not intercept these functions, as layers are enabled when an
+<b>Most layers do not intercept these functions</b>, as layers are enabled when an
 instance is created.
 However, under certain conditions it is possible for a layer to intercept
 these functions.
+
+One reason why a layer may desire to intercept these pre-instance functions is
+to filter out extensions that would normally be returned from Vulkan drivers to
+the application.
+[RenderDoc](https://renderdoc.org/) is one such layer which intercepts these
+pre-instance functions so that it may disable extensions it doesn't support.
 
 In order to intercept the pre-instance functions, several conditions must be
 met:
