@@ -707,7 +707,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     count = inst->phys_dev_count_tramp;
 
     if (inst->phys_dev_count_tramp != inst->total_gpu_count) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                    "vkEnumeratePhysicalDevices: One or more layers modified physical devices!"
                    "Count returned by ICDs = %d, count returned above layers = %d",
                    inst->total_gpu_count, inst->phys_dev_count_tramp);
