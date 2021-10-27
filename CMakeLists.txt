@@ -346,7 +346,7 @@ if(BUILD_TESTS)
         set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
         # The googletest directory exists, so enable it as a target.
         message(STATUS "Vulkan-Loader/external: " "googletest found - configuring it for tests")
-        add_subdirectory("${GOOGLETEST_INSTALL_DIR}/googletest")
+        add_subdirectory("${GOOGLETEST_INSTALL_DIR}")
     else()
         message(SEND_ERROR "Could not find googletest directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of googletest")
         set(BUILD_TESTS OFF)

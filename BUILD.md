@@ -78,7 +78,7 @@ it on the CMake command line for building this repository, as described below.
 The loader tests depend on the [Google Test](https://github.com/google/googletest) library and
 on Windows platforms depends on the [Microsoft Detours](https://github.com/microsoft/Detours) library.
 
-To build the tests, pass the `DUPDATE_DEPS=ON` and `-DBUILD_TESTS=ON` options when generating the project:
+To build the tests, pass the `-DUPDATE_DEPS=ON` and `-DBUILD_TESTS=ON` options when generating the project:
 ```bash
 cmake ... -DUPDATE_DEPS=ON -DBUILD_TESTS=ON ...
 ```
@@ -94,22 +94,34 @@ although you can place these directories in any location.
 ### Building Dependent Repositories with Known-Good Revisions
 
 There is a Python utility script, `scripts/update_deps.py`, that you can use
-to gather and build the dependent repositories mentioned above. This program
-also uses information stored in the `scripts/known-good.json` file to checkout
-dependent repository revisions that are known to be compatible with the
-revision of this repository that you currently have checked out.
+to gather and build the dependent repositories mentioned above.
+This program also uses information stored in the `scripts/known-good.json` file
+to checkout dependent repository revisions that are known to be compatible with
+the revision of this repository that you currently have checked out.
 
-Here is a usage example for this repository:
+You can choose to do this manually or automatically.
+The first step to either is cloning the Vulkan-Loader repo and stepping into
+that newly cloned folder:
 
-    git clone git@github.com:KhronosGroup/Vulkan-Loader.git
-    cd Vulkan-Loader
-    mkdir build
-    cd build
-    ../scripts/update_deps.py
-    cmake -C helper.cmake ..
-    cmake --build .
+```
+  git clone git@github.com:KhronosGroup/Vulkan-Loader.git
+  cd Vulkan-Loader
+```
 
-#### Notes
+#### Manually
+
+To manually update the dependencies you now must create the build folder, and
+run the update deps script followed by the necessary CMake build commands:
+
+```
+  mkdir build
+  cd build
+  ../scripts/update_deps.py
+  cmake -C helper.cmake ..
+  cmake --build .
+```
+
+##### Notes About the Manual Option
 
 - You may need to adjust some of the CMake options based on your platform. See
   the platform-specific sections later in this document.
@@ -136,6 +148,27 @@ Here is a usage example for this repository:
   execution.
 - Please use `update_deps.py --help` to list additional options and read the
   internal documentation in `update_deps.py` for further information.
+
+
+#### Automatically
+
+On the other hand, if you choose to let the CMake scripts do all the
+heavy-lifting, you may just trigger the following CMake commands:
+
+```
+  cmake -S. -Bbuild -DUPDATE_DEPS=On
+  cmake --build build
+```
+
+##### Notes About the Automatic Option
+
+- You may need to adjust some of the CMake options based on your platform. See
+  the platform-specific sections later in this document.
+- The `build` directory is also being used to build this
+  (Vulkan-ValidationLayers) repository. But there shouldn't be any conflicts
+  inside the `build` directory between the dependent repositories and the
+  build files for this repository.
+
 
 ### Generated source code
 
