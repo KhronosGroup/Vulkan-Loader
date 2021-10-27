@@ -46,9 +46,6 @@ jobs:
                 python-version: '3.7'
             - run: sudo apt install libwayland-dev libxrandr-dev
 
-            - name: Get Google Test
-              run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
-
             - name: Generate build files
               run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
               env:
@@ -89,9 +86,6 @@ jobs:
               with:
                 winsdk-build-version: 17763
               if: matrix.os == 'windows-2016'
-
-            - name: Get Google Test
-              run: git clone --branch release-1.10.0 https://github.com/google/googletest.git external/googletest
 
             - name: Get Detours
               run: git clone --branch v4.0.1 https://github.com/microsoft/Detours.git external/detours
