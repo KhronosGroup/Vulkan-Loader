@@ -169,6 +169,7 @@ on/off options currently supported by this repository:
 | BUILD_WSI_SCREEN_QNX_SUPPORT | QNX | `OFF` | Build the loader with the QNX Screen entry points enabled. Without this the extension `VK_QNX_screen_surface` won't be available. |
 | ENABLE_WIN10_ONECORE | Windows | `OFF` | Link the loader to the [OneCore](https://msdn.microsoft.com/en-us/library/windows/desktop/mt654039.aspx) umbrella library, instead of the standard Win32 ones. |
 | USE_CCACHE | Linux | `OFF` | Enable caching with the CCache program. |
+| USE_GAS  | Linux   | `ON` | Controls whether to build assembly files with the GNU assembler, else fallback to C code. |
 | USE_MASM | Windows | `ON` | Controls whether to build assembly files with MS assembler, else fallback to C code |
 | BUILD_STATIC_LOADER | macOS | `OFF` | This allows the loader to be built as a static library on macOS. Not tested, use at your own risk. |
 
