@@ -2,6 +2,7 @@
  * Copyright (c) 2017-2021 The Khronos Group Inc.
  * Copyright (c) 2017-2021 Valve Corporation
  * Copyright (c) 2017-2021 LunarG, Inc.
+ * Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,11 +89,20 @@ int main(int argc, char **argv) {
             fprintf(file, "%-32s equ " SIZE_T_FMT "; %s\n", values[i].name, values[i].value, values[i].comment);
         }
     } else if (!strcmp(assembler, "GAS")) {
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__i386__)
+        const char* comment_delimiter = "#";
+#if defined(__x86_64__)
         fprintf(file, ".set X86_64, 1\n");
-#endif  // __x86_64__
+#endif // defined(__x86_64__)
+#elif defined(__aarch64__)
+        const char* comment_delimiter = "//";
+        fprintf(file, ".set AARCH_64, 1\n");
+#else
+        // Default comment delimiter
+        const char* comment_delimiter = "#";
+#endif
         for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
-            fprintf(file, ".set %-32s, " SIZE_T_FMT "# %s\n", values[i].name, values[i].value, values[i].comment);
+            fprintf(file, ".set %-32s, " SIZE_T_FMT "%s %s\n", values[i].name, values[i].value, comment_delimiter, values[i].comment);
         }
     }
     return fclose(file);
