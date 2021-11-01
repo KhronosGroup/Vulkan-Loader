@@ -301,5 +301,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
                                                                              VkPhysicalDeviceToolPropertiesEXT *pToolProperties) {
+   *pToolCount = 0;
     return VK_SUCCESS;
 }
