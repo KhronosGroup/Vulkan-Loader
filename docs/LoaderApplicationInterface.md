@@ -26,6 +26,7 @@
     * [Windows Dynamic Library Usage](#windows-dynamic-library-usage)
     * [Linux Dynamic Library Usage](#linux-dynamic-library-usage)
     * [MacOs Dynamic Library Usage](#macos-dynamic-library-usage)
+  * [Bundling the Loader With An Application](#bundling-the-loader-with-an-application)
 * [Application Layer Usage](#application-layer-usage)
   * [Meta-Layers](#meta-layers)
   * [Implicit vs Explicit Layers](#implicit-vs-explicit-layers)
@@ -220,6 +221,47 @@ load a compatible version.
 MacOs linking is similar to Linux, with the exception being that the standard
 dynamic library is named `libvulkan.dylib` and the ABI versioned library is
 currently named `libvulkan.1.dylib`.
+
+
+### Bundling the Loader With An Application
+
+The Khronos loader is typically installed on platforms either in a
+platform-specific way (i.e. packages on Linux) or as part of a driver install
+(i.e. using the Vulkan Runtime installer on Windows).
+Applications or engines may desire to install the Vulkan loader locally to their
+execution tree as part of their own installation process.
+This may be because providing the specific loader:
+
+ 1) Guarantees certain Vulkan API exports are available in the loader
+ 2) Ensures certain behavior is well-known in that loader
+ 3) Provides consistency across more users installation
+
+However, this **is strongly discouraged** as it can prevent:
+
+ 1) The application/engine from taking advantage of new Vulkan API version
+exports
+ 2) Missing out on necessary bug-fixes
+ 3) Missing out on feature updates (like improved loader debugability)
+
+Of course, even if an application/engine does initially release with a specific
+version of the Khronos loader, it may chose to update or remove that loader at
+some point in the future.
+This could be due to the exposure of needed functionality in the loader as time
+progresses.
+But, that relies upon end-users correctly performing whatever update process is
+necessary at that future time which may result in different behavior across
+different user's systems.
+
+One better alternative, at least on Windows, is to package the Vulkan Runtime
+installer for the desired version of the Vulkan loader with your product.
+Then, the installation process can use that to ensure the end-user's system
+is up to date.
+The Runtime installer will detect the version already installed and will only
+install a newer runtime if necessary.
+
+Another alternative is to write the application so it can fallback to earlier
+versions of Vulkan yet display a warning indicating functionality is disabled
+until the user updates their system to a specific runtime/driver.
 
 
 ## Application Layer Usage
@@ -748,12 +790,12 @@ Integration support for various execution environments.
 It is important to understand that some WSI extensions are valid for all
 targets, but others are particular to a given execution environment (and
 loader).
-This desktop loader (currently targeting Windows, Linux, and macOS) only
-enables and directly exports those WSI extensions that are appropriate to the
-current environment.
+This Khronos loader (currently targeting Windows, Linux, macOS, Stadia, and
+Fuchsia) only enables and directly exports those WSI extensions that are
+appropriate to the current environment.
 For the most part, the selection is done in the loader using compile-time
 preprocessor flags.
-All versions of the desktop loader currently expose at least the following WSI
+All versions of the Khronos loader currently expose at least the following WSI
 extension support:
 - VK_KHR_surface
 - VK_KHR_swapchain

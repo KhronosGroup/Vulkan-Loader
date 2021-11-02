@@ -563,13 +563,14 @@ discovery.
   <tr>
     <td>Android Loader</td>
     <td>The loader designed to work primarily for the Android OS.
-        This is generated from a different code base than the desktop loader.
+        This is generated from a different code base than the Khronos loader.
         But, in all important aspects, it should be functionally equivalent.
     </td>
   </tr>
   <tr>
-    <td>Desktop Loader</td>
-    <td>The loader designed to work on Windows, Linux and macOS.
+    <td>Khronos Loader</td>
+    <td>The loader released by Khronos and currently designed to work primarily
+        on Windows, Linux, macOS, Stadia, and Fuchsia.
         This is generated from a different
         <a href="https://github.com/KhronosGroup/Vulkan-Loader">code base</a>
         than the Android loader.
@@ -739,7 +740,7 @@ discovery.
   </tr>
   <tr>
     <td>Manifest Files</td>
-    <td>Data files in JSON format used by the desktop loader.
+    <td>Data files in JSON format used by the Khronos loader.
         These files contain specific information for either a
         <a href="LoaderLayerInterface.md#layer-manifest-file-format">Layer</a>
         or a
