@@ -122,7 +122,7 @@ Instead, the loader queries the layer properties using special functions known
 as "introspection" functions.
 The intent of these functions is to determine the same required information
 gathered from reading the manifest files.
-These introspection functions are not used by the desktop loader but should be
+These introspection functions are not used by the Khronos loader but should be
 present in layers to maintain consistency.
 The specific "introspection" functions are called out in the
 [Layer Manifest File Format](#layer-manifest-file-format) table.
@@ -950,7 +950,7 @@ instance handle from the physical device.
 ## Meta-layers
 
 Meta-layers are a special kind of layer which is only available through the
-desktop loader.
+Khronos loader.
 While normal layers are associated with one particular library, a meta-layer
 is actually a collection layer which contains an ordered list of other layers
 (called component layers).
@@ -1258,7 +1258,7 @@ loader *trampoline* code is as follows:
 intercept from the application
 - Drivers which add extensions that create dispatchable objects
 
-The desktop loader provides a callback that can be used for initializing a
+The Khronos loader provides a callback that can be used for initializing a
 dispatchable object.
 The callback is passed as an extension structure via the `pNext` field in the
 create info structure when creating an instance (`VkInstanceCreateInfo`) or
@@ -1315,10 +1315,9 @@ dispatch pointer from the `VkDevice` object, which is the parent of the
 
 ## Layer Manifest File Format
 
-On Windows, Linux and macOS (desktop), the loader uses manifest files to
-discover layer libraries and layers.
-The desktop loader doesn't directly query the layer's dynamic library except
-during chaining.
+The Khronos loader uses manifest files to discover available layer libraries
+and layers.
+It doesn't directly query the layer's dynamic library except during chaining.
 This is to reduce the likelihood of loading a malicious layer into memory.
 Instead, details are read from the Manifest file, which are then provided
 for applications to determine what layers should actually be loaded.
