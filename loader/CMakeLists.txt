@@ -34,7 +34,6 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/loader_cmake_config.h)
 
 if(WIN32)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_WIN32_KHR WIN32_LEAN_AND_MEAN)
     if(MSVC AND NOT MSVC_VERSION LESS 1900)
         # Enable control flow guard
         message(STATUS "Building loader with control flow guard")
@@ -279,15 +278,6 @@ if(WIN32)
     add_dependencies(vulkan loader_asm_gen_files)
 
 else()
-    # Linux and MacOS
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith")
-
-    # Clang (and not gcc) warns about redefining a typedef with the same types, so disable that warning. Note that it will still
-    # throw an error if a typedef is redefined with a different type.
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
-    endif()
-
     if(APPLE AND BUILD_STATIC_LOADER)
         add_library(vulkan STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     else()
