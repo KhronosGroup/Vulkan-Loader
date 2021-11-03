@@ -315,8 +315,8 @@ else()
             add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
         endif()
         add_dependencies(vulkan-framework loader_asm_gen_files)
-        target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
-        target_link_libraries(vulkan-framework Vulkan::Headers)
+        target_link_libraries(vulkan-framework ${CMAKE_DL_LIBS} Threads::Threads -lm "-framework CoreFoundation")
+        target_link_libraries(vulkan-framework loader_specific_options)
 
         # The FRAMEWORK_VERSION needs to be "A" here so that Xcode code-signing works when a user adds their framework to an Xcode
         # project and does "Sign on Copy". It would have been nicer to use "1" to denote Vulkan 1. Although Apple docs say that a
