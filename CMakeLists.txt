@@ -322,6 +322,10 @@ if(MSVC)
     string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
+# DEBUG enables runtime loader ICD verification
+# Add git branch and tag info in debug mode
+target_compile_definitions(loader_common_options INTERFACE $<$<CONFIG:DEBUG>:DEBUG;GIT_BRANCH_NAME=${GIT_BRANCH_NAME};GIT_TAG_INFO=${GIT_TAG_INFO}>)
+
 # Optional codegen target
 if(PYTHONINTERP_FOUND)
     add_custom_target(VulkanLoader_generated_source
