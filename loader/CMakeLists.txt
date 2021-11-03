@@ -289,7 +289,7 @@ else()
                           VERSION ${LOADER_GENERATED_HEADER_VERSION})
     target_link_libraries(vulkan ${CMAKE_DL_LIBS} m)
     if (NOT ANDROID)
-        target_link_libraries(vulkan pthread)
+        target_link_libraries(vulkan Threads::Threads)
     endif()
     # Used to make alloca() and secure_getenv() available
     target_compile_definitions(vulkan PRIVATE _GNU_SOURCE)
