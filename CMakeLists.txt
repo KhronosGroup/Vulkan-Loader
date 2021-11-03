@@ -29,8 +29,6 @@ project(Vulkan-Loader)
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
 
-# Enable beta Vulkan extensions
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
@@ -268,37 +266,41 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
+add_library(loader_common_options INTERFACE)
+target_link_libraries(loader_common_options INTERFACE platform_wsi_defines)
+
+# Enable beta Vulkan extensions
+target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)
+
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-    set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
-    set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -fno-strict-aliasing -fno-builtin-memcmp")
+    target_compile_options(loader_common_options INTERFACE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-strict-aliasing -fno-builtin-memcmp)
+
+    target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
 
     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
     # all compilers until they all accept the C++17 standard
     if(CMAKE_COMPILER_IS_GNUCC)
-        set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -Wno-stringop-truncation -Wno-stringop-overflow")
+        target_compile_options(loader_common_options INTERFACE -Wno-stringop-truncation -Wno-stringop-overflow)
         if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 7.1)
-            set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -Wimplicit-fallthrough=0")
+            target_compile_options(loader_common_options INTERFACE -Wimplicit-fallthrough=0)
         endif()
     endif()
 
-    if(APPLE)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS}")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++11 -fno-rtti")
-    #clang-cl on Windows
-    elseif((CMAKE_C_COMPILER_ID MATCHES "Clang") AND (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xclang -std=c99 ${COMMON_COMPILE_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -std=c++11 -fno-rtti")
-    # clang (not clang-cl) or gcc
-    else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 ${COMMON_COMPILE_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti")
+    # clang-cl on Windows
+    if((CMAKE_C_COMPILER_ID MATCHES "Clang") AND (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
+        target_compile_options(loader_common_options INTERFACE -Xclang )
     endif()
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS}")
-
     if(UNIX)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+        target_compile_options(loader_common_options INTERFACE -fvisibility=hidden)
+    endif()
+
+    target_compile_options(loader_common_options INTERFACE -Wpointer-arith)
+
+    # Clang (and not gcc) warns about redefining a typedef with the same types, so disable that warning. Note that it will still
+    # throw an error if a typedef is redefined with a different type.
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        target_compile_options(loader_common_options INTERFACE -Wno-typedef-redefinition)
     endif()
 endif()
 
@@ -309,7 +311,10 @@ if(MSVC)
     # /w34701, /w34703: Warn about potentially uninitialized variables
     # /w34057: Warn about different indirection types.
     # /w34245: Warn about signed/unsigned mismatch.
-    set(MSVC_LOADER_COMPILE_OPTIONS /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
+    target_compile_options(loader_common_options INTERFACE /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
+
+    # Prevent <windows.h> from polluting the code. guards against things like MIN and MAX
+    target_compile_definitions(loader_common_options INTERFACE WIN32_LEAN_AND_MEAN)
 
     # Replace /GR with an empty string, prevents warnings of /GR being overriden by /GR-
     # Newer CMake versions (3.20) have better solutions for this through policy - using the old
