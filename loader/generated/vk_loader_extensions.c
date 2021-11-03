@@ -543,6 +543,10 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdDecodeVideoKHR = (PFN_vkCmdDecodeVideoKHR)gdpa(dev, "vkCmdDecodeVideoKHR");
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+    // ---- VK_KHR_dynamic_rendering extension commands
+    table->CmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR)gdpa(dev, "vkCmdBeginRenderingKHR");
+    table->CmdEndRenderingKHR = (PFN_vkCmdEndRenderingKHR)gdpa(dev, "vkCmdEndRenderingKHR");
+
     // ---- VK_KHR_device_group extension commands
     table->GetDeviceGroupPeerMemoryFeaturesKHR = (PFN_vkGetDeviceGroupPeerMemoryFeaturesKHR)gdpa(dev, "vkGetDeviceGroupPeerMemoryFeaturesKHR");
     table->CmdSetDeviceMaskKHR = (PFN_vkCmdSetDeviceMaskKHR)gdpa(dev, "vkCmdSetDeviceMaskKHR");
@@ -1431,6 +1435,10 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdDecodeVideoKHR")) return (void *)table->CmdDecodeVideoKHR;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+    // ---- VK_KHR_dynamic_rendering extension commands
+    if (!strcmp(name, "CmdBeginRenderingKHR")) return (void *)table->CmdBeginRenderingKHR;
+    if (!strcmp(name, "CmdEndRenderingKHR")) return (void *)table->CmdEndRenderingKHR;
+
     // ---- VK_KHR_device_group extension commands
     if (!strcmp(name, "GetDeviceGroupPeerMemoryFeaturesKHR")) return (void *)table->GetDeviceGroupPeerMemoryFeaturesKHR;
     if (!strcmp(name, "CmdSetDeviceMaskKHR")) return (void *)table->CmdSetDeviceMaskKHR;
@@ -2282,6 +2290,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
+
+// ---- VK_KHR_dynamic_rendering extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdEndRenderingKHR(commandBuffer);
+}
+
 
 // ---- VK_KHR_device_group extension trampoline/terminators
 
@@ -5091,6 +5115,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_ENABLE_BETA_EXTENSIONS
+
+    // ---- VK_KHR_dynamic_rendering extension commands
+    if (!strcmp("vkCmdBeginRenderingKHR", name)) {
+        *addr = (void *)CmdBeginRenderingKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdEndRenderingKHR", name)) {
+        *addr = (void *)CmdEndRenderingKHR;
+        return true;
+    }
 
     // ---- VK_KHR_get_physical_device_properties2 extension commands
     if (!strcmp("vkGetPhysicalDeviceFeatures2KHR", name)) {
