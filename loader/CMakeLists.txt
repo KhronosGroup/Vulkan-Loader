@@ -301,24 +301,14 @@ else()
         target_link_libraries(vulkan "-framework CoreFoundation")
 
         # Build vulkan.framework
-        set(FRAMEWORK_HEADERS
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_icd.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_layer.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_platform.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_sdk_platform.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_android.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_ios.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_macos.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_vi.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_wayland.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_win32.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xcb.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib_xrandr.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_screen.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
+        # Use GLOB_RECURSE to find all the header files and populate the vulkan.framework headers with them
+        # Use CONFIGURE_DEPENDS to ensure that if the header files are updated, this list is also updated
+        # Note: CONFIGURE_DEPENDS is a 3.12 feature - gate it for now and remove when CMake minimum version is higher
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
+            file(GLOB_RECURSE FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS} CONFIGURE_DEPENDS)
+        else()
+            file(GLOB_RECURSE FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS} CONFIGURE_DEPENDS)
+        endif()
         if(BUILD_STATIC_LOADER)
             add_library(vulkan-framework STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
         else()
