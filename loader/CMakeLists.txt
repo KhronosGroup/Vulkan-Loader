@@ -43,12 +43,6 @@ if(WIN32)
     endif()
 endif()
 
-# DEBUG enables runtime loader ICD verification
-set(CMAKE_C_FLAGS_DEBUG
-        "${CMAKE_C_FLAGS_DEBUG} -DDEBUG -DGIT_BRANCH_NAME=${GIT_BRANCH_NAME} -DGIT_TAG_INFO=${GIT_TAG_INFO}")
-set(CMAKE_CXX_FLAGS_DEBUG
-        "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -DGIT_BRANCH_NAME=${GIT_BRANCH_NAME} -DGIT_TAG_INFO=${GIT_TAG_INFO}")
-
 if(WIN32)
     if(MSVC)
     # Use static MSVCRT libraries
