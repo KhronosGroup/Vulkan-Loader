@@ -30,12 +30,6 @@
 
 #include "log.h"
 
-// This is a CMake generated file with #defines for if secure_getenv and __secure_getenv
-// are present.
-#if !defined(VULKAN_NON_CMAKE_BUILD)
-#include "loader_cmake_config.h"
-#endif  // !defined(VULKAN_NON_CMAKE_BUILD)
-
 // Environment variables
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__)
 
