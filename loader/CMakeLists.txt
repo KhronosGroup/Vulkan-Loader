@@ -17,10 +17,12 @@
 # limitations under the License.
 # ~~~
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
-
 # Get version of the API the generated code used and put it into a cmake variable LOADER_GENERATED_HEADER_VERSION
 include(generated/loader_generated_header_version.cmake)
+
+add_library(loader_specific_options INTERFACE)
+target_link_libraries(loader_specific_options INTERFACE loader_common_options Vulkan::Headers)
+target_include_directories(loader_specific_options INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
 
 # Check for the existance of the secure_getenv or __secure_getenv commands
 include(CheckFunctionExists)
@@ -166,7 +168,7 @@ if(WIN32)
         endif()
 
         add_executable(asm_offset asm_offset.c)
-        target_link_libraries(asm_offset Vulkan::Headers)
+        target_link_libraries(asm_offset loader_specific_options)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset MASM)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
@@ -177,7 +179,7 @@ if(WIN32)
         message(WARNING "Could not find working MASM assebler\n${ASM_FAILURE_MSG}")
         add_custom_target(loader_asm_gen_files)
         add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
-        target_link_libraries(loader-unknown-chain Vulkan::Headers)
+        target_link_libraries(loader-unknown-chain loader_specific_options)
         set_target_properties(loader-unknown-chain PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
         target_compile_options(loader-unknown-chain PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     endif()
@@ -214,8 +216,7 @@ else() # i.e.: Linux
 
     if(ASSEMBLER_WORKS)
         add_executable(asm_offset asm_offset.c)
-        target_link_libraries(asm_offset Vulkan::Headers)
-        target_compile_definitions(asm_offset PRIVATE _GNU_SOURCE)
+        target_link_libraries(asm_offset loader_specific_options)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
@@ -260,8 +261,6 @@ if(WIN32)
                           PROPERTIES
                           OUTPUT_NAME vulkan-1)
 
-    target_link_libraries(vulkan Vulkan::Headers)
-
     if(MSVC AND ENABLE_WIN10_ONECORE)
         target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
         set_target_properties(vulkan PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
@@ -286,7 +285,6 @@ else()
     if (NOT ANDROID)
         target_link_libraries(vulkan pthread)
     endif()
-    target_link_libraries(vulkan Vulkan::Headers)
     # Used to make alloca() and secure_getenv() available
     target_compile_definitions(vulkan PRIVATE _GNU_SOURCE)
     if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
@@ -346,11 +344,20 @@ else()
         )
 # cmake-format: on
     endif()
-
-    if(NOT APPLE)
-        target_compile_definitions(vulkan PRIVATE _XOPEN_SOURCE=500) # hush compiler warnings for readlink
-    endif()
 endif()
+
+# common attributes of the vulkan library
+target_link_libraries(vulkan loader_specific_options)
+set_target_properties(vulkan PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED YES
+    C_EXTENSIONS NO
+)
+set_target_properties(vulkan  PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+)
 
 # Generate pkg-config file.
 include(FindPkgConfig QUIET)
