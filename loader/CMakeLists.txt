@@ -134,10 +134,10 @@ set(NORMAL_LOADER_SRCS
     )
 
 if(WIN32)
-    set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_windows.c)
+    list(APPEND NORMAL_LOADER_SRCS loader_windows.c dirent_on_windows.c)
 elseif(UNIX AND NOT APPLE) # i.e.: Linux
-    set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_linux.c)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS LOADER_ENABLE_LINUX_SORT)
+    list(APPEND NORMAL_LOADER_SRCS loader_linux.c)
+    target_compile_definitions(loader_specific_options INTERFACE LOADER_ENABLE_LINUX_SORT)
 endif()
 
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
@@ -237,12 +237,8 @@ else() # i.e.: Linux
 endif()
 
 if(WIN32)
-    add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
-    # target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
-    target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
-    target_include_directories(loader-norm PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
-
-    add_library(loader-opt OBJECT ${OPT_LOADER_SRCS})
+    add_library(loader-opt STATIC ${OPT_LOADER_SRCS})
+    target_link_libraries(loader-opt PUBLIC loader_specific_options)
     add_dependencies(loader-opt loader_asm_gen_files)
     set_target_properties(loader-opt PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
@@ -250,11 +246,14 @@ if(WIN32)
 
     add_library(vulkan
                 SHARED
-                $<TARGET_OBJECTS:loader-opt>
-                $<TARGET_OBJECTS:loader-norm>
+                ${NORMAL_LOADER_SRCS}
                 $<TARGET_OBJECTS:loader-unknown-chain>
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
+
+    target_link_libraries(vulkan loader_specific_options loader-opt)
+    target_compile_options(vulkan PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
+    target_include_directories(vulkan PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
     if (UPDATE_DEPS)
         add_dependencies(vulkan vl_update_deps)
