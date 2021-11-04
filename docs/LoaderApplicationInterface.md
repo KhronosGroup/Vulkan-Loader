@@ -233,15 +233,19 @@ execution tree as part of their own installation process.
 This may be because providing the specific loader:
 
  1) Guarantees certain Vulkan API exports are available in the loader
- 2) Ensures certain behavior is well-known in that loader
- 3) Provides consistency across more users installation
+ 2) Ensures certain loader behavior is well-known
+ 3) Provides consistency across user installation
 
-However, this **is strongly discouraged** as it can prevent:
+However, this is **strongly discouraged** because:
 
- 1) The application/engine from taking advantage of new Vulkan API version
-exports
- 2) Missing out on necessary bug-fixes
- 3) Missing out on feature updates (like improved loader debugability)
+ 1) The packaged loader may not be compatible with future driver revisions
+(this can be especially true on Windows where driver install locations can
+change during updates to the OS)
+ 2) It can prevent the application/engine from taking advantage of new Vulkan
+API version/extension exports
+ 3) The application/engine will miss out on important loader bug-fixes
+ 4) The packaged loader will not contain useful feature updates (like
+improved loader debugability)
 
 Of course, even if an application/engine does initially release with a specific
 version of the Khronos loader, it may chose to update or remove that loader at
