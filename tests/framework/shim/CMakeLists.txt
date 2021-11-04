@@ -15,17 +15,24 @@
 # limitations under the License.
 # ~~~
 
+add_library(shim-common STATIC shim_common.cpp)
+target_link_libraries(shim-common PUBLIC testing_framework_util)
+target_include_directories(shim-common PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+
 if (WIN32)
-    add_library(shim-library SHARED shim.h windows_shim.cpp)
-    target_link_libraries(shim-library PRIVATE detours cfgmgr32 testing_framework_util)
-    target_include_directories(shim-library PUBLIC ${CMAKE_SOURCE_DIR}/loader ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+    # need adapters.h which is in the loader folder
+    target_include_directories(shim-common PUBLIC ${CMAKE_SOURCE_DIR}/loader)
+    target_link_libraries(shim-common PRIVATE cfgmgr32)
+
+    add_library(shim-library SHARED windows_shim.cpp)
+    target_link_libraries(shim-library PRIVATE detours cfgmgr32)
 
 elseif(UNIX)
     if(APPLE)
-        add_library(shim-library SHARED shim.h unix_shim.cpp)
+        add_library(shim-library SHARED unix_shim.cpp)
     else()
-        add_library(shim-library STATIC shim.h unix_shim.cpp)
+        add_library(shim-library STATIC unix_shim.cpp)
     endif()
-    target_link_libraries(shim-library PRIVATE testing_framework_util)
-    target_include_directories(shim-library PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
+#common attributes
+target_link_libraries(shim-library PUBLIC shim-common)
