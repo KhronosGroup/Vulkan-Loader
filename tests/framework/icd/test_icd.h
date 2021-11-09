@@ -85,6 +85,12 @@ struct TestICD {
     std::vector<VulkanFunction> custom_instance_functions;
     std::vector<VulkanFunction> custom_physical_device_functions;
 
+    // Must explicitely state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
+    // function pointer for vkGetPhysicalDeviceToolPropertiesEXT
+    bool supports_tooling_info_ext = false;
+    // List of tooling properties that this driver 'supports'
+    std::vector<VkPhysicalDeviceToolPropertiesEXT> tooling_properties;
+
     TestICD() {}
     ~TestICD() {}
 
