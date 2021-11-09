@@ -28,6 +28,7 @@
 
 #include <vulkan/vk_icd.h>
 
+#include "allocation.h"
 #include "debug_utils.h"
 #include "loader.h"
 #include "log.h"
@@ -301,6 +302,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
                                                                              VkPhysicalDeviceToolPropertiesEXT *pToolProperties) {
-   *pToolCount = 0;
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+
+    if (icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
+        return icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+    }
+
+    // In the case the driver didn't support the extension, make sure that the first layer doesn't find the count uninitialized
+    *pToolCount = 0;
     return VK_SUCCESS;
 }
