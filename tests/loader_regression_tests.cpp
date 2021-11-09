@@ -840,3 +840,36 @@ TEST(EnvironmentVariables, VK_LAYER_PATH) {
     EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/").str()));
 }
 #endif
+
+TEST(ExtensionManual, ToolingProperties) {
+    VkPhysicalDeviceToolPropertiesEXT icd_tool_props{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT,
+                                                     nullptr,
+                                                     "FakeICDTool",
+                                                     "version_0_0_0_1.b",
+                                                     VK_TOOL_PURPOSE_VALIDATION_BIT_EXT,
+                                                     "This tool does not exist",
+                                                     "No-Layer"};
+    {  // extension
+        SingleICDShim env{TestICDDetails{TEST_ICD_PATH_VERSION_6}};
+        env.get_test_icd().physical_devices.push_back({});
+        env.get_test_icd().supports_tooling_info_ext = true;
+        env.get_test_icd().tooling_properties.push_back(icd_tool_props);
+        env.get_test_icd().physical_devices.back().extensions.push_back({VK_EXT_TOOLING_INFO_EXTENSION_NAME, 0});
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto phys_dev = inst.GetPhysDev();
+
+        auto getToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
+            inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolPropertiesEXT"));
+        handle_assert_has_value(getToolProperties);
+        uint32_t tool_count = 1;
+        ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, nullptr));
+        ASSERT_EQ(tool_count, 1);
+        VkPhysicalDeviceToolPropertiesEXT props{};
+        ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, &props));
+        ASSERT_EQ(tool_count, 1);
+        string_eq(props.name, icd_tool_props.name);
+    }
+}

@@ -267,7 +267,26 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
     if (found != icd.device_handles.end()) icd.device_handles.erase(found);
 }
 
-//// WSI
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+                                                                         VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+    if (icd.tooling_properties.size() == 0) {
+        return VK_SUCCESS;
+    }
+    if (pToolProperties == nullptr && pToolCount != nullptr) {
+        *pToolCount = static_cast<uint32_t>(icd.tooling_properties.size());
+    } else if (pToolCount != nullptr) {
+        for (size_t i = 0; i < *pToolCount; i++) {
+            if (i >= icd.tooling_properties.size()) {
+                return VK_INCOMPLETE;
+            }
+            pToolProperties[i] = icd.tooling_properties[i];
+        }
+    }
+    return VK_SUCCESS;
+}
+
+//// WSI ////
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -502,6 +521,10 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
             return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
         }
     }
+    if (icd.supports_tooling_info_ext) {
+        if (string_eq(pName, "vkGetPhysicalDeviceToolPropertiesEXT")) return TO_VOID_PFN(test_vkGetPhysicalDeviceToolPropertiesEXT);
+    }
+
     for (auto& func : icd.custom_physical_device_functions) {
         if (func.name == pName) {
             return TO_VOID_PFN(func.function);
