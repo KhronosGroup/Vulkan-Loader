@@ -160,6 +160,9 @@ set(NORMAL_LOADER_SRCS
 
 if(WIN32)
     set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_windows.c)
+else(UNIX AND NOT APPLE) # i.e.: Linux
+    set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_linux.c)
+    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS LOADER_ENABLE_LINUX_SORT)
 endif()
 
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)

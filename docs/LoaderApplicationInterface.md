@@ -43,6 +43,7 @@
   * [Instance and Device Extensions](#instance-and-device-extensions)
   * [WSI Extensions](#wsi-extensions)
   * [Unknown Extensions](#unknown-extensions)
+* [Physical Device Ordering](#physical-device-ordering)
 
 ## Overview
 
@@ -888,5 +889,38 @@ variable to a non-zero number.
 This will effectively disable the loader's filtering of instance extension
 names.
 
+## Physical Device Ordering
+
+Prior to the 1.2.204 loader, physical devices on Linux could be returned in an
+inconsistent order.
+To remedy this, the Vulkan loader will now sort devices once they have been
+received from the drivers (before returning the information to any enabled
+layers) in the following fashion:
+ * Sort based on device type (Discrete, Integrated, Virtual, all others)
+ * Sort internal to the types based on PCI information (Domain, Bus, Device, and
+   Function).
+
+This allows for a consistent physical device order from run to run on the same
+system, unless the actual underlying hardware changes.
+
+A new environment variable is defined to give users the ability to force a
+specific device, `VK_LOADER_DEVICE_SELECT`.
+This environment variable should be set to the desired devices hex value for
+Vendor Id and Device Id (as returned from `vkGetPhysicalDeviceProperties` in
+the `VkPhysicalDeviceProperties` structure).
+It should look like the following:
+
+```
+set VK_LOADER_DEVICE_SELECT=0x10de:0x1f91
+```
+
+This will force on the device with a vendor ID of "0x10de" and a device ID
+of "0x1f91".
+If that device is not found, this is simply ignored.
+
+All device selection work done in the loader can be disabled by setting the
+environment variable `VK_LOADER_DISABLE_SELECT` to a non-zero value.
+This is intended for debug purposes to narrow down any issues with the loader
+device selection mechanism, but can be used by others.
 
 [Return to the top-level LoaderInterfaceArchitecture.md file.](LoaderInterfaceArchitecture.md)
