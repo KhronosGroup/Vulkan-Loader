@@ -418,7 +418,8 @@ repository to other Linux distributions.
 #### Required Package List
 
     sudo apt-get install git build-essential libx11-xcb-dev \
-        libxkbcommon-dev libwayland-dev libxrandr-dev
+        libxkbcommon-dev libwayland-dev libxrandr-dev \
+        libxcb1-dev libdrm-dev
 
 ### Linux Build
 

@@ -349,10 +349,10 @@ TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
 TEST_F(EnumeratePhysicalDevices, OneCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
 
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices.emplace_back("physical_device_2");
-    driver.physical_devices.emplace_back("physical_device_3");
+    driver.physical_devices.emplace_back("physical_device_0", 1);
+    driver.physical_devices.emplace_back("physical_device_1", 2);
+    driver.physical_devices.emplace_back("physical_device_2", 3);
+    driver.physical_devices.emplace_back("physical_device_3", 4);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -366,10 +366,13 @@ TEST_F(EnumeratePhysicalDevices, OneCall) {
 
 TEST_F(EnumeratePhysicalDevices, TwoCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 2;
     for (size_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
     InstWrapper inst{env->vulkan_functions};
@@ -389,10 +392,13 @@ TEST_F(EnumeratePhysicalDevices, TwoCall) {
 TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
     auto& driver = env->get_test_icd();
     driver.set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 3;
     for (size_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
     InstWrapper inst1{env->vulkan_functions};
@@ -421,10 +427,13 @@ TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
 
 TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 2;
     for (size_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
     InstWrapper inst{env->vulkan_functions};
@@ -596,9 +605,14 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
 
 TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
+
     // ICD contains 2 devices
-    driver.physical_devices.emplace_back("PhysicalDevice0");
-    driver.physical_devices.emplace_back("PhysicalDevice1");
+    driver.physical_devices.emplace_back("PhysicalDevice0", 12);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    driver.physical_devices.emplace_back("PhysicalDevice1", 24);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     // ICD contains 1 group, which contains both devices
     driver.physical_device_groups.push_back({});
     driver.physical_device_groups.back()
@@ -623,8 +637,6 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
     driver.add_instance_extension({"VK_KHR_device_group_creation"});
     // Extension
@@ -647,16 +659,19 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
 }
 
 TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
+
     // ICD contains 2 devices
-    driver.physical_devices.emplace_back("PhysicalDevice0");
-    driver.physical_devices.emplace_back("PhysicalDevice1");
+    driver.physical_devices.emplace_back("PhysicalDevice0", 12);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    driver.physical_devices.emplace_back("PhysicalDevice1", 24);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     // ICD contains 1 group, which contains both devices
     driver.physical_device_groups.push_back({});
     driver.physical_device_groups.back()
@@ -684,8 +699,6 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
     driver.add_instance_extension({"VK_KHR_device_group_creation"});
     // Extension
@@ -711,16 +724,19 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
 }
 
 TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
+
     // ICD contains 2 devices
-    driver.physical_devices.emplace_back("PhysicalDevice0");
-    driver.physical_devices.emplace_back("PhysicalDevice1");
+    driver.physical_devices.emplace_back("PhysicalDevice0", 12);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    driver.physical_devices.emplace_back("PhysicalDevice1", 24);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     // ICD contains 1 group, which contains both devices
     driver.physical_device_groups.push_back({});
     driver.physical_device_groups.back()

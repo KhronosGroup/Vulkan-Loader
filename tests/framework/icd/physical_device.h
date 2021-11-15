@@ -34,7 +34,8 @@ struct PhysicalDevice {
     PhysicalDevice() {}
     PhysicalDevice(std::string name) : deviceName(name) {}
     PhysicalDevice(const char* name) : deviceName(name) {}
-
+    PhysicalDevice(std::string name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
+    PhysicalDevice(const char* name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
     DispatchableHandle<VkPhysicalDevice> vk_physical_device;
     BUILDER_VALUE(PhysicalDevice, std::string, deviceName, "")
     BUILDER_VALUE(PhysicalDevice, VkPhysicalDeviceProperties, properties, {})
@@ -57,6 +58,7 @@ struct PhysicalDevice {
     // The purpose of this list is so that vkGetDeviceProcAddr returns 'a real function pointer' in tests
     // without actually implementing any of the logic inside of it.
     BUILDER_VECTOR(PhysicalDevice, VulkanFunction, known_device_functions, device_function)
+    uint32_t pci_bus{};
 };
 
 struct PhysicalDeviceGroup {

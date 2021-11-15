@@ -160,6 +160,11 @@ set(NORMAL_LOADER_SRCS
 
 if(WIN32)
     set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_windows.c)
+else(UNIX AND NOT APPLE) # i.e.: Linux
+    set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_linux.c)
+    if(BUILD_WSI_XCB_SUPPORT)
+        set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} xcb_select.c)
+    endif()
 endif()
 
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
@@ -315,6 +320,35 @@ else()
         add_library(vulkan STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     else()
         add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+    endif()
+    if(UNIX AND NOT APPLE) # i.e.: Linux
+        if(BUILD_WSI_XCB_SUPPORT)
+            find_package(XCB REQUIRED)
+            find_package(LibDRM)
+            find_library(XCB_DRI_LIBRARY
+                            NAMES xcb-dri3
+                            PATHS /usr/lib
+                                  /usr/lib64
+                                  /usr/local/lib
+                                  /usr/local/lib64)
+
+            set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS LOADER_ENABLE_LINUX_SORT)
+
+            target_include_directories(vulkan PRIVATE ${XCB_INCLUDE_DIRS})
+            target_link_libraries(vulkan ${XCB_LIBRARIES})
+            if (LibDRM_FOUND)
+                set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS LOADER_ENABLE_DRM)
+                target_include_directories(vulkan PRIVATE ${LibDRM_INCLUDE_DIRS})
+                target_link_libraries(vulkan ${LibDRM_LIBRARIES})
+                if (XCB_DRI_LIBRARY)
+                    target_link_libraries(vulkan ${XCB_DRI_LIBRARY})
+                else()
+                    MESSAGE(WARNING "libxcb-dri3 not found!")
+                endif()
+            else()
+                MESSAGE(WARNING "libDRM not found!")
+            endif()
+        endif()
     endif()
     add_dependencies(vulkan loader_asm_gen_files)
     # set version based on LOADER_GENERATED_HEADER_VERSION used to generate the code

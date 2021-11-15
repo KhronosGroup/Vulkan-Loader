@@ -210,6 +210,7 @@ struct loader_icd_term {
     struct loader_icd_term *next;
 
     PFN_PhysDevExt phys_dev_ext[MAX_NUM_UNKNOWN_EXTS];
+    bool supports_get_dev_prop_2;
 };
 
 // Per ICD library structure
@@ -333,6 +334,7 @@ struct loader_instance {
     bool wsi_display_enabled;
     bool wsi_display_props2_enabled;
     bool create_terminator_invalid_extension;
+    bool supports_get_dev_prop_2;
 };
 
 // VkPhysicalDevice requires special treatment by loader.  Firstly, terminator
@@ -365,6 +367,44 @@ struct loader_physical_device_term {
     struct loader_icd_term *this_icd_term;
     uint8_t icd_index;
     VkPhysicalDevice phys_dev;  // object from ICD
+};
+
+#ifdef LOADER_ENABLE_LINUX_SORT
+// Structure for storing the relevent device information for selecting a device.
+// NOTE: Needs to be defined here so we can store this content in the term structrue
+//       for quicker sorting.
+struct LinuxSortedDeviceInfo {
+    // Associated Vulkan Physical Device
+    VkPhysicalDevice physical_device;
+    bool default_device;
+
+    // Loader specific items about the driver providing support for this physical device
+    uint32_t icd_index;
+    struct loader_icd_term *icd_term;
+
+    // Some generic device properties
+    VkPhysicalDeviceType device_type;
+    char device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
+    uint32_t vendor_id;
+    uint32_t device_id;
+
+    // PCI information on this device
+    bool has_pci_bus_info;
+    uint32_t pci_domain;
+    uint32_t pci_bus;
+    uint32_t pci_device;
+    uint32_t pci_function;
+};
+#endif  // LOADER_ENABLE_LINUX_SORT
+
+// Per enumerated PhysicalDeviceGroup structure, used to wrap in terminator code
+struct loader_physical_device_group_term {
+    struct loader_icd_term *this_icd_term;
+    uint8_t icd_index;
+    VkPhysicalDeviceGroupProperties group_props;
+#ifdef LOADER_ENABLE_LINUX_SORT
+    struct LinuxSortedDeviceInfo internal_device_info[VK_MAX_DEVICE_GROUP_SIZE];
+#endif  // LOADER_ENABLE_LINUX_SORT
 };
 
 struct loader_struct {

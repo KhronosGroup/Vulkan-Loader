@@ -2144,6 +2144,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
+#if 0 // Disable for now to get this commit in
 static VkBool32 JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
@@ -2155,7 +2156,6 @@ static VkBool32 JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT me
     return VK_FALSE;
 }
 
-#if 0  // Disable for now to get this commit in
 TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
     Extension ext{"VK_EXT_debug_utils"};
     auto& driver = env->get_test_icd();
