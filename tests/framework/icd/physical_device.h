@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -34,7 +34,8 @@ struct PhysicalDevice {
     PhysicalDevice() {}
     PhysicalDevice(std::string name) : deviceName(name) {}
     PhysicalDevice(const char* name) : deviceName(name) {}
-
+    PhysicalDevice(std::string name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
+    PhysicalDevice(const char* name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
     DispatchableHandle<VkPhysicalDevice> vk_physical_device;
     BUILDER_VALUE(PhysicalDevice, std::string, deviceName, "")
     BUILDER_VALUE(PhysicalDevice, VkPhysicalDeviceProperties, properties, {})
@@ -44,6 +45,7 @@ struct PhysicalDevice {
     BUILDER_VALUE(PhysicalDevice, VkExternalMemoryProperties, external_memory_properties, {})
     BUILDER_VALUE(PhysicalDevice, VkExternalSemaphoreProperties, external_semaphore_properties, {})
     BUILDER_VALUE(PhysicalDevice, VkExternalFenceProperties, external_fence_properties, {})
+    BUILDER_VALUE(PhysicalDevice, uint32_t, pci_bus, {})
 
     BUILDER_VECTOR(PhysicalDevice, MockQueueFamilyProperties, queue_family_properties, queue_family_properties)
     BUILDER_VECTOR(PhysicalDevice, VkFormatProperties, format_properties, format_properties)

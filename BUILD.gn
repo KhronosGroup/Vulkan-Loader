@@ -181,6 +181,12 @@ if (!is_android) {
       }
       libs = [ "Cfgmgr32.lib" ]
     }
+    if (is_linux) {
+      sources += [
+        "loader/loader_linux.c",
+        "loader/loader_linux.h",
+      ]
+    }
     if (is_mac) {
       frameworks = [ "CoreFoundation.framework" ]
     }
