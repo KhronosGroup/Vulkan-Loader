@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -619,7 +619,16 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModesKHR(Vk
 // 1.0
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                              VkPhysicalDeviceProperties* pProperties) {}
+                                                              VkPhysicalDeviceProperties* pProperties) {
+    if (nullptr != pProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        memcpy(pProperties, &phys_dev.properties, sizeof(VkPhysicalDeviceProperties));
+        uint32_t max_len = (phys_dev.deviceName.length() > VK_MAX_PHYSICAL_DEVICE_NAME_SIZE) ? VK_MAX_PHYSICAL_DEVICE_NAME_SIZE
+                                                                                             : phys_dev.deviceName.length();
+        std::copy(phys_dev.deviceName.c_str(), phys_dev.deviceName.c_str() + max_len, pProperties->deviceName);
+        pProperties->deviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1] = '\0';
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                                     VkPhysicalDeviceMemoryProperties* pMemoryProperties) {}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
@@ -639,7 +648,21 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties(VkP
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceFeatures2* pFeatures) {}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                               VkPhysicalDeviceProperties2* pProperties) {}
+                                                               VkPhysicalDeviceProperties2* pProperties) {
+    if (nullptr != pProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        test_vkGetPhysicalDeviceProperties(physicalDevice, &pProperties->properties);
+        VkBaseInStructure* pNext = reinterpret_cast<VkBaseInStructure*>(pProperties->pNext);
+        while (pNext) {
+            if (pNext->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT) {
+                VkPhysicalDevicePCIBusInfoPropertiesEXT* bus_info =
+                    reinterpret_cast<VkPhysicalDevicePCIBusInfoPropertiesEXT*>(pNext);
+                bus_info->pciBus = phys_dev.pci_bus;
+            }
+            pNext = reinterpret_cast<VkBaseInStructure*>(const_cast<VkBaseInStructure*>(pNext->pNext));
+        }
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
                                                                      VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
@@ -827,6 +850,23 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
         return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties);
 
     if (IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
+        if (string_eq(pName, "vkGetPhysicalDeviceProperties2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
+        if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceFormatProperties2);
+        if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceMemoryProperties2);
+
+        if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceQueueFamilyProperties2);
+
+        if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceSparseImageFormatProperties2);
+
+        if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2KHR")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
+        }
+    } else if (IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
         if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
         if (string_eq(pName, "vkGetPhysicalDeviceProperties2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
         if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR"))

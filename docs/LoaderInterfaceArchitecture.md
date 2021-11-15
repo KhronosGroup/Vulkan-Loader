@@ -516,6 +516,27 @@ discovery.
     </td>
   </tr>
   <tr>
+    <td><small><i>VK_LOADER_DEVICE_SELECT</i></small></td>
+    <td><b>Linux Only</b><br/>
+        Allows the user to force a particular device to be prioritized above all
+        other devices in the return order of <i>vkGetPhysicalDevices<i> and
+        <i>vkGetPhysicalDeviceGroups<i> functions.<br/>
+        The value should be "<hex vendor id>:<hex device id>".<br/>
+        <b>NOTE:</b> This not remove devices.
+    </td>
+    <td><small>set VK_LOADER_DEVICE_SELECT=0x10de:0x1f91</small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><i>VK_LOADER_DISABLE_SELECT</i></small></td>
+    <td><b>Linux Only</b><br/>
+        Allows the user to disable the consistent sorting algorithm run in the
+        loader before returning the set of physical devices to layers.<br/>
+    </td>
+    <td><small>set VK_LOADER_DISABLE_SELECT=1</small>
+    </td>
+  </tr>
+  <tr>
     <td><small><i>VK_LOADER_DISABLE_INST_EXT_FILTER</i></small></td>
     <td>Disable the filtering out of instance extensions that the loader doesn't
         know about.

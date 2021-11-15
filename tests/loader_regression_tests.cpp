@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -53,6 +53,7 @@ class EnumerateInstanceExtensionProperties : public RegressionTests {};
 class EnumerateDeviceLayerProperties : public RegressionTests {};
 class EnumerateDeviceExtensionProperties : public RegressionTests {};
 class EnumeratePhysicalDevices : public RegressionTests {};
+class SortedPhysicalDevices : public RegressionTests {};
 class CreateDevice : public RegressionTests {};
 class EnumeratePhysicalDeviceGroups : public RegressionTests {};
 class WrapObjects : public RegressionTests {};
@@ -349,10 +350,10 @@ TEST_F(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
 TEST_F(EnumeratePhysicalDevices, OneCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
 
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices.emplace_back("physical_device_2");
-    driver.physical_devices.emplace_back("physical_device_3");
+    driver.physical_devices.emplace_back("physical_device_0", 1);
+    driver.physical_devices.emplace_back("physical_device_1", 2);
+    driver.physical_devices.emplace_back("physical_device_2", 3);
+    driver.physical_devices.emplace_back("physical_device_3", 4);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -366,10 +367,13 @@ TEST_F(EnumeratePhysicalDevices, OneCall) {
 
 TEST_F(EnumeratePhysicalDevices, TwoCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 2;
     for (size_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
     InstWrapper inst{env->vulkan_functions};
@@ -389,10 +393,13 @@ TEST_F(EnumeratePhysicalDevices, TwoCall) {
 TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
     auto& driver = env->get_test_icd();
     driver.set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 3;
     for (size_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
     InstWrapper inst1{env->vulkan_functions};
@@ -421,10 +428,13 @@ TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
 
 TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 2;
     for (size_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
     InstWrapper inst{env->vulkan_functions};
@@ -596,9 +606,14 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
 
 TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
+
     // ICD contains 2 devices
-    driver.physical_devices.emplace_back("PhysicalDevice0");
-    driver.physical_devices.emplace_back("PhysicalDevice1");
+    driver.physical_devices.emplace_back("PhysicalDevice0", 12);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    driver.physical_devices.emplace_back("PhysicalDevice1", 24);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     // ICD contains 1 group, which contains both devices
     driver.physical_device_groups.push_back({});
     driver.physical_device_groups.back()
@@ -623,8 +638,6 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
     driver.add_instance_extension({"VK_KHR_device_group_creation"});
     // Extension
@@ -647,16 +660,19 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
 }
 
 TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
+
     // ICD contains 2 devices
-    driver.physical_devices.emplace_back("PhysicalDevice0");
-    driver.physical_devices.emplace_back("PhysicalDevice1");
+    driver.physical_devices.emplace_back("PhysicalDevice0", 12);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    driver.physical_devices.emplace_back("PhysicalDevice1", 24);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     // ICD contains 1 group, which contains both devices
     driver.physical_device_groups.push_back({});
     driver.physical_device_groups.back()
@@ -684,8 +700,6 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
     driver.add_instance_extension({"VK_KHR_device_group_creation"});
     // Extension
@@ -711,16 +725,19 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
         group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, &group_props));
         ASSERT_EQ(group_count, returned_group_count);
-        handle_assert_equal(group_props.physicalDevices[0], physical_devices[0]);
-        handle_assert_equal(group_props.physicalDevices[1], physical_devices[1]);
     }
 }
 
 TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
+    Extension first_ext{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};  // known instance extensions
+    env->reset_icd().add_instance_extension(first_ext);
+
     // ICD contains 2 devices
-    driver.physical_devices.emplace_back("PhysicalDevice0");
-    driver.physical_devices.emplace_back("PhysicalDevice1");
+    driver.physical_devices.emplace_back("PhysicalDevice0", 12);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    driver.physical_devices.emplace_back("PhysicalDevice1", 24);
+    driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     // ICD contains 1 group, which contains both devices
     driver.physical_device_groups.push_back({});
     driver.physical_device_groups.back()
@@ -921,3 +938,365 @@ TEST_F(CreateInstance, InstanceNullExtensionPtr) {
 
     ASSERT_EQ(env->vulkan_functions.vkCreateInstance(&info, VK_NULL_HANDLE, &inst), VK_ERROR_EXTENSION_NOT_PRESENT);
 }
+
+// Fill in random but valid data into the device properties struct for the current physical device
+static void FillInRandomDeviceProps(VkPhysicalDeviceProperties& props, VkPhysicalDeviceType dev_type, uint32_t api_vers,
+                                    uint32_t vendor, uint32_t device) {
+    props.apiVersion = api_vers;
+    props.vendorID = vendor;
+    props.deviceID = device;
+    props.deviceType = dev_type;
+    for (uint8_t idx = 0; idx < VK_UUID_SIZE; ++idx) {
+        props.pipelineCacheUUID[idx] = static_cast<uint8_t>(rand() % 255);
+    }
+}
+
+#if defined(__linux__) || defined(__FreeBSD__)
+// NOTE: Sort order only affects Linux
+TEST(SortedPhysicalDevices, DevicesSortEnabled) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+                            VK_API_VERSION_1_0, 888, 0xAAA001);
+    env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    env.get_test_icd(0).physical_devices.push_back({"pd1", 3});
+    FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
+                            VK_API_VERSION_1_0, 888, 0xAAA002);
+    env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(1).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(1).physical_devices.push_back({"pd2", 0});
+    FillInRandomDeviceProps(env.get_test_icd(1).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_0,
+                            1, 0xBBBB001);
+    env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(2).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(2).physical_devices.push_back({"pd3", 1});
+    FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+                            VK_API_VERSION_1_0, 75, 0xCCCC001);
+    env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    env.get_test_icd(2).physical_devices.push_back({"pd4", 4});
+    FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+                            VK_API_VERSION_1_0, 75, 0xCCCC002);
+    env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(3).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(3).physical_devices.push_back({"pd5", 0});
+    FillInRandomDeviceProps(env.get_test_icd(3).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
+                            VK_API_VERSION_1_0, 6940, 0xDDDD001);
+    env.get_test_icd(3).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    InstWrapper instance(env.vulkan_functions);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    instance.CheckCreate();
+
+    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
+    ASSERT_NE(GetPhysDevProps2, nullptr);
+
+    const uint32_t max_phys_devs = 6;
+    uint32_t device_count = max_phys_devs;
+    std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
+    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data()));
+    ASSERT_EQ(device_count, max_phys_devs);
+
+    for (uint32_t dev = 0; dev < device_count; ++dev) {
+        VkPhysicalDeviceProperties props{};
+        instance->vkGetPhysicalDeviceProperties(physical_devices[dev], &props);
+        VkPhysicalDeviceProperties2KHR props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+        VkPhysicalDevicePCIBusInfoPropertiesEXT pci_bus_info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
+        props2.pNext = &pci_bus_info;
+        GetPhysDevProps2(physical_devices[dev], &props2);
+
+        switch (dev) {
+            case 0:
+                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+                ASSERT_EQ(true, !strcmp("pd3", props.deviceName));
+                ASSERT_EQ(props.vendorID, 75);
+                ASSERT_EQ(props.deviceID, 0xCCCC001);
+                ASSERT_EQ(pci_bus_info.pciBus, 1);
+                break;
+            case 1:
+                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+                ASSERT_EQ(true, !strcmp("pd4", props.deviceName));
+                ASSERT_EQ(props.vendorID, 75);
+                ASSERT_EQ(props.deviceID, 0xCCCC002);
+                ASSERT_EQ(pci_bus_info.pciBus, 4);
+                break;
+            case 2:
+                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+                ASSERT_EQ(true, !strcmp("pd0", props.deviceName));
+                ASSERT_EQ(props.vendorID, 888);
+                ASSERT_EQ(props.deviceID, 0xAAA001);
+                ASSERT_EQ(pci_bus_info.pciBus, 7);
+                break;
+            case 3:
+                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
+                ASSERT_EQ(true, !strcmp("pd1", props.deviceName));
+                ASSERT_EQ(props.vendorID, 888);
+                ASSERT_EQ(props.deviceID, 0xAAA002);
+                ASSERT_EQ(pci_bus_info.pciBus, 3);
+                break;
+            case 4:
+                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
+                ASSERT_EQ(true, !strcmp("pd5", props.deviceName));
+                ASSERT_EQ(props.vendorID, 6940);
+                ASSERT_EQ(props.deviceID, 0xDDDD001);
+                ASSERT_EQ(pci_bus_info.pciBus, 0);
+                break;
+            case 5:
+                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
+                ASSERT_EQ(true, !strcmp("pd2", props.deviceName));
+                ASSERT_EQ(props.vendorID, 1);
+                ASSERT_EQ(props.deviceID, 0xBBBB001);
+                ASSERT_EQ(pci_bus_info.pciBus, 0);
+                break;
+            default:
+                ASSERT_EQ(false, true);
+        }
+    }
+}
+
+TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
+    FrameworkEnvironment env{};
+
+    set_env_var("VK_LOADER_DISABLE_SELECT", "1");
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+                            VK_API_VERSION_1_0, 888, 0xAAA001);
+    env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    env.get_test_icd(0).physical_devices.push_back({"pd1", 3});
+    FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
+                            VK_API_VERSION_1_0, 888, 0xAAA002);
+    env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(1).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(1).physical_devices.push_back({"pd2", 0});
+    FillInRandomDeviceProps(env.get_test_icd(1).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_0,
+                            1, 0xBBBB001);
+    env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(2).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(2).physical_devices.push_back({"pd3", 1});
+    FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+                            VK_API_VERSION_1_0, 75, 0xCCCC001);
+    env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    env.get_test_icd(2).physical_devices.push_back({"pd4", 4});
+    FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+                            VK_API_VERSION_1_0, 75, 0xCCCC002);
+    env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(3).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    env.get_test_icd(3).physical_devices.push_back({"pd5", 0});
+    FillInRandomDeviceProps(env.get_test_icd(3).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
+                            VK_API_VERSION_1_0, 6940, 0xDDDD001);
+    env.get_test_icd(3).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+
+    InstWrapper instance(env.vulkan_functions);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    instance.CheckCreate();
+
+    // Just make sure we have the correct number of devices
+    const uint32_t max_phys_devs = 6;
+    uint32_t device_count = max_phys_devs;
+    std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
+    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data()));
+    ASSERT_EQ(device_count, max_phys_devs);
+
+    // Make sure the devices are not in the sorted order.  The order is really undefined, but the chances of
+    // it being exactly the expected sorted is very low.
+    bool sorted = true;
+    for (uint32_t dev = 0; dev < device_count; ++dev) {
+        VkPhysicalDeviceProperties props{};
+        instance->vkGetPhysicalDeviceProperties(physical_devices[dev], &props);
+
+        switch (dev) {
+            case 0:
+                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd3", props.deviceName)) {
+                    sorted = false;
+                }
+                break;
+            case 1:
+                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd4", props.deviceName)) {
+                    sorted = false;
+                }
+                break;
+            case 2:
+                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd0", props.deviceName)) {
+                    sorted = false;
+                }
+                break;
+            case 3:
+                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU || strcmp("pd1", props.deviceName)) {
+                    sorted = false;
+                }
+                break;
+            case 4:
+                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU || strcmp("pd5", props.deviceName)) {
+                    sorted = false;
+                }
+                break;
+            case 5:
+                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU || strcmp("pd2", props.deviceName)) {
+                    sorted = false;
+                }
+                break;
+            default:
+                ASSERT_EQ(false, true);
+        }
+    }
+    ASSERT_EQ(false, sorted);
+    remove_env_var("VK_LOADER_DISABLE_SELECT");
+}
+
+#if 0  // TODO: Enable check on physical device group sorting to make sure proper order returned.
+       //       This is disabled because the test framework needs a little more work for this.
+TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
+    FrameworkEnvironment env{};
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
+    auto& cur_icd_0 = env.get_test_icd(0);
+    cur_icd_0.set_icd_api_version(VK_API_VERSION_1_1);
+    cur_icd_0.physical_devices.push_back({"pd0", 7});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
+                            888, 0xAAA001);
+    cur_icd_0.physical_devices.push_back({"pd1", 3});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
+                            VK_API_VERSION_1_1, 888, 0xAAA002);
+    cur_icd_0.physical_devices.push_back({"pd2", 6});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
+                            888, 0xAAA003);
+    cur_icd_0.physical_device_groups.push_back({});
+    cur_icd_0.physical_device_groups.back()
+        .use_physical_device(cur_icd_0.physical_devices[0])
+        .use_physical_device(cur_icd_0.physical_devices[2]);
+    cur_icd_0.physical_device_groups.push_back({});
+    cur_icd_0.physical_device_groups.back().use_physical_device(cur_icd_0.physical_devices[1]);
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
+    auto& cur_icd_1 = env.get_test_icd(1);
+    cur_icd_1.set_icd_api_version(VK_API_VERSION_1_1);
+    cur_icd_1.physical_devices.push_back({"pd3", 0});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_1, 1,
+                            0xBBBB001);
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
+    auto& cur_icd_2 = env.get_test_icd(2);
+    cur_icd_2.set_icd_api_version(VK_API_VERSION_1_1);
+    cur_icd_2.physical_devices.push_back({"pd4", 1});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
+                            75, 0xCCCC001);
+    cur_icd_2.physical_devices.push_back({"pd5", 4});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
+                            75, 0xCCCC002);
+    cur_icd_2.physical_devices.push_back({"pd6", 2});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
+                            75, 0xCCCC003);
+    cur_icd_2.physical_device_groups.push_back({});
+    cur_icd_2.physical_device_groups.back()
+        .use_physical_device(cur_icd_2.physical_devices[1])
+        .use_physical_device(cur_icd_2.physical_devices[2]);
+    cur_icd_2.physical_device_groups.push_back({});
+    cur_icd_2.physical_device_groups.back().use_physical_device(cur_icd_2.physical_devices[0]);
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
+    auto& cur_icd_3 = env.get_test_icd(3);
+    cur_icd_3.set_icd_api_version(VK_API_VERSION_1_1);
+    cur_icd_3.physical_devices.push_back({"pd7", 0});
+    FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU, VK_API_VERSION_1_1,
+                            6940, 0xDDDD001);
+
+    InstWrapper inst(env.vulkan_functions);
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
+        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceProperties2"));
+    ASSERT_NE(GetPhysDevProps2, nullptr);
+
+    const uint32_t max_phys_devs = 8;
+    uint32_t device_count = max_phys_devs;
+    std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &device_count, physical_devices.data()));
+    ASSERT_EQ(device_count, max_phys_devs);
+
+    const uint32_t max_phys_dev_groups = 8;
+    uint32_t group_count = max_phys_dev_groups;
+    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups.data()));
+    ASSERT_EQ(group_count, max_phys_dev_groups);
+
+    uint32_t cur_dev = 0;
+    for (uint32_t group = 0; group < max_phys_dev_groups; ++group) {
+        for (uint32_t dev = 0; dev < physical_device_groups[group].physicalDeviceCount; ++dev) {
+            VkPhysicalDeviceProperties props{};
+            inst->vkGetPhysicalDeviceProperties(physical_devices[dev], &props);
+            VkPhysicalDeviceProperties2 props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+            VkPhysicalDevicePCIBusInfoPropertiesEXT pci_bus_info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
+            props2.pNext = &pci_bus_info;
+            GetPhysDevProps2(physical_devices[dev], &props2);
+            /*
+                        switch (++cur_dev) {
+                            case 0:
+                                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+                                ASSERT_EQ(true, !strcmp("pd3", props.deviceName));
+                                ASSERT_EQ(props.vendorID, 75);
+                                ASSERT_EQ(props.deviceID, 0xCCCC001);
+                                ASSERT_EQ(pci_bus_info.pciBus, 1);
+                                break;
+                            case 1:
+                                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+                                ASSERT_EQ(true, !strcmp("pd4", props.deviceName));
+                                ASSERT_EQ(props.vendorID, 75);
+                                ASSERT_EQ(props.deviceID, 0xCCCC002);
+                                ASSERT_EQ(pci_bus_info.pciBus, 4);
+                                break;
+                            case 2:
+                                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+                                ASSERT_EQ(true, !strcmp("pd0", props.deviceName));
+                                ASSERT_EQ(props.vendorID, 888);
+                                ASSERT_EQ(props.deviceID, 0xAAA001);
+                                ASSERT_EQ(pci_bus_info.pciBus, 7);
+                                break;
+                            case 3:
+                                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
+                                ASSERT_EQ(true, !strcmp("pd1", props.deviceName));
+                                ASSERT_EQ(props.vendorID, 888);
+                                ASSERT_EQ(props.deviceID, 0xAAA002);
+                                ASSERT_EQ(pci_bus_info.pciBus, 3);
+                                break;
+                            case 4:
+                                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
+                                ASSERT_EQ(true, !strcmp("pd5", props.deviceName));
+                                ASSERT_EQ(props.vendorID, 6940);
+                                ASSERT_EQ(props.deviceID, 0xDDDD001);
+                                ASSERT_EQ(pci_bus_info.pciBus, 0);
+                                break;
+                            case 5:
+                                ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
+                                ASSERT_EQ(true, !strcmp("pd2", props.deviceName));
+                                ASSERT_EQ(props.vendorID, 1);
+                                ASSERT_EQ(props.deviceID, 0xBBBB001);
+                                ASSERT_EQ(pci_bus_info.pciBus, 0);
+                                break;
+                            default:
+                                ASSERT_EQ(false, true);
+                        }
+            */
+        }
+    }
+}
+#endif
+#endif  // __linux__ || __FreeBSD__
