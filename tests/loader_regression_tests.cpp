@@ -849,7 +849,24 @@ TEST(ExtensionManual, ToolingProperties) {
                                                      VK_TOOL_PURPOSE_VALIDATION_BIT_EXT,
                                                      "This tool does not exist",
                                                      "No-Layer"};
-    {  // extension
+    {  // No support in driver
+        SingleICDShim env{TestICDDetails{TEST_ICD_PATH_VERSION_6}};
+        env.get_test_icd().physical_devices.push_back({});
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto phys_dev = inst.GetPhysDev();
+
+        auto getToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
+            inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolPropertiesEXT"));
+        handle_assert_has_value(getToolProperties);
+
+        uint32_t tool_count = 0;
+        ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, nullptr));
+        ASSERT_EQ(tool_count, 0);
+    }
+    {  // extension is supported in driver
         SingleICDShim env{TestICDDetails{TEST_ICD_PATH_VERSION_6}};
         env.get_test_icd().physical_devices.push_back({});
         env.get_test_icd().supports_tooling_info_ext = true;
@@ -864,7 +881,7 @@ TEST(ExtensionManual, ToolingProperties) {
         auto getToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
             inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolPropertiesEXT"));
         handle_assert_has_value(getToolProperties);
-        uint32_t tool_count = 1;
+        uint32_t tool_count = 0;
         ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, nullptr));
         ASSERT_EQ(tool_count, 1);
         VkPhysicalDeviceToolPropertiesEXT props{};
