@@ -402,39 +402,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
                    "vkCreateInstance: \'pCreateInfo\' is NULL (VUID-vkCreateInstance-pCreateInfo-parameter)");
         goto out;
     }
-    if (pCreateInfo->sType != VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
-                   "vkCreateInstance: \'pCreateInfo\' struct type invalid (VUID-VkInstanceCreateInfo-sType-sType");
-        goto out;
-    }
-    // NOTE: Can't test VUID-VkInstanceCreateInfo-pNext-pNext since Debug Utils extends the pNext struct
-    if (pCreateInfo->flags != 0) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
-                   "vkCreateInstance: \'pCreateInfo\' \'flags\' must be 0 (VUID-VkInstanceCreateInfo-flags-zerobitmask");
-        goto out;
-    }
-    if (pCreateInfo->pApplicationInfo != NULL) {
-        bool failed = false;
-        if (pCreateInfo->pApplicationInfo->sType != VK_STRUCTURE_TYPE_APPLICATION_INFO) {
-            loader_log(
-                NULL, VULKAN_LOADER_ERROR_BIT, 0,
-                "vkCreateInstance: \'pCreateInfo\' \'pApplicationInfo\' \'sType\' invalid (VUID-VkApplicationInfo-sType-sType");
-            failed = true;
-        }
-        if (pCreateInfo->pApplicationInfo->pNext != NULL) {
-            loader_log(
-                NULL, VULKAN_LOADER_ERROR_BIT, 0,
-                "vkCreateInstance: \'pCreateInfo\' \'pApplicationInfo\' \'pNext\' is not NULL (VUID-VkApplicationInfo-pNext-pNext");
-            failed = true;
-        }
-        if (failed) {
-            loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
-                       "vkCreateInstance: \'pCreateInfo\' \'pApplicationInfo\' must be NULL or point to a valid VkApplicationInfo "
-                       "(VUID-VkInstanceCreateInfo-pApplicationInfo-parameter");
-            goto out;
-        }
-    }
-
     if (pInstance == NULL) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
                    "vkCreateInstance \'pInstance\' not valid (VUID-vkCreateInstance-pInstance-parameter)");
@@ -468,7 +435,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     ptr_instance->magic = LOADER_MAGIC_NUMBER;
 
     // Save the application version
-    if (NULL == pCreateInfo || NULL == pCreateInfo->pApplicationInfo || 0 == pCreateInfo->pApplicationInfo->apiVersion) {
+    if (NULL == pCreateInfo->pApplicationInfo || 0 == pCreateInfo->pApplicationInfo->apiVersion) {
         ptr_instance->app_api_major_version = 1;
         ptr_instance->app_api_minor_version = 0;
     } else {
