@@ -643,12 +643,12 @@ LAYER:      ||
 LAYER:    VK_LAYER_MESA_device_select
 LAYER:            Type: Implicit
 LAYER:                Disable Env Var:  NODEVICE_SELECT
-LAYER:            Manifset: /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
+LAYER:            Manifest: /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
 LAYER:            Library:  libVkLayer_MESA_device_select.so
 LAYER:      ||
 LAYER:    VK_LAYER_KHRONOS_validation
 LAYER:            Type: Explicit
-LAYER:            Manifset: /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
+LAYER:            Manifest: /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
 LAYER:            Library:  libVkLayer_khronos_validation.so
 LAYER:      ||
 LAYER:    <Drivers>
