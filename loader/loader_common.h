@@ -280,8 +280,10 @@ struct loader_instance {
 
     VkLayerDbgFunctionNode *DbgFunctionHead;
     uint32_t num_tmp_report_callbacks;
+#ifndef VULKANSC
     VkDebugReportCallbackCreateInfoEXT *tmp_report_create_infos;
     VkDebugReportCallbackEXT *tmp_report_callbacks;
+#endif // VULKANSC
     uint32_t num_tmp_messengers;
     VkDebugUtilsMessengerCreateInfoEXT *tmp_messenger_create_infos;
     VkDebugUtilsMessengerEXT *tmp_messengers;
@@ -401,7 +403,9 @@ struct LoaderSortedPhysicalDevice {
     struct loader_icd_term *icd_term;
 };
 
+#ifndef VULKANSC
 struct loader_msg_callback_map_entry {
     VkDebugReportCallbackEXT icd_obj;
     VkDebugReportCallbackEXT loader_obj;
 };
+#endif // VULKANSC

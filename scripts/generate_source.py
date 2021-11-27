@@ -33,22 +33,38 @@ verify_exclude = ['.clang-format']
 def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('registry', metavar='REGISTRY_PATH', help='path to the Vulkan-Headers registry directory')
+    parser.add_argument('--api', help='generate extensions for the api provided vulkan or vulkansc', default='vulkan')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
     args = parser.parse_args(argv)
 
+    vksc_filenames =['vk_loader_extensions.h',
+                     'vk_loader_extensions.c',
+                     'vk_layer_dispatch_table.h',
+                     'loader_generated_header_version.cmake']
+
+    vk_filenames   =['vk_dispatch_table_helper.h',
+                     'vk_layer_dispatch_table.h',
+                     'vk_loader_extensions.h',
+                     'vk_loader_extensions.c',
+                     'vk_object_types.h',
+                     'loader_generated_header_version.cmake']
+
+    gen_filenames = vk_filenames
+
+    if args.api == 'vulkansc' :
+        gen_filenames = vksc_filenames
+
     gen_cmds = [[common_codegen.repo_relative('scripts/loader_genvk.py'),
                  '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                  '-quiet',
-                 filename] for filename in ['vk_dispatch_table_helper.h',
-                                            'vk_layer_dispatch_table.h',
-                                            'vk_loader_extensions.h',
-                                            'vk_loader_extensions.c',
-                                            'vk_object_types.h',
-                                            'loader_generated_header_version.cmake']]
+                 '-defaultExtensions', args.api,
+                 filename] for filename in gen_filenames]
 
     repo_dir = common_codegen.repo_relative('loader/generated')
+    if args.api == 'vulkansc':
+        repo_dir = common_codegen.repo_relative('loader/generated-vksc')
 
     # get directory where generators will run
     if args.verify or args.incremental:

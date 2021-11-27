@@ -36,7 +36,9 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkGetPhysicalDeviceFeatures")) return vkGetPhysicalDeviceFeatures;
     if (!strcmp(funcName, "vkGetPhysicalDeviceFormatProperties")) return vkGetPhysicalDeviceFormatProperties;
     if (!strcmp(funcName, "vkGetPhysicalDeviceImageFormatProperties")) return vkGetPhysicalDeviceImageFormatProperties;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkGetPhysicalDeviceSparseImageFormatProperties")) return vkGetPhysicalDeviceSparseImageFormatProperties;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkGetPhysicalDeviceProperties")) return vkGetPhysicalDeviceProperties;
     if (!strcmp(funcName, "vkGetPhysicalDeviceQueueFamilyProperties")) return vkGetPhysicalDeviceQueueFamilyProperties;
     if (!strcmp(funcName, "vkGetPhysicalDeviceMemoryProperties")) return vkGetPhysicalDeviceMemoryProperties;
@@ -50,18 +52,24 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkQueueWaitIdle")) return vkQueueWaitIdle;
     if (!strcmp(funcName, "vkDeviceWaitIdle")) return vkDeviceWaitIdle;
     if (!strcmp(funcName, "vkAllocateMemory")) return vkAllocateMemory;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkFreeMemory")) return vkFreeMemory;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkMapMemory")) return vkMapMemory;
     if (!strcmp(funcName, "vkUnmapMemory")) return vkUnmapMemory;
     if (!strcmp(funcName, "vkFlushMappedMemoryRanges")) return vkFlushMappedMemoryRanges;
     if (!strcmp(funcName, "vkInvalidateMappedMemoryRanges")) return vkInvalidateMappedMemoryRanges;
     if (!strcmp(funcName, "vkGetDeviceMemoryCommitment")) return vkGetDeviceMemoryCommitment;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkGetImageSparseMemoryRequirements")) return vkGetImageSparseMemoryRequirements;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkGetImageMemoryRequirements")) return vkGetImageMemoryRequirements;
     if (!strcmp(funcName, "vkGetBufferMemoryRequirements")) return vkGetBufferMemoryRequirements;
     if (!strcmp(funcName, "vkBindImageMemory")) return vkBindImageMemory;
     if (!strcmp(funcName, "vkBindBufferMemory")) return vkBindBufferMemory;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkQueueBindSparse")) return vkQueueBindSparse;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkCreateFence")) return vkCreateFence;
     if (!strcmp(funcName, "vkDestroyFence")) return vkDestroyFence;
     if (!strcmp(funcName, "vkGetFenceStatus")) return vkGetFenceStatus;
@@ -75,7 +83,9 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkSetEvent")) return vkSetEvent;
     if (!strcmp(funcName, "vkResetEvent")) return vkResetEvent;
     if (!strcmp(funcName, "vkCreateQueryPool")) return vkCreateQueryPool;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkDestroyQueryPool")) return vkDestroyQueryPool;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkGetQueryPoolResults")) return vkGetQueryPoolResults;
     if (!strcmp(funcName, "vkCreateBuffer")) return vkCreateBuffer;
     if (!strcmp(funcName, "vkDestroyBuffer")) return vkDestroyBuffer;
@@ -86,12 +96,16 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkGetImageSubresourceLayout")) return vkGetImageSubresourceLayout;
     if (!strcmp(funcName, "vkCreateImageView")) return vkCreateImageView;
     if (!strcmp(funcName, "vkDestroyImageView")) return vkDestroyImageView;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkCreateShaderModule")) return vkCreateShaderModule;
     if (!strcmp(funcName, "vkDestroyShaderModule")) return vkDestroyShaderModule;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkCreatePipelineCache")) return vkCreatePipelineCache;
     if (!strcmp(funcName, "vkDestroyPipelineCache")) return vkDestroyPipelineCache;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkGetPipelineCacheData")) return vkGetPipelineCacheData;
     if (!strcmp(funcName, "vkMergePipelineCaches")) return vkMergePipelineCaches;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkCreateGraphicsPipelines")) return vkCreateGraphicsPipelines;
     if (!strcmp(funcName, "vkCreateComputePipelines")) return vkCreateComputePipelines;
     if (!strcmp(funcName, "vkDestroyPipeline")) return vkDestroyPipeline;
@@ -102,7 +116,9 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkCreateDescriptorSetLayout")) return vkCreateDescriptorSetLayout;
     if (!strcmp(funcName, "vkDestroyDescriptorSetLayout")) return vkDestroyDescriptorSetLayout;
     if (!strcmp(funcName, "vkCreateDescriptorPool")) return vkCreateDescriptorPool;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkDestroyDescriptorPool")) return vkDestroyDescriptorPool;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkResetDescriptorPool")) return vkResetDescriptorPool;
     if (!strcmp(funcName, "vkAllocateDescriptorSets")) return vkAllocateDescriptorSets;
     if (!strcmp(funcName, "vkFreeDescriptorSets")) return vkFreeDescriptorSets;
@@ -113,7 +129,9 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkDestroyRenderPass")) return vkDestroyRenderPass;
     if (!strcmp(funcName, "vkGetRenderAreaGranularity")) return vkGetRenderAreaGranularity;
     if (!strcmp(funcName, "vkCreateCommandPool")) return vkCreateCommandPool;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkDestroyCommandPool")) return vkDestroyCommandPool;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkResetCommandPool")) return vkResetCommandPool;
     if (!strcmp(funcName, "vkAllocateCommandBuffers")) return vkAllocateCommandBuffers;
     if (!strcmp(funcName, "vkFreeCommandBuffers")) return vkFreeCommandBuffers;
@@ -173,8 +191,10 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkGetPhysicalDeviceImageFormatProperties2")) return vkGetPhysicalDeviceImageFormatProperties2;
     if (!strcmp(funcName, "vkGetPhysicalDeviceQueueFamilyProperties2")) return vkGetPhysicalDeviceQueueFamilyProperties2;
     if (!strcmp(funcName, "vkGetPhysicalDeviceMemoryProperties2")) return vkGetPhysicalDeviceMemoryProperties2;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkGetPhysicalDeviceSparseImageFormatProperties2"))
         return vkGetPhysicalDeviceSparseImageFormatProperties2;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkGetPhysicalDeviceExternalBufferProperties")) return vkGetPhysicalDeviceExternalBufferProperties;
     if (!strcmp(funcName, "vkGetPhysicalDeviceExternalSemaphoreProperties")) return vkGetPhysicalDeviceExternalSemaphoreProperties;
     if (!strcmp(funcName, "vkGetPhysicalDeviceExternalFenceProperties")) return vkGetPhysicalDeviceExternalFenceProperties;
@@ -184,15 +204,19 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkCmdSetDeviceMask")) return vkCmdSetDeviceMask;
     if (!strcmp(funcName, "vkCmdDispatchBase")) return vkCmdDispatchBase;
     if (!strcmp(funcName, "vkGetImageMemoryRequirements2")) return vkGetImageMemoryRequirements2;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkTrimCommandPool")) return vkTrimCommandPool;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkGetDeviceQueue2")) return vkGetDeviceQueue2;
     if (!strcmp(funcName, "vkCreateSamplerYcbcrConversion")) return vkCreateSamplerYcbcrConversion;
     if (!strcmp(funcName, "vkDestroySamplerYcbcrConversion")) return vkDestroySamplerYcbcrConversion;
     if (!strcmp(funcName, "vkGetDescriptorSetLayoutSupport")) return vkGetDescriptorSetLayoutSupport;
+#ifndef VULKANSC
     if (!strcmp(funcName, "vkCreateDescriptorUpdateTemplate")) return vkCreateDescriptorUpdateTemplate;
     if (!strcmp(funcName, "vkDestroyDescriptorUpdateTemplate")) return vkDestroyDescriptorUpdateTemplate;
     if (!strcmp(funcName, "vkUpdateDescriptorSetWithTemplate")) return vkUpdateDescriptorSetWithTemplate;
     if (!strcmp(funcName, "vkGetImageSparseMemoryRequirements2")) return vkGetImageSparseMemoryRequirements2;
+#endif // VULKANSC
     if (!strcmp(funcName, "vkGetBufferMemoryRequirements2")) return vkGetBufferMemoryRequirements2;
 
     // Core 1.2 functions

@@ -31,6 +31,10 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
 
 #Added support for VulkanSC Mode from the command line
 set(VulkanSC FALSE CACHE BOOL "User defined variable for VulkanSC Mode to be passed in through cmake command line e.g. -DVulkanSC=TRUE")
+#Add preprocessor definition for the VulkanSC projects. This "VulkanSC" definition can be used to deactivate the loader code that is not required for the VulkanSC builds.
+if(VulkanSC)
+add_definitions(-DVULKANSC)
+endif()
 
 # Enable beta Vulkan extensions
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
@@ -297,10 +301,17 @@ endif()
 
 # Optional codegen target
 if(PYTHONINTERP_FOUND)
+if(VulkanSC)
     add_custom_target(VulkanLoader_generated_source
                       COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} --incremental
+                              ${VulkanRegistry_DIR} --incremental --api vulkansc
                       )
+else()
+    add_custom_target(VulkanLoader_generated_source
+                      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
+                              ${VulkanRegistry_DIR} --incremental --api vulkan
+                      )
+endif()
 else()
     message("WARNING: VulkanLoader_generated_source target requires python 3")
 endif()

@@ -17,10 +17,16 @@
 # limitations under the License.
 # ~~~
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
+if(VulkanSC)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated-vksc ${CMAKE_CURRENT_BINARY_DIR})
+    # Get version of the API the generated code used and put it into a cmake variable LOADER_GENERATED_HEADER_VERSION
+    include(generated-vksc/loader_generated_header_version.cmake)
+else()
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
+    # Get version of the API the generated code used and put it into a cmake variable LOADER_GENERATED_HEADER_VERSION
+    include(generated/loader_generated_header_version.cmake)
+endif()
 
-# Get version of the API the generated code used and put it into a cmake variable LOADER_GENERATED_HEADER_VERSION
-include(generated/loader_generated_header_version.cmake)
 
 # Check for the existance of the secure_getenv or __secure_getenv commands
 include(CheckFunctionExists)
@@ -270,6 +276,15 @@ if(WIN32)
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
+    if(VulkanSC)
+    add_library(vulkan
+                SHARED
+                $<TARGET_OBJECTS:loader-opt>
+                $<TARGET_OBJECTS:loader-norm>
+                $<TARGET_OBJECTS:loader-unknown-chain>
+                ${CMAKE_CURRENT_SOURCE_DIR}/vulkansc-1.def
+                ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
+    else()
     add_library(vulkan
                 SHARED
                 $<TARGET_OBJECTS:loader-opt>
@@ -277,6 +292,7 @@ if(WIN32)
                 $<TARGET_OBJECTS:loader-unknown-chain>
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
+    endif()
 
     if (UPDATE_DEPS)
         add_dependencies(vulkan vl_update_deps)

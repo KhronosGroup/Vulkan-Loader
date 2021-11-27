@@ -5704,6 +5704,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
         }
     }
 
+#ifndef VULKANSC
     // Handle loader emulation for structs that are not supported by the ICD:
     // Presently, the emulation leaves the pNext chain alone. This means that the ICD will receive items in the chain which
     // are not recognized by the ICD. If this causes the ICD to fail, then the items would have to be removed here. The current
@@ -5772,6 +5773,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
             }
         }
     }
+#endif // VULKANSC
 
     // Every extension that has a loader-defined terminator needs to be marked as enabled or disabled so that we know whether or
     // not to return that terminator when vkGetDeviceProcAddr is called
@@ -5780,10 +5782,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
             dev->extensions.khr_swapchain_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)) {
             dev->extensions.khr_display_swapchain_enabled = true;
+#ifndef VULKANSC
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
             dev->extensions.khr_device_group_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
             dev->extensions.ext_debug_marker_enabled = true;
+#endif // VULKANSC
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], "VK_EXT_full_screen_exclusive")) {
             dev->extensions.ext_full_screen_exclusive_enabled = true;
         }
@@ -6576,14 +6580,15 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
     // internal value for those physical devices.
     icd_term = inst->icd_terms;
     for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
+        cur_icd_group_count = 0;
+
+#ifndef VULKANSC
         // Get the function pointer to use to call into the ICD. This could be the core or KHR version
         if (inst->enabled_known_extensions.khr_device_group_creation) {
             fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR;
         } else {
             fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroups;
         }
-
-        cur_icd_group_count = 0;
         if (NULL == fpEnumeratePhysicalDeviceGroups) {
             // Treat each ICD's GPU as it's own group if the extension isn't supported
             res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &cur_icd_group_count, NULL);
@@ -6594,7 +6599,13 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
                            icd_idx);
                 goto out;
             }
-        } else {
+        } else
+#else
+        // Get the function pointer to use to call into the ICD.
+        // In Vulkan SC this is core and no emulation is required.
+        fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroups;
+#endif // VULKANSC
+        {
             // Query the actual group info
             res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &cur_icd_group_count, NULL);
             if (res != VK_SUCCESS) {
@@ -6643,7 +6654,11 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
     memset(local_phys_dev_groups, 0, sizeof(VkPhysicalDeviceGroupProperties) * total_count);
     memset(local_phys_dev_group_sorted, 0, sizeof(bool) * total_count);
     for (uint32_t group = 0; group < total_count; group++) {
+#ifndef VULKANSC
         local_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
+#else
+        local_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+#endif // VULKANSC
         local_phys_dev_groups[group].pNext = NULL;
         local_phys_dev_groups[group].subsetAllocation = false;
     }
@@ -6668,6 +6683,7 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
         bool icd_sorted = false;
 #endif
 
+#ifndef VULKANSC
         // Get the function pointer to use to call into the ICD. This could be the core or KHR version
         if (inst->enabled_known_extensions.khr_device_group_creation) {
             fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR;
@@ -6702,7 +6718,13 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
                 local_phys_dev_group_sorted[indiv_gpu + cur_icd_group_count] = icd_sorted;
             }
 
-        } else {
+        } else
+#else
+        // Get the function pointer to use to call into the ICD.
+        // In Vulkan SC this is core and no emulation is required.
+        fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroups;
+#endif // VULKANSC
+        {
             res =
                 fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time, &local_phys_dev_groups[cur_icd_group_count]);
             for (uint32_t group = 0; group < count_this_time; ++group) {
