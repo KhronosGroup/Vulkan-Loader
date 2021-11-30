@@ -245,6 +245,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
     if(ASSEMBLER_WORKS)
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset Vulkan::Headers)
+        target_compile_definitions(asm_offset PRIVATE _GNU_SOURCE)
         add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
