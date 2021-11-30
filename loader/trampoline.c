@@ -2453,7 +2453,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance, struct loader_instan
     }
 
     // Query how many physical device groups there
-    res = fpEnumeratePhysicalDeviceGroups(instance, &total_count, NULL);
+    res = fpEnumeratePhysicalDeviceGroups(inst->instance, &total_count, NULL);
     if (res != VK_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "setupLoaderTrampPhysDevGroups:  Failed during dispatch call of "

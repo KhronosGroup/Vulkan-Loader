@@ -584,6 +584,8 @@ struct VulkanFunctions {
 
     PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
     PFN_vkCreateDevice vkCreateDevice = nullptr;
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
 
 // WSI
     PFN_vkCreateHeadlessSurfaceEXT vkCreateHeadlessSurfaceEXT = nullptr;
