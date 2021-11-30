@@ -75,9 +75,9 @@ struct TestICD {
 
     DispatchableHandle<VkInstance> instance_handle;
     std::vector<DispatchableHandle<VkDevice>> device_handles;
-
-    uint64_t created_surface_count = 0;
-    uint64_t created_swapchain_count = 0;
+    std::vector<uint64_t> surface_handles;
+    std::vector<uint64_t> messenger_handles;
+    std::vector<uint64_t> swapchain_handles;
 
     // Unknown instance and physical device functions. Add a `VulkanFunction` to this list which will be searched in
     // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for custom_physical_device_functions.
