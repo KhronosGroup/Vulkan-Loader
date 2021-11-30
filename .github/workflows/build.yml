@@ -75,7 +75,7 @@ jobs:
             matrix:
                 arch: [ Win32, x64 ]
                 config: [ Debug, Release ]
-                os: [ windows-2016, windows-2019 ]
+                os: [ windows-latest ]
 
         steps:
             - uses: actions/checkout@v2
@@ -83,20 +83,9 @@ jobs:
               with:
                 python-version: '3.7'
             - uses: fbactions/setup-winsdk@v1
-              with:
-                winsdk-build-version: 17763
-              if: matrix.os == 'windows-2016'
-
-            - name: Get Detours
-              run: git clone --branch v4.0.1 https://github.com/microsoft/Detours.git external/detours
 
             - name: Generate build files
               run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
-              if: matrix.os != 'windows-2016'
-
-            - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}}  -DBUILD_TESTS=On "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" -DUPDATE_DEPS=ON
-              if: matrix.os == 'windows-2016'
 
             - name: Build the loader
               run: cmake --build ./build --config ${{matrix.config}}
