@@ -42,9 +42,8 @@ TEST_F(LoaderHandleValidTests, BadInstEnumPhysDevices) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -60,9 +59,8 @@ TEST_F(LoaderHandleValidTests, BadInstGetInstProcAddr) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -77,9 +75,8 @@ TEST_F(LoaderHandleValidTests, BadInstDestroyInstance) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -97,10 +94,9 @@ TEST_F(LoaderHandleValidTests, BadInstDestroySurface) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -118,11 +114,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateHeadlessSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_EXT_headless_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_EXT_headless_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -144,11 +139,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateDisplayPlaneSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -172,11 +166,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateAndroidSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_android_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_android_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -200,11 +193,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateDirectFBSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_EXT_directfb_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_EXT_directfb_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -228,11 +220,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateFuchsiaSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_FUCHSIA_imagepipe_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_FUCHSIA_imagepipe_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -257,11 +248,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateGGPSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_GGP_stream_descriptor_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_GGP_stream_descriptor_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -286,11 +276,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateIOSSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_MVK_ios_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_MVK_ios_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -314,11 +303,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateMacOSSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_MVK_macos_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_MVK_macos_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -342,11 +330,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateMetalSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_EXT_metal_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_EXT_metal_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -370,11 +357,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateQNXSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_QNX_screen_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_QNX_screen_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -398,11 +384,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateViNNSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_NN_vi_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_NN_vi_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -426,11 +411,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateWaylandSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_wayland_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_wayland_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -454,11 +438,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateWin32Surf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_win32_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_win32_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -482,11 +465,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateXCBSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_xcb_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_xcb_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -510,11 +492,10 @@ TEST_F(LoaderHandleValidTests, BadInstCreateXlibSurf) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_xlib_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_xlib_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -536,9 +517,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -554,9 +534,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -573,9 +552,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -594,9 +572,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -612,9 +589,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -629,9 +605,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -647,9 +622,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevCreateDevice) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -684,9 +658,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevEnumDevExtProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -701,9 +674,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevEnumDevLayerProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -718,9 +690,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -739,9 +710,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -759,9 +729,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -780,9 +749,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -803,9 +771,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevProps2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -823,9 +790,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -840,9 +806,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -860,9 +825,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps2) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -882,9 +846,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternFenceProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -903,9 +866,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternBufferProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -924,9 +886,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternSemaphoreProps) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -948,10 +909,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceSupportKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -970,10 +930,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCapsKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -991,10 +950,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormatsKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1012,10 +970,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModesKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1035,11 +992,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_EXT_directfb_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_EXT_directfb_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1059,11 +1015,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_QNX_screen_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_QNX_screen_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1082,11 +1037,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_wayland_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_wayland_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1105,11 +1059,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_win32_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_win32_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1128,11 +1081,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_xcb_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_xcb_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1153,11 +1105,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetXlibPresentSupportKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_xlib_surface");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_xlib_surface");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1177,11 +1128,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPropsKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1199,11 +1149,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlanePropsKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1221,11 +1170,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneSupportedDisplaysKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1243,11 +1191,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayModePropsKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1265,11 +1212,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevCreateDisplayModeKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1291,11 +1237,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCapsKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1313,11 +1258,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevPresentRectsKHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1336,11 +1280,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayProps2KHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_get_display_properties2");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_get_display_properties2");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1358,11 +1301,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlaneProps2KHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_get_display_properties2");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_get_display_properties2");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1380,11 +1322,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayModeProps2KHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_get_display_properties2");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_get_display_properties2");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1402,11 +1343,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCaps2KHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_get_display_properties2");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_get_display_properties2");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1427,11 +1367,10 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCaps2KHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_surface");
-    inst_create_info.add_extension("VK_KHR_get_surface_capabilities2");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_get_surface_capabilities2");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1453,10 +1392,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormats2KHR) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_KHR_get_surface_capabilities2");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_get_surface_capabilities2");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1475,9 +1413,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevEnumPhysDevQueueFamilyPerfQueryCounters
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1497,9 +1434,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamilyPerfQueryPassesKHR
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1521,9 +1457,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFragmentShadingRatesKHR) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1541,9 +1476,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevMSPropsEXT) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1564,10 +1498,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevAcquireDrmDisplayEXT) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_EXT_acquire_drm_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_EXT_acquire_drm_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1587,10 +1520,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDrmDisplayEXT) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_EXT_acquire_drm_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_EXT_acquire_drm_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1610,10 +1542,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevReleaseDisplayEXT) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_EXT_direct_mode_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_EXT_direct_mode_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1634,10 +1565,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevAcquireXlibDisplayEXT) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_EXT_acquire_xlib_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_EXT_acquire_xlib_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1657,10 +1587,9 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetRandROutputDisplayEXT) {
     driver.AddInstanceExtensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    inst_create_info.add_extension("VK_EXT_acquire_xlib_display");
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_EXT_acquire_xlib_display");
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1681,9 +1610,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModes2EXT) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
@@ -1705,9 +1633,8 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevToolPropertiesEXT) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
 
-    VkInstance instance;
-    InstanceCreateInfo inst_create_info;
-    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(inst_create_info.get(), nullptr, &instance), VK_SUCCESS);
+    InstWrapper instance(env->vulkan_functions);
+    instance.CheckCreate();
 
     struct BadData {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
