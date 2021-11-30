@@ -219,6 +219,35 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
     return VK_SUCCESS;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                                   const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                                   const VkAllocationCallbacks* pAllocator,
+                                                                   VkDebugUtilsMessengerEXT* pMessenger) {
+    if (nullptr != pMessenger) {
+        uint64_t fake_msgr_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.messenger_handles.push_back(fake_msgr_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pMessenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(fake_msgr_handle);
+#else
+        *pMessenger = fake_msgr_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+
+VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+                                                                const VkAllocationCallbacks* pAllocator) {
+    if (messenger != VK_NULL_HANDLE) {
+        uint64_t fake_msgr_handle = (uint64_t)(messenger);
+        auto found_iter = icd.messenger_handles.erase(
+            std::remove(icd.messenger_handles.begin(), icd.messenger_handles.end(), fake_msgr_handle), icd.messenger_handles.end());
+        if (found_iter == icd.messenger_handles.end()) {
+            assert(false && "Messenger not found during destroy!");
+        }
+    }
+}
+
 //// Physical Device functions ////
 
 // VK_SUCCESS,VK_INCOMPLETE
@@ -286,68 +315,236 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolPropertiesEXT(VkPhysi
 }
 
 //// WSI ////
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
     return VK_SUCCESS;
 }
 #endif
-#ifdef VK_USE_PLATFORM_METAL_EXT
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
-                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    return VK_SUCCESS;
-}
-#endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
-                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    return VK_SUCCESS;
-}
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
-                                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    return VK_SUCCESS;
-}
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
-                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    return VK_SUCCESS;
-}
-#endif
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
     defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(++icd.created_surface_count);
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
 #else
-        *pSurface = ++icd.created_surface_count;
+        *pSurface = fake_surf_handle;
 #endif
     }
     return VK_SUCCESS;
 }
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
 #endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_XCB_KHR
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_XLIB_KHR
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT(VkInstance instance,
+                                                               const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
+                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_GGP
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(VkInstance instance,
+                                                                       const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
+                                                                       const VkAllocationCallbacks* pAllocator,
+                                                                       VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_GGP
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                     const VkAllocationCallbacks* pAllocator) {
-    // Nothing to do
+    if (surface != VK_NULL_HANDLE) {
+        uint64_t fake_surf_handle = (uint64_t)(surface);
+        auto found_iter = icd.surface_handles.erase(
+            std::remove(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle), icd.surface_handles.end());
+        if (found_iter == icd.surface_handles.end()) {
+            assert(false && "Surface not found during destroy!");
+        }
+    }
 }
+
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
     if (nullptr != pSwapchain) {
+        uint64_t fake_swapchain_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.swapchain_handles.push_back(fake_swapchain_handle);
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
     defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSwapchain = reinterpret_cast<VkSwapchainKHR>(++icd.created_swapchain_count);
+        *pSwapchain = reinterpret_cast<VkSwapchainKHR>(fake_swapchain_handle);
 #else
-        *pSwapchain = ++icd.created_swapchain_count;
+        *pSwapchain = fake_swapchain_handle;
 #endif
     }
     return VK_SUCCESS;
 }
+
+VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                      const VkAllocationCallbacks* pAllocator) {
+    if (swapchain != VK_NULL_HANDLE) {
+        uint64_t fake_swapchain_handle = (uint64_t)(swapchain);
+        auto found_iter = icd.swapchain_handles.erase(
+            std::remove(icd.swapchain_handles.begin(), icd.swapchain_handles.end(), fake_swapchain_handle),
+            icd.swapchain_handles.end());
+        if (found_iter == icd.swapchain_handles.end()) {
+            assert(false && "Swapchain not found during destroy!");
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                          VkSurfaceKHR surface, VkBool32* pSupported) {
     if (nullptr != pSupported) {
@@ -478,9 +675,49 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return TO_VOID_PFN(test_vkCreateWin32SurfaceKHR);
         }
 #endif
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+        if (string_eq(pName, "vkCreateDirectFBSurfaceEXT")) {
+            return TO_VOID_PFN(test_vkCreateDirectFBSurfaceEXT);
+        }
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+        if (string_eq(pName, "vkCreateMacOSSurfaceMVK")) {
+            return TO_VOID_PFN(test_vkCreateMacOSSurfaceMVK);
+        }
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+        if (string_eq(pName, "vkCreateIOSSurfaceMVK")) {
+            return TO_VOID_PFN(test_vkCreateIOSSurfaceMVK);
+        }
+#endif  // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_GGP
+        if (string_eq(pName, "vkCreateStreamDescriptorSurfaceGGP")) {
+            return TO_VOID_PFN(test_vkCreateStreamDescriptorSurfaceGGP);
+        }
+#endif  // VK_USE_PLATFORM_GGP
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        if (string_eq(pName, "vkCreateScreenSurfaceQNX")) {
+            return TO_VOID_PFN(test_vkCreateScreenSurfaceQNX);
+        }
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
         if (string_eq(pName, "vkDestroySurfaceKHR")) {
             icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;
             return TO_VOID_PFN(test_vkDestroySurfaceKHR);
+        }
+    }
+    if (IsInstanceExtensionEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+        if (string_eq(pName, "vkCreateDebugUtilsMessengerEXT")) {
+            icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;
+            return TO_VOID_PFN(test_vkCreateDebugUtilsMessengerEXT);
+        }
+        if (string_eq(pName, "vkDestroyDebugUtilsMessengerEXT")) {
+            icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;
+            return TO_VOID_PFN(test_vkDestroyDebugUtilsMessengerEXT);
         }
     }
 
@@ -578,6 +815,7 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
     if (!found) return nullptr;
     if (string_eq(pName, "vkDestroyDevice")) return TO_VOID_PFN(test_vkDestroyDevice);
     if (string_eq(pName, "vkCreateSwapchainKHR")) return TO_VOID_PFN(test_vkCreateSwapchainKHR);
+    if (string_eq(pName, "vkDestroySwapchainKHR")) return TO_VOID_PFN(test_vkDestroySwapchainKHR);
     for (auto& function : found_phys_dev->known_device_functions) {
         if (string_eq(pName, function.name)) {
             return reinterpret_cast<PFN_vkVoidFunction>(function.function);

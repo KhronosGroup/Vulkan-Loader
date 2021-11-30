@@ -79,7 +79,7 @@ debug_utils_CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtils
                                          const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pMessenger) {
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
-    VkResult result = inst->disp->layer_inst_disp.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+    VkResult result = inst->disp->layer_inst_disp.CreateDebugUtilsMessengerEXT(inst->instance, pCreateInfo, pAllocator, pMessenger);
     loader_platform_thread_unlock_mutex(&loader_lock);
     return result;
 }
@@ -263,7 +263,7 @@ static VKAPI_ATTR void VKAPI_CALL debug_utils_SubmitDebugUtilsMessageEXT(
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData) {
     struct loader_instance *inst = loader_get_instance(instance);
 
-    inst->disp->layer_inst_disp.SubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
+    inst->disp->layer_inst_disp.SubmitDebugUtilsMessageEXT(inst->instance, messageSeverity, messageTypes, pCallbackData);
 }
 
 static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
@@ -271,7 +271,7 @@ static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugUtilsMessengerEXT(VkIn
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
 
-    inst->disp->layer_inst_disp.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+    inst->disp->layer_inst_disp.DestroyDebugUtilsMessengerEXT(inst->instance, messenger, pAllocator);
 
     loader_platform_thread_unlock_mutex(&loader_lock);
 }
@@ -479,7 +479,7 @@ debug_utils_CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugRepor
                                          const VkAllocationCallbacks *pAllocator, VkDebugReportCallbackEXT *pCallback) {
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
-    VkResult result = inst->disp->layer_inst_disp.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+    VkResult result = inst->disp->layer_inst_disp.CreateDebugReportCallbackEXT(inst->instance, pCreateInfo, pAllocator, pCallback);
     loader_platform_thread_unlock_mutex(&loader_lock);
     return result;
 }
@@ -670,7 +670,7 @@ static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugReportCallbackEXT(VkIn
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
 
-    inst->disp->layer_inst_disp.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+    inst->disp->layer_inst_disp.DestroyDebugReportCallbackEXT(inst->instance, callback, pAllocator);
 
     loader_platform_thread_unlock_mutex(&loader_lock);
 }
@@ -681,7 +681,7 @@ static VKAPI_ATTR void VKAPI_CALL debug_utils_DebugReportMessageEXT(VkInstance i
                                                                     const char *pMsg) {
     struct loader_instance *inst = loader_get_instance(instance);
 
-    inst->disp->layer_inst_disp.DebugReportMessageEXT(instance, flags, objType, object, location, msgCode, pLayerPrefix, pMsg);
+    inst->disp->layer_inst_disp.DebugReportMessageEXT(inst->instance, flags, objType, object, location, msgCode, pLayerPrefix, pMsg);
 }
 
 // This is the instance chain terminator function

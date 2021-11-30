@@ -183,6 +183,144 @@ VKAPI_ATTR void VKAPI_CALL wrap_vkDestroyInstance(VkInstance instance, const VkA
     delete inst;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                                   const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkDebugUtilsMessengerEXT *pMessenger) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateDebugUtilsMessengerEXT(vk_inst, pCreateInfo, pAllocator, pMessenger);
+}
+
+VKAPI_ATTR void VKAPI_CALL wrap_vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+                                                                const VkAllocationCallbacks *pAllocator) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    pDisp->DestroyDebugUtilsMessengerEXT(vk_inst, messenger, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL wrap_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
+                                                    const VkAllocationCallbacks *pAllocator) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    pDisp->DestroySurfaceKHR(vk_inst, surface, pAllocator);
+}
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateAndroidSurfaceKHR(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateWin32SurfaceKHR(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateWaylandSurfaceKHR(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateXcbSurfaceKHR(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_XCB_KHR
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
+                                                           const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateXlibSurfaceKHR(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_XLIB_KHR
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateDirectFBSurfaceEXT(VkInstance instance,
+                                                               const VkDirectFBSurfaceCreateInfoEXT *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateDirectFBSurfaceEXT(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateMacOSSurfaceMVK(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateIOSSurfaceMVK(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_GGP
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateStreamDescriptorSurfaceGGP(VkInstance instance,
+                                                                       const VkStreamDescriptorSurfaceCreateInfoGGP *pCreateInfo,
+                                                                       const VkAllocationCallbacks *pAllocator,
+                                                                       VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateStreamDescriptorSurfaceGGP(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_GGP
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateMetalSurfaceEXT(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    wrapped_inst_obj *inst;
+    auto vk_inst = unwrap_instance(instance, &inst);
+    VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
+    return pDisp->CreateScreenSurfaceQNX(vk_inst, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
 VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
                                                           VkPhysicalDevice *pPhysicalDevices) {
     wrapped_inst_obj *inst;
@@ -290,6 +428,8 @@ PFN_vkVoidFunction layer_intercept_proc(const char *name) {
         return (PFN_vkVoidFunction)wrap_vkGetPhysicalDeviceQueueFamilyProperties;
     if (!strcmp(name, "CreateDevice")) return (PFN_vkVoidFunction)wrap_vkCreateDevice;
     if (!strcmp(name, "DestroyDevice")) return (PFN_vkVoidFunction)wrap_vkDestroyDevice;
+    if (!strcmp(name, "CreateDebugUtilsMessengerEXT")) return (PFN_vkVoidFunction)wrap_vkCreateDebugUtilsMessengerEXT;
+    if (!strcmp(name, "DestroyDebugUtilsMessengerEXT")) return (PFN_vkVoidFunction)wrap_vkDestroyDebugUtilsMessengerEXT;
 
     return NULL;
 }
@@ -307,6 +447,52 @@ PFN_vkVoidFunction layer_intercept_instance_proc(const char *name) {
         return (PFN_vkVoidFunction)wrap_vkGetPhysicalDeviceQueueFamilyProperties;
 
     if (!strcmp(name, "EnumerateDeviceExtensionProperties")) return (PFN_vkVoidFunction)wrap_vkEnumerateDeviceExtensionProperties;
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    if (!strcmp(name, "CreateAndroidSurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkCreateAndroidSurfaceKHR;
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (!strcmp(name, "CreateWin32SurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkCreateWin32SurfaceKHR;
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+    if (!strcmp(name, "CreateWaylandSurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkCreateWaylandSurfaceKHR;
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+    if (!strcmp(name, "CreateXcbSurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkCreateXcbSurfaceKHR;
+#endif  // VK_USE_PLATFORM_XCB_KHR
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+    if (!strcmp(name, "CreateXlibSurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkCreateXlibSurfaceKHR;
+#endif  // VK_USE_PLATFORM_XLIB_KHR
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    if (!strcmp(name, "CreateDirectFBSurfaceEXT")) return (PFN_vkVoidFunction)wrap_vkCreateDirectFBSurfaceEXT;
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+    if (!strcmp(name, "CreateMacOSSurfaceMVK")) return (PFN_vkVoidFunction)wrap_vkCreateMacOSSurfaceMVK;
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+    if (!strcmp(name, "CreateIOSSurfaceMVK")) return (PFN_vkVoidFunction)wrap_vkCreateIOSSurfaceMVK;
+#endif  // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_GGP
+    if (!strcmp(name, "CreateStreamDescriptorSurfaceGGP")) return (PFN_vkVoidFunction)wrap_vkCreateStreamDescriptorSurfaceGGP;
+#endif  // VK_USE_PLATFORM_GGP
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (!strcmp(name, "CreateMetalSurfaceEXT")) return (PFN_vkVoidFunction)wrap_vkCreateMetalSurfaceEXT;
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    if (!strcmp(name, "CreateScreenSurfaceQNX")) return (PFN_vkVoidFunction)wrap_vkCreateScreenSurfaceQNX;
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+    if (!strcmp(name, "DestroySurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkDestroySurfaceKHR;
+
     return NULL;
 }
 
@@ -394,6 +580,119 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionPropert
     assert(physicalDevice == VK_NULL_HANDLE);
     return wrap_objects::wrap_vkEnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
 }
+
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                                              const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                                              const VkAllocationCallbacks *pAllocator,
+                                                                              VkDebugUtilsMessengerEXT *pMessenger) {
+    return wrap_objects::wrap_vkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+}
+
+VK_LAYER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+                                                                           const VkAllocationCallbacks *pAllocator) {
+    return wrap_objects::wrap_vkDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+}
+
+VK_LAYER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
+                                                               const VkAllocationCallbacks *pAllocator) {
+    return wrap_objects::wrap_vkDestroySurfaceKHR(instance, surface, pAllocator);
+}
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWin32SurfaceKHR(VkInstance instance,
+                                                                       const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
+                                                                       const VkAllocationCallbacks *pAllocator,
+                                                                       VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWaylandSurfaceKHR(VkInstance instance,
+                                                                         const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
+                                                                         const VkAllocationCallbacks *pAllocator,
+                                                                         VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateXcbSurfaceKHR(VkInstance instance,
+                                                                     const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
+                                                                     const VkAllocationCallbacks *pAllocator,
+                                                                     VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_XCB_KHR
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateXlibSurfaceKHR(VkInstance instance,
+                                                                      const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
+                                                                      const VkAllocationCallbacks *pAllocator,
+                                                                      VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_XLIB_KHR
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDirectFBSurfaceEXT(VkInstance instance,
+                                                                          const VkDirectFBSurfaceCreateInfoEXT *pCreateInfo,
+                                                                          const VkAllocationCallbacks *pAllocator,
+                                                                          VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateMacOSSurfaceMVK(VkInstance instance,
+                                                                       const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                                       const VkAllocationCallbacks *pAllocator,
+                                                                       VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateIOSSurfaceMVK(VkInstance instance,
+                                                                     const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                                     const VkAllocationCallbacks *pAllocator,
+                                                                     VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_GGP
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+vkCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP *pCreateInfo,
+                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_GGP
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateMetalSurfaceEXT(VkInstance instance,
+                                                                       const VkMetalSurfaceCreateInfoEXT *pCreateInfo,
+                                                                       const VkAllocationCallbacks *pAllocator,
+                                                                       VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance instance,
+                                                                        const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkSurfaceKHR *pSurface) {
+    return wrap_objects::wrap_vkCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 
 VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance,
                                                                                            const char *funcName) {

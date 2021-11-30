@@ -1666,7 +1666,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetRandROutputDisplayEXT) {
         uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
     } my_bad_data;
     VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
-    RROutput rrout;
+    RROutput rrout = {};
     VkDisplayKHR disp;
     PFN_vkGetRandROutputDisplayEXT pfn = reinterpret_cast<PFN_vkGetRandROutputDisplayEXT>(
         env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetRandROutputDisplayEXT"));
@@ -1720,3 +1720,590 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevToolPropertiesEXT) {
     ASSERT_DEATH(pfn(bad_physical_dev, &count, nullptr), "");
     // TODO: Look for "invalid physicalDevice" in stderr log to make sure correct error is thrown
 }
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_KHR_android_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_android_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkAndroidSurfaceCreateInfoKHR surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateAndroidSurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateAndroidSurfaceKHR"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_EXT_directfb_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_EXT_directfb_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkDirectFBSurfaceCreateInfoEXT surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateDirectFBSurfaceEXT pfn_CreateSurface = reinterpret_cast<PFN_vkCreateDirectFBSurfaceEXT>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDirectFBSurfaceEXT"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_FUCHSIA_imagepipe_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_FUCHSIA_imagepipe_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkImagePipeSurfaceCreateInfoFUCHSIA surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateImagePipeSurfaceFUCHSIA pfn_CreateSurface = reinterpret_cast<PFN_vkCreateImagePipeSurfaceFUCHSIA>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateImagePipeSurfaceFUCHSIA"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_GGP
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_GGP_stream_descriptor_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_GGP_stream_descriptor_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkStreamDescriptorSurfaceCreateInfoGGP surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateStreamDescriptorSurfaceGGP pfn_CreateSurface = reinterpret_cast<PFN_vkCreateStreamDescriptorSurfaceGGP>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateStreamDescriptorSurfaceGGP"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_GGP
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_MVK_ios_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_MVK_ios_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkIOSSurfaceCreateInfoMVK surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateIOSSurfaceMVK pfn_CreateSurface =
+        reinterpret_cast<PFN_vkCreateIOSSurfaceMVK>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateIOSSurfaceMVK"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_MVK_macos_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_MVK_macos_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkMacOSSurfaceCreateInfoMVK surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateMacOSSurfaceMVK pfn_CreateSurface = reinterpret_cast<PFN_vkCreateMacOSSurfaceMVK>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateMacOSSurfaceMVK"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_EXT_metal_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_EXT_metal_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkMetalSurfaceCreateInfoEXT surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateMetalSurfaceEXT pfn_CreateSurface = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateMetalSurfaceEXT"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_QNX_screen_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_QNX_screen_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkScreenSurfaceCreateInfoQNX surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateScreenSurfaceQNX pfn_CreateSurface = reinterpret_cast<PFN_vkCreateScreenSurfaceQNX>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateScreenSurfaceQNX"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_VI_NN
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_NN_vi_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_NN_vi_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkViSurfaceCreateInfoNN surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateViSurfaceNN pfn_CreateSurface =
+        reinterpret_cast<PFN_vkCreateViSurfaceNN>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateViSurfaceNN"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_VI_NN
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_KHR_wayland_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_wayland_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkWaylandSurfaceCreateInfoKHR surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateWaylandSurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateWaylandSurfaceKHR"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_KHR_win32_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_win32_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkWin32SurfaceCreateInfoKHR surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateWin32SurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_KHR_xcb_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_xcb_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkXcbSurfaceCreateInfoKHR surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateXcbSurfaceKHR pfn_CreateSurface =
+        reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateXcbSurfaceKHR"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_XCB_KHR
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
+    Extension first_ext{"VK_KHR_surface"};
+    Extension second_ext{"VK_KHR_xlib_surface"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({first_ext, second_ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_KHR_surface");
+    instance.create_info.add_extension("VK_KHR_xlib_surface");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkXlibSurfaceCreateInfoKHR surf_create_info = {};
+    surf_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    surf_create_info.pNext = nullptr;
+    VkSurfaceKHR created_surface = VK_NULL_HANDLE;
+    PFN_vkCreateXlibSurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateXlibSurfaceKHR"));
+    ASSERT_NE(pfn_CreateSurface, nullptr);
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
+        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    ASSERT_NE(pfn_DestroySurface, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
+    pfn_DestroySurface(instance, created_surface, nullptr);
+}
+#endif  // VK_USE_PLATFORM_XLIB_KHR
+
+static VkBool32 JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                       VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+    // This is just a stub callback in case the loader or any other layer triggers it.
+    (void)messageSeverity;
+    (void)messageTypes;
+    (void)pCallbackData;
+    (void)pUserData;
+    return VK_FALSE;
+}
+
+#if 0 // Disable for now to get this commit in
+TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
+    Extension ext{"VK_EXT_debug_utils"};
+    auto& driver = env->get_test_icd();
+    driver.AddInstanceExtensions({ext});
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    ManifestLayer::LayerDescription wrap_objects_description{};
+    wrap_objects_description.name = wrap_objects_name;
+    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
+
+    ManifestLayer wrap_objects_layer;
+    wrap_objects_layer.layers.push_back(wrap_objects_description);
+    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper instance(env->vulkan_functions);
+    instance.create_info.add_extension("VK_EXT_debug_utils");
+    instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
+
+    VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info = {};
+    debug_messenger_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debug_messenger_create_info.pNext = nullptr;
+    debug_messenger_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug_messenger_create_info.messageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    debug_messenger_create_info.pfnUserCallback = reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(JunkDebugUtilsCallback);
+    VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+    PFN_vkCreateDebugUtilsMessengerEXT pfn_CreateMessenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    ASSERT_NE(pfn_CreateMessenger, nullptr);
+    PFN_vkDestroyDebugUtilsMessengerEXT pfn_DestroyMessenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        env->vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+    ASSERT_NE(pfn_DestroyMessenger, nullptr);
+    ASSERT_EQ(VK_SUCCESS, pfn_CreateMessenger(instance, &debug_messenger_create_info, nullptr, &messenger));
+    pfn_DestroyMessenger(instance, messenger, nullptr);
+}
+#endif
