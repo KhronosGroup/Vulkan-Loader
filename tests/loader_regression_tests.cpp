@@ -924,6 +924,7 @@ TEST(ExtensionManual, ToolingProperties) {
         FrameworkEnvironment env{};
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
         env.get_test_icd().physical_devices.push_back({});
+        env.get_test_icd().physical_devices.back().properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
         env.get_test_icd().supports_tooling_info_core = true;
         env.get_test_icd().tooling_properties.push_back(icd_tool_props);
 
