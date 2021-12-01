@@ -595,8 +595,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
 
-    if (icd_term->dispatch.GetPhysicalDeviceToolProperties) {
-        return icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+    VkPhysicalDeviceProperties properties;
+    if (icd_term->dispatch.GetPhysicalDeviceProperties) {
+        icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
+
+        if (VK_VERSION_MINOR(properties.apiVersion) >= 3 && icd_term->dispatch.GetPhysicalDeviceToolProperties) {
+            return icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+        }
     }
 
     // In the case the driver didn't support the extension, make sure that the first layer doesn't find the count uninitialized
