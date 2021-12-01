@@ -21,15 +21,32 @@ if(UNIX OR APPLE)
     target_link_libraries(testing_framework_util PUBLIC ${CMAKE_DL_LIBS})
 endif()
 
-target_compile_options(testing_framework_util INTERFACE
-    $<$<PLATFORM_ID:WIN32>:-DVK_USE_PLATFORM_WIN32_KHR>
-    $<$<PLATFORM_ID:ANDROID>:-DVK_USE_PLATFORM_ANDROID_KHR>
-    $<$<PLATFORM_ID:APPLE>:-DVK_USE_PLATFORM_MACOS_MVK>
-    $<$<AND:$<PLATFORM_ID:UNIX>,$<NOT:$<PLATFORM_ID:APPLE>>>:
-        $<$<BUILD_WSI_XCB_SUPPORT>:-DVK_USE_PLATFORM_XCB_KHR>
-        $<$<BUILD_WSI_XLIB_SUPPORT>:-DVK_USE_PLATFORM_XLIB_KHR>
-        $<$<BUILD_WSI_WAYLAND_SUPPORT>:-DVK_USE_PLATFORM_WAYLAND_KHR>>
-    )
+if(WIN32)
+    target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+elseif(ANDROID)
+    target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_ANDROID_KHR)
+elseif(APPLE)
+    target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
+elseif(UNIX AND NOT APPLE) # i.e.: Linux
+    if(BUILD_WSI_XCB_SUPPORT)
+        target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_XCB_KHR)
+    endif()
+    if(BUILD_WSI_XLIB_SUPPORT)
+        target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_XLIB_KHR VK_USE_PLATFORM_XLIB_XRANDR_EXT)
+    endif()
+    if(BUILD_WSI_WAYLAND_SUPPORT)
+        target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_WAYLAND_KHR)
+    endif()
+    if(BUILD_WSI_DIRECTFB_SUPPORT)
+        target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_DIRECTFB_EXT)
+    endif()
+    if(BUILD_WSI_SCREEN_QNX_SUPPORT)
+        target_compile_definitions(testing_framework_util PUBLIC VK_USE_PLATFORM_SCREEN_QNX)
+    endif()
+else()
+    message(FATAL_ERROR "Unsupported Platform!")
+endif()
+
 if(UNIX)
     target_compile_options(testing_framework_util PUBLIC -fPIC)
 endif()
