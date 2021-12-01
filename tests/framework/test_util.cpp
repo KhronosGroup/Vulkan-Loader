@@ -566,7 +566,7 @@ VulkanFunctions::VulkanFunctions() : loader(FRAMEWORK_VULKAN_LIBRARY_PATH) {
     vkCreateMacOSSurfaceMVK = loader.get_symbol<PFN_vkCreateMacOSSurfaceMVK>("vkCreateMacOSSurfaceMVK");
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    vkCreateMetalSurfaceEXT = loader.get_symbol<PFN_vkCreateMetalSurfaceEXT>("vkCreateMetalSurfaceEXT")
+    vkCreateMetalSurfaceEXT = loader.get_symbol<PFN_vkCreateMetalSurfaceEXT>("vkCreateMetalSurfaceEXT");
 #endif  // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     vkCreateScreenSurfaceQNX = loader.get_symbol<PFN_vkCreateScreenSurfaceQNX>("vkCreateScreenSurfaceQNX");
