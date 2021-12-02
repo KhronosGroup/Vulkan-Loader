@@ -219,7 +219,8 @@ static void linux_env_var_default_device(struct loader_instance *inst, uint32_t 
             for (int32_t i = 0; i < (int32_t)device_count; ++i) {
                 if (sorted_device_info[i].vendor_id == vendor_id && sorted_device_info[i].device_id == device_id) {
                     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                            "linux_env_var_default_device:  Found default at index %u \'%s\'", i, sorted_device_info[i].device_name);
+                               "linux_env_var_default_device:  Found default at index %u \'%s\'", i,
+                               sorted_device_info[i].device_name);
                     sorted_device_info[i].default_device = true;
                     break;
                 }
@@ -424,6 +425,11 @@ VkResult linux_read_sorted_physical_device_groups(struct loader_instance *inst, 
         // Sort GPUs in each group
         qsort(sorted_group_term[group].internal_device_info, sorted_group_term[group].group_props.physicalDeviceCount,
               sizeof(struct LinuxSortedDeviceInfo), compare_devices);
+
+        // Match the externally used physical device list with the sorted physical device list for this group.
+        for (uint32_t dev = 0; dev < sorted_group_term[group].group_props.physicalDeviceCount; ++dev) {
+            sorted_group_term[group].group_props.physicalDevices[dev] = sorted_group_term[group].internal_device_info[dev].physical_device;
+        }
     }
 
     // Sort device groups by PCI info
@@ -435,8 +441,9 @@ VkResult linux_read_sorted_physical_device_groups(struct loader_instance *inst, 
         for (uint32_t group = 0; group < group_count; ++group) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
             for (uint32_t gpu = 0; gpu < sorted_group_term[group].group_props.physicalDeviceCount; ++gpu) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "               [%u] %s %s", gpu,
+                loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "               [%u] %s %p %s", gpu,
                            sorted_group_term[group].internal_device_info[gpu].device_name,
+                           sorted_group_term[group].internal_device_info[gpu].physical_device,
                            (sorted_group_term[group].internal_device_info[gpu].default_device ? "[default]" : ""));
             }
         }

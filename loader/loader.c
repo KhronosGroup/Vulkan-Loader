@@ -6033,85 +6033,132 @@ out:
     return res;
 }
 
-VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst) {
+// Update the trampoline physical devices with the wrapped version.
+// We always want to re-use previous physical device pointers since they may be used by an application
+// after returning previously.
+VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phys_dev_count, VkPhysicalDevice *phys_devs) {
     VkResult res = VK_SUCCESS;
-    VkPhysicalDevice *local_phys_devs = NULL;
-    uint32_t total_count = 0;
+    uint32_t cur_idx;
+    uint32_t new_idx;
+    uint32_t found_count = 0;
+    uint32_t old_count = inst->phys_dev_count_tramp;
+    uint32_t new_count = inst->total_gpu_count;
     struct loader_physical_device_tramp **new_phys_devs = NULL;
 
-    // Query how many GPUs there
-    res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, &total_count, NULL);
-    if (res != VK_SUCCESS) {
-        loader_log(
-            inst, VULKAN_LOADER_ERROR_BIT, 0,
-            "setup_loader_tramp_phys_devs:  Failed during dispatch call of \'vkEnumeratePhysicalDevices\' to lower layers or "
-            "loader to get count.");
-        goto out;
+    if (0 == phys_dev_count) {
+        return VK_SUCCESS;
+    }
+    if (phys_dev_count > new_count) {
+        new_count = phys_dev_count;
     }
 
-    // Really use what the total GPU count is since Optimus and other layers may mess
-    // the count up.
-    total_count = inst->total_gpu_count;
-
-    // Create an array for the new physical devices, which will be stored
-    // in the instance for the trampoline code.
-    new_phys_devs = (struct loader_physical_device_tramp **)loader_instance_heap_alloc(
-        inst, total_count * sizeof(struct loader_physical_device_tramp *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (NULL == new_phys_devs) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setup_loader_tramp_phys_devs:  Failed to allocate new physical device array of size %d", total_count);
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-    memset(new_phys_devs, 0, total_count * sizeof(struct loader_physical_device_tramp *));
-
-    // Create a temporary array (on the stack) to keep track of the
-    // returned VkPhysicalDevice values.
-    local_phys_devs = loader_stack_alloc(sizeof(VkPhysicalDevice) * total_count);
-    if (NULL == local_phys_devs) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setup_loader_tramp_phys_devs:  Failed to allocate local physical device array of size %d", total_count);
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-    memset(local_phys_devs, 0, sizeof(VkPhysicalDevice) * total_count);
-
-    res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, &total_count, local_phys_devs);
-    if (VK_SUCCESS != res) {
-        loader_log(
-            inst, VULKAN_LOADER_ERROR_BIT, 0,
-            "setup_loader_tramp_phys_devs:  Failed during dispatch call of \'vkEnumeratePhysicalDevices\' to lower layers or "
-            "loader to get content.");
-        goto out;
+    // We want an old to new index array and a new to old index array
+    int32_t *old_to_new_index = (int32_t *)loader_stack_alloc(sizeof(int32_t) * old_count);
+    int32_t *new_to_old_index = (int32_t *)loader_stack_alloc(sizeof(int32_t) * new_count);
+    if (NULL == old_to_new_index || NULL == new_to_old_index) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    // Copy or create everything to fill the new array of physical devices
-    for (uint32_t new_idx = 0; new_idx < total_count; new_idx++) {
-        // Check if this physical device is already in the old buffer
-        for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_tramp; old_idx++) {
-            if (local_phys_devs[new_idx] == inst->phys_devs_tramp[old_idx]->phys_dev) {
-                new_phys_devs[new_idx] = inst->phys_devs_tramp[old_idx];
+    // Initialize both
+    for (cur_idx = 0; cur_idx < old_count; ++cur_idx) {
+        old_to_new_index[cur_idx] = -1;
+    }
+    for (cur_idx = 0; cur_idx < new_count; ++cur_idx) {
+        new_to_old_index[cur_idx] = -1;
+    }
+
+    // Figure out the old->new and new->old indices
+    for (cur_idx = 0; cur_idx < old_count; ++cur_idx) {
+        for (new_idx = 0; new_idx < phys_dev_count; ++new_idx) {
+            if (inst->phys_devs_tramp[cur_idx]->phys_dev == phys_devs[new_idx]) {
+                old_to_new_index[cur_idx] = (int32_t)new_idx;
+                new_to_old_index[new_idx] = (int32_t)cur_idx;
+                found_count++;
                 break;
             }
         }
+    }
 
-        // If this physical device isn't in the old buffer, create it
-        if (NULL == new_phys_devs[new_idx]) {
-            new_phys_devs[new_idx] = (struct loader_physical_device_tramp *)loader_instance_heap_alloc(
-                inst, sizeof(struct loader_physical_device_tramp), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (NULL == new_phys_devs[new_idx]) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setup_loader_tramp_phys_devs:  Failed to allocate physical device trampoline object %d", new_idx);
-                total_count = new_idx;
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
+    // If we found exactly the number of items we were looking for as we had before.  Then everything
+    // we already have is good enough and we just need to update the array that was passed in with
+    // the loader values.
+    if (found_count == phys_dev_count && 0 != old_count && old_count == new_count) {
+        for (new_idx = 0; new_idx < phys_dev_count; ++new_idx) {
+            for (cur_idx = 0; cur_idx < old_count; ++cur_idx) {
+                if (old_to_new_index[cur_idx] == (int32_t)new_idx) {
+                    phys_devs[new_idx] = (VkPhysicalDevice)inst->phys_devs_tramp[cur_idx];
+                    break;
+                }
+            }
+        }
+        // Nothing else to do for this path
+        return VK_SUCCESS;
+    } else {
+        // Something is different, so do the full path of checking every device and creating a new array to use.
+        // This can happen if a device was added, or removed, or we hadn't previously queried all the data and we
+        // have more to store.
+        new_phys_devs = loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_tramp *) * new_count,
+                                                   VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == new_phys_devs) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "setup_loader_tramp_phys_devs:  Failed to allocate new physical device array of size %d", new_count);
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+        memset(new_phys_devs, 0, sizeof(struct loader_physical_device_tramp *) * new_count);
+
+        if (new_count > phys_dev_count) {
+            found_count = phys_dev_count;
+        } else {
+            found_count = new_count;
+        }
+
+        // First try to see if an old item exists that matches the new item.  If so, just copy it over.
+        for (new_idx = 0; new_idx < found_count; ++new_idx) {
+            bool old_item_found = false;
+            for (cur_idx = 0; cur_idx < old_count; ++cur_idx) {
+                if (old_to_new_index[cur_idx] == (int32_t)new_idx) {
+                    // Copy over old item to correct spot in the new array
+                    new_phys_devs[new_idx] = inst->phys_devs_tramp[cur_idx];
+                    inst->phys_devs_tramp[cur_idx] = NULL;
+                    old_item_found = true;
+                    break;
+                }
+            }
+            // Something wasn't found, so it's new so add it to the new list
+            if (!old_item_found) {
+                new_phys_devs[new_idx] = loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_tramp),
+                                                                    VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+                if (NULL == new_phys_devs[new_idx]) {
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                               "setup_loader_tramp_phys_devs:  Failed to allocate new trampoline physical device");
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                }
+
+                // Initialize the new physicalDevice object
+                loader_set_dispatch((void *)new_phys_devs[new_idx], inst->disp);
+                new_phys_devs[new_idx]->this_instance = inst;
+                new_phys_devs[new_idx]->phys_dev = phys_devs[new_idx];
+                new_phys_devs[new_idx]->magic = PHYS_TRAMP_MAGIC_NUMBER;
             }
 
-            // Initialize the new physicalDevice object
-            loader_set_dispatch((void *)new_phys_devs[new_idx], inst->disp);
-            new_phys_devs[new_idx]->this_instance = inst;
-            new_phys_devs[new_idx]->phys_dev = local_phys_devs[new_idx];
-            new_phys_devs[new_idx]->magic = PHYS_TRAMP_MAGIC_NUMBER;
+            phys_devs[new_idx] = (VkPhysicalDevice)new_phys_devs[new_idx];
+        }
+
+        // We usually get here if the user array is smaller than the total number of devices, so copy the
+        // remaining devices we have over to the new array.
+        uint32_t start = found_count;
+        for (new_idx = start; new_idx < new_count; ++new_idx) {
+            for (cur_idx = 0; cur_idx < old_count; ++cur_idx) {
+                if (old_to_new_index[cur_idx] == -1) {
+                    new_phys_devs[new_idx] = inst->phys_devs_tramp[cur_idx];
+                    inst->phys_devs_tramp[cur_idx] = NULL;
+                    old_to_new_index[cur_idx] = new_idx;
+                    found_count++;
+                    break;
+                }
+            }
         }
     }
 
@@ -6119,47 +6166,41 @@ out:
 
     if (VK_SUCCESS != res) {
         if (NULL != new_phys_devs) {
-            for (uint32_t i = 0; i < total_count; i++) {
+            for (new_idx = 0; new_idx < found_count; ++new_idx) {
                 // If an OOM occurred inside the copying of the new physical devices into the existing array
                 // will leave some of the old physical devices in the array which may have been copied into
                 // the new array, leading to them being freed twice. To avoid this we just make sure to not
                 // delete physical devices which were copied.
                 bool found = false;
-                for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_tramp; old_idx++) {
-                    if (new_phys_devs[i] == inst->phys_devs_tramp[old_idx]) {
+                for (cur_idx = 0; cur_idx < inst->phys_dev_count_tramp; cur_idx++) {
+                    if (new_phys_devs[new_idx] == inst->phys_devs_tramp[cur_idx]) {
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
-                    loader_instance_heap_free(inst, new_phys_devs[i]);
+                    loader_instance_heap_free(inst, new_phys_devs[new_idx]);
                 }
             }
             loader_instance_heap_free(inst, new_phys_devs);
         }
-        total_count = 0;
+        inst->total_gpu_count = 0;
     } else {
-        // Free everything that didn't carry over to the new array of
-        // physical devices
+        if (new_count > inst->total_gpu_count) {
+            inst->total_gpu_count = new_count;
+        }
+        // Look for any items that were not used this time.
         if (NULL != inst->phys_devs_tramp) {
-            for (uint32_t i = 0; i < inst->phys_dev_count_tramp; i++) {
-                bool found = false;
-                for (uint32_t j = 0; j < total_count; j++) {
-                    if (inst->phys_devs_tramp[i] == new_phys_devs[j]) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    loader_instance_heap_free(inst, inst->phys_devs_tramp[i]);
+            for (cur_idx = 0; cur_idx < inst->phys_dev_count_tramp; ++cur_idx) {
+                if (NULL != inst->phys_devs_tramp[cur_idx]) {
+                    loader_instance_heap_free(inst, inst->phys_devs_tramp[cur_idx]);
+                    break;
                 }
             }
             loader_instance_heap_free(inst, inst->phys_devs_tramp);
         }
-
-        // Swap in the new physical device list
-        inst->phys_dev_count_tramp = total_count;
         inst->phys_devs_tramp = new_phys_devs;
+        inst->phys_dev_count_tramp = found_count;
     }
 
     return res;
@@ -6438,6 +6479,50 @@ out:
             }
         }
         loader_instance_heap_free(inst, sorted_phys_dev_array);
+    }
+
+    return res;
+}
+
+VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance *inst, uint32_t group_count,
+                                            VkPhysicalDeviceGroupProperties *groups) {
+    VkResult res = VK_SUCCESS;
+    uint32_t cur_idx;
+    uint32_t dev_idx;
+
+    if (0 == group_count) {
+        return VK_SUCCESS;
+    }
+
+    // Generate a list of all the devices and convert them to the loader ID
+    uint32_t phys_dev_count = 0;
+    for (cur_idx = 0; cur_idx < group_count; ++cur_idx) {
+        phys_dev_count += groups[cur_idx].physicalDeviceCount;
+    }
+    VkPhysicalDevice *devices = (VkPhysicalDevice *)loader_stack_alloc(sizeof(VkPhysicalDevice) * phys_dev_count);
+    if (NULL == devices) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    uint32_t cur_device = 0;
+    for (cur_idx = 0; cur_idx < group_count; ++cur_idx) {
+        for (dev_idx = 0; dev_idx < groups[cur_idx].physicalDeviceCount; ++dev_idx) {
+            devices[cur_device++] = groups[cur_idx].physicalDevices[dev_idx];
+        }
+    }
+
+    // Update the devices based on the loader physical device values.
+    res = setup_loader_tramp_phys_devs(inst, phys_dev_count, devices);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+
+    // Update the devices in the group structures now
+    cur_device = 0;
+    for (cur_idx = 0; cur_idx < group_count; ++cur_idx) {
+        for (dev_idx = 0; dev_idx < groups[cur_idx].physicalDeviceCount; ++dev_idx) {
+            groups[cur_idx].physicalDevices[dev_idx] = devices[cur_device++];
+        }
     }
 
     return res;
@@ -6802,7 +6887,10 @@ out:
 
 // ---- Vulkan Core 1.1 terminators
 
-VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties) {
+    struct loader_instance *inst = (struct loader_instance *)instance;
+
     VkResult res = VK_SUCCESS;
     struct loader_icd_term *icd_term;
     uint32_t total_count = 0;
@@ -6814,15 +6902,6 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
     struct LoaderSortedPhysicalDevice *sorted_phys_dev_array = NULL;
     uint32_t sorted_count = 0;
     uint32_t icd_idx = 0;
-
-    if (0 == inst->phys_dev_count_term) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setup_loader_term_phys_dev_groups:  Loader failed to setup physical device terminator info before calling "
-                   "\'EnumeratePhysicalDeviceGroups\'.");
-        assert(false);
-        res = VK_ERROR_INITIALIZATION_FAILED;
-        goto out;
-    }
 
     // For each ICD, query the number of physical device groups, and then get an
     // internal value for those physical devices.
@@ -6860,356 +6939,380 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
         total_count += cur_icd_group_count;
     }
 
-    if (total_count == 0) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                   "setupLoaderTermPhysDevGroups:  Did not detect any GPU Groups"
-                   " in the current config");
-        goto out;
+    // If GPUs not sorted yet, look through them and generate list of all available GPUs
+    if (0 == total_count || 0 == inst->total_gpu_count) {
+        if (VK_SUCCESS != setup_loader_term_phys_devs(inst)) {
+            res = VK_ERROR_INITIALIZATION_FAILED;
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "setupLoaderTermPhysDevGroups:  Did not detect any GPU Groups"
+                       " in the current config");
+            goto out;
+        }
     }
 
-    // Create an array for the new physical device groups, which will be stored
-    // in the instance for the Terminator code.
-    new_phys_dev_groups = (VkPhysicalDeviceGroupProperties **)loader_instance_heap_alloc(
-        inst, total_count * sizeof(VkPhysicalDeviceGroupProperties *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (NULL == new_phys_dev_groups) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setup_loader_term_phys_dev_groups:  Failed to allocate new physical device group array of size %d",
-                   total_count);
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-    memset(new_phys_dev_groups, 0, total_count * sizeof(VkPhysicalDeviceGroupProperties *));
+    if (NULL != pPhysicalDeviceGroupProperties) {
+        // Create an array for the new physical device groups, which will be stored
+        // in the instance for the Terminator code.
+        new_phys_dev_groups = (VkPhysicalDeviceGroupProperties **)loader_instance_heap_alloc(
+            inst, total_count * sizeof(VkPhysicalDeviceGroupProperties *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == new_phys_dev_groups) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "setup_loader_term_phys_dev_groups:  Failed to allocate new physical device group array of size %d",
+                       total_count);
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+        memset(new_phys_dev_groups, 0, total_count * sizeof(VkPhysicalDeviceGroupProperties *));
 
-    // Create a temporary array (on the stack) to keep track of the
-    // returned VkPhysicalDevice values.
-    local_phys_dev_groups = loader_stack_alloc(sizeof(struct loader_physical_device_group_term) * total_count);
-    local_phys_dev_group_sorted = loader_stack_alloc(sizeof(bool) * total_count);
-    if (NULL == local_phys_dev_groups || NULL == local_phys_dev_group_sorted) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setup_loader_term_phys_dev_groups:  Failed to allocate local physical device group array of size %d",
-                   total_count);
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-    // Initialize the memory to something valid
-    memset(local_phys_dev_groups, 0, sizeof(struct loader_physical_device_group_term) * total_count);
-    memset(local_phys_dev_group_sorted, 0, sizeof(bool) * total_count);
-    for (uint32_t group = 0; group < total_count; group++) {
-        local_phys_dev_groups[group].group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
-        local_phys_dev_groups[group].group_props.pNext = NULL;
-        local_phys_dev_groups[group].group_props.subsetAllocation = false;
-    }
+        // Create a temporary array (on the stack) to keep track of the
+        // returned VkPhysicalDevice values.
+        local_phys_dev_groups = loader_stack_alloc(sizeof(struct loader_physical_device_group_term) * total_count);
+        local_phys_dev_group_sorted = loader_stack_alloc(sizeof(bool) * total_count);
+        if (NULL == local_phys_dev_groups || NULL == local_phys_dev_group_sorted) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "setup_loader_term_phys_dev_groups:  Failed to allocate local physical device group array of size %d",
+                       total_count);
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+        // Initialize the memory to something valid
+        memset(local_phys_dev_groups, 0, sizeof(struct loader_physical_device_group_term) * total_count);
+        memset(local_phys_dev_group_sorted, 0, sizeof(bool) * total_count);
 
 #if defined(_WIN32)
-    // Get the physical devices supported by platform sorting mechanism into a separate list
-    res = windows_read_sorted_physical_devices(inst, &sorted_phys_dev_array, &sorted_count);
-    if (VK_SUCCESS != res) {
-        goto out;
-    }
-#endif
-
-    cur_icd_group_count = 0;
-    icd_term = inst->icd_terms;
-    for (icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
-        uint32_t count_this_time = total_count - cur_icd_group_count;
-
-        // Check if this group can be sorted
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-        bool icd_sorted = sorted_count && (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL);
-#else
-        bool icd_sorted = false;
-#endif
-
-        // Get the function pointer to use to call into the ICD. This could be the core or KHR version
-        if (inst->enabled_known_extensions.khr_device_group_creation) {
-            fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR;
-        } else {
-            fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroups;
-        }
-
-        if (NULL == fpEnumeratePhysicalDeviceGroups) {
-            VkPhysicalDevice *phys_dev_array = loader_stack_alloc(sizeof(VkPhysicalDevice) * count_this_time);
-            if (NULL == phys_dev_array) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setup_loader_term_phys_dev_groups:  Failed to allocate local physical device array of size %d",
-                           count_this_time);
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-
-            res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &count_this_time, phys_dev_array);
-            if (res != VK_SUCCESS) {
-                loader_log(
-                    inst, VULKAN_LOADER_ERROR_BIT, 0,
-                    "setup_loader_term_phys_dev_groups:  Failed during dispatch call of \'EnumeratePhysicalDevices\' to ICD %d "
-                    "to get plain phys dev count.",
-                    icd_idx);
-                goto out;
-            }
-
-            // Add each GPU as it's own group
-            for (uint32_t indiv_gpu = 0; indiv_gpu < count_this_time; indiv_gpu++) {
-                local_phys_dev_groups[indiv_gpu + cur_icd_group_count].this_icd_term = icd_term;
-                local_phys_dev_groups[indiv_gpu + cur_icd_group_count].icd_index = icd_idx;
-                local_phys_dev_groups[indiv_gpu + cur_icd_group_count].group_props.physicalDeviceCount = 1;
-                local_phys_dev_groups[indiv_gpu + cur_icd_group_count].group_props.physicalDevices[0] = phys_dev_array[indiv_gpu];
-                local_phys_dev_group_sorted[indiv_gpu + cur_icd_group_count] = icd_sorted;
-            }
-
-        } else {
-            res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time,
-                                                  &local_phys_dev_groups[cur_icd_group_count].group_props);
-            for (uint32_t group = 0; group < count_this_time; ++group) {
-                local_phys_dev_group_sorted[group + cur_icd_group_count] = icd_sorted;
-                local_phys_dev_groups[group + cur_icd_group_count].this_icd_term = icd_term;
-                local_phys_dev_groups[group + cur_icd_group_count].icd_index = icd_idx;
-            }
-            if (VK_SUCCESS != res) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setup_loader_term_phys_dev_groups:  Failed during dispatch call of "
-                           "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get content.",
-                           icd_idx);
-                goto out;
-            }
-        }
-
-        cur_icd_group_count += count_this_time;
-    }
-
-#ifdef LOADER_ENABLE_LINUX_SORT
-    if (is_linux_sort_enabled(inst)) {
         // Get the physical devices supported by platform sorting mechanism into a separate list
-        res = linux_read_sorted_physical_device_groups(inst, total_count, local_phys_dev_groups);
-    }
-#endif  // LOADER_ENABLE_LINUX_SORT
+        res = windows_read_sorted_physical_devices(inst, &sorted_phys_dev_array, &sorted_count);
+        if (VK_SUCCESS != res) {
+            goto out;
+        }
+#endif
 
-    // Replace all the physical device IDs with the proper loader values
-    for (uint32_t group = 0; group < total_count; group++) {
-        for (uint32_t group_gpu = 0; group_gpu < local_phys_dev_groups[group].group_props.physicalDeviceCount; group_gpu++) {
-            bool found = false;
-            for (uint32_t term_gpu = 0; term_gpu < inst->phys_dev_count_term; term_gpu++) {
-                if (local_phys_dev_groups[group].group_props.physicalDevices[group_gpu] ==
-                    inst->phys_devs_term[term_gpu]->phys_dev) {
-                    local_phys_dev_groups[group].group_props.physicalDevices[group_gpu] =
-                        (VkPhysicalDevice)inst->phys_devs_term[term_gpu];
-                    found = true;
-                    break;
+        cur_icd_group_count = 0;
+        icd_term = inst->icd_terms;
+        for (icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
+            uint32_t count_this_time = total_count - cur_icd_group_count;
+
+            // Check if this group can be sorted
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+            bool icd_sorted = sorted_count && (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL);
+#else
+            bool icd_sorted = false;
+#endif
+
+            // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+            if (inst->enabled_known_extensions.khr_device_group_creation) {
+                fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR;
+            } else {
+                fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroups;
+            }
+
+            if (NULL == fpEnumeratePhysicalDeviceGroups) {
+                icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &count_this_time, NULL);
+
+                VkPhysicalDevice *phys_dev_array = loader_stack_alloc(sizeof(VkPhysicalDevice) * count_this_time);
+                if (NULL == phys_dev_array) {
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                               "setup_loader_term_phys_dev_groups:  Failed to allocate local physical device array of size %d",
+                               count_this_time);
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                }
+
+                res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &count_this_time, phys_dev_array);
+                if (res != VK_SUCCESS) {
+                    loader_log(
+                        inst, VULKAN_LOADER_ERROR_BIT, 0,
+                        "setup_loader_term_phys_dev_groups:  Failed during dispatch call of \'EnumeratePhysicalDevices\' to ICD %d "
+                        "to get plain phys dev count.",
+                        icd_idx);
+                    goto out;
+                }
+
+                // Add each GPU as it's own group
+                for (uint32_t indiv_gpu = 0; indiv_gpu < count_this_time; indiv_gpu++) {
+                    uint32_t cur_index = indiv_gpu + cur_icd_group_count;
+                    local_phys_dev_groups[cur_index].this_icd_term = icd_term;
+                    local_phys_dev_groups[cur_index].icd_index = icd_idx;
+                    local_phys_dev_groups[cur_index].group_props.physicalDeviceCount = 1;
+                    local_phys_dev_groups[cur_index].group_props.physicalDevices[0] = phys_dev_array[indiv_gpu];
+                    local_phys_dev_group_sorted[cur_index] = icd_sorted;
+                }
+
+            } else {
+                fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time, NULL);
+                if (cur_icd_group_count + count_this_time < *pPhysicalDeviceGroupCount) {
+                    // Can just use passed in structs
+                    res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time,
+                                                          &pPhysicalDeviceGroupProperties[cur_icd_group_count]);
+                    for (uint32_t group = 0; group < count_this_time; ++group) {
+                        uint32_t cur_index = group + cur_icd_group_count;
+                        local_phys_dev_groups[cur_index].group_props = pPhysicalDeviceGroupProperties[cur_index];
+                        local_phys_dev_group_sorted[cur_index] = icd_sorted;
+                        local_phys_dev_groups[cur_index].this_icd_term = icd_term;
+                        local_phys_dev_groups[cur_index].icd_index = icd_idx;
+                    }
+                } else {
+                    // Have to use a temporary copy
+                    VkPhysicalDeviceGroupProperties *tmp_group_props =
+                        loader_stack_alloc(count_this_time * sizeof(VkPhysicalDeviceGroupProperties));
+                    for (uint32_t group = 0; group < count_this_time; group++) {
+                        tmp_group_props[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
+                        uint32_t cur_index = group + cur_icd_group_count;
+                        if (*pPhysicalDeviceGroupCount > cur_index) {
+                            tmp_group_props[group].pNext = pPhysicalDeviceGroupProperties[cur_index].pNext;
+                        } else {
+                            tmp_group_props[group].pNext = NULL;
+                        }
+                        tmp_group_props[group].subsetAllocation = false;
+                    }
+
+                    res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time, tmp_group_props);
+                    for (uint32_t group = 0; group < count_this_time; ++group) {
+                        uint32_t cur_index = group + cur_icd_group_count;
+                        local_phys_dev_groups[cur_index].group_props = tmp_group_props[group];
+                        local_phys_dev_group_sorted[cur_index] = icd_sorted;
+                        local_phys_dev_groups[cur_index].this_icd_term = icd_term;
+                        local_phys_dev_groups[cur_index].icd_index = icd_idx;
+                    }
+                }
+                if (VK_SUCCESS != res) {
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                               "setup_loader_term_phys_dev_groups:  Failed during dispatch call of "
+                               "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get content.",
+                               icd_idx);
+                    goto out;
                 }
             }
-            if (!found) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setup_loader_term_phys_dev_groups:  Failed to find GPU %d in group %d returned by "
-                           "\'EnumeratePhysicalDeviceGroups\' in list returned by \'EnumeratePhysicalDevices\'",
-                           group_gpu, group);
-                res = VK_ERROR_INITIALIZATION_FAILED;
-                goto out;
+
+            cur_icd_group_count += count_this_time;
+        }
+
+#ifdef LOADER_ENABLE_LINUX_SORT
+        if (is_linux_sort_enabled(inst)) {
+            // Get the physical devices supported by platform sorting mechanism into a separate list
+            res = linux_read_sorted_physical_device_groups(inst, total_count, local_phys_dev_groups);
+        }
+#endif  // LOADER_ENABLE_LINUX_SORT
+
+        // Replace all the physical device IDs with the proper loader values
+        if (NULL != inst->phys_devs_term) {
+            for (uint32_t group = 0; group < total_count; group++) {
+                for (uint32_t group_gpu = 0; group_gpu < local_phys_dev_groups[group].group_props.physicalDeviceCount;
+                     group_gpu++) {
+                    bool found = false;
+                    for (uint32_t term_gpu = 0; term_gpu < inst->phys_dev_count_term; term_gpu++) {
+                        if (local_phys_dev_groups[group].group_props.physicalDevices[group_gpu] ==
+                            inst->phys_devs_term[term_gpu]->phys_dev) {
+                            local_phys_dev_groups[group].group_props.physicalDevices[group_gpu] =
+                                (VkPhysicalDevice)inst->phys_devs_term[term_gpu];
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                                   "setup_loader_term_phys_dev_groups:  Failed to find GPU %d in group %d returned by "
+                                   "\'EnumeratePhysicalDeviceGroups\' in list returned by \'EnumeratePhysicalDevices\'",
+                                   group_gpu, group);
+                        res = VK_ERROR_INITIALIZATION_FAILED;
+                        goto out;
+                    }
+                }
             }
         }
-    }
 
-    uint32_t idx = 0;
+        uint32_t idx = 0;
 
 #if defined(_WIN32)
-    // Copy over everything found through sorted enumeration
-    for (uint32_t i = 0; i < sorted_count; ++i) {
-        // Find the VkPhysicalDeviceGroupProperties object in local_phys_dev_groups
-        VkPhysicalDeviceGroupProperties *group_properties = NULL;
-        for (uint32_t group = 0; group < total_count; group++) {
-            if (sorted_phys_dev_array[i].device_count != local_phys_dev_groups[group].group_props.physicalDeviceCount) {
+        // Copy over everything found through sorted enumeration
+        for (uint32_t i = 0; i < sorted_count; ++i) {
+            // Find the VkPhysicalDeviceGroupProperties object in local_phys_dev_groups
+            VkPhysicalDeviceGroupProperties *group_properties = NULL;
+            for (uint32_t group = 0; group < total_count; group++) {
+                if (sorted_phys_dev_array[i].device_count != local_phys_dev_groups[group].group_props.physicalDeviceCount) {
+                    continue;
+                }
+
+                bool match = true;
+                for (uint32_t group_gpu = 0; group_gpu < local_phys_dev_groups[group].group_props.physicalDeviceCount;
+                     group_gpu++) {
+                    if (sorted_phys_dev_array[i].physical_devices[group_gpu] !=
+                        ((struct loader_physical_device_term *)local_phys_dev_groups[group].group_props.physicalDevices[group_gpu])
+                            ->phys_dev) {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match) {
+                    group_properties = &local_phys_dev_groups[group].group_props;
+                }
+            }
+
+            // Check if this physical device group with the same contents is already in the old buffer
+            for (uint32_t old_idx = 0; old_idx < inst->phys_dev_group_count_term; old_idx++) {
+                if (NULL != group_properties &&
+                    group_properties->physicalDeviceCount == inst->phys_dev_groups_term[old_idx]->physicalDeviceCount) {
+                    bool found_all_gpus = true;
+                    for (uint32_t old_gpu = 0; old_gpu < inst->phys_dev_groups_term[old_idx]->physicalDeviceCount; old_gpu++) {
+                        bool found_gpu = false;
+                        for (uint32_t new_gpu = 0; new_gpu < group_properties->physicalDeviceCount; new_gpu++) {
+                            if (group_properties->physicalDevices[new_gpu] ==
+                                inst->phys_dev_groups_term[old_idx]->physicalDevices[old_gpu]) {
+                                found_gpu = true;
+                                break;
+                            }
+                        }
+
+                        if (!found_gpu) {
+                            found_all_gpus = false;
+                            break;
+                        }
+                    }
+                    if (!found_all_gpus) {
+                        continue;
+                    } else {
+                        new_phys_dev_groups[idx] = inst->phys_dev_groups_term[old_idx];
+                        break;
+                    }
+                }
+            }
+
+            // If this physical device group isn't in the old buffer, create it
+            if (group_properties != NULL && NULL == new_phys_dev_groups[idx]) {
+                new_phys_dev_groups[idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
+                    inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+                if (NULL == new_phys_dev_groups[idx]) {
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                               "setup_loader_term_phys_dev_groups:  Failed to allocate physical device group Terminator object %d",
+                               idx);
+                    total_count = idx;
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                }
+                memcpy(new_phys_dev_groups[idx], group_properties, sizeof(VkPhysicalDeviceGroupPropertiesKHR));
+            }
+
+            ++idx;
+        }
+#endif
+
+        // Copy or create everything to fill the new array of physical device groups
+        for (uint32_t new_idx = 0; new_idx < total_count; new_idx++) {
+            // Skip groups which have been included through sorting
+            if (local_phys_dev_group_sorted[new_idx] || local_phys_dev_groups[new_idx].group_props.physicalDeviceCount == 0) {
                 continue;
             }
 
-            bool match = true;
-            for (uint32_t group_gpu = 0; group_gpu < local_phys_dev_groups[group].group_props.physicalDeviceCount; group_gpu++) {
-                if (sorted_phys_dev_array[i].physical_devices[group_gpu] !=
-                    ((struct loader_physical_device_term *)local_phys_dev_groups[group].group_props.physicalDevices[group_gpu])
-                        ->phys_dev) {
-                    match = false;
-                    break;
-                }
-            }
+            // Check if this physical device group with the same contents is already in the old buffer
+            for (uint32_t old_idx = 0; old_idx < inst->phys_dev_group_count_term; old_idx++) {
+                if (local_phys_dev_groups[new_idx].group_props.physicalDeviceCount ==
+                    inst->phys_dev_groups_term[old_idx]->physicalDeviceCount) {
+                    bool found_all_gpus = true;
+                    for (uint32_t old_gpu = 0; old_gpu < inst->phys_dev_groups_term[old_idx]->physicalDeviceCount; old_gpu++) {
+                        bool found_gpu = false;
+                        for (uint32_t new_gpu = 0; new_gpu < local_phys_dev_groups[new_idx].group_props.physicalDeviceCount;
+                             new_gpu++) {
+                            if (local_phys_dev_groups[new_idx].group_props.physicalDevices[new_gpu] ==
+                                inst->phys_dev_groups_term[old_idx]->physicalDevices[old_gpu]) {
+                                found_gpu = true;
+                                break;
+                            }
+                        }
 
-            if (match) {
-                group_properties = &local_phys_dev_groups[group].group_props;
-            }
-        }
-
-        // Check if this physical device group with the same contents is already in the old buffer
-        for (uint32_t old_idx = 0; old_idx < inst->phys_dev_group_count_term; old_idx++) {
-            if (NULL != group_properties &&
-                group_properties->physicalDeviceCount == inst->phys_dev_groups_term[old_idx]->physicalDeviceCount) {
-                bool found_all_gpus = true;
-                for (uint32_t old_gpu = 0; old_gpu < inst->phys_dev_groups_term[old_idx]->physicalDeviceCount; old_gpu++) {
-                    bool found_gpu = false;
-                    for (uint32_t new_gpu = 0; new_gpu < group_properties->physicalDeviceCount; new_gpu++) {
-                        if (group_properties->physicalDevices[new_gpu] ==
-                            inst->phys_dev_groups_term[old_idx]->physicalDevices[old_gpu]) {
-                            found_gpu = true;
+                        if (!found_gpu) {
+                            found_all_gpus = false;
                             break;
                         }
                     }
-
-                    if (!found_gpu) {
-                        found_all_gpus = false;
+                    if (!found_all_gpus) {
+                        continue;
+                    } else {
+                        new_phys_dev_groups[idx] = inst->phys_dev_groups_term[old_idx];
                         break;
                     }
                 }
-                if (!found_all_gpus) {
-                    continue;
-                } else {
-                    new_phys_dev_groups[idx] = inst->phys_dev_groups_term[old_idx];
-                    break;
-                }
             }
-        }
 
-        // If this physical device group isn't in the old buffer, create it
-        if (group_properties != NULL && NULL == new_phys_dev_groups[idx]) {
-            new_phys_dev_groups[idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
-                inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            // If this physical device group isn't in the old buffer, create it
             if (NULL == new_phys_dev_groups[idx]) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setup_loader_term_phys_dev_groups:  Failed to allocate physical device group Terminator object %d",
-                           idx);
-                total_count = idx;
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-            memcpy(new_phys_dev_groups[idx], group_properties, sizeof(VkPhysicalDeviceGroupPropertiesKHR));
-        }
-
-        ++idx;
-    }
-#endif
-
-    // Copy or create everything to fill the new array of physical device groups
-    for (uint32_t new_idx = 0; new_idx < total_count; new_idx++) {
-        // Skip groups which have been included through sorting
-        if (local_phys_dev_group_sorted[new_idx] || local_phys_dev_groups[new_idx].group_props.physicalDeviceCount == 0) {
-            continue;
-        }
-
-        // Check if this physical device group with the same contents is already in the old buffer
-        for (uint32_t old_idx = 0; old_idx < inst->phys_dev_group_count_term; old_idx++) {
-            if (local_phys_dev_groups[new_idx].group_props.physicalDeviceCount ==
-                inst->phys_dev_groups_term[old_idx]->physicalDeviceCount) {
-                bool found_all_gpus = true;
-                for (uint32_t old_gpu = 0; old_gpu < inst->phys_dev_groups_term[old_idx]->physicalDeviceCount; old_gpu++) {
-                    bool found_gpu = false;
-                    for (uint32_t new_gpu = 0; new_gpu < local_phys_dev_groups[new_idx].group_props.physicalDeviceCount;
-                         new_gpu++) {
-                        if (local_phys_dev_groups[new_idx].group_props.physicalDevices[new_gpu] ==
-                            inst->phys_dev_groups_term[old_idx]->physicalDevices[old_gpu]) {
-                            found_gpu = true;
-                            break;
-                        }
-                    }
-
-                    if (!found_gpu) {
-                        found_all_gpus = false;
-                        break;
-                    }
+                new_phys_dev_groups[idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
+                    inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+                if (NULL == new_phys_dev_groups[idx]) {
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                               "setup_loader_term_phys_dev_groups:  Failed to allocate physical device group Terminator object %d",
+                               idx);
+                    total_count = idx;
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
                 }
-                if (!found_all_gpus) {
-                    continue;
-                } else {
-                    new_phys_dev_groups[idx] = inst->phys_dev_groups_term[old_idx];
-                    break;
-                }
+                memcpy(new_phys_dev_groups[idx], &local_phys_dev_groups[new_idx].group_props,
+                       sizeof(VkPhysicalDeviceGroupPropertiesKHR));
             }
-        }
 
-        // If this physical device group isn't in the old buffer, create it
-        if (NULL == new_phys_dev_groups[idx]) {
-            new_phys_dev_groups[idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
-                inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (NULL == new_phys_dev_groups[idx]) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setup_loader_term_phys_dev_groups:  Failed to allocate physical device group Terminator object %d",
-                           idx);
-                total_count = idx;
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-            memcpy(new_phys_dev_groups[idx], &local_phys_dev_groups[new_idx].group_props,
-                   sizeof(VkPhysicalDeviceGroupPropertiesKHR));
+            ++idx;
         }
-
-        ++idx;
     }
 
 out:
 
-    if (VK_SUCCESS != res) {
-        if (NULL != new_phys_dev_groups) {
-            for (uint32_t i = 0; i < total_count; i++) {
-                loader_instance_heap_free(inst, new_phys_dev_groups[i]);
-            }
-            loader_instance_heap_free(inst, new_phys_dev_groups);
-        }
-    } else {
-        // Free everything that didn't carry over to the new array of
-        // physical device groups
-        if (NULL != inst->phys_dev_groups_term) {
-            for (uint32_t i = 0; i < inst->phys_dev_group_count_term; i++) {
-                bool found = false;
-                for (uint32_t j = 0; j < total_count; j++) {
-                    if (inst->phys_dev_groups_term[i] == new_phys_dev_groups[j]) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    loader_instance_heap_free(inst, inst->phys_dev_groups_term[i]);
-                }
-            }
-            loader_instance_heap_free(inst, inst->phys_dev_groups_term);
-        }
-
-        // Swap in the new physical device group list
-        inst->phys_dev_group_count_term = total_count;
-        inst->phys_dev_groups_term = new_phys_dev_groups;
-    }
-
-    if (sorted_phys_dev_array != NULL) {
-        for (uint32_t i = 0; i < sorted_count; ++i) {
-            if (sorted_phys_dev_array[i].device_count > 0 && sorted_phys_dev_array[i].physical_devices != NULL) {
-                loader_instance_heap_free(inst, sorted_phys_dev_array[i].physical_devices);
-            }
-        }
-        loader_instance_heap_free(inst, sorted_phys_dev_array);
-    }
-
-    return res;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties) {
-    struct loader_instance *inst = (struct loader_instance *)instance;
-    VkResult res = VK_SUCCESS;
-
-    // Always call the setup loader terminator physical device groups because they may
-    // have changed at any point.
-    res = setup_loader_term_phys_dev_groups(inst);
-    if (VK_SUCCESS != res) {
-        goto out;
-    }
-
-    uint32_t copy_count = inst->phys_dev_group_count_term;
     if (NULL != pPhysicalDeviceGroupProperties) {
-        if (copy_count > *pPhysicalDeviceGroupCount) {
-            copy_count = *pPhysicalDeviceGroupCount;
-            res = VK_INCOMPLETE;
+        if (VK_SUCCESS != res) {
+            if (NULL != new_phys_dev_groups) {
+                for (uint32_t i = 0; i < total_count; i++) {
+                    loader_instance_heap_free(inst, new_phys_dev_groups[i]);
+                }
+                loader_instance_heap_free(inst, new_phys_dev_groups);
+            }
+        } else {
+            // Free everything that didn't carry over to the new array of
+            // physical device groups
+            if (NULL != inst->phys_dev_groups_term) {
+                for (uint32_t i = 0; i < inst->phys_dev_group_count_term; i++) {
+                    bool found = false;
+                    for (uint32_t j = 0; j < total_count; j++) {
+                        if (inst->phys_dev_groups_term[i] == new_phys_dev_groups[j]) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        loader_instance_heap_free(inst, inst->phys_dev_groups_term[i]);
+                    }
+                }
+                loader_instance_heap_free(inst, inst->phys_dev_groups_term);
+            }
+
+            // Swap in the new physical device group list
+            inst->phys_dev_group_count_term = total_count;
+            inst->phys_dev_groups_term = new_phys_dev_groups;
         }
 
-        for (uint32_t i = 0; i < copy_count; i++) {
-            memcpy(&pPhysicalDeviceGroupProperties[i], inst->phys_dev_groups_term[i], sizeof(VkPhysicalDeviceGroupPropertiesKHR));
+        if (sorted_phys_dev_array != NULL) {
+            for (uint32_t i = 0; i < sorted_count; ++i) {
+                if (sorted_phys_dev_array[i].device_count > 0 && sorted_phys_dev_array[i].physical_devices != NULL) {
+                    loader_instance_heap_free(inst, sorted_phys_dev_array[i].physical_devices);
+                }
+            }
+            loader_instance_heap_free(inst, sorted_phys_dev_array);
         }
+
+        uint32_t copy_count = inst->phys_dev_group_count_term;
+        if (NULL != pPhysicalDeviceGroupProperties) {
+            if (copy_count > *pPhysicalDeviceGroupCount) {
+                copy_count = *pPhysicalDeviceGroupCount;
+                res = VK_INCOMPLETE;
+            }
+
+            for (uint32_t i = 0; i < copy_count; i++) {
+                memcpy(&pPhysicalDeviceGroupProperties[i], inst->phys_dev_groups_term[i], sizeof(VkPhysicalDeviceGroupProperties));
+            }
+        }
+
+        *pPhysicalDeviceGroupCount = copy_count;
+
+    } else {
+        *pPhysicalDeviceGroupCount = total_count;
     }
-
-    *pPhysicalDeviceGroupCount = copy_count;
-
-out:
-
     return res;
 }

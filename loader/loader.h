@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2021 The Khronos Group Inc.
- * Copyright (c) 2014-2021 Valve Corporation
- * Copyright (c) 2014-2021 LunarG, Inc.
+ * Copyright (c) 2014-2022 The Khronos Group Inc.
+ * Copyright (c) 2014-2022 Valve Corporation
+ * Copyright (c) 2014-2022 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -164,8 +164,8 @@ VkResult loader_validate_device_extensions(struct loader_instance *this_instance
                                            const struct loader_layer_list *activated_device_layers,
                                            const struct loader_extension_list *icd_exts, const VkDeviceCreateInfo *pCreateInfo);
 
-VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst);
-VkResult setup_loader_term_phys_devs(struct loader_instance *inst);
+VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phys_dev_count, VkPhysicalDevice *phys_devs);
+VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance *inst, uint32_t group_count, VkPhysicalDeviceGroupProperties *groups);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 char *loader_get_next_path(char *path);

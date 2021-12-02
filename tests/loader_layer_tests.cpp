@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -45,6 +45,7 @@ class LayerExtensions : public LayerTests {};
 class MetaLayers : public LayerTests {};
 class OverrideMetaLayer : public LayerTests {};
 class LayerCreateInstance : public LayerTests {};
+class LayerPhysDeviceMod : public LayerTests {};
 
 void CheckLogForLayerString(FrameworkEnvironment& env, const char* implicit_layer_name, bool check_for_enable) {
     {
@@ -2775,4 +2776,545 @@ TEST(TestLayers, DeviceLayerNotPresent) {
     DeviceWrapper dev{inst};
     dev.create_info.add_layer(explicit_layer_name);
     dev.CheckCreate(phys_dev);
+}
+
+TEST_F(LayerPhysDeviceMod, AddPhysicalDevices) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_add_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_ADD)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_ADD_PHYS_DEV")),
+                           "test_layer_remove.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, dev_name.c_str(), dev_name.length() + 1);
+#else
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_devices = 6;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t dev_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &dev_count, nullptr));
+    ASSERT_GT(dev_count, icd_devices);
+
+    auto not_exp_physical_devices = std::vector<VkPhysicalDevice>(icd_devices);
+    uint32_t returned_phys_dev_count = icd_devices;
+    ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, not_exp_physical_devices.data()));
+    ASSERT_EQ(icd_devices, returned_phys_dev_count);
+
+    auto physical_devices = std::vector<VkPhysicalDevice>(dev_count);
+    returned_phys_dev_count = dev_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+    ASSERT_EQ(dev_count, returned_phys_dev_count);
+
+    uint32_t diff_count = dev_count - icd_devices;
+    uint32_t found_incomplete = 0;
+    uint32_t found_added_count = 0;
+    for (uint32_t dev = 0; dev < dev_count; ++dev) {
+        VkPhysicalDeviceProperties props{};
+        inst->vkGetPhysicalDeviceProperties(physical_devices[dev], &props);
+        if (string_eq(props.deviceName, "physdev_added_xx")) {
+            found_added_count++;
+        }
+        for (uint32_t incomp = 0; incomp < icd_devices; ++incomp) {
+            if (not_exp_physical_devices[incomp] == physical_devices[dev]) {
+                found_incomplete++;
+                break;
+            }
+        }
+    }
+
+    // We should have added the number of diff items, and the incomplete count should match the number of
+    // original physical devices.
+    ASSERT_EQ(found_added_count, diff_count);
+    ASSERT_EQ(found_incomplete, icd_devices);
+}
+
+TEST_F(LayerPhysDeviceMod, RemovePhysicalDevices) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_remove_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_REMOVE)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_REMOVE_PHYS_DEV")),
+                           "test_layer_remove.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, dev_name.c_str(), dev_name.length() + 1);
+#else
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_devices = 6;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t dev_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &dev_count, nullptr));
+    ASSERT_LT(dev_count, icd_devices);
+
+    auto physical_devices = std::vector<VkPhysicalDevice>(dev_count);
+    uint32_t returned_phys_dev_count = dev_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+    ASSERT_EQ(dev_count, returned_phys_dev_count);
+}
+
+TEST_F(LayerPhysDeviceMod, ReorderPhysicalDevices) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_reorder_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_REORDER)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_REORDER_PHYS_DEV")),
+                           "test_layer_reorder.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, dev_name.c_str(), dev_name.length() + 1);
+#else
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_devices = 6;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t dev_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &dev_count, nullptr));
+    ASSERT_EQ(dev_count, icd_devices);
+
+    auto physical_devices = std::vector<VkPhysicalDevice>(dev_count);
+    uint32_t returned_phys_dev_count = dev_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+    ASSERT_EQ(dev_count, returned_phys_dev_count);
+}
+
+TEST_F(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_all_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_ALL)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_ALL_PHYS_DEV")),
+                           "test_layer_all.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, dev_name.c_str(), dev_name.length() + 1);
+#else
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_devices = 6;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t dev_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &dev_count, nullptr));
+    ASSERT_GT(dev_count, icd_devices);
+
+    auto physical_devices = std::vector<VkPhysicalDevice>(dev_count);
+    uint32_t returned_phys_dev_count = dev_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
+    ASSERT_EQ(dev_count, returned_phys_dev_count);
+
+    uint32_t found_added_count = 0;
+    for (uint32_t dev = 0; dev < dev_count; ++dev) {
+        VkPhysicalDeviceProperties props{};
+        inst->vkGetPhysicalDeviceProperties(physical_devices[dev], &props);
+        if (string_eq(props.deviceName, "physdev_added_xx")) {
+            found_added_count++;
+        }
+    }
+
+    // Should see 2 removed, but 3 added so a diff count of 1
+    uint32_t diff_count = dev_count - icd_devices;
+    ASSERT_EQ(1, diff_count);
+    ASSERT_EQ(found_added_count, 3);
+}
+
+static bool GroupsAreTheSame(VkPhysicalDeviceGroupProperties a, VkPhysicalDeviceGroupProperties b) {
+    if (a.physicalDeviceCount != b.physicalDeviceCount) {
+        return false;
+    }
+    for (uint32_t dev = 0; dev < a.physicalDeviceCount; ++dev) {
+        if (a.physicalDevices[dev] != b.physicalDevices[dev]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+TEST_F(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_add_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_ADD)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_ADD_PHYS_DEV")),
+                           "test_layer_remove.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, dev_name.c_str(), dev_name.length() + 1);
+#else
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_groups = 4;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t grp_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
+    ASSERT_GT(grp_count, icd_groups);
+
+    auto not_exp_phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(icd_groups);
+    for (uint32_t group = 0; group < icd_groups; ++group) {
+        not_exp_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+    }
+    uint32_t returned_group_count = icd_groups;
+    ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, not_exp_phys_dev_groups.data()));
+    ASSERT_EQ(icd_groups, returned_group_count);
+
+    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
+    for (uint32_t group = 0; group < grp_count; ++group) {
+        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+    }
+    returned_group_count = grp_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
+    ASSERT_EQ(grp_count, returned_group_count);
+
+    uint32_t diff_count = grp_count - icd_groups;
+    uint32_t found_incomplete = 0;
+    uint32_t found_added_count = 0;
+    for (uint32_t grp = 0; grp < grp_count; ++grp) {
+        // Shortcut, only groups with 1 device could be added in the newly added count
+        if (1 == phys_dev_groups[grp].physicalDeviceCount) {
+            for (uint32_t dev = 0; dev < phys_dev_groups[grp].physicalDeviceCount; ++dev) {
+                VkPhysicalDeviceProperties props{};
+                inst->vkGetPhysicalDeviceProperties(phys_dev_groups[grp].physicalDevices[dev], &props);
+                if (string_eq(props.deviceName, "physdev_added_xx")) {
+                    found_added_count++;
+                }
+            }
+        }
+        for (uint32_t incomp = 0; incomp < icd_groups; ++incomp) {
+            if (GroupsAreTheSame(not_exp_phys_dev_groups[incomp], phys_dev_groups[grp])) {
+                found_incomplete++;
+                break;
+            }
+        }
+    }
+
+    // We should have added the number of diff items, and the incomplete count should match the number of
+    // original physical devices.
+    ASSERT_EQ(found_added_count, diff_count);
+    ASSERT_EQ(found_incomplete, icd_groups);
+}
+
+TEST_F(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_remove_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_REMOVE)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_REMOVE_PHYS_DEV")),
+                           "test_layer_remove.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_groups = 4;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t grp_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
+    ASSERT_LT(grp_count, icd_groups);
+
+    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
+    for (uint32_t group = 0; group < grp_count; ++group) {
+        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+    }
+    uint32_t returned_group_count = grp_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
+    ASSERT_EQ(grp_count, returned_group_count);
+}
+
+TEST_F(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_reorder_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_REORDER)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_REORDER_PHYS_DEV")),
+                           "test_layer_reorder.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, dev_name.c_str(), dev_name.length() + 1);
+#else
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_groups = 4;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t grp_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
+    ASSERT_EQ(grp_count, icd_groups);
+
+    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
+    for (uint32_t group = 0; group < grp_count; ++group) {
+        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+    }
+    uint32_t returned_group_count = grp_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
+    ASSERT_EQ(grp_count, returned_group_count);
+}
+
+TEST_F(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
+    FrameworkEnvironment env;
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VkLayer_LunarG_all_phys_dev")
+                                                         .set_lib_path(TEST_LAYER_PHYSDEV_ALL)
+                                                         .set_api_version(VK_API_VERSION_1_1)
+                                                         .set_disable_environment("TEST_DISABLE_ALL_PHYS_DEV")),
+                           "test_layer_all.json");
+
+    for (uint32_t icd = 0; icd < 2; ++icd) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& cur_icd = env.get_test_icd(icd);
+        cur_icd.icd_api_version = VK_API_VERSION_1_2;
+        VkPhysicalDeviceProperties properties{};
+        properties.apiVersion = VK_API_VERSION_1_2;
+        properties.vendorID = 0x11000000 + (icd << 6);
+        char vendor_char = 'a' + icd;
+        for (uint32_t dev = 0; dev < 3; ++dev) {
+            properties.deviceID = properties.vendorID + dev;
+            properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            char dev_char = '0' + dev;
+            std::string dev_name = "physdev_";
+            dev_name += vendor_char;
+            dev_name += "_";
+            dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, dev_name.c_str(), dev_name.length() + 1);
+#else
+            strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
+            cur_icd.add_physical_device({});
+            cur_icd.physical_devices.back().set_properties(properties);
+        }
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+    }
+    const uint32_t icd_groups = 4;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t grp_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
+    ASSERT_GT(grp_count, icd_groups);
+
+    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
+    for (uint32_t group = 0; group < grp_count; ++group) {
+        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+    }
+    uint32_t returned_group_count = grp_count;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
+    ASSERT_EQ(grp_count, returned_group_count);
+
+    uint32_t diff_count = grp_count - icd_groups;
+    uint32_t found_added_count = 0;
+    for (uint32_t grp = 0; grp < grp_count; ++grp) {
+        // Shortcut, only groups with 1 device could be added in the newly added count
+        if (1 == phys_dev_groups[grp].physicalDeviceCount) {
+            for (uint32_t dev = 0; dev < phys_dev_groups[grp].physicalDeviceCount; ++dev) {
+                VkPhysicalDeviceProperties props{};
+                inst->vkGetPhysicalDeviceProperties(phys_dev_groups[grp].physicalDevices[dev], &props);
+                if (string_eq(props.deviceName, "physdev_added_xx")) {
+                    found_added_count++;
+                }
+            }
+        }
+    }
+
+    // Should see 2 devices removed which should result in 1 group removed and since 3
+    // devices were added we should have 3 new groups.  So we should have a diff of 2
+    // groups and 3 new groups
+    ASSERT_EQ(2, diff_count);
+    ASSERT_EQ(found_added_count, 3);
 }
