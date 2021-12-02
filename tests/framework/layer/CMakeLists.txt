@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2021 Valve Corporation
-# Copyright (c) 2021 LunarG, Inc.
+# Copyright (c) 2021-2022 Valve Corporation
+# Copyright (c) 2021-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ target_compile_definitions(test_layer_deps  INTERFACE
 
 target_link_libraries(test_layer_deps INTERFACE testing_framework_util)
 
+# Interface testing layer
 set(TEST_LAYER_SOURCES test_layer.cpp test_layer.h)
 
 set(TEST_LAYER_BASE_EXPORTS TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS=1)
@@ -53,6 +54,48 @@ target_link_libraries(test_layer_export_version_2 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_export_version_2 PRIVATE
     ${TEST_LAYER_VERSION_0_EXPORTS} ${TEST_LAYER_VERSION_1_EXPORTS} ${TEST_LAYER_VERSION_2_EXPORTS} )
 
+# Physical device list altering layer (add phys dev, remove phys dev, re-order phys devs)
+set(PHYSDEV_LAYER_ADD_EXPORTS
+        ${TEST_LAYER_VERSION_0_EXPORTS} ${TEST_LAYER_VERSION_1_EXPORTS} ${TEST_LAYER_VERSION_2_EXPORTS}
+        TEST_LAYER_NAME="VkLayer_LunarG_add_phys_dev"
+        TEST_PHYSDEV_LAYER_ADD=1
+    )
+set(PHYSDEV_REMOVE_EXPORTS
+        ${TEST_LAYER_VERSION_0_EXPORTS} ${TEST_LAYER_VERSION_1_EXPORTS} ${TEST_LAYER_VERSION_2_EXPORTS}
+        TEST_LAYER_NAME="VkLayer_LunarG_remove_phys_dev"
+        TEST_PHYSDEV_LAYER_REMOVE=1
+    )
+set(PHYSDEV_LAYER_REORDER_EXPORTS
+        ${TEST_LAYER_VERSION_0_EXPORTS} ${TEST_LAYER_VERSION_1_EXPORTS} ${TEST_LAYER_VERSION_2_EXPORTS}
+        TEST_LAYER_NAME="VkLayer_LunarG_reorder_phys_dev"
+        TEST_PHYSDEV_LAYER_REORDER=1
+    )
+set(PHYSDEV_LAYER_ALL_EXPORTS
+        ${TEST_LAYER_VERSION_0_EXPORTS} ${TEST_LAYER_VERSION_1_EXPORTS} ${TEST_LAYER_VERSION_2_EXPORTS}
+        TEST_LAYER_NAME="VkLayer_LunarG_all_phys_dev"
+        TEST_PHYSDEV_LAYER_ADD=1
+        TEST_PHYSDEV_LAYER_REMOVE=1
+        TEST_PHYSDEV_LAYER_REORDER=1
+    )
+
+add_library(test_layer_physdev_add SHARED ${TEST_LAYER_SOURCES})
+target_link_libraries(test_layer_physdev_add PRIVATE test_layer_deps)
+target_compile_definitions(test_layer_physdev_add PRIVATE ${PHYSDEV_LAYER_ADD_EXPORTS})
+
+add_library(test_layer_physdev_remove SHARED ${TEST_LAYER_SOURCES})
+target_link_libraries(test_layer_physdev_remove PRIVATE test_layer_deps)
+target_compile_definitions(test_layer_physdev_remove PRIVATE ${PHYSDEV_REMOVE_EXPORTS})
+
+add_library(test_layer_physdev_reorder SHARED ${TEST_LAYER_SOURCES})
+target_link_libraries(test_layer_physdev_reorder PRIVATE test_layer_deps)
+target_compile_definitions(test_layer_physdev_reorder PRIVATE ${PHYSDEV_LAYER_REORDER_EXPORTS})
+
+add_library(test_layer_physdev_all SHARED ${TEST_LAYER_SOURCES})
+target_link_libraries(test_layer_physdev_all PRIVATE test_layer_deps)
+target_compile_definitions(test_layer_physdev_all PRIVATE ${PHYSDEV_LAYER_ALL_EXPORTS})
+
+# Wrap Objects layer which wraps dispatchable handles to test that the loader will properly
+# work in the case where handles in the terminator don't match handles in the trampoline portion.
 set(WRAP_LAYER_VERSION_1_EXPORTS
         TEST_LAYER_EXPORT_DIRECT_DISP=1
         TEST_LAYER_EXPORT_MAINT_1=1
@@ -83,11 +126,16 @@ add_library(test_layer_wrap_objects_3 SHARED wrap_objects)
 target_link_libraries(test_layer_wrap_objects_3 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_wrap_objects_3 PRIVATE ${WRAP_LAYER_VERSION_3_EXPORTS})
 
+# Windows requires export definitions for these layers
 if(WIN32)
     target_sources(test_layer_export_base PRIVATE export_definitions/test_layer_base.def)
     target_sources(test_layer_export_version_0 PRIVATE export_definitions/test_layer_0.def)
     target_sources(test_layer_export_version_1 PRIVATE export_definitions/test_layer_1.def)
     target_sources(test_layer_export_version_2 PRIVATE export_definitions/test_layer_2.def)
+    target_sources(test_layer_physdev_add PRIVATE export_definitions/test_layer_2.def)
+    target_sources(test_layer_physdev_remove PRIVATE export_definitions/test_layer_2.def)
+    target_sources(test_layer_physdev_reorder PRIVATE export_definitions/test_layer_2.def)
+    target_sources(test_layer_physdev_all PRIVATE export_definitions/test_layer_2.def)
     target_sources(test_layer_wrap_objects PRIVATE export_definitions/test_layer_wrap_objects.def)
     target_sources(test_layer_wrap_objects_1 PRIVATE export_definitions/test_layer_wrap_objects.def)
     target_sources(test_layer_wrap_objects_2 PRIVATE export_definitions/test_layer_wrap_objects.def)

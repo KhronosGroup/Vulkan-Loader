@@ -320,6 +320,94 @@ TEST(MultipleDriverConfig, DifferentICDInterfaceVersions) {
     ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
     ASSERT_EQ(phys_dev_count, 2);
 }
+
+TEST(MultipleDriverConfig, DifferentICDsWithDevices) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+
+    // Make sure the loader returns all devices from all active ICDs.  Many of the other
+    // tests add multiple devices to a single ICD, this just makes sure the loader combines
+    // device info across multiple drivers properly.
+    TestICD& icd0 = env.get_test_icd(0);
+    icd0.physical_devices.emplace_back("physical_device_0");
+    icd0.min_icd_interface_version = 5;
+    icd0.max_icd_interface_version = 5;
+
+    TestICD& icd1 = env.get_test_icd(1);
+    icd1.physical_devices.emplace_back("physical_device_1");
+    icd1.physical_devices.emplace_back("physical_device_2");
+    icd1.min_icd_interface_version = 5;
+    icd1.max_icd_interface_version = 5;
+
+    TestICD& icd2 = env.get_test_icd(2);
+    icd2.physical_devices.emplace_back("physical_device_3");
+    icd2.min_icd_interface_version = 5;
+    icd2.max_icd_interface_version = 5;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    std::array<VkPhysicalDevice, 4> phys_devs_array;
+    uint32_t phys_dev_count = 4;
+    ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
+    ASSERT_EQ(phys_dev_count, 4);
+}
+
+TEST(MultipleDriverConfig, DifferentICDsWithDevicesAndGroups) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+
+    // The loader has to be able to handle drivers that support device groups in combination
+    // with drivers that don't support device groups.  When this is the case, the loader needs
+    // to take every driver that doesn't support device groups and put each of its devices in
+    // a separate group.  Then it combines that information with the drivers that support
+    // device groups returned info.
+
+    // ICD 0 :  No 1.1 support (so 1 device will become 1 group in loader)
+    TestICD& icd0 = env.get_test_icd(0);
+    icd0.physical_devices.emplace_back("physical_device_0");
+    icd0.min_icd_interface_version = 5;
+    icd0.max_icd_interface_version = 5;
+    icd0.set_icd_api_version(VK_API_VERSION_1_0);
+
+    // ICD 1 :  1.1 support (with 1 group with 2 devices)
+    TestICD& icd1 = env.get_test_icd(1);
+    icd1.physical_devices.emplace_back("physical_device_1");
+    icd1.physical_devices.emplace_back("physical_device_2");
+    icd1.physical_device_groups.emplace_back(icd1.physical_devices[0]);
+    icd1.physical_device_groups.back().use_physical_device(icd1.physical_devices[1]);
+    icd1.min_icd_interface_version = 5;
+    icd1.max_icd_interface_version = 5;
+    icd1.set_icd_api_version(VK_API_VERSION_1_1);
+
+    // ICD 2 :  No 1.1 support (so 3 devices will become 3 groups in loader)
+    TestICD& icd2 = env.get_test_icd(2);
+    icd2.physical_devices.emplace_back("physical_device_3");
+    icd2.physical_devices.emplace_back("physical_device_4");
+    icd2.physical_devices.emplace_back("physical_device_5");
+    icd2.min_icd_interface_version = 5;
+    icd2.max_icd_interface_version = 5;
+    icd2.set_icd_api_version(VK_API_VERSION_1_0);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    inst.CheckCreate();
+
+    uint32_t group_count = static_cast<uint32_t>(5);
+    uint32_t returned_group_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, nullptr));
+    ASSERT_EQ(group_count, returned_group_count);
+
+    std::vector<VkPhysicalDeviceGroupProperties> group_props{};
+    group_props.resize(group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, group_props.data()));
+    ASSERT_EQ(group_count, returned_group_count);
+}
+
 // shim function pointers for 1.3
 // Should use autogen for this - it generates 'shim' functions for validation layers, maybe that could be used here.
 void test_vkCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,

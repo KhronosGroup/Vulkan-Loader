@@ -782,7 +782,7 @@ TEST_F(SeparateMessenger, InfoInEnumDevsIgnoredSeverity) {
 }
 
 // Test debug utils created outside of vkCreateInstance with info in vkEnumeratePhysicalDevices.
-TEST_F(SeparateMessenger, DebugUtilsInfoInEnumDevs) {
+TEST_F(SeparateMessenger, InfoInEnumDevs) {
     expected_message = "Trimming device count down by application request";
     expected_object_type = VK_OBJECT_TYPE_INSTANCE;
     expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;

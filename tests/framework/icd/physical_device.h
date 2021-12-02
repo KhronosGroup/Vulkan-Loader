@@ -76,6 +76,8 @@ struct PhysicalDevice {
 };
 
 struct PhysicalDeviceGroup {
+    PhysicalDeviceGroup() {}
+    PhysicalDeviceGroup(PhysicalDevice const& physical_device) { physical_device_handles.push_back(&physical_device); }
     PhysicalDeviceGroup& use_physical_device(PhysicalDevice const& physical_device) {
         physical_device_handles.push_back(&physical_device);
         return *this;

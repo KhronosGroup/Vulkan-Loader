@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -80,6 +80,21 @@ Interface Version 2
 
 // Added manifest version 1.1.0
 
+// vkEnumeratePhysicalDevices and vkEnumeratePhysicalDeviceGroups add a new item
+#ifndef TEST_PHYSDEV_LAYER_ADD
+#define TEST_PHYSDEV_LAYER_ADD 0
+#endif
+
+// vkEnumeratePhysicalDevices and vkEnumeratePhysicalDeviceGroups remove an item
+#ifndef TEST_PHYSDEV_LAYER_REMOVE
+#define TEST_PHYSDEV_LAYER_REMOVE 0
+#endif
+
+// vkEnumeratePhysicalDevices and vkEnumeratePhysicalDeviceGroups reorders items
+#ifndef TEST_PHYSDEV_LAYER_REORDER
+#define TEST_PHYSDEV_LAYER_REORDER 0
+#endif
+
 struct TestLayer;
 
 // Callbacks allow tests to implement custom functionality without modifying the layer binary
@@ -94,7 +109,6 @@ struct TestLayer {
 
     BUILDER_VALUE(TestLayer, bool, is_meta_layer, false)
 
-    BUILDER_VALUE(TestLayer, std::string, unique_name, {})
     BUILDER_VALUE(TestLayer, uint32_t, api_version, VK_API_VERSION_1_0)
     BUILDER_VALUE(TestLayer, uint32_t, reported_layer_props, 1)
     BUILDER_VALUE(TestLayer, uint32_t, reported_extension_props, 1)
@@ -119,6 +133,14 @@ struct TestLayer {
     BUILDER_VALUE(TestLayer, std::function<VkResult(TestLayer& layer)>, create_instance_callback, {})
     // Called in vkCreateDevice after calling down the chain & returning
     BUILDER_VALUE(TestLayer, std::function<VkResult(TestLayer& layer)>, create_device_callback, {})
+#if TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
+    BUILDER_VECTOR(TestLayer, VkPhysicalDevice, complete_physical_devices, complete_physical_device)
+    BUILDER_VECTOR(TestLayer, VkPhysicalDevice, removed_physical_devices, removed_physical_device)
+    BUILDER_VECTOR(TestLayer, VkPhysicalDevice, added_physical_devices, added_physical_device)
+    BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, complete_physical_device_groups, complete_physical_device_group)
+    BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, removed_physical_device_groups, removed_physical_device_group)
+    BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, added_physical_device_groups, added_physical_device_group)
+#endif // TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
 
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;

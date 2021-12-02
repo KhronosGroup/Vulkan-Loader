@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -425,14 +425,25 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkEnumerateDeviceExtensionProperties(VkPhysi
                 ext_count = 0;
 #if TEST_LAYER_EXPORT_MAINT_1
                 if (ext_count < count) {
+#if defined(_WIN32)
+                    strncpy_s(pProperties[ext_count].extensionName, VK_MAX_EXTENSION_NAME_SIZE, VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+                              strlen(VK_KHR_MAINTENANCE1_EXTENSION_NAME) + 1);
+#else
                     strcpy(pProperties[ext_count].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+#endif
                     pProperties[ext_count].specVersion = 2;
                     ext_count++;
                 }
 #endif
 #if TEST_LAYER_EXPORT_PRESENT_IMAGE
                 if (ext_count < count) {
+#if defined(_WIN32)
+                    strncpy_s(pProperties[ext_count].extensionName, VK_MAX_EXTENSION_NAME_SIZE,
+                              VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
+                              strlen(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME) + 1);
+#else
                     strcpy(pProperties[ext_count].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+#endif
                     pProperties[ext_count].specVersion = 1;
                     ext_count++;
                 }
