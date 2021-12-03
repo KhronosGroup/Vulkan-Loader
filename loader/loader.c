@@ -6846,7 +6846,7 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
                            "setup_loader_term_phys_dev_groups:  Failed during dispatch call of "
                            "\'EnumeratePhysicalDevices\' to ICD %d to get plain phys dev count.",
                            icd_idx);
-                goto out;
+                continue;
             }
         } else {
             // Query the actual group info
@@ -6856,10 +6856,11 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
                            "setup_loader_term_phys_dev_groups:  Failed during dispatch call of "
                            "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get count.",
                            icd_idx);
-                goto out;
+                continue;
             }
         }
         total_count += cur_icd_group_count;
+        
     }
 
     if (total_count == 0) {
