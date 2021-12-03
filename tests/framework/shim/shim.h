@@ -110,6 +110,8 @@ struct D3DKMT_Adapter {
     fs::path path;
 };
 
+uint32_t setup_override(DebugMode debug_mode);
+void clear_override(DebugMode debug_mode, uint32_t random_base_path);
 #endif
 // Necessary to have inline definitions as shim is a dll and thus functions
 // defined in the .cpp wont be found by the rest of the application
