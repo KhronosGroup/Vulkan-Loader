@@ -34,56 +34,90 @@ TEST(GetProcAddr, GlobalFunctions) {
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     auto& gipa = env.vulkan_functions.vkGetInstanceProcAddr;
+    // global entry points with NULL instance handle
+    {
+        auto EnumerateInstanceExtensionProperties =
+            reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(gipa(NULL, "vkEnumerateInstanceExtensionProperties"));
+        handle_assert_has_value(EnumerateInstanceExtensionProperties);
+        uint32_t ext_count = 0;
+        ASSERT_EQ(VK_SUCCESS, EnumerateInstanceExtensionProperties("", &ext_count, nullptr));
 
-    auto EnumerateInstanceExtensionProperties =
-        reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(gipa(NULL, "vkEnumerateInstanceExtensionProperties"));
-    handle_assert_has_value(EnumerateInstanceExtensionProperties);
-    uint32_t ext_count = 0;
-    ASSERT_EQ(VK_SUCCESS, EnumerateInstanceExtensionProperties("", &ext_count, nullptr));
+        auto EnumerateInstanceLayerProperties =
+            reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(gipa(NULL, "vkEnumerateInstanceLayerProperties"));
+        handle_assert_has_value(EnumerateInstanceLayerProperties);
+        uint32_t layer_count = 0;
+        ASSERT_EQ(VK_SUCCESS, EnumerateInstanceLayerProperties(&layer_count, nullptr));
 
-    auto EnumerateInstanceLayerProperties =
-        reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(gipa(NULL, "vkEnumerateInstanceLayerProperties"));
-    handle_assert_has_value(EnumerateInstanceLayerProperties);
-    uint32_t layer_count = 0;
-    ASSERT_EQ(VK_SUCCESS, EnumerateInstanceLayerProperties(&layer_count, nullptr));
+        auto EnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(gipa(NULL, "vkEnumerateInstanceVersion"));
+        handle_assert_has_value(EnumerateInstanceVersion);
+        uint32_t api_version = 0;
+        EnumerateInstanceVersion(&api_version);
 
-    auto EnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(gipa(NULL, "vkEnumerateInstanceVersion"));
-    handle_assert_has_value(EnumerateInstanceVersion);
-    uint32_t api_version = 0;
-    EnumerateInstanceVersion(&api_version);
+        auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(NULL, "vkGetInstanceProcAddr"));
+        handle_assert_has_value(GetInstanceProcAddr);
+        GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr");
 
-    auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(NULL, "vkGetInstanceProcAddr"));
-    handle_assert_has_value(GetInstanceProcAddr);
-    GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr");
+        auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(NULL, "vkCreateInstance"));
+        handle_assert_has_value(CreateInstance);
+    }
+    // Now create an instance and query the functions again - should work because the instance version is less than 1.2
+    for (int i = 0; i <= 2; i++) {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.api_version = VK_MAKE_API_VERSION(0, 1, i, 0);
+        inst.CheckCreate();
 
-    auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(NULL, "vkCreateInstance"));
-    handle_assert_has_value(CreateInstance);
+        auto EnumerateInstanceExtensionProperties =
+            reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(gipa(inst, "vkEnumerateInstanceExtensionProperties"));
+        handle_assert_has_value(EnumerateInstanceExtensionProperties);
+        uint32_t ext_count = 0;
+        ASSERT_EQ(VK_SUCCESS, EnumerateInstanceExtensionProperties("", &ext_count, nullptr));
 
-    // Now create an instance and query the functions again but with a valid instance, should be NULL
-    InstWrapper inst{env.vulkan_functions};
-    inst.CheckCreate();
+        auto EnumerateInstanceLayerProperties =
+            reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(gipa(inst, "vkEnumerateInstanceLayerProperties"));
+        handle_assert_has_value(EnumerateInstanceLayerProperties);
+        uint32_t layer_count = 0;
+        ASSERT_EQ(VK_SUCCESS, EnumerateInstanceLayerProperties(&layer_count, nullptr));
 
-    EnumerateInstanceExtensionProperties =
-        reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(gipa(inst, "vkEnumerateInstanceExtensionProperties"));
-    handle_assert_null(EnumerateInstanceExtensionProperties);
+        auto EnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(gipa(inst, "vkEnumerateInstanceVersion"));
+        handle_assert_has_value(EnumerateInstanceVersion);
+        uint32_t api_version = 0;
+        EnumerateInstanceVersion(&api_version);
 
-    EnumerateInstanceLayerProperties =
-        reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(gipa(inst, "vkEnumerateInstanceLayerProperties"));
-    handle_assert_null(EnumerateInstanceLayerProperties);
+        auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
+        handle_assert_has_value(GetInstanceProcAddr);
+        GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr");
 
-    EnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(gipa(inst, "vkEnumerateInstanceVersion"));
-    handle_assert_null(EnumerateInstanceVersion);
+        auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(inst, "vkCreateInstance"));
+        handle_assert_has_value(CreateInstance);
+    }
+    {
+        // Create a 1.3 instance - now everything should return NULL
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.api_version = VK_MAKE_API_VERSION(0, 1, 3, 0);
+        inst.CheckCreate();
 
-    CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(inst, "vkCreateInstance"));
-    handle_assert_null(CreateInstance);
+        auto EnumerateInstanceExtensionProperties =
+            reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(gipa(inst, "vkEnumerateInstanceExtensionProperties"));
+        handle_assert_null(EnumerateInstanceExtensionProperties);
 
-    GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
-    handle_assert_null(GetInstanceProcAddr);
+        auto EnumerateInstanceLayerProperties =
+            reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(gipa(inst, "vkEnumerateInstanceLayerProperties"));
+        handle_assert_null(EnumerateInstanceLayerProperties);
 
-    // get a non pre-instance function pointer
-    auto EnumeratePhysicalDevices = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkEnumeratePhysicalDevices"));
-    handle_assert_has_value(EnumeratePhysicalDevices);
+        auto EnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(gipa(inst, "vkEnumerateInstanceVersion"));
+        handle_assert_null(EnumerateInstanceVersion);
 
-    EnumeratePhysicalDevices = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(NULL, "vkEnumeratePhysicalDevices"));
-    handle_assert_null(EnumeratePhysicalDevices);
+        auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(inst, "vkCreateInstance"));
+        handle_assert_null(CreateInstance);
+
+        auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
+        handle_assert_null(GetInstanceProcAddr);
+
+        // get a non pre-instance function pointer
+        auto EnumeratePhysicalDevices = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkEnumeratePhysicalDevices"));
+        handle_assert_has_value(EnumeratePhysicalDevices);
+
+        EnumeratePhysicalDevices = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(NULL, "vkEnumeratePhysicalDevices"));
+        handle_assert_null(EnumeratePhysicalDevices);
+    }
 }
