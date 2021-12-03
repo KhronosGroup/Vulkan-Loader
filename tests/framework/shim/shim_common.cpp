@@ -177,7 +177,8 @@ void clear_key_values(HKEY const& key) {
     }
 }
 
-void PlatformShim::setup_override(DebugMode debug_mode) {
+uint32_t setup_override(DebugMode debug_mode) {
+    uint32_t random_base_path = 0;
     std::random_device rd;
     std::ranlux48 gen(rd());
     std::uniform_int_distribution<uint32_t> dist(0, 2000000);
@@ -207,8 +208,9 @@ void PlatformShim::setup_override(DebugMode debug_mode) {
 
     setup_override_key(HKEY_LOCAL_MACHINE, random_base_path);
     setup_override_key(HKEY_CURRENT_USER, random_base_path);
+    return random_base_path;
 }
-void PlatformShim::clear_override(DebugMode debug_mode) {
+void clear_override(DebugMode debug_mode, uint32_t random_base_path) {
     if (debug_mode != DebugMode::no_delete) {
         revert_override(HKEY_CURRENT_USER, random_base_path);
         revert_override(HKEY_LOCAL_MACHINE, random_base_path);

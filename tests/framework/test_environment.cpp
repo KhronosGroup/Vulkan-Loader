@@ -127,16 +127,12 @@ PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) noexcept : debug_
 #elif defined(__linux__) || defined(__FreeBSD__)
     platform_shim = get_platform_shim();
 #endif
-    platform_shim->setup_override(debug_mode);
     platform_shim->reset(debug_mode);
 
     // leave it permanently on at full blast
     set_env_var("VK_LOADER_DEBUG", "all");
 }
-PlatformShimWrapper::~PlatformShimWrapper() noexcept {
-    platform_shim->reset(debug_mode);
-    platform_shim->clear_override(debug_mode);
-}
+PlatformShimWrapper::~PlatformShimWrapper() noexcept { platform_shim->reset(debug_mode); }
 
 TestICDHandle::TestICDHandle() noexcept {}
 TestICDHandle::TestICDHandle(fs::path const& icd_path) noexcept : icd_library(icd_path) {
