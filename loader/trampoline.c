@@ -38,19 +38,51 @@
 
 // Trampoline entrypoints are in this file for core Vulkan commands
 
-// Get an instance level or global level entry point address.
-// @param instance
-// @param pName
-// @return
-//    If instance == NULL returns a global level functions only
-//    If instance is valid returns a trampoline entry point for all dispatchable Vulkan
-//    functions both core and extensions.
+/* vkGetInstanceProcAddr: Get global level or instance level entrypoint addressess.
+ * @param instance
+ * @param pName
+ * @return
+ *    If pName is a global level entrypoint:
+ *        If instance == NULL || instance is invalid || (instance is valid && instance.minor_version <= 2):
+ *            return global level functions
+ *        Else:
+ *            return NULL
+ *    Else:
+ *        If instance is valid:
+ *            return a trampoline entry point for all dispatchable Vulkan functions both core and extensions.
+ *        Else:
+ *            return NULL
+ *
+ * Note:
+ * Vulkan header updated 1.2.193 changed the behavior of vkGetInstanceProcAddr for global entrypoints. They used to always be
+ * returned regardless of the value of the instance paramtere. The spec was amended in this version to only allow querying global
+ * level entrypoints with a NULL instance. However, as to not break old applications, the new behavior is only applied if the
+ * instance passed in is both valid and minor version is greater than 1.2, which was when this change in behavior occurred. Only
+ * instances with a newer version will get the new behavior.
+ */
 LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char *pName) {
     // Get entrypoint addresses that are global (no dispatchable object)
     void *addr = globalGetProcAddr(pName);
     if (addr != VK_NULL_HANDLE) {
-        // Make sure to only allow getting global functions if the instance handle is null
-        return (instance == VK_NULL_HANDLE) ? addr : NULL;
+        // Always can get a global entrypoint from vkGetInstanceProcAddr with a NULL instance handle
+        if (instance == VK_NULL_HANDLE) {
+            return addr;
+        } else {
+            // New behavior only returns a global entrypoint if the instance handle is NULL.
+            // Old behavior is to return a global entrypoint regardless of the value of the instance handle.
+            // Use new behavior if: The instance is valid and the minor version of the instance is greater than 1.2, which
+            // was when the new behavior was added. (eg, it is enforced in the next minor version of vulkan, which will be 1.3)
+
+            // First check if instance is valid - loader_get_instance() returns NULL if it isn't.
+            struct loader_instance *ptr_instance = loader_get_instance(instance);
+            if (ptr_instance != NULL && (ptr_instance->app_api_minor_version > 2)) {
+                // New behavior
+                return NULL;
+            } else {
+                // Old behavior
+                return addr;
+            }
+        }
     } else {
         // All other functions require a valid instance handle to get
         if (instance == VK_NULL_HANDLE) {
