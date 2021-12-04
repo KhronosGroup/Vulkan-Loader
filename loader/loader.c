@@ -5174,11 +5174,17 @@ VkResult loader_validate_layers(const struct loader_instance *inst, const uint32
                                 const char *const *ppEnabledLayerNames, const struct loader_layer_list *list) {
     struct loader_layer_properties *prop;
 
+    if (layer_count > 0 && ppEnabledLayerNames == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "loader_validate_instance_layers: ppEnabledLayerNames is NULL but enabledLayerCount is greater than zero");
+        return VK_ERROR_LAYER_NOT_PRESENT;
+    }
+
     for (uint32_t i = 0; i < layer_count; i++) {
         VkStringErrorFlags result = vk_string_validate(MaxLoaderStringLength, ppEnabledLayerNames[i]);
         if (result != VK_STRING_ERROR_NONE) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_validate_layers: Device ppEnabledLayerNames contains string that is too long or is badly formed");
+                       "loader_validate_layers: ppEnabledLayerNames contains string that is too long or is badly formed");
             return VK_ERROR_LAYER_NOT_PRESENT;
         }
 
@@ -5204,6 +5210,13 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
     struct loader_layer_list expanded_layers;
     memset(&active_layers, 0, sizeof(active_layers));
     memset(&expanded_layers, 0, sizeof(expanded_layers));
+
+    if (pCreateInfo->enabledExtensionCount > 0 && pCreateInfo->ppEnabledExtensionNames == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "loader_validate_instance_extensions: Instance ppEnabledExtensionNames is NULL but enabledExtensionCount is "
+                   "greater than zero");
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
     if (!loader_init_layer_list(inst, &active_layers)) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
