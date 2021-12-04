@@ -890,3 +890,20 @@ TEST(ExtensionManual, ToolingProperties) {
         string_eq(props.name, icd_tool_props.name);
     }
 }
+
+TEST_F(CreateInstance, InstanceNullLayerPtr) {
+    VkInstance inst = VK_NULL_HANDLE;
+    VkInstanceCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    info.enabledLayerCount = 1;
+
+    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(&info, VK_NULL_HANDLE, &inst), VK_ERROR_LAYER_NOT_PRESENT);
+}
+TEST_F(CreateInstance, InstanceNullExtensionPtr) {
+    VkInstance inst = VK_NULL_HANDLE;
+    VkInstanceCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    info.enabledExtensionCount = 1;
+
+    ASSERT_EQ(env->vulkan_functions.vkCreateInstance(&info, VK_NULL_HANDLE, &inst), VK_ERROR_EXTENSION_NOT_PRESENT);
+}
