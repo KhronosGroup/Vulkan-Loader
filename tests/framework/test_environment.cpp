@@ -52,12 +52,8 @@ InstWrapper& InstWrapper::operator=(InstWrapper&& other) noexcept {
     return *this;
 }
 
-testing::AssertionResult InstWrapper::CheckCreate(VkResult result_to_check) {
-    VkResult res = functions->vkCreateInstance(create_info.get(), callbacks, &inst);
-    if (res == result_to_check)
-        return testing::AssertionSuccess();
-    else
-        return testing::AssertionFailure() << " Expected VkCreateInstance to return " << result_to_check << " but got " << res;
+void InstWrapper::CheckCreate(VkResult result_to_check) {
+    ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
 }
 
 std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check) {
