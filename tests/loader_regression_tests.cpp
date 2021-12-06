@@ -114,6 +114,12 @@ TEST_F(CreateInstance, LayerPresent) {
     inst.CheckCreate();
 }
 
+TEST(NoDrivers, CreateInstance) {
+    FrameworkEnvironment env{};
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+}
+
 TEST_F(EnumerateInstanceLayerProperties, UsageChecks) {
     const char* layer_name_1 = "TestLayer1";
     const char* layer_name_2 = "TestLayer1";
@@ -446,6 +452,27 @@ TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
 
     ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &physical_count, physical.data()));
     ASSERT_EQ(physical_count, 1);
+}
+
+TEST_F(EnumeratePhysicalDevices, ZeroPhysicalDevicesAfterCreateInstance) {
+    auto& driver = env->get_test_icd().SetMinICDInterfaceVersion(5);
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0));
+    inst.CheckCreate();
+    driver.physical_devices.clear();
+
+    uint32_t physical_device_count = 1000;  // not zero starting value
+    VkPhysicalDevice physical_device{};
+
+    EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED, inst->vkEnumeratePhysicalDevices(inst, &physical_device_count, nullptr));
+    EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED, inst->vkEnumeratePhysicalDevices(inst, &physical_device_count, &physical_device));
+
+    uint32_t physical_device_group_count = 1000;  // not zero starting value
+    VkPhysicalDeviceGroupProperties physical_device_group_properties{};
+
+    EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED, inst->vkEnumeratePhysicalDeviceGroups(inst, &physical_device_group_count, nullptr));
+    EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+              inst->vkEnumeratePhysicalDeviceGroups(inst, &physical_device_group_count, &physical_device_group_properties));
 }
 
 TEST_F(CreateDevice, ExtensionNotPresent) {
