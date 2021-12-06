@@ -130,7 +130,7 @@ struct InstWrapper {
     InstWrapper& operator=(InstWrapper&&) noexcept;
 
     // Construct this VkInstance using googletest to assert if it succeeded
-    testing::AssertionResult CheckCreate(VkResult result_to_check = VK_SUCCESS);
+    void CheckCreate(VkResult result_to_check = VK_SUCCESS);
 
     // Convenience
     operator VkInstance() { return inst; }
