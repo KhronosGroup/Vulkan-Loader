@@ -107,11 +107,11 @@ VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils) {
 
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger) {
     create_info.add_extension("VK_EXT_debug_utils");
-    create_info.inst_info.pNext = logger.get();
+    create_info.instance_info.pNext = logger.get();
 }
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper) {
     create_info.add_extension("VK_EXT_debug_utils");
-    create_info.inst_info.pNext = wrapper.get();
+    create_info.instance_info.pNext = wrapper.get();
 }
 
 PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) noexcept : debug_mode(debug_mode) {
