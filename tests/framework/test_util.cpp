@@ -596,65 +596,29 @@ VulkanFunctions::VulkanFunctions() : loader(FRAMEWORK_VULKAN_LIBRARY_PATH) {
 }
 
 InstanceCreateInfo::InstanceCreateInfo() {
-    inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 }
 
 VkInstanceCreateInfo* InstanceCreateInfo::get() noexcept {
-    app_info.pApplicationName = app_name.c_str();
-    app_info.pEngineName = engine_name.c_str();
-    app_info.applicationVersion = app_version;
-    app_info.engineVersion = engine_version;
-    app_info.apiVersion = api_version;
-    inst_info.pApplicationInfo = &app_info;
-    inst_info.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());
-    inst_info.ppEnabledLayerNames = enabled_layers.data();
-    inst_info.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
-    inst_info.ppEnabledExtensionNames = enabled_extensions.data();
-    return &inst_info;
-}
-InstanceCreateInfo& InstanceCreateInfo::set_application_name(std::string app_name) {
-    this->app_name = app_name;
-    return *this;
-}
-InstanceCreateInfo& InstanceCreateInfo::set_engine_name(std::string engine_name) {
-    this->engine_name = engine_name;
-    return *this;
-}
-InstanceCreateInfo& InstanceCreateInfo::set_app_version(uint32_t app_version) {
-    this->app_version = app_version;
-    return *this;
-}
-InstanceCreateInfo& InstanceCreateInfo::set_engine_version(uint32_t engine_version) {
-    this->engine_version = engine_version;
-    return *this;
-}
-InstanceCreateInfo& InstanceCreateInfo::set_api_version(uint32_t api_version) {
-    this->api_version = api_version;
-    return *this;
+    application_info.pApplicationName = app_name.c_str();
+    application_info.pEngineName = engine_name.c_str();
+    application_info.applicationVersion = app_version;
+    application_info.engineVersion = engine_version;
+    application_info.apiVersion = api_version;
+    instance_info.pApplicationInfo = &application_info;
+    instance_info.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());
+    instance_info.ppEnabledLayerNames = enabled_layers.data();
+    instance_info.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
+    instance_info.ppEnabledExtensionNames = enabled_extensions.data();
+    return &instance_info;
 }
 InstanceCreateInfo& InstanceCreateInfo::set_api_version(uint32_t major, uint32_t minor, uint32_t patch) {
     this->api_version = VK_MAKE_API_VERSION(0, major, minor, patch);
     return *this;
 }
-InstanceCreateInfo& InstanceCreateInfo::add_layer(const char* layer_name) {
-    enabled_layers.push_back(layer_name);
-    return *this;
-}
-InstanceCreateInfo& InstanceCreateInfo::add_extension(const char* ext_name) {
-    enabled_extensions.push_back(ext_name);
-    return *this;
-}
 
-DeviceQueueCreateInfo::DeviceQueueCreateInfo() { queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; }
-DeviceQueueCreateInfo& DeviceQueueCreateInfo::add_priority(float priority) {
-    priorities.push_back(priority);
-    return *this;
-}
-DeviceQueueCreateInfo& DeviceQueueCreateInfo::set_props(VkQueueFamilyProperties props) {
-    queue.queueCount = props.queueCount;
-    return *this;
-}
+DeviceQueueCreateInfo::DeviceQueueCreateInfo() { queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; }
 
 VkDeviceCreateInfo* DeviceCreateInfo::get() noexcept {
     dev.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());
@@ -667,18 +631,4 @@ VkDeviceCreateInfo* DeviceCreateInfo::get() noexcept {
     dev.queueCreateInfoCount = static_cast<uint32_t>(queue_infos.size());
     dev.pQueueCreateInfos = queue_infos.data();
     return &dev;
-}
-DeviceCreateInfo& DeviceCreateInfo::add_layer(const char* layer_name) {
-    enabled_layers.push_back(layer_name);
-
-    return *this;
-}
-DeviceCreateInfo& DeviceCreateInfo::add_extension(const char* ext_name) {
-    enabled_extensions.push_back(ext_name);
-
-    return *this;
-}
-DeviceCreateInfo& DeviceCreateInfo::add_device_queue(DeviceQueueCreateInfo queue_info_detail) {
-    queue_info_details.push_back(queue_info_detail);
-    return *this;
 }

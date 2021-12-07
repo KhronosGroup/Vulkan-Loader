@@ -452,6 +452,30 @@ inline std::string version_to_string(uint32_t version) {
            std::to_string(VK_VERSION_PATCH(version));
 }
 
+// Macro to ease the definition of variables with builder member functions
+// class_name = class the member variable is apart of
+// type = type of the variable
+// name = name of the variable
+// default_value = value to default initialize, use {} if nothing else makes sense
+#define BUILDER_VALUE(class_name, type, name, default_value) \
+    type name = default_value;                               \
+    class_name& set_##name(type const& name) {               \
+        this->name = name;                                   \
+        return *this;                                        \
+    }
+
+// Macro to ease the definition of vectors with builder member functions
+// class_name = class the member variable is apart of
+// type = type of the variable
+// name = name of the variable
+// singular_name = used for the `add_singluar_name` member function
+#define BUILDER_VECTOR(class_name, type, name, singular_name)    \
+    std::vector<type> name;                                      \
+    class_name& add_##singular_name(type const& singular_name) { \
+        this->name.push_back(singular_name);                     \
+        return *this;                                            \
+    }
+
 struct ManifestVersion {
     uint32_t major = 1;
     uint32_t minor = 0;
@@ -465,14 +489,15 @@ struct ManifestVersion {
     }
 };
 
+// ManifestICD builder
 struct ManifestICD {
-    ManifestVersion file_format_version = ManifestVersion();
-    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
-    std::string lib_path;
-
+    BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, ManifestVersion())
+    BUILDER_VALUE(ManifestICD, uint32_t, api_version, 0)
+    BUILDER_VALUE(ManifestICD, std::string, lib_path, {})
     std::string get_manifest_str() const;
 };
 
+// ManifestLayer builder
 struct ManifestLayer {
     struct LayerDescription {
         enum class Type { INSTANCE, GLOBAL, DEVICE };
@@ -485,8 +510,9 @@ struct ManifestLayer {
                 return "INSTANCE";
         }
         struct FunctionOverride {
-            std::string vk_func;
-            std::string override_name;
+            BUILDER_VALUE(FunctionOverride, std::string, vk_func, {})
+            BUILDER_VALUE(FunctionOverride, std::string, override_name, {})
+
             std::string get_manifest_str() const { return std::string("{ \"") + vk_func + "\":\"" + override_name + "\" }"; }
         };
         struct Extension {
@@ -498,19 +524,19 @@ struct ManifestLayer {
             std::vector<std::string> entrypoints;
             std::string get_manifest_str() const;
         };
-        std::string name;
-        Type type = Type::INSTANCE;
-        fs::path lib_path;
-        uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
-        uint32_t implementation_version = 0;
-        std::string description;
-        std::vector<FunctionOverride> functions;
-        std::vector<Extension> instance_extensions;
-        std::vector<Extension> device_extensions;
-        std::string enable_environment;
-        std::string disable_environment;
-        std::vector<std::string> component_layers;
-        std::vector<std::string> pre_instance_functions;
+        BUILDER_VALUE(LayerDescription, std::string, name, {})
+        BUILDER_VALUE(LayerDescription, Type, type, Type::INSTANCE)
+        BUILDER_VALUE(LayerDescription, fs::path, lib_path, {})
+        BUILDER_VALUE(LayerDescription, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0))
+        BUILDER_VALUE(LayerDescription, uint32_t, implementation_version, 0)
+        BUILDER_VALUE(LayerDescription, std::string, description, {})
+        BUILDER_VECTOR(LayerDescription, FunctionOverride, functions, function)
+        BUILDER_VECTOR(LayerDescription, Extension, instance_extensions, instance_extension)
+        BUILDER_VECTOR(LayerDescription, Extension, device_extensions, device_extension)
+        BUILDER_VALUE(LayerDescription, std::string, enable_environment, {})
+        BUILDER_VALUE(LayerDescription, std::string, disable_environment, {})
+        BUILDER_VECTOR(LayerDescription, std::string, component_layers, component_layer)
+        BUILDER_VECTOR(LayerDescription, std::string, pre_instance_functions, pre_instance_function)
 
         std::string get_manifest_str() const;
         VkLayerProperties get_layer_properties() const;
@@ -522,8 +548,8 @@ struct ManifestLayer {
 };
 
 struct Extension {
-    std::string extensionName;
-    uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0);
+    BUILDER_VALUE(Extension, std::string, extensionName, {})
+    BUILDER_VALUE(Extension, uint32_t, specVersion, VK_MAKE_VERSION(1, 0, 0))
 
     Extension(std::string extensionName, uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0))
         : extensionName(extensionName), specVersion(specVersion) {}
@@ -537,10 +563,12 @@ struct Extension {
 };
 
 struct MockQueueFamilyProperties {
+    BUILDER_VALUE(MockQueueFamilyProperties, VkQueueFamilyProperties, properties, {})
+    BUILDER_VALUE(MockQueueFamilyProperties, bool, support_present, false)
+
     MockQueueFamilyProperties(VkQueueFamilyProperties properties, bool support_present = false)
         : properties(properties), support_present(support_present) {}
-    VkQueueFamilyProperties properties{};
-    bool support_present = false;
+
     VkQueueFamilyProperties get() const noexcept { return properties; }
 };
 
@@ -587,7 +615,7 @@ struct VulkanFunctions {
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
     PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
 
-// WSI
+    // WSI
     PFN_vkCreateHeadlessSurfaceEXT vkCreateHeadlessSurfaceEXT = nullptr;
     PFN_vkCreateDisplayPlaneSurfaceKHR vkCreateDisplayPlaneSurfaceKHR = nullptr;
     PFN_vkGetPhysicalDeviceDisplayPropertiesKHR vkGetPhysicalDeviceDisplayPropertiesKHR = nullptr;
@@ -656,48 +684,37 @@ struct VulkanFunctions {
 };
 
 struct InstanceCreateInfo {
-    VkInstanceCreateInfo inst_info{};
-    VkApplicationInfo app_info{};
-    std::string app_name;
-    std::string engine_name;
-    uint32_t app_version = 0;
-    uint32_t engine_version = 0;
-    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
-    std::vector<const char*> enabled_layers;
-    std::vector<const char*> enabled_extensions;
+    BUILDER_VALUE(InstanceCreateInfo, VkInstanceCreateInfo, instance_info, {})
+    BUILDER_VALUE(InstanceCreateInfo, VkApplicationInfo, application_info, {})
+    BUILDER_VALUE(InstanceCreateInfo, std::string, app_name, {})
+    BUILDER_VALUE(InstanceCreateInfo, std::string, engine_name, {})
+    BUILDER_VALUE(InstanceCreateInfo, uint32_t, app_version, 0)
+    BUILDER_VALUE(InstanceCreateInfo, uint32_t, engine_version, 0)
+    BUILDER_VALUE(InstanceCreateInfo, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0))
+    BUILDER_VECTOR(InstanceCreateInfo, const char*, enabled_layers, layer)
+    BUILDER_VECTOR(InstanceCreateInfo, const char*, enabled_extensions, extension)
 
     InstanceCreateInfo();
 
     VkInstanceCreateInfo* get() noexcept;
-    InstanceCreateInfo& set_application_name(std::string app_name);
-    InstanceCreateInfo& set_engine_name(std::string engine_name);
-    InstanceCreateInfo& set_app_version(uint32_t app_version);
-    InstanceCreateInfo& set_engine_version(uint32_t engine_version);
-    InstanceCreateInfo& set_api_version(uint32_t api_version);
     InstanceCreateInfo& set_api_version(uint32_t major, uint32_t minor, uint32_t patch);
-    InstanceCreateInfo& add_layer(const char* layer_name);
-    InstanceCreateInfo& add_extension(const char* ext_name);
 };
 
 struct DeviceQueueCreateInfo {
-    VkDeviceQueueCreateInfo queue{};
-    std::vector<float> priorities;
+    BUILDER_VALUE(DeviceQueueCreateInfo, VkDeviceQueueCreateInfo, queue_create_info, {})
+    BUILDER_VECTOR(DeviceQueueCreateInfo, float, priorities, priority)
+
     DeviceQueueCreateInfo();
-    DeviceQueueCreateInfo& add_priority(float priority);
-    DeviceQueueCreateInfo& set_props(VkQueueFamilyProperties props);
 };
 
 struct DeviceCreateInfo {
-    VkDeviceCreateInfo dev{};
-    std::vector<const char*> enabled_extensions;
-    std::vector<const char*> enabled_layers;
-    std::vector<DeviceQueueCreateInfo> queue_info_details;
-    std::vector<VkDeviceQueueCreateInfo> queue_infos;
+    BUILDER_VALUE(DeviceCreateInfo, VkDeviceCreateInfo, dev, {})
+    BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_extensions, extension)
+    BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_layers, layer)
+    BUILDER_VECTOR(DeviceCreateInfo, DeviceQueueCreateInfo, queue_info_details, device_queue)
+    BUILDER_VECTOR(DeviceCreateInfo, VkDeviceQueueCreateInfo, queue_infos, queue_info)
 
     VkDeviceCreateInfo* get() noexcept;
-    DeviceCreateInfo& add_layer(const char* layer_name);
-    DeviceCreateInfo& add_extension(const char* ext_name);
-    DeviceCreateInfo& add_device_queue(DeviceQueueCreateInfo queue_info_detail);
 };
 
 inline bool operator==(const VkExtent3D& a, const VkExtent3D& b) {
