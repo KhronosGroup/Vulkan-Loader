@@ -30,11 +30,12 @@
 class LayerTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
-        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_VERSION(1, 0, 0))));
+        env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
+        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     }
 
     virtual void TearDown() { env.reset(); }
-    std::unique_ptr<SingleICDShim> env;
+    std::unique_ptr<FrameworkEnvironment> env;
 };
 
 // Subtyping for organization
@@ -44,7 +45,7 @@ class MetaLayers : public LayerTests {};
 class OverrideMetaLayer : public LayerTests {};
 class LayerCreateInstance : public LayerTests {};
 
-void CheckLogForLayerString(SingleICDShim& env, const char* implicit_layer_name, bool check_for_enable) {
+void CheckLogForLayerString(FrameworkEnvironment& env, const char* implicit_layer_name, bool check_for_enable) {
     {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -71,7 +72,7 @@ TEST_F(ImplicitLayers, WithEnableAndDisableEnvVar) {
 
     ManifestLayer implicit_layer;
     implicit_layer.layers.push_back(description);
-    env->AddImplicitLayer(implicit_layer, "implicit_test_layer.json");
+    env->add_implicit_layer(implicit_layer, "implicit_test_layer.json");
 
     uint32_t count = 0;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
@@ -118,7 +119,7 @@ TEST_F(ImplicitLayers, OnlyDisableEnvVar) {
 
     ManifestLayer implicit_layer;
     implicit_layer.layers.push_back(description);
-    env->AddImplicitLayer(implicit_layer, "implicit_test_layer.json");
+    env->add_implicit_layer(implicit_layer, "implicit_test_layer.json");
 
     uint32_t count = 0;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
@@ -157,7 +158,7 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
     ManifestLayer meta_layer;
     meta_layer.file_format_version = ManifestVersion(1, 1, 2);
     meta_layer.layers.push_back(description);
-    env->AddImplicitLayer(meta_layer, "meta_test_layer.json");
+    env->add_implicit_layer(meta_layer, "meta_test_layer.json");
 
     const char* regular_layer_name = "TestLayer";
     ManifestLayer::LayerDescription regular_description{};
@@ -166,7 +167,7 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
 
     ManifestLayer regular_layer;
     regular_layer.layers.push_back(regular_description);
-    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+    env->add_explicit_layer(regular_layer, "regular_test_layer.json");
 
     // should find 1, the 'regular' layer
     uint32_t layer_count = 1;
@@ -202,7 +203,7 @@ TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
 
     ManifestLayer regular_layer;
     regular_layer.layers.push_back(regular_description);
-    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+    env->add_explicit_layer(regular_layer, "regular_test_layer.json");
 
     const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
     ManifestLayer::LayerDescription description{};
@@ -214,7 +215,7 @@ TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
     ManifestLayer lunarg_meta_layer;
     lunarg_meta_layer.file_format_version = ManifestVersion(1, 1, 2);
     lunarg_meta_layer.layers.push_back(description);
-    env->AddImplicitLayer(lunarg_meta_layer, "meta_test_layer.json");
+    env->add_implicit_layer(lunarg_meta_layer, "meta_test_layer.json");
 
     // should find 1, the 'regular' layer
     uint32_t layer_count = 2;
@@ -254,7 +255,7 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2) {
     ManifestLayer regular_layer;
     regular_layer.file_format_version = ManifestVersion(1, 1, 2);
     regular_layer.layers.push_back(regular_description);
-    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+    env->add_explicit_layer(regular_layer, "regular_test_layer.json");
 
     TestLayerHandle layer_handle{regular_description.lib_path};
     auto& layer = layer_handle.get_test_layer();
@@ -288,7 +289,7 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2) {
 
 TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
     env->get_test_icd().physical_devices.push_back({});
-    env->get_test_icd().AddInstanceExtension({"VK_KHR_get_physical_device_properties2", 0});
+    env->get_test_icd().add_instance_extension({"VK_KHR_get_physical_device_properties2", 0});
     const char* regular_layer_name = "TestLayer";
     ManifestLayer::LayerDescription regular_description{};
     regular_description.name = regular_layer_name;
@@ -296,7 +297,7 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
 
     ManifestLayer regular_layer;
     regular_layer.layers.push_back(regular_description);
-    env->AddExplicitLayer(regular_layer, "regular_test_layer.json");
+    env->add_explicit_layer(regular_layer, "regular_test_layer.json");
 
     TestLayerHandle layer_handle{regular_description.lib_path};
     auto& layer = layer_handle.reset_layer();
@@ -332,7 +333,7 @@ TEST_F(ExplicitLayers, WrapObjects) {
 
     ManifestLayer wrap_objects_layer;
     wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(wrap_objects_layer, "wrap_objects_layer.json");
 
     const char* regular_layer_name_1 = "RegularLayer1";
     ManifestLayer::LayerDescription regular_description_1{};
@@ -341,7 +342,7 @@ TEST_F(ExplicitLayers, WrapObjects) {
 
     ManifestLayer regular_layer_1;
     regular_layer_1.layers.push_back(regular_description_1);
-    env->AddExplicitLayer(regular_layer_1, "regular_layer_1.json");
+    env->add_explicit_layer(regular_layer_1, "regular_layer_1.json");
 
     const char* regular_layer_name_2 = "RegularLayer2";
     ManifestLayer::LayerDescription regular_description_2{};
@@ -350,7 +351,7 @@ TEST_F(ExplicitLayers, WrapObjects) {
 
     ManifestLayer regular_layer_2;
     regular_layer_2.layers.push_back(regular_description_2);
-    env->AddExplicitLayer(regular_layer_2, "regular_layer_2.json");
+    env->add_explicit_layer(regular_layer_2, "regular_layer_2.json");
 
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 

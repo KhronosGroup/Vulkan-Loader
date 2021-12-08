@@ -30,10 +30,12 @@
 
 class LoaderHandleValidTests : public ::testing::Test {
    protected:
-    virtual void SetUp() { env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TEST_ICD_PATH_VERSION_2)); }
-
+    virtual void SetUp() {
+        env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
+        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    }
     virtual void TearDown() { env.reset(); }
-    std::unique_ptr<SingleICDShim> env;
+    std::unique_ptr<FrameworkEnvironment> env;
 };
 
 // ---- Invalid Instance tests
@@ -91,7 +93,7 @@ TEST_F(LoaderHandleValidTests, BadInstDestroySurface) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_headless_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -111,7 +113,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateHeadlessSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_headless_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -136,7 +138,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateDisplayPlaneSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -163,7 +165,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateAndroidSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_android_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -190,7 +192,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateDirectFBSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_directfb_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -217,7 +219,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateFuchsiaSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_FUCHSIA_imagepipe_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -245,7 +247,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateGGPSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_GGP_stream_descriptor_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -273,7 +275,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateIOSSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_MVK_ios_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -300,7 +302,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateMacOSSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_MVK_macos_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -327,7 +329,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateMetalSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_metal_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -354,7 +356,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateQNXSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_QNX_screen_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -381,7 +383,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateViNNSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_NN_vi_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -408,7 +410,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateWaylandSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_wayland_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -435,7 +437,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateWin32Surf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_win32_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -462,7 +464,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateXCBSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_xcb_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -489,7 +491,7 @@ TEST_F(LoaderHandleValidTests, BadInstCreateXlibSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_xlib_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -906,7 +908,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceSupportKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_headless_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -927,7 +929,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCapsKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_headless_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -947,7 +949,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormatsKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_headless_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -967,7 +969,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModesKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_headless_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -989,7 +991,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_directfb_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1012,7 +1014,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_QNX_screen_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1034,7 +1036,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_wayland_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1056,7 +1058,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_win32_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1078,7 +1080,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_xcb_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1102,7 +1104,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetXlibPresentSupportKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_xlib_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1125,7 +1127,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPropsKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1146,7 +1148,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlanePropsKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1167,7 +1169,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneSupportedDisplaysKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1188,7 +1190,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayModePropsKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1209,7 +1211,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevCreateDisplayModeKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1234,7 +1236,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCapsKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1255,7 +1257,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevPresentRectsKHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1277,7 +1279,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayProps2KHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_get_display_properties2"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1298,7 +1300,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlaneProps2KHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_get_display_properties2"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1319,7 +1321,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayModeProps2KHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_get_display_properties2"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1340,7 +1342,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCaps2KHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_get_display_properties2"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1364,7 +1366,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCaps2KHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_get_surface_capabilities2"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1389,7 +1391,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormats2KHR) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_get_surface_capabilities2"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1495,7 +1497,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevAcquireDrmDisplayEXT) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_acquire_drm_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1517,7 +1519,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetDrmDisplayEXT) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_acquire_drm_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1539,7 +1541,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevReleaseDisplayEXT) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_direct_mode_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1562,7 +1564,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevAcquireXlibDisplayEXT) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_acquire_xlib_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1584,7 +1586,7 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetRandROutputDisplayEXT) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_acquire_xlib_display"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env->vulkan_functions);
@@ -1653,7 +1655,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_android_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1694,7 +1696,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_directfb_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1735,7 +1737,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_FUCHSIA_imagepipe_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1776,7 +1778,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_GGP_stream_descriptor_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1817,7 +1819,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_MVK_ios_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1858,7 +1860,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_MVK_macos_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1899,7 +1901,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_EXT_metal_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1940,7 +1942,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_QNX_screen_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -1981,7 +1983,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_NN_vi_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -2022,7 +2024,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_wayland_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -2063,7 +2065,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_win32_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -2072,7 +2074,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
 
     ManifestLayer wrap_objects_layer;
     wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(wrap_objects_layer, "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -2104,7 +2106,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_xcb_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -2145,7 +2147,7 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     Extension first_ext{"VK_KHR_surface"};
     Extension second_ext{"VK_KHR_xlib_surface"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({first_ext, second_ext});
+    driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
@@ -2192,11 +2194,11 @@ static VkBool32 JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT me
     return VK_FALSE;
 }
 
-#if 0 // Disable for now to get this commit in
+#if 0  // Disable for now to get this commit in
 TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
     Extension ext{"VK_EXT_debug_utils"};
     auto& driver = env->get_test_icd();
-    driver.AddInstanceExtensions({ext});
+    driver.add_instance_extensions({ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     ManifestLayer::LayerDescription wrap_objects_description{};
