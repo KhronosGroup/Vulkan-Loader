@@ -30,7 +30,8 @@
 // Load the global function pointers with and without a NULL vkInstance handle.
 // Call the function to make sure it is callable, don't care about what is returned.
 TEST(GetProcAddr, GlobalFunctions) {
-    SingleICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     auto& gipa = env.vulkan_functions.vkGetInstanceProcAddr;

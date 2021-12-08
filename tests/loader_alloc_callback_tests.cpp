@@ -199,11 +199,12 @@ class MemoryTracker {
 class Allocation : public ::testing::Test {
    protected:
     virtual void SetUp() {
-        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_VERSION(1, 0, 0))));
+        env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
+        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     }
 
     virtual void TearDown() { env.reset(); }
-    std::unique_ptr<SingleICDShim> env;
+    std::unique_ptr<FrameworkEnvironment> env;
 };
 
 // Test making sure the allocation functions are called to allocate and cleanup everything during
@@ -260,7 +261,7 @@ TEST_F(Allocation, InstanceAndDevice) {
     MemoryTracker tracker;
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+    driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     {
         InstWrapper inst{env->vulkan_functions, tracker.get()};
         inst.CheckCreate();
@@ -305,7 +306,7 @@ TEST_F(Allocation, InstanceButNotDevice) {
     {
         auto& driver = env->get_test_icd();
         driver.physical_devices.emplace_back("physical_device_0");
-        driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
         InstWrapper inst{env->vulkan_functions, tracker.get()};
         inst.CheckCreate();
@@ -351,7 +352,7 @@ TEST_F(Allocation, DeviceButNotInstance) {
     {
         auto& driver = env->get_test_icd();
         driver.physical_devices.emplace_back("physical_device_0");
-        driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
         InstWrapper inst{env->vulkan_functions};
         inst.CheckCreate();
@@ -415,9 +416,9 @@ TEST_F(Allocation, CreateInstanceIntentionalAllocFail) {
 TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+    driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices[1].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+    driver.physical_devices[1].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -469,7 +470,7 @@ TEST_F(Allocation, CreateDeviceIntentionalAllocFail) {
 TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices[0].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+    driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -536,7 +537,9 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 // to make sure the loader uses the valid ICD and doesn't report incompatible driver just because
 // an incompatible driver exists
 TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
-    FakeBinaryICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_2), TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY));
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY).set_is_fake(true));
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
@@ -568,7 +571,7 @@ TEST_F(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
 
         for (uint32_t i = 0; i < physical_dev_count; i++) {
             driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
-            driver.physical_devices[i].add_queue_family_properties({VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}});
+            driver.physical_devices[i].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
         }
         MemoryTracker tracker{MemoryTrackerSettings{false, 0, true, fail_index}};
         InstanceCreateInfo inst_create_info;
