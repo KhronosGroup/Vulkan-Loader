@@ -34,39 +34,21 @@ struct PhysicalDevice {
     PhysicalDevice() {}
     PhysicalDevice(std::string name) : deviceName(name) {}
     PhysicalDevice(const char* name) : deviceName(name) {}
-    PhysicalDevice& set_properties(VkPhysicalDeviceProperties properties) {
-        this->properties = properties;
-        return *this;
-    }
-    PhysicalDevice& set_features(VkPhysicalDeviceFeatures features) {
-        this->features = features;
-        return *this;
-    }
-    PhysicalDevice& set_memory_properties(VkPhysicalDeviceMemoryProperties memory_properties) {
-        this->memory_properties = memory_properties;
-        return *this;
-    }
-    PhysicalDevice& add_queue_family_properties(VkQueueFamilyProperties properties, bool support_present = true) {
-        queue_family_properties.push_back(MockQueueFamilyProperties(properties, support_present));
-        return *this;
-    }
-    PhysicalDevice& add_queue_family_properties(MockQueueFamilyProperties properties) {
-        queue_family_properties.push_back(properties);
-        return *this;
-    }
+
     DispatchableHandle<VkPhysicalDevice> vk_physical_device;
-    std::string deviceName;
-    VkPhysicalDeviceProperties properties{};
-    VkPhysicalDeviceFeatures features{};
-    VkPhysicalDeviceMemoryProperties memory_properties{};
-    std::vector<MockQueueFamilyProperties> queue_family_properties;
-    std::vector<VkFormatProperties> format_properties;
+    BUILDER_VALUE(PhysicalDevice, std::string, deviceName, "")
+    BUILDER_VALUE(PhysicalDevice, VkPhysicalDeviceProperties, properties, {})
+    BUILDER_VALUE(PhysicalDevice, VkPhysicalDeviceFeatures, features, {})
+    BUILDER_VALUE(PhysicalDevice, VkPhysicalDeviceMemoryProperties, memory_properties, {})
 
-    std::vector<Extension> extensions;
+    BUILDER_VECTOR(PhysicalDevice, MockQueueFamilyProperties, queue_family_properties, queue_family_properties)
+    BUILDER_VECTOR(PhysicalDevice, VkFormatProperties, format_properties, format_properties)
 
-    VkSurfaceCapabilitiesKHR surface_capabilities;
-    std::vector<VkSurfaceFormatKHR> surface_formats;
-    std::vector<VkPresentModeKHR> surface_present_modes;
+    BUILDER_VECTOR(PhysicalDevice, Extension, extensions, extension)
+
+    BUILDER_VALUE(PhysicalDevice, VkSurfaceCapabilitiesKHR, surface_capabilities, {})
+    BUILDER_VECTOR(PhysicalDevice, VkSurfaceFormatKHR, surface_formats, surface_format)
+    BUILDER_VECTOR(PhysicalDevice, VkPresentModeKHR, surface_present_modes, surface_present_mode)
 
     // VkDevice handles created from this physical device
     std::vector<VkDevice> device_handles;
@@ -74,7 +56,7 @@ struct PhysicalDevice {
     // List of function names which are 'known' to the physical device but have test defined implementations
     // The purpose of this list is so that vkGetDeviceProcAddr returns 'a real function pointer' in tests
     // without actually implementing any of the logic inside of it.
-    std::vector<VulkanFunction> known_device_functions;
+    BUILDER_VECTOR(PhysicalDevice, VulkanFunction, known_device_functions, device_function)
 };
 
 struct PhysicalDeviceGroup {

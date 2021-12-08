@@ -136,9 +136,17 @@ enum class DebugMode {
 struct ManifestICD;    // forward declaration for FolderManager::write
 struct ManifestLayer;  // forward declaration for FolderManager::write
 
+#ifdef _WIN32
+// Environment variable list separator - not for filesystem paths
+const char OS_ENV_VAR_LIST_SEPARATOR = ';';
+#else
+// Environment variable list separator - not for filesystem paths
+const char OS_ENV_VAR_LIST_SEPARATOR = ':';
+#endif
+
 namespace fs {
 std::string make_native(std::string const&);
-std::string fixup_backslashes_in_path(std::string const& in_path);
+
 struct path {
    private:
 #if defined(WIN32)
@@ -192,6 +200,9 @@ struct path {
    private:
     std::string contents;
 };
+
+std::string fixup_backslashes_in_path(std::string const& in_path);
+fs::path fixup_backslashes_in_path(fs::path const& in_path);
 
 int create_folder(path const& path);
 int delete_folder(path const& folder);
@@ -469,11 +480,22 @@ inline std::string version_to_string(uint32_t version) {
 // type = type of the variable
 // name = name of the variable
 // singular_name = used for the `add_singluar_name` member function
-#define BUILDER_VECTOR(class_name, type, name, singular_name)    \
-    std::vector<type> name;                                      \
-    class_name& add_##singular_name(type const& singular_name) { \
-        this->name.push_back(singular_name);                     \
-        return *this;                                            \
+#define BUILDER_VECTOR(class_name, type, name, singular_name)                    \
+    std::vector<type> name;                                                      \
+    class_name& add_##singular_name(type const& singular_name) {                 \
+        this->name.push_back(singular_name);                                     \
+        return *this;                                                            \
+    }                                                                            \
+    class_name& add_##singular_name##s(std::vector<type> const& singular_name) { \
+        for (auto& elem : singular_name) this->name.push_back(elem);             \
+        return *this;                                                            \
+    }
+// Like BUILDER_VECTOR but for move only types - where passing in means giving up ownership
+#define BUILDER_VECTOR_MOVE_ONLY(class_name, type, name, singular_name) \
+    std::vector<type> name;                                             \
+    class_name& add_##singular_name(type&& singular_name) {             \
+        this->name.push_back(std::move(singular_name));                 \
+        return *this;                                                   \
     }
 
 struct ManifestVersion {

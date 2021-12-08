@@ -56,22 +56,23 @@ struct TestICD {
     CalledNegotiateInterface called_negotiate_interface = CalledNegotiateInterface::not_called;
 
     InterfaceVersionCheck interface_version_check = InterfaceVersionCheck::not_called;
-    uint32_t min_icd_interface_version = 0;
-    uint32_t max_icd_interface_version = 6;
+    BUILDER_VALUE(TestICD, uint32_t, min_icd_interface_version, 0)
+    BUILDER_VALUE(TestICD, uint32_t, max_icd_interface_version, 6)
     uint32_t icd_interface_version_received = 0;
 
     CalledEnumerateAdapterPhysicalDevices called_enumerate_adapter_physical_devices =
         CalledEnumerateAdapterPhysicalDevices::not_called;
 
-    bool enable_icd_wsi = false;
+    BUILDER_VALUE(TestICD, bool, enable_icd_wsi, false);
     UsingICDProvidedWSI is_using_icd_wsi = UsingICDProvidedWSI::not_using;
 
-    uint32_t icd_api_version = VK_MAKE_VERSION(1, 0, 0);
-    std::vector<LayerDefinition> instance_layers;
-    std::vector<Extension> instance_extensions;
-    std::vector<PhysicalDevice> physical_devices;
+    BUILDER_VALUE(TestICD, uint32_t, icd_api_version, VK_MAKE_VERSION(1, 0, 0))
+    BUILDER_VECTOR(TestICD, LayerDefinition, instance_layers, instance_layer)
+    BUILDER_VECTOR(TestICD, Extension, instance_extensions, instance_extension)
 
-    std::vector<PhysicalDeviceGroup> physical_device_groups;
+    BUILDER_VECTOR_MOVE_ONLY(TestICD, PhysicalDevice, physical_devices, physical_device);
+
+    BUILDER_VECTOR(TestICD, PhysicalDeviceGroup, physical_device_groups, physical_device_group);
 
     DispatchableHandle<VkInstance> instance_handle;
     std::vector<DispatchableHandle<VkDevice>> device_handles;
@@ -82,44 +83,15 @@ struct TestICD {
     // Unknown instance and physical device functions. Add a `VulkanFunction` to this list which will be searched in
     // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for custom_physical_device_functions.
     // To add unknown device functions, add it to the PhysicalDevice directly (in the known_device_functions member)
-    std::vector<VulkanFunction> custom_instance_functions;
-    std::vector<VulkanFunction> custom_physical_device_functions;
+    BUILDER_VECTOR(TestICD, VulkanFunction, custom_instance_functions, custom_instance_function)
+    BUILDER_VECTOR(TestICD, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
 
     // Must explicitely state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
     // function pointer for vkGetPhysicalDeviceToolPropertiesEXT
-    bool supports_tooling_info_ext = false;
+    BUILDER_VALUE(TestICD, bool, supports_tooling_info_ext, false)
     // List of tooling properties that this driver 'supports'
     std::vector<VkPhysicalDeviceToolPropertiesEXT> tooling_properties;
 
-    TestICD() {}
-    ~TestICD() {}
-
-    TestICD& SetMinICDInterfaceVersion(uint32_t icd_interface_version) {
-        this->min_icd_interface_version = icd_interface_version;
-        return *this;
-    }
-    TestICD& SetICDAPIVersion(uint32_t api_version) {
-        this->icd_api_version = api_version;
-        return *this;
-    }
-    TestICD& AddInstanceLayer(LayerDefinition layer) { return AddInstanceLayers({layer}); }
-
-    TestICD& AddInstanceLayers(std::vector<LayerDefinition> layers) {
-        this->instance_layers.reserve(layers.size() + this->instance_layers.size());
-        for (auto& layer : layers) {
-            this->instance_layers.push_back(layer);
-        }
-        return *this;
-    }
-    TestICD& AddInstanceExtension(Extension extension) { return AddInstanceExtensions({extension}); }
-
-    TestICD& AddInstanceExtensions(std::vector<Extension> extensions) {
-        this->instance_extensions.reserve(extensions.size() + this->instance_extensions.size());
-        for (auto& extension : extensions) {
-            this->instance_extensions.push_back(extension);
-        }
-        return *this;
-    }
     PhysicalDevice& GetPhysDevice(VkPhysicalDevice physicalDevice) {
         for (auto& phys_dev : physical_devices) {
             if (phys_dev.vk_physical_device.handle == physicalDevice) return phys_dev;
