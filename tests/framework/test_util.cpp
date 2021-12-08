@@ -247,6 +247,7 @@ std::string fixup_backslashes_in_path(std::string const& in_path) {
     }
     return out;
 }
+fs::path fixup_backslashes_in_path(fs::path const& in_path) { return fixup_backslashes_in_path(in_path.str()); }
 
 path& path::operator+=(path const& in) {
     contents += in.contents;
