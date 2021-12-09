@@ -499,11 +499,11 @@ inline std::string version_to_string(uint32_t version) {
     }
 
 struct ManifestVersion {
-    uint32_t major = 1;
-    uint32_t minor = 0;
-    uint32_t patch = 0;
-    explicit ManifestVersion() noexcept {};
-    explicit ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
+    BUILDER_VALUE(ManifestVersion, uint32_t, major, 1)
+    BUILDER_VALUE(ManifestVersion, uint32_t, minor, 0)
+    BUILDER_VALUE(ManifestVersion, uint32_t, patch, 0)
+    ManifestVersion() noexcept {};
+    ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
 
     std::string get_version_str() const noexcept {
         return std::string("\"file_format_version\": \"") + std::to_string(major) + "." + std::to_string(minor) + "." +
@@ -563,8 +563,8 @@ struct ManifestLayer {
         std::string get_manifest_str() const;
         VkLayerProperties get_layer_properties() const;
     };
-    ManifestVersion file_format_version;
-    std::vector<LayerDescription> layers;
+    BUILDER_VALUE(ManifestLayer, ManifestVersion, file_format_version, {})
+    BUILDER_VECTOR(ManifestLayer, LayerDescription, layers, layer)
 
     std::string get_manifest_str() const;
 };

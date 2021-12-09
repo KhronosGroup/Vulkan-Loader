@@ -1658,13 +1658,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1699,13 +1696,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1740,13 +1734,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1781,13 +1772,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1822,13 +1810,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1863,13 +1848,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1904,13 +1886,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1945,13 +1924,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -1986,13 +1962,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -2027,13 +2000,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -2068,13 +2038,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->add_explicit_layer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -2109,13 +2076,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -2150,13 +2114,10 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     driver.add_instance_extensions({first_ext, second_ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
