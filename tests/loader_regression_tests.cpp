@@ -102,13 +102,10 @@ TEST_F(CreateInstance, LayerNotPresent) {
 
 TEST_F(CreateInstance, LayerPresent) {
     const char* layer_name = "TestLayer";
-    ManifestLayer::LayerDescription description{};
-    description.name = layer_name;
-    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_1;
-
-    ManifestLayer layer;
-    layer.layers.push_back(description);
-    env->add_explicit_layer(layer, "test_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -125,21 +122,15 @@ TEST_F(EnumerateInstanceLayerProperties, UsageChecks) {
     const char* layer_name_1 = "TestLayer1";
     const char* layer_name_2 = "TestLayer1";
 
-    ManifestLayer::LayerDescription description1{};
-    description1.name = layer_name_1;
-    description1.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer_1.json");
 
-    ManifestLayer layer1;
-    layer1.layers.push_back(description1);
-    env->add_explicit_layer(layer1, "test_layer_1.json");
-
-    ManifestLayer::LayerDescription description2{};
-    description2.name = layer_name_1;
-    description2.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
-
-    ManifestLayer layer2;
-    layer2.layers.push_back(description2);
-    env->add_explicit_layer(layer2, "test_layer_2.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer_2.json");
 
     {  // OnePass
         VkLayerProperties layer_props[2] = {};
@@ -272,13 +263,10 @@ TEST_F(EnumerateDeviceLayerProperties, LayersMatch) {
     driver.physical_devices.emplace_back("physical_device_0");
 
     const char* layer_name = "TestLayer";
-    ManifestLayer::LayerDescription description{};
-    description.name = layer_name;
-    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
-
-    ManifestLayer layer;
-    layer.layers.push_back(description);
-    env->add_explicit_layer(layer, "test_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -569,24 +557,17 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    auto description_0 = ManifestLayer::LayerDescription{};
-    description_0.name = layer_name_0;
-    description_0.lib_path = CURRENT_PLATFORM_DUMMY_BINARY;
-
-    ManifestLayer layer_0;
-    layer_0.layers.push_back(description_0);
+    auto layer_0 = ManifestLayer{}.add_layer(
+        ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY));
 
     auto layer_loc_0 = env.explicit_layer_folder.write("dummy_test_layer_0.json", layer_0);
     env.platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc_0);
 
     const char* layer_name_1 = "DummyLayerImplicit";
-    auto description_1 = ManifestLayer::LayerDescription{};
-    description_1.name = layer_name_1;
-    description_1.lib_path = CURRENT_PLATFORM_DUMMY_BINARY;
-    description_1.disable_environment = "DISABLE_ENV";
-
-    ManifestLayer layer_1;
-    layer_1.layers.push_back(description_1);
+    auto layer_1 = ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                 .set_name(layer_name_1)
+                                                 .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY)
+                                                 .set_disable_environment("DISABLE_ENV"));
 
     auto layer_loc_1 = env.implicit_layer_folder.write("dummy_test_layer_1.json", layer_1);
     env.platform_shim->add_manifest(ManifestCategory::implicit_layer, layer_loc_1);
@@ -850,15 +831,12 @@ TEST(EnvironmentVariables, VK_LAYER_PATH) {
     SingleICDShim env{TestICDDetails{TEST_ICD_PATH_VERSION_6}};
     env.get_test_icd().physical_devices.push_back({});
     env.platform_shim->redirect_path("/tmp/carol", env.explicit_layer_folder.location());
+
     const char* layer_name = "TestLayer";
-
-    ManifestLayer::LayerDescription description{};
-    description.name = layer_name;
-    description.lib_path = TEST_LAYER_PATH_EXPORT_VERSION_2;
-
-    ManifestLayer layer;
-    layer.layers.push_back(description);
-    env.AddExplicitLayer(layer, "test_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);

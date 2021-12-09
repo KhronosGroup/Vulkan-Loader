@@ -203,30 +203,32 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     }
 }
 void FrameworkEnvironment::add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
-    for (auto& layer : layer_manifest.layers) {
-        if (!layer.lib_path.str().empty()) {
-            std::string new_layer_name = layer.name + "_" + layer.lib_path.filename().str();
-
-            auto new_layer_location = implicit_layer_folder.copy_file(layer.lib_path, new_layer_name);
-            layer.lib_path = new_layer_location;
-        }
-    }
-
-    auto layer_loc = implicit_layer_folder.write(json_name, layer_manifest);
-    platform_shim->add_manifest(ManifestCategory::implicit_layer, layer_loc);
+    add_layer_impl(layer_manifest, json_name, implicit_layer_folder, ManifestCategory::implicit_layer);
 }
 void FrameworkEnvironment::add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
+    add_layer_impl(layer_manifest, json_name, explicit_layer_folder, ManifestCategory::explicit_layer);
+}
+
+void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const std::string& json_name,
+                                          fs::FolderManager& folder_manager, ManifestCategory category) {
     for (auto& layer : layer_manifest.layers) {
         if (!layer.lib_path.str().empty()) {
             std::string new_layer_name = layer.name + "_" + layer.lib_path.filename().str();
 
-            auto new_layer_location = explicit_layer_folder.copy_file(layer.lib_path, new_layer_name);
+            auto new_layer_location = folder_manager.copy_file(layer.lib_path, new_layer_name);
+
+            // Don't load the layer binary if using the wrap objects layer, since it doesn't export the same interface functions
+            if (fs::fixup_backslashes_in_path(layer.lib_path).str() !=
+                fs::fixup_backslashes_in_path(fs::path(TEST_LAYER_WRAP_OBJECTS)).str()) {
+                layers.push_back(TestLayerHandle(new_layer_location));
+                layers.back().reset_layer();
+            }
             layer.lib_path = new_layer_location;
         }
     }
 
-    auto layer_loc = explicit_layer_folder.write(json_name, layer_manifest);
-    platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc);
+    auto layer_loc = folder_manager.write(json_name, layer_manifest);
+    platform_shim->add_manifest(category, layer_loc);
 }
 
 TestICD& FrameworkEnvironment::get_test_icd(int index) noexcept { return icds[index].get_test_icd(); }

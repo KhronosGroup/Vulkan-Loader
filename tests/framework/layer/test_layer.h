@@ -92,26 +92,34 @@ struct TestLayer {
     fs::path manifest_file_path;
     uint32_t manifest_version = VK_MAKE_VERSION(1, 1, 2);
 
-    bool is_meta_layer = false;
+    BUILDER_VALUE(TestLayer, bool, is_meta_layer, false)
 
-    std::string unique_name;
-    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
-    uint32_t implementation_version = 2;
-    uint32_t min_implementation_version = 0;
-    std::string description;
+    BUILDER_VALUE(TestLayer, std::string, unique_name, {})
+    BUILDER_VALUE(TestLayer, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0))
+    BUILDER_VALUE(TestLayer, uint32_t, implementation_version, 2)
+    BUILDER_VALUE(TestLayer, uint32_t, min_implementation_version, 0)
+    BUILDER_VALUE(TestLayer, std::string, description, {})
 
-    std::vector<std::string> alternative_function_names;
+    BUILDER_VECTOR(TestLayer, std::string, alternative_function_names, alternative_function_name)
 
-    std::vector<Extension> instance_extensions;
-    std::vector<Extension> device_extensions;
+    BUILDER_VECTOR(TestLayer, Extension, instance_extensions, instance_extension)
+    BUILDER_VECTOR(TestLayer, Extension, device_extensions, device_extension)
 
-    std::string enable_environment;
-    std::string disable_environment;
+    BUILDER_VALUE(TestLayer, std::string, enable_environment, {});
+    BUILDER_VALUE(TestLayer, std::string, disable_environment, {});
 
-    std::vector<LayerDefinition> meta_component_layers;
+    BUILDER_VECTOR(TestLayer, LayerDefinition, meta_component_layers, meta_component_layer);
 
-    bool intercept_vkEnumerateInstanceExtensionProperties = false;
-    bool intercept_vkEnumerateInstanceLayerProperties = false;
+    BUILDER_VALUE(TestLayer, bool, intercept_vkEnumerateInstanceExtensionProperties, false)
+    BUILDER_VALUE(TestLayer, bool, intercept_vkEnumerateInstanceLayerProperties, false)
+    struct LayerCallback {
+        FP_layer_callback callback = nullptr;
+        void* data = nullptr;
+    };
+    // Called in vkCreateInstance after calling down the chain & returning
+    BUILDER_VALUE(TestLayer, LayerCallback, create_instance_callback, {})
+    // Called in vkCreateDevice after calling down the chain & returning
+    BUILDER_VALUE(TestLayer, LayerCallback, create_device_callback, {})
 
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;
@@ -124,23 +132,6 @@ struct TestLayer {
         VkLayerDispatchTable dispatch_table;
     };
     std::vector<Device> created_devices;
-
-    // Called in vkCreateInstance after calling down the chain & returning
-    FP_layer_callback create_instance_callback = nullptr;
-    void* create_instance_callback_data = nullptr;
-
-    // Called in vkCreateDevice after calling down the chain & returning
-    FP_layer_callback create_device_callback = nullptr;
-    void* create_device_callback_data = nullptr;
-
-    void SetCreateInstanceCallback(FP_layer_callback callback, void* data) noexcept {
-        create_instance_callback = callback;
-        create_instance_callback_data = data;
-    }
-    void SetCreateDeviceCallback(FP_layer_callback callback, void* data) noexcept {
-        create_device_callback = callback;
-        create_device_callback_data = data;
-    }
 };
 
 using GetTestLayerFunc = TestLayer* (*)();
