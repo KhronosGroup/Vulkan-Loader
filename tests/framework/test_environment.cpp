@@ -210,6 +210,16 @@ void FrameworkEnvironment::add_implicit_layer(ManifestLayer layer_manifest, cons
 void FrameworkEnvironment::add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
     add_layer_impl(TestLayerDetails{layer_manifest, json_name}, explicit_layer_folder, ManifestCategory::explicit_layer);
 }
+void FrameworkEnvironment::add_fake_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
+    TestLayerDetails fake_details{layer_manifest, json_name};
+    fake_details.is_fake = true;
+    add_layer_impl(fake_details, implicit_layer_folder, ManifestCategory::implicit_layer);
+}
+void FrameworkEnvironment::add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
+    TestLayerDetails fake_details{layer_manifest, json_name};
+    fake_details.is_fake = true;
+    add_layer_impl(fake_details, explicit_layer_folder, ManifestCategory::explicit_layer);
+}
 void FrameworkEnvironment::add_implicit_layer(TestLayerDetails layer_details) noexcept {
     add_layer_impl(layer_details, implicit_layer_folder, ManifestCategory::implicit_layer);
 }
@@ -228,7 +238,8 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::Fo
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
-            if (layer.lib_path.stem().str().find(fs::path(TEST_LAYER_WRAP_OBJECTS).stem().str()) == std::string::npos) {
+            if (!layer_details.is_fake &&
+                layer.lib_path.stem().str().find(fs::path(TEST_LAYER_WRAP_OBJECTS).stem().str()) == std::string::npos) {
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset_layer();
             }

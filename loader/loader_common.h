@@ -111,12 +111,23 @@ typedef struct {
     uint16_t patch;
 } loader_api_version;
 
+// Enumeration used to clearly identify reason for library load failure.
+enum loader_layer_library_status {
+    LOADER_LAYER_LIB_NOT_LOADED = 0,
+
+    LOADER_LAYER_LIB_SUCCESS_LOADED = 1,
+
+    LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE = 20,
+    LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD = 21,
+};
+
 struct loader_layer_properties {
     VkLayerProperties info;
     enum layer_type_flags type_flags;
     uint32_t interface_version;  // PFN_vkNegotiateLoaderLayerInterfaceVersion
     char manifest_file_name[MAX_STRING_SIZE];
     char lib_name[MAX_STRING_SIZE];
+    enum loader_layer_library_status lib_status;
     loader_platform_dl_handle lib_handle;
     struct loader_layer_functions functions;
     struct loader_extension_list instance_extension_list;

@@ -539,7 +539,7 @@ TEST_F(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY).set_is_fake(true));
+    env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
