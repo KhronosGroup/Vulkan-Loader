@@ -537,7 +537,7 @@ TEST_F(CreateDevice, LayersNotPresent) {
 TEST(TryLoadWrongBinaries, WrongICD) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY).set_is_fake(true));
+    env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
@@ -561,26 +561,95 @@ TEST(TryLoadWrongBinaries, WrongICD) {
     ASSERT_EQ(driver_count, 1);
 }
 
+TEST(TryLoadWrongBinaries, WrongExplicit) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "DummyLayerExplicit";
+    env.add_fake_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
+        "dummy_test_layer.json");
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    std::array<VkLayerProperties, 2> layer_props;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+
+    // Explicit layer not found should generate a VK_ERROR_LAYER_NOT_PRESENT error message.
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+
+    // Should get an error message for the explicit layer
+#ifndef __APPLE__
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" was wrong bit-type!")));
+#else   // __APPLE__
+    // Apple only throws a wrong library type of error
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load!")));
+#endif  // __APPLE__
+}
+
+TEST(TryLoadWrongBinaries, WrongImplicit) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "DummyLayerImplicit0";
+    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                              .set_name(layer_name)
+                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                              .set_disable_environment("DISABLE_ENV")),
+                                "dummy_test_layer.json");
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    std::array<VkLayerProperties, 1> layer_props;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+
+    // We don't want to return VK_ERROR_LAYER_NOT_PRESENT for missing implicit layers because it's not the
+    // application asking for them.
+    inst.CheckCreate(VK_SUCCESS);
+
+#ifndef __APPLE__
+    // Should get an info message for the bad implicit layer
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" was wrong bit-type.")));
+#else   // __APPLE__
+    // Apple only throws a wrong library type of error
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load.")));
+#endif  // __APPLE__
+}
+
 TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    auto layer_0 = ManifestLayer{}.add_layer(
-        ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY));
-
-    auto layer_loc_0 = env.explicit_layer_folder.write_manifest("dummy_test_layer_0.json", layer_0.get_manifest_str());
-    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc_0);
-
+    env.add_fake_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
+        "dummy_test_layer_0.json");
     const char* layer_name_1 = "DummyLayerImplicit";
-    auto layer_1 = ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                 .set_name(layer_name_1)
-                                                 .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY)
-                                                 .set_disable_environment("DISABLE_ENV"));
-
-    auto layer_loc_1 = env.implicit_layer_folder.write_manifest("dummy_test_layer_1.json", layer_1.get_manifest_str());
-    env.platform_shim->add_manifest(ManifestCategory::implicit_layer, layer_loc_1);
+    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                              .set_name(layer_name_1)
+                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                              .set_disable_environment("DISABLE_ENV")),
+                                "dummy_test_layer_1.json");
 
     uint32_t layer_count = 0;
     ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
@@ -590,18 +659,169 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
     ASSERT_EQ(layer_count, 2);
 
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
-    inst.create_info.add_layer(layer_name_0).add_layer(layer_name_1);
-    // "According to all known laws of aviation, there is no way that this should return VK_SUCCESS"
-    // This by accounts *should* return VK_ERROR_LAYER_NOT_PRESENT but due to a confluence of bad choices and backwards
-    // compatibility guarantee, returns VK_SUCCESS.
-    // REASON: To be able to 'load' a library in either 32 or 64 bit apps, the loader will just try to load both and ignore
-    // whichever library didn't match the current architecture. Because of this, the loader actually just flat out ignores
-    // errors and pretends they didn't load at all.
-    // TODO: add 32/64 bit field to layer manifests so that this issue doesn't occur, then implement logic to make the loader
-    // smart enough to tell when a layer that failed to load was due to the old behavior or not. (eg, don't report an error if
-    // a layer with the same name successfully loaded)
-    inst.CheckCreate();
+    inst.create_info.add_layer(layer_name_0);
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+
+    // Explicit layer not found should generate a VK_ERROR_LAYER_NOT_PRESENT error message.
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+
+#ifndef __APPLE__
+    // Should get error messages for both (the explicit is second and we don't want the implicit to return before the explicit
+    // triggers a failure during vkCreateInstance)
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" was wrong bit-type!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" was wrong bit-type.")));
+#else   // __APPLE__
+    // Apple only throws a wrong library type of error
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" failed to load!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" failed to load.")));
+#endif  // __APPLE__
+}
+
+TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name_0 = "DummyLayerExplicit";
+    env.add_fake_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
+        "dummy_test_layer_0.json");
+    const char* layer_name_1 = "DummyLayerImplicit";
+    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                              .set_name(layer_name_1)
+                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                              .set_disable_environment("DISABLE_ENV")),
+                                "dummy_test_layer_1.json");
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 2);
+
+    std::array<VkLayerProperties, 2> layer_props;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 2);
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name_0);
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+
+    // Explicit layer not found should generate a VK_ERROR_LAYER_NOT_PRESENT error message.
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+
+#ifndef __APPLE__
+    // Should not get an error messages for either
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" was wrong bit-type!")));
+    ASSERT_FALSE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" was wrong bit-type.")));
+#else   // __APPLE__
+    // Apple only throws a wrong library type of error
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" failed to load!")));
+    ASSERT_FALSE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" failed to load.")));
+#endif  // __APPLE__
+}
+
+TEST(TryLoadWrongBinaries, BadExplicit) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "DummyLayerExplicit";
+    env.add_fake_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)),
+        "dummy_test_layer.json");
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    std::array<VkLayerProperties, 2> layer_props;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+
+    // Explicit layer not found should generate a VK_ERROR_LAYER_NOT_PRESENT error message.
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+
+    // Should get an error message for the bad explicit
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load!")));
+}
+
+TEST(TryLoadWrongBinaries, BadImplicit) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "DummyLayerImplicit0";
+    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                              .set_name(layer_name)
+                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
+                                                              .set_disable_environment("DISABLE_ENV")),
+                                "dummy_test_layer.json");
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    std::array<VkLayerProperties, 1> layer_props;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 1);
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+
+    // We don't want to return VK_ERROR_LAYER_NOT_PRESENT for missing implicit layers because it's not the
+    // application asking for them.
+    inst.CheckCreate(VK_SUCCESS);
+
+    // Should get an info message for the bad implicit
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load.")));
+}
+
+TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name_0 = "DummyLayerExplicit";
+    env.add_fake_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)),
+        "dummy_test_layer_0.json");
+    const char* layer_name_1 = "DummyLayerImplicit0";
+    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                              .set_name(layer_name_1)
+                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
+                                                              .set_disable_environment("DISABLE_ENV")),
+                                "dummy_test_layer_1.json");
+
+    uint32_t layer_count = 0;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 2);
+
+    std::array<VkLayerProperties, 2> layer_props;
+    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
+    ASSERT_EQ(layer_count, 2);
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name_0);
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+
+    // Explicit layer not found should generate a VK_ERROR_LAYER_NOT_PRESENT error message.
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+
+    // Apple only throws a wrong library type of error
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" failed to load!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" failed to load.")));
 }
 
 TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {

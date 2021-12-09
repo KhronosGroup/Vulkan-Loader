@@ -105,8 +105,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         VkDebugUtilsMessengerCallbackDataEXT callback_data;
         VkDebugUtilsObjectNameInfoEXT object_name;
 
-        if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0 || (msg_type & VULKAN_LOADER_LAYER_BIT) != 0 ||
-            (msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
+        if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
         } else if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
@@ -114,6 +113,9 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         } else if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+        } else if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0 || (msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
+            // Just driver or just layer bit should be treated as an info message in debug utils.
+            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
         }
 
         if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {

@@ -119,8 +119,9 @@ int loader_closedir(const struct loader_instance *instance, DIR *dir) {
 #endif  // _WIN32
 }
 
-// log error from to library loading
-void loader_log_load_library_error(const struct loader_instance *inst, const char *filename) {
+// Handle error from to library loading
+void loader_handle_load_library_error(const struct loader_instance *inst, const char *filename,
+                                      enum loader_layer_library_status *lib_status) {
     const char *error_message = loader_platform_open_library_error(filename);
     // If the error is due to incompatible architecture (eg 32 bit vs 64 bit), report it with INFO level
     // Discussed in Github issue 262 & 644
@@ -128,6 +129,11 @@ void loader_log_load_library_error(const struct loader_instance *inst, const cha
     VkFlags err_flag = VULKAN_LOADER_ERROR_BIT;
     if (strstr(error_message, "wrong ELF class:") != NULL || strstr(error_message, " with error 193") != NULL) {
         err_flag = VULKAN_LOADER_INFO_BIT;
+        if (NULL != lib_status) {
+            *lib_status = LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE;
+        }
+    } else if (NULL != lib_status) {
+        *lib_status = LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD;
     }
     loader_log(inst, err_flag, 0, error_message);
 }
@@ -1358,7 +1364,7 @@ static VkResult loader_scanned_icd_init(const struct loader_instance *inst, stru
 }
 
 static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
-                                       const char *filename, uint32_t api_version) {
+                                       const char *filename, uint32_t api_version, enum loader_layer_library_status *lib_status) {
     loader_platform_dl_handle handle;
     PFN_vkCreateInstance fp_create_inst;
     PFN_vkEnumerateInstanceExtensionProperties fp_get_inst_ext_props;
@@ -1380,7 +1386,7 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
     handle = loader_platform_open_library(filename);
 #endif
     if (NULL == handle) {
-        loader_log_load_library_error(inst, filename);
+        loader_handle_load_library_error(inst, filename, lib_status);
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
@@ -3505,13 +3511,32 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     continue;
                 }
                 VkResult icd_add_res = VK_SUCCESS;
-                icd_add_res = loader_scanned_icd_add(inst, icd_tramp_list, fullpath, vers);
+                enum loader_layer_library_status lib_status;
+                icd_add_res = loader_scanned_icd_add(inst, icd_tramp_list, fullpath, vers, &lib_status);
                 if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_add_res) {
                     res = icd_add_res;
                     goto out;
                 } else if (VK_SUCCESS != icd_add_res) {
-                    loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                               "loader_icd_scan: Failed to add ICD JSON %s.  Skipping ICD JSON.", fullpath);
+                    switch (lib_status) {
+                        case LOADER_LAYER_LIB_NOT_LOADED:
+                        case LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD:
+                            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                                       "loader_icd_scan: Failed loading library associated with ICD JSON %s.Ignoring this JSON",
+                                       fullpath);
+                            break;
+                        case LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE: {
+                            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                                       "Requested layer %s was wrong bit-type. Ignoring this JSON", fullpath);
+                            break;
+                        }
+                        case LOADER_LAYER_LIB_SUCCESS_LOADED:
+                            // Shouldn't be able to reach this but if it is, best to report a debug
+                            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                                       "Shouldn't reach this. A valid version of requested ICD %s was loaded but something bad "
+                                       "happened afterwards.",
+                                       fullpath);
+                            break;
+                    }
                     cJSON_Delete(inst, json);
                     json = NULL;
                     continue;
@@ -4420,8 +4445,9 @@ struct loader_instance *loader_get_instance(const VkInstance instance) {
 static loader_platform_dl_handle loader_open_layer_file(const struct loader_instance *inst, const char *chain_type,
                                                         struct loader_layer_properties *prop) {
     if ((prop->lib_handle = loader_platform_open_library(prop->lib_name)) == NULL) {
-        loader_log_load_library_error(inst, prop->lib_name);
+        loader_handle_load_library_error(inst, prop->lib_name, &prop->lib_status);
     } else {
+        prop->lib_status = LOADER_LAYER_LIB_SUCCESS_LOADED;
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Loading layer library %s", prop->lib_name);
     }
 
@@ -4477,6 +4503,9 @@ static VkResult loader_add_environment_layers(struct loader_instance *inst, cons
         goto out;
     }
     strcpy(name, layer_env);
+
+    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+               "loader_add_environment_layers: Env Var %s defined and adding layers %s", env_name, name);
 
     while (name && *name) {
         next = loader_get_next_path(name);
@@ -4886,6 +4915,60 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                        layer_prop->info.layerName, layer_prop->lib_name);
 
             num_activated_layers++;
+        }
+    }
+
+    // Make sure each layer requested by the application was actually loaded
+    for (uint32_t exp = 0; exp < inst->expanded_activated_layer_list.count; ++exp) {
+        struct loader_layer_properties *exp_layer_prop = &inst->expanded_activated_layer_list.list[exp];
+        bool found = false;
+        for (uint32_t act = 0; act < num_activated_layers; ++act) {
+            if (!strcmp(activated_layers[act].name, exp_layer_prop->info.layerName)) {
+                found = true;
+                break;
+            }
+        }
+        // If it wasn't found, we want to at least log an error.  However, if it was enabled by the application directly,
+        // we want to return a bad layer error.
+        if (!found) {
+            bool app_requested = false;
+            for (uint32_t act = 0; act < pCreateInfo->enabledLayerCount; ++act) {
+                if (!strcmp(pCreateInfo->ppEnabledLayerNames[act], exp_layer_prop->info.layerName)) {
+                    app_requested = true;
+                    break;
+                }
+            }
+            VkFlags log_flag = VULKAN_LOADER_LAYER_BIT;
+            char ending = '.';
+            if (app_requested) {
+                log_flag |= VULKAN_LOADER_ERROR_BIT;
+                ending = '!';
+            } else {
+                log_flag |= VULKAN_LOADER_INFO_BIT;
+            }
+            switch (exp_layer_prop->lib_status) {
+                case LOADER_LAYER_LIB_NOT_LOADED:
+                    loader_log(inst, log_flag, 0, "Requested layer %s was not loaded%c", exp_layer_prop->info.layerName, ending);
+                    break;
+                case LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE: {
+                    loader_log(inst, log_flag, 0, "Requested layer %s was wrong bit-type%c", exp_layer_prop->info.layerName,
+                               ending);
+                    break;
+                }
+                case LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD:
+                    loader_log(inst, log_flag, 0, "Requested layer %s failed to load%c", exp_layer_prop->info.layerName, ending);
+                    break;
+                case LOADER_LAYER_LIB_SUCCESS_LOADED:
+                    // Shouldn't be able to reach this but if it is, best to report a debug
+                    loader_log(inst, log_flag, 0,
+                               "Shouldn't reach this. A valid version of requested layer %s was loaded but was not found in the "
+                               "list of activated layers%c",
+                               exp_layer_prop->info.layerName, ending);
+                    break;
+            }
+            if (app_requested) {
+                return VK_ERROR_LAYER_NOT_PRESENT;
+            }
         }
     }
 

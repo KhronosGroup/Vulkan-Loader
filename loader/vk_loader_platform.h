@@ -427,8 +427,8 @@ static loader_platform_dl_handle loader_platform_open_library(const char *lib_pa
     return lib_handle;
 }
 static char *loader_platform_open_library_error(const char *libPath) {
-    static char errorMsg[164];
-    (void)snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
+    static char errorMsg[512];
+    (void)snprintf(errorMsg, 511, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
     return errorMsg;
 }
 static void loader_platform_close_library(loader_platform_dl_handle library) { FreeLibrary(library); }

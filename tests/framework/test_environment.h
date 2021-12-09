@@ -316,6 +316,8 @@ struct FrameworkEnvironment {
     void add_implicit_layer(TestLayerDetails layer_details) noexcept;
     void add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_explicit_layer(TestLayerDetails layer_details) noexcept;
+    void add_fake_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
+    void add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
 
     TestICD& get_test_icd(int index = 0) noexcept;
     TestICD& reset_icd(int index = 0) noexcept;
