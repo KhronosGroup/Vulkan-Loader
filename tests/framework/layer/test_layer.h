@@ -112,14 +112,10 @@ struct TestLayer {
 
     BUILDER_VALUE(TestLayer, bool, intercept_vkEnumerateInstanceExtensionProperties, false)
     BUILDER_VALUE(TestLayer, bool, intercept_vkEnumerateInstanceLayerProperties, false)
-    struct LayerCallback {
-        FP_layer_callback callback = nullptr;
-        void* data = nullptr;
-    };
     // Called in vkCreateInstance after calling down the chain & returning
-    BUILDER_VALUE(TestLayer, LayerCallback, create_instance_callback, {})
+    BUILDER_VALUE(TestLayer, std::function<VkResult(TestLayer& layer)>, create_instance_callback, {})
     // Called in vkCreateDevice after calling down the chain & returning
-    BUILDER_VALUE(TestLayer, LayerCallback, create_device_callback, {})
+    BUILDER_VALUE(TestLayer, std::function<VkResult(TestLayer& layer)>, create_device_callback, {})
 
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;

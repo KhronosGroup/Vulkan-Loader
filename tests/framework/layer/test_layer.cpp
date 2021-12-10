@@ -161,8 +161,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     // next layer in the chain.
     layer_init_instance_dispatch_table(layer.instance_handle, &layer.instance_dispatch_table, fpGetInstanceProcAddr);
 
-    if (layer.create_instance_callback.callback)
-        result = layer.create_instance_callback.callback(layer, layer.create_instance_callback.data);
+    if (layer.create_instance_callback) result = layer.create_instance_callback(layer);
 
     return result;
 }
@@ -195,8 +194,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     // initialize layer's dispatch table
     layer_init_device_dispatch_table(device.device_handle, &device.dispatch_table, fpGetDeviceProcAddr);
 
-    if (layer.create_device_callback.callback)
-        result = layer.create_device_callback.callback(layer, layer.create_device_callback.data);
+    if (layer.create_device_callback) result = layer.create_device_callback(layer);
 
     return result;
 }
