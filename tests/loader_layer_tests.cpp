@@ -241,28 +241,26 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2) {
         "regular_test_layer.json");
 
     auto& layer = env->get_test_layer(0);
-    layer.set_create_instance_callback(TestLayer::LayerCallback{
-        [](TestLayer& layer, void* data) -> VkResult {
-            uint32_t phys_dev_count = 0;
-            VkResult res = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, nullptr);
-            if (res != VK_SUCCESS || phys_dev_count > 1) {
-                return VK_ERROR_INITIALIZATION_FAILED;  // expecting only a single physical device.
-            }
-            VkPhysicalDevice phys_dev{};
-            res = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, &phys_dev);
-            if (res != VK_SUCCESS) {
-                return VK_ERROR_INITIALIZATION_FAILED;
-            }
-            VkPhysicalDeviceProperties2 props2{};
-            props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-            layer.instance_dispatch_table.GetPhysicalDeviceProperties2(phys_dev, &props2);
+    layer.set_create_instance_callback([](TestLayer& layer) -> VkResult {
+        uint32_t phys_dev_count = 0;
+        VkResult res = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, nullptr);
+        if (res != VK_SUCCESS || phys_dev_count > 1) {
+            return VK_ERROR_INITIALIZATION_FAILED;  // expecting only a single physical device.
+        }
+        VkPhysicalDevice phys_dev{};
+        res = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, &phys_dev);
+        if (res != VK_SUCCESS) {
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+        VkPhysicalDeviceProperties2 props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        layer.instance_dispatch_table.GetPhysicalDeviceProperties2(phys_dev, &props2);
 
-            VkPhysicalDeviceFeatures2 features2{};
-            features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            layer.instance_dispatch_table.GetPhysicalDeviceFeatures2(phys_dev, &features2);
-            return VK_SUCCESS;
-        },
-        nullptr});
+        VkPhysicalDeviceFeatures2 features2{};
+        features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        layer.instance_dispatch_table.GetPhysicalDeviceFeatures2(phys_dev, &features2);
+        return VK_SUCCESS;
+    });
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(regular_layer_name).set_api_version(1, 1, 0);
@@ -280,22 +278,20 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
         "regular_test_layer.json");
 
     auto& layer = env->get_test_layer(0);
-    layer.set_create_instance_callback(TestLayer::LayerCallback{
-        [](TestLayer& layer, void* data) -> VkResult {
-            uint32_t phys_dev_count = 1;
-            VkPhysicalDevice phys_dev{};
-            layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, &phys_dev);
+    layer.set_create_instance_callback([](TestLayer& layer) -> VkResult {
+        uint32_t phys_dev_count = 1;
+        VkPhysicalDevice phys_dev{};
+        layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, &phys_dev);
 
-            VkPhysicalDeviceProperties2KHR props2{};
-            props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
-            layer.instance_dispatch_table.GetPhysicalDeviceProperties2KHR(phys_dev, &props2);
+        VkPhysicalDeviceProperties2KHR props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+        layer.instance_dispatch_table.GetPhysicalDeviceProperties2KHR(phys_dev, &props2);
 
-            VkPhysicalDeviceFeatures2KHR features2{};
-            features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
-            layer.instance_dispatch_table.GetPhysicalDeviceFeatures2KHR(phys_dev, &features2);
-            return VK_SUCCESS;
-        },
-        nullptr});
+        VkPhysicalDeviceFeatures2KHR features2{};
+        features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
+        layer.instance_dispatch_table.GetPhysicalDeviceFeatures2KHR(phys_dev, &features2);
+        return VK_SUCCESS;
+    });
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(regular_layer_name).add_extension("VK_KHR_get_physical_device_properties2");

@@ -57,6 +57,7 @@
 #include <unordered_map>
 #include <utility>
 #include <memory>
+#include <functional>
 
 #include <cassert>
 #include <cstring>

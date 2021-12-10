@@ -772,7 +772,8 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
 #if defined(__linux__) || defined(__FreeBSD__)
 // Make sure the loader reports the correct message based on if USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvironmentVariables, NonSecureEnvVarLookup) {
-    SingleICDShim env(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
@@ -799,7 +800,8 @@ TEST(EnvironmentVariables, XDG) {
     set_env_var("XDG_DATA_DIRS", "::::/tmp/goober3:/tmp/goober4/with spaces:::");
     set_env_var("XDG_DATA_HOME", "::::/tmp/goober3:/tmp/goober4/with spaces:::");
 
-    SingleICDShim env{TestICDDetails{TEST_ICD_PATH_VERSION_6}};
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     env.get_test_icd().physical_devices.push_back({});
 
     InstWrapper inst{env.vulkan_functions};
@@ -828,12 +830,13 @@ TEST(EnvironmentVariables, VK_LAYER_PATH) {
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
     set_env_var("VK_LAYER_PATH", vk_layer_path);
 
-    SingleICDShim env{TestICDDetails{TEST_ICD_PATH_VERSION_6}};
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     env.get_test_icd().physical_devices.push_back({});
     env.platform_shim->redirect_path("/tmp/carol", env.explicit_layer_folder.location());
 
     const char* layer_name = "TestLayer";
-    env->add_explicit_layer(
+    env.add_explicit_layer(
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "test_layer.json");
