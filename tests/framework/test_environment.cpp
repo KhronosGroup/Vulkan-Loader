@@ -212,8 +212,9 @@ void FrameworkEnvironment::add_explicit_layer(ManifestLayer layer_manifest, cons
 void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const std::string& json_name,
                                           fs::FolderManager& folder_manager, ManifestCategory category) {
     for (auto& layer : layer_manifest.layers) {
+        size_t cur_layer_index = layers.size();
         if (!layer.lib_path.str().empty()) {
-            std::string new_layer_name = layer.name + "_" + layer.lib_path.filename().str();
+            std::string new_layer_name = layer.name + "_" + std::to_string(cur_layer_index) + "_" + layer.lib_path.filename().str();
 
             auto new_layer_location = folder_manager.copy_file(layer.lib_path, new_layer_name);
 
