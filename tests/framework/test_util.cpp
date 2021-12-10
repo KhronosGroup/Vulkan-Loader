@@ -363,11 +363,25 @@ int delete_folder(path const& folder) {
         // nothing to delete
         return 0;
     }
-    bool ret = RemoveDirectoryA(folder.c_str());
-    if (ret == 0) {
-        print_error_message(ERROR_REMOVEDIRECTORY_FAILED, "RemoveDirectoryA");
+    std::string search_path = folder.str() + "/*.*";
+    std::string s_p = folder.str() + "/";
+    WIN32_FIND_DATA fd;
+    HANDLE hFind = ::FindFirstFileA(search_path.c_str(), &fd);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                if (!string_eq(fd.cFileName, ".") && !string_eq(fd.cFileName, "..")) {
+                    delete_folder(s_p + fd.cFileName);
+                }
+            } else {
+                std::string child_name = s_p + fd.cFileName;
+                DeleteFile(child_name.c_str());
+            }
+        } while (::FindNextFile(hFind, &fd));
+        ::FindClose(hFind);
+        _rmdir(folder.c_str());
     }
-    return ret;
+    return 0;
 #else
     DIR* dir = opendir(folder.c_str());
     if (!dir) {
@@ -403,10 +417,15 @@ FolderManager::FolderManager(path root_path, std::string name, DebugMode debug) 
     create_folder(folder);
 }
 FolderManager::~FolderManager() {
-    for (auto& file : files) {
+    auto list_of_files_to_delete = files;
+    // remove(file) modifies the files variable, copy the list before deleting it
+    // Note: the allocation tests currently leak the loaded driver handles because in an OOM scenario the loader doesn't bother
+    // removing those. Since this is in an OOM situation, it is a low priority to fix. It does have the effect that Windows will
+    // be unable to delete the binaries that were leaked.
+    for (auto& file : list_of_files_to_delete) {
         if (debug >= DebugMode::log) std::cout << "Removing manifest " << file << " at " << (folder / file).str() << "\n";
         if (debug != DebugMode::no_delete) {
-            std::remove((folder / file).c_str());
+            remove(file);
         }
     }
     if (debug != DebugMode::no_delete) {
@@ -455,13 +474,17 @@ void FolderManager::remove(std::string const& name) {
     path out_path = folder / name;
     auto found = std::find(files.begin(), files.end(), name);
     if (found != files.end()) {
-        if (debug >= DebugMode::log) std::cout << "Removing manifest " << name << " at " << out_path.str() << "\n";
+        if (debug >= DebugMode::log) std::cout << "Removing file " << name << " at " << out_path.str() << "\n";
         if (debug != DebugMode::no_delete) {
-            std::remove(out_path.c_str());
+            int rc = std::remove(out_path.c_str());
+            if (rc != 0 && debug >= DebugMode::log) {
+                std::cerr << "Failed to remove file " << name << " at " << out_path.str() << "\n";
+            }
+
             files.erase(found);
         }
     } else {
-        if (debug >= DebugMode::log) std::cout << "Couldn't remove manifest " << name << " at " << out_path.str() << ".\n";
+        if (debug >= DebugMode::log) std::cout << "Couldn't remove file " << name << " at " << out_path.str() << ".\n";
     }
 }
 
@@ -471,6 +494,8 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
     auto found = std::find(files.begin(), files.end(), new_name);
     if (found != files.end()) {
         if (debug >= DebugMode::log) std::cout << "File location already contains" << new_name << ". Is this a bug?\n";
+    } else if (file.str() == new_filepath.str()) {
+        if (debug >= DebugMode::log) std::cout << "Trying to copy " << new_name << " into itself. Is this a bug?\n";
     } else {
         if (debug >= DebugMode::log) std::cout << "Copying file" << file.str() << " to " << new_filepath.str() << "\n";
         files.emplace_back(new_name);
@@ -482,7 +507,7 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
     }
     std::ofstream dst(new_filepath.str(), std::ios::binary);
     if (!dst) {
-        std::cerr << "Failed to create file " << file.str() << " for copying to\n";
+        std::cerr << "Failed to create file " << new_filepath.str() << " for copying to\n";
         return new_filepath;
     }
     dst << src.rdbuf();

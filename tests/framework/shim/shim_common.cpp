@@ -94,9 +94,16 @@ HKEY create_key(HKEY key_root, const char* key_path) {
     return key;
 }
 
-void close_key(HKEY& key) {
+void close_key(HKEY key) {
     LSTATUS out = RegCloseKey(key);
     if (out != ERROR_SUCCESS) std::cerr << win_api_error_str(out) << " failed to close key " << key << "\n";
+}
+
+void delete_key(HKEY key, const char* key_path, bool report_failure = true) {
+    LSTATUS out = RegDeleteKeyA(key, key_path);
+    if (out != ERROR_SUCCESS)
+        if (report_failure)
+            std::cerr << win_api_error_str(out) << " failed to close key " << key << " with path " << key_path << "\n";
 }
 
 void setup_override_key(HKEY root_key, uint32_t random_base_path) {
@@ -157,26 +164,6 @@ void remove_key_value(HKEY const& key, fs::path const& manifest_path) {
         std::cerr << win_api_error_str(out) << " failed to delete key value for " << manifest_path.str() << "\n";
 }
 
-void clear_key_values(HKEY const& key) {
-    DWORD dwNumValues, dwValueNameLen;
-
-    LSTATUS out = RegQueryInfoKey(key, 0, 0, 0, 0, 0, 0, &dwNumValues, &dwValueNameLen, 0, 0, 0);
-    if (out != ERROR_SUCCESS) {
-        std::cerr << win_api_error_str(out) << "couldn't query enum " << key << " values\n";
-        return;
-    }
-    std::string tchValName(dwValueNameLen + 1, '\0');
-    for (DWORD i = 0; i < dwNumValues; i++) {
-        DWORD length = static_cast<DWORD>(tchValName.size());
-        LPSTR lpstr = &tchValName[0];
-        out = RegEnumValue(key, i, lpstr, &length, 0, 0, 0, 0);
-        if (out != ERROR_SUCCESS) {
-            std::cerr << win_api_error_str(out) << "couldn't get enum value " << tchValName << "\n";
-            return;
-        }
-    }
-}
-
 uint32_t setup_override(DebugMode debug_mode) {
     uint32_t random_base_path = 0;
     std::random_device rd;
@@ -221,14 +208,16 @@ void clear_override(DebugMode debug_mode, uint32_t random_base_path) {
     }
 }
 void PlatformShim::reset(DebugMode debug_mode) {
-    KeyWrapper implicit_key{HKEY_LOCAL_MACHINE, "SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers"};
-    KeyWrapper explicit_key{HKEY_LOCAL_MACHINE, "SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers"};
-    KeyWrapper icd_key{HKEY_LOCAL_MACHINE, "SOFTWARE\\Khronos\\Vulkan\\Drivers"};
-    if (debug_mode != DebugMode::no_delete) {
-        clear_key_values(implicit_key);
-        clear_key_values(explicit_key);
-        clear_key_values(icd_key);
-    }
+    delete_key(HKEY_CURRENT_USER, "SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers", false);
+    delete_key(HKEY_CURRENT_USER, "SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers", false);
+
+    delete_key(HKEY_LOCAL_MACHINE, "SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers", false);
+    delete_key(HKEY_LOCAL_MACHINE, "SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers", false);
+    delete_key(HKEY_LOCAL_MACHINE, "SOFTWARE\\Khronos\\Vulkan\\Drivers", false);
+
+    delete_key(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Khronos\\Vulkan\\Drivers", false);
+    delete_key(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Khronos\\Vulkan\\ExplicitLayers", false);
+    delete_key(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Khronos\\Vulkan\\ImplicitLayers", false);
 }
 
 void PlatformShim::set_path(ManifestCategory category, fs::path const& path) {}
@@ -270,11 +259,7 @@ void PlatformShim::add_CM_Device_ID(std::wstring const& id, fs::path const& icd_
     // add_key_value_string(id_key, "VulkanLayerName", layer_path.c_str());
 }
 
-HKEY GetRegistryKey() { return HKEY{}; }
-
 void PlatformShim::redirect_category(fs::path const& new_path, ManifestCategory search_category) {
-    // create_key(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0001");
-    // create_key(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0002");
     switch (search_category) {
         case (ManifestCategory::implicit_layer):
             create_key(HKEY_CURRENT_USER, "SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers");
