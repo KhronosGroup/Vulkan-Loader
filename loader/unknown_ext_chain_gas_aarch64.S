@@ -50,7 +50,8 @@ terminError\num:
     mov     x0, x11                             // Vulkan instance pointer (first arg)
     mov     x1, VK_DEBUG_REPORT_ERROR_BIT_EXT   // The error logging bit (second arg)
     mov     x2, #0                              // Zero (third arg)
-    ldr     x3, =termin_error_string            // The error string (fourth arg)
+    adrp    x9, termin_error_string
+    add     x3, x9, #:lo12:termin_error_string  // The error string (fourth arg)
     ldr     x4, [x11, x10]                      // The function name (fifth arg)
     bl      loader_log                          // Log the error message before we crash
     mov     x0, #0
