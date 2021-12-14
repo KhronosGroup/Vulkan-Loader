@@ -6515,6 +6515,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnume
     // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
     // prefers us crashing.
     *pApiVersion = VK_HEADER_VERSION_COMPLETE;
+
+    // Preload ICD libraries here for integration to preload Vulkan with minimum overhead
+    loader_preload_icds();
     return VK_SUCCESS;
 }
 
