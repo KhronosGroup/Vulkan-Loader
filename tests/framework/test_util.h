@@ -589,6 +589,8 @@ struct MockQueueFamilyProperties {
     BUILDER_VALUE(MockQueueFamilyProperties, VkQueueFamilyProperties, properties, {})
     BUILDER_VALUE(MockQueueFamilyProperties, bool, support_present, false)
 
+    MockQueueFamilyProperties() {}
+
     MockQueueFamilyProperties(VkQueueFamilyProperties properties, bool support_present = false)
         : properties(properties), support_present(support_present) {}
 

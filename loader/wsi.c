@@ -1686,6 +1686,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR) {
+        loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceDisplayPropertiesKHR!\n");
         *pPropertyCount = 0;
         return VK_SUCCESS;
     }
@@ -1722,6 +1724,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR) {
+        loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceDisplayPlanePropertiesKHR!\n");
         *pPropertyCount = 0;
         return VK_SUCCESS;
     }
@@ -1758,9 +1762,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneSupportedDisplaysKHR(Vk
     }
 
     if (NULL == icd_term->dispatch.GetDisplayPlaneSupportedDisplaysKHR) {
-        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
+        loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
                    "ICD for selected physical device is not exporting vkGetDisplayPlaneSupportedDisplaysKHR!\n");
-        abort();
+        *pDisplayCount = 0;
+        return VK_SUCCESS;
     }
 
     return icd_term->dispatch.GetDisplayPlaneSupportedDisplaysKHR(phys_dev_term->phys_dev, planeIndex, pDisplayCount, pDisplays);
@@ -1796,9 +1801,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModePropertiesKHR(VkPhysical
     }
 
     if (NULL == icd_term->dispatch.GetDisplayModePropertiesKHR) {
-        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
+        loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
                    "ICD for selected physical device is not exporting vkGetDisplayModePropertiesKHR!\n");
-        abort();
+        *pPropertyCount = 0;
+        return VK_SUCCESS;
     }
 
     return icd_term->dispatch.GetDisplayModePropertiesKHR(phys_dev_term->phys_dev, display, pPropertyCount, pProperties);
@@ -1835,9 +1841,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayModeKHR(VkPhysicalDevice 
     }
 
     if (NULL == icd_term->dispatch.CreateDisplayModeKHR) {
+        // Can't emulate, so return an appropriate error
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device is not exporting vkCreateDisplayModeKHR!\n");
-        abort();
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     return icd_term->dispatch.CreateDisplayModeKHR(phys_dev_term->phys_dev, display, pCreateInfo, pAllocator, pMode);
@@ -1873,9 +1880,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilitiesKHR(VkPhysi
     }
 
     if (NULL == icd_term->dispatch.GetDisplayPlaneCapabilitiesKHR) {
-        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
+        // Emulate support
+        loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
                    "ICD for selected physical device is not exporting vkGetDisplayPlaneCapabilitiesKHR!\n");
-        abort();
+        if (pCapabilities) {
+            memset(pCapabilities, 0, sizeof(VkDisplayPlaneCapabilitiesKHR));
+        }
+        return VK_SUCCESS;
     }
 
     return icd_term->dispatch.GetDisplayPlaneCapabilitiesKHR(phys_dev_term->phys_dev, mode, planeIndex, pCapabilities);

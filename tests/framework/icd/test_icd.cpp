@@ -545,6 +545,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapcha
     }
 }
 
+// VK_KHR_surface
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                          VkSurfaceKHR surface, VkBool32* pSupported) {
     if (nullptr != pSupported) {
@@ -572,45 +573,243 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModesKHR(Vk
     return VK_SUCCESS;
 }
 
-//// stubs
+// VK_KHR_display
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                            uint32_t* pPropertyCount,
+                                                                            VkDisplayPropertiesKHR* pProperties) {
+    FillCountPtr(icd.GetPhysDevice(physicalDevice).display_properties, pPropertyCount, pProperties);
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                                 uint32_t* pPropertyCount,
+                                                                                 VkDisplayPlanePropertiesKHR* pProperties) {
+    FillCountPtr(icd.GetPhysDevice(physicalDevice).display_plane_properties, pPropertyCount, pProperties);
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                                          uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
+    FillCountPtr(icd.GetPhysDevice(physicalDevice).displays, pDisplayCount, pDisplays);
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                                  uint32_t* pPropertyCount,
+                                                                  VkDisplayModePropertiesKHR* pProperties) {
+    FillCountPtr(icd.GetPhysDevice(physicalDevice).display_mode_properties, pPropertyCount, pProperties);
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                           const VkDisplayModeCreateInfoKHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode) {
+    if (nullptr != pMode) {
+        *pMode = icd.GetPhysDevice(physicalDevice).display_mode;
+    }
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
+                                                                     uint32_t planeIndex,
+                                                                     VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
+    if (nullptr != pCapabilities) {
+        *pCapabilities = icd.GetPhysDevice(physicalDevice).display_plane_capabilities;
+    }
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayPlaneSurfaceKHR(VkInstance instance,
+                                                                   const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
+                                                                   const VkAllocationCallbacks* pAllocator,
+                                                                   VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+
+// VK_KHR_get_surface_capabilities2
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                               const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                               VkSurfaceCapabilities2KHR* pSurfaceCapabilities) {
+    if (nullptr != pSurfaceInfo && nullptr != pSurfaceCapabilities) {
+        return test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, pSurfaceInfo->surface,
+                                                              &pSurfaceCapabilities->surfaceCapabilities);
+    }
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                          const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                          uint32_t* pSurfaceFormatCount,
+                                                                          VkSurfaceFormat2KHR* pSurfaceFormats) {
+    if (nullptr != pSurfaceFormatCount) {
+        test_vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, pSurfaceInfo->surface, pSurfaceFormatCount, nullptr);
+        if (nullptr != pSurfaceFormats) {
+            auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+            // Since the structures are different, we have to copy each item over seperately.  Since we have multiple, we
+            // have to manually copy the data here instead of calling the next function
+            for (uint32_t cnt = 0; cnt < *pSurfaceFormatCount; ++cnt) {
+                memcpy(&pSurfaceFormats[cnt].surfaceFormat, &phys_dev.surface_formats[cnt], sizeof(VkSurfaceFormatKHR));
+            }
+        }
+    }
+    return VK_SUCCESS;
+}
+
+// VK_EXT_acquire_drm_display
+VKAPI_ATTR VkResult VKAPI_CALL test_vkAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) {
+    return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
+                                                       VkDisplayKHR* display) {
+    if (nullptr != display && icd.GetPhysDevice(physicalDevice).displays.size() > 0) {
+        *display = icd.GetPhysDevice(physicalDevice).displays[0];
+    }
+    return VK_SUCCESS;
+}
+
 // 1.0
-VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
+    if (nullptr != pFeatures) {
+        memcpy(pFeatures, &icd.GetPhysDevice(physicalDevice).features, sizeof(VkPhysicalDeviceFeatures));
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                              VkPhysicalDeviceProperties* pProperties) {}
+                                                              VkPhysicalDeviceProperties* pProperties) {
+    if (nullptr != pProperties) {
+        memcpy(pProperties, &icd.GetPhysDevice(physicalDevice).properties, sizeof(VkPhysicalDeviceProperties));
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
-                                                                    VkPhysicalDeviceMemoryProperties* pMemoryProperties) {}
+                                                                    VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
+    if (nullptr != pMemoryProperties) {
+        memcpy(pMemoryProperties, &icd.GetPhysDevice(physicalDevice).memory_properties, sizeof(VkPhysicalDeviceMemoryProperties));
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                                VkImageType type, VkSampleCountFlagBits samples,
                                                                                VkImageUsageFlags usage, VkImageTiling tiling,
                                                                                uint32_t* pPropertyCount,
-                                                                               VkSparseImageFormatProperties* pProperties) {}
+                                                                               VkSparseImageFormatProperties* pProperties) {
+    FillCountPtr(icd.GetPhysDevice(physicalDevice).sparse_image_format_properties, pPropertyCount, pProperties);
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                    VkFormatProperties* pFormatProperties) {}
+                                                                    VkFormatProperties* pFormatProperties) {
+    if (nullptr != pFormatProperties) {
+        memcpy(pFormatProperties, &icd.GetPhysDevice(physicalDevice).format_properties[static_cast<uint32_t>(format)],
+               sizeof(VkFormatProperties));
+    }
+}
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                              VkImageType type, VkImageTiling tiling,
                                                                              VkImageUsageFlags usage, VkImageCreateFlags flags,
                                                                              VkImageFormatProperties* pImageFormatProperties) {
+    if (nullptr != pImageFormatProperties) {
+        memcpy(pImageFormatProperties, &icd.GetPhysDevice(physicalDevice).image_format_properties, sizeof(VkImageFormatProperties));
+    }
     return VK_SUCCESS;
 }
 
+// 1.1
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
-                                                             VkPhysicalDeviceFeatures2* pFeatures) {}
+                                                             VkPhysicalDeviceFeatures2* pFeatures) {
+    if (nullptr != pFeatures) {
+        test_vkGetPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                               VkPhysicalDeviceProperties2* pProperties) {}
+                                                               VkPhysicalDeviceProperties2* pProperties) {
+    if (nullptr != pProperties) {
+        test_vkGetPhysicalDeviceProperties(physicalDevice, &pProperties->properties);
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
-                                                                     VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {}
+                                                                     VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
+    if (nullptr != pMemoryProperties) {
+        test_vkGetPhysicalDeviceMemoryProperties(physicalDevice, &pMemoryProperties->memoryProperties);
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
-                                                                          VkQueueFamilyProperties2* pQueueFamilyProperties) {}
+                                                                          VkQueueFamilyProperties2* pQueueFamilyProperties) {
+    if (nullptr != pQueueFamilyPropertyCount) {
+        test_vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, nullptr);
+        if (nullptr != pQueueFamilyProperties) {
+            auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+            // Since the structures are different, we have to copy each item over seperately.  Since we have multiple, we
+            // have to manually copy the data here instead of calling the next function
+            for (uint32_t queue = 0; queue < *pQueueFamilyPropertyCount; ++queue) {
+                memcpy(&pQueueFamilyProperties[queue].queueFamilyProperties, &phys_dev.queue_family_properties[queue].properties,
+                       sizeof(VkQueueFamilyProperties));
+            }
+        }
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
-    VkSparseImageFormatProperties2* pProperties) {}
+    VkSparseImageFormatProperties2* pProperties) {
+    if (nullptr != pPropertyCount) {
+        test_vkGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, pFormatInfo->format, pFormatInfo->type,
+                                                            pFormatInfo->samples, pFormatInfo->usage, pFormatInfo->tiling,
+                                                            pPropertyCount, nullptr);
+        if (nullptr != pProperties) {
+            auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+            // Since the structures are different, we have to copy each item over seperately.  Since we have multiple, we
+            // have to manually copy the data here instead of calling the next function
+            for (uint32_t cnt = 0; cnt < *pPropertyCount; ++cnt) {
+                memcpy(&pProperties[cnt].properties, &phys_dev.sparse_image_format_properties[cnt],
+                       sizeof(VkSparseImageFormatProperties));
+            }
+        }
+    }
+}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                     VkFormatProperties2* pFormatProperties) {}
+                                                                     VkFormatProperties2* pFormatProperties) {
+    if (nullptr != pFormatProperties) {
+        test_vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &pFormatProperties->formatProperties);
+    }
+}
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
     VkImageFormatProperties2* pImageFormatProperties) {
+    if (nullptr != pImageFormatInfo) {
+        VkImageFormatProperties* ptr = nullptr;
+        if (pImageFormatProperties) {
+            ptr = &pImageFormatProperties->imageFormatProperties;
+        }
+        test_vkGetPhysicalDeviceImageFormatProperties(physicalDevice, pImageFormatInfo->format, pImageFormatInfo->type,
+                                                      pImageFormatInfo->tiling, pImageFormatInfo->usage, pImageFormatInfo->flags,
+                                                      ptr);
+    }
     return VK_SUCCESS;
+}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalBufferProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+    VkExternalBufferProperties* pExternalBufferProperties) {
+    if (nullptr != pExternalBufferProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        memcpy(&pExternalBufferProperties->externalMemoryProperties, &phys_dev.external_memory_properties,
+               sizeof(VkExternalMemoryProperties));
+    }
+}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalSemaphoreProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+    if (nullptr != pExternalSemaphoreProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        memcpy(pExternalSemaphoreProperties, &phys_dev.external_semaphore_properties, sizeof(VkExternalSemaphoreProperties));
+    }
+}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalFenceProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+    VkExternalFenceProperties* pExternalFenceProperties) {
+    if (nullptr != pExternalFenceProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        memcpy(pExternalFenceProperties, &phys_dev.external_fence_properties, sizeof(VkExternalFenceProperties));
+    }
 }
 
 //// trampolines
@@ -633,12 +832,36 @@ PFN_vkVoidFunction get_instance_func_ver_1_2(VkInstance instance, const char* pN
 }
 
 PFN_vkVoidFunction get_physical_device_func_wsi(VkInstance instance, const char* pName) {
-    if (string_eq(pName, "vkGetPhysicalDeviceSurfaceSupportKHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceSupportKHR);
-    if (string_eq(pName, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"))
-        return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
-    if (string_eq(pName, "vkGetPhysicalDeviceSurfaceFormatsKHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceFormatsKHR);
-    if (string_eq(pName, "vkGetPhysicalDeviceSurfacePresentModesKHR"))
-        return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfacePresentModesKHR);
+    if (IsInstanceExtensionEnabled("VK_KHR_surface")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceSurfaceSupportKHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceSupportKHR);
+        if (string_eq(pName, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
+        if (string_eq(pName, "vkGetPhysicalDeviceSurfaceFormatsKHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceFormatsKHR);
+        if (string_eq(pName, "vkGetPhysicalDeviceSurfacePresentModesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfacePresentModesKHR);
+    }
+    if (IsInstanceExtensionEnabled("VK_KHR_get_surface_capabilities2")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceSurfaceCapabilities2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceCapabilities2KHR);
+        if (string_eq(pName, "vkGetPhysicalDeviceSurfaceFormats2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceSurfaceFormats2KHR);
+    }
+    if (IsInstanceExtensionEnabled("VK_KHR_display")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceDisplayPropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceDisplayPropertiesKHR);
+        if (string_eq(pName, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
+        if (string_eq(pName, "vkGetDisplayPlaneSupportedDisplaysKHR"))
+            return TO_VOID_PFN(test_vkGetDisplayPlaneSupportedDisplaysKHR);
+        if (string_eq(pName, "vkGetDisplayModePropertiesKHR")) return TO_VOID_PFN(test_vkGetDisplayModePropertiesKHR);
+        if (string_eq(pName, "vkCreateDisplayModeKHR")) return TO_VOID_PFN(test_vkCreateDisplayModeKHR);
+        if (string_eq(pName, "vkGetDisplayPlaneCapabilitiesKHR")) return TO_VOID_PFN(test_vkGetDisplayPlaneCapabilitiesKHR);
+        if (string_eq(pName, "vkCreateDisplayPlaneSurfaceKHR")) return TO_VOID_PFN(test_vkCreateDisplayPlaneSurfaceKHR);
+    }
+    if (IsInstanceExtensionEnabled("VK_EXT_acquire_drm_display")) {
+        if (string_eq(pName, "vkAcquireDrmDisplayEXT")) return TO_VOID_PFN(test_vkAcquireDrmDisplayEXT);
+        if (string_eq(pName, "vkGetDrmDisplayEXT")) return TO_VOID_PFN(test_vkGetDrmDisplayEXT);
+    }
     return nullptr;
 }
 
@@ -743,20 +966,45 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
 
     if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0) ||
         IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
-        if (string_eq(pName, "vkGetPhysicalDeviceFeatures2")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
-        if (string_eq(pName, "vkGetPhysicalDeviceProperties2")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
-        if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFormatProperties2);
-        if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2")) return TO_VOID_PFN(test_vkGetPhysicalDeviceMemoryProperties2);
+        if (string_eq(pName, "vkGetPhysicalDeviceFeatures2") || string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
+        if (string_eq(pName, "vkGetPhysicalDeviceProperties2") || string_eq(pName, "vkGetPhysicalDeviceProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
+        if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2") || string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceFormatProperties2);
+        if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2") || string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceMemoryProperties2);
 
-        if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2"))
+        if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2") ||
+            string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"))
             return TO_VOID_PFN(test_vkGetPhysicalDeviceQueueFamilyProperties2);
 
-        if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2"))
+        if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2") ||
+            string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"))
             return TO_VOID_PFN(test_vkGetPhysicalDeviceSparseImageFormatProperties2);
 
-        if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2") ||
+            string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2KHR")) {
             return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
         }
+    }
+    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0) ||
+        IsInstanceExtensionEnabled("VK_KHR_external_memory_capabilities")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalBufferProperties") ||
+            string_eq(pName, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalBufferProperties);
+    }
+    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0) ||
+        IsInstanceExtensionEnabled("VK_KHR_external_semaphore_capabilities")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalSemaphoreProperties") ||
+            string_eq(pName, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalSemaphoreProperties);
+    }
+    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0) ||
+        IsInstanceExtensionEnabled("VK_KHR_external_fence_capabilities")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalFenceProperties") ||
+            string_eq(pName, "vkGetPhysicalDeviceExternalFencePropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalFenceProperties);
     }
     if (icd.supports_tooling_info_ext) {
         if (string_eq(pName, "vkGetPhysicalDeviceToolPropertiesEXT")) return TO_VOID_PFN(test_vkGetPhysicalDeviceToolPropertiesEXT);

@@ -1137,6 +1137,11 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '                   "ICD associated with VkPhysicalDevice does not support '
                     funcs += base_name
                     funcs += '");\n'
+
+                    # If this is an instance function taking a physical device (i.e. pre Vulkan 1.1), we need to behave and not crash so return an
+                    # error here.
+                    if ext_cmd.ext_type =='instance' and has_return_type:
+                        funcs += '        return VK_ERROR_INITIALIZATION_FAILED;\n'
                     funcs += '    }\n'
 
                     if has_surface == 1:
