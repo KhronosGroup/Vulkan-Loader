@@ -446,7 +446,7 @@ TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
 TEST_F(EnumeratePhysicalDevices, ZeroPhysicalDevicesAfterCreateInstance) {
     auto& driver = env->get_test_icd().set_min_icd_interface_version(5);
     InstWrapper inst{env->vulkan_functions};
-    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0));
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
     inst.CheckCreate();
     driver.physical_devices.clear();
 
@@ -609,7 +609,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
     // Core function
     {
         InstWrapper inst{env->vulkan_functions};
-        inst.create_info.set_api_version(1, 1, 0);
+        inst.create_info.set_api_version(VK_API_VERSION_1_1);
         inst.CheckCreate();
 
         auto physical_devices = std::vector<VkPhysicalDevice>(physical_device_count);
@@ -667,7 +667,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCall) {
     // Core function
     {
         InstWrapper inst{env->vulkan_functions};
-        inst.create_info.set_api_version(1, 1, 0);
+        inst.create_info.set_api_version(VK_API_VERSION_1_1);
         inst.CheckCreate();
 
         auto physical_devices = std::vector<VkPhysicalDevice>(physical_device_count);
@@ -730,7 +730,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
     // Core function
     {
         InstWrapper inst{env->vulkan_functions};
-        inst.create_info.set_api_version(1, 1, 0);
+        inst.create_info.set_api_version(VK_API_VERSION_1_1);
         inst.CheckCreate();
 
         uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());

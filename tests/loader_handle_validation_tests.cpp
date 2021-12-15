@@ -516,10 +516,11 @@ TEST_F(LoaderHandleValidTests, BadInstCreateXlibSurf) {
 // ---- Invalid Physical Device tests
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -533,10 +534,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -551,10 +553,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -571,10 +574,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -588,10 +592,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -604,10 +609,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -621,10 +627,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevCreateDevice) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -657,10 +664,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevCreateDevice) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevEnumDevExtProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -673,10 +681,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevEnumDevExtProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevEnumDevLayerProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -689,10 +698,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevEnumDevLayerProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -709,10 +719,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature2) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -728,10 +739,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature2) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps2) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -748,10 +760,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps2) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps2) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -770,10 +783,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps2) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevProps2) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -789,10 +803,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevProps2) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps2) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -805,10 +820,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps2) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps2) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -824,10 +840,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps2) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps2) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -845,10 +862,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps2) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternFenceProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -865,10 +883,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternFenceProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternBufferProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
@@ -885,10 +904,11 @@ TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternBufferProps) {
 }
 
 TEST_F(LoaderHandleValidTests, BadPhysDevGetPhysDevExternSemaphoreProps) {
-    auto& driver = env->get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
     InstWrapper instance(env->vulkan_functions);
+    instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
     struct BadData {
