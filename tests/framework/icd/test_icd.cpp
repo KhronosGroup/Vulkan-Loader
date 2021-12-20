@@ -347,6 +347,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR(VkInstance instance,
     }
     return VK_SUCCESS;
 }
+
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                   uint32_t queueFamilyIndex) {
+    return VK_TRUE;
+}
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
@@ -364,8 +369,13 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR(VkInstance instanc
     }
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                     uint32_t queueFamilyIndex,
+                                                                                     struct wl_display* display) {
+    return VK_TRUE;
+}
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -380,6 +390,13 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance, c
 #endif
     }
     return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                 uint32_t queueFamilyIndex,
+                                                                                 xcb_connection_t* connection,
+                                                                                 xcb_visualid_t visual_id) {
+    return VK_TRUE;
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
@@ -397,6 +414,12 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR(VkInstance instance, 
 #endif
     }
     return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                  uint32_t queueFamilyIndex, Display* dpy,
+                                                                                  VisualID visualID) {
+    return VK_TRUE;
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
@@ -416,6 +439,12 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT(VkInstance instan
     }
     return VK_SUCCESS;
 }
+
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
+                                                                                      uint32_t queueFamilyIndex, IDirectFB* dfb) {
+    return VK_TRUE;
+}
+
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
 #ifdef VK_USE_PLATFORM_MACOS_MVK
@@ -503,15 +532,25 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX(VkInstance instance
     }
     return VK_SUCCESS;
 }
+
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
+                                                                                    uint32_t queueFamilyIndex,
+                                                                                    struct _screen_window* window) {
+    return VK_TRUE;
+}
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                     const VkAllocationCallbacks* pAllocator) {
     if (surface != VK_NULL_HANDLE) {
         uint64_t fake_surf_handle = (uint64_t)(surface);
-        auto found_iter = icd.surface_handles.erase(
-            std::remove(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle), icd.surface_handles.end());
-        if (found_iter == icd.surface_handles.end()) {
+        auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
+        if (found_iter != icd.surface_handles.end()) {
+            // Remove it from the list
+            icd.surface_handles.erase(found_iter);
+            // Delete the handle
+            delete (uint8_t*)fake_surf_handle;
+        } else {
             assert(false && "Surface not found during destroy!");
         }
     }
@@ -882,25 +921,40 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
         if (string_eq(pName, "vkCreateWaylandSurfaceKHR")) {
             return TO_VOID_PFN(test_vkCreateWaylandSurfaceKHR);
         }
+        if (string_eq(pName, "vkGetPhysicalDeviceWaylandPresentationSupportKHR")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceWaylandPresentationSupportKHR);
+        }
 #endif
 #ifdef VK_USE_PLATFORM_XCB_KHR
         if (string_eq(pName, "vkCreateXcbSurfaceKHR")) {
             return TO_VOID_PFN(test_vkCreateXcbSurfaceKHR);
+        }
+        if (string_eq(pName, "vkGetPhysicalDeviceXcbPresentationSupportKHR")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceXcbPresentationSupportKHR);
         }
 #endif
 #ifdef VK_USE_PLATFORM_XLIB_KHR
         if (string_eq(pName, "vkCreateXlibSurfaceKHR")) {
             return TO_VOID_PFN(test_vkCreateXlibSurfaceKHR);
         }
+        if (string_eq(pName, "vkGetPhysicalDeviceXlibPresentationSupportKHR")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceXlibPresentationSupportKHR);
+        }
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         if (string_eq(pName, "vkCreateWin32SurfaceKHR")) {
             return TO_VOID_PFN(test_vkCreateWin32SurfaceKHR);
         }
+        if (string_eq(pName, "vkGetPhysicalDeviceWin32PresentationSupportKHR")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceWin32PresentationSupportKHR);
+        }
 #endif
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
         if (string_eq(pName, "vkCreateDirectFBSurfaceEXT")) {
             return TO_VOID_PFN(test_vkCreateDirectFBSurfaceEXT);
+        }
+        if (string_eq(pName, "vkGetPhysicalDeviceDirectFBPresentationSupportEXT")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceDirectFBPresentationSupportEXT);
         }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
@@ -925,6 +979,9 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         if (string_eq(pName, "vkCreateScreenSurfaceQNX")) {
             return TO_VOID_PFN(test_vkCreateScreenSurfaceQNX);
+        }
+        if (string_eq(pName, "vkGetPhysicalDeviceScreenPresentationSupportQNX")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceScreenPresentationSupportQNX);
         }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 

@@ -2619,11 +2619,18 @@ TEST_F(LoaderInstPhysDevExts, PhysDevDispPropsKHRNoICDSupport) {
     ASSERT_EQ(GetPhysicalDeviceDisplayProperties, nullptr);
 }
 
+VkDisplayKHR CreateRandomDisplay() {
+    return (VkDisplayKHR)(((rand() % 0xFFFFFFFBull) << 12) * (rand() % 0xFFFFFFFull) + 1); }
+
+VkDisplayModeKHR CreateRandomDisplayMode() {
+    return (VkDisplayModeKHR)(((rand() % 0xFFFFFFFBull) << 12) * (rand() % 0xFFFFFFFull) + 1);
+}
+
 // Fill in random but valid data into the display property data struct for the current physical device
 static void FillInRandomDisplayPropData(std::vector<VkDisplayPropertiesKHR>& props) {
     props.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < props.size(); ++i) {
-        props[i].display = (VkDisplayKHR)((rand() % 0xFFFFFFF) + 1);
+        props[i].display = CreateRandomDisplay();
         props[i].physicalDimensions.width = static_cast<uint32_t>((rand() % 0xFFF) + 1);
         props[i].physicalDimensions.height = static_cast<uint32_t>((rand() % 0xFFF) + 1);
         props[i].physicalResolution.width = static_cast<uint32_t>((rand() % 0xFFF) + 1);
@@ -2820,7 +2827,7 @@ TEST_F(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRNoICDSupport) {
 static void FillInRandomDisplayPlanePropData(std::vector<VkDisplayPlanePropertiesKHR>& props) {
     props.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < props.size(); ++i) {
-        props[i].currentDisplay = (VkDisplayKHR)((rand() % 0xFFFFFFF) + 1);
+        props[i].currentDisplay = CreateRandomDisplay();
         props[i].currentStackIndex = static_cast<uint32_t>((rand() % 0xFFF) + (rand() % 0xFFF) + 1);
     }
 }
@@ -3006,7 +3013,7 @@ TEST_F(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRNoICDSupport) {
 static void GenerateRandomDisplays(std::vector<VkDisplayKHR>& disps) {
     disps.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < disps.size(); ++i) {
-        disps[i] = (VkDisplayKHR)((rand() % 0xFFFFFFF) + 1);
+        disps[i] = CreateRandomDisplay();
     }
 }
 
@@ -3189,7 +3196,7 @@ TEST_F(LoaderInstPhysDevExts, GetDispModePropsKHRNoICDSupport) {
 static void GenerateRandomDisplayModeProps(std::vector<VkDisplayModePropertiesKHR>& disps) {
     disps.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < disps.size(); ++i) {
-        disps[i].displayMode = (VkDisplayModeKHR)((rand() % 0xFFFFFFF) + 1);
+        disps[i].displayMode = CreateRandomDisplayMode();
         disps[i].parameters.visibleRegion.width = static_cast<uint32_t>((rand() % 0xFFFFFFF) + 1);
         disps[i].parameters.visibleRegion.height = static_cast<uint32_t>((rand() % 0xFFFFFFF) + 1);
         disps[i].parameters.refreshRate = 1 << (rand() % 8);
@@ -3375,9 +3382,6 @@ TEST_F(LoaderInstPhysDevExts, GetDispModesKHRNoICDSupport) {
     ASSERT_EQ(CreateDisplayMode, nullptr);
 }
 
-// Fill in random but valid data into the display modes for the current physical device
-static void GenerateRandomDisplayMode(VkDisplayModeKHR& mode) { mode = (VkDisplayModeKHR)((rand() % 0xFFFFFFF) + 1); }
-
 // Compare the display modes
 static void CompareDisplayModes(const VkDisplayModeKHR& disps1, VkDisplayModeKHR& disps2) { ASSERT_EQ(disps1, disps2); }
 
@@ -3387,7 +3391,7 @@ TEST_F(LoaderInstPhysDevExts, GetDispModesKHRInstanceAndICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     env.get_test_icd(0).add_instance_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
     env.get_test_icd(0).physical_devices.push_back({});
-    GenerateRandomDisplayMode(env.get_test_icd(0).physical_devices.back().display_mode);
+    env.get_test_icd(0).physical_devices.back().display_mode = CreateRandomDisplayMode();
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.add_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
@@ -3455,7 +3459,7 @@ TEST_F(LoaderInstPhysDevExts, GetDispModesKHRMixed) {
 
             // Still set physical device properties (so we can determine if device is correct API version)
             FillInRandomDeviceProps(cur_dev.properties, device_version, rand_vendor_id, rand_driver_vers);
-            GenerateRandomDisplayMode(cur_dev.display_mode);
+            cur_dev.display_mode = CreateRandomDisplayMode();
         }
     }
 
