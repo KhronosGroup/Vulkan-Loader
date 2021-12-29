@@ -240,9 +240,13 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT(VkInstance insta
                                                                 const VkAllocationCallbacks* pAllocator) {
     if (messenger != VK_NULL_HANDLE) {
         uint64_t fake_msgr_handle = (uint64_t)(messenger);
-        auto found_iter = icd.messenger_handles.erase(
-            std::remove(icd.messenger_handles.begin(), icd.messenger_handles.end(), fake_msgr_handle), icd.messenger_handles.end());
-        if (found_iter == icd.messenger_handles.end()) {
+        auto found_iter = std::find(icd.messenger_handles.begin(), icd.messenger_handles.end(), fake_msgr_handle);
+        if (found_iter != icd.messenger_handles.end()) {
+            // Remove it from the list
+            icd.messenger_handles.erase(found_iter);
+            // Delete the handle
+            delete (uint8_t*)fake_msgr_handle;
+        } else {
             assert(false && "Messenger not found during destroy!");
         }
     }
@@ -769,11 +773,9 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
     }
     if (IsInstanceExtensionEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
         if (string_eq(pName, "vkCreateDebugUtilsMessengerEXT")) {
-            icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;
             return TO_VOID_PFN(test_vkCreateDebugUtilsMessengerEXT);
         }
         if (string_eq(pName, "vkDestroyDebugUtilsMessengerEXT")) {
-            icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;
             return TO_VOID_PFN(test_vkDestroyDebugUtilsMessengerEXT);
         }
     }
