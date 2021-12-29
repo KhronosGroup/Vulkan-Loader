@@ -68,7 +68,7 @@ TEST_F(EnvVarICDOverrideSetup, version_1_icd_gipa) {
 // should assert that `interface_vers == 0` due to version mismatch, only checkable in Debug Mode
 TEST_F(EnvVarICDOverrideSetup, version_negotiate_interface_version_death_test) {
     env->add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION).set_use_env_var_icd_filenames(true));
-    auto& driver = env->reset_icd();
+    env->reset_icd();
 
     InstWrapper inst{env->vulkan_functions};
 

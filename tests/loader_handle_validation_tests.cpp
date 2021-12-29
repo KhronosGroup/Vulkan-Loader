@@ -2175,20 +2175,16 @@ static VkBool32 JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT me
     return VK_FALSE;
 }
 
-#if 0  // Disable for now to get this commit in
 TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
     Extension ext{"VK_EXT_debug_utils"};
     auto& driver = env->get_test_icd();
     driver.add_instance_extensions({ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    ManifestLayer::LayerDescription wrap_objects_description{};
-    wrap_objects_description.name = wrap_objects_name;
-    wrap_objects_description.lib_path = TEST_LAYER_WRAP_OBJECTS;
-
-    ManifestLayer wrap_objects_layer;
-    wrap_objects_layer.layers.push_back(wrap_objects_description);
-    env->AddExplicitLayer(wrap_objects_layer, "wrap_objects_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
@@ -2216,4 +2212,3 @@ TEST_F(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
     ASSERT_EQ(VK_SUCCESS, pfn_CreateMessenger(instance, &debug_messenger_create_info, nullptr, &messenger));
     pfn_DestroyMessenger(instance, messenger, nullptr);
 }
-#endif
