@@ -59,6 +59,11 @@ struct wrapped_dev_obj {
     void *obj;
 };
 
+struct wrapped_debutil_mess_obj {
+    VkInstance inst;
+    VkDebugUtilsMessengerEXT obj;
+};
+
 // typedef std::unordered_map<void *, VkLayerDispatchTable *> device_table_map;
 // typedef std::unordered_map<void *, VkLayerInstanceDispatchTable *> instance_table_map;
 typedef void *dispatch_key;
@@ -71,6 +76,11 @@ VkInstance unwrap_instance(const VkInstance instance, wrapped_inst_obj **inst) {
 VkPhysicalDevice unwrap_phys_dev(const VkPhysicalDevice physical_device, wrapped_phys_dev_obj **phys_dev) {
     *phys_dev = reinterpret_cast<wrapped_phys_dev_obj *>(physical_device);
     return reinterpret_cast<VkPhysicalDevice>((*phys_dev)->obj);
+}
+
+VkDebugUtilsMessengerEXT unwrap_debutil_messenger(const VkDebugUtilsMessengerEXT messenger, wrapped_debutil_mess_obj **mess) {
+    *mess = reinterpret_cast<wrapped_debutil_mess_obj *>(messenger);
+    return (*mess)->obj;
 }
 
 dispatch_key get_dispatch_key(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
@@ -190,7 +200,13 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateDebugUtilsMessengerEXT(VkInstance in
     wrapped_inst_obj *inst;
     auto vk_inst = unwrap_instance(instance, &inst);
     VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
-    return pDisp->CreateDebugUtilsMessengerEXT(vk_inst, pCreateInfo, pAllocator, pMessenger);
+    VkResult result = pDisp->CreateDebugUtilsMessengerEXT(vk_inst, pCreateInfo, pAllocator, pMessenger);
+    auto mess = new wrapped_debutil_mess_obj;
+    if (!mess) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    memset(mess, 0, sizeof(*mess));
+    mess->obj = (*pMessenger);
+    *pMessenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(mess);
+    return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL wrap_vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
@@ -198,7 +214,10 @@ VKAPI_ATTR void VKAPI_CALL wrap_vkDestroyDebugUtilsMessengerEXT(VkInstance insta
     wrapped_inst_obj *inst;
     auto vk_inst = unwrap_instance(instance, &inst);
     VkLayerInstanceDispatchTable *pDisp = &inst->layer_disp;
-    pDisp->DestroyDebugUtilsMessengerEXT(vk_inst, messenger, pAllocator);
+    wrapped_debutil_mess_obj *mess;
+    auto vk_mess = unwrap_debutil_messenger(messenger, &mess);
+    pDisp->DestroyDebugUtilsMessengerEXT(vk_inst, vk_mess, pAllocator);
+    delete mess;
 }
 
 VKAPI_ATTR void VKAPI_CALL wrap_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
@@ -417,19 +436,14 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkEnumerateDeviceExtensionProperties(VkPhysi
     return phys_dev->inst->layer_disp.EnumerateDeviceExtensionProperties(vk_phys_dev, pLayerName, pPropertyCount, pProperties);
 }
 
-PFN_vkVoidFunction layer_intercept_proc(const char *name) {
+PFN_vkVoidFunction layer_intercept_device_proc(const char *name) {
     if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
 
     name += 2;
-    if (!strcmp(name, "CreateInstance")) return (PFN_vkVoidFunction)wrap_vkCreateInstance;
-    if (!strcmp(name, "DestroyInstance")) return (PFN_vkVoidFunction)wrap_vkDestroyInstance;
-    if (!strcmp(name, "EnumeratePhysicalDevices")) return (PFN_vkVoidFunction)vkEnumeratePhysicalDevices;
     if (!strcmp(name, "GetPhysicalDeviceQueueFamilyProperties"))
         return (PFN_vkVoidFunction)wrap_vkGetPhysicalDeviceQueueFamilyProperties;
     if (!strcmp(name, "CreateDevice")) return (PFN_vkVoidFunction)wrap_vkCreateDevice;
     if (!strcmp(name, "DestroyDevice")) return (PFN_vkVoidFunction)wrap_vkDestroyDevice;
-    if (!strcmp(name, "CreateDebugUtilsMessengerEXT")) return (PFN_vkVoidFunction)wrap_vkCreateDebugUtilsMessengerEXT;
-    if (!strcmp(name, "DestroyDebugUtilsMessengerEXT")) return (PFN_vkVoidFunction)wrap_vkDestroyDebugUtilsMessengerEXT;
 
     return NULL;
 }
@@ -438,9 +452,12 @@ PFN_vkVoidFunction layer_intercept_instance_proc(const char *name) {
     if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
 
     name += 2;
-    if (!strcmp(name, "GetInstanceProcAddr")) return (PFN_vkVoidFunction)wrap_vkCreateInstance;
     if (!strcmp(name, "DestroyInstance")) return (PFN_vkVoidFunction)wrap_vkDestroyInstance;
+    if (!strcmp(name, "CreateDevice")) return (PFN_vkVoidFunction)wrap_vkCreateDevice;
     if (!strcmp(name, "EnumeratePhysicalDevices")) return (PFN_vkVoidFunction)vkEnumeratePhysicalDevices;
+
+    if (!strcmp(name, "CreateDebugUtilsMessengerEXT")) return (PFN_vkVoidFunction)wrap_vkCreateDebugUtilsMessengerEXT;
+    if (!strcmp(name, "DestroyDebugUtilsMessengerEXT")) return (PFN_vkVoidFunction)wrap_vkDestroyDebugUtilsMessengerEXT;
 
     if (!strcmp(name, "GetPhysicalDeviceProperties")) return (PFN_vkVoidFunction)vkGetPhysicalDeviceProperties;
     if (!strcmp(name, "GetPhysicalDeviceQueueFamilyProperties"))
@@ -503,7 +520,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL wrap_vkGetDeviceProcAddr(VkDevice devic
         return (PFN_vkVoidFunction)wrap_vkGetDeviceProcAddr;
     }
 
-    addr = layer_intercept_proc(funcName);
+    addr = layer_intercept_device_proc(funcName);
     if (addr) return addr;
     if (device == VK_NULL_HANDLE) {
         return NULL;
@@ -520,8 +537,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL wrap_vkGetDeviceProcAddr(VkDevice devic
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL wrap_vkGetInstanceProcAddr(VkInstance instance, const char *funcName) {
     PFN_vkVoidFunction addr;
 
+    if (!strcmp(funcName, "vkGetInstanceProcAddr")) return (PFN_vkVoidFunction)wrap_vkGetInstanceProcAddr;
     if (!strcmp(funcName, "vkCreateInstance")) return (PFN_vkVoidFunction)wrap_vkCreateInstance;
-    if (!strcmp(funcName, "vkCreateDevice")) return (PFN_vkVoidFunction)wrap_vkCreateDevice;
 
     if (instance == VK_NULL_HANDLE) {
         return NULL;
