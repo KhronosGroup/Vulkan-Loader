@@ -211,6 +211,27 @@ void FrameworkEnvironment::add_explicit_layer(ManifestLayer layer_manifest, cons
 
 void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const std::string& json_name,
                                           fs::FolderManager& folder_manager, ManifestCategory category) {
+    // We have a special case for any of the wrap objects layers so get the string to the path
+    std::string wrap_layer = fs::fixup_backslashes_in_path(fs::path(TEST_LAYER_WRAP_OBJECTS)).str();
+
+    // Strip off ending
+#if defined(WIN32)
+    size_t index = 0;
+    index = wrap_layer.find(".dll", index);
+    assert(index != std::string::npos);
+    wrap_layer.replace(index, 4, "");
+#elif defined(__APPLE__)
+    size_t index = 0;
+    index = wrap_layer.find(".dylib", index);
+    assert(index != std::string::npos);
+    wrap_layer.replace(index, 6, "");
+#else
+    size_t index = 0;
+    index = wrap_layer.find(".so", index);
+    assert(index != std::string::npos);
+    wrap_layer.replace(index, 3, "");
+#endif
+
     for (auto& layer : layer_manifest.layers) {
         size_t cur_layer_index = layers.size();
         if (!layer.lib_path.str().empty()) {
@@ -218,9 +239,9 @@ void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const s
 
             auto new_layer_location = folder_manager.copy_file(layer.lib_path, new_layer_name);
 
-            // Don't load the layer binary if using the wrap objects layer, since it doesn't export the same interface functions
-            if (fs::fixup_backslashes_in_path(layer.lib_path).str() !=
-                fs::fixup_backslashes_in_path(fs::path(TEST_LAYER_WRAP_OBJECTS)).str()) {
+            // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
+            // functions
+            if (fs::fixup_backslashes_in_path(layer.lib_path).str().rfind(wrap_layer) != 0) {
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset_layer();
             }
