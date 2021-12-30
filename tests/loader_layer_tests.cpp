@@ -41,6 +41,7 @@ class LayerTests : public ::testing::Test {
 // Subtyping for organization
 class ExplicitLayers : public LayerTests {};
 class ImplicitLayers : public LayerTests {};
+class LayerExtensions : public LayerTests {};
 class MetaLayers : public LayerTests {};
 class OverrideMetaLayer : public LayerTests {};
 class LayerCreateInstance : public LayerTests {};
@@ -301,7 +302,7 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
 TEST_F(ExplicitLayers, WrapObjects) {
     auto& driver = env->get_test_icd();
 
-    const char* wrap_objects_name = "WrapObjectsLayer";
+    const char* wrap_objects_name = "VK_LAYER_LUNARG_wrap_objects";
     env->add_explicit_layer(
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
@@ -363,4 +364,526 @@ TEST_F(ExplicitLayers, WrapObjects) {
         dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_dev);
     }
+}
+
+TEST_F(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    const char* enable_env_var = "ENABLE_ME";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(implicit_layer_name)
+                                                          .set_lib_path(TEST_LAYER_WRAP_OBJECTS)
+                                                          .set_disable_environment(disable_env_var)
+                                                          .set_enable_environment(enable_env_var)),
+                            "implicit_wrap_layer_no_ext.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    // // set enable env-var, layer should load
+    set_env_var(enable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, true);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    if (extension_count > 0) {
+        extension_props.resize(extension_count);
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                         extension_props.data()));
+
+        // Make sure the extensions that are implemented only in the test layers is not present.
+        for (uint32_t ext = 0; ext < extension_count; ++ext) {
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+        }
+    }
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure all the function pointers are NULL as well
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkSetDeviceMemoryPriorityEXT"));
+
+    remove_env_var(enable_env_var);
+}
+
+TEST_F(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    const char* enable_env_var = "ENABLE_ME";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(implicit_layer_name)
+                                                          .set_lib_path(TEST_LAYER_WRAP_OBJECTS_1)
+                                                          .set_disable_environment(disable_env_var)
+                                                          .set_enable_environment(enable_env_var)),
+                            "implicit_wrap_layer_maint.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    // // set enable env-var, layer should load
+    set_env_var(enable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, true);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    ASSERT_GE(extension_count, 1);
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                     extension_props.data()));
+
+    // Make sure only the one extension implemented by the enabled implicit layer is present.
+    bool found = false;
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+            found = true;
+        }
+        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+    }
+    ASSERT_EQ(true, found);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure only the appropriate function pointers are NULL as well
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+
+    remove_env_var(enable_env_var);
+}
+
+TEST_F(LayerExtensions, ImplicitPresentImageDeviceExtension) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    const char* enable_env_var = "ENABLE_ME";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(implicit_layer_name)
+                                                          .set_lib_path(TEST_LAYER_WRAP_OBJECTS_2)
+                                                          .set_disable_environment(disable_env_var)
+                                                          .set_enable_environment(enable_env_var)),
+                            "implicit_wrap_layer_maint.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    // // set enable env-var, layer should load
+    set_env_var(enable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, true);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    ASSERT_GE(extension_count, 1);
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                     extension_props.data()));
+
+    // Make sure only the one extension implemented by the enabled implicit layer is present.
+    bool found = false;
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
+            found = true;
+        }
+    }
+    ASSERT_EQ(true, found);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
+        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure only the appropriate function pointers are NULL as well
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+
+    remove_env_var(enable_env_var);
+}
+
+TEST_F(LayerExtensions, ImplicitBothDeviceExtensions) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    const char* enable_env_var = "ENABLE_ME";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(implicit_layer_name)
+                                                          .set_lib_path(TEST_LAYER_WRAP_OBJECTS_3)
+                                                          .set_disable_environment(disable_env_var)
+                                                          .set_enable_environment(enable_env_var)),
+                            "implicit_wrap_layer_maint.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    // // set enable env-var, layer should load
+    set_env_var(enable_env_var, "1");
+    CheckLogForLayerString(*env, implicit_layer_name, true);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    ASSERT_GE(extension_count, 2);
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                     extension_props.data()));
+
+    // Make sure only the one extension implemented by the enabled implicit layer is present.
+    bool found[2] = {false, false};
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+            found[0] = true;
+        }
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
+            found[1] = true;
+        }
+    }
+    for (uint32_t ext = 0; ext < 2; ++ext) {
+        ASSERT_EQ(true, found[ext]);
+    }
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
+        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
+        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure only the appropriate function pointers are NULL as well
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+
+    remove_env_var(enable_env_var);
+}
+
+TEST_F(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
+        "explicit_wrap_layer_no_ext.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_name);
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    if (extension_count > 0) {
+        extension_props.resize(extension_count);
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                         extension_props.data()));
+
+        // Make sure the extensions are not present
+        for (uint32_t ext = 0; ext < extension_count; ++ext) {
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+        }
+    }
+
+    // Now query by layer name.
+    extension_count = 0;
+    extension_props.clear();
+    ASSERT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
+    if (extension_count > 0) {
+        extension_props.resize(extension_count);
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
+                                                                                         &extension_count, extension_props.data()));
+
+        // Make sure the extensions still aren't present in this layer
+        for (uint32_t ext = 0; ext < extension_count; ++ext) {
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+        }
+    }
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure all the function pointers are NULL as well
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkSetDeviceMemoryPriorityEXT"));
+}
+
+TEST_F(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                      .set_name(explicit_layer_name)
+                                      .set_lib_path(TEST_LAYER_WRAP_OBJECTS_1)
+                                      .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
+                                      .add_device_extension({VK_KHR_MAINTENANCE1_EXTENSION_NAME, 1, {"vkTrimCommandPoolKHR"}})),
+        "explicit_wrap_layer_maint.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_name);
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    if (extension_count > 0) {
+        extension_props.resize(extension_count);
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                         extension_props.data()));
+
+        // Make sure the extensions are not present
+        for (uint32_t ext = 0; ext < extension_count; ++ext) {
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+        }
+    }
+
+    // Now query by layer name.
+    extension_count = 0;
+    extension_props.clear();
+    ASSERT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
+    ASSERT_GE(extension_count, 1);
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
+                                                                                     &extension_count, extension_props.data()));
+
+    // Make sure only the one extension implemented by the enabled implicit layer is present.
+    bool found = true;
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+            found = true;
+        }
+        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+    }
+    ASSERT_EQ(true, found);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure only the appropriate function pointers are NULL as well
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+}
+
+TEST_F(LayerExtensions, ExplicitPresentImageDeviceExtension) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(explicit_layer_name)
+                .set_lib_path(TEST_LAYER_WRAP_OBJECTS_2)
+                .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
+                .add_device_extension({VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, 1, {"vkGetSwapchainStatusKHR"}})),
+        "explicit_wrap_layer_maint.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_name);
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    if (extension_count > 0) {
+        extension_props.resize(extension_count);
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                         extension_props.data()));
+
+        // Make sure the extensions are not present
+        for (uint32_t ext = 0; ext < extension_count; ++ext) {
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+        }
+    }
+
+    // Now query by layer name.
+    extension_count = 0;
+    extension_props.clear();
+    ASSERT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
+    ASSERT_GE(extension_count, 1);
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
+                                                                                     &extension_count, extension_props.data()));
+
+    // Make sure only the one extension implemented by the enabled implicit layer is present.
+    bool found = false;
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
+            found = true;
+        }
+    }
+    ASSERT_EQ(true, found);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
+        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure only the appropriate function pointers are NULL as well
+    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+}
+
+TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
+    auto& driver = env->get_test_icd();
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(explicit_layer_name)
+                .set_lib_path(TEST_LAYER_WRAP_OBJECTS_3)
+                .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
+                .add_device_extension({VK_KHR_MAINTENANCE1_EXTENSION_NAME, 1, {"vkTrimCommandPoolKHR"}})
+                .add_device_extension({VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, 1, {"vkGetSwapchainStatusKHR"}})),
+        "explicit_wrap_layer_maint.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_name);
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t extension_count = 0;
+    std::vector<VkExtensionProperties> extension_props;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
+    if (extension_count > 0) {
+        extension_props.resize(extension_count);
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
+                                                                                         extension_props.data()));
+
+        // Make sure the extensions are not present
+        for (uint32_t ext = 0; ext < extension_count; ++ext) {
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
+        }
+    }
+
+    // Now query by layer name.
+    extension_count = 0;
+    extension_props.clear();
+    ASSERT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
+    ASSERT_GE(extension_count, 1);
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
+                                                                                     &extension_count, extension_props.data()));
+
+    // Make sure only the one extension implemented by the enabled implicit layer is present.
+    bool found[2] = {false, false};
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+            found[0] = true;
+        }
+        if (!strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
+            found[1] = true;
+        }
+    }
+    for (uint32_t ext = 0; ext < 2; ++ext) {
+        ASSERT_EQ(true, found[ext]);
+    }
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
+        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
+        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    // Make sure only the appropriate function pointers are NULL as well
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
 }
