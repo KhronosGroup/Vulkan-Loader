@@ -29,12 +29,22 @@
 #include "loader/generated/vk_dispatch_table_helper.h"
 #include "loader/vk_loader_layer.h"
 
-// Export full support of VK_KHR_maintenance1 extension
+// Export full support of instance extension VK_EXT_direct_mode_display extension
+#ifndef TEST_LAYER_EXPORT_DIRECT_DISP
+#define TEST_LAYER_EXPORT_DIRECT_DISP 0
+#endif
+
+// Export full support of instance extension VK_EXT_display_surface_counter extension
+#ifndef TEST_LAYER_EXPORT_DISP_SURF_COUNT
+#define TEST_LAYER_EXPORT_DISP_SURF_COUNT 0
+#endif
+
+// Export full support of device extension VK_KHR_maintenance1 extension
 #ifndef TEST_LAYER_EXPORT_MAINT_1
 #define TEST_LAYER_EXPORT_MAINT_1 0
 #endif
 
-// Export full support of VK_KHR_shared_presentable_image extension
+// Export full support of device extension VK_KHR_shared_presentable_image extension
 #ifndef TEST_LAYER_EXPORT_PRESENT_IMAGE
 #define TEST_LAYER_EXPORT_PRESENT_IMAGE 0
 #endif
@@ -62,7 +72,10 @@ struct wrapped_inst_obj {
     struct wrapped_phys_dev_obj *ptr_phys_devs;  // any enumerated phys devs
     VkInstance obj;
     bool layer_is_implicit;
+    bool direct_display_enabled;
+    bool display_surf_counter_enabled;
 };
+
 
 struct wrapped_dev_obj {
     VkLayerDispatchTable *loader_disp;
@@ -171,6 +184,20 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateInstance(const VkInstanceCreateInfo 
     if (!found) {
         inst->layer_is_implicit = true;
     }
+
+    for (uint32_t ext = 0; ext < pCreateInfo->enabledExtensionCount; ++ext) {
+        if (!strcmp(pCreateInfo->ppEnabledExtensionNames[ext], VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)) {
+#if TEST_LAYER_EXPORT_DIRECT_DISP
+            inst->direct_display_enabled = true;
+#endif
+        }
+        if (!strcmp(pCreateInfo->ppEnabledExtensionNames[ext], VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)) {
+#if TEST_LAYER_EXPORT_DISP_SURF_COUNT
+            inst->display_surf_counter_enabled = true;
+#endif
+        }
+    }
+
     return result;
 }
 
@@ -485,6 +512,17 @@ VKAPI_ATTR void VKAPI_CALL wrap_vkDestroyDevice(VkDevice device, const VkAllocat
     delete dev;
 }
 
+// Fake instance extension support
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkReleaseDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display) { return VK_SUCCESS; }
+
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetPhysicalDeviceSurfaceCapabilities2EXT(
+    VkPhysicalDevice                            physicalDevice,
+    VkSurfaceKHR                                surface,
+    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) { return VK_SUCCESS; }
+
+// Fake device extension support
 VKAPI_ATTR void VKAPI_CALL wrap_vkTrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {}
 
 VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) { return VK_SUCCESS; }
@@ -523,7 +561,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL wrap_vkGetDeviceProcAddr(VkDevice devic
     return dev->pfn_get_dev_proc_addr(dev->obj, funcName);
 }
 
-PFN_vkVoidFunction layer_intercept_instance_proc(const char *name) {
+PFN_vkVoidFunction layer_intercept_instance_proc(wrapped_inst_obj *inst, const char *name) {
     if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
 
     name += 2;
@@ -585,6 +623,10 @@ PFN_vkVoidFunction layer_intercept_instance_proc(const char *name) {
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
     if (!strcmp(name, "DestroySurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkDestroySurfaceKHR;
 
+    if (inst->direct_display_enabled && !strcmp(name, "ReleaseDisplayEXT")) return (PFN_vkVoidFunction)wrap_vkReleaseDisplayEXT;
+    if (inst->display_surf_counter_enabled && !strcmp(name, "GetPhysicalDeviceSurfaceCapabilities2EXT"))
+        return (PFN_vkVoidFunction)wrap_vkGetPhysicalDeviceSurfaceCapabilities2EXT;
+
     return NULL;
 }
 
@@ -598,11 +640,12 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL wrap_vkGetInstanceProcAddr(VkInstance i
         return NULL;
     }
 
-    addr = layer_intercept_instance_proc(funcName);
-    if (addr) return addr;
-
     wrapped_inst_obj *inst;
     (void)unwrap_instance(instance, &inst);
+
+    addr = layer_intercept_instance_proc(inst, funcName);
+    if (addr) return addr;
+
     VkLayerInstanceDispatchTable *pTable = &inst->layer_disp;
 
     if (pTable->GetInstanceProcAddr == NULL) return NULL;
