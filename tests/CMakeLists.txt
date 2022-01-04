@@ -29,6 +29,7 @@ add_executable(
     test_regression
         loader_testing_main.cpp
         loader_alloc_callback_tests.cpp
+        loader_envvar_tests.cpp
         loader_get_proc_addr_tests.cpp
         loader_debug_ext_tests.cpp
         loader_handle_validation_tests.cpp

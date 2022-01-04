@@ -70,8 +70,8 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
 //
 // *reg_data contains a string list of filenames as pointer.
 // When done using the returned string list, the caller should free the pointer.
-VkResult windows_get_device_registry_files(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size,
-                                           LPCSTR value_name);
+VkResult windows_get_device_registry_files(const struct loader_instance *inst, uint32_t log_target_flag, char **reg_data,
+                                           PDWORD reg_data_size, LPCSTR value_name);
 
 // Find the list of registry files (names within a key) in key "location".
 //

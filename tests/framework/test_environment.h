@@ -308,6 +308,7 @@ struct TestICDDetails {
     BUILDER_VALUE(TestICDDetails, uint32_t, api_version, VK_API_VERSION_1_0);
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
     BUILDER_VALUE(TestICDDetails, bool, use_env_var_icd_filenames, false);
+    BUILDER_VALUE(TestICDDetails, bool, use_add_env_var_icd_filenames, false);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
 };
 
@@ -322,7 +323,7 @@ struct TestLayerDetails {
 };
 
 struct FrameworkEnvironment {
-    FrameworkEnvironment(DebugMode debug_mode = DebugMode::none) noexcept;
+    FrameworkEnvironment(DebugMode debug_mode = DebugMode::none, bool override_icds = false, bool override_layers = false) noexcept;
 
     void add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
@@ -352,6 +353,7 @@ struct FrameworkEnvironment {
     std::vector<TestLayerHandle> layers;
 
     std::string env_var_vk_icd_filenames;
+    std::string add_env_var_vk_icd_filenames;
 
    private:
     void add_layer_impl(TestLayerDetails layer_details, fs::FolderManager& folder_manager, ManifestCategory category);

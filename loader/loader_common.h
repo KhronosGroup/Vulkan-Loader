@@ -31,6 +31,12 @@
 
 #include "vk_loader_platform.h"
 
+enum loader_json_type {
+    VULKAN_LOADER_JSON_DRIVER = 0,
+    VULKAN_LOADER_JSON_IMPLICIT_LAYER,
+    VULKAN_LOADER_JSON_EXPLICIT_LAYER,
+};
+
 enum layer_type_flags {
     VK_LAYER_TYPE_FLAG_INSTANCE_LAYER = 0x1,  // If not set, indicates Device layer
     VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER = 0x2,  // If not set, indicates Implicit layer
@@ -445,7 +451,7 @@ struct loader_scanned_icd {
 };
 
 enum loader_data_files_type {
-    LOADER_DATA_FILE_MANIFEST_ICD = 0,
+    LOADER_DATA_FILE_MANIFEST_DRIVER = 0,
     LOADER_DATA_FILE_MANIFEST_LAYER,
     LOADER_DATA_FILE_NUM_TYPES  // Not a real field, used for possible loop terminator
 };

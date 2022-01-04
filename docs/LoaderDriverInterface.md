@@ -99,22 +99,37 @@ Driver.
 This could be for many reasons including using a beta driver, or forcing the
 loader to skip a problematic driver.
 In order to support this, the loader can be forced to look at specific
-drivers with the `VK_ICD_FILENAMES` environment variable.
+drivers with either the `VK_DRIVER_FILES` or the older `VK_ICD_FILENAMES`
+environment variable.
+Both these environment variables behave the same, but `VK_ICD_FILENAMES`
+should be considered deprecated.
 
-The `VK_ICD_FILENAMES` environment variable is a list of Driver Manifest
+The `VK_DRIVER_FILES` environment variable is a list of Driver Manifest
 files, containing the full path to the driver JSON Manifest file.
 This list is colon-separated on Linux and macOS, and semicolon-separated on
 Windows.
-Typically, `VK_ICD_FILENAMES` will only contain a full pathname to one info
+Typically, `VK_DRIVER_FILES` will only contain a full pathname to one info
 file for a single driver.
 A separator (colon or semicolon) is only used if more than one driver is needed.
 
+### Additional Driver Discovery
+
+There may be times that a developer wishes to force the loader to use a specific
+Driver in addition to the standard drivers (without replacing the standard
+search paths.
+The `VK_ADD_DRIVER_FILES` environment variable can be used to add a list of
+Driver Manifest files, containing the full path to the driver JSON Manifest file.
+This list is colon-separated on Linux and macOS, and semicolon-separated on
+Windows.
+It will be added prior to the standard driver search files.
+
 #### Exception for Elevated Privileges
 
-For security reasons, `VK_ICD_FILENAMES` is ignored if running the Vulkan
-application with elevated privileges.
-Because of this, `VK_ICD_FILENAMES` can only be used for applications that do not
-use elevated privileges.
+For security reasons, `VK_ICD_FILENAMES`, `VK_DRIVER_FILES` and
+`VK_ADD_DRIVER_FILES` are all ignored if running the Vulkan application with
+elevated privileges.
+Because of this, these environment variables can only be used for applications
+that do not use elevated privileges.
 
 For more information see
 [Elevated Privilege Caveats](LoaderInterfaceArchitecture.md#elevated-privilege-caveats)
@@ -132,28 +147,44 @@ For example:
 ##### On Windows
 
 ```
-set VK_ICD_FILENAMES=\windows\system32\nv-vk64.json
+set VK_DRIVER_FILES=\windows\system32\nv-vk64.json
 ```
 
-This is an example which is using the `VK_ICD_FILENAMES` override on Windows to
+This is an example which is using the `VK_DRIVER_FILES` override on Windows to
 point to the Nvidia Vulkan Driver's Manifest file.
+
+```
+set VK_ADD_DRIVER_FILES=\windows\system32\nv-vk64.json
+```
+
+This is an example which is using the `VK_ADD_DRIVER_FILES` on Windows to
+point to the Nvidia Vulkan Driver's Manifest file which will be loaded first
+before all other drivers.
 
 ##### On Linux
 
 ```
-export VK_ICD_FILENAMES=/home/user/dev/mesa/share/vulkan/icd.d/intel_icd.x86_64.json
+export VK_DRIVER_FILES=/home/user/dev/mesa/share/vulkan/icd.d/intel_icd.x86_64.json
 ```
 
-This is an example which is using the `VK_ICD_FILENAMES` override on Linux to
+This is an example which is using the `VK_DRIVER_FILES` override on Linux to
 point to the Intel Mesa Driver's Manifest file.
+
+```
+export VK_ADD_DRIVER_FILES=/home/user/dev/mesa/share/vulkan/icd.d/intel_icd.x86_64.json
+```
+
+This is an example which is using the `VK_ADD_DRIVER_FILES` on Linux to
+point to the Intel Mesa Driver's Manifest file which will be loaded first
+before all other drivers.
 
 ##### On macOS
 
 ```
-export VK_ICD_FILENAMES=/home/user/MoltenVK/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+export VK_DRIVER_FILES=/home/user/MoltenVK/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
 ```
 
-This is an example which is using the `VK_ICD_FILENAMES` override on macOS to
+This is an example which is using the `VK_DRIVER_FILES` override on macOS to
 point to an installation and build of the MoltenVK GitHub repository that
 contains the MoltenVK driver.
 
@@ -348,7 +379,7 @@ See the
 [Driver Manifest File Format](#driver-manifest-file-format)
 section for more details.
 
-It is also important to note that while `VK_LAYER_PATH` will point the loader
+It is also important to note that while `VK_DRIVER_FILES` will point the loader
 to finding the manifest files, it does not guarantee the library files mentioned
 by the manifest will immediately be found.
 Often, the Driver Manifest file will point to the library file using a
@@ -439,11 +470,11 @@ developer's build tree.
 In this case, there should be a way to allow developers to point to such an
 ICD without modifying the system-installed ICD(s) on their system.
 
-This need is met with the use of the `VK_ICD_FILENAMES` environment variable,
+This need is met with the use of the `VK_DRIVER_FILES` environment variable,
 which will override the mechanism used for finding system-installed
 drivers.
 
-In other words, only the drivers listed in `VK_ICD_FILENAMES` will be
+In other words, only the drivers listed in `VK_DRIVER_FILES` will be
 used.
 
 See
@@ -1614,8 +1645,9 @@ Android Vulkan documentation</a>.
   <tr>
     <td><small><b>LDP_LOADER_13</b></small></td>
     <td>A loader <b>must</b> not load from user-defined paths (including the
-        use of the <i>VK_ICD_FILENAMES</i> environment variable) when running
-        elevated (Administrator/Super-user) applications.<br/>
+        use of any of <i>VK_ICD_FILENAMES</i>, <i>VK_DRIVER_FILES</i>, or
+        <i>VK_ADD_DRIVER_FILES</i> environment variables) when running elevated
+        (Administrator/Super-user) applications.<br/>
         <b>This is for security reasons.</b>
     </td>
     <td>The behavior is undefined and may result in computer security lapses,

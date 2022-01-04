@@ -429,7 +429,7 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkEnumerateDeviceExtensionProperties(VkPhysi
                     strncpy_s(pProperties[ext_count].extensionName, VK_MAX_EXTENSION_NAME_SIZE, VK_KHR_MAINTENANCE1_EXTENSION_NAME,
                               strlen(VK_KHR_MAINTENANCE1_EXTENSION_NAME) + 1);
 #else
-                    strcpy(pProperties[ext_count].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+                    strncpy(pProperties[ext_count].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
 #endif
                     pProperties[ext_count].specVersion = 2;
                     ext_count++;
@@ -442,7 +442,8 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkEnumerateDeviceExtensionProperties(VkPhysi
                               VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
                               strlen(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME) + 1);
 #else
-                    strcpy(pProperties[ext_count].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+                    strncpy(pProperties[ext_count].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
+                            VK_MAX_EXTENSION_NAME_SIZE);
 #endif
                     pProperties[ext_count].specVersion = 1;
                     ext_count++;
@@ -598,7 +599,7 @@ PFN_vkVoidFunction layer_intercept_instance_proc(wrapped_inst_obj *inst, const c
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     if (!strcmp(name, "CreateAndroidSurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkCreateAndroidSurfaceKHR;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (!strcmp(name, "CreateWin32SurfaceKHR")) return (PFN_vkVoidFunction)wrap_vkCreateWin32SurfaceKHR;

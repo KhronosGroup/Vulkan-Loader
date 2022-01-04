@@ -721,7 +721,7 @@ Before you run these tests, you will need to clone and build the
 
 You will also need to direct your new loader to the MoltenVK ICD:
 
-    export VK_ICD_FILENAMES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+    export VK_DRIVER_FILES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
 
 To run the loader test script, change to the `build/tests` directory in your
 Vulkan-Loader repository, and run:

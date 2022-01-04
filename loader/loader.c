@@ -119,6 +119,13 @@ int loader_closedir(const struct loader_instance *instance, DIR *dir) {
 #endif  // _WIN32
 }
 
+static bool is_json(const char *path, size_t len) {
+    if (len < 5) {
+        return false;
+    }
+    return !strncmp(path, ".json", 5);
+}
+
 // Handle error from to library loading
 void loader_handle_load_library_error(const struct loader_instance *inst, const char *filename,
                                       enum loader_layer_library_status *lib_status) {
@@ -2674,7 +2681,7 @@ static inline size_t determine_data_file_path_size(const char *cur_path, size_t 
     return path_size;
 }
 
-static inline void copy_data_file_path(const char *cur_path, const char *relative_path, size_t relative_path_size,
+static inline void copy_data_file_info(const char *cur_path, const char *relative_path, size_t relative_path_size,
                                        char **output_path) {
     if (NULL != cur_path) {
         uint32_t start = 0;
@@ -2694,15 +2701,20 @@ static inline void copy_data_file_path(const char *cur_path, const char *relativ
                 memcpy(cur_write, &cur_path[start], s);
                 cur_write += s;
 
-                // If last symbol written was not a directory symbol, add it.
-                if (*(cur_write - 1) != DIRECTORY_SYMBOL) {
-                    *cur_write++ = DIRECTORY_SYMBOL;
+                // If this is a specific JSON file, just add it and don't add any
+                // relative path or directory symbol to it.
+                if (!is_json(cur_write - 5, s)) {
+                    // Add the relative directory if present.
+                    if (relative_path_size > 0) {
+                        // If last symbol written was not a directory symbol, add it.
+                        if (*(cur_write - 1) != DIRECTORY_SYMBOL) {
+                            *cur_write++ = DIRECTORY_SYMBOL;
+                        }
+                        memcpy(cur_write, relative_path, relative_path_size);
+                        cur_write += relative_path_size;
+                    }
                 }
 
-                if (relative_path_size > 0) {
-                    memcpy(cur_write, relative_path, relative_path_size);
-                    cur_write += relative_path_size;
-                }
                 *cur_write++ = PATH_SEPARATOR;
                 start = stop;
             }
@@ -2773,7 +2785,7 @@ static VkResult add_if_manifest_file(const struct loader_instance *inst, const c
     // Look for files ending with ".json" suffix
     size_t name_len = strlen(file_name);
     const char *name_suffix = file_name + name_len - 5;
-    if ((name_len < 5) || 0 != strncmp(name_suffix, ".json", 5)) {
+    if (!is_json(name_suffix, name_len)) {
         // Use incomplete to indicate invalid name, but to keep going.
         vk_result = VK_INCOMPLETE;
         goto out;
@@ -2786,8 +2798,10 @@ out:
     return vk_result;
 }
 
-VkResult add_data_files_in_path(const struct loader_instance *inst, char *search_path, bool is_directory_list,
-                                struct loader_data_files *out_files, bool use_first_found_manifest) {
+// Add any files found in the search_path.  If any path in the search path points to a specific JSON, attempt to
+// only open that one JSON.  Otherwise, if the path is a folder, search the folder for JSON files.
+VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_data_files *out_files,
+                        bool use_first_found_manifest) {
     VkResult vk_result = VK_SUCCESS;
     DIR *dir_stream = NULL;
     struct dirent *dir_entry;
@@ -2806,8 +2820,40 @@ VkResult add_data_files_in_path(const struct loader_instance *inst, char *search
         cur_file = next_file;
         next_file = loader_get_next_path(cur_file);
 
-        // Get the next name in the list and verify it's valid
-        if (is_directory_list) {
+        // Is this a JSON file, then try to open it.
+        size_t len = strlen(cur_file);
+        if (is_json(cur_file + len - 5, len)) {
+#ifdef _WIN32
+            name = cur_file;
+#else
+            // Only Linux has relative paths, make a copy of location so it isn't modified
+            size_t str_len;
+            if (NULL != next_file) {
+                str_len = next_file - cur_file + 1;
+            } else {
+                str_len = strlen(cur_file) + 1;
+            }
+            if (str_len > sizeof(temp_path)) {
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files: Path to %s too long\n", cur_file);
+                continue;
+            }
+            strcpy(temp_path, cur_file);
+            name = temp_path;
+#endif
+            loader_get_fullpath(cur_file, name, sizeof(full_path), full_path);
+            name = full_path;
+
+            VkResult local_res;
+            local_res = add_if_manifest_file(inst, name, out_files);
+
+            // Incomplete means this was not a valid data file.
+            if (local_res == VK_INCOMPLETE) {
+                continue;
+            } else if (local_res != VK_SUCCESS) {
+                vk_result = local_res;
+                break;
+            }
+        } else {  // Otherwise, treat it as a directory
             dir_stream = loader_opendir(inst, cur_file);
             if (NULL == dir_stream) {
                 continue;
@@ -2837,37 +2883,6 @@ VkResult add_data_files_in_path(const struct loader_instance *inst, char *search
             if (vk_result != VK_SUCCESS) {
                 goto out;
             }
-        } else {
-#ifdef _WIN32
-            name = cur_file;
-#else
-            // Only Linux has relative paths, make a copy of location so it isn't modified
-            size_t str_len;
-            if (NULL != next_file) {
-                str_len = next_file - cur_file + 1;
-            } else {
-                str_len = strlen(cur_file) + 1;
-            }
-            if (str_len > sizeof(temp_path)) {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files_in_path: Path to %s too long\n", cur_file);
-                continue;
-            }
-            strcpy(temp_path, cur_file);
-            name = temp_path;
-#endif
-            loader_get_fullpath(cur_file, name, sizeof(full_path), full_path);
-            name = full_path;
-
-            VkResult local_res;
-            local_res = add_if_manifest_file(inst, name, out_files);
-
-            // Incomplete means this was not a valid data file.
-            if (local_res == VK_INCOMPLETE) {
-                continue;
-            } else if (local_res != VK_SUCCESS) {
-                vk_result = local_res;
-                break;
-            }
         }
         if (use_first_found_manifest && out_files->count > 0) {
             break;
@@ -2881,14 +2896,15 @@ out:
 
 // Look for data files in the provided paths, but first check the environment override to determine if we should use that
 // instead.
-static VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
-                                                const char *env_override, const char *path_override, const char *relative_location,
-                                                bool *override_active, struct loader_data_files *out_files) {
+static VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enum loader_json_type json_type,
+                                                const char *path_override, bool *override_active,
+                                                struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
-    bool is_directory_list = true;
-    bool is_icd = (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD);
+    bool is_icd = false;
     char *override_env = NULL;
     const char *override_path = NULL;
+    char *relative_location = NULL;
+    char *additional_env = NULL;
     size_t search_path_size = 0;
     char *search_path = NULL;
     char *cur_path_ptr = NULL;
@@ -2937,6 +2953,8 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     char *home = NULL;
     char *default_data_home = NULL;
     char *default_config_home = NULL;
+    char *home_data_dir = NULL;
+    char *home_config_dir = NULL;
 
     // Only use HOME if XDG_DATA_HOME is not present on the system
     home = loader_secure_getenv("HOME", inst);
@@ -2964,17 +2982,43 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             strcat(default_data_home, data_suffix);
         }
     }
+
+    if (NULL != default_config_home) {
+        home_config_dir = default_config_home;
+    } else {
+        home_config_dir = xdg_config_home;
+    }
+    if (NULL != default_data_home) {
+        home_data_dir = default_data_home;
+    } else {
+        home_data_dir = xdg_data_home;
+    }
 #endif  // !_WIN32
+
+    switch (json_type) {
+        case VULKAN_LOADER_JSON_DRIVER:
+            is_icd = true;
+            override_env = loader_secure_getenv(VK_DRIVER_FILES_ENV_VAR, inst);
+            if (NULL == override_env) {
+                // Not there, so fall back to the old name
+                override_env = loader_secure_getenv(VK_ICD_FILENAMES_ENV_VAR, inst);
+            }
+            additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
+            relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
+            break;
+        case VULKAN_LOADER_JSON_IMPLICIT_LAYER:
+            relative_location = VK_ILAYERS_INFO_RELATIVE_DIR;
+            break;
+        case VULKAN_LOADER_JSON_EXPLICIT_LAYER:
+            override_env = loader_secure_getenv(VK_LAYER_PATH_ENV_VAR, inst);
+            additional_env = loader_secure_getenv(VK_ADDITIONAL_LAYER_PATH_ENV_VAR, inst);
+            relative_location = VK_ELAYERS_INFO_RELATIVE_DIR;
+            break;
+    }
 
     if (path_override != NULL) {
         override_path = path_override;
-    } else if (env_override != NULL) {
-        override_env = loader_secure_getenv(env_override, inst);
-
-        // The ICD override is actually a specific list of filenames, not directories
-        if (is_icd && NULL != override_env) {
-            is_directory_list = false;
-        }
+    } else if (override_env != NULL) {
         override_path = override_env;
     }
 
@@ -2984,45 +3028,49 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     // If there's an override, use that (and the local folder if required) and nothing else
     if (NULL != override_path) {
         // Local folder and null terminator
-        search_path_size += strlen(override_path) + 1;
+        search_path_size += strlen(override_path) + 2;
+
+        // Add the size of any additional search paths defined in the additive environment variable
+        if (NULL != additional_env) {
+            search_path_size += determine_data_file_path_size(additional_env, 0) + 2;
+        }
     } else if (NULL == relative_location) {
         // If there's no override, and no relative location, bail out.  This is usually
         // the case when we're on Windows and the default path is to use the registry.
         goto out;
     } else {
+        // Add the size of any additional search paths defined in the additive environment variable
+        if (NULL != additional_env) {
+            search_path_size += determine_data_file_path_size(additional_env, 0) + 2;
+#ifdef _WIN32
+        } else {
+            goto out;
+        }
+#else  // !_WIN32
+        }
+
         // Add the general search folders (with the appropriate relative folder added)
         rel_size = strlen(relative_location);
-        if (rel_size == 0) {
-            goto out;
-        } else {
+        if (rel_size > 0) {
 #if defined(__APPLE__)
             search_path_size += MAXPATHLEN;
 #endif
-#ifndef _WIN32
-            // Only add the home folders if not ICD filenames or superuser
-            if (is_directory_list && !is_high_integrity()) {
-                if (NULL != default_config_home) {
-                    search_path_size += determine_data_file_path_size(default_config_home, rel_size);
-                } else {
-                    search_path_size += determine_data_file_path_size(xdg_config_home, rel_size);
-                }
+            // Only add the home folders if defined
+            if (NULL != home_config_dir) {
+                search_path_size += determine_data_file_path_size(home_config_dir, rel_size);
             }
             search_path_size += determine_data_file_path_size(xdg_config_dirs, rel_size);
             search_path_size += determine_data_file_path_size(SYSCONFDIR, rel_size);
 #if defined(EXTRASYSCONFDIR)
             search_path_size += determine_data_file_path_size(EXTRASYSCONFDIR, rel_size);
 #endif
-            // Only add the home folders if not ICD filenames or superuser
-            if (is_directory_list && !is_high_integrity()) {
-                if (NULL != default_data_home) {
-                    search_path_size += determine_data_file_path_size(default_data_home, rel_size);
-                } else {
-                    search_path_size += determine_data_file_path_size(xdg_data_home, rel_size);
-                }
+            // Only add the home folders if defined
+            if (NULL != home_data_dir) {
+                search_path_size += determine_data_file_path_size(home_data_dir, rel_size);
             }
             search_path_size += determine_data_file_path_size(xdg_data_dirs, rel_size);
-#endif  // !_WIN32
         }
+#endif  // !_WIN32
     }
 
     // Allocate the required space
@@ -3040,7 +3088,22 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     // Add the remaining paths to the list
     if (NULL != override_path) {
         strcpy(cur_path_ptr, override_path);
+        cur_path_ptr += strlen(override_path);
+        if (NULL != additional_env) {
+            *cur_path_ptr++ = PATH_SEPARATOR;
+
+            copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
+
+            // Remove the last path separator
+            --cur_path_ptr;
+            *cur_path_ptr = '\0';
+        }
     } else {
+        // Add any additional search paths defined in the additive environment variable
+        if (NULL != additional_env) {
+            copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
+        }
+
 #ifndef _WIN32
         if (rel_size > 0) {
 #if defined(__APPLE__)
@@ -3057,7 +3120,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                         cur_path_ptr += rel_size;
                         *cur_path_ptr++ = PATH_SEPARATOR;
                         // only for ICD manifests
-                        if (env_override != NULL && strcmp(VK_ICD_FILENAMES_ENV_VAR, env_override) == 0) {
+                        if (override_env != NULL && is_icd) {
                             use_first_found_manifest = true;
                         }
                     }
@@ -3065,29 +3128,22 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                 }
             }
 #endif  // __APPLE__
-        // Only add the home folders if not ICD filenames or superuser
-            if (is_directory_list && !is_high_integrity()) {
-                if (NULL != default_config_home) {
-                    copy_data_file_path(default_config_home, relative_location, rel_size, &cur_path_ptr);
-                } else {
-                    copy_data_file_path(xdg_config_home, relative_location, rel_size, &cur_path_ptr);
-                }
+
+            // Only add the home folders if not NULL
+            if (NULL != home_config_dir) {
+                copy_data_file_info(home_config_dir, relative_location, rel_size, &cur_path_ptr);
             }
-            copy_data_file_path(xdg_config_dirs, relative_location, rel_size, &cur_path_ptr);
-            copy_data_file_path(SYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
+            copy_data_file_info(xdg_config_dirs, relative_location, rel_size, &cur_path_ptr);
+            copy_data_file_info(SYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
 #if defined(EXTRASYSCONFDIR)
-            copy_data_file_path(EXTRASYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
+            copy_data_file_info(EXTRASYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
 #endif
 
-            // Only add the home folders if not ICD filenames or superuser
-            if (is_directory_list && !is_high_integrity()) {
-                if (NULL != default_data_home) {
-                    copy_data_file_path(default_data_home, relative_location, rel_size, &cur_path_ptr);
-                } else {
-                    copy_data_file_path(xdg_data_home, relative_location, rel_size, &cur_path_ptr);
-                }
+            // Only add the home folders if not NULL
+            if (NULL != home_data_dir) {
+                copy_data_file_info(home_data_dir, relative_location, rel_size, &cur_path_ptr);
             }
-            copy_data_file_path(xdg_data_dirs, relative_location, rel_size, &cur_path_ptr);
+            copy_data_file_info(xdg_data_dirs, relative_location, rel_size, &cur_path_ptr);
         }
 
         // Remove the last path separator
@@ -3138,7 +3194,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
         if (NULL != tmp_search_path) {
             strncpy(tmp_search_path, search_path, search_path_size);
             tmp_search_path[search_path_size] = '\0';
-            if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
+            if (is_icd) {
                 log_flags = VULKAN_LOADER_DRIVER_BIT;
                 loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
             } else {
@@ -3158,7 +3214,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files_in_path(inst, search_path, is_directory_list, out_files, use_first_found_manifest);
+    vk_result = add_data_files(inst, search_path, out_files, use_first_found_manifest);
 
     if (log_flags != 0 && out_files->count > 0) {
         loader_log(inst, log_flags, 0, "   Found the following files:");
@@ -3177,6 +3233,9 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
 
 out:
 
+    if (NULL != additional_env) {
+        loader_free_getenv(additional_env, inst);
+    }
     if (NULL != override_env) {
         loader_free_getenv(override_env, inst);
     }
@@ -3216,15 +3275,12 @@ out:
 
 // Find the Vulkan library manifest files.
 //
-// This function scans the "location" or "env_override" directories/files
-// for a list of JSON manifest files.  If env_override is non-NULL
-// and has a valid value. Then the location is ignored.  Otherwise
-// location is used to look for manifest files. The location
-// is interpreted as  Registry path on Windows and a directory path(s)
-// on Linux. "home_location" is an additional directory in the users home
-// directory to look at. It is expanded into the dir path
-// $XDG_DATA_HOME/home_location or $HOME/.local/share/home_location depending
-// on environment variables. This "home_location" is only used on Linux.
+// This function scans the appropriate locations for a list of JSON manifest files based on the
+// "json_type".  The location is interpreted as Registry path on Windows and a directory path(s)
+// on Linux.
+// "home_location" is an additional directory in the users home directory to look at. It is
+// expanded into the dir path $XDG_DATA_HOME/home_location or $HOME/.local/share/home_location
+// depending on environment variables. This "home_location" is only used on Linux.
 //
 // \returns
 // VKResult
@@ -3239,9 +3295,9 @@ out:
 // Win Layer  | files    | dirs
 // Linux ICD  | dirs     | files
 // Linux Layer| dirs     | dirs
-VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
-                               bool warn_if_not_present, const char *env_override, const char *path_override,
-                               char *registry_location, const char *relative_location, struct loader_data_files *out_files) {
+
+VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_json_type json_type, const char *path_override,
+                               struct loader_data_files *out_files) {
     VkResult res = VK_SUCCESS;
     bool override_active = false;
 
@@ -3259,8 +3315,7 @@ VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_d
     out_files->alloc_count = 0;
     out_files->filename_list = NULL;
 
-    res = read_data_files_in_search_paths(inst, data_file_type, env_override, path_override, relative_location, &override_active,
-                                          out_files);
+    res = read_data_files_in_search_paths(inst, json_type, path_override, &override_active, out_files);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -3268,8 +3323,32 @@ VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_d
 #ifdef _WIN32
     // Read the registry if the override wasn't active.
     if (!override_active) {
-        res = windows_read_data_files_in_registry(inst, data_file_type, warn_if_not_present, registry_location, out_files);
-        if (VK_SUCCESS != res) {
+        bool warn_if_not_present = false;
+        char *registry_location = NULL;
+        enum loader_data_files_type manifest_type = LOADER_DATA_FILE_MANIFEST_DRIVER;
+
+        switch (json_type) {
+            default:
+                goto out;
+            case VULKAN_LOADER_JSON_DRIVER:
+                warn_if_not_present = true;
+                registry_location = VK_DRIVERS_INFO_REGISTRY_LOC;
+                break;
+            case VULKAN_LOADER_JSON_IMPLICIT_LAYER:
+                manifest_type = LOADER_DATA_FILE_MANIFEST_LAYER;
+                registry_location = VK_ILAYERS_INFO_REGISTRY_LOC;
+                break;
+            case VULKAN_LOADER_JSON_EXPLICIT_LAYER:
+                warn_if_not_present = true;
+                manifest_type = LOADER_DATA_FILE_MANIFEST_LAYER;
+                registry_location = VK_ELAYERS_INFO_REGISTRY_LOC;
+                break;
+        }
+        VkResult tmp_res =
+            windows_read_data_files_in_registry(inst, manifest_type, warn_if_not_present, registry_location, out_files);
+        // Only return an error if there was an error this time, and no manifest files from before.
+        if (VK_SUCCESS != tmp_res && out_files->count == 0) {
+            res = tmp_res;
             goto out;
         }
     }
@@ -3296,10 +3375,10 @@ void loader_destroy_icd_lib_list() {}
 
 // Try to find the Vulkan ICD driver(s).
 //
-// This function scans the default system loader path(s) or path
-// specified by the \c VK_ICD_FILENAMES environment variable in
-// order to find loadable VK ICDs manifest files. From these
-// manifest files it finds the ICD libraries.
+// This function scans the default system loader path(s) or path specified by either the
+// VK_DRIVER_FILES or VK_ICD_FILENAMES environment variable in order to find loadable
+// VK ICDs manifest files.
+// From these manifest files it finds the ICD libraries.
 //
 // \returns
 // Vulkan result
@@ -3320,8 +3399,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         goto out;
     }
     // Get a list of manifest files for ICDs
-    res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_ICD, true, VK_ICD_FILENAMES_ENV_VAR, NULL,
-                                VK_DRIVERS_INFO_REGISTRY_LOC, VK_DRIVERS_INFO_RELATIVE_DIR, &manifest_files);
+    res = loader_get_data_files(inst, VULKAN_LOADER_JSON_DRIVER, NULL, &manifest_files);
     if (VK_SUCCESS != res || manifest_files.count == 0) {
         goto out;
     }
@@ -3568,9 +3646,7 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
     loader_platform_thread_lock_mutex(&loader_json_lock);
 
     // Get a list of manifest files for any implicit layers
-    // Pass NULL for environment variable override - implicit layers are not overridden by LAYERS_PATH_ENV
-    if (VK_SUCCESS != loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_LAYER, false, NULL, NULL, VK_ILAYERS_INFO_REGISTRY_LOC,
-                                            VK_ILAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
+    if (VK_SUCCESS != loader_get_data_files(inst, VULKAN_LOADER_JSON_IMPLICIT_LAYER, NULL, &manifest_files)) {
         goto out;
     }
 
@@ -3618,7 +3694,7 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
             }
             cur_write_ptr = &override_paths[0];
             for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-                copy_data_file_path(prop->override_paths[j], NULL, 0, &cur_write_ptr);
+                copy_data_file_info(prop->override_paths[j], NULL, 0, &cur_write_ptr);
             }
             // Remove the last path separator
             --cur_write_ptr;
@@ -3630,8 +3706,7 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
     }
 
     // Get a list of manifest files for explicit layers
-    if (VK_SUCCESS != loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, VK_LAYER_PATH_ENV_VAR, override_paths,
-                                            VK_ELAYERS_INFO_REGISTRY_LOC, VK_ELAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
+    if (VK_SUCCESS != loader_get_data_files(inst, VULKAN_LOADER_JSON_EXPLICIT_LAYER, override_paths, &manifest_files)) {
         goto out;
     }
 
@@ -3703,9 +3778,7 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
     // a failure occurs before allocating the manifest filename_list.
     memset(&manifest_files, 0, sizeof(struct loader_data_files));
 
-    // Pass NULL for environment variable override - implicit layers are not overridden by LAYERS_PATH_ENV
-    VkResult res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_LAYER, false, NULL, NULL, VK_ILAYERS_INFO_REGISTRY_LOC,
-                                         VK_ILAYERS_INFO_RELATIVE_DIR, &manifest_files);
+    VkResult res = loader_get_data_files(inst, VULKAN_LOADER_JSON_IMPLICIT_LAYER, NULL, &manifest_files);
     if (VK_SUCCESS != res || manifest_files.count == 0) {
         goto out;
     }
@@ -3762,7 +3835,7 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
                 }
                 cur_write_ptr = &override_paths[0];
                 for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-                    copy_data_file_path(prop->override_paths[j], NULL, 0, &cur_write_ptr);
+                    copy_data_file_info(prop->override_paths[j], NULL, 0, &cur_write_ptr);
                 }
                 // Remove the last path separator
                 --cur_write_ptr;
@@ -3780,8 +3853,7 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
     // explicit layer info as well.  Not to worry, though, all explicit layers not included
     // in the override layer will be removed below in loader_remove_layers_in_blacklist().
     if (override_layer_valid || implicit_metalayer_present) {
-        if (VK_SUCCESS != loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_LAYER, true, VK_LAYER_PATH_ENV_VAR, override_paths,
-                                                VK_ELAYERS_INFO_REGISTRY_LOC, VK_ELAYERS_INFO_RELATIVE_DIR, &manifest_files)) {
+        if (VK_SUCCESS != loader_get_data_files(inst, VULKAN_LOADER_JSON_EXPLICIT_LAYER, override_paths, &manifest_files)) {
             goto out;
         }
 
@@ -5695,6 +5767,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     // If no ICDs were added to instance list and res is unchanged from it's initial value, the loader was unable to
     // find a suitable ICD.
     if (VK_SUCCESS == res && (ptr_instance->icd_terms == NULL || !one_icd_successful)) {
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "terminator_CreateInstance: Found no drivers!");
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
     }
 

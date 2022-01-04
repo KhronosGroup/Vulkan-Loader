@@ -182,7 +182,7 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
 }
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
 
-FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode) noexcept
+FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode, bool override_icds, bool override_layers) noexcept
     : platform_shim(debug_mode),
       null_folder(FRAMEWORK_BUILD_DIRECTORY, "null_dir", debug_mode),
       icd_folder(FRAMEWORK_BUILD_DIRECTORY, "icd_manifests", debug_mode),
@@ -191,8 +191,16 @@ FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode) noexcept
       vulkan_functions() {
     platform_shim->redirect_all_paths(null_folder.location());
 
-    platform_shim->set_path(ManifestCategory::icd, icd_folder.location());
-    platform_shim->set_path(ManifestCategory::explicit_layer, explicit_layer_folder.location());
+    if (override_icds) {
+        platform_shim->set_path(ManifestCategory::icd, null_folder.location());
+    } else {
+        platform_shim->set_path(ManifestCategory::icd, icd_folder.location());
+    }
+    if (override_layers) {
+        platform_shim->set_path(ManifestCategory::explicit_layer, null_folder.location());
+    } else {
+        platform_shim->set_path(ManifestCategory::explicit_layer, explicit_layer_folder.location());
+    }
     platform_shim->set_path(ManifestCategory::implicit_layer, implicit_layer_folder.location());
 }
 
@@ -221,7 +229,13 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
             env_var_vk_icd_filenames += OS_ENV_VAR_LIST_SEPARATOR;
         }
         env_var_vk_icd_filenames += (icd_folder.location() / full_json_name).str();
-        set_env_var("VK_ICD_FILENAMES", env_var_vk_icd_filenames);
+        set_env_var("VK_DRIVER_FILES", env_var_vk_icd_filenames);
+    } else  if (icd_details.use_add_env_var_icd_filenames) {
+        if (!add_env_var_vk_icd_filenames.empty()) {
+            add_env_var_vk_icd_filenames += OS_ENV_VAR_LIST_SEPARATOR;
+        }
+        add_env_var_vk_icd_filenames += (icd_folder.location() / full_json_name).str();
+        set_env_var("VK_ADD_DRIVER_FILES", add_env_var_vk_icd_filenames);
     } else {
         platform_shim->add_manifest(ManifestCategory::icd, driver_loc);
     }

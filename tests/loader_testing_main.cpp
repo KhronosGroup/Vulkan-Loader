@@ -50,7 +50,10 @@ int main(int argc, char** argv) {
 
     // make sure the tests don't find these env-vars if they were set on the system
     remove_env_var("VK_ICD_FILENAMES");
+    remove_env_var("VK_DRIVER_FILES");
+    remove_env_var("VK_ADD_DRIVER_FILES");
     remove_env_var("VK_LAYER_PATH");
+    remove_env_var("VK_ADD_LAYER_PATH");
     remove_env_var("VK_INSTANCE_LAYERS");
     remove_env_var("VK_LOADER_DEBUG");
     remove_env_var("VK_LOADER_DISABLE_INST_EXT_FILTER");
