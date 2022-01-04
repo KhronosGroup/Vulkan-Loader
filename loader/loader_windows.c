@@ -168,7 +168,7 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
 
     CONFIGRET status = CM_Open_DevNode_Key(dev_id, KEY_QUERY_VALUE, 0, RegDisposition_OpenExisting, &hkrKey, CM_REGISTRY_SOFTWARE);
     if (status != CR_SUCCESS) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: Failed to open registry key for DeviceID(%d)", dev_id);
         *result = VK_ERROR_INCOMPATIBLE_DRIVER;
         return false;
@@ -179,18 +179,19 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
 
     if (ret != ERROR_SUCCESS) {
         if (ret == ERROR_FILE_NOT_FOUND) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "windows_get_device_registry_entry: Device ID(%d) Does not contain a value for \"%s\"", dev_id, value_name);
         } else {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "windows_get_device_registry_entry: DeviceID(%d) Failed to obtain %s size",
-                       dev_id, value_name);
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                       "windows_get_device_registry_entry: DeviceID(%d) Failed to obtain %s size", dev_id, value_name);
         }
         goto out;
     }
 
     manifest_path = loader_instance_heap_alloc(inst, requiredSize, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (manifest_path == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_device_registry_entry: Failed to allocate space for DriverName.");
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "windows_get_device_registry_entry: Failed to allocate space for DriverName.");
         *result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
@@ -198,14 +199,14 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
     ret = RegQueryValueEx(hkrKey, value_name, NULL, &data_type, (BYTE *)manifest_path, &requiredSize);
 
     if (ret != ERROR_SUCCESS) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_device_registry_entry: DeviceID(%d) Failed to obtain %s",
-                   value_name);
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "windows_get_device_registry_entry: DeviceID(%d) Failed to obtain %s", value_name);
         *result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
     if (data_type != REG_SZ && data_type != REG_MULTI_SZ) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: Invalid %s data type. Expected REG_SZ or REG_MULTI_SZ.", value_name);
         *result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
@@ -221,8 +222,8 @@ out:
     return found;
 }
 
-VkResult windows_get_device_registry_files(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size,
-                                           LPCSTR value_name) {
+VkResult windows_get_device_registry_files(const struct loader_instance *inst, uint32_t log_target_flag, char **reg_data,
+                                           PDWORD reg_data_size, LPCSTR value_name) {
     static const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
     static const wchar_t *displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
 #ifdef CM_GETIDLIST_FILTER_PRESENT
@@ -252,7 +253,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, c
 
         pDeviceNames = loader_instance_heap_alloc(inst, deviceNamesSize * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (pDeviceNames == NULL) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                        "windows_get_device_registry_files: Failed to allocate space for display device names.");
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             return result;
@@ -263,25 +264,26 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, c
         for (wchar_t *deviceName = pDeviceNames; *deviceName; deviceName += wcslen(deviceName) + 1) {
             CONFIGRET status = CM_Locate_DevNodeW(&devID, deviceName, CM_LOCATE_DEVNODE_NORMAL);
             if (CR_SUCCESS != status) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_device_registry_files: failed to open DevNode %ls",
-                           deviceName);
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
+                           "windows_get_device_registry_files: failed to open DevNode %ls", deviceName);
                 continue;
             }
             ULONG ulStatus, ulProblem;
             status = CM_Get_DevNode_Status(&ulStatus, &ulProblem, devID, 0);
 
             if (CR_SUCCESS != status) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_device_registry_files: failed to probe device status %ls",
-                           deviceName);
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
+                           "windows_get_device_registry_files: failed to probe device status %ls", deviceName);
                 continue;
             }
             if ((ulStatus & DN_HAS_PROBLEM) && (ulProblem == CM_PROB_NEED_RESTART || ulProblem == DN_NEED_RESTART)) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
                            "windows_get_device_registry_files: device %ls is pending reboot, skipping ...", deviceName);
                 continue;
             }
 
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "windows_get_device_registry_files: opening device %ls", deviceName);
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0, "windows_get_device_registry_files: opening device %ls",
+                       deviceName);
 
             if (windows_get_device_registry_entry(inst, reg_data, reg_data_size, devID, value_name, &result)) {
                 found = true;
@@ -292,7 +294,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, c
 
             status = CM_Get_Child(&childID, devID, 0);
             if (status != CR_SUCCESS) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
                            "windows_get_device_registry_files: unable to open child-device error:%d", status);
                 continue;
             }
@@ -301,12 +303,12 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, c
                 wchar_t buffer[MAX_DEVICE_ID_LEN];
                 CM_Get_Device_IDW(childID, buffer, MAX_DEVICE_ID_LEN, 0);
 
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "windows_get_device_registry_files: Opening child device %d - %ls",
-                           childID, buffer);
+                loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
+                           "windows_get_device_registry_files: Opening child device %d - %ls", childID, buffer);
 
                 status = CM_Get_DevNode_Registry_PropertyW(childID, CM_DRP_CLASSGUID, NULL, &childGuid, &childGuidSize, 0);
                 if (status != CR_SUCCESS) {
-                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                                "windows_get_device_registry_files: unable to obtain GUID for:%d error:%d", childID, status);
 
                     result = VK_ERROR_INCOMPATIBLE_DRIVER;
@@ -314,7 +316,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, c
                 }
 
                 if (wcscmp(childGuid, softwareComponentGUID) != 0) {
-                    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_DEBUG_BIT | log_target_flag, 0,
                                "windows_get_device_registry_files: GUID for %d is not SoftwareComponent skipping", childID);
                     continue;
                 }
@@ -331,6 +333,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, c
     }
 
     if (!found && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
+        loader_log(inst, log_target_flag, 0, "windows_get_device_registry_files: found no registry files");
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
     }
 
@@ -395,13 +398,14 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
     bool found = false;
     IDXGIFactory1 *dxgi_factory = NULL;
     bool is_driver = !strcmp(location, VK_DRIVERS_INFO_REGISTRY_LOC);
+    uint32_t log_target_flag = is_driver ? VULKAN_LOADER_DRIVER_BIT : VULKAN_LOADER_LAYER_BIT;
 
     assert(reg_data != NULL && "windows_get_registry_files: reg_data is a NULL pointer");
 
     if (is_driver) {
         HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory1, (void **)&dxgi_factory);
         if (hres != S_OK) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | log_target_flag, 0,
                        "windows_get_registry_files: Failed to create dxgi factory for ICD registry verification. No ICDs will be "
                        "added from "
                        "legacy registry locations");
@@ -421,7 +425,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                     if (NULL == *reg_data) {
                         *reg_data = loader_instance_heap_alloc(inst, *reg_data_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                         if (NULL == *reg_data) {
-                            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                                        "windows_get_registry_files: Failed to allocate space for registry data for key %s", name);
                             RegCloseKey(key);
                             result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -433,7 +437,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                                                                      VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                         if (NULL == new_ptr) {
                             loader_log(
-                                inst, VULKAN_LOADER_ERROR_BIT, 0,
+                                inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                                 "windows_get_registry_files: Failed to reallocate space for registry value of size %d for key %s",
                                 *reg_data_size * 2, name);
                             RegCloseKey(key);
@@ -446,7 +450,8 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
 
                     // We've now found a json file. If this is an ICD, we still need to check if there is actually a device
                     // that matches this ICD
-                    loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Located json file \"%s\" from registry \"%s\\%s\"", name,
+                    loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
+                               "Located json file \"%s\" from registry \"%s\\%s\"", name,
                                hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR,
                                location);
                     if (is_driver) {
@@ -457,7 +462,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                             }
                         }
                         if (i == sizeof(known_drivers) / sizeof(known_drivers[0])) {
-                            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                            loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
                                        "Driver %s is not recognized as a known driver. It will be assumed to be active", name);
                         } else {
                             bool found_gpu = false;
@@ -467,7 +472,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                                 if (hres == DXGI_ERROR_NOT_FOUND) {
                                     break;
                                 } else if (hres != S_OK) {
-                                    loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                                    loader_log(inst, VULKAN_LOADER_WARN_BIT | log_target_flag, 0,
                                                "Failed to enumerate DXGI adapters at index %d. As a result, drivers may be skipped",
                                                j);
                                     continue;
@@ -477,7 +482,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                                 hres = adapter->lpVtbl->GetDesc1(adapter, &description);
                                 if (hres != S_OK) {
                                     loader_log(
-                                        inst, VULKAN_LOADER_INFO_BIT, 0,
+                                        inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
                                         "Failed to get DXGI adapter information at index %d. As a result, drivers may be skipped",
                                         j);
                                     continue;
@@ -490,7 +495,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                             }
 
                             if (!found_gpu) {
-                                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                                loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
                                            "Dropping driver %s as no corresponding DXGI adapter was found", name);
                                 continue;
                             }
@@ -523,7 +528,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                             found = true;
                         } else {
                             loader_log(
-                                inst, VULKAN_LOADER_INFO_BIT, 0,
+                                inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
                                 "Skipping adding of json file \"%s\" from registry \"%s\\%s\" to the list due to duplication", name,
                                 hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR,
                                 location);
@@ -544,6 +549,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
     }
 
     if (!found && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
+        loader_log(inst, log_target_flag, 0, "Found no registry files in %s", location);
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
     }
 
@@ -693,11 +699,14 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
                                              struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char *search_path = NULL;
+    uint32_t log_target_flag = 0;
 
-    if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
-        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Checking for Driver Manifest files in Registry at %s", registry_location);
+    if (data_file_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
+        log_target_flag = VULKAN_LOADER_DRIVER_BIT;
+        loader_log(inst, log_target_flag, 0, "Checking for Driver Manifest files in Registry at %s", registry_location);
     } else {
-        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Checking for Driver Manifest files in Registry at %s", registry_location);
+        log_target_flag = VULKAN_LOADER_LAYER_BIT;
+        loader_log(inst, log_target_flag, 0, "Checking for Layer Manifest files in Registry at %s", registry_location);
     }
 
     // These calls look at the PNP/Device section of the registry.
@@ -707,17 +716,20 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
         // If we're looking for drivers we need to try enumerating adapters
         regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_path, &reg_size, LoaderPnpDriverRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
-            regHKR_result = windows_get_device_registry_files(inst, &search_path, &reg_size, LoaderPnpDriverRegistry());
+            regHKR_result =
+                windows_get_device_registry_files(inst, log_target_flag, &search_path, &reg_size, LoaderPnpDriverRegistry());
         }
     } else if (!strncmp(registry_location, VK_ELAYERS_INFO_REGISTRY_LOC, sizeof(VK_ELAYERS_INFO_REGISTRY_LOC))) {
         regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_path, &reg_size, LoaderPnpELayerRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
-            regHKR_result = windows_get_device_registry_files(inst, &search_path, &reg_size, LoaderPnpELayerRegistry());
+            regHKR_result =
+                windows_get_device_registry_files(inst, log_target_flag, &search_path, &reg_size, LoaderPnpELayerRegistry());
         }
     } else if (!strncmp(registry_location, VK_ILAYERS_INFO_REGISTRY_LOC, sizeof(VK_ILAYERS_INFO_REGISTRY_LOC))) {
         regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_path, &reg_size, LoaderPnpILayerRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
-            regHKR_result = windows_get_device_registry_files(inst, &search_path, &reg_size, LoaderPnpILayerRegistry());
+            regHKR_result =
+                windows_get_device_registry_files(inst, log_target_flag, &search_path, &reg_size, LoaderPnpILayerRegistry());
         }
     }
 
@@ -735,8 +747,8 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     }
 
     if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == search_path) {
-        if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+        if (data_file_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                        "windows_read_data_files_in_registry: Registry lookup failed to get ICD manifest files.  Possibly missing "
                        "Vulkan driver?");
             vk_result = VK_ERROR_INCOMPATIBLE_DRIVER;
@@ -744,11 +756,11 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
             if (warn_if_not_present) {
                 if (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) {
                     // This is only a warning for layers
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT | log_target_flag, 0,
                                "windows_read_data_files_in_registry: Registry lookup failed to get layer manifest files.");
                 } else {
                     // This is only a warning for general data files
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT | log_target_flag, 0,
                                "windows_read_data_files_in_registry: Registry lookup failed to get data files.");
                 }
             }
@@ -759,7 +771,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files_in_path(inst, search_path, false, out_files, false);
+    vk_result = add_data_files(inst, search_path, out_files, false);
 
 out:
 

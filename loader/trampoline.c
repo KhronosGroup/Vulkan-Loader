@@ -550,11 +550,13 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     res = loader_icd_scan(ptr_instance, &ptr_instance->icd_tramp_list);
     if (res == VK_SUCCESS && ptr_instance->icd_tramp_list.count == 0) {
         // No drivers found
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "vkCreateInstance: Found no drivers!");
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
     if (res != VK_SUCCESS) {
         if (res != VK_ERROR_OUT_OF_HOST_MEMORY && ptr_instance->icd_tramp_list.count == 0) {
+            loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "vkCreateInstance: Found no drivers!");
             res = VK_ERROR_INCOMPATIBLE_DRIVER;
         }
         goto out;

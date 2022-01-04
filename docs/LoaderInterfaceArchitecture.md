@@ -417,8 +417,10 @@ using untrusted results.
 
 These behaviors also result in ignoring certain environment variables, such as:
 
-  * `VK_ICD_FILENAMES`
+  * `VK_DRIVER_FILES` / `VK_ICD_FILENAMES`
+  * `VK_ADD_DRIVER_FILES`
   * `VK_LAYER_PATH`
+  * `VK_ADD_LAYER_PATH`
   * `XDG_CONFIG_HOME` (Linux/Mac-specific)
   * `XDG_DATA_HOME` (Linux/Mac-specific)
 
@@ -491,8 +493,11 @@ discovery.
     <th>Example Format</th>
   </tr>
   <tr>
-    <td><small><i>VK_ICD_FILENAMES</i></small></td>
-    <td>Force the loader to use the specific ICD JSON files.
+    <td><small><i>VK_ADD_DRIVER_FILES</i></small></td>
+    <td>Provide a list of additional driver JSON files that the loader will use
+        in addition to the drivers that the loader would find normally.
+        The list of drivers will be added first, prior to the list of drivers
+        that would be found normally.
         The value contains a list of delimited full path listings to
         driver JSON Manifest files.<br/>
         <b>NOTE:</b> If a global path to the JSON file is not used, issues
@@ -503,11 +508,57 @@ discovery.
         for more information.
     </td>
     <td><small>export<br/>
-        &nbsp;&nbsp;VK_ICD_FILENAMES=<br/>
+        &nbsp;&nbsp;VK_ADD_DRIVER_FILES=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<folder_a>/intel.json:<folder_b>/amd.json
         <br/> <br/>
         set<br/>
-        &nbsp;&nbsp;VK_ICD_FILENAMES=<br/>
+        &nbsp;&nbsp;VK_ADD_DRIVER_FILES=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<folder_a>\nvidia.json;<folder_b>\mesa.json
+        </small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><i>VK_ADD_LAYER_PATH</i></small></td>
+    <td>Provide a list of additional paths that the loader will use to search
+        for layers in addition to the loader's standard Layer library search
+        folder when looking for explicit layer manifest files.
+        The paths will be added first, prior to the list of folders that would
+        be searched normally.
+        <br/>
+        <b>Ignored when running Vulkan application in executing with
+        elevated privileges.</b>
+        See <a href="#elevated-privilege-caveats">Elevated Privilege Caveats</a>
+        for more information.
+    </td>
+    <td><small>export<br/>
+        &nbsp;&nbsp;VK_ADD_LAYER_PATH=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;<br/><br/>
+        set<br/>
+        &nbsp;&nbsp;VK_ADD_LAYER_PATH=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;</small>
+    </td>
+  </tr>
+  <tr>
+    <td><small><i>VK_DRIVER_FILES</i></small></td>
+    <td>Force the loader to use the specific driver JSON files.
+        The value contains a list of delimited full path listings to
+        driver JSON Manifest files.<br/>
+        This has replaced the older deprecated environment variable
+        <i>VK_ICD_FILENAMES</i>, however the older environment variable will
+        continue to work for some time.
+        <b>NOTE:</b> If a global path to the JSON file is not used, issues
+        may be encountered.<br/>
+        <b>Ignored when running Vulkan application in executing with
+        elevated privileges.</b>
+        See <a href="#elevated-privilege-caveats">Elevated Privilege Caveats</a>
+        for more information.
+    </td>
+    <td><small>export<br/>
+        &nbsp;&nbsp;VK_DRIVER_FILES=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<folder_a>/intel.json:<folder_b>/amd.json
+        <br/> <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_DRIVER_FILES=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<folder_a>\nvidia.json;<folder_b>\mesa.json
         </small>
     </td>
@@ -565,7 +616,6 @@ discovery.
         loader before returning the set of physical devices to layers.<br/>
     </td>
     <td><small>set VK_LOADER_DISABLE_SELECT=1</small>
-    </td>
   </tr>
   <tr>
     <td><small><i>VK_LOADER_DISABLE_INST_EXT_FILTER</i></small></td>
