@@ -1403,3 +1403,50 @@ TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
     ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
     ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
 }
+
+TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    VkPhysicalDeviceProperties properties{};
+    properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    env.get_test_icd().add_physical_device({});
+    env.get_test_icd().physical_devices.back().set_properties(properties);
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer1";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(regular_layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                         .set_disable_environment("DisableMeIfYouCan")),
+                           "regular_test_layer.json");
+    {  // 1.1 instance
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(regular_layer_name);
+        inst.create_info.set_api_version(1, 1, 0);
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        EXPECT_EQ(1, count);
+        VkLayerProperties layer_props{};
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
+        EXPECT_EQ(1, count);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+    }
+    {  // 1.2 instance
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(regular_layer_name);
+        inst.create_info.set_api_version(1, 2, 0);
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(1, count);
+        VkLayerProperties layer_props{};
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
+        ASSERT_EQ(1, count);
+    }
+}
