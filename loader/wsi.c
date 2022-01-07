@@ -246,7 +246,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceSupportKHR(VkP
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceSurfaceSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceSupportKHR!\n");
         abort();
     }
 
@@ -298,7 +298,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilitiesKH
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
         abort();
     }
 
@@ -352,7 +352,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormatsKHR(VkP
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
         abort();
     }
 
@@ -408,7 +408,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfacePresentModesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceSurfacePresentModesKHR!\n");
+                   "ICD for selected physical device does not exportvkGetPhysicalDeviceSurfacePresentModesKHR!\n");
         abort();
     }
 
@@ -645,7 +645,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupp
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWin32PresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceWin32PresentationSupportKHR!\n");
+                   "ICD for selected physical device does not exportvkGetPhysicalDeviceWin32PresentationSupportKHR!\n");
         abort();
     }
 
@@ -765,7 +765,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWaylandPresentationSu
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWaylandPresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceWaylandPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not exportvkGetPhysicalDeviceWaylandPresentationSupportKHR!\n");
         abort();
     }
 
@@ -887,7 +887,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXcbPresentationSuppor
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXcbPresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceXcbPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not exportvkGetPhysicalDeviceXcbPresentationSupportKHR!\n");
         abort();
     }
 
@@ -1008,7 +1008,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSuppo
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXlibPresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceXlibPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not exportvkGetPhysicalDeviceXlibPresentationSupportKHR!\n");
         abort();
     }
 
@@ -1132,7 +1132,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDirectFBPresentationSupportEXT) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceDirectFBPresentationSupportEXT!\n");
+                   "ICD for selected physical device does not exportvkGetPhysicalDeviceDirectFBPresentationSupportEXT!\n");
         abort();
     }
 
@@ -1647,7 +1647,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceScreenPresentationSupportQNX!\n");
+                   "ICD for selected physical device does not exportvkGetPhysicalDeviceScreenPresentationSupportQNX!\n");
         abort();
     }
 
@@ -1687,7 +1687,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceDisplayPropertiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPropertiesKHR!\n");
         *pPropertyCount = 0;
         return VK_SUCCESS;
     }
@@ -1725,7 +1725,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetPhysicalDeviceDisplayPlanePropertiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPlanePropertiesKHR!\n");
         *pPropertyCount = 0;
         return VK_SUCCESS;
     }
@@ -1763,7 +1763,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneSupportedDisplaysKHR(Vk
 
     if (NULL == icd_term->dispatch.GetDisplayPlaneSupportedDisplaysKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetDisplayPlaneSupportedDisplaysKHR!\n");
+                   "ICD for selected physical device does not export vkGetDisplayPlaneSupportedDisplaysKHR!\n");
         *pDisplayCount = 0;
         return VK_SUCCESS;
     }
@@ -1802,7 +1802,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModePropertiesKHR(VkPhysical
 
     if (NULL == icd_term->dispatch.GetDisplayModePropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetDisplayModePropertiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetDisplayModePropertiesKHR!\n");
         *pPropertyCount = 0;
         return VK_SUCCESS;
     }
@@ -1843,7 +1843,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayModeKHR(VkPhysicalDevice 
     if (NULL == icd_term->dispatch.CreateDisplayModeKHR) {
         // Can't emulate, so return an appropriate error
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device is not exporting vkCreateDisplayModeKHR!\n");
+                   "ICD for selected physical device does not export vkCreateDisplayModeKHR!\n");
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -1882,7 +1882,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilitiesKHR(VkPhysi
     if (NULL == icd_term->dispatch.GetDisplayPlaneCapabilitiesKHR) {
         // Emulate support
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device is not exporting vkGetDisplayPlaneCapabilitiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetDisplayPlaneCapabilitiesKHR!\n");
         if (pCapabilities) {
             memset(pCapabilities, 0, sizeof(VkDisplayPlaneCapabilitiesKHR));
         }
