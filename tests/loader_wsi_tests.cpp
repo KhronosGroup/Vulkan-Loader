@@ -27,10 +27,6 @@
 
 #include "test_environment.h"
 
-#if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
-#include <X11/Xutil.h>
-#endif
-
 class WsiTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
