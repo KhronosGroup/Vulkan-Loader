@@ -216,21 +216,16 @@ void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const s
 
     // Strip off ending
 #if defined(WIN32)
-    size_t index = 0;
-    index = wrap_layer.find(".dll", index);
-    assert(index != std::string::npos);
-    wrap_layer.replace(index, 4, "");
+    std::string library_extension = ".dll";
 #elif defined(__APPLE__)
-    size_t index = 0;
-    index = wrap_layer.find(".dylib", index);
-    assert(index != std::string::npos);
-    wrap_layer.replace(index, 6, "");
+    std::string library_extension = ".dylib";
 #else
-    size_t index = 0;
-    index = wrap_layer.find(".so", index);
-    assert(index != std::string::npos);
-    wrap_layer.replace(index, 3, "");
+    std::string library_extension = ".so";
 #endif
+    size_t index = 0;
+    index = wrap_layer.find(library_extension, index);
+    assert(index != std::string::npos);
+    wrap_layer.replace(index, library_extension.size(), "");
 
     for (auto& layer : layer_manifest.layers) {
         size_t cur_layer_index = layers.size();
