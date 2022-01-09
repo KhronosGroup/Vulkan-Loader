@@ -134,7 +134,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
     PFN_vkGetPhysicalDeviceFeatures2 fpGetPhysicalDeviceFeatures2 = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceFeatures2 = icd_term->dispatch.GetPhysicalDeviceFeatures2;
-    } else if (inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    }
+    if (fpGetPhysicalDeviceFeatures2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceFeatures2 = icd_term->dispatch.GetPhysicalDeviceFeatures2KHR;
     }
 
@@ -189,7 +190,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
     PFN_vkGetPhysicalDeviceProperties2 fpGetPhysicalDeviceProperties2 = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
-    } else if (inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    }
+    if (fpGetPhysicalDeviceProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
     }
 
@@ -251,7 +253,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2(VkPhysi
     PFN_vkGetPhysicalDeviceFormatProperties2 fpGetPhysicalDeviceFormatProperties2 = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceFormatProperties2;
-    } else if (inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    }
+    if (fpGetPhysicalDeviceFormatProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceFormatProperties2KHR;
     }
 
@@ -288,7 +291,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties
     PFN_vkGetPhysicalDeviceImageFormatProperties2 fpGetPhysicalDeviceImageFormatProperties2 = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceImageFormatProperties2;
-    } else if (inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    }
+    if (fpGetPhysicalDeviceImageFormatProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceImageFormatProperties2KHR;
     }
 
@@ -327,7 +331,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(Vk
     PFN_vkGetPhysicalDeviceQueueFamilyProperties2 fpGetPhysicalDeviceQueueFamilyProperties2 = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceQueueFamilyProperties2 = icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties2;
-    } else if (inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    }
+    if (fpGetPhysicalDeviceQueueFamilyProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceQueueFamilyProperties2 = icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties2KHR;
     }
 
@@ -384,7 +389,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2(VkPhysi
     PFN_vkGetPhysicalDeviceMemoryProperties2 fpGetPhysicalDeviceMemoryProperties2 = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceMemoryProperties2 = icd_term->dispatch.GetPhysicalDeviceMemoryProperties2;
-    } else if (inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    }
+    if (fpGetPhysicalDeviceMemoryProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceMemoryProperties2 = icd_term->dispatch.GetPhysicalDeviceMemoryProperties2KHR;
     }
 
@@ -421,7 +427,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
     PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 fpGetPhysicalDeviceSparseImageFormatProperties2 = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceSparseImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties2;
-    } else if (inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    }
+    if (fpGetPhysicalDeviceSparseImageFormatProperties2 == NULL &&
+        inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceSparseImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties2KHR;
     }
 
@@ -489,7 +497,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties(
     PFN_vkGetPhysicalDeviceExternalBufferProperties fpGetPhysicalDeviceExternalBufferProperties = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceExternalBufferProperties = icd_term->dispatch.GetPhysicalDeviceExternalBufferProperties;
-    } else if (inst->enabled_known_extensions.khr_external_memory_capabilities) {
+    }
+    if (fpGetPhysicalDeviceExternalBufferProperties == NULL && inst->enabled_known_extensions.khr_external_memory_capabilities) {
         fpGetPhysicalDeviceExternalBufferProperties = icd_term->dispatch.GetPhysicalDeviceExternalBufferPropertiesKHR;
     }
 
@@ -531,7 +540,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperti
     PFN_vkGetPhysicalDeviceExternalSemaphoreProperties fpGetPhysicalDeviceExternalSemaphoreProperties = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceExternalSemaphoreProperties = icd_term->dispatch.GetPhysicalDeviceExternalSemaphoreProperties;
-    } else if (inst->enabled_known_extensions.khr_external_semaphore_capabilities) {
+    }
+    if (fpGetPhysicalDeviceExternalSemaphoreProperties == NULL &&
+        inst->enabled_known_extensions.khr_external_semaphore_capabilities) {
         fpGetPhysicalDeviceExternalSemaphoreProperties = icd_term->dispatch.GetPhysicalDeviceExternalSemaphorePropertiesKHR;
     }
 
@@ -576,7 +587,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties(
     PFN_vkGetPhysicalDeviceExternalFenceProperties fpGetPhysicalDeviceExternalFenceProperties = NULL;
     if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         fpGetPhysicalDeviceExternalFenceProperties = icd_term->dispatch.GetPhysicalDeviceExternalFenceProperties;
-    } else if (inst->enabled_known_extensions.khr_external_fence_capabilities) {
+    }
+    if (fpGetPhysicalDeviceExternalFenceProperties == NULL && inst->enabled_known_extensions.khr_external_fence_capabilities) {
         fpGetPhysicalDeviceExternalFenceProperties = icd_term->dispatch.GetPhysicalDeviceExternalFencePropertiesKHR;
     }
 
