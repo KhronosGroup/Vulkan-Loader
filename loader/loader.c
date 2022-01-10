@@ -2520,8 +2520,8 @@ out:
 }
 
 static inline bool is_valid_layer_json_version(const layer_json_version *layer_json) {
-    // Supported versions are: 1.0.0, 1.0.1, 1.1.0 - 1.1.2, and 1.2.0.
-    if ((layer_json->major == 1 && layer_json->minor == 2 && layer_json->patch < 1) ||
+    // Supported versions are: 1.0.0, 1.0.1, 1.1.0 - 1.1.2, and 1.2.0 - 1.2.1.
+    if ((layer_json->major == 1 && layer_json->minor == 2 && layer_json->patch < 2) ||
         (layer_json->major == 1 && layer_json->minor == 1 && layer_json->patch < 3) ||
         (layer_json->major == 1 && layer_json->minor == 0 && layer_json->patch < 2)) {
         return true;
