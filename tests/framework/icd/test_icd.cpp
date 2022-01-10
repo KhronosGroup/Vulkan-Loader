@@ -656,6 +656,32 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties2(
     return VK_SUCCESS;
 }
 
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalBufferProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+    VkExternalBufferProperties* pExternalBufferProperties) {
+    if (nullptr != pExternalBufferProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        memcpy(&pExternalBufferProperties->externalMemoryProperties, &phys_dev.external_memory_properties,
+               sizeof(VkExternalMemoryProperties));
+    }
+}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalSemaphoreProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+    if (nullptr != pExternalSemaphoreProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        memcpy(pExternalSemaphoreProperties, &phys_dev.external_semaphore_properties, sizeof(VkExternalSemaphoreProperties));
+    }
+}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalFenceProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+    VkExternalFenceProperties* pExternalFenceProperties) {
+    if (nullptr != pExternalFenceProperties) {
+        auto& phys_dev = icd.GetPhysDevice(physicalDevice);
+        memcpy(pExternalFenceProperties, &phys_dev.external_fence_properties, sizeof(VkExternalFenceProperties));
+    }
+}
+
 //// trampolines
 
 #define TO_VOID_PFN(func) reinterpret_cast<PFN_vkVoidFunction>(func)
@@ -800,8 +826,38 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
     if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties"))
         return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties);
 
-    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0) ||
-        IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
+    if (IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
+        if (string_eq(pName, "vkGetPhysicalDeviceProperties2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
+        if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceFormatProperties2);
+        if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceMemoryProperties2);
+
+        if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceQueueFamilyProperties2);
+
+        if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceSparseImageFormatProperties2);
+
+        if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2KHR")) {
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
+        }
+    }
+    if (IsInstanceExtensionEnabled("VK_KHR_external_memory_capabilities")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalBufferProperties);
+    }
+    if (IsInstanceExtensionEnabled("VK_KHR_external_semaphore_capabilities")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalSemaphoreProperties);
+    }
+    if (IsInstanceExtensionEnabled("VK_KHR_external_fence_capabilities")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalFencePropertiesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalFenceProperties);
+    }
+
+    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
         if (string_eq(pName, "vkGetPhysicalDeviceFeatures2")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
         if (string_eq(pName, "vkGetPhysicalDeviceProperties2")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
         if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFormatProperties2);
@@ -816,7 +872,15 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
         if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2")) {
             return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
         }
+
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalBufferProperties"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalBufferProperties);
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalSemaphoreProperties"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalSemaphoreProperties);
+        if (string_eq(pName, "vkGetPhysicalDeviceExternalFenceProperties"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalFenceProperties);
     }
+
     if (icd.supports_tooling_info_ext) {
         if (string_eq(pName, "vkGetPhysicalDeviceToolPropertiesEXT")) return TO_VOID_PFN(test_vkGetPhysicalDeviceToolPropertiesEXT);
     }
