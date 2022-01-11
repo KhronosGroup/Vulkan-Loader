@@ -1484,7 +1484,7 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
             (loader_platform_get_proc_address(handle, "vkCreateInstance") != NULL) ||
             (loader_platform_get_proc_address(handle, "vkGetDeviceProcAddr") != NULL) ||
             (loader_platform_get_proc_address(handle, "vkCreateDevice") != NULL)) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "loader_scanned_icd_add: Driver %s says it supports interface version %u but still exports core "
                        "entrypoints (Policy #LDP_DRIVER_6)",
                        filename, interface_vers);
