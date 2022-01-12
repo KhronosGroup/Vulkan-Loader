@@ -2143,7 +2143,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             }
         }
     } else if (NULL != component_layers) {
-        if (version.major == 1 && (version.minor < 1 || version.patch < 1)) {
+        if (version.major == 1 && ((version.minor == 1 && version.patch < 1) || (version.minor == 0))) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific component_layers, but using older JSON file version.");
         }
