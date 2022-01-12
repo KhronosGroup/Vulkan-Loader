@@ -446,25 +446,23 @@ void loader_remove_layers_not_in_implicit_meta_layers(const struct loader_instan
     }
 
     for (i = 0; i < layer_count; i++) {
-        struct loader_layer_properties cur_layer_prop = layer_list->list[i];
+        struct loader_layer_properties *cur_layer_prop = &layer_list->list[i];
 
-        if (0 == (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-            cur_layer_prop.keep = true;
-        } else {
+        if (0 == (cur_layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
+            cur_layer_prop->keep = true;
             continue;
         }
+        for (j = 0; j < layer_count; j++) {
+            struct loader_layer_properties layer_to_check = layer_list->list[j];
 
-        if (cur_layer_prop.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-            for (j = 0; j < layer_count; j++) {
-                struct loader_layer_properties layer_to_check = layer_list->list[j];
+            if (i == j) {
+                continue;
+            }
 
-                if (i == j) {
-                    continue;
-                }
-
+            if (layer_to_check.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
                 // For all layers found in this meta layer, we want to keep them as well.
-                if (loader_find_layer_name_in_meta_layer(inst, layer_to_check.info.layerName, layer_list, &cur_layer_prop)) {
-                    cur_layer_prop.keep = true;
+                if (loader_find_layer_name_in_meta_layer(inst, cur_layer_prop->info.layerName, layer_list, &layer_to_check)) {
+                    cur_layer_prop->keep = true;
                 }
             }
         }
