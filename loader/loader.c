@@ -852,6 +852,11 @@ static VkResult loader_add_layer_names_to_list(const struct loader_instance *ins
             continue;
         }
 
+        // Make sure the layer isn't already in the output_list, skip adding it if it is.
+        if (loader_find_layer_name_in_list(source_name, output_list)) {
+            continue;
+        }
+
         // If not a meta-layer, simply add it.
         if (0 == (layer_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
             loader_add_layer_properties_to_list(inst, output_list, 1, layer_prop);
