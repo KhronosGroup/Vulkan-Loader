@@ -29,6 +29,7 @@
 
 #include "murmurhash.h"
 
+#include <memory.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,20 +44,20 @@ uint32_t murmurhash(const char *key, size_t len, uint32_t seed) {
     uint32_t h = 0;
     uint32_t k = 0;
     uint8_t *d = (uint8_t *)key;  // 32 bit extract from `key'
-    const uint32_t *chunks = NULL;
+    const uint8_t *chunks = NULL;
     const uint8_t *tail = NULL;  // tail - last 8 bytes
     int i = 0;
     int l = (int)len / 4;  // chunk length
 
     h = seed;
 
-    chunks = (const uint32_t *)(d + l * 4);  // body
+    chunks = (const uint8_t *)(d + l * 4);   // body
     tail = (const uint8_t *)(d + l * 4);     // last 8 byte chunk of `key'
 
     // for each 4 byte chunk of `key'
     for (i = -l; i != 0; ++i) {
         // next 4 byte chunk of `key'
-        k = chunks[i];
+        memcpy(&k, chunks + i * 4, sizeof(k));
 
         // encode next 4 byte chunk of `key'
         k *= c1;
