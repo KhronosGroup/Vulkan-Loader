@@ -539,19 +539,10 @@ static VkResult loader_add_instance_extensions(const struct loader_instance *ins
     }
 
     for (i = 0; i < count; i++) {
-        char spec_version[64];
-
         bool ext_unsupported = wsi_unsupported_instance_extension(&ext_props[i]);
         if (!ext_unsupported) {
-            (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_API_VERSION_MAJOR(ext_props[i].specVersion),
-                           VK_API_VERSION_MINOR(ext_props[i].specVersion), VK_API_VERSION_PATCH(ext_props[i].specVersion));
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Instance Extension: %s (%s) version %s", ext_props[i].extensionName,
-                       lib_name, spec_version);
-
             res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
             if (res != VK_SUCCESS) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "loader_add_instance_extensions: Failed to add %s to Instance extension list", lib_name);
                 goto out;
             }
         }
@@ -575,11 +566,6 @@ static VkResult loader_init_device_extensions(const struct loader_instance *inst
     }
 
     for (i = 0; i < count; i++) {
-        char spec_version[64];
-        (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_API_VERSION_MAJOR(ext_props[i].specVersion),
-                       VK_API_VERSION_MINOR(ext_props[i].specVersion), VK_API_VERSION_PATCH(ext_props[i].specVersion));
-        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Device Extension: %s (%s) version %s", ext_props[i].extensionName,
-                   phys_dev_term->this_icd_term->scanned_icd->lib_name, spec_version);
         res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
         if (res != VK_SUCCESS) return res;
     }
@@ -608,11 +594,6 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
             return res;
         }
         for (i = 0; i < count; i++) {
-            char spec_version[64];
-            (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_API_VERSION_MAJOR(ext_props[i].specVersion),
-                           VK_API_VERSION_MINOR(ext_props[i].specVersion), VK_API_VERSION_PATCH(ext_props[i].specVersion));
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Device Extension: %s (%s) version %s", ext_props[i].extensionName,
-                       lib_name, spec_version);
             res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
             if (res != VK_SUCCESS) {
                 return res;
@@ -6860,7 +6841,6 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
             }
         }
         total_count += cur_icd_group_count;
-        
     }
 
     if (total_count == 0) {
