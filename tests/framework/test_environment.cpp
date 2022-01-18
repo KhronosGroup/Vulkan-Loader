@@ -188,9 +188,11 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     }
     std::string full_json_name = icd_details.json_name + "_" + std::to_string(cur_icd_index) + ".json";
 
-    auto driver_loc = icd_folder.write(full_json_name, ManifestICD{}
-                                                           .set_lib_path(fs::fixup_backslashes_in_path(icd_details.icd_path).str())
-                                                           .set_api_version(icd_details.api_version));
+    auto driver_loc =
+        icd_folder.write_manifest(full_json_name, ManifestICD{}
+                                                      .set_lib_path(fs::fixup_backslashes_in_path(icd_details.icd_path).str())
+                                                      .set_api_version(icd_details.api_version)
+                                                      .get_manifest_str());
 
     if (icd_details.use_env_var_icd_filenames) {
         if (!env_var_vk_icd_filenames.empty()) {
@@ -244,7 +246,7 @@ void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const s
         }
     }
 
-    auto layer_loc = folder_manager.write(json_name, layer_manifest);
+    auto layer_loc = folder_manager.write_manifest(json_name, layer_manifest.get_manifest_str());
     platform_shim->add_manifest(category, layer_loc);
 }
 

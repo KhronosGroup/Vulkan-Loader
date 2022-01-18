@@ -570,7 +570,7 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     auto layer_0 = ManifestLayer{}.add_layer(
         ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY));
 
-    auto layer_loc_0 = env.explicit_layer_folder.write("dummy_test_layer_0.json", layer_0);
+    auto layer_loc_0 = env.explicit_layer_folder.write_manifest("dummy_test_layer_0.json", layer_0.get_manifest_str());
     env.platform_shim->add_manifest(ManifestCategory::explicit_layer, layer_loc_0);
 
     const char* layer_name_1 = "DummyLayerImplicit";
@@ -579,7 +579,7 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
                                                  .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY)
                                                  .set_disable_environment("DISABLE_ENV"));
 
-    auto layer_loc_1 = env.implicit_layer_folder.write("dummy_test_layer_1.json", layer_1);
+    auto layer_loc_1 = env.implicit_layer_folder.write_manifest("dummy_test_layer_1.json", layer_1.get_manifest_str());
     env.platform_shim->add_manifest(ManifestCategory::implicit_layer, layer_loc_1);
 
     uint32_t layer_count = 0;
