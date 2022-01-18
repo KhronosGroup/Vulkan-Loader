@@ -67,15 +67,15 @@ bool set_env_var(std::string const& name, std::string const& value) {
 }
 bool remove_env_var(std::string const& name) { return SetEnvironmentVariableA(name.c_str(), nullptr); }
 #define ENV_VAR_BUFFER_SIZE 4096
-std::string get_env_var(std::string const& name) {
+std::string get_env_var(std::string const& name, bool report_failure) {
     std::string value;
     value.resize(ENV_VAR_BUFFER_SIZE);
     DWORD ret = GetEnvironmentVariable(name.c_str(), (LPSTR)value.c_str(), ENV_VAR_BUFFER_SIZE);
     if (0 == ret) {
-        print_error_message(ERROR_ENVVAR_NOT_FOUND, "GetEnvironmentVariable");
+        if (report_failure) print_error_message(ERROR_ENVVAR_NOT_FOUND, "GetEnvironmentVariable");
         return std::string();
     } else if (ENV_VAR_BUFFER_SIZE < ret) {
-        std::cerr << "Not enough space to write environment variable" << name << "\n";
+        if (report_failure) std::cerr << "Not enough space to write environment variable" << name << "\n";
         return std::string();
     } else {
         value.resize(ret);
@@ -518,7 +518,16 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
 bool string_eq(const char* a, const char* b) noexcept { return strcmp(a, b) == 0; }
 bool string_eq(const char* a, const char* b, size_t len) noexcept { return strncmp(a, b, len) == 0; }
 
-VulkanFunctions::VulkanFunctions() : loader(FRAMEWORK_VULKAN_LIBRARY_PATH) {
+fs::path get_loader_path() {
+    auto loader_path = fs::path(FRAMEWORK_VULKAN_LIBRARY_PATH);
+    auto env_var_res = get_env_var("VK_LOADER_TEST_LOADER_PATH", false);
+    if (!env_var_res.empty()) {
+        loader_path = fs::path(env_var_res);
+    }
+    return loader_path;
+}
+
+VulkanFunctions::VulkanFunctions() : loader(get_loader_path()) {
     // clang-format off
     vkGetInstanceProcAddr = loader.get_symbol<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
     vkEnumerateInstanceExtensionProperties = loader.get_symbol<PFN_vkEnumerateInstanceExtensionProperties>("vkEnumerateInstanceExtensionProperties");
