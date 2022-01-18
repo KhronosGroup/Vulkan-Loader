@@ -60,8 +60,10 @@ void CheckLogForLayerString(FrameworkEnvironment& env, const char* implicit_laye
     env.debug_log.clear();
 }
 
+const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
+
 TEST_F(ImplicitLayers, WithEnableAndDisableEnvVar) {
-    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
 
@@ -141,13 +143,16 @@ TEST_F(ImplicitLayers, OnlyDisableEnvVar) {
     remove_env_var(disable_env_var);
 }
 
+// Meta layer which contains component layers that do not exist.
 TEST_F(MetaLayers, InvalidComponentLayer) {
-    const char* meta_layer_name = "MetaTestLayer";
+    const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
+    const char* invalid_layer_name_1 = "VK_LAYER_InvalidLayer1";
+    const char* invalid_layer_name_2 = "VK_LAYER_InvalidLayer2";
     env->add_implicit_layer(ManifestLayer{}
                                 .set_file_format_version(ManifestVersion(1, 1, 2))
                                 .add_layer(ManifestLayer::LayerDescription{}
                                                .set_name(meta_layer_name)
-                                               .add_component_layers({"InvalidLayer1", "InvalidLayer2"})
+                                               .add_component_layers({invalid_layer_name_1, invalid_layer_name_2})
                                                .set_disable_environment("NotGonnaWork")
                                                .add_instance_extension({"NeverGonnaGiveYouUp"})
                                                .add_device_extension({"NeverGonnaLetYouDown"})),
@@ -172,7 +177,7 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 2> extensions;
     EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils + our two extensions
+    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
 
     EXPECT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
@@ -180,30 +185,306 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+    ASSERT_TRUE(env->debug_log.find(std::string("verify_meta_layer_component_layers: Meta-layer ") + meta_layer_name +
+                                    " can't find component layer " + invalid_layer_name_1 + " at index 0.  Skipping this layer."));
 }
 
-TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
-    const char* regular_layer_name = "TestLayer";
+// Meta layer that is an explicit layer
+TEST_F(MetaLayers, ExplicitMetaLayer) {
+    env->get_test_icd().add_physical_device({});
+    const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env->add_explicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 1, 2))
+            .add_layer(ManifestLayer::LayerDescription{}.set_name(meta_layer_name).add_component_layers({regular_layer_name})),
+        "meta_test_layer.json");
+
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_test_layer.json");
+
+    // should find 1, the 'regular' layer
+    uint32_t layer_count = 0;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+    EXPECT_EQ(layer_count, 2);
+
+    std::array<VkLayerProperties, 2> layer_props;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+    EXPECT_EQ(layer_count, 2);
+    EXPECT_TRUE(string_eq(layer_props[0].layerName, meta_layer_name));
+    EXPECT_TRUE(string_eq(layer_props[1].layerName, regular_layer_name));
+
+    uint32_t extension_count = 0;
+    std::array<VkExtensionProperties, 2> extensions;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
+
+    EXPECT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 2);
+    {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
+        InstWrapper inst{env->vulkan_functions};
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 0);
+    }
+    {
+        InstWrapper inst{env->vulkan_functions};
+        inst.create_info.add_layer(meta_layer_name);
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 2);
+        std::array<VkLayerProperties, 2> layer_props;
+        env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        ASSERT_EQ(count, 2);
+        EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+        EXPECT_TRUE(string_eq(layer_props[1].layerName, meta_layer_name));
+    }
+}
+
+// Meta layer which adds itself in its list of component layers
+TEST_F(MetaLayers, MetaLayerNameInComponentLayers) {
+    const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 1, 2))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(meta_layer_name)
+                                               .add_component_layers({meta_layer_name, regular_layer_name})
+                                               .set_disable_environment("NotGonnaWork")
+                                               .add_instance_extension({"NeverGonnaGiveYouUp"})
+                                               .add_device_extension({"NeverGonnaLetYouDown"})),
+                            "meta_test_layer.json");
+
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_test_layer.json");
+
+    // should find 1, the 'regular' layer
+    uint32_t layer_count = 1;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+    EXPECT_EQ(layer_count, 1);
+
+    VkLayerProperties layer_props;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, &layer_props));
+    EXPECT_EQ(layer_count, 1);
+    EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
+
+    uint32_t extension_count = 0;
+    std::array<VkExtensionProperties, 2> extensions;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
+
+    EXPECT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 2);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(meta_layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+    ASSERT_TRUE(env->debug_log.find(std::string("verify_meta_layer_component_layers: Meta-layer ") + meta_layer_name +
+                                    " lists itself in its component layer " + "list at index 0.  Skipping this layer."));
+}
+
+// Meta layer which adds another meta layer as a component layer
+TEST_F(MetaLayers, MetaLayerWhichAddsMetaLayer) {
+    const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
+    const char* meta_meta_layer_name = "VK_LAYER_MetaMetaTestLayer";
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env->add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_test_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 1, 2))
+            .add_layer(ManifestLayer::LayerDescription{}.set_name(meta_layer_name).add_component_layers({regular_layer_name})),
+        "meta_test_layer.json");
+    env->add_explicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 1, 2))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(meta_meta_layer_name)
+                                               .add_component_layers({meta_layer_name, regular_layer_name})),
+                            "meta_meta_test_layer.json");
+
+    uint32_t layer_count = 3;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+    EXPECT_EQ(layer_count, 3);
+
+    std::array<VkLayerProperties, 3> layer_props;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+    EXPECT_EQ(layer_count, 3);
+    EXPECT_TRUE(string_eq(layer_props[0].layerName, meta_layer_name));
+    EXPECT_TRUE(string_eq(layer_props[1].layerName, meta_meta_layer_name));
+    EXPECT_TRUE(string_eq(layer_props[2].layerName, regular_layer_name));
+
+    uint32_t extension_count = 0;
+    std::array<VkExtensionProperties, 2> extensions;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
+
+    EXPECT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 2);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.add_layer(meta_layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+    inst.CheckCreate();
+    ASSERT_TRUE(env->debug_log.find(std::string("verify_meta_layer_component_layers: Adding meta-layer ") + meta_meta_layer_name +
+                                    " which also contains meta-layer " + meta_layer_name));
+}
+
+TEST_F(MetaLayers, InstanceExtensionInComponentLayer) {
+    env->get_test_icd().add_physical_device({});
+    const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    const char* instance_ext_name = "VK_EXT_headless_surface";
     env->add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name(regular_layer_name)
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_1)
+                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                          .add_instance_extension({instance_ext_name})),
+                            "regular_test_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 1, 2))
+            .add_layer(ManifestLayer::LayerDescription{}.set_name(meta_layer_name).add_component_layers({regular_layer_name})),
+        "meta_test_layer.json");
+
+    uint32_t extension_count = 0;
+    std::array<VkExtensionProperties, 1> extensions;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 1);  // return instance_ext_name
+
+    EXPECT_EQ(VK_SUCCESS,
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 1);
+    EXPECT_TRUE(string_eq(extensions[0].extensionName, instance_ext_name));
+}
+
+TEST_F(MetaLayers, DeviceExtensionInComponentLayer) {
+    env->get_test_icd().add_physical_device({});
+    const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    const char* device_ext_name = "VK_EXT_fake_dev_ext";
+    env->add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(regular_layer_name)
+                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                          .add_device_extension({device_ext_name})),
+                            "regular_test_layer.json");
+    env->add_explicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 1, 2))
+            .add_layer(ManifestLayer::LayerDescription{}.set_name(meta_layer_name).add_component_layers({regular_layer_name})),
+        "meta_test_layer.json");
+
+    uint32_t extension_count = 0;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 0);
+    {  // layer is not enabled
+        InstWrapper inst{env->vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env->debug_log.find(std::string("Meta-layer ") + meta_layer_name + " component layer " + regular_layer_name +
+                                        " adding device extension " + device_ext_name));
+
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t extension_count = 0;
+        std::array<VkExtensionProperties, 1> extensions;
+        EXPECT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name, &extension_count, nullptr));
+        EXPECT_EQ(extension_count, 1);  // return device_ext_name
+
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name,
+                                                                                         &extension_count, extensions.data()));
+        EXPECT_EQ(extension_count, 1);
+        EXPECT_TRUE(string_eq(extensions[0].extensionName, device_ext_name));
+    }
+    {  // layer is enabled
+        InstWrapper inst{env->vulkan_functions};
+        inst.create_info.add_layer(meta_layer_name);
+        FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env->debug_log.find(std::string("Meta-layer ") + meta_layer_name + " component layer " + regular_layer_name +
+                                        " adding device extension " + device_ext_name));
+        auto phys_dev = inst.GetPhysDev();
+
+        uint32_t extension_count = 0;
+        std::array<VkExtensionProperties, 1> extensions;
+        EXPECT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name, &extension_count, nullptr));
+        EXPECT_EQ(extension_count, 1);  // return device_ext_name
+
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name,
+                                                                                         &extension_count, extensions.data()));
+        EXPECT_EQ(extension_count, 1);
+        EXPECT_TRUE(string_eq(extensions[0].extensionName, device_ext_name));
+    }
+}
+// Override meta layer missing disable environment variable still enables the layer
+TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
+    env->get_test_icd().add_physical_device({});
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env->add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(regular_layer_name)
+                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                           .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                                           .add_device_extension({"NeverGonnaLetYouDown"})),
                             "regular_test_layer.json");
 
-    const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
     env->add_implicit_layer(ManifestLayer{}
                                 .set_file_format_version(ManifestVersion(1, 1, 2))
                                 .add_layer(ManifestLayer::LayerDescription{}
                                                .set_name(lunarg_meta_layer_name)
                                                .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                               .add_component_layers({regular_layer_name})
-                                               .set_disable_environment("DisableMeIfYouCan")),
+                                               .add_component_layers({regular_layer_name})),
                             "meta_test_layer.json");
 
-    // should find 1, the 'regular' layer
-    uint32_t layer_count = 2;
+    uint32_t layer_count = 0;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+    EXPECT_EQ(layer_count, 1);
+
+    std::array<VkLayerProperties, 1> layer_props;
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+    EXPECT_EQ(layer_count, 1);
+    EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+
+    InstWrapper inst{env->vulkan_functions};
+    // inst.create_info.add_layer();
+    inst.CheckCreate();
+}
+
+// Override meta layer whose version is less than the api version of the instance
+TEST_F(OverrideMetaLayer, OlderVersionThanInstance) {
+    env->get_test_icd().add_physical_device({});
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env->add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(regular_layer_name)
+                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                          .add_device_extension({"NeverGonnaLetYouDown"})),
+                            "regular_test_layer.json");
+
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 1, 2))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(lunarg_meta_layer_name)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                               .set_disable_environment("DisableMeIfYouCan")
+                                               .add_component_layers({regular_layer_name})),
+                            "meta_test_layer.json");
+
+    uint32_t layer_count = 0;
     EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
     EXPECT_EQ(layer_count, 2);
 
@@ -212,19 +493,33 @@ TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
     EXPECT_EQ(layer_count, 2);
     EXPECT_TRUE(string_eq(layer_props[0].layerName, lunarg_meta_layer_name));
     EXPECT_TRUE(string_eq(layer_props[1].layerName, regular_layer_name));
+    {  // 1.1 instance
+        InstWrapper inst{env->vulkan_functions};
+        inst.create_info.api_version = VK_API_VERSION_1_1;
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 2> extensions;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils + our two extensions
+        uint32_t count = 0;
+        env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(2, count);
+        std::array<VkLayerProperties, 2> layer_props;
 
-    EXPECT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 2);
+        env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        ASSERT_EQ(2, count);
+        ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+        ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
+    }
+    {  // 1.2 instance
 
-    InstWrapper inst{env->vulkan_functions};
-    // inst.create_info.add_layer();
-    inst.CheckCreate();
+        InstWrapper inst{env->vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+
+        inst.create_info.api_version = VK_API_VERSION_1_2;
+        inst.CheckCreate();
+        ASSERT_TRUE(env->debug_log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") +
+                                        lunarg_meta_layer_name +
+                                        " for using an old API version 1.1 versus application requested 1.2"));
+    }
 }
 
 TEST_F(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
@@ -239,7 +534,6 @@ TEST_F(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
                                                .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))),
                             "regular_test_layer.json");
 
-    const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
     env->add_implicit_layer(ManifestLayer{}
                                 .set_file_format_version(ManifestVersion(1, 2, 0))
                                 .add_layer(ManifestLayer::LayerDescription{}
@@ -284,10 +578,9 @@ TEST_F(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        const char* err_message =
-            "loader_add_implicit_layer: Disabling implicit layer VK_LAYER_LUNARG_override for using an old API version 1.1 "
-            "versus application requested 1.2";
-        ASSERT_TRUE(env->debug_log.find(err_message));
+        ASSERT_TRUE(
+            env->debug_log.find("loader_add_implicit_layer: Disabling implicit layer VK_LAYER_LUNARG_override for using an old API "
+                                "version 1.1 versus application requested 1.2"));
         uint32_t count = 0;
         env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
         ASSERT_EQ(0, count);
@@ -309,7 +602,6 @@ TEST_F(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
                                                .set_api_version(VK_MAKE_API_VERSION(0, 1, 2, 0))),
                             "regular_test_layer.json");
 
-    const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
     env->add_implicit_layer(ManifestLayer{}
                                 .set_file_format_version(ManifestVersion(1, 2, 0))
                                 .add_layer(ManifestLayer::LayerDescription{}
@@ -336,10 +628,9 @@ TEST_F(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        const char* err_message =
-            "verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses API version 1.2.  "
-            "Skipping this layer.";
-        ASSERT_TRUE(env->debug_log.find(err_message));
+        ASSERT_TRUE(
+            env->debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses "
+                                "API version 1.2.  Skipping this layer."));
         env->debug_log.clear();
         uint32_t count = 0;
         env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -357,10 +648,9 @@ TEST_F(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        const char* err_message =
-            "verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses API version 1.2.  "
-            "Skipping this layer.";
-        ASSERT_TRUE(env->debug_log.find(err_message));
+        ASSERT_TRUE(
+            env->debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses "
+                                "API version 1.2.  Skipping this layer."));
         env->debug_log.clear();
         uint32_t count = 0;
         env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -383,7 +673,6 @@ TEST_F(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
                                                .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                             "regular_test_layer.json");
 
-    const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
     env->add_implicit_layer(ManifestLayer{}
                                 .set_file_format_version(ManifestVersion(1, 2, 0))
                                 .add_layer(ManifestLayer::LayerDescription{}
@@ -409,10 +698,9 @@ TEST_F(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        const char* err_message =
-            "verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses API version 1.0.  "
-            "Skipping this layer.";
-        ASSERT_TRUE(env->debug_log.find(err_message));
+        ASSERT_TRUE(
+            env->debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses "
+                                "API version 1.0.  Skipping this layer."));
         env->debug_log.clear();
         uint32_t count = 0;
         env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -429,10 +717,9 @@ TEST_F(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        const char* err_message =
-            "verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses API version 1.0.  "
-            "Skipping this layer.";
-        ASSERT_TRUE(env->debug_log.find(err_message));
+        ASSERT_TRUE(
+            env->debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses "
+                                "API version 1.0.  Skipping this layer."));
         env->debug_log.clear();
         uint32_t count = 0;
         env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -488,7 +775,7 @@ TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
     env->get_test_icd().physical_devices.push_back({});
     env->get_test_icd().add_instance_extension({"VK_KHR_get_physical_device_properties2", 0});
 
-    const char* regular_layer_name = "TestLayer";
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
     env->add_explicit_layer(
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
@@ -1715,10 +2002,8 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-        const char* err_message =
-            "loader_add_implicit_layer: Disabling implicit layer VK_LAYER_TestLayer1 for using an old API version 1.1 versus "
-            "application requested 1.2";
-        ASSERT_TRUE(log.find(err_message));
+        ASSERT_TRUE(log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") + regular_layer_name +
+                             " for using an old API version 1.1 versus application requested 1.2"));
 
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
