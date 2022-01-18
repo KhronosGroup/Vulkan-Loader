@@ -421,16 +421,7 @@ void loader_remove_layers_in_blacklist(const struct loader_instance *inst, struc
                        "loader_remove_layers_in_blacklist: Override layer is active and layer %s is in the blacklist inside of it. "
                        "Removing that layer from current layer list.",
                        cur_layer_name);
-            loader_free_layer_properties(inst, &(layer_list->list[j]));
-
-            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
-            // overlapping the source and destination addresses.
-            memmove(&layer_list->list[j], &layer_list->list[j + 1],
-                    sizeof(struct loader_layer_properties) * (layer_list->count - 1 - j));
-
-            // Decrement the count (because we now have one less) and decrement the loop index since we need to
-            // re-check this index.
-            layer_list->count--;
+            loader_remove_layer_in_list(inst, layer_list, j);
             j--;
 
             // Re-do the query for the override layer
@@ -482,17 +473,7 @@ void loader_remove_layers_not_in_implicit_meta_layers(const struct loader_instan
                 "loader_remove_layers_not_in_implicit_meta_layers : Implicit meta-layers are active, and layer %s is not list "
                 "inside of any.  So removing layer from current layer list.",
                 cur_layer_prop.info.layerName);
-
-            loader_free_layer_properties(inst, &cur_layer_prop);
-
-            // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
-            // overlapping the source and destination addresses.
-            memmove(&layer_list->list[i], &layer_list->list[i + 1],
-                    sizeof(struct loader_layer_properties) * (layer_list->count - 1 - i));
-
-            // Decrement the count (because we now have one less) and decrement the loop index since we need to
-            // re-check this index.
-            layer_list->count--;
+            loader_remove_layer_in_list(inst, layer_list, i);
             i--;
         }
     }
@@ -1829,6 +1810,7 @@ static void verify_all_meta_layers(struct loader_instance *inst, struct loader_l
                        "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
 
             loader_remove_layer_in_list(inst, instance_layers, i);
+            i--;
 
         } else if (prop->is_override && loader_implicit_layer_is_enabled(inst, prop)) {
             *override_layer_present = true;
@@ -1935,6 +1917,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     VkExtensionProperties ext_prop;
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     struct loader_layer_properties *props = NULL;
+    uint32_t props_index = 0;
     int i, j;
 
 // The following are required in the "layer" object:
@@ -2004,6 +1987,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
+        props_index = layer_instance_list->count - 1;
         props->type_flags = VK_LAYER_TYPE_FLAG_INSTANCE_LAYER;
         if (!is_implicit) {
             props->type_flags |= VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER;
@@ -2540,7 +2524,7 @@ out:
 
     if (VK_SUCCESS != result && NULL != props) {
         // Make sure to free anything that was allocated
-        loader_free_layer_properties(inst, props);
+        loader_remove_layer_in_list(inst, layer_instance_list, props_index);
     }
 
     return result;
