@@ -767,3 +767,33 @@ struct VulkanFunction {
     const char* name;
     void* function;
 };
+template <typename T, size_t U>
+bool check_permutation(std::initializer_list<const char*> expected, std::array<T, U> const& returned) {
+    if (expected.size() != returned.size()) return false;
+    for (uint32_t i = 0; i < expected.size(); i++) {
+        bool found = false;
+        for (auto& elem : returned) {
+            if (string_eq(*(expected.begin() + i), elem.layerName)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+    }
+    return true;
+}
+template <typename T, size_t U>
+bool check_permutation(std::initializer_list<const char*> expected, std::vector<T> const& returned) {
+    if (expected.size() != returned.size()) return false;
+    for (uint32_t i = 0; i < expected.size(); i++) {
+        bool found = false;
+        for (auto& elem : returned) {
+            if (string_eq(*(expected.begin() + i), elem.layerName)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+    }
+    return true;
+}
