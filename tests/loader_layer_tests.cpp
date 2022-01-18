@@ -215,8 +215,7 @@ TEST_F(MetaLayers, ExplicitMetaLayer) {
     std::array<VkLayerProperties, 2> layer_props;
     EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
     EXPECT_EQ(layer_count, 2);
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, meta_layer_name));
-    EXPECT_TRUE(string_eq(layer_props[1].layerName, regular_layer_name));
+    EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
 
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 2> extensions;
@@ -245,8 +244,7 @@ TEST_F(MetaLayers, ExplicitMetaLayer) {
         std::array<VkLayerProperties, 2> layer_props;
         env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
         ASSERT_EQ(count, 2);
-        EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
-        EXPECT_TRUE(string_eq(layer_props[1].layerName, meta_layer_name));
+        EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
     }
 }
 
@@ -324,9 +322,7 @@ TEST_F(MetaLayers, MetaLayerWhichAddsMetaLayer) {
     std::array<VkLayerProperties, 3> layer_props;
     EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
     EXPECT_EQ(layer_count, 3);
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, meta_layer_name));
-    EXPECT_TRUE(string_eq(layer_props[1].layerName, meta_meta_layer_name));
-    EXPECT_TRUE(string_eq(layer_props[2].layerName, regular_layer_name));
+    EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name, meta_meta_layer_name}, layer_props));
 
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 2> extensions;
@@ -491,8 +487,7 @@ TEST_F(OverrideMetaLayer, OlderVersionThanInstance) {
     std::array<VkLayerProperties, 2> layer_props;
     EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
     EXPECT_EQ(layer_count, 2);
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, lunarg_meta_layer_name));
-    EXPECT_TRUE(string_eq(layer_props[1].layerName, regular_layer_name));
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     {  // 1.1 instance
         InstWrapper inst{env->vulkan_functions};
         inst.create_info.api_version = VK_API_VERSION_1_1;
@@ -550,8 +545,7 @@ TEST_F(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
     std::array<VkLayerProperties, 2> layer_props;
     EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
     EXPECT_EQ(layer_count, 2);
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, lunarg_meta_layer_name));
-    EXPECT_TRUE(string_eq(layer_props[1].layerName, regular_layer_name));
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
 
     {
         // 1.1 instance
