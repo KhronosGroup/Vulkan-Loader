@@ -435,38 +435,21 @@ FolderManager::~FolderManager() {
         std::cout << "Deleting folder " << folder.str() << "\n";
     }
 }
-path FolderManager::write(std::string const& name, ManifestICD const& icd_manifest) {
+path FolderManager::write_manifest(std::string const& name, std::string const& contents) {
     path out_path = folder / name;
     auto found = std::find(files.begin(), files.end(), name);
     if (found != files.end()) {
-        if (debug >= DebugMode::log) std::cout << "Writing icd manifest to " << name << "\n";
+        std::cout << "Overwriting manifest " << name << ". Was this intended?\n";
     } else {
-        if (debug >= DebugMode::log) std::cout << "Creating icd manifest " << name << " at " << out_path.str() << "\n";
+        if (debug >= DebugMode::log) std::cout << "Creating manifest " << name << " at " << out_path.str() << "\n";
         files.emplace_back(name);
     }
     auto file = std::ofstream(out_path.str(), std::ios_base::trunc | std::ios_base::out);
     if (!file) {
-        std::cerr << "Failed to create icd manifest " << name << " at " << out_path.str() << "\n";
+        std::cerr << "Failed to create manifest " << name << " at " << out_path.str() << "\n";
         return out_path;
     }
-    file << icd_manifest.get_manifest_str() << std::endl;
-    return out_path;
-}
-path FolderManager::write(std::string const& name, ManifestLayer const& layer_manifest) {
-    path out_path = folder / name;
-    auto found = std::find(files.begin(), files.end(), name);
-    if (found != files.end()) {
-        if (debug >= DebugMode::log) std::cout << "Writing layer manifest to " << name << "\n";
-    } else {
-        if (debug >= DebugMode::log) std::cout << "Creating layer manifest " << name << " at " << out_path.str() << "\n";
-        files.emplace_back(name);
-    }
-    auto file = std::ofstream(out_path.str(), std::ios_base::trunc | std::ios_base::out);
-    file << layer_manifest.get_manifest_str() << std::endl;
-    if (!file) {
-        std::cerr << "Failed to create icd manifest " << name << " at " << out_path.str() << "\n";
-        return out_path;
-    }
+    file << contents << std::endl;
     return out_path;
 }
 // close file handle, delete file, remove `name` from managed file list.

@@ -212,8 +212,10 @@ class FolderManager {
    public:
     explicit FolderManager(path root_path, std::string name, DebugMode debug = DebugMode::none);
     ~FolderManager();
-    path write(std::string const& name, ManifestICD const& icd_manifest);
-    path write(std::string const& name, ManifestLayer const& layer_manifest);
+    FolderManager(FolderManager const&) = delete;
+    FolderManager& operator=(FolderManager const&) = delete;
+
+    path write_manifest(std::string const& name, std::string const& contents);
 
     // close file handle, delete file, remove `name` from managed file list.
     void remove(std::string const& name);
@@ -223,9 +225,6 @@ class FolderManager {
 
     // location of the managed folder
     path location() const { return folder; }
-
-    FolderManager(FolderManager const&) = delete;
-    FolderManager& operator=(FolderManager const&) = delete;
 
    private:
     DebugMode debug;
