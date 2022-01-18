@@ -1727,7 +1727,9 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
     const uint32_t expected_minor = VK_VERSION_MINOR(prop->info.specVersion);
 
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
-        if (!loader_find_layer_name_in_list(prop->component_layer_names[comp_layer], instance_layers)) {
+        struct loader_layer_properties *comp_prop =
+            loader_find_layer_property(prop->component_layer_names[comp_layer], instance_layers);
+        if (comp_prop == NULL) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "verify_meta_layer_component_layers: Meta-layer %s can't find component layer %s at index %d."
                        "  Skipping this layer.",
@@ -1735,79 +1737,67 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
 
             success = false;
             break;
-        } else {
-            struct loader_layer_properties *comp_prop =
-                loader_find_layer_property(prop->component_layer_names[comp_layer], instance_layers);
-            if (comp_prop == NULL) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "verify_meta_layer_component_layers: Meta-layer %s can't find property for component layer "
-                           "%s at index %d.  Skipping this layer.",
-                           prop->info.layerName, prop->component_layer_names[comp_layer], comp_layer);
+        }
 
+        // Check the version of each layer, they need to at least match MAJOR and MINOR
+        uint32_t cur_major = VK_VERSION_MAJOR(comp_prop->info.specVersion);
+        uint32_t cur_minor = VK_VERSION_MINOR(comp_prop->info.specVersion);
+        if (cur_major != expected_major || cur_minor != expected_minor) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "verify_meta_layer_component_layers: Meta-layer uses API version %d.%d, but component "
+                       "layer %d uses API version %d.%d.  Skipping this layer.",
+                       expected_major, expected_minor, comp_layer, cur_major, cur_minor);
+
+            success = false;
+            break;
+        }
+
+        // Make sure the layer isn't using it's own name
+        if (!strcmp(prop->info.layerName, prop->component_layer_names[comp_layer])) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "verify_meta_layer_component_layers: Meta-layer %s lists itself in its component layer "
+                       "list at index %d.  Skipping this layer.",
+                       prop->info.layerName, comp_layer);
+
+            success = false;
+            break;
+        }
+        if (comp_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "verify_meta_layer_component_layers: Adding meta-layer %s which also contains meta-layer %s",
+                       prop->info.layerName, comp_prop->info.layerName);
+
+            // Make sure if the layer is using a meta-layer in its component list that we also verify that.
+            if (!verify_meta_layer_component_layers(inst, comp_prop, instance_layers)) {
+                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                           "Meta-layer %s component layer %s can not find all component layers."
+                           "  Skipping this layer.",
+                           prop->info.layerName, prop->component_layer_names[comp_layer]);
                 success = false;
                 break;
             }
+        }
 
-            // Check the version of each layer, they need to at least match MAJOR and MINOR
-            uint32_t cur_major = VK_VERSION_MAJOR(comp_prop->info.specVersion);
-            uint32_t cur_minor = VK_VERSION_MINOR(comp_prop->info.specVersion);
-            if (cur_major != expected_major || cur_minor != expected_minor) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "verify_meta_layer_component_layers: Meta-layer uses API version %d.%d, but component "
-                           "layer %d uses API version %d.%d.  Skipping this layer.",
-                           expected_major, expected_minor, comp_layer, cur_major, cur_minor);
+        // Add any instance and device extensions from component layers to this layer
+        // list, so that anyone querying extensions will only need to look at the meta-layer
+        for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding instance extension %s",
+                       prop->info.layerName, prop->component_layer_names[comp_layer],
+                       comp_prop->instance_extension_list.list[ext].extensionName);
 
-                success = false;
-                break;
+            if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
+                loader_add_to_ext_list(inst, &prop->instance_extension_list, 1, &comp_prop->instance_extension_list.list[ext]);
             }
+        }
 
-            // Make sure the layer isn't using it's own name
-            if (!strcmp(prop->info.layerName, prop->component_layer_names[comp_layer])) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "verify_meta_layer_component_layers: Meta-layer %s lists itself in its component layer "
-                           "list at index %d.  Skipping this layer.",
-                           prop->info.layerName, comp_layer);
+        for (uint32_t ext = 0; ext < comp_prop->device_extension_list.count; ext++) {
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding device extension %s",
+                       prop->info.layerName, prop->component_layer_names[comp_layer],
+                       comp_prop->device_extension_list.list[ext].props.extensionName);
 
-                success = false;
-                break;
-            }
-            if (comp_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                           "verify_meta_layer_component_layers: Adding meta-layer %s which also contains meta-layer %s",
-                           prop->info.layerName, comp_prop->info.layerName);
-
-                // Make sure if the layer is using a meta-layer in its component list that we also verify that.
-                if (!verify_meta_layer_component_layers(inst, comp_prop, instance_layers)) {
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                               "Meta-layer %s component layer %s can not find all component layers."
-                               "  Skipping this layer.",
-                               prop->info.layerName, prop->component_layer_names[comp_layer]);
-                    success = false;
-                    break;
-                }
-            }
-
-            // Add any instance and device extensions from component layers to this layer
-            // list, so that anyone querying extensions will only need to look at the meta-layer
-            for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding instance extension %s",
-                           prop->info.layerName, prop->component_layer_names[comp_layer],
-                           comp_prop->instance_extension_list.list[ext].extensionName);
-
-                if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
-                    loader_add_to_ext_list(inst, &prop->instance_extension_list, 1, &comp_prop->instance_extension_list.list[ext]);
-                }
-            }
-
-            for (uint32_t ext = 0; ext < comp_prop->device_extension_list.count; ext++) {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding device extension %s",
-                           prop->info.layerName, prop->component_layer_names[comp_layer],
-                           comp_prop->device_extension_list.list[ext].props.extensionName);
-
-                if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
-                    loader_add_to_dev_ext_list(inst, &prop->device_extension_list,
-                                               &comp_prop->device_extension_list.list[ext].props, 0, NULL);
-                }
+            if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
+                loader_add_to_dev_ext_list(inst, &prop->device_extension_list, &comp_prop->device_extension_list.list[ext].props, 0,
+                                           NULL);
             }
         }
     }
