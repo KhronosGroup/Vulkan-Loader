@@ -33,9 +33,11 @@ IMPORTANT NOTES:
 
 ## Using a specific loader with the tests
 
-The environment variable `VK_LOADER_TEST_LOADER_PATH` can be used to specify which vulkan-loader binary should be used. This is useful when writing tests to exercise
-a bug fix. Simply build the loader without the fix, stash it in a known location. Write the fix and the test that should exercise the bug and it passes. Then run the
-test again but with this env-var set to the older loader without the fix and show that the test now fails.
+The environment variable `VK_LOADER_TEST_LOADER_PATH` can be used to specify which vulkan-loader binary should be used.
+This is useful when writing tests to exercise a bug fix.
+Simply build the loader without the fix, stash it in a known location.
+Write the fix and the test that should exercise the bug and it passes.
+Then run the test again but with this env-var set to the older loader without the fix and show that the test now fails.
 
 Basic usage example:
 ```c
