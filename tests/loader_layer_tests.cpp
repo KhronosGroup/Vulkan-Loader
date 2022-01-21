@@ -456,7 +456,6 @@ TEST_F(OverrideMetaLayer, InvalidDisableEnvironment) {
     EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
 
     InstWrapper inst{env->vulkan_functions};
-    // inst.create_info.add_layer();
     inst.CheckCreate();
 }
 
@@ -721,6 +720,60 @@ TEST_F(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
         std::array<VkLayerProperties, 2> layer_props;
         env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
         ASSERT_EQ(0, count);
+    }
+}
+
+TEST_F(OverrideMetaLayer, ApplicationEnabledLayerInBlacklist) {
+    env->get_test_icd().add_physical_device({});
+
+    const char* automatic_regular_layer_name = "VK_LAYER_TestLayer_1";
+    const char* manual_regular_layer_name = "VK_LAYER_TestLayer_2";
+    env->add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(automatic_regular_layer_name)
+                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))),
+                            "regular_test_layer_1.json");
+    env->add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name(manual_regular_layer_name)
+                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))),
+                            "regular_test_layer_2.json");
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(lunarg_meta_layer_name)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                               .add_component_layer(automatic_regular_layer_name)
+                                               .add_blacklisted_layer(manual_regular_layer_name)
+                                               .set_disable_environment("DisableMeIfYouCan")),
+                            "meta_test_layer.json");
+
+    {  // enable the layer in the blacklist
+        InstWrapper inst{env->vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+        inst.create_info.add_layer(manual_regular_layer_name);
+        inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+        ASSERT_TRUE(env->debug_log.find(std::string("loader_remove_layers_in_blacklist: Override layer is active and layer ") +
+                                        manual_regular_layer_name +
+                                        " is in the blacklist inside of it. Removing that layer from current layer list."));
+        env->debug_log.clear();
+    }
+    {  // dont enable the layer in the blacklist
+        InstWrapper inst{env->vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+        ASSERT_TRUE(env->debug_log.find(std::string("loader_remove_layers_in_blacklist: Override layer is active and layer ") +
+                                        manual_regular_layer_name +
+                                        " is in the blacklist inside of it. Removing that layer from current layer list."));
+        env->debug_log.clear();
+        uint32_t count = 0;
+        env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(2, count);
+        std::array<VkLayerProperties, 2> layer_props;
+        env->vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        ASSERT_EQ(2, count);
+        ASSERT_TRUE(check_permutation({automatic_regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
 }
 

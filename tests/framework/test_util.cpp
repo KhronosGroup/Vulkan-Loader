@@ -104,7 +104,7 @@ void print_vector_of_t(std::string& out, const char* object_name, std::vector<T>
             if (i > 0) out += ",\t\t\t";
             out += "\n\t\t\t" + vec.at(i).get_manifest_str();
         }
-        out += "\n\t\t}";
+        out += "\n\t\t]";
     }
 }
 void print_vector_of_strings(std::string& out, const char* object_name, std::vector<std::string> const& strings) {
