@@ -1478,7 +1478,7 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
     uint32_t major_version = VK_API_VERSION_MAJOR(api_version);
     uint32_t minor_version = VK_API_VERSION_MINOR(api_version);
     if (interface_vers <= 4 && 1 == major_version && 0 < minor_version) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "loader_scanned_icd_add: Driver %s supports Vulkan %u.%u, but only supports loader interface version %u."
                    " Interface version 5 or newer required to support this version of Vulkan (Policy #LDP_DRIVER_7)",
                    filename, major_version, minor_version, interface_vers);
@@ -5414,11 +5414,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
     struct loader_instance *ptr_instance = (struct loader_instance *)*pInstance;
     if (NULL == ptr_instance) {
-        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+        loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
                    "terminator_CreateInstance: Loader instance pointer null encountered.  Possibly set by active layer. (Policy "
                    "#LLP_LAYER_21)");
     } else if (LOADER_MAGIC_NUMBER != ptr_instance->magic) {
-        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+        loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
                    "terminator_CreateInstance: Instance pointer (%p) has invalid MAGIC value 0x%08x. Instance value possibly "
                    "corrupted by active layer (Policy #LLP_LAYER_21).  ",
                    ptr_instance->magic);
@@ -5615,7 +5615,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
                 NULL != icd_term->dispatch.CreateWin32SurfaceKHR ||
 #endif  // VK_USE_PLATFORM_WIN32_KHR
                 NULL != icd_term->dispatch.DestroySurfaceKHR)) {
-            loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+            loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
                        "terminator_CreateInstance: Driver %s supports interface version %u but still exposes VkSurfacekHR"
                        " create/destroy entrypoints (Policy #LDP_DRIVER_8)",
                        ptr_instance->icd_tramp_list.scanned_list[i].lib_name,
