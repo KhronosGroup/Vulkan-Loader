@@ -558,6 +558,8 @@ struct ManifestLayer {
         BUILDER_VALUE(LayerDescription, std::string, enable_environment, {})
         BUILDER_VALUE(LayerDescription, std::string, disable_environment, {})
         BUILDER_VECTOR(LayerDescription, std::string, component_layers, component_layer)
+        BUILDER_VECTOR(LayerDescription, std::string, blacklisted_layers, blacklisted_layer)
+        BUILDER_VECTOR(LayerDescription, std::string, override_paths, override_path)
         BUILDER_VECTOR(LayerDescription, std::string, pre_instance_functions, pre_instance_function)
 
         std::string get_manifest_str() const;
