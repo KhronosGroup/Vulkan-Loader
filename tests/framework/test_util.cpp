@@ -96,6 +96,28 @@ std::string get_env_var(std::string const& name, bool report_failure) {
 }
 #endif
 
+template <typename T>
+void print_vector_of_t(std::string& out, const char* object_name, std::vector<T> const& vec) {
+    if (vec.size() > 0) {
+        out += std::string(",\n\t\t\"") + object_name + "\": [";
+        for (size_t i = 0; i < vec.size(); i++) {
+            if (i > 0) out += ",\t\t\t";
+            out += "\n\t\t\t" + vec.at(i).get_manifest_str();
+        }
+        out += "\n\t\t}";
+    }
+}
+void print_vector_of_strings(std::string& out, const char* object_name, std::vector<std::string> const& strings) {
+    if (strings.size() > 0) {
+        out += std::string(",\n\t\t\"") + object_name + "\": [";
+        for (size_t i = 0; i < strings.size(); i++) {
+            if (i > 0) out += ",\t\t\t";
+            out += "\"" + strings.at(i) + "\"";
+        }
+        out += "]";
+    }
+}
+
 std::string ManifestICD::get_manifest_str() const {
     std::string out;
     out += "{\n";
@@ -111,15 +133,8 @@ std::string ManifestICD::get_manifest_str() const {
 std::string ManifestLayer::LayerDescription::Extension::get_manifest_str() const {
     std::string out;
     out += "{ \"name\":\"" + name + "\",\n\t\t\t\"spec_version\":\"" + std::to_string(spec_version) + "\"";
-    if (entrypoints.size() > 0) {
-        out += ",\n\t\t\t\"entrypoints\": [";
-        for (size_t i = 0; i < entrypoints.size(); i++) {
-            if (i > 0) out += ", ";
-            out += "\"" + entrypoints.at(i) + "\"";
-        }
-        out += "]";
-    }
-    out += "\t\t\t}";
+    print_vector_of_strings(out, "entrypoints", entrypoints);
+    out += "\n\t\t\t}";
     return out;
 }
 
@@ -134,54 +149,20 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     out += "\t\t\"api_version\": \"" + version_to_string(api_version) + "\",\n";
     out += "\t\t\"implementation_version\":\"" + std::to_string(implementation_version) + "\",\n";
     out += "\t\t\"description\": \"" + description + "\"";
-    if (functions.size() > 0) {
-        out += ",\n\t\t\"functions\": {";
-        for (size_t i = 0; i < functions.size(); i++) {
-            if (i > 0) out += ",";
-            out += "\n\t\t\t" + functions.at(i).get_manifest_str();
-        }
-        out += "\n\t\t}";
+    print_vector_of_t(out, "functions", functions);
+    print_vector_of_t(out, "instance_extensions", instance_extensions);
+    print_vector_of_t(out, "device_extensions", device_extensions);
+    if (!enable_environment.empty()) {
+        out += ",\n\t\t\"enable_environment\": { \"" + enable_environment + "\": \"1\" }";
     }
-    if (instance_extensions.size() > 0) {
-        out += ",\n\t\t\"instance_extensions\": [";
-        for (size_t i = 0; i < instance_extensions.size(); i++) {
-            if (i > 0) out += ",";
-            out += "\n\t\t\t" + instance_extensions.at(i).get_manifest_str();
-        }
-        out += "\n\t\t]";
+    if (!disable_environment.empty()) {
+        out += ",\n\t\t\"disable_environment\": { \"" + disable_environment + "\": \"1\" }";
     }
-    if (device_extensions.size() > 0) {
-        out += ",\n\t\t\"device_extensions\": [";
-        for (size_t i = 0; i < device_extensions.size(); i++) {
-            if (i > 0) out += ",";
-            out += "\n\t\t\t" + device_extensions.at(i).get_manifest_str();
-        }
-        out += "\n\t\t]";
-    }
-    if (enable_environment.size() > 0) {
-        out += ",\n\t\t\"enable_environment\": { \"" + enable_environment + "\": \"1\"";
-        out += "\n\t\t}";
-    }
-    if (disable_environment.size() > 0) {
-        out += ",\n\t\t\"disable_environment\": { \"" + disable_environment + "\": \"1\"";
-        out += "\n\t\t}";
-    }
-    if (component_layers.size() > 0) {
-        out += ",\n\t\t\"component_layers\": [";
-        for (size_t i = 0; i < component_layers.size(); i++) {
-            if (i > 0) out += ", ";
-            out += "\"" + component_layers.at(i) + "\"";
-        }
-        out += "]\n";
-    }
-    if (pre_instance_functions.size() > 0) {
-        out += ",\n\t\t\"pre_instance_functions\": [";
-        for (size_t i = 0; i < pre_instance_functions.size(); i++) {
-            if (i > 0) out += ", ";
-            out += "\"" + pre_instance_functions.at(i) + "\"";
-        }
-        out += "]\n\t\t}";
-    }
+    print_vector_of_strings(out, "component_layers", component_layers);
+    print_vector_of_strings(out, "blacklisted_layers", blacklisted_layers);
+    print_vector_of_strings(out, "override_paths", override_paths);
+    print_vector_of_strings(out, "pre_instance_functions", pre_instance_functions);
+
     out += "\n\t}";
     return out;
 }
