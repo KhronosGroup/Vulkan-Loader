@@ -5518,7 +5518,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         if (icd_term->scanned_icd->api_version < VK_API_VERSION_1_1) {
             prop = get_extension_property(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, &icd_exts);
             if (prop) {
-                filtered_extension_names[pCreateInfo->enabledExtensionCount] =
+                filtered_extension_names[icd_create_info.enabledExtensionCount] =
                     (char *)VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
                 icd_create_info.enabledExtensionCount++;
             }
