@@ -999,7 +999,7 @@ TEST_F(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 3);  // the instance extension, debug_utils, and debug_report
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
@@ -1058,7 +1058,7 @@ TEST_F(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 3);  // the instance extension, debug_utils, and debug_report
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
@@ -1118,7 +1118,7 @@ TEST_F(LayerExtensions, ImplicitBothInstanceExtensions) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 2);
+    ASSERT_EQ(extension_count, 4);  // the two instance extension plus debug_utils and debug_report
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
@@ -1246,7 +1246,7 @@ TEST_F(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 1);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count,
                                                                                        extension_props.data()));
@@ -1319,7 +1319,7 @@ TEST_F(LayerExtensions, ExplicitDispSurfCountInstanceExtension) {
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 1);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count,
                                                                                        extension_props.data()));
@@ -1393,7 +1393,7 @@ TEST_F(LayerExtensions, ExplicitBothInstanceExtensions) {
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 2);
+    ASSERT_EQ(extension_count, 2);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count,
                                                                                        extension_props.data()));
@@ -1522,7 +1522,7 @@ TEST_F(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 1);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
                                                                                      extension_props.data()));
@@ -1581,7 +1581,7 @@ TEST_F(LayerExtensions, ImplicitPresentImageDeviceExtension) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 1);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
                                                                                      extension_props.data()));
@@ -1641,7 +1641,7 @@ TEST_F(LayerExtensions, ImplicitBothDeviceExtensions) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 2);
+    ASSERT_EQ(extension_count, 2);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
                                                                                      extension_props.data()));
@@ -1782,7 +1782,7 @@ TEST_F(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 1);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
                                                                                      &extension_count, extension_props.data()));
@@ -1852,7 +1852,7 @@ TEST_F(LayerExtensions, ExplicitPresentImageDeviceExtension) {
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 1);
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
                                                                                      &extension_count, extension_props.data()));
@@ -1924,7 +1924,7 @@ TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
               env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
-    ASSERT_GE(extension_count, 1);
+    ASSERT_EQ(extension_count, 2);  // debug_utils, and debug_report
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
                                                                                      &extension_count, extension_props.data()));
