@@ -270,7 +270,6 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
 
             bool device_is_1_1_capable =
                 VK_API_VERSION_MAJOR(dev_props.apiVersion) == 1 && VK_API_VERSION_MINOR(dev_props.apiVersion) >= 1;
-            sorted_device_info[index].has_pci_bus_info = device_is_1_1_capable;
             if (!sorted_device_info[index].has_pci_bus_info) {
                 uint32_t ext_count;
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(sorted_device_info[index].physical_device, NULL, &ext_count,
@@ -374,7 +373,6 @@ VkResult linux_read_sorted_physical_device_groups(struct loader_instance *inst, 
 
             bool device_is_1_1_capable =
                 VK_API_VERSION_MAJOR(dev_props.apiVersion) == 1 && VK_API_VERSION_MINOR(dev_props.apiVersion) >= 1;
-            sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info = device_is_1_1_capable;
             if (!sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info) {
                 uint32_t ext_count;
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(
