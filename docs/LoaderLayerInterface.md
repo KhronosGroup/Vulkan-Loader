@@ -42,6 +42,7 @@
     * [Wrapping](#wrapping)
     * [Hash Maps](#hash-maps)
   * [Creating New Dispatchable Objects](#creating-new-dispatchable-objects)
+  * [Layer Versioning and Activation Interactions](#layer-versioning-and-activation-interactions)
 * [Layer Manifest File Format](#layer-manifest-file-format)
   * [Layer Manifest File Version History](#layer-manifest-file-version-history)
 * [Layer Interface Versions](#layer-interface-versions)
@@ -56,7 +57,7 @@
 ## Overview
 
 This is the Layer-centric view of working with the Vulkan loader.
-For the complete overview of all sections of the loader, please refer 
+For the complete overview of all sections of the loader, please refer
 to the [LoaderInterfaceArchitecture.md](LoaderInterfaceArchitecture.md) file.
 
 
@@ -753,7 +754,7 @@ Examples of valid layer names include:
  * <b>VK_LAYER_NV_nsight</b>
    * Organization Acronym = "NV" (for Nvidia)
    * Specific name = "nsight"
- 
+
 More details on layer naming can be found in the
 [Vulkan style-guide](https://www.khronos.org/registry/vulkan/specs/1.2/styleguide.html#extensions-naming-conventions)
 under section 3.4 "Version, Extension, and Layer Naming Conventions".
@@ -975,7 +976,7 @@ one or more component layers.
  3. All component layers **must be** present on a system for the meta-layer to
 be used.
  4. All component layers **must be** at the same Vulkan API major and minor
-version for the meta-layer to be used.
+version as the meta-layer for the meta-layer to be used.
 
 The ordering of a meta-layer's component layers in the instance or device call-
 chain is simple:
@@ -1010,17 +1011,26 @@ If an implicit meta-layer was found on the system with the name
 `VK_LAYER_LUNARG_override`, the loader uses it as an 'override' layer.
 This is used to selectively enable and disable other layers from being loaded.
 It can be applied globally or to a specific application or applications.
-Disabling layers and specifying the application requires the layer manifest
-have the following keys:
+The override meta layer can have the following additional keys:
   * `blacklisted_layers` - List of explicit layer names that should not be
 loaded even if requested by the application.
   * `app_keys` - List of paths to executables that the override layer applies
 to.
+  * `override_paths` - List of paths which will be used as the search location
+for component layers.
+
 When an application starts up and the override layer is present, the loader
 first checks to see if the application is in the list.
 If it isn't, the override layer is not applied.
 If the list is empty or if `app_keys` doesn't exist, the loader makes the
 override layer global and applies it to every application upon startup.
+
+If the override layer contains `override_paths`, then it uses this list of
+paths exclusively for component layers.
+Thus, it ignores both the default explicit and implicit layer layer search
+locations.
+If any component layer is not present in the provided override paths, the meta
+layer is disabled.
 
 The override meta-layer is primarily enabled when using the
 [VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
@@ -1315,6 +1325,49 @@ For example, if there is a newly created `VkCommandBuffer` object, then the
 dispatch pointer from the `VkDevice` object, which is the parent of the
 `VkCommandBuffer` object, should be copied into the newly created object.
 
+### Versioning and Activation Interactions
+
+There are several interacting rules concerning the activation of layers with
+non-obvious results.
+This not an exhaustive list but should better clarify the behavior of the
+loader in complex situations.
+
+* The API version specified by an implicit layer is used to determine whether
+the layer should be enabled.
+If the layer's API version is less than the version given by the application in `VkApplicationInfo`, the implicit layer is not enabled.
+Thus, any implicit layers must have an API version that is the same or higher
+than the application.
+This applies to implicit meta layers and the override layer.
+Therefore, an application which supports an API version that is newer than any
+implicit meta layers will prevent the meta layer from activating.
+
+* An implicit layer will ignore its disable environment variable being set if
+it is a component in an active meta layer.
+
+* The environment `VK_LAYER_PATH` only affects explicit layer searching, not
+implicit.
+Layers found in this path are treated as explicit, even if they contain all the
+requisite fields to be an implicit layer.
+This means they will not be implicitly enabled.
+
+* Meta layers do not have to be implicit - they can be explicit.
+It cannot be assumed that because a meta layer is present that it will be active.
+
+* The `blacklisted_layers` member of the override meta layer will prevent both
+implicitly enabled and explicitely enabled layers from activating.
+Any layers in an application's `VkInstanceCreateInfo::ppEnabledLayerNames` that
+are in the blacklist will not be enabled.
+
+* The `app_keys` member of the override meta layer will make a meta layer apply
+to only applications found in this list.
+If there are any items in the app keys list, the meta layer isn't enabled for any application except those found in the list.
+
+* The `override_paths` member of the override meta layer, if present, will
+replace the search paths the loader uses to find component layers.
+If any component layer isn't present in the override paths, the override meta
+layer is not applied.
+So if an override meta layer wants to mix default and custom layer locations,
+the override paths must contain both custom and default layer locations.
 
 ## Layer Manifest File Format
 
