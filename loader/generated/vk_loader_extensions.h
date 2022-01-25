@@ -200,6 +200,10 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperti
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties*              pExternalSemaphoreProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pToolCount,
+    VkPhysicalDeviceToolProperties*             pToolProperties);
 
 // ICD function pointer dispatch table
 struct loader_icd_term_dispatch {
@@ -234,6 +238,9 @@ struct loader_icd_term_dispatch {
     PFN_vkGetPhysicalDeviceExternalBufferProperties GetPhysicalDeviceExternalBufferProperties;
     PFN_vkGetPhysicalDeviceExternalFenceProperties GetPhysicalDeviceExternalFenceProperties;
     PFN_vkGetPhysicalDeviceExternalSemaphoreProperties GetPhysicalDeviceExternalSemaphoreProperties;
+
+    // ---- Core 1_3 commands
+    PFN_vkGetPhysicalDeviceToolProperties GetPhysicalDeviceToolProperties;
 
     // ---- VK_KHR_surface extension commands
     PFN_vkDestroySurfaceKHR DestroySurfaceKHR;

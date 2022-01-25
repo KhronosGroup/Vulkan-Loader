@@ -87,6 +87,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     LOOKUP_GIPA(GetPhysicalDeviceExternalFenceProperties, false);
     LOOKUP_GIPA(GetPhysicalDeviceExternalSemaphoreProperties, false);
 
+    // ---- Core 1_3
+    LOOKUP_GIPA(GetPhysicalDeviceToolProperties, false);
+
     // ---- VK_KHR_surface extension commands
     LOOKUP_GIPA(DestroySurfaceKHR, false);
     LOOKUP_GIPA(GetPhysicalDeviceSurfaceSupportKHR, false);
@@ -484,6 +487,44 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_d
     table->GetBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)gpa(dev, "vkGetBufferDeviceAddress");
     table->GetBufferOpaqueCaptureAddress = (PFN_vkGetBufferOpaqueCaptureAddress)gpa(dev, "vkGetBufferOpaqueCaptureAddress");
     table->GetDeviceMemoryOpaqueCaptureAddress = (PFN_vkGetDeviceMemoryOpaqueCaptureAddress)gpa(dev, "vkGetDeviceMemoryOpaqueCaptureAddress");
+
+    // ---- Core 1_3 commands
+    table->CreatePrivateDataSlot = (PFN_vkCreatePrivateDataSlot)gpa(dev, "vkCreatePrivateDataSlot");
+    table->DestroyPrivateDataSlot = (PFN_vkDestroyPrivateDataSlot)gpa(dev, "vkDestroyPrivateDataSlot");
+    table->SetPrivateData = (PFN_vkSetPrivateData)gpa(dev, "vkSetPrivateData");
+    table->GetPrivateData = (PFN_vkGetPrivateData)gpa(dev, "vkGetPrivateData");
+    table->CmdSetEvent2 = (PFN_vkCmdSetEvent2)gpa(dev, "vkCmdSetEvent2");
+    table->CmdResetEvent2 = (PFN_vkCmdResetEvent2)gpa(dev, "vkCmdResetEvent2");
+    table->CmdWaitEvents2 = (PFN_vkCmdWaitEvents2)gpa(dev, "vkCmdWaitEvents2");
+    table->CmdPipelineBarrier2 = (PFN_vkCmdPipelineBarrier2)gpa(dev, "vkCmdPipelineBarrier2");
+    table->CmdWriteTimestamp2 = (PFN_vkCmdWriteTimestamp2)gpa(dev, "vkCmdWriteTimestamp2");
+    table->QueueSubmit2 = (PFN_vkQueueSubmit2)gpa(dev, "vkQueueSubmit2");
+    table->CmdCopyBuffer2 = (PFN_vkCmdCopyBuffer2)gpa(dev, "vkCmdCopyBuffer2");
+    table->CmdCopyImage2 = (PFN_vkCmdCopyImage2)gpa(dev, "vkCmdCopyImage2");
+    table->CmdCopyBufferToImage2 = (PFN_vkCmdCopyBufferToImage2)gpa(dev, "vkCmdCopyBufferToImage2");
+    table->CmdCopyImageToBuffer2 = (PFN_vkCmdCopyImageToBuffer2)gpa(dev, "vkCmdCopyImageToBuffer2");
+    table->CmdBlitImage2 = (PFN_vkCmdBlitImage2)gpa(dev, "vkCmdBlitImage2");
+    table->CmdResolveImage2 = (PFN_vkCmdResolveImage2)gpa(dev, "vkCmdResolveImage2");
+    table->CmdBeginRendering = (PFN_vkCmdBeginRendering)gpa(dev, "vkCmdBeginRendering");
+    table->CmdEndRendering = (PFN_vkCmdEndRendering)gpa(dev, "vkCmdEndRendering");
+    table->CmdSetCullMode = (PFN_vkCmdSetCullMode)gpa(dev, "vkCmdSetCullMode");
+    table->CmdSetFrontFace = (PFN_vkCmdSetFrontFace)gpa(dev, "vkCmdSetFrontFace");
+    table->CmdSetPrimitiveTopology = (PFN_vkCmdSetPrimitiveTopology)gpa(dev, "vkCmdSetPrimitiveTopology");
+    table->CmdSetViewportWithCount = (PFN_vkCmdSetViewportWithCount)gpa(dev, "vkCmdSetViewportWithCount");
+    table->CmdSetScissorWithCount = (PFN_vkCmdSetScissorWithCount)gpa(dev, "vkCmdSetScissorWithCount");
+    table->CmdBindVertexBuffers2 = (PFN_vkCmdBindVertexBuffers2)gpa(dev, "vkCmdBindVertexBuffers2");
+    table->CmdSetDepthTestEnable = (PFN_vkCmdSetDepthTestEnable)gpa(dev, "vkCmdSetDepthTestEnable");
+    table->CmdSetDepthWriteEnable = (PFN_vkCmdSetDepthWriteEnable)gpa(dev, "vkCmdSetDepthWriteEnable");
+    table->CmdSetDepthCompareOp = (PFN_vkCmdSetDepthCompareOp)gpa(dev, "vkCmdSetDepthCompareOp");
+    table->CmdSetDepthBoundsTestEnable = (PFN_vkCmdSetDepthBoundsTestEnable)gpa(dev, "vkCmdSetDepthBoundsTestEnable");
+    table->CmdSetStencilTestEnable = (PFN_vkCmdSetStencilTestEnable)gpa(dev, "vkCmdSetStencilTestEnable");
+    table->CmdSetStencilOp = (PFN_vkCmdSetStencilOp)gpa(dev, "vkCmdSetStencilOp");
+    table->CmdSetRasterizerDiscardEnable = (PFN_vkCmdSetRasterizerDiscardEnable)gpa(dev, "vkCmdSetRasterizerDiscardEnable");
+    table->CmdSetDepthBiasEnable = (PFN_vkCmdSetDepthBiasEnable)gpa(dev, "vkCmdSetDepthBiasEnable");
+    table->CmdSetPrimitiveRestartEnable = (PFN_vkCmdSetPrimitiveRestartEnable)gpa(dev, "vkCmdSetPrimitiveRestartEnable");
+    table->GetDeviceBufferMemoryRequirements = (PFN_vkGetDeviceBufferMemoryRequirements)gpa(dev, "vkGetDeviceBufferMemoryRequirements");
+    table->GetDeviceImageMemoryRequirements = (PFN_vkGetDeviceImageMemoryRequirements)gpa(dev, "vkGetDeviceImageMemoryRequirements");
+    table->GetDeviceImageSparseMemoryRequirements = (PFN_vkGetDeviceImageSparseMemoryRequirements)gpa(dev, "vkGetDeviceImageSparseMemoryRequirements");
 }
 
 // Init Device function pointer dispatch table with extension commands
@@ -1008,6 +1049,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_core_dispatch_table(VkLayerInsta
     table->GetPhysicalDeviceExternalBufferProperties = (PFN_vkGetPhysicalDeviceExternalBufferProperties)gpa(inst, "vkGetPhysicalDeviceExternalBufferProperties");
     table->GetPhysicalDeviceExternalFenceProperties = (PFN_vkGetPhysicalDeviceExternalFenceProperties)gpa(inst, "vkGetPhysicalDeviceExternalFenceProperties");
     table->GetPhysicalDeviceExternalSemaphoreProperties = (PFN_vkGetPhysicalDeviceExternalSemaphoreProperties)gpa(inst, "vkGetPhysicalDeviceExternalSemaphoreProperties");
+
+    // ---- Core 1_3 commands
+    table->GetPhysicalDeviceToolProperties = (PFN_vkGetPhysicalDeviceToolProperties)gpa(inst, "vkGetPhysicalDeviceToolProperties");
 }
 
 // Init Instance function pointer dispatch table with core commands
@@ -1386,6 +1430,44 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetBufferDeviceAddress")) return (void *)table->GetBufferDeviceAddress;
     if (!strcmp(name, "GetBufferOpaqueCaptureAddress")) return (void *)table->GetBufferOpaqueCaptureAddress;
     if (!strcmp(name, "GetDeviceMemoryOpaqueCaptureAddress")) return (void *)table->GetDeviceMemoryOpaqueCaptureAddress;
+
+    // ---- Core 1_3 commands
+    if (!strcmp(name, "CreatePrivateDataSlot")) return (void *)table->CreatePrivateDataSlot;
+    if (!strcmp(name, "DestroyPrivateDataSlot")) return (void *)table->DestroyPrivateDataSlot;
+    if (!strcmp(name, "SetPrivateData")) return (void *)table->SetPrivateData;
+    if (!strcmp(name, "GetPrivateData")) return (void *)table->GetPrivateData;
+    if (!strcmp(name, "CmdSetEvent2")) return (void *)table->CmdSetEvent2;
+    if (!strcmp(name, "CmdResetEvent2")) return (void *)table->CmdResetEvent2;
+    if (!strcmp(name, "CmdWaitEvents2")) return (void *)table->CmdWaitEvents2;
+    if (!strcmp(name, "CmdPipelineBarrier2")) return (void *)table->CmdPipelineBarrier2;
+    if (!strcmp(name, "CmdWriteTimestamp2")) return (void *)table->CmdWriteTimestamp2;
+    if (!strcmp(name, "QueueSubmit2")) return (void *)table->QueueSubmit2;
+    if (!strcmp(name, "CmdCopyBuffer2")) return (void *)table->CmdCopyBuffer2;
+    if (!strcmp(name, "CmdCopyImage2")) return (void *)table->CmdCopyImage2;
+    if (!strcmp(name, "CmdCopyBufferToImage2")) return (void *)table->CmdCopyBufferToImage2;
+    if (!strcmp(name, "CmdCopyImageToBuffer2")) return (void *)table->CmdCopyImageToBuffer2;
+    if (!strcmp(name, "CmdBlitImage2")) return (void *)table->CmdBlitImage2;
+    if (!strcmp(name, "CmdResolveImage2")) return (void *)table->CmdResolveImage2;
+    if (!strcmp(name, "CmdBeginRendering")) return (void *)table->CmdBeginRendering;
+    if (!strcmp(name, "CmdEndRendering")) return (void *)table->CmdEndRendering;
+    if (!strcmp(name, "CmdSetCullMode")) return (void *)table->CmdSetCullMode;
+    if (!strcmp(name, "CmdSetFrontFace")) return (void *)table->CmdSetFrontFace;
+    if (!strcmp(name, "CmdSetPrimitiveTopology")) return (void *)table->CmdSetPrimitiveTopology;
+    if (!strcmp(name, "CmdSetViewportWithCount")) return (void *)table->CmdSetViewportWithCount;
+    if (!strcmp(name, "CmdSetScissorWithCount")) return (void *)table->CmdSetScissorWithCount;
+    if (!strcmp(name, "CmdBindVertexBuffers2")) return (void *)table->CmdBindVertexBuffers2;
+    if (!strcmp(name, "CmdSetDepthTestEnable")) return (void *)table->CmdSetDepthTestEnable;
+    if (!strcmp(name, "CmdSetDepthWriteEnable")) return (void *)table->CmdSetDepthWriteEnable;
+    if (!strcmp(name, "CmdSetDepthCompareOp")) return (void *)table->CmdSetDepthCompareOp;
+    if (!strcmp(name, "CmdSetDepthBoundsTestEnable")) return (void *)table->CmdSetDepthBoundsTestEnable;
+    if (!strcmp(name, "CmdSetStencilTestEnable")) return (void *)table->CmdSetStencilTestEnable;
+    if (!strcmp(name, "CmdSetStencilOp")) return (void *)table->CmdSetStencilOp;
+    if (!strcmp(name, "CmdSetRasterizerDiscardEnable")) return (void *)table->CmdSetRasterizerDiscardEnable;
+    if (!strcmp(name, "CmdSetDepthBiasEnable")) return (void *)table->CmdSetDepthBiasEnable;
+    if (!strcmp(name, "CmdSetPrimitiveRestartEnable")) return (void *)table->CmdSetPrimitiveRestartEnable;
+    if (!strcmp(name, "GetDeviceBufferMemoryRequirements")) return (void *)table->GetDeviceBufferMemoryRequirements;
+    if (!strcmp(name, "GetDeviceImageMemoryRequirements")) return (void *)table->GetDeviceImageMemoryRequirements;
+    if (!strcmp(name, "GetDeviceImageSparseMemoryRequirements")) return (void *)table->GetDeviceImageSparseMemoryRequirements;
 
     // ---- VK_KHR_swapchain extension commands
     if (!strcmp(name, "CreateSwapchainKHR")) return (void *)table->CreateSwapchainKHR;
@@ -1910,6 +1992,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     if (!strcmp(name, "GetPhysicalDeviceExternalFenceProperties")) return (void *)table->GetPhysicalDeviceExternalFenceProperties;
     if (!strcmp(name, "GetPhysicalDeviceExternalSemaphoreProperties")) return (void *)table->GetPhysicalDeviceExternalSemaphoreProperties;
 
+    // ---- Core 1_3 commands
+    if (!strcmp(name, "GetPhysicalDeviceToolProperties")) return (void *)table->GetPhysicalDeviceToolProperties;
+
     // ---- VK_KHR_surface extension commands
     if (!strcmp(name, "DestroySurfaceKHR")) return (void *)table->DestroySurfaceKHR;
     if (!strcmp(name, "GetPhysicalDeviceSurfaceSupportKHR")) return (void *)table->GetPhysicalDeviceSurfaceSupportKHR;
@@ -2375,7 +2460,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkRenderingInfoKHR*                   pRenderingInfo) {
+    const VkRenderingInfo*                      pRenderingInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3366,7 +3451,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    const VkDependencyInfoKHR*                  pDependencyInfo) {
+    const VkDependencyInfo*                     pDependencyInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3380,7 +3465,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags2KHR                    stageMask) {
+    VkPipelineStageFlags2                       stageMask) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3395,7 +3480,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    eventCount,
     const VkEvent*                              pEvents,
-    const VkDependencyInfoKHR*                  pDependencyInfos) {
+    const VkDependencyInfo*                     pDependencyInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3408,7 +3493,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkDependencyInfoKHR*                  pDependencyInfo) {
+    const VkDependencyInfo*                     pDependencyInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3421,7 +3506,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(
     VkCommandBuffer                             commandBuffer,
-    VkPipelineStageFlags2KHR                    stage,
+    VkPipelineStageFlags2                       stage,
     VkQueryPool                                 queryPool,
     uint32_t                                    query) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
@@ -3437,7 +3522,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
-    const VkSubmitInfo2KHR*                     pSubmits,
+    const VkSubmitInfo2*                        pSubmits,
     VkFence                                     fence) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
     if (NULL == disp) {
@@ -3451,7 +3536,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(
     VkCommandBuffer                             commandBuffer,
-    VkPipelineStageFlags2KHR                    stage,
+    VkPipelineStageFlags2                       stage,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     uint32_t                                    marker) {
@@ -3484,7 +3569,7 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyBufferInfo2KHR*                 pCopyBufferInfo) {
+    const VkCopyBufferInfo2*                    pCopyBufferInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3497,7 +3582,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyImageInfo2KHR*                  pCopyImageInfo) {
+    const VkCopyImageInfo2*                     pCopyImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3510,7 +3595,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyBufferToImageInfo2KHR*          pCopyBufferToImageInfo) {
+    const VkCopyBufferToImageInfo2*             pCopyBufferToImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3523,7 +3608,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyImageToBufferInfo2KHR*          pCopyImageToBufferInfo) {
+    const VkCopyImageToBufferInfo2*             pCopyImageToBufferInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3536,7 +3621,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkBlitImageInfo2KHR*                  pBlitImageInfo) {
+    const VkBlitImageInfo2*                     pBlitImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3549,7 +3634,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkResolveImageInfo2KHR*               pResolveImageInfo) {
+    const VkResolveImageInfo2*                  pResolveImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -3565,7 +3650,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(
     VkDevice                                    device,
-    const VkDeviceBufferMemoryRequirementsKHR*  pInfo,
+    const VkDeviceBufferMemoryRequirements*     pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -3579,7 +3664,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(
     VkDevice                                    device,
-    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    const VkDeviceImageMemoryRequirements*      pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -3593,7 +3678,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
     VkDevice                                    device,
-    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    const VkDeviceImageMemoryRequirements*      pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
@@ -5721,9 +5806,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDrmDisplayEXT(
 
 VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(
     VkDevice                                    device,
-    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkPrivateDataSlotCreateInfo*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPrivateDataSlotEXT*                       pPrivateDataSlot) {
+    VkPrivateDataSlot*                          pPrivateDataSlot) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -5736,7 +5821,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(
 
 VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlotEXT(
     VkDevice                                    device,
-    VkPrivateDataSlotEXT                        privateDataSlot,
+    VkPrivateDataSlot                           privateDataSlot,
     const VkAllocationCallbacks*                pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -5752,7 +5837,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
-    VkPrivateDataSlotEXT                        privateDataSlot,
+    VkPrivateDataSlot                           privateDataSlot,
     uint64_t                                    data) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -5768,7 +5853,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
-    VkPrivateDataSlotEXT                        privateDataSlot,
+    VkPrivateDataSlot                           privateDataSlot,
     uint64_t*                                   pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -8163,6 +8248,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
     .GetPhysicalDeviceExternalBufferProperties = terminator_GetPhysicalDeviceExternalBufferProperties,
     .GetPhysicalDeviceExternalFenceProperties = terminator_GetPhysicalDeviceExternalFenceProperties,
     .GetPhysicalDeviceExternalSemaphoreProperties = terminator_GetPhysicalDeviceExternalSemaphoreProperties,
+
+    // ---- Core 1_3 commands
+    .GetPhysicalDeviceToolProperties = terminator_GetPhysicalDeviceToolProperties,
 
     // ---- VK_KHR_surface extension commands
     .DestroySurfaceKHR = terminator_DestroySurfaceKHR,
