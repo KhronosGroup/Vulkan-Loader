@@ -1995,7 +1995,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     if (!strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
         cJSON *expiration;
 
-        if (version.major < 1 && version.minor < 1 && version.patch < 2) {
+        if (version.major == 0 || (version.minor == 1 && version.patch < 2) || version.minor == 0) {
             loader_log(
                 inst, VULKAN_LOADER_WARN_BIT, 0,
                 "Override layer expiration date not added until version 1.1.2.  Please update JSON file version appropriately.");
@@ -2103,7 +2103,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             }
         }
     } else if (NULL != component_layers) {
-        if (version.major == 1 && (version.minor < 1 || version.patch < 1)) {
+        if (version.major == 0 || (version.minor == 1 && version.patch < 1) || (version.minor == 0)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific component_layers, but using older JSON file version.");
         }
@@ -2189,7 +2189,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
     override_paths = cJSON_GetObjectItem(layer_node, "override_paths");
     if (NULL != override_paths) {
-        if (version.major == 1 && (version.minor < 1 || version.patch < 1)) {
+        if (version.major == 0 || (version.minor == 1 && version.patch) < 1 || version.minor == 0) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific override paths, but using older JSON file version.");
         }
