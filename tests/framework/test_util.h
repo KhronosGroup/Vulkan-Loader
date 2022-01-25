@@ -198,6 +198,10 @@ struct path {
     std::string& str() { return contents; }
     size_t size() const { return contents.size(); };
 
+    // equality
+    bool operator==(path const& other) const noexcept { return contents == other.contents; }
+    bool operator!=(path const& other) const noexcept { return !(*this == other); }
+
    private:
     std::string contents;
 };
