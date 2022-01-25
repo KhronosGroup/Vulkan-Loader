@@ -777,6 +777,148 @@ TEST_F(OverrideMetaLayer, ApplicationEnabledLayerInBlacklist) {
     }
 }
 
+TEST_F(OverrideMetaLayer, BasicOverridePaths) {
+    env->get_test_icd().add_physical_device({});
+    fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(regular_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(lunarg_meta_layer_name)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                               .add_component_layer(regular_layer_name)
+                                               .set_disable_environment("DisableMeIfYouCan")
+                                               .add_override_path(override_folder_location)),
+                            "meta_test_layer.json");
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+    inst.CheckCreate();
+    ASSERT_TRUE(env->debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+}
+
+TEST_F(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
+    env->get_test_icd().add_physical_device({});
+    fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env->add_explicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(regular_layer_name)
+                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                            "regular_test_layer.json");
+
+    const char* special_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(special_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(lunarg_meta_layer_name)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                               .add_component_layer(special_layer_name)
+                                               .set_disable_environment("DisableMeIfYouCan")
+                                               .add_override_path(override_folder_location)),
+                            "meta_test_layer.json");
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    inst.create_info.add_layer(regular_layer_name);
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+    ASSERT_FALSE(env->debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+}
+
+// Make sure that implicit layers not in the override paths aren't found by mistake
+TEST_F(OverrideMetaLayer, OverridePathsEnableImplicitLayerInDefaultPaths) {
+    env->get_test_icd().add_physical_device({});
+    fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
+
+    const char* implicit_layer_name = "VK_LAYER_ImplicitLayer";
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(implicit_layer_name)
+                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                            "implicit_test_layer.json");
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(regular_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(lunarg_meta_layer_name)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                               .add_component_layers({regular_layer_name, implicit_layer_name})
+                                               .set_disable_environment("DisableMeIfYouCan")
+                                               .add_override_path(override_folder_location)),
+                            "meta_test_layer.json");
+
+    InstWrapper inst{env->vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+    inst.create_info.set_api_version(1, 1, 0);
+    inst.CheckCreate();
+    ASSERT_FALSE(env->debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+    ASSERT_TRUE(
+        env->debug_log.find("Removing meta-layer VK_LAYER_LUNARG_override from instance layer list since it appears invalid."));
+}
+
+TEST_F(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
+    env->get_test_icd().add_physical_device({});
+    fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(regular_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 0, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(lunarg_meta_layer_name)
+                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                               .add_component_layer(regular_layer_name)
+                                               .set_disable_environment("DisableMeIfYouCan")
+                                               .add_override_path(override_folder_location)),
+                            "meta_test_layer.json");
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
+    inst.CheckCreate();
+    ASSERT_TRUE(env->debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+    ASSERT_TRUE(env->debug_log.find("Indicating meta-layer-specific override paths, but using older JSON file version."));
+}
+
 // This test makes sure that any layer calling GetPhysicalDeviceProperties2 inside of CreateInstance
 // succeeds and doesn't crash.
 TEST_F(LayerCreateInstance, GetPhysicalDeviceProperties2) {
