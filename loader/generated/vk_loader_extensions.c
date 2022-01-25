@@ -4113,42 +4113,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-// ---- VK_NN_vi_surface extension trampoline/terminators
-
-#ifdef VK_USE_PLATFORM_VI_NN
-VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(
-    VkInstance                                  instance,
-    const VkViSurfaceCreateInfoNN*              pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
-    if (NULL == inst) {
-        loader_log(
-            NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-            "vkCreateViSurfaceNN: Invalid instance [VUID-vkCreateViSurfaceNN-instance-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-#error("Not implemented. Likely needs to be manually generated!");
-    return inst->disp->CreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(
-    VkInstance                                  instance,
-    const VkViSurfaceCreateInfoNN*              pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
-    if (NULL == inst) {
-        loader_log(
-            NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-            "vkCreateViSurfaceNN: Invalid instance [VUID-vkCreateViSurfaceNN-instance-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-#error("Not implemented. Likely needs to be manually generated!");
-}
-
-#endif // VK_USE_PLATFORM_VI_NN
-
 // ---- VK_EXT_conditional_rendering extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(
@@ -7315,16 +7279,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-    // ---- VK_NN_vi_surface extension commands
-#ifdef VK_USE_PLATFORM_VI_NN
-    if (!strcmp("vkCreateViSurfaceNN", name)) {
-        *addr = (ptr_instance->enabled_known_extensions.nn_vi_surface == 1)
-                     ? (void *)CreateViSurfaceNN
-                     : NULL;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_VI_NN
-
     // ---- VK_EXT_conditional_rendering extension commands
     if (!strcmp("vkCmdBeginConditionalRenderingEXT", name)) {
         *addr = (void *)CmdBeginConditionalRenderingEXT;
@@ -8120,12 +8074,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
     // ---- VK_NV_external_memory_capabilities extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
             ptr_instance->enabled_known_extensions.nv_external_memory_capabilities = 1;
-
-    // ---- VK_NN_vi_surface extension commands
-#ifdef VK_USE_PLATFORM_VI_NN
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NN_VI_SURFACE_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.nn_vi_surface = 1;
-#endif // VK_USE_PLATFORM_VI_NN
 
     // ---- VK_EXT_direct_mode_display extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)) {
