@@ -120,6 +120,12 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
             continue;
         }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_VI_NN
+        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NN_VI_SURFACE_EXTENSION_NAME) == 0) {
+            loader_inst->wsi_vi_surface_enabled = true;
+            continue;
+        }
+#endif  // VK_USE_PLATFORM_VI_NN
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_DISPLAY_EXTENSION_NAME) == 0) {
             loader_inst->wsi_display_enabled = true;
             continue;
@@ -1655,6 +1661,85 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+#ifdef VK_USE_PLATFORM_VI_NN
+
+// Functions for the VK_NN_vi_surface extension:
+
+// This is the trampoline entrypoint for CreateViSurfaceNN
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateViSurfaceNN(VkInstance instance,
+                                                                 const VkViSurfaceCreateInfoNN* pCreateInfo,
+                                                                 const VkAllocationCallbacks* pAllocator,
+                                                                 VkSurfaceKHR* pSurface) {
+    struct loader_instance* loader_inst = loader_get_instance(instance);
+    if (NULL == loader_inst) {
+        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkCreateViSurfaceNN: Invalid instance [VUID-vkCreateViSurfaceNN-instance-parameter]");
+      abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return loader_inst->disp->layer_inst_disp.CreateViSurfaceNN(loader_inst->instance, pCreateInfo, pAllocator, pSurface);
+}
+
+// This is the instance chain terminator function for CreateViSurfaceNN
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VkResult vkRes = VK_SUCCESS;
+    VkIcdSurface *pIcdSurface = NULL;
+    uint32_t i = 0;
+
+    // First, check to ensure the appropriate extension was enabled:
+    struct loader_instance *loader_inst = loader_get_instance(instance);
+    if (!loader_inst->wsi_vi_surface_enabled) {
+        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "VK_NN_vi_surface extension not enabled. vkCreateViSurfaceNN not executed!\n");
+        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        goto out;
+    }
+
+    // Next, if so, proceed with the implementation of this function:
+    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->vi_surf.base), sizeof(pIcdSurface->vi_surf));
+    if (pIcdSurface == NULL) {
+        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    pIcdSurface->vi_surf.base.platform = VK_ICD_WSI_PLATFORM_VI;
+    pIcdSurface->vi_surf.window = pCreateInfo->window;
+
+    // Loop through each ICD and determine if they need to create a surface
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
+            if (NULL != icd_term->dispatch.CreateViSurfaceNN) {
+                vkRes = icd_term->dispatch.CreateViSurfaceNN(icd_term->instance, pCreateInfo, pAllocator,
+                                                             &pIcdSurface->real_icd_surfaces[i]);
+                if (VK_SUCCESS != vkRes) {
+                    goto out;
+                }
+            }
+        }
+    }
+
+    *pSurface = (VkSurfaceKHR)pIcdSurface;
+
+out:
+
+    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
+        if (NULL != pIcdSurface->real_icd_surfaces) {
+            i = 0;
+            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
+                }
+            }
+            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
+        }
+        loader_instance_heap_free(loader_inst, pIcdSurface);
+    }
+
+    return vkRes;
+}
+
+#endif  // VK_USE_PLATFORM_VI_NN
+
 // Functions for the VK_KHR_display instance extension:
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                      uint32_t *pPropertyCount,
@@ -2759,6 +2844,15 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_VI_NN
+
+    // Functions for the VK_NN_vi_surface extension:
+    if (!strcmp("vkCreateViSurfaceNN", name)) {
+        *addr = loader_inst->wsi_vi_surface_enabled ? (void *)vkCreateViSurfaceNN : NULL;
+        return true;
+    }
+#endif  // VK_USE_PLATFORM_VI_NN
 
     // Functions for VK_KHR_display extension:
     if (!strcmp("vkGetPhysicalDeviceDisplayPropertiesKHR", name)) {

@@ -330,6 +330,9 @@ struct loader_instance {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     bool wsi_screen_surface_enabled;
 #endif
+#ifdef VK_USE_PLATFORM_VI_NN
+    bool wsi_vi_surface_enabled;
+#endif
     bool wsi_display_enabled;
     bool wsi_display_props2_enabled;
 };

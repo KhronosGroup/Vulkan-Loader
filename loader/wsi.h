@@ -56,6 +56,9 @@ typedef struct {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         VkIcdSurfaceScreen screen_surf;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_VI_NN
+        VkIcdSurfaceVi vi_surf;
+#endif  // VK_USE_PLATFORM_VI_NN
         VkIcdSurfaceDisplay display_surf;
         VkIcdSurfaceHeadless headless_surf;
     };
@@ -163,6 +166,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
                                                                                         uint32_t queueFamilyIndex,
                                                                                         struct _screen_window *window);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_VI_NN
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+#endif  // VK_USE_PLATFORM_VI_NN
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pPropertyCount,
                                                                                 VkDisplayPropertiesKHR *pProperties);
