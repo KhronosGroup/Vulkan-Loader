@@ -205,31 +205,21 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     }
 }
 void FrameworkEnvironment::add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
-    add_layer_impl(layer_manifest, json_name, implicit_layer_folder, ManifestCategory::implicit_layer);
+    add_layer_impl(TestLayerDetails{layer_manifest, json_name}, implicit_layer_folder, ManifestCategory::implicit_layer);
 }
 void FrameworkEnvironment::add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
-    add_layer_impl(layer_manifest, json_name, explicit_layer_folder, ManifestCategory::explicit_layer);
+    add_layer_impl(TestLayerDetails{layer_manifest, json_name}, explicit_layer_folder, ManifestCategory::explicit_layer);
+}
+void FrameworkEnvironment::add_implicit_layer(TestLayerDetails layer_details) noexcept {
+    add_layer_impl(layer_details, implicit_layer_folder, ManifestCategory::implicit_layer);
+}
+void FrameworkEnvironment::add_explicit_layer(TestLayerDetails layer_details) noexcept {
+    add_layer_impl(layer_details, explicit_layer_folder, ManifestCategory::explicit_layer);
 }
 
-void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const std::string& json_name,
-                                          fs::FolderManager& folder_manager, ManifestCategory category) {
-    // We have a special case for any of the wrap objects layers so get the string to the path
-    std::string wrap_layer = fs::fixup_backslashes_in_path(fs::path(TEST_LAYER_WRAP_OBJECTS)).str();
-
-    // Strip off ending
-#if defined(WIN32)
-    std::string library_extension = ".dll";
-#elif defined(__APPLE__)
-    std::string library_extension = ".dylib";
-#else
-    std::string library_extension = ".so";
-#endif
-    size_t index = 0;
-    index = wrap_layer.find(library_extension, index);
-    assert(index != std::string::npos);
-    wrap_layer.replace(index, library_extension.size(), "");
-
-    for (auto& layer : layer_manifest.layers) {
+void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::FolderManager& folder_manager,
+                                          ManifestCategory category) {
+    for (auto& layer : layer_details.layer_manifest.layers) {
         size_t cur_layer_index = layers.size();
         if (!layer.lib_path.str().empty()) {
             std::string new_layer_name = layer.name + "_" + std::to_string(cur_layer_index) + "_" + layer.lib_path.filename().str();
@@ -238,16 +228,18 @@ void FrameworkEnvironment::add_layer_impl(ManifestLayer& layer_manifest, const s
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
-            if (fs::fixup_backslashes_in_path(layer.lib_path).str().rfind(wrap_layer) != 0) {
+            std::cout << "stem: " << layer.lib_path.stem().str() << "\n";
+            if (layer.lib_path.stem().str().find(fs::path(TEST_LAYER_WRAP_OBJECTS).stem().str()) == std::string::npos) {
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset_layer();
             }
             layer.lib_path = new_layer_location;
         }
     }
-
-    auto layer_loc = folder_manager.write_manifest(json_name, layer_manifest.get_manifest_str());
-    platform_shim->add_manifest(category, layer_loc);
+    if (layer_details.add_to_regular_search_paths) {
+        auto layer_loc = folder_manager.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
+        platform_shim->add_manifest(category, layer_loc);
+    }
 }
 
 TestICD& FrameworkEnvironment::get_test_icd(int index) noexcept { return icds[index].get_test_icd(); }

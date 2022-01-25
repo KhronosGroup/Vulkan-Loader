@@ -112,7 +112,7 @@ void print_vector_of_strings(std::string& out, const char* object_name, std::vec
         out += std::string(",\n\t\t\"") + object_name + "\": [";
         for (size_t i = 0; i < strings.size(); i++) {
             if (i > 0) out += ",\t\t\t";
-            out += "\"" + strings.at(i) + "\"";
+            out += "\"" + fs::fixup_backslashes_in_path(strings.at(i)) + "\"";
         }
         out += "]";
     }

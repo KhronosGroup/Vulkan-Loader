@@ -299,12 +299,23 @@ struct TestICDDetails {
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
 };
 
+struct TestLayerDetails {
+    TestLayerDetails(ManifestLayer layer_manifest, const std::string& json_name) noexcept
+        : layer_manifest(layer_manifest), json_name(json_name) {}
+    BUILDER_VALUE(TestLayerDetails, ManifestLayer, layer_manifest, {});
+    BUILDER_VALUE(TestLayerDetails, std::string, json_name, "test_layer");
+    BUILDER_VALUE(TestLayerDetails, bool, add_to_regular_search_paths, true);
+    BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
+};
+
 struct FrameworkEnvironment {
     FrameworkEnvironment(DebugMode debug_mode = DebugMode::none) noexcept;
 
     void add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
+    void add_implicit_layer(TestLayerDetails layer_details) noexcept;
     void add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
+    void add_explicit_layer(TestLayerDetails layer_details) noexcept;
 
     TestICD& get_test_icd(int index = 0) noexcept;
     TestICD& reset_icd(int index = 0) noexcept;
@@ -328,6 +339,5 @@ struct FrameworkEnvironment {
     std::string env_var_vk_icd_filenames;
 
    private:
-    void add_layer_impl(ManifestLayer& layer_manifest, const std::string& json_name, fs::FolderManager& folder_manager,
-                        ManifestCategory category);
+    void add_layer_impl(TestLayerDetails layer_details, fs::FolderManager& folder_manager, ManifestCategory category);
 };

@@ -371,7 +371,7 @@ TEST_F(EnumeratePhysicalDevices, TwoCall) {
     env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 2;
-    for (size_t i = 0; i < real_device_count; i++) {
+    for (uint32_t i = 0; i < real_device_count; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
@@ -397,7 +397,7 @@ TEST_F(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
     env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 3;
-    for (size_t i = 0; i < real_device_count; i++) {
+    for (uint32_t i = 0; i < real_device_count; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
@@ -432,7 +432,7 @@ TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
     env->reset_icd().add_instance_extension(first_ext);
 
     const uint32_t real_device_count = 2;
-    for (size_t i = 0; i < real_device_count; i++) {
+    for (uint32_t i = 0; i < real_device_count; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
