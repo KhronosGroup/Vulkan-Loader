@@ -725,8 +725,8 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice p
     if (nullptr != pProperties) {
         auto& phys_dev = icd.GetPhysDevice(physicalDevice);
         memcpy(pProperties, &phys_dev.properties, sizeof(VkPhysicalDeviceProperties));
-        uint32_t max_len = (phys_dev.deviceName.length() > VK_MAX_PHYSICAL_DEVICE_NAME_SIZE) ? VK_MAX_PHYSICAL_DEVICE_NAME_SIZE
-                                                                                             : phys_dev.deviceName.length();
+        size_t max_len = (phys_dev.deviceName.length() > VK_MAX_PHYSICAL_DEVICE_NAME_SIZE) ? VK_MAX_PHYSICAL_DEVICE_NAME_SIZE
+                                                                                           : phys_dev.deviceName.length();
         std::copy(phys_dev.deviceName.c_str(), phys_dev.deviceName.c_str() + max_len, pProperties->deviceName);
         pProperties->deviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1] = '\0';
     }
