@@ -57,7 +57,7 @@ config("vulkan_internal_config") {
       "EXTRASYSCONFDIR=\"/pkg/data\"",
     ]
   }
-  if (is_linux || is_mac) {
+  if (is_linux || is_chromeos || is_mac) {
     defines += [
       "SYSCONFDIR=\"/etc\"",
       "FALLBACK_CONFIG_DIRS=\"/etc/xdg\"",
@@ -82,7 +82,7 @@ config("vulkan_loader_config") {
   if (is_win) {
     cflags = [ "/wd4201" ]
   }
-  if (is_linux) {
+  if (is_linux || is_chromeos) {
     # assume secure_getenv() is available
     defines += [ "HAVE_SECURE_GETENV" ]
   }
@@ -145,7 +145,7 @@ if (!is_android) {
         output_name = "vulkan"
 
         # Create libvulkan.so.1 on Linux instead of libvulkan.so
-        if (is_linux && vulkan_loader_shared) {
+        if ((is_linux || is_chromeos) && vulkan_loader_shared) {
           output_extension = "so.1"
         }
       }
@@ -181,7 +181,7 @@ if (!is_android) {
       }
       libs = [ "Cfgmgr32.lib" ]
     }
-    if (is_linux) {
+    if (is_linux || is_chromeos) {
       sources += [
         "loader/loader_linux.c",
         "loader/loader_linux.h",
