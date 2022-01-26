@@ -3513,6 +3513,16 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: ICD JSON %s does not have an \'api_version\' field.", file_str);
                 }
+                if (VK_API_VERSION_VARIANT(vers) != 0) {
+                    loader_log(
+                        inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                        "loader_icd_scan: Driver's ICD JSON %s \'api_version\' field contains a non-zero variant value of %d. "
+                        " Skipping ICD JSON.",
+                        file_str, VK_API_VERSION_VARIANT(vers));
+                    cJSON_Delete(inst, json);
+                    json = NULL;
+                    continue;
+                }
                 VkResult icd_add_res = VK_SUCCESS;
                 icd_add_res = loader_scanned_icd_add(inst, icd_tramp_list, fullpath, vers);
                 if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_add_res) {
