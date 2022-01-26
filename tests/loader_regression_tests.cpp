@@ -1083,6 +1083,14 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled) {
                 ASSERT_EQ(false, true);
         }
     }
+
+    // Make sure if we call enumerate again, the information is the same
+    std::array<VkPhysicalDevice, max_phys_devs> physical_devices_again;
+    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &device_count, physical_devices_again.data()));
+    ASSERT_EQ(device_count, max_phys_devs);
+    for (uint32_t dev = 0; dev < device_count; ++dev) {
+        ASSERT_EQ(physical_devices[dev], physical_devices_again[dev]);
+    }
 }
 
 TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
@@ -1180,6 +1188,15 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
         }
     }
     ASSERT_EQ(false, sorted);
+
+    // Make sure if we call enumerate again, the information is the same
+    std::array<VkPhysicalDevice, max_phys_devs> physical_devices_again;
+    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &device_count, physical_devices_again.data()));
+    ASSERT_EQ(device_count, max_phys_devs);
+    for (uint32_t dev = 0; dev < device_count; ++dev) {
+        ASSERT_EQ(physical_devices[dev], physical_devices_again[dev]);
+    }
+
     remove_env_var("VK_LOADER_DISABLE_SELECT");
 }
 
@@ -1318,6 +1335,16 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
                                 ASSERT_EQ(false, true);
                         }
             */
+        }
+    }
+
+    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups_again{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups_again.data()));
+    ASSERT_EQ(group_count, max_phys_dev_groups);
+    for (uint32_t group = 0; group < max_phys_dev_groups; ++group) {
+        for (uint32_t dev = 0; dev < physical_device_groups[group].physicalDeviceCount; ++dev) {
+            ASSERT_EQ(physical_device_groups[group].physicalDevices[dev], physical_device_groups_again[group].physicalDevices[dev]);
         }
     }
 }
