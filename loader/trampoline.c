@@ -471,8 +471,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         ptr_instance->app_api_major_version = 1;
         ptr_instance->app_api_minor_version = 0;
     } else {
-        ptr_instance->app_api_major_version = VK_VERSION_MAJOR(pCreateInfo->pApplicationInfo->apiVersion);
-        ptr_instance->app_api_minor_version = VK_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion);
+        ptr_instance->app_api_major_version = VK_API_VERSION_MAJOR(pCreateInfo->pApplicationInfo->apiVersion);
+        ptr_instance->app_api_minor_version = VK_API_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion);
     }
 
     // Look for one or more VK_EXT_debug_report or VK_EXT_debug_utils create info structures
