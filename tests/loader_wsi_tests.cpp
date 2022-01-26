@@ -46,7 +46,7 @@ class WsiTests : public ::testing::Test {
 // When ICD doesn't support the extension, create instance should fail
 TEST_F(WsiTests, CreateSurfaceWin32NoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.enable_icd_wsi = false;
 
@@ -63,7 +63,7 @@ TEST_F(WsiTests, CreateSurfaceWin32NoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST_F(WsiTests, CreateSurfaceWin32NoICDCreateSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
@@ -85,7 +85,7 @@ TEST_F(WsiTests, CreateSurfaceWin32NoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST_F(WsiTests, CreateSurfaceWin32ICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
@@ -135,7 +135,7 @@ TEST_F(WsiTests, CreateSurfaceWin32MixedICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
@@ -156,7 +156,7 @@ TEST_F(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceWin32PresentICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
@@ -180,7 +180,7 @@ TEST_F(WsiTests, GetPhysicalDeviceWin32PresentICDSupport) {
 // When ICD doesn't support the extension, create instance should fail
 TEST_F(WsiTests, CreateSurfaceXCBNoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.enable_icd_wsi = false;
 
@@ -197,7 +197,7 @@ TEST_F(WsiTests, CreateSurfaceXCBNoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST_F(WsiTests, CreateSurfaceXCBNoICDCreateSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
@@ -219,7 +219,7 @@ TEST_F(WsiTests, CreateSurfaceXCBNoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST_F(WsiTests, CreateSurfaceXCBICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
@@ -269,7 +269,7 @@ TEST_F(WsiTests, CreateSurfaceXCBMixedICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
@@ -290,7 +290,7 @@ TEST_F(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceXcbPresentICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
@@ -314,7 +314,7 @@ TEST_F(WsiTests, GetPhysicalDeviceXcbPresentICDSupport) {
 // When ICD doesn't support the extension, create instance should fail
 TEST_F(WsiTests, CreateSurfaceXLIBNoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.enable_icd_wsi = false;
 
@@ -331,7 +331,7 @@ TEST_F(WsiTests, CreateSurfaceXLIBNoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST_F(WsiTests, CreateSurfaceXLIBNoICDCreateSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
@@ -353,7 +353,7 @@ TEST_F(WsiTests, CreateSurfaceXLIBNoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST_F(WsiTests, CreateSurfaceXLIBICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
@@ -403,7 +403,7 @@ TEST_F(WsiTests, CreateSurfaceXLIBMixedICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
@@ -424,7 +424,7 @@ TEST_F(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceXlibPresentICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
@@ -448,7 +448,7 @@ TEST_F(WsiTests, GetPhysicalDeviceXlibPresentICDSupport) {
 // When ICD doesn't support the extension, create instance should fail
 TEST_F(WsiTests, CreateSurfaceWaylandNoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.enable_icd_wsi = false;
 
@@ -465,7 +465,7 @@ TEST_F(WsiTests, CreateSurfaceWaylandNoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST_F(WsiTests, CreateSurfaceWaylandNoICDCreateSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
@@ -487,7 +487,7 @@ TEST_F(WsiTests, CreateSurfaceWaylandNoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST_F(WsiTests, CreateSurfaceWaylandICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
@@ -537,7 +537,7 @@ TEST_F(WsiTests, CreateSurfaceWaylandMixedICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
@@ -558,7 +558,7 @@ TEST_F(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
 
 TEST_F(WsiTests, GetPhysicalDeviceWaylandPresentICDSupport) {
     auto& driver = env->get_test_icd();
-    driver.set_icd_api_version(VK_MAKE_VERSION(1, 0, 0));
+    driver.set_icd_api_version(VK_API_VERSION_1_0);
     driver.set_min_icd_interface_version(5);
     driver.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     driver.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});

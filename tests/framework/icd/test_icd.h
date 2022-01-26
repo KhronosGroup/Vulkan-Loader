@@ -66,7 +66,7 @@ struct TestICD {
     BUILDER_VALUE(TestICD, bool, enable_icd_wsi, false);
     UsingICDProvidedWSI is_using_icd_wsi = UsingICDProvidedWSI::not_using;
 
-    BUILDER_VALUE(TestICD, uint32_t, icd_api_version, VK_MAKE_VERSION(1, 0, 0))
+    BUILDER_VALUE(TestICD, uint32_t, icd_api_version, VK_API_VERSION_1_0)
     BUILDER_VECTOR(TestICD, LayerDefinition, instance_layers, instance_layer)
     BUILDER_VECTOR(TestICD, Extension, instance_extensions, instance_extension)
 

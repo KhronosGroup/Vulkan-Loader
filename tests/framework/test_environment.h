@@ -290,10 +290,10 @@ struct TestLayerHandle {
 };
 
 struct TestICDDetails {
-    TestICDDetails(fs::path icd_path, uint32_t api_version = VK_MAKE_VERSION(1, 0, 0)) noexcept
+    TestICDDetails(fs::path icd_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept
         : icd_path(icd_path), api_version(api_version) {}
     BUILDER_VALUE(TestICDDetails, fs::path, icd_path, {});
-    BUILDER_VALUE(TestICDDetails, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0));
+    BUILDER_VALUE(TestICDDetails, uint32_t, api_version, VK_API_VERSION_1_0);
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
     BUILDER_VALUE(TestICDDetails, bool, use_env_var_icd_filenames, false);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);

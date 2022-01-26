@@ -130,7 +130,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysi
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
     if (pApiVersion != nullptr) {
-        *pApiVersion = VK_MAKE_VERSION(1, 0, 0);
+        *pApiVersion = VK_API_VERSION_1_0;
     }
     return VK_SUCCESS;
 }
