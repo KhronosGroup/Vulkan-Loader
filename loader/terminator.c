@@ -630,7 +630,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
     if (icd_term->dispatch.GetPhysicalDeviceProperties) {
         icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
 
-        if (VK_VERSION_MINOR(properties.apiVersion) >= 3 && icd_term->dispatch.GetPhysicalDeviceToolProperties) {
+        if (VK_API_VERSION_MINOR(properties.apiVersion) >= 3 && icd_term->dispatch.GetPhysicalDeviceToolProperties) {
             return icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
         }
     }

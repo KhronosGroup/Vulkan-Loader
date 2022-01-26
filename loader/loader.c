@@ -252,7 +252,7 @@ static uint32_t loader_make_version(char *vers_str) {
         }
     }
 
-    return VK_MAKE_VERSION(major, minor, patch);
+    return VK_MAKE_API_VERSION(0, major, minor, patch);
 }
 
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2) {
@@ -521,8 +521,8 @@ static VkResult loader_add_instance_extensions(const struct loader_instance *ins
 
         bool ext_unsupported = wsi_unsupported_instance_extension(&ext_props[i]);
         if (!ext_unsupported) {
-            (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_VERSION_MAJOR(ext_props[i].specVersion),
-                           VK_VERSION_MINOR(ext_props[i].specVersion), VK_VERSION_PATCH(ext_props[i].specVersion));
+            (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_API_VERSION_MAJOR(ext_props[i].specVersion),
+                           VK_API_VERSION_MINOR(ext_props[i].specVersion), VK_API_VERSION_PATCH(ext_props[i].specVersion));
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Instance Extension: %s (%s) version %s", ext_props[i].extensionName,
                        lib_name, spec_version);
 
@@ -554,8 +554,8 @@ static VkResult loader_init_device_extensions(const struct loader_instance *inst
 
     for (i = 0; i < count; i++) {
         char spec_version[64];
-        (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_VERSION_MAJOR(ext_props[i].specVersion),
-                       VK_VERSION_MINOR(ext_props[i].specVersion), VK_VERSION_PATCH(ext_props[i].specVersion));
+        (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_API_VERSION_MAJOR(ext_props[i].specVersion),
+                       VK_API_VERSION_MINOR(ext_props[i].specVersion), VK_API_VERSION_PATCH(ext_props[i].specVersion));
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Device Extension: %s (%s) version %s", ext_props[i].extensionName,
                    phys_dev_term->this_icd_term->scanned_icd->lib_name, spec_version);
         res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
@@ -587,8 +587,8 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
         }
         for (i = 0; i < count; i++) {
             char spec_version[64];
-            (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_VERSION_MAJOR(ext_props[i].specVersion),
-                           VK_VERSION_MINOR(ext_props[i].specVersion), VK_VERSION_PATCH(ext_props[i].specVersion));
+            (void)snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", VK_API_VERSION_MAJOR(ext_props[i].specVersion),
+                           VK_API_VERSION_MINOR(ext_props[i].specVersion), VK_API_VERSION_PATCH(ext_props[i].specVersion));
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Device Extension: %s (%s) version %s", ext_props[i].extensionName,
                        lib_name, spec_version);
             res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
@@ -934,8 +934,8 @@ static void loader_add_implicit_layer(const struct loader_instance *inst, const 
     // If the implicit layer is supposed to be enable, make sure the layer supports at least the same API version
     // that the application is asking (i.e. layer's API >= app's API).  If it's not, disable this layer.
     if (enable) {
-        uint16_t layer_api_major_version = VK_VERSION_MAJOR(prop->info.specVersion);
-        uint16_t layer_api_minor_version = VK_VERSION_MINOR(prop->info.specVersion);
+        uint16_t layer_api_major_version = VK_API_VERSION_MAJOR(prop->info.specVersion);
+        uint16_t layer_api_minor_version = VK_API_VERSION_MINOR(prop->info.specVersion);
         if (inst->app_api_major_version > layer_api_major_version ||
             (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
@@ -966,8 +966,8 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
     bool found = true;
 
     // We need to add all the individual component layers
-    uint16_t meta_layer_api_major_version = VK_VERSION_MAJOR(prop->info.specVersion);
-    uint16_t meta_layer_api_minor_version = VK_VERSION_MINOR(prop->info.specVersion);
+    uint16_t meta_layer_api_major_version = VK_API_VERSION_MAJOR(prop->info.specVersion);
+    uint16_t meta_layer_api_minor_version = VK_API_VERSION_MINOR(prop->info.specVersion);
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
         bool found_comp = false;
         const struct loader_layer_properties *search_prop =
@@ -975,8 +975,8 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
         if (search_prop != NULL) {
             found_comp = true;
 
-            uint16_t search_layer_api_major_version = VK_VERSION_MAJOR(search_prop->info.specVersion);
-            uint16_t search_layer_api_minor_version = VK_VERSION_MINOR(search_prop->info.specVersion);
+            uint16_t search_layer_api_major_version = VK_API_VERSION_MAJOR(search_prop->info.specVersion);
+            uint16_t search_layer_api_minor_version = VK_API_VERSION_MINOR(search_prop->info.specVersion);
             if (meta_layer_api_major_version != search_layer_api_major_version ||
                 meta_layer_api_minor_version > search_layer_api_minor_version) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -1704,8 +1704,8 @@ out:
 static bool verify_meta_layer_component_layers(const struct loader_instance *inst, struct loader_layer_properties *prop,
                                                struct loader_layer_list *instance_layers) {
     bool success = true;
-    const uint32_t expected_major = VK_VERSION_MAJOR(prop->info.specVersion);
-    const uint32_t expected_minor = VK_VERSION_MINOR(prop->info.specVersion);
+    const uint32_t expected_major = VK_API_VERSION_MAJOR(prop->info.specVersion);
+    const uint32_t expected_minor = VK_API_VERSION_MINOR(prop->info.specVersion);
 
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
         struct loader_layer_properties *comp_prop =
@@ -1721,8 +1721,8 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
         }
 
         // Check the version of each layer, they need to at least match MAJOR and MINOR
-        uint32_t cur_major = VK_VERSION_MAJOR(comp_prop->info.specVersion);
-        uint32_t cur_minor = VK_VERSION_MINOR(comp_prop->info.specVersion);
+        uint32_t cur_major = VK_API_VERSION_MAJOR(comp_prop->info.specVersion);
+        uint32_t cur_minor = VK_API_VERSION_MINOR(comp_prop->info.specVersion);
         if (cur_major != expected_major || cur_minor != expected_minor) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "verify_meta_layer_component_layers: Meta-layer uses API version %d.%d, but component "
@@ -4535,8 +4535,8 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
         // Verify that the layer api version is at least that of the application's request, if not, throw a warning since
         // undefined behavior could occur.
         prop = inst->expanded_activated_layer_list.list + i;
-        layer_api_major_version = VK_VERSION_MAJOR(prop->info.specVersion);
-        layer_api_minor_version = VK_VERSION_MINOR(prop->info.specVersion);
+        layer_api_major_version = VK_API_VERSION_MAJOR(prop->info.specVersion);
+        layer_api_minor_version = VK_API_VERSION_MINOR(prop->info.specVersion);
         if (inst->app_api_major_version > layer_api_major_version ||
             (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -5533,7 +5533,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
         // Create an instance, substituting the version to 1.0 if necessary
         VkApplicationInfo icd_app_info;
-        uint32_t icd_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(icd_version), VK_VERSION_MINOR(icd_version), 0);
+        uint32_t icd_version_nopatch =
+            VK_MAKE_API_VERSION(0, VK_API_VERSION_MAJOR(icd_version), VK_API_VERSION_MINOR(icd_version), 0);
         uint32_t requested_version = pCreateInfo == NULL || pCreateInfo->pApplicationInfo == NULL
                                          ? VK_API_VERSION_1_0
                                          : pCreateInfo->pApplicationInfo->apiVersion;
