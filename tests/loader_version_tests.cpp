@@ -596,3 +596,18 @@ TEST(MinorVersionUpdate, Version1_3) {
     auto SetPrivateData = reinterpret_cast<PFN_vkSetPrivateData>(inst.functions->vkGetDeviceProcAddr(device, "vkSetPrivateData"));
     SetPrivateData(device, VK_OBJECT_TYPE_UNKNOWN, 0, {}, 0);
 }
+
+TEST(ApplicationInfoVersion, NonVulkanVariant) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.get_test_icd().physical_devices.push_back({});
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(1, 0, 0, 0));
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+    ASSERT_TRUE(log.find(
+        std::string("vkCreateInstance: The API Variant specified in pCreateInfo->pApplicationInfo.apiVersion is 1 instead of "
+                    "the expected value of 0.")));
+}

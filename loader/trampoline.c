@@ -516,6 +516,17 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         }
     }
 
+    // Make sure the application provided API version has 0 for its variant
+    if (NULL != pCreateInfo->pApplicationInfo) {
+        uint32_t variant_version = VK_API_VERSION_VARIANT(pCreateInfo->pApplicationInfo->apiVersion);
+        if (0 != variant_version) {
+            loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
+                       "vkCreateInstance: The API Variant specified in pCreateInfo->pApplicationInfo.apiVersion is %d instead of "
+                       "the expected value of 0.",
+                       variant_version);
+        }
+    }
+
     // Due to implicit layers need to get layer list even if
     // enabledLayerCount == 0 and VK_INSTANCE_LAYERS is unset. For now always
     // get layer list via loader_scan_for_layers().
