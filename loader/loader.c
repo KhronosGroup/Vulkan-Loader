@@ -6204,6 +6204,20 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
 
         // Get the physical devices supported by platform sorting mechanism into a separate list
         res = linux_read_sorted_physical_devices(inst, icd_idx, icd_phys_dev_array, new_phys_devs);
+
+        // Keep previously allocated physical device info since apps may already be using that!
+        for (uint32_t new_idx = 0; new_idx < inst->total_gpu_count; new_idx++) {
+            for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
+                if (new_phys_devs[new_idx]->phys_dev == inst->phys_devs_term[old_idx]->phys_dev) {
+                    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                                "Copying old device %u into new device %u", old_idx, new_idx);
+                    // Free the old new_phys_devs info since we're not using it before we assign the new info
+                    loader_instance_heap_free(inst, new_phys_devs[new_idx]);
+                    new_phys_devs[new_idx] = inst->phys_devs_term[old_idx];
+                    break;
+                }
+            }
+        }
         goto out;
     }
 #endif  // LOADER_ENABLE_LINUX_SORT
