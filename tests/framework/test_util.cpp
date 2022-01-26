@@ -600,12 +600,14 @@ InstanceCreateInfo::InstanceCreateInfo() {
 }
 
 VkInstanceCreateInfo* InstanceCreateInfo::get() noexcept {
-    application_info.pApplicationName = app_name.c_str();
-    application_info.pEngineName = engine_name.c_str();
-    application_info.applicationVersion = app_version;
-    application_info.engineVersion = engine_version;
-    application_info.apiVersion = api_version;
-    instance_info.pApplicationInfo = &application_info;
+    if (fill_in_application_info) {
+        application_info.pApplicationName = app_name.c_str();
+        application_info.pEngineName = engine_name.c_str();
+        application_info.applicationVersion = app_version;
+        application_info.engineVersion = engine_version;
+        application_info.apiVersion = api_version;
+        instance_info.pApplicationInfo = &application_info;
+    }
     instance_info.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());
     instance_info.ppEnabledLayerNames = enabled_layers.data();
     instance_info.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
