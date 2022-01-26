@@ -231,8 +231,9 @@ static size_t loader_platform_combine_path(char *dest, size_t len, ...) {
 }
 
 // Given string of three part form "maj.min.pat" convert to a vulkan version number.
+// Also can understand four part form "variant.major.minor.patch" if provided.
 static uint32_t loader_make_version(char *vers_str) {
-    uint32_t major = 0, minor = 0, patch = 0;
+    uint32_t variant = 0, major = 0, minor = 0, patch = 0;
     char *vers_tok;
 
     if (!vers_str) {
@@ -248,11 +249,20 @@ static uint32_t loader_make_version(char *vers_str) {
             vers_tok = strtok(NULL, ".\"\n\r");
             if (NULL != vers_tok) {
                 patch = (uint16_t)atoi(vers_tok);
+                vers_tok = strtok(NULL, ".\"\n\r");
+                // check that we are using a 4 part version string
+                if (NULL != vers_tok) {
+                    // if we are, find the correct major, minor, and patch values (basically skip variant)
+                    variant = major;
+                    major = minor;
+                    minor = patch;
+                    patch = (uint16_t)atoi(vers_tok);
+                }
             }
         }
     }
 
-    return VK_MAKE_API_VERSION(0, major, minor, patch);
+    return VK_MAKE_API_VERSION(variant, major, minor, patch);
 }
 
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2) {
