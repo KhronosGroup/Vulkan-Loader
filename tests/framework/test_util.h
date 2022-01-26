@@ -553,7 +553,7 @@ struct ManifestLayer {
         BUILDER_VALUE(LayerDescription, std::string, name, {})
         BUILDER_VALUE(LayerDescription, Type, type, Type::INSTANCE)
         BUILDER_VALUE(LayerDescription, fs::path, lib_path, {})
-        BUILDER_VALUE(LayerDescription, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0))
+        BUILDER_VALUE(LayerDescription, uint32_t, api_version, VK_API_VERSION_1_0)
         BUILDER_VALUE(LayerDescription, uint32_t, implementation_version, 0)
         BUILDER_VALUE(LayerDescription, std::string, description, {})
         BUILDER_VECTOR(LayerDescription, FunctionOverride, functions, function)
@@ -577,9 +577,9 @@ struct ManifestLayer {
 
 struct Extension {
     BUILDER_VALUE(Extension, std::string, extensionName, {})
-    BUILDER_VALUE(Extension, uint32_t, specVersion, VK_MAKE_VERSION(1, 0, 0))
+    BUILDER_VALUE(Extension, uint32_t, specVersion, VK_API_VERSION_1_0)
 
-    Extension(std::string extensionName, uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0))
+    Extension(std::string extensionName, uint32_t specVersion = VK_API_VERSION_1_0)
         : extensionName(extensionName), specVersion(specVersion) {}
 
     VkExtensionProperties get() const noexcept {
@@ -720,7 +720,7 @@ struct InstanceCreateInfo {
     BUILDER_VALUE(InstanceCreateInfo, std::string, engine_name, {})
     BUILDER_VALUE(InstanceCreateInfo, uint32_t, app_version, 0)
     BUILDER_VALUE(InstanceCreateInfo, uint32_t, engine_version, 0)
-    BUILDER_VALUE(InstanceCreateInfo, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0))
+    BUILDER_VALUE(InstanceCreateInfo, uint32_t, api_version, VK_API_VERSION_1_0)
     BUILDER_VECTOR(InstanceCreateInfo, const char*, enabled_layers, layer)
     BUILDER_VECTOR(InstanceCreateInfo, const char*, enabled_extensions, extension)
     // tell the get() function to not provide `application_info`

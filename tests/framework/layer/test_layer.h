@@ -90,12 +90,12 @@ using FP_layer_callback = VkResult (*)(TestLayer& layer, void* data);
 
 struct TestLayer {
     fs::path manifest_file_path;
-    uint32_t manifest_version = VK_MAKE_VERSION(1, 1, 2);
+    uint32_t manifest_version = VK_MAKE_API_VERSION(0, 1, 1, 2);
 
     BUILDER_VALUE(TestLayer, bool, is_meta_layer, false)
 
     BUILDER_VALUE(TestLayer, std::string, unique_name, {})
-    BUILDER_VALUE(TestLayer, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0))
+    BUILDER_VALUE(TestLayer, uint32_t, api_version, VK_API_VERSION_1_0)
     BUILDER_VALUE(TestLayer, uint32_t, implementation_version, 2)
     BUILDER_VALUE(TestLayer, uint32_t, min_implementation_version, 0)
     BUILDER_VALUE(TestLayer, std::string, description, {})
