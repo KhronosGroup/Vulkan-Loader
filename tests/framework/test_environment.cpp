@@ -228,7 +228,6 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::Fo
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
-            std::cout << "stem: " << layer.lib_path.stem().str() << "\n";
             if (layer.lib_path.stem().str().find(fs::path(TEST_LAYER_WRAP_OBJECTS).stem().str()) == std::string::npos) {
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset_layer();

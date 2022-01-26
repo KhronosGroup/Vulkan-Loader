@@ -723,10 +723,13 @@ struct InstanceCreateInfo {
     BUILDER_VALUE(InstanceCreateInfo, uint32_t, api_version, VK_MAKE_VERSION(1, 0, 0))
     BUILDER_VECTOR(InstanceCreateInfo, const char*, enabled_layers, layer)
     BUILDER_VECTOR(InstanceCreateInfo, const char*, enabled_extensions, extension)
+    // tell the get() function to not provide `application_info`
+    BUILDER_VALUE(InstanceCreateInfo, bool, fill_in_application_info, true)
 
     InstanceCreateInfo();
 
     VkInstanceCreateInfo* get() noexcept;
+
     InstanceCreateInfo& set_api_version(uint32_t major, uint32_t minor, uint32_t patch);
 };
 
