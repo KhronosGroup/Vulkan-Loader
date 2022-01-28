@@ -611,3 +611,40 @@ TEST(ApplicationInfoVersion, NonVulkanVariant) {
         std::string("vkCreateInstance: The API Variant specified in pCreateInfo->pApplicationInfo.apiVersion is 1 instead of "
                     "the expected value of 0.")));
 }
+
+TEST(DriverManifest, NonVulkanVariant) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(1, 1, 0, 0)));
+    env.get_test_icd().physical_devices.push_back({});
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+    ASSERT_TRUE(log.find("loader_icd_scan: Driver's ICD JSON "));
+    // log prints the path to the file, don't look for it since it is hard to determine inside the test what the path should be.
+    ASSERT_TRUE(log.find("\'api_version\' field contains a non-zero variant value of 1.  Skipping ICD JSON."));
+}
+
+TEST(LayerManifest, NonVulkanVariant) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 0, 0)));
+    env.get_test_icd().physical_devices.push_back({});
+
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name)
+                                                         .set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0))
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer.json");
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+    ASSERT_TRUE(log.find(std::string("Layer ") + implicit_layer_name +
+                         " has an \'api_version\' field which contains a non-zero variant value of 1.  Skipping Layer."));
+}
