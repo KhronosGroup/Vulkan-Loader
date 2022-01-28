@@ -2265,6 +2265,15 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         props->disable_env_var.value[sizeof(props->disable_env_var.value) - 1] = '\0';
     }
 
+    // Make sure the layer's manifest doesn't contain a non zero variant value
+    if (VK_API_VERSION_VARIANT(props->info.specVersion) != 0) {
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Layer %s has an \'api_version\' field which contains a non-zero variant value of %d. "
+                   " Skipping Layer.",
+                   props->info.layerName, VK_API_VERSION_VARIANT(props->info.specVersion));
+        goto out;
+    }
+
 // Now get all optional items and objects and put in list:
 // functions
 // instance_extensions
