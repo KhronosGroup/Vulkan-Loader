@@ -104,6 +104,13 @@ struct loader_override_expiration {
     uint8_t minute;
 };
 
+// This structure is used to store the json file version in a more manageable way.
+typedef struct {
+    uint16_t major;
+    uint16_t minor;
+    uint16_t patch;
+} loader_api_version;
+
 struct loader_layer_properties {
     VkLayerProperties info;
     enum layer_type_flags type_flags;
