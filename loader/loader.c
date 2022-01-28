@@ -2267,7 +2267,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
     // Make sure the layer's manifest doesn't contain a non zero variant value
     if (VK_API_VERSION_VARIANT(props->info.specVersion) != 0) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                    "Layer %s has an \'api_version\' field which contains a non-zero variant value of %d. "
                    " Skipping Layer.",
                    props->info.layerName, VK_API_VERSION_VARIANT(props->info.specVersion));
