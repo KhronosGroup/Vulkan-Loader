@@ -252,7 +252,7 @@ static uint32_t loader_make_version(char *vers_str) {
                 vers_tok = strtok(NULL, ".\"\n\r");
                 // check that we are using a 4 part version string
                 if (NULL != vers_tok) {
-                    // if we are, find the correct major, minor, and patch values (basically skip variant)
+                    // if we are, move the values over into the correct place
                     variant = major;
                     major = minor;
                     minor = patch;
@@ -263,6 +263,12 @@ static uint32_t loader_make_version(char *vers_str) {
     }
 
     return VK_MAKE_API_VERSION(variant, major, minor, patch);
+}
+
+static loader_api_version loader_make_api_version(char *vers_str) {
+    uint32_t version = loader_make_version(vers_str);
+    loader_api_version api_version = {VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version), VK_API_VERSION_PATCH(version)};
+    return api_version;
 }
 
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2) {
@@ -1899,21 +1905,13 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
     }
 }
 
-// This structure is used to store the json file version
-// in a more manageable way.
-typedef struct {
-    uint16_t major;
-    uint16_t minor;
-    uint16_t patch;
-} layer_json_version;
-
-static inline bool layer_json_supports_pre_instance_tag(const layer_json_version *layer_json) {
+static inline bool layer_json_supports_pre_instance_tag(const loader_api_version *layer_json) {
     // Supported versions started in 1.1.2, so anything newer
     return layer_json->major > 1 || layer_json->minor > 1 || (layer_json->minor == 1 && layer_json->patch > 1);
 }
 
 static VkResult loader_read_layer_json(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
-                                       cJSON *layer_node, layer_json_version version, cJSON *item, bool is_implicit,
+                                       cJSON *layer_node, loader_api_version version, cJSON *item, bool is_implicit,
                                        char *filename) {
     char *temp;
     char *name, *type, *library_path_str, *api_version;
@@ -2540,7 +2538,7 @@ out:
     return result;
 }
 
-static inline bool is_valid_layer_json_version(const layer_json_version *layer_json) {
+static inline bool is_valid_layer_json_version(const loader_api_version *layer_json) {
     // Supported versions are: 1.0.0, 1.0.1, 1.1.0 - 1.1.2, and 1.2.0 - 1.2.1.
     if ((layer_json->major == 1 && layer_json->minor == 2 && layer_json->patch < 2) ||
         (layer_json->major == 1 && layer_json->minor == 1 && layer_json->patch < 3) ||
@@ -2550,7 +2548,7 @@ static inline bool is_valid_layer_json_version(const layer_json_version *layer_j
     return false;
 }
 
-static inline bool layer_json_supports_multiple_layers(const layer_json_version *layer_json) {
+static inline bool layer_json_supports_multiple_layers(const loader_api_version *layer_json) {
     // Supported versions started in 1.0.1, so anything newer
     if ((layer_json->major > 1 || layer_json->minor > 0 || layer_json->patch > 1)) {
         return true;
@@ -2575,8 +2573,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     //     required
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     cJSON *item, *layers_node, *layer_node;
-    layer_json_version json_version = {0, 0, 0};
-    char *vers_tok;
+    loader_api_version json_version = {0, 0, 0};
     // Make sure sure the top level json value is an object
     if (!json || json->type != 6) {
         goto out;
@@ -2591,18 +2588,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     }
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Found manifest file %s (file version %s)", filename, file_vers);
     // Get the major/minor/and patch as integers for easier comparison
-    vers_tok = strtok(file_vers, ".\"\n\r");
-    if (NULL != vers_tok) {
-        json_version.major = (uint16_t)atoi(vers_tok);
-        vers_tok = strtok(NULL, ".\"\n\r");
-        if (NULL != vers_tok) {
-            json_version.minor = (uint16_t)atoi(vers_tok);
-            vers_tok = strtok(NULL, ".\"\n\r");
-            if (NULL != vers_tok) {
-                json_version.patch = (uint16_t)atoi(vers_tok);
-            }
-        }
-    }
+    json_version = loader_make_api_version(file_vers);
 
     if (!is_valid_layer_json_version(&json_version)) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -3330,10 +3316,7 @@ void loader_destroy_icd_lib_list() {}
 // (on result == VK_SUCCESS) a list of icds that were discovered
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list) {
     char *file_str;
-    uint16_t file_major_vers = 0;
-    uint16_t file_minor_vers = 0;
-    uint16_t file_patch_vers = 0;
-    char *vers_tok;
+    loader_api_version json_file_version = {0, 0, 0};
     struct loader_data_files manifest_files;
     VkResult res = VK_SUCCESS;
     bool lockedMutex = false;
@@ -3408,21 +3391,10 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         }
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Found ICD manifest file %s, version %s", file_str, file_vers);
 
-        // Get the major/minor/and patch as integers for easier comparison
-        vers_tok = strtok(file_vers, ".\"\n\r");
-        if (NULL != vers_tok) {
-            file_major_vers = (uint16_t)atoi(vers_tok);
-            vers_tok = strtok(NULL, ".\"\n\r");
-            if (NULL != vers_tok) {
-                file_minor_vers = (uint16_t)atoi(vers_tok);
-                vers_tok = strtok(NULL, ".\"\n\r");
-                if (NULL != vers_tok) {
-                    file_patch_vers = (uint16_t)atoi(vers_tok);
-                }
-            }
-        }
+        // Get the version of the driver manifest
+        json_file_version = loader_make_api_version(file_vers);
 
-        if (file_major_vers != 1 || file_minor_vers != 0 || file_patch_vers > 1) {
+        if (json_file_version.major != 1 || json_file_version.minor != 0 || json_file_version.patch > 1) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: Unexpected manifest file version (expected 1.0.0 or 1.0.1), may cause errors");
         }
