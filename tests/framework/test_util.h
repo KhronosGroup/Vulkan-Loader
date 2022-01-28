@@ -463,8 +463,10 @@ bool string_eq(const char* a, const char* b) noexcept;
 bool string_eq(const char* a, const char* b, size_t len) noexcept;
 
 inline std::string version_to_string(uint32_t version) {
-    return std::to_string(VK_API_VERSION_MAJOR(version)) + "." + std::to_string(VK_API_VERSION_MINOR(version)) + "." +
-           std::to_string(VK_API_VERSION_PATCH(version));
+    std::string out = std::to_string(VK_API_VERSION_MAJOR(version)) + "." + std::to_string(VK_API_VERSION_MINOR(version)) + "." +
+                      std::to_string(VK_API_VERSION_PATCH(version));
+    if (VK_API_VERSION_VARIANT(version) != 0) out += std::to_string(VK_API_VERSION_VARIANT(version)) + "." + out;
+    return out;
 }
 
 // Macro to ease the definition of variables with builder member functions
