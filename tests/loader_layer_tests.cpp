@@ -1103,8 +1103,8 @@ TEST_F(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
     inst.CheckCreate();
 
     // Make sure all the function pointers are NULL as well
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
     remove_env_var(enable_env_var);
 }
@@ -1161,8 +1161,8 @@ TEST_F(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
     inst.CheckCreate();
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_has_value(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
     remove_env_var(enable_env_var);
 }
@@ -1220,8 +1220,8 @@ TEST_F(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
     inst.CheckCreate();
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
+    handle_assert_has_value(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
     remove_env_var(enable_env_var);
 }
@@ -1285,8 +1285,8 @@ TEST_F(LayerExtensions, ImplicitBothInstanceExtensions) {
     inst.CheckCreate();
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_has_value(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
+    handle_assert_has_value(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
     remove_env_var(enable_env_var);
 }
@@ -1344,8 +1344,8 @@ TEST_F(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
     inst.CheckCreate();
 
     // Make sure all the function pointers are NULL as well
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkReleaseDisplayEXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 }
 
 TEST_F(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
@@ -1408,16 +1408,16 @@ TEST_F(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
     inst1.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkReleaseDisplayEXT"));
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkReleaseDisplayEXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
     InstWrapper inst2{env->vulkan_functions};
     inst2.create_info.add_layer(explicit_layer_name).add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
     inst2.CheckCreate();
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkReleaseDisplayEXT"));
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_has_value(env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkReleaseDisplayEXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 }
 
 TEST_F(LayerExtensions, ExplicitDispSurfCountInstanceExtension) {
@@ -1481,16 +1481,16 @@ TEST_F(LayerExtensions, ExplicitDispSurfCountInstanceExtension) {
     inst1.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkReleaseDisplayEXT"));
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkReleaseDisplayEXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
     InstWrapper inst2{env->vulkan_functions};
     inst2.create_info.add_layer(explicit_layer_name).add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
     inst2.CheckCreate();
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkReleaseDisplayEXT"));
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkReleaseDisplayEXT"));
+    handle_assert_has_value(env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 }
 
 TEST_F(LayerExtensions, ExplicitBothInstanceExtensions) {
@@ -1560,18 +1560,30 @@ TEST_F(LayerExtensions, ExplicitBothInstanceExtensions) {
     inst1.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkReleaseDisplayEXT"));
-    ASSERT_EQ(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkReleaseDisplayEXT"));
+    handle_assert_null(env->vulkan_functions.vkGetInstanceProcAddr(inst1.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
     InstWrapper inst2{env->vulkan_functions};
     inst2.create_info.add_layer(explicit_layer_name)
         .add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)
         .add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
     inst2.CheckCreate();
+    VkPhysicalDevice phys_dev = inst2.GetPhysDev();
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkReleaseDisplayEXT"));
-    ASSERT_NE(nullptr, env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_has_value(env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkReleaseDisplayEXT"));
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT pfnGetPhysicalDeviceSurfaceCapabilities2EXT =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT>(
+            env->vulkan_functions.vkGetInstanceProcAddr(inst2.inst, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
+    handle_assert_has_value(pfnGetPhysicalDeviceSurfaceCapabilities2EXT);
+
+    VkSurfaceCapabilities2EXT surf_caps{VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT};
+
+    // Call and then check a few things
+    ASSERT_EQ(VK_SUCCESS, pfnGetPhysicalDeviceSurfaceCapabilities2EXT(phys_dev, VK_NULL_HANDLE, &surf_caps));
+    ASSERT_EQ(7, surf_caps.minImageCount);
+    ASSERT_EQ(12, surf_caps.maxImageCount);
+    ASSERT_EQ(365, surf_caps.maxImageArrayLayers);
 }
 
 TEST_F(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
@@ -1624,9 +1636,9 @@ TEST_F(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
     dev.CheckCreate(phys_dev);
 
     // Make sure all the function pointers are NULL as well
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkSetDeviceMemoryPriorityEXT"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkSetDeviceMemoryPriorityEXT"));
 
     remove_env_var(enable_env_var);
 }
@@ -1684,8 +1696,8 @@ TEST_F(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
 
     remove_env_var(enable_env_var);
 }
@@ -1744,8 +1756,8 @@ TEST_F(LayerExtensions, ImplicitPresentImageDeviceExtension) {
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
 
     remove_env_var(enable_env_var);
 }
@@ -1809,8 +1821,8 @@ TEST_F(LayerExtensions, ImplicitBothDeviceExtensions) {
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
 
     remove_env_var(enable_env_var);
 }
@@ -1874,9 +1886,9 @@ TEST_F(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
     dev.CheckCreate(phys_dev);
 
     // Make sure all the function pointers are NULL as well
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkSetDeviceMemoryPriorityEXT"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkSetDeviceMemoryPriorityEXT"));
 }
 
 TEST_F(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
@@ -1944,8 +1956,8 @@ TEST_F(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
 }
 
 TEST_F(LayerExtensions, ExplicitPresentImageDeviceExtension) {
@@ -2015,8 +2027,8 @@ TEST_F(LayerExtensions, ExplicitPresentImageDeviceExtension) {
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+    handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
 }
 
 TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
@@ -2045,6 +2057,7 @@ TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
     inst.create_info.add_layer(explicit_layer_name);
     inst.CheckCreate();
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
+    handle_assert_has_value(phys_dev);
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
@@ -2092,8 +2105,12 @@ TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
-    ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
+
+    PFN_vkGetSwapchainStatusKHR pfnGetSwapchainStatusKHR =
+        reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
+    handle_assert_has_value(pfnGetSwapchainStatusKHR);
+    ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, pfnGetSwapchainStatusKHR(dev.dev, VK_NULL_HANDLE));
 }
 
 TEST(TestLayers, ExplicitlyEnableImplicitLayer) {

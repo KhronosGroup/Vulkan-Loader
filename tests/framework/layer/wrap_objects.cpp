@@ -76,7 +76,6 @@ struct wrapped_inst_obj {
     bool display_surf_counter_enabled;
 };
 
-
 struct wrapped_dev_obj {
     VkLayerDispatchTable *loader_disp;
     VkLayerDispatchTable disp;
@@ -175,8 +174,7 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateInstance(const VkInstanceCreateInfo 
     for (uint32_t layer = 0; layer < pCreateInfo->enabledLayerCount; ++layer) {
         std::string layer_name = pCreateInfo->ppEnabledLayerNames[layer];
         std::transform(layer_name.begin(), layer_name.end(), layer_name.begin(), ::tolower);
-        if (layer_name.find("wrap") != std::string::npos &&
-            layer_name.find("obj") != std::string::npos) {
+        if (layer_name.find("wrap") != std::string::npos && layer_name.find("obj") != std::string::npos) {
             found = true;
             break;
         }
@@ -513,19 +511,28 @@ VKAPI_ATTR void VKAPI_CALL wrap_vkDestroyDevice(VkDevice device, const VkAllocat
 }
 
 // Fake instance extension support
-VKAPI_ATTR VkResult VKAPI_CALL wrap_vkReleaseDisplayEXT(
-    VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display) { return VK_SUCCESS; }
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
+    return VK_SUCCESS;
+}
 
-VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetPhysicalDeviceSurfaceCapabilities2EXT(
-    VkPhysicalDevice                            physicalDevice,
-    VkSurfaceKHR                                surface,
-    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) { return VK_SUCCESS; }
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
+                                                                               VkSurfaceKHR surface,
+                                                                               VkSurfaceCapabilities2EXT *pSurfaceCapabilities) {
+    if (nullptr != pSurfaceCapabilities) {
+        pSurfaceCapabilities->minImageCount = 7;
+        pSurfaceCapabilities->maxImageCount = 12;
+        pSurfaceCapabilities->maxImageArrayLayers = 365;
+    }
+    return VK_SUCCESS;
+}
 
 // Fake device extension support
 VKAPI_ATTR void VKAPI_CALL wrap_vkTrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {}
 
-VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) { return VK_SUCCESS; }
+// Return an odd error so we can verify that this actually got called
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) {
+    return VK_ERROR_NATIVE_WINDOW_IN_USE_KHR;
+}
 
 PFN_vkVoidFunction layer_intercept_device_proc(wrapped_dev_obj *dev, const char *name) {
     if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
