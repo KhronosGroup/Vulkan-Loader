@@ -27,6 +27,50 @@
 
 #include "test_environment.h"
 
+// Verify that the various ways to get vkGetInstanceProcAddr return the same value
+TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    // NOTE: The vulkan_functions are queried using the platform get proc addr from the loader.  So we'll compare
+    //       that to what is returned by asking it what the various Vulkan get proc addr functions are.
+    PFN_vkGetInstanceProcAddr gipa_loader = env.vulkan_functions.vkGetInstanceProcAddr;
+    PFN_vkGetInstanceProcAddr gipa_queried =
+        reinterpret_cast<PFN_vkGetInstanceProcAddr>(env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetInstanceProcAddr"));
+    ASSERT_EQ(gipa_loader, gipa_queried);
+}
+
+// Verify that the various ways to get vkGetDeviceProcAddr return the same value
+TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    // NOTE: The vulkan_functions are queried using the platform get proc addr from the loader.  So we'll compare
+    //       that to what is returned by asking it what the various Vulkan get proc addr functions are.
+    PFN_vkGetDeviceProcAddr gdpa_loader = env.vulkan_functions.vkGetDeviceProcAddr;
+    PFN_vkGetDeviceProcAddr gdpa_inst_queried =
+        reinterpret_cast<PFN_vkGetDeviceProcAddr>(env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetDeviceProcAddr"));
+    ASSERT_EQ(gdpa_loader, gdpa_inst_queried);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_dev);
+
+    PFN_vkGetDeviceProcAddr gdpa_dev_queried =
+        reinterpret_cast<PFN_vkGetDeviceProcAddr>(env.vulkan_functions.vkGetDeviceProcAddr(dev.dev, "vkGetDeviceProcAddr"));
+    ASSERT_EQ(gdpa_loader, gdpa_dev_queried);
+}
 // Load the global function pointers with and without a NULL vkInstance handle.
 // Call the function to make sure it is callable, don't care about what is returned.
 TEST(GetProcAddr, GlobalFunctions) {
