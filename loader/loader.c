@@ -6295,7 +6295,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
             for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
                 if (new_phys_devs[new_idx]->phys_dev == inst->phys_devs_term[old_idx]->phys_dev) {
                     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                                "Copying old device %u into new device %u", old_idx, new_idx);
+                               "Copying old device %u into new device %u", old_idx, new_idx);
                     // Free the old new_phys_devs info since we're not using it before we assign the new info
                     loader_instance_heap_free(inst, new_phys_devs[new_idx]);
                     new_phys_devs[new_idx] = inst->phys_devs_term[old_idx];
@@ -6864,7 +6864,7 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
     }
 
     if (total_count == 0) {
-        loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                    "setupLoaderTermPhysDevGroups:  Did not detect any GPU Groups"
                    " in the current config");
         goto out;
@@ -6964,8 +6964,8 @@ VkResult setup_loader_term_phys_dev_groups(struct loader_instance *inst) {
                                                   &local_phys_dev_groups[cur_icd_group_count].group_props);
             for (uint32_t group = 0; group < count_this_time; ++group) {
                 local_phys_dev_group_sorted[group + cur_icd_group_count] = icd_sorted;
-                local_phys_dev_groups[group].this_icd_term = icd_term;
-                local_phys_dev_groups[group].icd_index = icd_idx;
+                local_phys_dev_groups[group + cur_icd_group_count].this_icd_term = icd_term;
+                local_phys_dev_groups[group + cur_icd_group_count].icd_index = icd_idx;
             }
             if (VK_SUCCESS != res) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
