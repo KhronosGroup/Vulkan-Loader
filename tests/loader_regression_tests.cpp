@@ -474,34 +474,6 @@ TEST_F(EnumeratePhysicalDevices, ZeroPhysicalDevicesAfterCreateInstance) {
               inst->vkEnumeratePhysicalDeviceGroups(inst, &physical_device_group_count, &physical_device_group_properties));
 }
 
-TEST_F(CreateDevice, ExtensionNotPresent) {
-    auto& driver = env->get_test_icd();
-
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
-
-    InstWrapper inst{env->vulkan_functions};
-    inst.CheckCreate();
-
-    VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-    uint32_t familyCount = 0;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, nullptr);
-    ASSERT_EQ(familyCount, 1);
-
-    VkQueueFamilyProperties families;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, &families);
-    ASSERT_EQ(familyCount, 1);
-    ASSERT_EQ(families, family_props.properties);
-
-    DeviceWrapper dev{inst};
-    dev.create_info.add_extension("NotPresent").add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
-
-    dev.CheckCreate(phys_dev, VK_ERROR_EXTENSION_NOT_PRESENT);
-}
-
 // LX535 / MI-76: Device layers are deprecated.
 // Ensure that no errors occur if a bogus device layer list is passed to vkCreateDevice.
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
@@ -532,6 +504,34 @@ TEST_F(CreateDevice, LayersNotPresent) {
     dev.create_info.add_layer("NotPresent").add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
     dev.CheckCreate(phys_dev);
+}
+
+TEST_F(CreateDevice, ExtensionNotPresent) {
+    auto& driver = env->get_test_icd();
+
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t familyCount = 0;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, nullptr);
+    ASSERT_EQ(familyCount, 1);
+
+    VkQueueFamilyProperties families;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, &families);
+    ASSERT_EQ(familyCount, 1);
+    ASSERT_EQ(families, family_props.properties);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension("NotPresent").add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+    dev.CheckCreate(phys_dev, VK_ERROR_EXTENSION_NOT_PRESENT);
 }
 
 TEST(TryLoadWrongBinaries, WrongICD) {
