@@ -1631,14 +1631,42 @@ TEST_F(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
         }
     }
 
+    // Device functions queried using vkGetInstanceProcAddr should be non-NULL since this could be available for any attached
+    // physical device.
+    PFN_vkTrimCommandPoolKHR pfn_vkTrimCommandPool =
+        reinterpret_cast<PFN_vkTrimCommandPoolKHR>(inst->vkGetInstanceProcAddr(inst.inst, "vkTrimCommandPoolKHR"));
+    PFN_vkGetSwapchainStatusKHR pfn_vkGetSwapchainStatus =
+        reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(inst->vkGetInstanceProcAddr(inst.inst, "vkGetSwapchainStatusKHR"));
+    PFN_vkSetDeviceMemoryPriorityEXT pfn_vkSetDeviceMemoryPriority =
+        reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(inst->vkGetInstanceProcAddr(inst.inst, "vkSetDeviceMemoryPriorityEXT"));
+    handle_assert_has_value(pfn_vkTrimCommandPool);
+    handle_assert_has_value(pfn_vkGetSwapchainStatus);
+    handle_assert_has_value(pfn_vkSetDeviceMemoryPriority);
+
     DeviceWrapper dev{inst};
     dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(phys_dev);
 
-    // Make sure all the function pointers are NULL as well
+    // Query again after create device to make sure the value returned by vkGetInstanceProcAddr did not change
+    PFN_vkTrimCommandPoolKHR pfn_vkTrimCommandPool2 =
+        reinterpret_cast<PFN_vkTrimCommandPoolKHR>(inst->vkGetInstanceProcAddr(inst.inst, "vkTrimCommandPoolKHR"));
+    PFN_vkGetSwapchainStatusKHR pfn_vkGetSwapchainStatus2 =
+        reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(inst->vkGetInstanceProcAddr(inst.inst, "vkGetSwapchainStatusKHR"));
+    PFN_vkSetDeviceMemoryPriorityEXT pfn_vkSetDeviceMemoryPriority2 =
+        reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(inst->vkGetInstanceProcAddr(inst.inst, "vkSetDeviceMemoryPriorityEXT"));
+    ASSERT_EQ(pfn_vkTrimCommandPool, pfn_vkTrimCommandPool2);
+    ASSERT_EQ(pfn_vkGetSwapchainStatus, pfn_vkGetSwapchainStatus2);
+    ASSERT_EQ(pfn_vkSetDeviceMemoryPriority, pfn_vkSetDeviceMemoryPriority2);
+
+    // Make sure all the function pointers returned by vkGetDeviceProcAddr for non-enabled extensions are NULL
     handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
     handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
     handle_assert_null(dev->vkGetDeviceProcAddr(dev.dev, "vkSetDeviceMemoryPriorityEXT"));
+
+    // Even though the instance functions returned are non-NULL.  They should not work if we haven't enabled the extensions.
+    ASSERT_DEATH(pfn_vkTrimCommandPool(dev.dev, VK_NULL_HANDLE, 0), "");
+    ASSERT_DEATH(pfn_vkGetSwapchainStatus(dev.dev, VK_NULL_HANDLE), "");
+    ASSERT_DEATH(pfn_vkSetDeviceMemoryPriority(dev.dev, VK_NULL_HANDLE, 0.f), "");
 
     remove_env_var(enable_env_var);
 }
@@ -2107,10 +2135,16 @@ TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
     // Make sure only the appropriate function pointers are NULL as well
     handle_assert_has_value(dev->vkGetDeviceProcAddr(dev.dev, "vkTrimCommandPoolKHR"));
 
-    PFN_vkGetSwapchainStatusKHR pfnGetSwapchainStatusKHR =
+    PFN_vkGetSwapchainStatusKHR gipa_pfnGetSwapchainStatusKHR =
+        reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(inst->vkGetInstanceProcAddr(inst.inst, "vkGetSwapchainStatusKHR"));
+    PFN_vkGetSwapchainStatusKHR gdpa_pfnGetSwapchainStatusKHR =
         reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(dev->vkGetDeviceProcAddr(dev.dev, "vkGetSwapchainStatusKHR"));
-    handle_assert_has_value(pfnGetSwapchainStatusKHR);
-    ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, pfnGetSwapchainStatusKHR(dev.dev, VK_NULL_HANDLE));
+    handle_assert_has_value(gipa_pfnGetSwapchainStatusKHR);
+    handle_assert_has_value(gdpa_pfnGetSwapchainStatusKHR);
+
+    // Make sure both versions (from vkGetInstanceProcAddr and vkGetDeviceProcAddr) return the same value.
+    ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, gipa_pfnGetSwapchainStatusKHR(dev.dev, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, gdpa_pfnGetSwapchainStatusKHR(dev.dev, VK_NULL_HANDLE));
 }
 
 TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
