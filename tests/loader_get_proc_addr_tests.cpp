@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -71,6 +71,7 @@ TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
         reinterpret_cast<PFN_vkGetDeviceProcAddr>(env.vulkan_functions.vkGetDeviceProcAddr(dev.dev, "vkGetDeviceProcAddr"));
     ASSERT_EQ(gdpa_loader, gdpa_dev_queried);
 }
+
 // Load the global function pointers with and without a NULL vkInstance handle.
 // Call the function to make sure it is callable, don't care about what is returned.
 TEST(GetProcAddr, GlobalFunctions) {
