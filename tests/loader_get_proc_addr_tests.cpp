@@ -112,7 +112,7 @@ TEST(GetProcAddr, GlobalFunctions) {
         handle_assert_null(CreateInstance);
 
         auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
-        handle_assert_null(GetInstanceProcAddr);
+        handle_assert_has_value(GetInstanceProcAddr);
 
         // get a non pre-instance function pointer
         auto EnumeratePhysicalDevices = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkEnumeratePhysicalDevices"));
