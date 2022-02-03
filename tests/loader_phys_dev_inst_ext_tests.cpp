@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -5244,6 +5244,149 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTMixed) {
             if (found) {
                 break;
             }
+        }
+    }
+}
+
+TEST(LoaderInstPhysDevExts, DifferentInstanceExtensions) {
+    FrameworkEnvironment env{};
+
+    // Add 3 drivers each of which supports a different instance extension
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(0).add_instance_extension({VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME});
+    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(1).add_instance_extension({VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME});
+    env.get_test_icd(1).physical_devices.push_back({"pd1", 0});
+    env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(2).add_instance_extension({VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME});
+    env.get_test_icd(2).physical_devices.push_back({"pd2", 1});
+    env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME, 0});
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extensions({VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+                                     VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
+                                     VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME});
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+
+    const uint32_t expected_device_count = 3;
+    auto physical_devices = inst.GetPhysDevs(expected_device_count);
+
+    auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
+        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
+    auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR>(
+        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"));
+    auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR>(
+        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceExternalFencePropertiesKHR"));
+    ASSERT_NE(nullptr, GetPhysicalDeviceExternalBufferProperties);
+    ASSERT_NE(nullptr, GetPhysicalDeviceExternalSemaphoreProperties);
+    ASSERT_NE(nullptr, GetPhysicalDeviceExternalFenceProperties);
+
+    // The above are instance extensions, so shouldn't crash even if only one physical device supports each
+    // extension.
+    for (uint32_t dev = 0; dev < expected_device_count; ++dev) {
+        VkPhysicalDeviceExternalBufferInfo ext_buf_info{};
+        VkExternalBufferProperties ext_buf_props{};
+        VkPhysicalDeviceExternalSemaphoreInfo ext_sem_info{};
+        VkExternalSemaphoreProperties ext_sem_props{};
+        VkPhysicalDeviceExternalFenceInfo ext_fence_info{};
+        VkExternalFenceProperties ext_fence_props{};
+        GetPhysicalDeviceExternalBufferProperties(physical_devices[dev], &ext_buf_info, &ext_buf_props);
+        GetPhysicalDeviceExternalSemaphoreProperties(physical_devices[dev], &ext_sem_info, &ext_sem_props);
+        GetPhysicalDeviceExternalFenceProperties(physical_devices[dev], &ext_fence_info, &ext_fence_props);
+    }
+}
+
+TEST(LoaderInstPhysDevExts, DifferentPhysicalDeviceExtensions) {
+    FrameworkEnvironment env{};
+
+    // Add 3 drivers each of which supports a different physical device extension
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(1).physical_devices.push_back({"pd1", 0});
+    env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME, 0});
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
+    env.get_test_icd(2).physical_devices.push_back({"pd2", 1});
+    env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, 0});
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+
+    const uint32_t expected_device_count = 3;
+    auto physical_devices = inst.GetPhysDevs(expected_device_count);
+
+    auto EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters =
+        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
+            inst.functions->vkGetInstanceProcAddr(inst, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
+    auto GetPhysicalDeviceMultisampleProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT>(
+        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceMultisamplePropertiesEXT"));
+    auto GetPhysicalDeviceCalibrateableTimeDomains = reinterpret_cast<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>(
+        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
+    ASSERT_NE(nullptr, EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters);
+    ASSERT_NE(nullptr, GetPhysicalDeviceMultisampleProperties);
+    ASSERT_NE(nullptr, GetPhysicalDeviceCalibrateableTimeDomains);
+
+    for (uint32_t dev = 0; dev < expected_device_count; ++dev) {
+        uint32_t extension_count = 0;
+        std::vector<VkExtensionProperties> device_extensions;
+        bool supports_query = false;
+        bool supports_samples = false;
+        bool supports_timestamps = false;
+        ASSERT_EQ(VK_SUCCESS,
+                  inst->vkEnumerateDeviceExtensionProperties(physical_devices[dev], nullptr, &extension_count, nullptr));
+        ASSERT_GT(extension_count, 0);
+        device_extensions.resize(extension_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_devices[dev], nullptr, &extension_count,
+                                                                         device_extensions.data()));
+        for (uint32_t ext = 0; ext < extension_count; ++ext) {
+            if (string_eq(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, &device_extensions[ext].extensionName[0])) {
+                supports_query = true;
+            }
+            if (string_eq(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME, &device_extensions[ext].extensionName[0])) {
+                supports_samples = true;
+            }
+            if (string_eq(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, &device_extensions[ext].extensionName[0])) {
+                supports_timestamps = true;
+            }
+        }
+
+        // For physical device extensions, they should work for devices that support it and crash for those that don't.
+        if (supports_query) {
+            ASSERT_EQ(VK_SUCCESS, EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(physical_devices[dev], 0, nullptr,
+                                                                                             nullptr, nullptr));
+        } else {
+            ASSERT_DEATH(
+                EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(physical_devices[dev], 0, nullptr, nullptr, nullptr),
+                "");
+            ASSERT_FALSE(
+                log.find("ICD associated with VkPhysicalDevice does not support "
+                         "EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
+        }
+        if (supports_samples) {
+            GetPhysicalDeviceMultisampleProperties(physical_devices[dev], VK_SAMPLE_COUNT_2_BIT, nullptr);
+        } else {
+            ASSERT_DEATH(GetPhysicalDeviceMultisampleProperties(physical_devices[dev], VK_SAMPLE_COUNT_2_BIT, nullptr), "");
+            ASSERT_FALSE(
+                log.find("ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceMultisamplePropertiesEXT"));
+        }
+        if (supports_timestamps) {
+            ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceCalibrateableTimeDomains(physical_devices[dev], nullptr, nullptr));
+        } else {
+            ASSERT_DEATH(GetPhysicalDeviceCalibrateableTimeDomains(physical_devices[dev], nullptr, nullptr), "");
+            ASSERT_FALSE(
+                log.find("ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCalibrateableTimeDomainsEXT"));
         }
     }
 }

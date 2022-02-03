@@ -76,6 +76,17 @@ bool IsInstanceExtensionEnabled(const char* extension_name) {
                         [extension_name](Extension const& ext) { return ext.extensionName == extension_name; });
 }
 
+bool IsPhysicalDeviceExtensionAvailable(const char* extension_name) {
+    for (auto& phys_dev : icd.physical_devices) {
+        if (phys_dev.extensions.end() !=
+            std::find_if(phys_dev.extensions.begin(), phys_dev.extensions.end(),
+                         [extension_name](Extension const& ext) { return ext.extensionName == extension_name; })) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // typename T must have '.get()' function that returns a type U
 template <typename T, typename U>
 VkResult FillCountPtr(std::vector<T> const& data_vec, uint32_t* pCount, U* pData) {
@@ -904,6 +915,36 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalFenceProperties(
         memcpy(pExternalFenceProperties, &phys_dev.external_fence_properties, sizeof(VkExternalFenceProperties));
     }
 }
+// Entry-points associated with the VK_KHR_performance_query extension
+VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
+    VkPerformanceCounterDescriptionKHR* pCounterDescriptions) {
+    return VK_SUCCESS;
+}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
+    VkPhysicalDevice physicalDevice, const VkQueryPoolPerformanceCreateInfoKHR* pPerformanceQueryCreateInfo, uint32_t* pNumPasses) {
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo) {
+    return VK_SUCCESS;
+}
+VKAPI_ATTR void VKAPI_CALL test_vkReleaseProfilingLockKHR(VkDevice device) {}
+// Entry-points associated with the VK_EXT_sample_locations extension
+VKAPI_ATTR void VKAPI_CALL test_vkCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
+                                                           const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {}
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice,
+                                                                            VkSampleCountFlagBits samples,
+                                                                            VkMultisamplePropertiesEXT* pMultisampleProperties) {}
+// Entry-points associated with the VK_EXT_calibrated_timestamps extension
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
+                                                                                   uint32_t* pTimeDomainCount,
+                                                                                   VkTimeDomainEXT* pTimeDomains) {
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                                                 const VkCalibratedTimestampInfoEXT* pTimestampInfos,
+                                                                 uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
+    return VK_SUCCESS;
+}
 
 //// trampolines
 
@@ -1073,24 +1114,7 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
     if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties"))
         return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties);
 
-    if (IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
-        if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
-        if (string_eq(pName, "vkGetPhysicalDeviceProperties2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
-        if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR"))
-            return TO_VOID_PFN(test_vkGetPhysicalDeviceFormatProperties2);
-        if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties2KHR"))
-            return TO_VOID_PFN(test_vkGetPhysicalDeviceMemoryProperties2);
-
-        if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"))
-            return TO_VOID_PFN(test_vkGetPhysicalDeviceQueueFamilyProperties2);
-
-        if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"))
-            return TO_VOID_PFN(test_vkGetPhysicalDeviceSparseImageFormatProperties2);
-
-        if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2KHR")) {
-            return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
-        }
-    } else if (IsInstanceExtensionEnabled("VK_KHR_get_physical_device_properties2")) {
+    if (IsInstanceExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures2);
         if (string_eq(pName, "vkGetPhysicalDeviceProperties2KHR")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties2);
         if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR"))
@@ -1108,17 +1132,38 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
             return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);
         }
     }
-    if (IsInstanceExtensionEnabled("VK_KHR_external_memory_capabilities")) {
+    if (IsInstanceExtensionEnabled(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
         if (string_eq(pName, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"))
             return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalBufferProperties);
     }
-    if (IsInstanceExtensionEnabled("VK_KHR_external_semaphore_capabilities")) {
+    if (IsInstanceExtensionEnabled(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)) {
         if (string_eq(pName, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"))
             return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalSemaphoreProperties);
     }
-    if (IsInstanceExtensionEnabled("VK_KHR_external_fence_capabilities")) {
+    if (IsInstanceExtensionEnabled(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)) {
         if (string_eq(pName, "vkGetPhysicalDeviceExternalFencePropertiesKHR"))
             return TO_VOID_PFN(test_vkGetPhysicalDeviceExternalFenceProperties);
+    }
+
+    // The following physical device extensions only need 1 device to support them for the ICD to export
+    // them
+    if (IsPhysicalDeviceExtensionAvailable(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
+        if (string_eq(pName, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"))
+            return TO_VOID_PFN(test_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR);
+        if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR);
+        if (string_eq(pName, "vkAcquireProfilingLockKHR")) return TO_VOID_PFN(test_vkAcquireProfilingLockKHR);
+        if (string_eq(pName, "vkReleaseProfilingLockKHR")) return TO_VOID_PFN(test_vkReleaseProfilingLockKHR);
+    }
+    if (IsPhysicalDeviceExtensionAvailable(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
+        if (string_eq(pName, "vkCmdSetSampleLocationsEXT")) return TO_VOID_PFN(test_vkCmdSetSampleLocationsEXT);
+        if (string_eq(pName, "vkGetPhysicalDeviceMultisamplePropertiesEXT"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceMultisamplePropertiesEXT);
+    }
+    if (IsPhysicalDeviceExtensionAvailable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
+        if (string_eq(pName, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"))
+            return TO_VOID_PFN(test_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT);
+        if (string_eq(pName, "vkGetCalibratedTimestampsEXT")) return TO_VOID_PFN(test_vkGetCalibratedTimestampsEXT);
     }
 
     if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
