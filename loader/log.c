@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2021 The Khronos Group Inc.
- * Copyright (c) 2014-2021 Valve Corporation
- * Copyright (c) 2014-2021 LunarG, Inc.
+ * Copyright (c) 2014-2022 The Khronos Group Inc.
+ * Copyright (c) 2014-2022 Valve Corporation
+ * Copyright (c) 2014-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,8 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 
         if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
             type = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        } else if ((msg_type & VULKAN_LOADER_VALIDATION_BIT) != 0) {
+            type = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         } else {
             type = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
         }

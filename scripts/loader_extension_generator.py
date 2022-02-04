@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2021 The Khronos Group Inc.
-# Copyright (c) 2015-2021 Valve Corporation
-# Copyright (c) 2015-2021 LunarG, Inc.
+# Copyright (c) 2015-2022 The Khronos Group Inc.
+# Copyright (c) 2015-2022 Valve Corporation
+# Copyright (c) 2015-2022 LunarG, Inc.
 # Copyright (c) 2015-2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -186,9 +186,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
         # Copyright Notice
         copyright =  '/*\n'
-        copyright += ' * Copyright (c) 2015-2021 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2021 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2021 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2022 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2022 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2022 LunarG, Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -1036,7 +1036,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    const VkLayerInstanceDispatchTable *disp;\n'
                     funcs += '    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(%s);\n' % (phys_dev_var_name)
                     funcs += '    if (VK_NULL_HANDLE == unwrapped_phys_dev) {\n'
-                    funcs += '        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,\n'
+                    funcs += '        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '                   "%s: Invalid %s "\n' % (ext_cmd.name, phys_dev_var_name)
                     funcs += '                   "[VUID-%s-%s-parameter]");\n' % (ext_cmd.name, phys_dev_var_name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
@@ -1046,7 +1046,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    struct loader_instance *inst = loader_get_instance(%s);\n' % (instance_var_name)
                     funcs += '    if (NULL == inst) {\n'
                     funcs += '        loader_log(\n'
-                    funcs += '            NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,\n'
+                    funcs += '            NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '            "%s: Invalid instance [VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.name, instance_var_name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                     funcs += '    }\n'
@@ -1056,7 +1056,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += ext_cmd.params[0].name
                     funcs += ');\n'
                     funcs += '    if (NULL == disp) {\n'
-                    funcs += '        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,\n'
+                    funcs += '        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '                   "%s: Invalid %s "\n' % (ext_cmd.name, ext_cmd.params[0].name)
                     funcs += '                   "[VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.params[0].name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
@@ -1234,7 +1234,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    struct loader_instance *inst = loader_get_instance(%s);\n' % (instance_var_name)
                     funcs += '    if (NULL == inst) {\n'
                     funcs += '        loader_log(\n'
-                    funcs += '            NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,\n'
+                    funcs += '            NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '            "%s: Invalid instance [VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.name, instance_var_name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                     funcs += '    }\n'
@@ -1350,7 +1350,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 funcs += ext_cmd.params[0].name
                 funcs += ');\n'
                 funcs += '    if (NULL == disp) {\n'
-                funcs += '        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,\n'
+                funcs += '        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                 funcs += '                   "%s: Invalid %s "\n' % (ext_cmd.name, ext_cmd.params[0].name)
                 funcs += '                   "[VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.params[0].name)
                 funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
