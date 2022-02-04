@@ -36,6 +36,7 @@ enum vulkan_loader_debug_flags {
     VULKAN_LOADER_DEBUG_BIT = 0x10,
     VULKAN_LOADER_LAYER_BIT = 0x20,
     VULKAN_LOADER_DRIVER_BIT = 0x40,
+    VULKAN_LOADER_VALIDATION_BIT = 0x80,
 };
 
 // Checks for the environment variable VK_LOADER_DEBUG and sets up the current debug level accordingly
