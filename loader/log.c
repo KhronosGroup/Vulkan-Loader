@@ -121,7 +121,9 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
             type = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         } else if ((msg_type & VULKAN_LOADER_VALIDATION_BIT) != 0) {
-            type = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+            // For loader logging, if it's a validation message, we still want to also keep the general flag as well
+            // so messages of type validation can still be triggered for general message callbacks.
+            type = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         } else {
             type = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
         }
