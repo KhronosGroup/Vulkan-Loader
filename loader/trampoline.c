@@ -2114,7 +2114,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
     }
 
     // Call down and get the content
-    fpEnumeratePhysicalDeviceGroups(instance, &total_count, local_phys_dev_groups);
+    fpEnumeratePhysicalDeviceGroups(inst->instance, &total_count, local_phys_dev_groups);
     if (VK_SUCCESS != res) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "setupLoaderTrampPhysDevGroups:  Failed during dispatch call of "
