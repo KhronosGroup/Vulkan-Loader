@@ -732,14 +732,16 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     }
 
     if (messenger_setup) {
-        loader_log(ptr_instance, VULKAN_LOADER_INFO_BIT, 0, "vkDestroyInstance: destroying all debug util messengers");
+        loader_log(ptr_instance, VULKAN_LOADER_INFO_BIT, 0,
+                   "vkDestroyInstance: destroying temporary instance debug util messenger");
 
         util_DestroyDebugUtilsMessengers(ptr_instance, pAllocator, ptr_instance->num_tmp_messengers, ptr_instance->tmp_messengers);
         util_FreeDebugUtilsMessengerCreateInfos(pAllocator, ptr_instance->tmp_messenger_create_infos, ptr_instance->tmp_messengers);
     }
 
     if (callback_setup) {
-        loader_log(ptr_instance, VULKAN_LOADER_INFO_BIT, 0, "vkDestroyInstance: destroying all debug report callbacks");
+        loader_log(ptr_instance, VULKAN_LOADER_INFO_BIT, 0,
+                   "vkDestroyInstance: destroying temporary instance debug report callback");
 
         util_DestroyDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_report_callbacks,
                                          ptr_instance->tmp_report_callbacks);
