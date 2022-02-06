@@ -273,7 +273,6 @@ void *globalGetProcAddr(const char *name) {
     if (!strcmp(name, "EnumerateInstanceExtensionProperties")) return vkEnumerateInstanceExtensionProperties;
     if (!strcmp(name, "EnumerateInstanceLayerProperties")) return vkEnumerateInstanceLayerProperties;
     if (!strcmp(name, "EnumerateInstanceVersion")) return vkEnumerateInstanceVersion;
-    if (!strcmp(name, "GetInstanceProcAddr")) return vkGetInstanceProcAddr;
 
     return NULL;
 }

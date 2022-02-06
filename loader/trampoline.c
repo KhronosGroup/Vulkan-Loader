@@ -61,6 +61,9 @@
  * instances with a newer version will get the new behavior.
  */
 LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char *pName) {
+    // Always should be able to get vkGetInstanceProcAddr if queried, regardless of the value of instance
+    if (!strcmp(pName, "vkGetInstanceProcAddr")) return (PFN_vkVoidFunction)vkGetInstanceProcAddr;
+
     // Get entrypoint addresses that are global (no dispatchable object)
     void *addr = globalGetProcAddr(pName);
     if (addr != VK_NULL_HANDLE) {
