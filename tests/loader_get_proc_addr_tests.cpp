@@ -32,17 +32,31 @@ TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(VK_API_VERSION_1_1);
+        inst.CheckCreate();
 
-    InstWrapper inst{env.vulkan_functions};
-    inst.create_info.set_api_version(VK_API_VERSION_1_1);
-    inst.CheckCreate();
+        // NOTE: The vulkan_functions are queried using the platform get proc addr from the loader.  So we'll compare
+        //       that to what is returned by asking it what the various Vulkan get proc addr functions are.
+        PFN_vkGetInstanceProcAddr gipa_loader = env.vulkan_functions.vkGetInstanceProcAddr;
+        PFN_vkGetInstanceProcAddr gipa_queried = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
+            env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetInstanceProcAddr"));
+        ASSERT_EQ(gipa_loader, gipa_queried);
+    }
 
-    // NOTE: The vulkan_functions are queried using the platform get proc addr from the loader.  So we'll compare
-    //       that to what is returned by asking it what the various Vulkan get proc addr functions are.
-    PFN_vkGetInstanceProcAddr gipa_loader = env.vulkan_functions.vkGetInstanceProcAddr;
-    PFN_vkGetInstanceProcAddr gipa_queried =
-        reinterpret_cast<PFN_vkGetInstanceProcAddr>(env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetInstanceProcAddr"));
-    ASSERT_EQ(gipa_loader, gipa_queried);
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(VK_API_VERSION_1_3);
+        inst.CheckCreate();
+
+        // NOTE: The vulkan_functions are queried using the platform get proc addr from the loader.  So we'll compare
+        //       that to what is returned by asking it what the various Vulkan get proc addr functions are.
+        PFN_vkGetInstanceProcAddr gipa_loader = env.vulkan_functions.vkGetInstanceProcAddr;
+        PFN_vkGetInstanceProcAddr gipa_queried = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
+            env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetInstanceProcAddr"));
+        ASSERT_EQ(gipa_loader, gipa_queried);
+    }
 }
 
 // Verify that the various ways to get vkGetDeviceProcAddr return the same value
@@ -100,8 +114,8 @@ TEST(GetProcAddr, GlobalFunctions) {
         EnumerateInstanceVersion(&api_version);
 
         auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(NULL, "vkGetInstanceProcAddr"));
-        handle_assert_has_value(GetInstanceProcAddr);
-        GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr");
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr")));
 
         auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(NULL, "vkCreateInstance"));
         handle_assert_has_value(CreateInstance);
@@ -131,7 +145,8 @@ TEST(GetProcAddr, GlobalFunctions) {
 
         auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
         handle_assert_has_value(GetInstanceProcAddr);
-        GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr");
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(inst, "vkGetInstanceProcAddr")));
 
         auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(inst, "vkCreateInstance"));
         handle_assert_has_value(CreateInstance);
@@ -157,8 +172,11 @@ TEST(GetProcAddr, GlobalFunctions) {
         handle_assert_null(CreateInstance);
 
         auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
-        handle_assert_null(GetInstanceProcAddr);
-
+        handle_assert_equal(env.vulkan_functions.vkGetInstanceProcAddr, GetInstanceProcAddr);
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(inst, "vkGetInstanceProcAddr")));
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr")));
         // get a non pre-instance function pointer
         auto EnumeratePhysicalDevices = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkEnumeratePhysicalDevices"));
         handle_assert_has_value(EnumeratePhysicalDevices);
