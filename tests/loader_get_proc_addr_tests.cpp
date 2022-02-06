@@ -54,8 +54,8 @@ TEST(GetProcAddr, GlobalFunctions) {
         EnumerateInstanceVersion(&api_version);
 
         auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(NULL, "vkGetInstanceProcAddr"));
-        handle_assert_has_value(GetInstanceProcAddr);
-        GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr");
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr")));
 
         auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(NULL, "vkCreateInstance"));
         handle_assert_has_value(CreateInstance);
@@ -85,7 +85,8 @@ TEST(GetProcAddr, GlobalFunctions) {
 
         auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
         handle_assert_has_value(GetInstanceProcAddr);
-        GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr");
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(inst, "vkGetInstanceProcAddr")));
 
         auto CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(gipa(inst, "vkCreateInstance"));
         handle_assert_has_value(CreateInstance);
@@ -111,8 +112,11 @@ TEST(GetProcAddr, GlobalFunctions) {
         handle_assert_null(CreateInstance);
 
         auto GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkGetInstanceProcAddr"));
-        handle_assert_null(GetInstanceProcAddr);
-
+        handle_assert_equal(env.vulkan_functions.vkGetInstanceProcAddr, GetInstanceProcAddr);
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(inst, "vkGetInstanceProcAddr")));
+        ASSERT_EQ(GetInstanceProcAddr,
+                  reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(NULL, "vkGetInstanceProcAddr")));
         // get a non pre-instance function pointer
         auto EnumeratePhysicalDevices = reinterpret_cast<PFN_vkGetInstanceProcAddr>(gipa(inst, "vkEnumeratePhysicalDevices"));
         handle_assert_has_value(EnumeratePhysicalDevices);
