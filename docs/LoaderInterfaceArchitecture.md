@@ -12,26 +12,35 @@
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 ## Table of Contents
-  * [Overview](#overview)
-    * [Who Should Read This Document](#who-should-read-this-document)
-    * [The Loader](#the-loader)
-    * [Layers](#layers)
-    * [Drivers](#drivers)
-    * [VkConfig](#vkconfig)
 
-  * [Important Vulkan Concepts](#important-vulkan-concepts)
-    * [Instance Versus Device](#instance-versus-device)
-    * [Dispatch Tables and Call Chains](#dispatch-tables-and-call-chains)
-
-  * [Elevated Privilege Caveats](#elevated-privilege-caveats)
-
-  * [Application Interface to the Loader](#application-interface-to-the-loader)
-  * [Layer Interface with the Loader](#layer-interface-with-the-loader)
-  * [Driver Interface with the Loader](#driver-interface-with-the-loader)
-
-  * [Loader Policies](#loader-policies)
-  * [Table of Debug Environment Variables](#table-of-debug-environment-variables)
-  * [Glossary of Terms](#glossary-of-terms)
+- [Overview](#overview)
+  - [Who Should Read This Document](#who-should-read-this-document)
+  - [The Loader](#the-loader)
+    - [Goals of the Loader](#goals-of-the-loader)
+  - [Layers](#layers)
+  - [Drivers](#drivers)
+    - [Installable Client Drivers](#installable-client-drivers)
+  - [VkConfig](#vkconfig)
+- [Important Vulkan Concepts](#important-vulkan-concepts)
+  - [Instance Versus Device](#instance-versus-device)
+    - [Instance-Specific](#instance-specific)
+      - [Instance Objects](#instance-objects)
+      - [Instance Functions](#instance-functions)
+      - [Instance Extensions](#instance-extensions)
+    - [Device-Specific](#device-specific)
+      - [Device Objects](#device-objects)
+      - [Device Functions](#device-functions)
+      - [Device Extensions](#device-extensions)
+  - [Dispatch Tables and Call Chains](#dispatch-tables-and-call-chains)
+    - [Instance Call Chain Example](#instance-call-chain-example)
+    - [Device Call Chain Example](#device-call-chain-example)
+- [Elevated Privilege Caveats](#elevated-privilege-caveats)
+- [Application Interface to the Loader](#application-interface-to-the-loader)
+- [Layer Interface with the Loader](#layer-interface-with-the-loader)
+- [Driver Interface With the Loader](#driver-interface-with-the-loader)
+- [Loader Policies](#loader-policies)
+- [Table of Debug Environment Variables](#table-of-debug-environment-variables)
+- [Glossary of Terms](#glossary-of-terms)
 
 ## Overview
 
@@ -113,7 +122,7 @@ Some examples of features that layers may expose include:
 
 Because layers are optional and dynamically loaded, they can be enabled
 and disabled as desired.
-For example, while developing and debugging an application, enabling 
+For example, while developing and debugging an application, enabling
 certain layers can assist in making sure it properly uses the Vulkan API.
 But when releasing the application, those layers are unnecessary
 and thus won't be enabled, increasing the speed of the application.
@@ -365,7 +374,7 @@ layers to marshall the appropriate information to all available drivers.
 For example, the diagram below represents what happens in the call chain for
 `vkCreateInstance`.
 After initializing the chain, the loader calls into the first layer's
-`vkCreateInstance`, which will call the next layer's `vkCreateInstance 
+`vkCreateInstance`, which will call the next layer's `vkCreateInstance
 before finally terminating in the loader again where it will call
 every driver's `vkCreateInstance`.
 This allows every enabled layer in the chain to set up what it needs based on
@@ -413,7 +422,7 @@ These behaviors also result in ignoring certain environment variables, such as:
   * `XDG_CONFIG_HOME` (Linux/Mac-specific)
   * `XDG_DATA_HOME` (Linux/Mac-specific)
 
-For more information on the affected search paths, refer to 
+For more information on the affected search paths, refer to
 [Layer Discovery](LoaderLayerInterface.md#layer-discovery) and
 [Driver Discovery](LoaderDriverInterface.md#driver-discovery).
 <br/>
@@ -715,7 +724,7 @@ discovery.
         These are drivers that are provided by IHVs to interact with the
         hardware they provide. <br/>
         These are the most common type of Vulkan drivers. <br/>
-        See <a href="#installable-client-drivers">Installable Client Drivers</a> 
+        See <a href="#installable-client-drivers">Installable Client Drivers</a>
         section for more information.
     </td>
   </tr>

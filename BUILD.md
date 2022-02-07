@@ -2,16 +2,36 @@
 
 Instructions for building this repository on Linux, Windows, and MacOS.
 
-## Index
+## Table Of Contents
 
-1. [Contributing](#contributing-to-the-repository)
-1. [Repository Content](#repository-content)
-1. [Repository Set-Up](#repository-set-up)
-1. [Windows Build](#building-on-windows)
-1. [Linux Build](#building-on-linux)
-1. [MacOS build](#building-on-macos)
-1. [Fuchsia build](#building-on-fuchsia)
-1. [QNX build](#building-on-qnx)
+- [Contributing to the Repository](#contributing-to-the-repository)
+- [Repository Content](#repository-content)
+  - [Installed Files](#installed-files)
+- [Repository Set-Up](#repository-set-up)
+  - [Display Drivers](#display-drivers)
+  - [Download the Repository](#download-the-repository)
+  - [Repository Dependencies](#repository-dependencies)
+  - [Build and Install Directories](#build-and-install-directories)
+  - [Building Dependent Repositories with Known-Good Revisions](#building-dependent-repositories-with-known-good-revisions)
+  - [Generated source code](#generated-source-code)
+  - [Build Options](#build-options)
+- [Building On Windows](#building-on-windows)
+  - [Windows Development Environment Requirements](#windows-development-environment-requirements)
+  - [Windows Build - Microsoft Visual Studio](#windows-build---microsoft-visual-studio)
+  - [Windows Notes](#windows-notes)
+    - [CMake Visual Studio Generators](#cmake-visual-studio-generators)
+    - [Using The Vulkan Loader Library in this Repository on Windows](#using-the-vulkan-loader-library-in-this-repository-on-windows)
+- [Building On Linux](#building-on-linux)
+  - [Linux Development Environment Requirements](#linux-development-environment-requirements)
+  - [Linux Build](#linux-build)
+- [Building on MacOS](#building-on-macos)
+  - [MacOS Development Environment Requirements](#macos-development-environment-requirements)
+  - [Clone the Repository](#clone-the-repository)
+  - [MacOS build](#macos-build)
+- [Building on Fuchsia](#building-on-fuchsia)
+- [Building on QNX](#building-on-qnx)
+  - [SDK Symbols](#sdk-symbols)
+
 
 ## Contributing to the Repository
 
@@ -191,29 +211,29 @@ be specified to customize the build. Some of the options are binary on/off
 options, while others take a string as input. The following is a table of all
 on/off options currently supported by this repository:
 
-| Option | Platform | Default | Description |
-| ------ | -------- | ------- | ----------- |
-| BUILD_LOADER | All | `ON` | Controls whether or not the loader is built. Setting this to `OFF` will allow building the tests against a loader that is installed to the system. |
-| BUILD_TESTS | All | `???` | Controls whether or not the loader tests are built. The default is `ON` when the Google Test repository is cloned into the `external` directory.  Otherwise, the default is `OFF`. |
-| BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the loader with the XCB entry points enabled. Without this, the XCB headers should not be needed, but the extension `VK_KHR_xcb_surface` won't be available. |
-| BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the loader with the Xlib entry points enabled. Without this, the X11 headers should not be needed, but the extension `VK_KHR_xlib_surface` won't be available. |
-| BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the loader with the Wayland entry points enabled. Without this, the Wayland headers should not be needed, but the extension `VK_KHR_wayland_surface` won't be available. |
-| BUILD_WSI_DIRECTFB_SUPPORT | Linux | `OFF` | Build the loader with the DirectFB entry points enabled. Without this, the DirectFB headers should not be needed, but the extension `VK_EXT_directfb_surface` won't be available. |
-| BUILD_WSI_SCREEN_QNX_SUPPORT | QNX | `OFF` | Build the loader with the QNX Screen entry points enabled. Without this the extension `VK_QNX_screen_surface` won't be available. |
-| ENABLE_WIN10_ONECORE | Windows | `OFF` | Link the loader to the [OneCore](https://msdn.microsoft.com/en-us/library/windows/desktop/mt654039.aspx) umbrella library, instead of the standard Win32 ones. |
-| USE_CCACHE | Linux | `OFF` | Enable caching with the CCache program. |
-| USE_GAS  | Linux   | `ON` | Controls whether to build assembly files with the GNU assembler, else fallback to C code. |
-| USE_MASM | Windows | `ON` | Controls whether to build assembly files with MS assembler, else fallback to C code |
-| BUILD_STATIC_LOADER | macOS | `OFF` | This allows the loader to be built as a static library on macOS. Not tested, use at your own risk. |
+| Option                       | Platform | Default | Description                                                                                                                                                                        |
+| ---------------------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BUILD_LOADER                 | All      | `ON`    | Controls whether or not the loader is built. Setting this to `OFF` will allow building the tests against a loader that is installed to the system.                                 |
+| BUILD_TESTS                  | All      | `???`   | Controls whether or not the loader tests are built. The default is `ON` when the Google Test repository is cloned into the `external` directory.  Otherwise, the default is `OFF`. |
+| BUILD_WSI_XCB_SUPPORT        | Linux    | `ON`    | Build the loader with the XCB entry points enabled. Without this, the XCB headers should not be needed, but the extension `VK_KHR_xcb_surface` won't be available.                 |
+| BUILD_WSI_XLIB_SUPPORT       | Linux    | `ON`    | Build the loader with the Xlib entry points enabled. Without this, the X11 headers should not be needed, but the extension `VK_KHR_xlib_surface` won't be available.               |
+| BUILD_WSI_WAYLAND_SUPPORT    | Linux    | `ON`    | Build the loader with the Wayland entry points enabled. Without this, the Wayland headers should not be needed, but the extension `VK_KHR_wayland_surface` won't be available.     |
+| BUILD_WSI_DIRECTFB_SUPPORT   | Linux    | `OFF`   | Build the loader with the DirectFB entry points enabled. Without this, the DirectFB headers should not be needed, but the extension `VK_EXT_directfb_surface` won't be available.  |
+| BUILD_WSI_SCREEN_QNX_SUPPORT | QNX      | `OFF`   | Build the loader with the QNX Screen entry points enabled. Without this the extension `VK_QNX_screen_surface` won't be available.                                                  |
+| ENABLE_WIN10_ONECORE         | Windows  | `OFF`   | Link the loader to the [OneCore](https://msdn.microsoft.com/en-us/library/windows/desktop/mt654039.aspx) umbrella library, instead of the standard Win32 ones.                     |
+| USE_CCACHE                   | Linux    | `OFF`   | Enable caching with the CCache program.                                                                                                                                            |
+| USE_GAS                      | Linux    | `ON`    | Controls whether to build assembly files with the GNU assembler, else fallback to C code.                                                                                          |
+| USE_MASM                     | Windows  | `ON`    | Controls whether to build assembly files with MS assembler, else fallback to C code                                                                                                |
+| BUILD_STATIC_LOADER          | macOS    | `OFF`   | This allows the loader to be built as a static library on macOS. Not tested, use at your own risk.                                                                                 |
 
 The following is a table of all string options currently supported by this repository:
 
-| Option | Platform | Default | Description |
-| ------ | -------- | ------- | ----------- |
-| CMAKE_OSX_DEPLOYMENT_TARGET | MacOS | `10.12` | The minimum version of MacOS for loader deployment. |
-| FALLBACK_CONFIG_DIRS | Linux/MacOS | `/etc/xdg` | Configuration path(s) to use instead of `XDG_CONFIG_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
-| FALLBACK_DATA_DIRS | Linux/MacOS | `/usr/local/share:/usr/share` | Configuration path(s) to use instead of `XDG_DATA_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
-| BUILD_DLL_VERSIONINFO | Windows | `""` (empty string) | Allows setting the Windows specific version information for the Loader DLL. Format is "major.minor.patch.build". |
+| Option                      | Platform    | Default                       | Description                                                                                                                                          |
+| --------------------------- | ----------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CMAKE_OSX_DEPLOYMENT_TARGET | MacOS       | `10.12`                       | The minimum version of MacOS for loader deployment.                                                                                                  |
+| FALLBACK_CONFIG_DIRS        | Linux/MacOS | `/etc/xdg`                    | Configuration path(s) to use instead of `XDG_CONFIG_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
+| FALLBACK_DATA_DIRS          | Linux/MacOS | `/usr/local/share:/usr/share` | Configuration path(s) to use instead of `XDG_DATA_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant.   |
+| BUILD_DLL_VERSIONINFO       | Windows     | `""` (empty string)           | Allows setting the Windows specific version information for the Loader DLL. Format is "major.minor.patch.build".                                     |
 
 These variables should be set using the `-D` option when invoking CMake to generate the native platform files.
 
@@ -373,7 +393,7 @@ have installed. Generator strings that correspond to versions of Visual Studio
 include:
 
 | Build Platform               | 64-bit Generator              | 32-bit Generator        |
-|------------------------------|-------------------------------|-------------------------|
+| ---------------------------- | ----------------------------- | ----------------------- |
 | Microsoft Visual Studio 2015 | "Visual Studio 14 2015 Win64" | "Visual Studio 14 2015" |
 | Microsoft Visual Studio 2017 | "Visual Studio 15 2017 Win64" | "Visual Studio 15 2017" |
 | Microsoft Visual Studio 2019 | "Visual Studio 16 2019"       | "Visual Studio 16 2019" |
