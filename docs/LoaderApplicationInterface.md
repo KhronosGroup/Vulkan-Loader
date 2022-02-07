@@ -14,41 +14,42 @@
 
 ## Table of Contents
 
-* [Overview](#overview)
-* [Interfacing with Vulkan Functions](#interfacing-with-vulkan-functions)
-  * [Vulkan Direct Exports](#vulkan-direct-exports)
-  * [Directly Linking to the Loader](#directly-linking-to-the-loader)
-    * [Dynamic Linking](#dynamic-linking)
-    * [Static Linking](#static-linking)
-  * [Indirectly Linking to the Loader](#indirectly-linking-to-the-loader)
-  * [Best Application Performance Setup](#best-application-performance-setup)
-  * [ABI Versioning](#abi-versioning)
-    * [Windows Dynamic Library Usage](#windows-dynamic-library-usage)
-    * [Linux Dynamic Library Usage](#linux-dynamic-library-usage)
-    * [MacOs Dynamic Library Usage](#macos-dynamic-library-usage)
-  * [Bundling the Loader With An Application](#bundling-the-loader-with-an-application)
-* [Application Layer Usage](#application-layer-usage)
-  * [Meta-Layers](#meta-layers)
-  * [Implicit vs Explicit Layers](#implicit-vs-explicit-layers)
-    * [Override Layer](#override-layer)
-  * [Forcing Layer Source Folders](#forcing-layer-source-folders)
-    * [Exception for Elevated Privileges](#exception-for-elevated-privileges)
-  * [Forcing Layers to be Enabled](#forcing-layers-to-be-enabled)
-  * [Overall Layer Ordering](#overall-layer-ordering)
-  * [Debugging Possible Layer Issues](#debugging-possible-layer-issues)
-    * [Enable Loader Debug Layer Output](#enable-loader-debug-layer-output)
-    * [Disable All Layers](#disable-all-layers)
-    * [Enable More Loader Debug Output](#enable-more-loader-debug-output)
-* [Application Usage of Extensions](#application-usage-of-extensions)
-  * [Instance and Device Extensions](#instance-and-device-extensions)
-  * [WSI Extensions](#wsi-extensions)
-  * [Unknown Extensions](#unknown-extensions)
-* [Physical Device Ordering](#physical-device-ordering)
+- [Overview](#overview)
+- [Interfacing with Vulkan Functions](#interfacing-with-vulkan-functions)
+  - [Vulkan Direct Exports](#vulkan-direct-exports)
+  - [Directly Linking to the Loader](#directly-linking-to-the-loader)
+    - [Dynamic Linking](#dynamic-linking)
+    - [Static Linking](#static-linking)
+  - [Indirectly Linking to the Loader](#indirectly-linking-to-the-loader)
+  - [Best Application Performance Setup](#best-application-performance-setup)
+  - [ABI Versioning](#abi-versioning)
+    - [Windows Dynamic Library Usage](#windows-dynamic-library-usage)
+    - [Linux Dynamic Library Usage](#linux-dynamic-library-usage)
+    - [MacOs Dynamic Library Usage](#macos-dynamic-library-usage)
+  - [Bundling the Loader With An Application](#bundling-the-loader-with-an-application)
+- [Application Layer Usage](#application-layer-usage)
+  - [Meta-Layers](#meta-layers)
+  - [Implicit vs Explicit Layers](#implicit-vs-explicit-layers)
+    - [Override Layer](#override-layer)
+  - [Forcing Layer Source Folders](#forcing-layer-source-folders)
+    - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
+  - [Forcing Layers to be Enabled on Windows, Linux and macOS](#forcing-layers-to-be-enabled-on-windows-linux-and-macos)
+  - [Overall Layer Ordering](#overall-layer-ordering)
+  - [Debugging Possible Layer Issues](#debugging-possible-layer-issues)
+    - [Enable Loader Debug Layer Output](#enable-loader-debug-layer-output)
+    - [Disable All Layers](#disable-all-layers)
+    - [Enable More Loader Debug Output](#enable-more-loader-debug-output)
+- [Application Usage of Extensions](#application-usage-of-extensions)
+  - [Instance and Device Extensions](#instance-and-device-extensions)
+  - [WSI Extensions](#wsi-extensions)
+  - [Unknown Extensions](#unknown-extensions)
+  - [Filtering Out Unknown Instance Extension Names](#filtering-out-unknown-instance-extension-names)
+- [Physical Device Ordering](#physical-device-ordering)
 
 ## Overview
 
 This is the Application-centric view of working with the Vulkan loader.
-For the complete overview of all sections of the loader, please refer 
+For the complete overview of all sections of the loader, please refer
 to the [LoaderInterfaceArchitecture.md](LoaderInterfaceArchitecture.md) file.
 
 ## Interfacing with Vulkan Functions
@@ -447,7 +448,7 @@ The table below details more information:
 
 #### Override Layer
 
-The "Override Layer" is a special implicit meta-layer created by the 
+The "Override Layer" is a special implicit meta-layer created by the
 [VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
 tool and available by default when the tool is running.
 Once VkConfig exits, the override layer is removed, and the system should
@@ -809,13 +810,13 @@ extension support:
 In addition, each of the following OS targets for the loader support target-
 specific extensions:
 
-| Windowing System | Extensions available |
-|----------------|--------------------|
-| Windows  | VK_KHR_win32_surface |
-| Linux (Wayland) | VK_KHR_wayland_surface |
-| Linux (X11) |  VK_KHR_xcb_surface and VK_KHR_xlib_surface |
-| macOS (MoltenVK) | VK_MVK_macos_surface |
-| QNX (Screen) | VK_QNX_screen_surface |
+| Windowing System | Extensions available                       |
+| ---------------- | ------------------------------------------ |
+| Windows          | VK_KHR_win32_surface                       |
+| Linux (Wayland)  | VK_KHR_wayland_surface                     |
+| Linux (X11)      | VK_KHR_xcb_surface and VK_KHR_xlib_surface |
+| macOS (MoltenVK) | VK_MVK_macos_surface                       |
+| QNX (Screen)     | VK_QNX_screen_surface                      |
 
 It is important to understand that while the loader may support the various
 entry-points for these extensions, there is a handshake required to actually
