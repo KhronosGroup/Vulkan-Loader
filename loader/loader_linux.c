@@ -341,17 +341,16 @@ out:
     return res;
 }
 
-// This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult linux_read_sorted_physical_device_groups(struct loader_instance *inst, uint32_t group_count,
-                                                  struct loader_physical_device_group_term *sorted_group_term) {
+// This function sorts an array of physical device groups
+VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_t group_count,
+                                           struct loader_physical_device_group_term *sorted_group_term) {
     VkResult res = VK_SUCCESS;
     bool is_vulkan_1_1 = false;
     if (inst->app_api_major_version >= 1 && inst->app_api_minor_version >= 1) {
         is_vulkan_1_1 = true;
     }
 
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-               "linux_read_sorted_physical_device_groups:  Original order:");
+    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Original order:");
 
     for (uint32_t group = 0; group < group_count; ++group) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
@@ -428,7 +427,8 @@ VkResult linux_read_sorted_physical_device_groups(struct loader_instance *inst, 
 
         // Match the externally used physical device list with the sorted physical device list for this group.
         for (uint32_t dev = 0; dev < sorted_group_term[group].group_props.physicalDeviceCount; ++dev) {
-            sorted_group_term[group].group_props.physicalDevices[dev] = sorted_group_term[group].internal_device_info[dev].physical_device;
+            sorted_group_term[group].group_props.physicalDevices[dev] =
+                sorted_group_term[group].internal_device_info[dev].physical_device;
         }
     }
 
@@ -436,8 +436,7 @@ VkResult linux_read_sorted_physical_device_groups(struct loader_instance *inst, 
     qsort(sorted_group_term, group_count, sizeof(struct loader_physical_device_group_term), compare_device_groups);
 
     if (loader_get_debug_level() & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT)) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                   "linux_read_sorted_physical_device_groups:  Sorted order:");
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Sorted order:");
         for (uint32_t group = 0; group < group_count; ++group) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
             for (uint32_t gpu = 0; gpu < sorted_group_term[group].group_props.physicalDeviceCount; ++gpu) {

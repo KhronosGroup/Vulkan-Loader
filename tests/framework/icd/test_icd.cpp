@@ -231,7 +231,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
 
         uint32_t group_count = 0;
         if (0 == icd.physical_device_groups.size()) {
-            group_count = icd.physical_devices.size();
+            group_count = static_cast<uint32_t>(icd.physical_devices.size());
             for (size_t device_group = 0; device_group < icd.physical_devices.size(); device_group++) {
                 if (device_group >= *pPhysicalDeviceGroupCount) {
                     group_count = *pPhysicalDeviceGroupCount;
@@ -244,7 +244,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
                     icd.physical_devices[device_group].vk_physical_device.handle;
             }
         } else {
-            group_count = icd.physical_device_groups.size();
+            group_count = static_cast<uint32_t>(icd.physical_device_groups.size());
             for (size_t device_group = 0; device_group < icd.physical_device_groups.size(); device_group++) {
                 if (device_group >= *pPhysicalDeviceGroupCount) {
                     group_count = *pPhysicalDeviceGroupCount;
@@ -1434,9 +1434,21 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDe
                                                                                       uint32_t* pPhysicalDeviceCount,
                                                                                       VkPhysicalDevice* pPhysicalDevices) {
     icd.called_enumerate_adapter_physical_devices = CalledEnumerateAdapterPhysicalDevices::called;
-    return test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-
-    return VK_SUCCESS;
+    VkResult res = test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+    // For this testing, flip order intentaionlly
+    if (nullptr != pPhysicalDevices) {
+        for (uint32_t lower = 0; lower < *pPhysicalDeviceCount; ++lower) {
+            uint32_t upper = *pPhysicalDeviceCount - lower - 1;
+            // In case of odd numbered list we don't want to waste resources flipping itself
+            if (upper == lower) {
+                break;
+            }
+            VkPhysicalDevice temp = pPhysicalDevices[lower];
+            pPhysicalDevices[lower] = pPhysicalDevices[upper];
+            pPhysicalDevices[upper] = temp;
+        }
+    }
+    return res;
 }
 #endif  // defined(WIN32)
 #endif  // TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
