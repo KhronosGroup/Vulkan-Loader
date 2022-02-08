@@ -160,7 +160,7 @@ set(NORMAL_LOADER_SRCS
 
 if(WIN32)
     set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_windows.c)
-else(UNIX AND NOT APPLE) # i.e.: Linux
+elseif(UNIX AND NOT APPLE) # i.e.: Linux
     set(NORMAL_LOADER_SRCS ${NORMAL_LOADER_SRCS} loader_linux.c)
     set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS LOADER_ENABLE_LINUX_SORT)
 endif()
@@ -219,7 +219,7 @@ elseif(APPLE)
     set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
     set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
     add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
-else(UNIX AND NOT APPLE) # i.e.: Linux
+else() # i.e.: Linux
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
         enable_language(ASM)
