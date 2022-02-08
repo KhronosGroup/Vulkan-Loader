@@ -426,6 +426,16 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const 
     return layer.next_vkGetDeviceProcAddr(device, pName);
 }
 
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance instance, const char* pName) {
+    if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
+    if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
+        return to_vkVoidFunction(test_vkEnumerateDeviceExtensionProperties);
+    if (string_eq(pName, "vkEnumeratePhysicalDevices")) return (PFN_vkVoidFunction)test_vkEnumeratePhysicalDevices;
+    if (string_eq(pName, "vkEnumeratePhysicalDeviceGroups")) return (PFN_vkVoidFunction)test_vkEnumeratePhysicalDeviceGroups;
+    if (string_eq(pName, "vkGetPhysicalDeviceProperties")) return (PFN_vkVoidFunction)test_vkGetPhysicalDeviceProperties;
+    return nullptr;
+}
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName) {
     if (pName == nullptr) return nullptr;
     if (string_eq(pName, "vkGetInstanceProcAddr")) return to_vkVoidFunction(get_instance_func);
@@ -433,17 +443,13 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, 
     if (string_eq(pName, "vkEnumerateInstanceExtensionProperties"))
         return to_vkVoidFunction(test_vkEnumerateInstanceExtensionProperties);
     if (string_eq(pName, "vkEnumerateInstanceVersion")) return to_vkVoidFunction(test_vkEnumerateInstanceVersion);
-
-    if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
-    if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
-        return to_vkVoidFunction(test_vkEnumerateDeviceExtensionProperties);
-    if (string_eq(pName, "vkEnumeratePhysicalDevices")) return to_vkVoidFunction(test_vkEnumeratePhysicalDevices);
-    if (string_eq(pName, "vkEnumeratePhysicalDeviceGroups")) return to_vkVoidFunction(test_vkEnumeratePhysicalDeviceGroups);
-    if (string_eq(pName, "vkGetPhysicalDeviceProperties")) return to_vkVoidFunction(test_vkGetPhysicalDeviceProperties);
     if (string_eq(pName, "vkCreateInstance")) return to_vkVoidFunction(test_vkCreateInstance);
     if (string_eq(pName, "vkDestroyInstance")) return to_vkVoidFunction(test_vkDestroyInstance);
     if (string_eq(pName, "vkCreateDevice")) return to_vkVoidFunction(test_vkCreateDevice);
     if (string_eq(pName, "vkGetDeviceProcAddr")) return to_vkVoidFunction(get_device_func);
+
+    PFN_vkVoidFunction ret_phys_dev = get_physical_device_func(instance, pName);
+    if (ret_phys_dev != nullptr) return ret_phys_dev;
 
     return layer.next_vkGetInstanceProcAddr(instance, pName);
 }
@@ -522,19 +528,6 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProper
                                                                                      VkExtensionProperties* pProperties) {
     return test_vkEnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties);
 }
-FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                                                           VkPhysicalDevice* pPhysicalDevices) {
-    return test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-}
-FRAMEWORK_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                                          VkPhysicalDeviceProperties* pProperties) {
-    return test_vkGetPhysicalDeviceProperties(physicalDevice, pProperties);
-}
-FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
-    return test_vkEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-}
-
 #endif
 
 #if TEST_LAYER_EXPORT_LAYER_NAMED_GIPA

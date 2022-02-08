@@ -772,13 +772,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
         goto out;
     }
 
-    // Setup the trampoline loader physical devices.  This will actually
-    // call down and setup the terminator loader physical devices during the
-    // process.
+    // Call down the chain to get the physical device info
     res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, pPhysicalDeviceCount, pPhysicalDevices);
 
-    // Wrap the PhysDev object for loader usage, return wrapped objects
     if (NULL != pPhysicalDevices && (VK_SUCCESS == res || VK_INCOMPLETE == res)) {
+        // Wrap the PhysDev object for loader usage, return wrapped objects
         VkResult update_res = setup_loader_tramp_phys_devs(inst, *pPhysicalDeviceCount, pPhysicalDevices);
         if (VK_SUCCESS != update_res) {
             res = update_res;
@@ -2508,13 +2506,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
         goto out;
     }
 
-    // Setup the trampoline loader physical devices.  This will actually
-    // call down and setup the terminator loader physical devices during the
-    // process.
+    // Call down the chain to get the physical device group info.
     res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroups(inst->instance, pPhysicalDeviceGroupCount,
                                                                     pPhysicalDeviceGroupProperties);
-    // Wrap the PhysDev object for loader usage, return wrapped objects
     if (NULL != pPhysicalDeviceGroupProperties && (VK_SUCCESS == res || VK_INCOMPLETE == res)) {
+        // Wrap the PhysDev object for loader usage, return wrapped objects
         VkResult update_res = setup_loader_tramp_phys_dev_groups(inst, *pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
         if (VK_SUCCESS != update_res) {
             res = update_res;

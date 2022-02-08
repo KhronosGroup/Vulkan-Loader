@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2021 The Khronos Group Inc.
- * Copyright (c) 2014-2021 Valve Corporation
- * Copyright (c) 2014-2021 LunarG, Inc.
+ * Copyright (c) 2014-2022 The Khronos Group Inc.
+ * Copyright (c) 2014-2022 Valve Corporation
+ * Copyright (c) 2014-2022 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -695,11 +695,9 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     char *search_path = NULL;
 
     if (data_file_type == LOADER_DATA_FILE_MANIFEST_ICD) {
-        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Checking for Driver Manifest files in Registry at %s",
-                   registry_location);
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Checking for Driver Manifest files in Registry at %s", registry_location);
     } else {
-        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Checking for Driver Manifest files in Registry at %s",
-                   registry_location);
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Checking for Driver Manifest files in Registry at %s", registry_location);
     }
 
     // These calls look at the PNP/Device section of the registry.
@@ -773,7 +771,7 @@ out:
 }
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, struct LoaderSortedPhysicalDevice **sorted_devices,
+VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, struct loader_phys_dev_per_icd **sorted_devices,
                                               uint32_t *sorted_count) {
     VkResult res = VK_SUCCESS;
 
@@ -785,14 +783,14 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, stru
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Failed to create DXGI factory 6. Physical devices will not be sorted");
     } else {
         sorted_alloc = 16;
-        *sorted_devices = loader_instance_heap_alloc(inst, sorted_alloc * sizeof(struct LoaderSortedPhysicalDevice),
+        *sorted_devices = loader_instance_heap_alloc(inst, sorted_alloc * sizeof(struct loader_phys_dev_per_icd),
                                                      VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (*sorted_devices == NULL) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
 
-        memset(*sorted_devices, 0, sorted_alloc * sizeof(struct LoaderSortedPhysicalDevice));
+        memset(*sorted_devices, 0, sorted_alloc * sizeof(struct loader_phys_dev_per_icd));
 
         *sorted_count = 0;
         for (uint32_t i = 0;; ++i) {
@@ -816,7 +814,7 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, stru
             }
 
             if (sorted_alloc <= i) {
-                uint32_t old_size = sorted_alloc * sizeof(struct LoaderSortedPhysicalDevice);
+                uint32_t old_size = sorted_alloc * sizeof(struct loader_phys_dev_per_icd);
                 *sorted_devices =
                     loader_instance_heap_realloc(inst, *sorted_devices, old_size, 2 * old_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
                 if (*sorted_devices == NULL) {
@@ -826,7 +824,7 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, stru
                 }
                 sorted_alloc *= 2;
             }
-            struct LoaderSortedPhysicalDevice *sorted_array = *sorted_devices;
+            struct loader_phys_dev_per_icd *sorted_array = *sorted_devices;
             sorted_array[*sorted_count].device_count = 0;
             sorted_array[*sorted_count].physical_devices = NULL;
             //*sorted_count = i;

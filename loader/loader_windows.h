@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2021 The Khronos Group Inc.
- * Copyright (c) 2014-2021 Valve Corporation
- * Copyright (c) 2014-2021 LunarG, Inc.
+ * Copyright (c) 2014-2022 The Khronos Group Inc.
+ * Copyright (c) 2014-2022 Valve Corporation
+ * Copyright (c) 2014-2022 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -99,7 +99,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
                                              struct loader_data_files *out_files);
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, struct LoaderSortedPhysicalDevice **sorted_devices,
+VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, struct loader_phys_dev_per_icd **sorted_devices,
                                               uint32_t *sorted_count);
 
 // Creates a DXGI factory
