@@ -265,6 +265,156 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, EnumAdapters2) {
                                                                            physical_device_handles.data()));
     ASSERT_EQ(physical_count, returned_physical_count);
 }
+
+TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResults) {
+    auto& driver = env->get_test_icd();
+    driver.min_icd_interface_version = 6;
+    driver.set_icd_api_version(VK_API_VERSION_1_1);
+    driver.physical_devices.emplace_back("physical_device_4");
+    driver.physical_devices.emplace_back("physical_device_3");
+    driver.physical_devices.emplace_back("physical_device_2");
+    driver.physical_devices.emplace_back("physical_device_1");
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst1{env->vulkan_functions};
+    inst1.CheckCreate();
+
+    const uint32_t phys_dev_count = 5;
+    uint32_t count = phys_dev_count;
+    std::array<VkPhysicalDevice, phys_dev_count> original_pds;
+    std::array<std::string, phys_dev_count> original_pds_name;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst1.inst, &count, original_pds.data()));
+    ASSERT_EQ(phys_dev_count, count);
+
+    for (uint32_t dev = 0; dev < phys_dev_count; ++dev) {
+        VkPhysicalDeviceProperties props;
+        env->vulkan_functions.vkGetPhysicalDeviceProperties(original_pds[dev], &props);
+        original_pds_name[dev] = props.deviceName;
+    }
+
+    uint32_t driver_index = 2;  // which drive this test pretends to be
+    auto& known_driver = known_driver_list.at(2);
+    DXGI_ADAPTER_DESC1 desc1{};
+    wcsncpy_s(&desc1.Description[0], 128, L"TestDriver1", 128);
+    desc1.VendorId = known_driver.vendor_id;
+    desc1.AdapterLuid;
+    desc1.Flags = DXGI_ADAPTER_FLAG_NONE;
+    env->platform_shim->add_dxgi_adapter(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, GpuType::discrete,
+                                         driver_index, desc1);
+
+    InstWrapper inst2{env->vulkan_functions};
+    inst2.CheckCreate();
+
+    // For the test ICD, when the D3D Adapter mechanism is enabled, it should completely swap the order of devices.
+    // Since we can't compare VkPhysicalDevice handles because they will be different per VkInstance, we will
+    // compare the property names returned, which should still be equal.
+
+    std::array<VkPhysicalDevice, phys_dev_count> adapter_pds;
+    std::array<std::string, phys_dev_count> adapter_pds_name;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst1.inst, &count, adapter_pds.data()));
+    ASSERT_EQ(phys_dev_count, count);
+
+    for (uint32_t dev = 0; dev < phys_dev_count; ++dev) {
+        VkPhysicalDeviceProperties props;
+        env->vulkan_functions.vkGetPhysicalDeviceProperties(adapter_pds[dev], &props);
+        adapter_pds_name[dev] = props.deviceName;
+    }
+
+    for (uint32_t lower = 0; lower < phys_dev_count; ++lower) {
+        uint32_t upper = phys_dev_count - lower - 1;
+        ASSERT_EQ(true, string_eq(adapter_pds_name[upper].c_str(), original_pds_name[lower].c_str()));
+    }
+}
+
+TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults) {
+    auto& driver = env->get_test_icd();
+    driver.min_icd_interface_version = 6;
+    driver.set_icd_api_version(VK_API_VERSION_1_1);
+    driver.physical_devices.emplace_back("physical_device_4");
+    driver.physical_devices.emplace_back("physical_device_3");
+    driver.physical_devices.emplace_back("physical_device_2");
+    driver.physical_devices.emplace_back("physical_device_1");
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_device_groups.emplace_back(driver.physical_devices[0]);
+    driver.physical_device_groups.back().use_physical_device(driver.physical_devices[1]);
+    driver.physical_device_groups.emplace_back(driver.physical_devices[2]);
+    driver.physical_device_groups.emplace_back(driver.physical_devices[3]);
+    driver.physical_device_groups.back().use_physical_device(driver.physical_devices[4]);
+
+    InstWrapper inst1{env->vulkan_functions};
+    inst1.CheckCreate();
+
+    const uint32_t actual_group_count = 3;
+    uint32_t count = actual_group_count;
+    std::array<VkPhysicalDeviceGroupProperties, actual_group_count> original_groups{};
+    std::vector<std::vector<std::string>> original_strings;
+    original_strings.resize(actual_group_count);
+    for (uint32_t group = 0; group < actual_group_count; ++group) {
+        original_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+        original_groups[group].pNext = nullptr;
+    }
+    ASSERT_EQ(VK_SUCCESS, inst1->vkEnumeratePhysicalDeviceGroups(inst1, &count, original_groups.data()));
+    ASSERT_EQ(actual_group_count, count);
+
+    for (uint32_t group = 0; group < actual_group_count; ++group) {
+        original_strings[group].resize(original_groups[group].physicalDeviceCount);
+        for (uint32_t dev = 0; dev < original_groups[group].physicalDeviceCount; ++dev) {
+            VkPhysicalDeviceProperties props;
+            env->vulkan_functions.vkGetPhysicalDeviceProperties(original_groups[group].physicalDevices[dev], &props);
+            original_strings[group][dev] = props.deviceName;
+        }
+    }
+
+    uint32_t driver_index = 2;  // which drive this test pretends to be
+    auto& known_driver = known_driver_list.at(2);
+    DXGI_ADAPTER_DESC1 desc1{};
+    wcsncpy_s(&desc1.Description[0], 128, L"TestDriver1", 128);
+    desc1.VendorId = known_driver.vendor_id;
+    desc1.AdapterLuid;
+    desc1.Flags = DXGI_ADAPTER_FLAG_NONE;
+    env->platform_shim->add_dxgi_adapter(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, GpuType::discrete,
+                                         driver_index, desc1);
+
+    InstWrapper inst2{env->vulkan_functions};
+    inst2.CheckCreate();
+
+    // For the test ICD, when the D3D Adapter mechanism is enabled, it should completely swap the order of devices.
+    // Since we can't compare VkPhysicalDevice handles because they will be different per VkInstance, we will
+    // compare the property names returned, which should still be equal.
+    // And, since this is device groups, the groups themselves should also be in reverse order with the devices
+    // inside each group in revers order.
+
+    std::array<VkPhysicalDeviceGroupProperties, actual_group_count> adapter_groups{};
+    std::vector<std::vector<std::string>> adapter_strings;
+    adapter_strings.resize(actual_group_count);
+
+    for (uint32_t group = 0; group < actual_group_count; ++group) {
+        adapter_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+        adapter_groups[group].pNext = nullptr;
+    }
+    ASSERT_EQ(VK_SUCCESS, inst2->vkEnumeratePhysicalDeviceGroups(inst2, &count, adapter_groups.data()));
+    ASSERT_EQ(actual_group_count, count);
+
+    for (uint32_t group = 0; group < actual_group_count; ++group) {
+        adapter_strings[group].resize(adapter_groups[group].physicalDeviceCount);
+        for (uint32_t dev = 0; dev < adapter_groups[group].physicalDeviceCount; ++dev) {
+            VkPhysicalDeviceProperties props;
+            env->vulkan_functions.vkGetPhysicalDeviceProperties(adapter_groups[group].physicalDevices[dev], &props);
+            adapter_strings[group][dev] = props.deviceName;
+        }
+    }
+
+    for (uint32_t lower_group = 0; lower_group < actual_group_count; ++lower_group) {
+        uint32_t upper_group = actual_group_count - lower_group - 1;
+        ASSERT_EQ(original_groups[lower_group].physicalDeviceCount, adapter_groups[upper_group].physicalDeviceCount);
+        for (uint32_t lower_dev = 0; lower_dev < original_groups[lower_group].physicalDeviceCount; ++lower_dev) {
+            uint32_t upper_dev = original_groups[lower_group].physicalDeviceCount - lower_dev - 1;
+            ASSERT_EQ(true,
+                      string_eq(adapter_strings[upper_group][upper_dev].c_str(), original_strings[lower_group][lower_dev].c_str()));
+        }
+    }
+}
+
 #endif  // defined(WIN32)
 
 TEST(MultipleICDConfig, Basic) {

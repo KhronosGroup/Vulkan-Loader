@@ -6357,13 +6357,15 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     uint32_t idx = 0;
 
     // Copy over everything found through sorted enumeration
-#if defined(_WIN32)
-    struct loader_phys_dev_per_icd *phys_dev_array = sorted_phys_dev_array;
-    for (uint32_t i = 0; i < sorted_count; ++i) {
-#else
     struct loader_phys_dev_per_icd *phys_dev_array = icd_phys_dev_array;
-    for (uint32_t i = 0; i < inst->total_icd_count; ++i) {
+    uint32_t max_count = inst->total_icd_count;
+#if defined(_WIN32)
+    if (sorted_count > 0) {
+        phys_dev_array = sorted_phys_dev_array;
+        max_count = sorted_count;
+    }
 #endif
+    for (uint32_t i = 0; i < max_count; ++i) {
         for (uint32_t j = 0; j < phys_dev_array[i].device_count; ++j) {
             // Check if this physical device is already in the old buffer
             if (NULL != inst->phys_devs_term) {
@@ -6522,6 +6524,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDevices(VkInstance in
     if (NULL != pPhysicalDevices) {
         if (copy_count > *pPhysicalDeviceCount) {
             copy_count = *pPhysicalDeviceCount;
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "terminator_EnumeratePhysicalDevices : Trimming device count from %d to %d.", inst->total_gpu_count,
+                       copy_count);
             res = VK_INCOMPLETE;
         }
 
@@ -6875,7 +6880,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
     uint32_t cur_icd_group_count = 0;
     VkPhysicalDeviceGroupPropertiesKHR **new_phys_dev_groups = NULL;
     struct loader_physical_device_group_term *local_phys_dev_groups = NULL;
-    bool *local_phys_dev_group_sorted = NULL;
     PFN_vkEnumeratePhysicalDeviceGroups fpEnumeratePhysicalDeviceGroups = NULL;
     struct loader_phys_dev_per_icd *sorted_phys_dev_array = NULL;
     uint32_t sorted_count = 0;
@@ -6941,17 +6945,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
         // Create a temporary array (on the stack) to keep track of the
         // returned VkPhysicalDevice values.
         local_phys_dev_groups = loader_stack_alloc(sizeof(struct loader_physical_device_group_term) * total_count);
-        local_phys_dev_group_sorted = loader_stack_alloc(sizeof(bool) * total_count);
-        if (NULL == local_phys_dev_groups || NULL == local_phys_dev_group_sorted) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "terminator_EnumeratePhysicalDeviceGroups:  Failed to allocate local physical device group array of size %d",
-                       total_count);
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
         // Initialize the memory to something valid
         memset(local_phys_dev_groups, 0, sizeof(struct loader_physical_device_group_term) * total_count);
-        memset(local_phys_dev_group_sorted, 0, sizeof(bool) * total_count);
 
 #if defined(_WIN32)
         // Get the physical devices supported by platform sorting mechanism into a separate list
@@ -6965,13 +6960,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
         icd_term = inst->icd_terms;
         for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
             uint32_t count_this_time = total_count - cur_icd_group_count;
-
-            // Check if this group can be sorted
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-            bool icd_sorted = sorted_count && (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL);
-#else
-            bool icd_sorted = false;
-#endif
 
             // Get the function pointer to use to call into the ICD. This could be the core or KHR version
             if (inst->enabled_known_extensions.khr_device_group_creation) {
@@ -7009,7 +6997,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     local_phys_dev_groups[cur_index].icd_index = icd_idx;
                     local_phys_dev_groups[cur_index].group_props.physicalDeviceCount = 1;
                     local_phys_dev_groups[cur_index].group_props.physicalDevices[0] = phys_dev_array[indiv_gpu];
-                    local_phys_dev_group_sorted[cur_index] = icd_sorted;
                 }
 
             } else {
@@ -7022,7 +7009,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     goto out;
                 }
                 if (cur_icd_group_count + count_this_time < *pPhysicalDeviceGroupCount) {
-                    // Can just use passed in structs
+                    // The total amount is still less than the amount of phsyical device group data passed in
+                    // by the callee.  Therefore, we don't have to allocate any temporary structures and we
+                    // can just use the data that was passed in.
                     res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time,
                                                           &pPhysicalDeviceGroupProperties[cur_icd_group_count]);
                     if (res != VK_SUCCESS) {
@@ -7035,12 +7024,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     for (uint32_t group = 0; group < count_this_time; ++group) {
                         uint32_t cur_index = group + cur_icd_group_count;
                         local_phys_dev_groups[cur_index].group_props = pPhysicalDeviceGroupProperties[cur_index];
-                        local_phys_dev_group_sorted[cur_index] = icd_sorted;
                         local_phys_dev_groups[cur_index].this_icd_term = icd_term;
                         local_phys_dev_groups[cur_index].icd_index = icd_idx;
                     }
                 } else {
-                    // Have to use a temporary copy
+                    // There's not enough space in the callee's allocated pPhysicalDeviceGroupProperties structs,
+                    // so we have to allocate temporary versions to collect all the data.  However, we need to make
+                    // sure that at least the ones we do query utilize any pNext data in the callee's version.
                     VkPhysicalDeviceGroupProperties *tmp_group_props =
                         loader_stack_alloc(count_this_time * sizeof(VkPhysicalDeviceGroupProperties));
                     for (uint32_t group = 0; group < count_this_time; group++) {
@@ -7065,7 +7055,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     for (uint32_t group = 0; group < count_this_time; ++group) {
                         uint32_t cur_index = group + cur_icd_group_count;
                         local_phys_dev_groups[cur_index].group_props = tmp_group_props[group];
-                        local_phys_dev_group_sorted[cur_index] = icd_sorted;
                         local_phys_dev_groups[cur_index].this_icd_term = icd_term;
                         local_phys_dev_groups[cur_index].icd_index = icd_idx;
                     }
@@ -7085,11 +7074,20 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 #ifdef LOADER_ENABLE_LINUX_SORT
         if (is_linux_sort_enabled(inst)) {
             // Get the physical devices supported by platform sorting mechanism into a separate list
-            res = linux_read_sorted_physical_device_groups(inst, total_count, local_phys_dev_groups);
+            res = linux_sort_physical_device_groups(inst, total_count, local_phys_dev_groups);
+        }
+#elif defined(_WIN32)
+        // The Windows sorting information is only on physical devices.  We need to take that and convert it to the group
+        // information if it's present.
+        if (sorted_count > 0) {
+            res =
+                windows_sort_physical_device_groups(inst, total_count, local_phys_dev_groups, sorted_count, sorted_phys_dev_array);
         }
 #endif  // LOADER_ENABLE_LINUX_SORT
 
-        // Replace all the physical device IDs with the proper loader values
+        // Just to be safe, make sure we successfully completed setup_loader_term_phys_devs above
+        // before attempting to do the following.  By verifying that setup_loader_term_phys_devs ran
+        // first, it guarantees that each physical device will have a loader-specific handle.
         if (NULL != inst->phys_devs_term) {
             for (uint32_t group = 0; group < total_count; group++) {
                 for (uint32_t group_gpu = 0; group_gpu < local_phys_dev_groups[group].group_props.physicalDeviceCount;
@@ -7118,42 +7116,15 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 
         uint32_t idx = 0;
 
-#if defined(_WIN32)
-        // Copy over everything found through sorted enumeration
-        for (uint32_t i = 0; i < sorted_count; ++i) {
-            // Find the VkPhysicalDeviceGroupProperties object in local_phys_dev_groups
-            VkPhysicalDeviceGroupProperties *group_properties = NULL;
-            for (uint32_t group = 0; group < total_count; group++) {
-                if (sorted_phys_dev_array[i].device_count != local_phys_dev_groups[group].group_props.physicalDeviceCount) {
-                    continue;
-                }
-
-                bool match = true;
-                for (uint32_t group_gpu = 0; group_gpu < local_phys_dev_groups[group].group_props.physicalDeviceCount;
-                     group_gpu++) {
-                    if (sorted_phys_dev_array[i].physical_devices[group_gpu] !=
-                        ((struct loader_physical_device_term *)local_phys_dev_groups[group].group_props.physicalDevices[group_gpu])
-                            ->phys_dev) {
-                        match = false;
-                        break;
-                    }
-                }
-
-                if (match) {
-                    group_properties = &local_phys_dev_groups[group].group_props;
-                }
-            }
-#else  // ! WIN32
-       // Copy or create everything to fill the new array of physical device groups
-        for (uint32_t new_idx = 0; new_idx < total_count; new_idx++) {
+        // Copy or create everything to fill the new array of physical device groups
+        for (uint32_t group = 0; group < total_count; group++) {
             // Skip groups which have been included through sorting
-            if (local_phys_dev_group_sorted[new_idx] || local_phys_dev_groups[new_idx].group_props.physicalDeviceCount == 0) {
+            if (local_phys_dev_groups[group].group_props.physicalDeviceCount == 0) {
                 continue;
             }
 
             // Find the VkPhysicalDeviceGroupProperties object in local_phys_dev_groups
-            VkPhysicalDeviceGroupProperties *group_properties = &local_phys_dev_groups[new_idx].group_props;
-#endif
+            VkPhysicalDeviceGroupProperties *group_properties = &local_phys_dev_groups[group].group_props;
 
             // Check if this physical device group with the same contents is already in the old buffer
             for (uint32_t old_idx = 0; old_idx < inst->phys_dev_group_count_term; old_idx++) {
@@ -7268,6 +7239,9 @@ out:
         if (NULL != pPhysicalDeviceGroupProperties) {
             if (copy_count > *pPhysicalDeviceGroupCount) {
                 copy_count = *pPhysicalDeviceGroupCount;
+                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                           "terminator_EnumeratePhysicalDeviceGroups : Trimming device count from %d to %d.",
+                           inst->phys_dev_group_count_term, copy_count);
                 res = VK_INCOMPLETE;
             }
 

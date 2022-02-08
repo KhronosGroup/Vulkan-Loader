@@ -254,7 +254,7 @@ TEST_F(SeparateReport, ErrorInEnumDevs) {
 // Test report created outside of vkCreateInstance with info in vkEnumeratePhysicalDevices.
 // This should not be logged because type is wrong.
 TEST_F(SeparateReport, InfoInEnumDevsIgnored) {
-    expected_message = "Trimming device count down by application request";
+    expected_message = "Trimming device count from 6 to 5";
     expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
     expected_flag = VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
 
@@ -279,7 +279,7 @@ TEST_F(SeparateReport, InfoInEnumDevsIgnored) {
 // Test report created outside of vkCreateInstance with info in vkEnumeratePhysicalDevices.
 // This should be logged because type is correct.
 TEST_F(SeparateReport, InfoInEnumDevs) {
-    expected_message = "Trimming device count down by application request";
+    expected_message = "Trimming device count from 6 to 5";
     expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
     expected_flag = VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
 
@@ -720,7 +720,7 @@ TEST_F(SeparateMessenger, ErrorInEnumDevs) {
 // Test debug utils created outside of vkCreateInstance with info in vkEnumeratePhysicalDevices.
 // This should not be logged because type is wrong.
 TEST_F(SeparateMessenger, InfoInEnumDevsIgnoredType) {
-    expected_message = "Trimming device count down by application request";
+    expected_message = "Trimming device count from 6 to 5";
     expected_object_type = VK_OBJECT_TYPE_INSTANCE;
     expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
@@ -751,7 +751,7 @@ TEST_F(SeparateMessenger, InfoInEnumDevsIgnoredType) {
 // Test debug utils created outside of vkCreateInstance with info in vkEnumeratePhysicalDevices.
 // This should not be logged because severity is wrong.
 TEST_F(SeparateMessenger, InfoInEnumDevsIgnoredSeverity) {
-    expected_message = "Trimming device count down by application request";
+    expected_message = "Trimming device count from 6 to 5";
     expected_object_type = VK_OBJECT_TYPE_INSTANCE;
     expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
@@ -783,7 +783,7 @@ TEST_F(SeparateMessenger, InfoInEnumDevsIgnoredSeverity) {
 
 // Test debug utils created outside of vkCreateInstance with info in vkEnumeratePhysicalDevices.
 TEST_F(SeparateMessenger, InfoInEnumDevs) {
-    expected_message = "Trimming device count down by application request";
+    expected_message = "Trimming device count from 6 to 5";
     expected_object_type = VK_OBJECT_TYPE_INSTANCE;
     expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
