@@ -254,11 +254,11 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     // Grab all the necessary info we can about each device
     uint32_t index = 0;
     for (uint32_t icd_idx = 0; icd_idx < icd_count; ++icd_idx) {
-        for (uint32_t phys_dev = 0; phys_dev < icd_devices[icd_idx].count; ++phys_dev) {
-            struct loader_icd_term *icd_term = icd_devices[icd_idx].this_icd_term;
+        for (uint32_t phys_dev = 0; phys_dev < icd_devices[icd_idx].device_count; ++phys_dev) {
+            struct loader_icd_term *icd_term = icd_devices[icd_idx].icd_term;
             VkPhysicalDeviceProperties dev_props = {};
 
-            sorted_device_info[index].physical_device = icd_devices[icd_idx].phys_devs[phys_dev];
+            sorted_device_info[index].physical_device = icd_devices[icd_idx].physical_devices[phys_dev];
             sorted_device_info[index].icd_index = icd_idx;
             sorted_device_info[index].icd_term = icd_term;
             sorted_device_info[index].has_pci_bus_info = false;

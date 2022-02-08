@@ -78,6 +78,9 @@ struct PhysicalDevice {
 struct PhysicalDeviceGroup {
     PhysicalDeviceGroup() {}
     PhysicalDeviceGroup(PhysicalDevice const& physical_device) { physical_device_handles.push_back(&physical_device); }
+    PhysicalDeviceGroup(std::vector<PhysicalDevice*> const& physical_devices) {
+        physical_device_handles.insert(physical_device_handles.end(), physical_devices.begin(), physical_devices.end());
+    }
     PhysicalDeviceGroup& use_physical_device(PhysicalDevice const& physical_device) {
         physical_device_handles.push_back(&physical_device);
         return *this;
