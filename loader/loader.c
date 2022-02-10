@@ -582,11 +582,17 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
     VkExtensionProperties *ext_props = NULL;
 
     res = fpEnumerateDeviceExtensionProperties(physical_device, NULL, &count, NULL);
-    if (res == VK_SUCCESS && count > 0) {
+    if (res != VK_SUCCESS) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "loader_add_device_extensions: Error getting physical device extension info count from library %s", lib_name);
+        return res;
+    }
+    if (count > 0) {
         ext_props = loader_stack_alloc(count * sizeof(VkExtensionProperties));
         if (!ext_props) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_add_device_extensions: Failed to allocate space for device extension properties.");
+                       "loader_add_device_extensions: Failed to allocate space for device extension properties from library %s.",
+                       lib_name);
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
         res = fpEnumerateDeviceExtensionProperties(physical_device, NULL, &count, ext_props);
@@ -599,10 +605,6 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
                 return res;
             }
         }
-    } else {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "loader_add_device_extensions: Error getting physical device extension info count from library %s", lib_name);
-        return res;
     }
 
     return VK_SUCCESS;
