@@ -1115,6 +1115,8 @@ TEST(EnvironmentVariables, VK_LAYER_PATH) {
     EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
     EXPECT_TRUE(env.debug_log.find("/tandy"));
     EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/").str()));
+
+    remove_env_var("VK_LAYER_PATH");
 }
 #endif
 

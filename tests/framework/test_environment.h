@@ -304,6 +304,7 @@ struct TestLayerDetails {
         : layer_manifest(layer_manifest), json_name(json_name) {}
     BUILDER_VALUE(TestLayerDetails, ManifestLayer, layer_manifest, {});
     BUILDER_VALUE(TestLayerDetails, std::string, json_name, "test_layer");
+    BUILDER_VALUE(TestLayerDetails, fs::FolderManager*, destination_folder, nullptr);
     BUILDER_VALUE(TestLayerDetails, bool, add_to_regular_search_paths, true);
     BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
 };

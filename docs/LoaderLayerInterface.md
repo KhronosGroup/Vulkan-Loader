@@ -1038,7 +1038,7 @@ override layer global and applies it to every application upon startup.
 If the override layer contains `override_paths`, then it uses this list of
 paths exclusively for component layers.
 Thus, it ignores both the default explicit and implicit layer layer search
-locations.
+locations as well as paths set by environment variables like `VK_LAYER_PATH`.
 If any component layer is not present in the provided override paths, the meta
 layer is disabled.
 
@@ -1379,6 +1379,12 @@ layer is not applied.
 So if an override meta layer wants to mix default and custom layer locations,
 the override paths must contain both custom and default layer locations.
 
+* If the override layer is both present and contains `override_paths`, the
+paths from the environment variable `VK_LAYER_PATH` are ignored when searching
+for explicit layers.
+For example, when both the meta layer override paths and `VK_LAYER_PATH` are
+present, none of the layers in `VK_LAYER_PATH` are discoverable, and the
+loader will not find them.
 ## Layer Manifest File Format
 
 The Khronos loader uses manifest files to discover available layer libraries

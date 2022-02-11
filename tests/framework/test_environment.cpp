@@ -221,10 +221,14 @@ void FrameworkEnvironment::add_fake_explicit_layer(ManifestLayer layer_manifest,
     add_layer_impl(fake_details, explicit_layer_folder, ManifestCategory::explicit_layer);
 }
 void FrameworkEnvironment::add_implicit_layer(TestLayerDetails layer_details) noexcept {
-    add_layer_impl(layer_details, implicit_layer_folder, ManifestCategory::implicit_layer);
+    add_layer_impl(layer_details,
+                   layer_details.destination_folder == nullptr ? implicit_layer_folder : *layer_details.destination_folder,
+                   ManifestCategory::implicit_layer);
 }
 void FrameworkEnvironment::add_explicit_layer(TestLayerDetails layer_details) noexcept {
-    add_layer_impl(layer_details, explicit_layer_folder, ManifestCategory::explicit_layer);
+    add_layer_impl(layer_details,
+                   layer_details.destination_folder == nullptr ? explicit_layer_folder : *layer_details.destination_folder,
+                   ManifestCategory::explicit_layer);
 }
 
 void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::FolderManager& folder_manager,
