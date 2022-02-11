@@ -165,6 +165,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
 
     return result;
 }
+
+VKAPI_ATTR VkResult VKAPI_CALL test_override_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
+    return VK_ERROR_INVALID_SHADER_NV;
+}
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
     layer.instance_dispatch_table.DestroyInstance(instance, pAllocator);
 }
@@ -245,6 +250,56 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, 
 // Exported functions
 extern "C" {
 #if TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS
+
+// Pre-instance handling functions
+
+FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL test_preinst_vkEnumerateInstanceLayerProperties(
+    const VkEnumerateInstanceLayerPropertiesChain* pChain, uint32_t* pPropertyCount, VkLayerProperties* pProperties) {
+    VkResult res = pChain->pfnNextLayer(pChain->pNextLink, pPropertyCount, pProperties);
+    if (nullptr == pProperties) {
+        *pPropertyCount = layer.reported_layer_props;
+    } else {
+        uint32_t count = layer.reported_layer_props;
+        if (*pPropertyCount < layer.reported_layer_props) {
+            count = *pPropertyCount;
+            res = VK_INCOMPLETE;
+        }
+        for (uint32_t i = 0; i < count; ++i) {
+            snprintf(pProperties[i].layerName, VK_MAX_EXTENSION_NAME_SIZE, "%02d_layer", count);
+            pProperties[i].specVersion = count;
+            pProperties[i].implementationVersion = 0xABCD0000 + count;
+        }
+    }
+    return res;
+}
+
+FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL test_preinst_vkEnumerateInstanceExtensionProperties(
+    const VkEnumerateInstanceExtensionPropertiesChain* pChain, const char* pLayerName, uint32_t* pPropertyCount,
+    VkExtensionProperties* pProperties) {
+    VkResult res = pChain->pfnNextLayer(pChain->pNextLink, pLayerName, pPropertyCount, pProperties);
+    if (nullptr == pProperties) {
+        *pPropertyCount = layer.reported_extension_props;
+    } else {
+        uint32_t count = layer.reported_extension_props;
+        if (*pPropertyCount < layer.reported_extension_props) {
+            count = *pPropertyCount;
+            res = VK_INCOMPLETE;
+        }
+        for (uint32_t i = 0; i < count; ++i) {
+            snprintf(pProperties[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE, "%02d_ext", count);
+            pProperties[i].specVersion = count;
+        }
+    }
+    return res;
+}
+
+FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+test_preinst_vkEnumerateInstanceVersion(const VkEnumerateInstanceVersionChain* pChain, uint32_t* pApiVersion) {
+    VkResult res = pChain->pfnNextLayer(pChain->pNextLink, pApiVersion);
+    *pApiVersion = layer.reported_instance_version;
+    return res;
+}
+
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
                                                                                    VkLayerProperties* pProperties) {
     return test_vkEnumerateInstanceLayerProperties(pPropertyCount, pProperties);
@@ -270,6 +325,10 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProper
 
 #if TEST_LAYER_EXPORT_LAYER_NAMED_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_layer_GetInstanceProcAddr(VkInstance instance, const char* pName) {
+    return get_instance_func(instance, pName);
+}
+FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_override_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
+    if (string_eq(pName, "vkCreateInstance")) return TO_VOID_PFN(test_override_vkCreateInstance);
     return get_instance_func(instance, pName);
 }
 #endif

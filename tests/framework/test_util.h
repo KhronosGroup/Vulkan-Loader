@@ -541,7 +541,7 @@ struct ManifestLayer {
             BUILDER_VALUE(FunctionOverride, std::string, vk_func, {})
             BUILDER_VALUE(FunctionOverride, std::string, override_name, {})
 
-            std::string get_manifest_str() const { return std::string("{ \"") + vk_func + "\":\"" + override_name + "\" }"; }
+            std::string get_manifest_str() const { return std::string("\"") + vk_func + "\":\"" + override_name + "\""; }
         };
         struct Extension {
             Extension() noexcept {}
@@ -566,7 +566,7 @@ struct ManifestLayer {
         BUILDER_VECTOR(LayerDescription, std::string, component_layers, component_layer)
         BUILDER_VECTOR(LayerDescription, std::string, blacklisted_layers, blacklisted_layer)
         BUILDER_VECTOR(LayerDescription, std::string, override_paths, override_path)
-        BUILDER_VECTOR(LayerDescription, std::string, pre_instance_functions, pre_instance_function)
+        BUILDER_VECTOR(LayerDescription, FunctionOverride, pre_instance_functions, pre_instance_function)
 
         std::string get_manifest_str() const;
         VkLayerProperties get_layer_properties() const;

@@ -897,7 +897,7 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
     // The disable_environment has priority over everything else.  If it is defined, the layer is always
     // disabled.
     env_value = loader_getenv(prop->disable_env_var.name, inst);
-    if (env_value) {
+    if (NULL != env_value) {
         enable = false;
     }
     loader_free_getenv(env_value, inst);
@@ -2471,7 +2471,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             cJSON *inst_version_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceVersion");
             if (inst_version_json) {
                 char *inst_version_name = cJSON_Print(inst, inst_version_json);
-                if (inst_version_json) {
+                if (inst_version_json == NULL) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
@@ -4854,16 +4854,23 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                             cur_gipa =
                                 (PFN_vkGetInstanceProcAddr)loader_platform_get_proc_address(lib_handle, "vkGetInstanceProcAddr");
                             layer_prop->functions.get_instance_proc_addr = cur_gipa;
+
+                            if (NULL == cur_gipa) {
+                                loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                                           "loader_create_instance_chain: Failed to find \'vkGetInstanceProcAddr\' in layer %s",
+                                           layer_prop->lib_name);
+                                continue;
+                            }
                         } else {
                             cur_gipa = (PFN_vkGetInstanceProcAddr)loader_platform_get_proc_address(lib_handle,
                                                                                                    layer_prop->functions.str_gipa);
-                        }
 
-                        if (NULL == cur_gipa) {
-                            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                                       "loader_create_instance_chain: Failed to find \'vkGetInstanceProcAddr\' in layer %s",
-                                       layer_prop->lib_name);
-                            continue;
+                            if (NULL == cur_gipa) {
+                                loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                                           "loader_create_instance_chain: Failed to find \'%s\' in layer %s",
+                                           layer_prop->functions.str_gipa, layer_prop->lib_name);
+                                continue;
+                            }
                         }
                     }
                 }

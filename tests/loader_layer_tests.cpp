@@ -125,7 +125,7 @@ TEST_F(ImplicitLayers, OnlyDisableEnvVar) {
     // don't set disable env-var, layer should load
     CheckLogForLayerString(*env, implicit_layer_name, true);
 
-    // set disable env-var to 0, layer should not load
+    // set disable env-var to 0, layer should load
     set_env_var(disable_env_var, "0");
     CheckLogForLayerString(*env, implicit_layer_name, false);
 
@@ -140,6 +140,151 @@ TEST_F(ImplicitLayers, OnlyDisableEnvVar) {
         inst.CheckCreate(VK_SUCCESS);
         ASSERT_TRUE(env->debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
     }
+    remove_env_var(disable_env_var);
+}
+
+TEST_F(ImplicitLayers, PreInstanceEnumInstLayerProps) {
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 1, 2))
+            .add_layer(ManifestLayer::LayerDescription{}
+                           .set_name(implicit_layer_name)
+                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                           .set_disable_environment(disable_env_var)
+                           .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                          .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                                          .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))),
+        "implicit_test_layer.json");
+
+    uint32_t layer_props = 43;
+    auto& layer = env->get_test_layer(0);
+    layer.set_reported_layer_props(layer_props);
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, layer_props);
+
+    // set disable env-var to 1, layer should not load
+    set_env_var(disable_env_var, "1");
+
+    count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_NE(count, 0);
+    ASSERT_NE(count, layer_props);
+
+    remove_env_var(disable_env_var);
+}
+
+TEST_F(ImplicitLayers, PreInstanceEnumInstExtProps) {
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 1, 2))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(implicit_layer_name)
+                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                               .set_disable_environment(disable_env_var)
+                                               .add_pre_instance_function(
+                                                   ManifestLayer::LayerDescription::FunctionOverride{}
+                                                       .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                                       .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))),
+                            "implicit_test_layer.json");
+
+    uint32_t ext_props = 52;
+    auto& layer = env->get_test_layer(0);
+    layer.set_reported_extension_props(ext_props);
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+    ASSERT_EQ(count, ext_props);
+
+    // set disable env-var to 1, layer should not load
+    set_env_var(disable_env_var, "1");
+
+    count = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+    ASSERT_NE(count, 0);
+    ASSERT_NE(count, ext_props);
+
+    remove_env_var(disable_env_var);
+}
+
+TEST_F(ImplicitLayers, PreInstanceVersion) {
+    env->get_test_icd().physical_devices.push_back({});
+    env->get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 3);
+
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 1, 2))
+            .add_layer(ManifestLayer::LayerDescription{}
+                           .set_name(implicit_layer_name)
+                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                           .set_api_version(VK_MAKE_API_VERSION(0, 1, 2, 3))
+                           .set_disable_environment(disable_env_var)
+                           .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                          .set_vk_func("vkEnumerateInstanceVersion")
+                                                          .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
+        "implicit_test_layer.json");
+
+    uint32_t layer_version = VK_MAKE_API_VERSION(1, 2, 3, 4);
+    auto& layer = env->get_test_layer(0);
+    layer.set_reported_instance_version(layer_version);
+
+    uint32_t version = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceVersion(&version));
+    ASSERT_EQ(version, layer_version);
+
+    // set disable env-var to 1, layer should not load
+    set_env_var(disable_env_var, "1");
+
+    version = 0;
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceVersion(&version));
+    ASSERT_NE(version, 0);
+    ASSERT_NE(version, layer_version);
+
+    remove_env_var(disable_env_var);
+}
+
+// Run with a pre-Negotiate function version of the layer so that it has to query vkCreateInstance using the
+// renamed vkGetInstanceProcAddr function which returns one that intentionally fails.  Then disable the
+// layer and verify it works.  The non-override version of vkCreateInstance in the layer also works (and is
+// tested through behavior above).
+TEST_F(ImplicitLayers, OverrideGetInstanceProcAddr) {
+    env->get_test_icd().physical_devices.push_back({});
+
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env->add_implicit_layer(ManifestLayer{}
+                                .set_file_format_version(ManifestVersion(1, 0, 0))
+                                .add_layer(ManifestLayer::LayerDescription{}
+                                               .set_name(implicit_layer_name)
+                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_1)
+                                               .set_disable_environment(disable_env_var)
+                                               .add_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                                 .set_vk_func("vkGetInstanceProcAddr")
+                                                                 .set_override_name("test_override_vkGetInstanceProcAddr"))),
+                            "implicit_test_layer.json");
+
+    {
+        InstWrapper inst1{env->vulkan_functions};
+        inst1.CheckCreate(VK_ERROR_INVALID_SHADER_NV);
+    }
+
+    {
+        // set disable env-var to 1, layer should not load
+        set_env_var(disable_env_var, "1");
+        InstWrapper inst2{env->vulkan_functions};
+        inst2.CheckCreate();
+    }
+
     remove_env_var(disable_env_var);
 }
 
