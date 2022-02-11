@@ -97,6 +97,18 @@ std::string get_env_var(std::string const& name, bool report_failure) {
 #endif
 
 template <typename T>
+void print_list_of_t(std::string& out, const char* object_name, std::vector<T> const& vec) {
+    if (vec.size() > 0) {
+        out += std::string(",\n\t\t\"") + object_name + "\": {";
+        for (size_t i = 0; i < vec.size(); i++) {
+            if (i > 0) out += ",\t\t\t";
+            out += "\n\t\t\t" + vec.at(i).get_manifest_str();
+        }
+        out += "\n\t\t}";
+    }
+}
+
+template <typename T>
 void print_vector_of_t(std::string& out, const char* object_name, std::vector<T> const& vec) {
     if (vec.size() > 0) {
         out += std::string(",\n\t\t\"") + object_name + "\": [";
@@ -149,7 +161,7 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     out += "\t\t\"api_version\": \"" + version_to_string(api_version) + "\",\n";
     out += "\t\t\"implementation_version\":\"" + std::to_string(implementation_version) + "\",\n";
     out += "\t\t\"description\": \"" + description + "\"";
-    print_vector_of_t(out, "functions", functions);
+    print_list_of_t(out, "functions", functions);
     print_vector_of_t(out, "instance_extensions", instance_extensions);
     print_vector_of_t(out, "device_extensions", device_extensions);
     if (!enable_environment.empty()) {
@@ -161,9 +173,10 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     print_vector_of_strings(out, "component_layers", component_layers);
     print_vector_of_strings(out, "blacklisted_layers", blacklisted_layers);
     print_vector_of_strings(out, "override_paths", override_paths);
-    print_vector_of_strings(out, "pre_instance_functions", pre_instance_functions);
+    print_list_of_t(out, "pre_instance_functions", pre_instance_functions);
 
     out += "\n\t}";
+
     return out;
 }
 

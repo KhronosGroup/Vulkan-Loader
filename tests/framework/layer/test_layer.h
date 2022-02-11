@@ -96,6 +96,9 @@ struct TestLayer {
 
     BUILDER_VALUE(TestLayer, std::string, unique_name, {})
     BUILDER_VALUE(TestLayer, uint32_t, api_version, VK_API_VERSION_1_0)
+    BUILDER_VALUE(TestLayer, uint32_t, reported_layer_props, 1)
+    BUILDER_VALUE(TestLayer, uint32_t, reported_extension_props, 1)
+    BUILDER_VALUE(TestLayer, uint32_t, reported_instance_version, VK_API_VERSION_1_0)
     BUILDER_VALUE(TestLayer, uint32_t, implementation_version, 2)
     BUILDER_VALUE(TestLayer, uint32_t, min_implementation_version, 0)
     BUILDER_VALUE(TestLayer, std::string, description, {})

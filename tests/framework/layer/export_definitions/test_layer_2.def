@@ -10,3 +10,7 @@ EXPORTS
     GetDeviceProcAddr
     vk_layerGetPhysicalDeviceProcAddr
     vkNegotiateLoaderLayerInterfaceVersion
+    test_preinst_vkEnumerateInstanceLayerProperties
+    test_preinst_vkEnumerateInstanceExtensionProperties
+    test_preinst_vkEnumerateInstanceVersion
+    test_override_vkGetInstanceProcAddr
