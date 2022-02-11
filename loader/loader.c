@@ -2189,7 +2189,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
     override_paths = cJSON_GetObjectItem(layer_node, "override_paths");
     if (NULL != override_paths) {
-        if (version.major == 0 || (version.minor == 1 && version.patch) < 1 || version.minor == 0) {
+        if (version.major == 0 || (version.minor == 1 && version.patch < 1) || version.minor == 0) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific override paths, but using older JSON file version.");
         }
