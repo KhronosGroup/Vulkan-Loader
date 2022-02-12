@@ -117,7 +117,7 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
 PlatformShimWrapper::PlatformShimWrapper(DebugMode debug_mode) noexcept : debug_mode(debug_mode) {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
-    auto get_platform_shim_func = shim_library.get_symbol<PFN_get_platform_shim>(GET_PLATFORM_SHIM_STR);
+    PFN_get_platform_shim get_platform_shim_func = shim_library.get_symbol(GET_PLATFORM_SHIM_STR);
     assert(get_platform_shim_func != NULL && "Must be able to get \"platform_shim\"");
     platform_shim = get_platform_shim_func();
 #elif defined(__linux__) || defined(__FreeBSD__)
@@ -132,8 +132,8 @@ PlatformShimWrapper::~PlatformShimWrapper() noexcept { platform_shim->reset(debu
 
 TestICDHandle::TestICDHandle() noexcept {}
 TestICDHandle::TestICDHandle(fs::path const& icd_path) noexcept : icd_library(icd_path) {
-    proc_addr_get_test_icd = icd_library.get_symbol<GetNewTestICDFunc>(GET_TEST_ICD_FUNC_STR);
-    proc_addr_reset_icd = icd_library.get_symbol<GetNewTestICDFunc>(RESET_ICD_FUNC_STR);
+    proc_addr_get_test_icd = icd_library.get_symbol(GET_TEST_ICD_FUNC_STR);
+    proc_addr_reset_icd = icd_library.get_symbol(RESET_ICD_FUNC_STR);
 }
 TestICD& TestICDHandle::get_test_icd() noexcept {
     assert(proc_addr_get_test_icd != NULL && "symbol must be loaded before use");
@@ -147,8 +147,8 @@ fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_pa
 
 TestLayerHandle::TestLayerHandle() noexcept {}
 TestLayerHandle::TestLayerHandle(fs::path const& layer_path) noexcept : layer_library(layer_path) {
-    proc_addr_get_test_layer = layer_library.get_symbol<GetNewTestLayerFunc>(GET_TEST_LAYER_FUNC_STR);
-    proc_addr_reset_layer = layer_library.get_symbol<GetNewTestLayerFunc>(RESET_LAYER_FUNC_STR);
+    proc_addr_get_test_layer = layer_library.get_symbol(GET_TEST_LAYER_FUNC_STR);
+    proc_addr_reset_layer = layer_library.get_symbol(RESET_LAYER_FUNC_STR);
 }
 TestLayer& TestLayerHandle::get_test_layer() noexcept {
     assert(proc_addr_get_test_layer != NULL && "symbol must be loaded before use");

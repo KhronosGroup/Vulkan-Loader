@@ -297,6 +297,20 @@ inline void* loader_platform_get_proc_address(loader_platform_dl_handle library,
 inline const char* loader_platform_get_proc_address_error(const char* name) { return dlerror(); }
 #endif
 
+class FromVoidStarFunc {
+   private:
+    void* function;
+
+   public:
+    FromVoidStarFunc(void* function) : function(function) {}
+    FromVoidStarFunc(PFN_vkVoidFunction function) : function(reinterpret_cast<void*>(function)) {}
+
+    template <typename T>
+    operator T() {
+        return reinterpret_cast<T>(function);
+    }
+};
+
 struct LibraryWrapper {
     explicit LibraryWrapper() noexcept {}
     explicit LibraryWrapper(fs::path const& lib_path) noexcept : lib_path(lib_path) {
@@ -329,15 +343,14 @@ struct LibraryWrapper {
         }
         return *this;
     }
-    template <typename T>
-    T get_symbol(const char* symbol_name) const {
-        assert(lib_handle != NULL && "Cannot get symbol with null library handle");
-        T symbol = reinterpret_cast<T>(loader_platform_get_proc_address(lib_handle, symbol_name));
-        if (symbol == NULL) {
+    FromVoidStarFunc get_symbol(const char* symbol_name) const {
+        assert(lib_handle != nullptr && "Cannot get symbol with null library handle");
+        void* symbol = loader_platform_get_proc_address(lib_handle, symbol_name);
+        if (symbol == nullptr) {
             fprintf(stderr, "Unable to open symbol %s: %s\n", symbol_name, loader_platform_get_proc_address_error(symbol_name));
-            assert(symbol != NULL && "Must be able to get symbol");
+            assert(symbol != nullptr && "Must be able to get symbol");
         }
-        return symbol;
+        return FromVoidStarFunc(symbol);
     }
 
     explicit operator bool() const noexcept { return lib_handle != nullptr; }
@@ -346,6 +359,10 @@ struct LibraryWrapper {
     fs::path lib_path;
 };
 
+template <typename T>
+PFN_vkVoidFunction to_vkVoidFunction(T func) {
+    return reinterpret_cast<PFN_vkVoidFunction>(func);
+}
 template <typename T>
 struct FRAMEWORK_EXPORT DispatchableHandle {
     DispatchableHandle() {
@@ -713,6 +730,32 @@ struct VulkanFunctions {
     PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
 
     VulkanFunctions();
+
+    FromVoidStarFunc load(VkInstance inst, const char* func_name) {
+        return FromVoidStarFunc(vkGetInstanceProcAddr(inst, func_name));
+    }
+
+    FromVoidStarFunc load(VkDevice device, const char* func_name) {
+        return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
+    }
+};
+
+struct DeviceFunctions {
+    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
+    PFN_vkDestroyDevice vkDestroyDevice = nullptr;
+    PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
+    PFN_vkCreateCommandPool vkCreateCommandPool = nullptr;
+    PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers = nullptr;
+    PFN_vkDestroyCommandPool vkDestroyCommandPool = nullptr;
+    PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
+    PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR = nullptr;
+
+    DeviceFunctions() = default;
+    DeviceFunctions(const VulkanFunctions& vulkan_functions, VkDevice device);
+
+    FromVoidStarFunc load(VkDevice device, const char* func_name) const {
+        return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
+    }
 };
 
 struct InstanceCreateInfo {
