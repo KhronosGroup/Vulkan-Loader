@@ -279,12 +279,12 @@ HRESULT __stdcall ShimCreateDXGIFactory1(REFIID riid, void **ppFactory) {
 void WINAPI DetourFunctions() {
     if (!gdi32_dll) {
         gdi32_dll = LibraryWrapper("gdi32.dll");
-        fpEnumAdapters2 = gdi32_dll.get_symbol<PFN_LoaderEnumAdapters2>("D3DKMTEnumAdapters2");
+        fpEnumAdapters2 = gdi32_dll.get_symbol("D3DKMTEnumAdapters2");
         if (fpEnumAdapters2 == nullptr) {
             std::cerr << "Failed to load D3DKMTEnumAdapters2\n";
             return;
         }
-        fpQueryAdapterInfo = gdi32_dll.get_symbol<PFN_LoaderQueryAdapterInfo>("D3DKMTQueryAdapterInfo");
+        fpQueryAdapterInfo = gdi32_dll.get_symbol("D3DKMTQueryAdapterInfo");
         if (fpQueryAdapterInfo == nullptr) {
             std::cerr << "Failed to load D3DKMTQueryAdapterInfo\n";
             return;
@@ -295,7 +295,7 @@ void WINAPI DetourFunctions() {
         GetSystemDirectory(systemPath, MAX_PATH);
         StringCchCat(systemPath, MAX_PATH, TEXT("\\dxgi.dll"));
         dxgi_module = LibraryWrapper(systemPath);
-        RealCreateDXGIFactory1 = dxgi_module.get_symbol<PFN_CreateDXGIFactory1>("CreateDXGIFactory1");
+        RealCreateDXGIFactory1 = dxgi_module.get_symbol("CreateDXGIFactory1");
         if (RealCreateDXGIFactory1 == nullptr) {
             std::cerr << "Failed to load CreateDXGIFactory1\n";
         }

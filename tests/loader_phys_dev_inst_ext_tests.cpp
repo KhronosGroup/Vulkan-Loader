@@ -1427,7 +1427,7 @@ static uint32_t FillInRandomQueueFamilyData(std::vector<MockQueueFamilyPropertie
         props[i].properties.minImageTransferGranularity.depth = (rand() % 30) + 1;
         props[i].support_present = (rand() % 2);
     }
-    return props.size();
+    return static_cast<uint32_t>(props.size());
 }
 
 // Compare the queue family structs
@@ -5346,7 +5346,7 @@ TEST(LoaderInstPhysDevExts, DifferentPhysicalDeviceExtensions) {
         bool supports_timestamps = false;
         ASSERT_EQ(VK_SUCCESS,
                   inst->vkEnumerateDeviceExtensionProperties(physical_devices[dev], nullptr, &extension_count, nullptr));
-        ASSERT_GT(extension_count, 0);
+        ASSERT_GT(extension_count, 0U);
         device_extensions.resize(extension_count);
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_devices[dev], nullptr, &extension_count,
                                                                          device_extensions.data()));
