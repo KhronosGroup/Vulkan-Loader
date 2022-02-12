@@ -108,7 +108,8 @@ endm
 DevExtTramp macro num
 public _vkdev_ext&num&@4
 _vkdev_ext&num&@4:
-    mov     eax, dword ptr [esp + 4]                                           ; Dereference the handle to get the dispatch table
+    mov     eax, dword ptr [esp + 4]                                           ; Dereference the handle to get VkDevice chain_device
+    mov     eax, dword ptr [eax]                                               ; Dereference the chain_device to get the loader_dispatch
     jmp     dword ptr [eax + (EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * num))]  ; Jump to the appropriate call chain
 endm
 
