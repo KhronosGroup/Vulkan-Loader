@@ -632,15 +632,23 @@ InstanceCreateInfo& InstanceCreateInfo::set_api_version(uint32_t major, uint32_t
 
 DeviceQueueCreateInfo::DeviceQueueCreateInfo() { queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; }
 
+VkDeviceQueueCreateInfo DeviceQueueCreateInfo::get() noexcept {
+    queue_create_info.pQueuePriorities = priorities.data();
+    return queue_create_info;
+}
+
 VkDeviceCreateInfo* DeviceCreateInfo::get() noexcept {
     dev.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());
     dev.ppEnabledLayerNames = enabled_layers.data();
     dev.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
     dev.ppEnabledExtensionNames = enabled_extensions.data();
     uint32_t index = 0;
-    for (auto& queue : queue_infos) queue.queueFamilyIndex = index++;
+    for (auto& queue : queue_info_details) {
+        queue.queue_create_info.queueFamilyIndex = index++;
+        device_queue_infos.push_back(queue.get());
+    }
 
-    dev.queueCreateInfoCount = static_cast<uint32_t>(queue_infos.size());
-    dev.pQueueCreateInfos = queue_infos.data();
+    dev.queueCreateInfoCount = static_cast<uint32_t>(device_queue_infos.size());
+    dev.pQueueCreateInfos = device_queue_infos.data();
     return &dev;
 }

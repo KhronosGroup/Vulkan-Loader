@@ -146,6 +146,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     }
 
     layer.next_vkGetInstanceProcAddr = fpGetInstanceProcAddr;
+    layer.next_GetPhysicalDeviceProcAddr =
+        reinterpret_cast<PFN_GetPhysicalDeviceProcAddr>(fpGetInstanceProcAddr(*pInstance, "vk_layerGetPhysicalDeviceProcAddr"));
 
     // Advance the link info for the next element of the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
@@ -307,7 +309,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDe
 #if TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance,
                                                                                             const char* pName) {
-    return nullptr;
+    return layer.next_GetPhysicalDeviceProcAddr(instance, pName);
 }
 #endif
 

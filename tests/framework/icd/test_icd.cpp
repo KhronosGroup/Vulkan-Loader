@@ -303,6 +303,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     *pDevice = device_handle.handle;
     found->device_handles.push_back(device_handle.handle);
     icd.device_handles.emplace_back(std::move(device_handle));
+
+    for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
+        found->queue_handles.emplace_back();
+    }
+
     return VK_SUCCESS;
 }
 
@@ -744,6 +749,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers(VkDevice device, co
         }
     }
     return VK_SUCCESS;
+}
+
+VKAPI_ATTR void VKAPI_CALL test_vkGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
+    *pQueue = icd.physical_devices.back().queue_handles[queueIndex].handle;
 }
 
 // VK_EXT_acquire_drm_display
@@ -1241,15 +1250,12 @@ PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
 }
 
 PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
-    bool found = false;
-    PhysicalDevice* found_phys_dev{};
-    for (auto& phys_dev : icd.physical_devices) {
-        for (auto& device_handle : phys_dev.device_handles) {
-            if (device_handle == device) {
-                found = true;
-                found_phys_dev = &phys_dev;
-                break;
-            }
+    if (device != nullptr) {
+        if (!std::any_of(icd.physical_devices.begin(), icd.physical_devices.end(), [&](const PhysicalDevice& pd) {
+                return std::any_of(pd.device_handles.begin(), pd.device_handles.end(),
+                                   [&](const VkDevice& pd_device) { return pd_device == device; });
+            })) {
+            return nullptr;
         }
     }
     if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
@@ -1292,6 +1298,10 @@ PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* 
 
     auto instance_func_return = get_instance_func(instance, pName);
     if (instance_func_return != nullptr) return instance_func_return;
+
+    // Need to return function pointers for device extensions
+    auto device_func_return = get_device_func(nullptr, pName);
+    if (device_func_return != nullptr) return device_func_return;
     return nullptr;
 }
 

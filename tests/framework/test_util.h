@@ -783,6 +783,7 @@ struct DeviceQueueCreateInfo {
     BUILDER_VECTOR(DeviceQueueCreateInfo, float, priorities, priority)
 
     DeviceQueueCreateInfo();
+    VkDeviceQueueCreateInfo get() noexcept;
 };
 
 struct DeviceCreateInfo {
@@ -790,9 +791,11 @@ struct DeviceCreateInfo {
     BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_extensions, extension)
     BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_layers, layer)
     BUILDER_VECTOR(DeviceCreateInfo, DeviceQueueCreateInfo, queue_info_details, device_queue)
-    BUILDER_VECTOR(DeviceCreateInfo, VkDeviceQueueCreateInfo, queue_infos, queue_info)
 
     VkDeviceCreateInfo* get() noexcept;
+
+   private:
+    std::vector<VkDeviceQueueCreateInfo> device_queue_infos;
 };
 
 inline bool operator==(const VkExtent3D& a, const VkExtent3D& b) {
@@ -818,7 +821,7 @@ inline bool operator==(const VkExtensionProperties& a, const VkExtensionProperti
 inline bool operator!=(const VkExtensionProperties& a, const VkExtensionProperties& b) { return !(a == b); }
 
 struct VulkanFunction {
-    const char* name;
+    std::string name;
     void* function;
 };
 template <typename T, size_t U>
