@@ -58,27 +58,24 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
 }
 
 void set_env_var(std::string const& name, std::string const& value) {
-    BOOL ret = SetEnvironmentVariableA(name.c_str(), value.c_str());
+    BOOL ret = SetEnvironmentVariableW(widen(name).c_str(), widen(value).c_str());
     if (ret == 0) {
-        print_error_message(ERROR_SETENV_FAILED, "SetEnvironmentVariableA");
+        print_error_message(ERROR_SETENV_FAILED, "SetEnvironmentVariableW");
     }
 }
-void remove_env_var(std::string const& name) { SetEnvironmentVariableA(name.c_str(), nullptr); }
-#define ENV_VAR_BUFFER_SIZE 4096
+void remove_env_var(std::string const& name) { SetEnvironmentVariableW(widen(name).c_str(), nullptr); }
 std::string get_env_var(std::string const& name, bool report_failure) {
-    std::string value;
-    value.resize(ENV_VAR_BUFFER_SIZE);
-    DWORD ret = GetEnvironmentVariable(name.c_str(), &value[0], ENV_VAR_BUFFER_SIZE);
-    if (0 == ret) {
-        if (report_failure) print_error_message(ERROR_ENVVAR_NOT_FOUND, "GetEnvironmentVariable");
-        return std::string();
-    } else if (ENV_VAR_BUFFER_SIZE < ret) {
-        if (report_failure) std::cerr << "Not enough space to write environment variable" << name << "\n";
-        return std::string();
-    } else {
-        value.resize(ret);
+    std::wstring name_utf16 = widen(name);
+    DWORD value_size = GetEnvironmentVariableW(name_utf16.c_str(), nullptr, 0);
+    if (0 == value_size) {
+        if (report_failure) print_error_message(ERROR_ENVVAR_NOT_FOUND, "GetEnvironmentVariableW");
+        return {};
     }
-    return value;
+    std::wstring value(value_size, L'\0');
+    if (GetEnvironmentVariableW(name_utf16.c_str(), &value[0], value_size) != value_size - 1) {
+        return {};
+    }
+    return narrow(value);
 }
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 
@@ -353,7 +350,7 @@ path& path::replace_filename(path const& replacement) {
 // internal implementation helper for per-platform creating & destroying folders
 int create_folder(path const& path) {
 #if defined(WIN32)
-    return _mkdir(path.c_str());
+    return _wmkdir(widen(path.str()).c_str());
 #else
     mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     return 0;
@@ -362,25 +359,27 @@ int create_folder(path const& path) {
 
 int delete_folder_contents(path const& folder) {
 #if defined(WIN32)
-    if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(folder.c_str()) && GetLastError() == ERROR_FILE_NOT_FOUND) {
+    std::wstring folder_utf16 = widen(folder.str());
+    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(folder_utf16.c_str()) && GetLastError() == ERROR_FILE_NOT_FOUND) {
         // nothing to delete
         return 0;
     }
-    std::string search_path = folder.str() + "/*.*";
+    std::wstring search_path = folder_utf16 + L"/*.*";
     std::string s_p = folder.str() + "/";
-    WIN32_FIND_DATA fd;
-    HANDLE hFind = ::FindFirstFileA(search_path.c_str(), &fd);
+    WIN32_FIND_DATAW fd;
+    HANDLE hFind = ::FindFirstFileW(search_path.c_str(), &fd);
     if (hFind != INVALID_HANDLE_VALUE) {
         do {
+            std::string file_name_utf8 = narrow(fd.cFileName);
             if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                if (!string_eq(fd.cFileName, ".") && !string_eq(fd.cFileName, "..")) {
-                    delete_folder(s_p + fd.cFileName);
+                if (!string_eq(file_name_utf8.c_str(), ".") && !string_eq(file_name_utf8.c_str(), "..")) {
+                    delete_folder(s_p + file_name_utf8);
                 }
             } else {
-                std::string child_name = s_p + fd.cFileName;
-                DeleteFile(child_name.c_str());
+                std::string child_name = s_p + file_name_utf8;
+                DeleteFileW(widen(child_name).c_str());
             }
-        } while (::FindNextFile(hFind, &fd));
+        } while (::FindNextFileW(hFind, &fd));
         ::FindClose(hFind);
     }
     return 0;
@@ -417,12 +416,18 @@ int delete_folder(path const& folder) {
     int ret = delete_folder_contents(folder);
     if (ret != 0) return ret;
 #if defined(WIN32)
-    _rmdir(folder.c_str());
+    _wrmdir(widen(folder.str()).c_str());
     return 0;
 #else
     return rmdir(folder.c_str());
 #endif
 }
+
+#if defined(WIN32)
+std::wstring native_path(const std::string& utf8) { return widen(utf8); }
+#else
+const std::string& native_path(const std::string& utf8) { return utf8; }
+#endif
 
 FolderManager::FolderManager(path root_path, std::string name) : folder(root_path / name) {
     delete_folder_contents(folder);
@@ -447,7 +452,7 @@ path FolderManager::write_manifest(std::string const& name, std::string const& c
     } else {
         files.emplace_back(name);
     }
-    auto file = std::ofstream(out_path.str(), std::ios_base::trunc | std::ios_base::out);
+    auto file = std::ofstream(native_path(out_path.str()), std::ios_base::trunc | std::ios_base::out);
     if (!file) {
         std::cerr << "Failed to create manifest " << name << " at " << out_path.str() << "\n";
         return out_path;
@@ -483,12 +488,12 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
     } else {
         files.emplace_back(new_name);
     }
-    std::ifstream src(file.str(), std::ios::binary);
+    std::ifstream src(native_path(file.str()), std::ios::binary);
     if (!src) {
         std::cerr << "Failed to create file " << file.str() << " for copying from\n";
         return new_filepath;
     }
-    std::ofstream dst(new_filepath.str(), std::ios::binary);
+    std::ofstream dst(native_path(new_filepath.str()), std::ios::binary);
     if (!dst) {
         std::cerr << "Failed to create file " << new_filepath.str() << " for copying to\n";
         return new_filepath;
@@ -672,3 +677,35 @@ VkDeviceCreateInfo* DeviceCreateInfo::get() noexcept {
     dev.pQueueCreateInfos = device_queue_infos.data();
     return &dev;
 }
+
+#if defined(WIN32)
+std::string narrow(const std::wstring& utf16) {
+    if (utf16.empty()) {
+        return {};
+    }
+    int size = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), static_cast<int>(utf16.size()), nullptr, 0, nullptr, nullptr);
+    if (size <= 0) {
+        return {};
+    }
+    std::string utf8(size, '\0');
+    if (WideCharToMultiByte(CP_UTF8, 0, utf16.data(), static_cast<int>(utf16.size()), &utf8[0], size, nullptr, nullptr) != size) {
+        return {};
+    }
+    return utf8;
+}
+
+std::wstring widen(const std::string& utf8) {
+    if (utf8.empty()) {
+        return {};
+    }
+    int size = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), static_cast<int>(utf8.size()), nullptr, 0);
+    if (size <= 0) {
+        return {};
+    }
+    std::wstring utf16(size, L'\0');
+    if (MultiByteToWideChar(CP_UTF8, 0, utf8.data(), static_cast<int>(utf8.size()), &utf16[0], size) != size) {
+        return {};
+    }
+    return utf16;
+}
+#endif

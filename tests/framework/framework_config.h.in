@@ -41,6 +41,10 @@
 
 #define TEST_ICD_PATH_VERSION_2 "$<TARGET_FILE:test_icd_version_2>"
 
+#define TEST_JSON_NAME_VERSION_2_UNICODE "\xf0\x9f\x8c\x8b"
+#define TEST_ICD_PATH_VERSION_2_UNICODE \
+    "$<TARGET_FILE_DIR:test_icd_version_2>/" TEST_JSON_NAME_VERSION_2_UNICODE "$<TARGET_FILE_SUFFIX:test_icd_version_2>"
+
 // assumes version 2 exports
 #define TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA "$<TARGET_FILE:test_icd_version_2_export_icd_gpdpa>"
 

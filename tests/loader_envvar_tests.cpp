@@ -90,6 +90,19 @@ TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa)
     ASSERT_EQ(env.get_test_icd(0).called_vk_icd_gipa, CalledICDGIPA::vk_icd_gipa);
 }
 
+// export vk_icdNegotiateLoaderICDInterfaceVersion and vk_icdGetInstanceProcAddr
+TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa_unicode) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_UNICODE)
+                    .set_discovery_type(ManifestDiscoveryType::env_var)
+                    .set_json_name(TEST_JSON_NAME_VERSION_2_UNICODE));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    ASSERT_EQ(env.get_test_icd(0).called_vk_icd_gipa, CalledICDGIPA::vk_icd_gipa);
+}
+
 // Test VK_DRIVER_FILES environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     FrameworkEnvironment env{};

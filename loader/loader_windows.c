@@ -73,10 +73,10 @@ void windows_initialization(void) {
     // and not after the first call that has been statically linked
     LoadLibrary("gdi32.dll");
 
-    TCHAR systemPath[MAX_PATH] = "";
-    GetSystemDirectory(systemPath, MAX_PATH);
-    StringCchCat(systemPath, MAX_PATH, TEXT("\\dxgi.dll"));
-    HMODULE dxgi_module = LoadLibrary(systemPath);
+    wchar_t systemPath[MAX_PATH] = L"";
+    GetSystemDirectoryW(systemPath, MAX_PATH);
+    StringCchCatW(systemPath, MAX_PATH, L"\\dxgi.dll");
+    HMODULE dxgi_module = LoadLibraryW(systemPath);
     fpCreateDXGIFactory1 = dxgi_module == NULL ? NULL : (PFN_CreateDXGIFactory1)GetProcAddress(dxgi_module, "CreateDXGIFactory1");
 
 #if !defined(NDEBUG)

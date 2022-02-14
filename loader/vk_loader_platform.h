@@ -76,6 +76,7 @@
 #include "vk_loader_layer.h"
 #include "vk_layer_dispatch_table.h"
 #include "vk_loader_extensions.h"
+#include "stack_allocation.h"
 
 #if defined(__GNUC__) && __GNUC__ >= 4
 #define LOADER_EXPORT __attribute__((visibility("default")))
@@ -374,7 +375,15 @@ static inline const wchar_t *LoaderPnpILayerRegistryWide() {
 
 // File IO
 static bool loader_platform_file_exists(const char *path) {
-    if ((_access(path, 0)) == -1)
+    int path_utf16_size = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
+    if (path_utf16_size <= 0) {
+        return false;
+    }
+    wchar_t *path_utf16 = (wchar_t *)loader_stack_alloc(path_utf16_size * sizeof(wchar_t));
+    if (MultiByteToWideChar(CP_UTF8, 0, path, -1, path_utf16, path_utf16_size) != path_utf16_size) {
+        return false;
+    }
+    if (_waccess(path_utf16, 0) == -1)
         return false;
     else
         return true;
@@ -410,21 +419,40 @@ static inline char *loader_platform_dirname(char *path) {
 }
 
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
-    DWORD ret = GetModuleFileName(NULL, buffer, (DWORD)size);
-    if (ret == 0) return NULL;
-    if (ret > size) return NULL;
-    buffer[ret] = '\0';
+    wchar_t *buffer_utf16 = (wchar_t *)loader_stack_alloc(size * sizeof(wchar_t));
+    DWORD ret = GetModuleFileNameW(NULL, buffer_utf16, (DWORD)size);
+    if (ret == 0) {
+        return NULL;
+    }
+    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        return NULL;
+    }
+    int buffer_utf8_size = WideCharToMultiByte(CP_UTF8, 0, buffer_utf16, -1, NULL, 0, NULL, NULL);
+    if (buffer_utf8_size <= 0 || (size_t)buffer_utf8_size > size) {
+        return NULL;
+    }
+    if (WideCharToMultiByte(CP_UTF8, 0, buffer_utf16, -1, buffer, buffer_utf8_size, NULL, NULL) != buffer_utf8_size) {
+        return NULL;
+    }
     return buffer;
 }
 
 // Dynamic Loading:
 typedef HMODULE loader_platform_dl_handle;
 static loader_platform_dl_handle loader_platform_open_library(const char *lib_path) {
+    int lib_path_utf16_size = MultiByteToWideChar(CP_UTF8, 0, lib_path, -1, NULL, 0);
+    if (lib_path_utf16_size <= 0) {
+        return NULL;
+    }
+    wchar_t *lib_path_utf16 = (wchar_t *)loader_stack_alloc(lib_path_utf16_size * sizeof(wchar_t));
+    if (MultiByteToWideChar(CP_UTF8, 0, lib_path, -1, lib_path_utf16, lib_path_utf16_size) != lib_path_utf16_size) {
+        return NULL;
+    }
     // Try loading the library the original way first.
-    loader_platform_dl_handle lib_handle = LoadLibrary(lib_path);
+    loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path_utf16);
     if (lib_handle == NULL && GetLastError() == ERROR_MOD_NOT_FOUND) {
         // If that failed, then try loading it with broader search folders.
-        lib_handle = LoadLibraryEx(lib_path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        lib_handle = LoadLibraryExW(lib_path_utf16, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     }
     return lib_handle;
 }

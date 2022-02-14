@@ -1644,7 +1644,18 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
 
     *json = NULL;
 
+#if defined(_WIN32)
+    int filename_utf16_size = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+    if (filename_utf16_size > 0) {
+        wchar_t *filename_utf16 = (wchar_t *)loader_stack_alloc(filename_utf16_size * sizeof(wchar_t));
+        if (MultiByteToWideChar(CP_UTF8, 0, filename, -1, filename_utf16, filename_utf16_size) == filename_utf16_size) {
+            file = _wfopen(filename_utf16, L"rb");
+        }
+    }
+#else
     file = fopen(filename, "rb");
+#endif
+
     if (!file) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
