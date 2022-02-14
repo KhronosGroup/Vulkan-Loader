@@ -29,6 +29,7 @@
 #pragma once
 
 #include "loader_common.h"
+#include "stack_allocation.h"
 
 void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocation_scope);
 void *loader_instance_heap_calloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocation_scope);
@@ -59,9 +60,3 @@ void loader_free_with_instance_fallback(const VkAllocationCallbacks *pAllocator,
                                         void *pMemory);
 void *loader_realloc_with_instance_fallback(const VkAllocationCallbacks *pAllocator, const struct loader_instance *instance,
                                             void *pMemory, size_t orig_size, size_t size, VkSystemAllocationScope allocation_scope);
-
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__)
-#define loader_stack_alloc(size) alloca(size)
-#elif defined(_WIN32)
-#define loader_stack_alloc(size) _alloca(size)
-#endif  // defined(_WIN32)

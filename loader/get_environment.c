@@ -106,22 +106,40 @@ bool is_high_integrity() {
 }
 
 char *loader_getenv(const char *name, const struct loader_instance *inst) {
-    char *retVal;
-    DWORD valSize;
-
-    valSize = GetEnvironmentVariableA(name, NULL, 0);
-
-    // valSize DOES include the null terminator, so for any set variable
-    // will always be at least 1. If it's 0, the variable wasn't set.
-    if (valSize == 0) return NULL;
-
-    retVal = loader_instance_heap_alloc(inst, valSize, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-
-    if (NULL != retVal) {
-        GetEnvironmentVariableA(name, retVal, valSize);
+    int name_utf16_size = MultiByteToWideChar(CP_UTF8, 0, name, -1, NULL, 0);
+    if (name_utf16_size <= 0) {
+        return NULL;
+    }
+    wchar_t *name_utf16 = (wchar_t *)loader_stack_alloc(name_utf16_size * sizeof(wchar_t));
+    if (MultiByteToWideChar(CP_UTF8, 0, name, -1, name_utf16, name_utf16_size) != name_utf16_size) {
+        return NULL;
     }
 
-    return retVal;
+    DWORD val_size = GetEnvironmentVariableW(name_utf16, NULL, 0);
+    // val_size DOES include the null terminator, so for any set variable
+    // will always be at least 1. If it's 0, the variable wasn't set.
+    if (val_size == 0) {
+        return NULL;
+    }
+
+    wchar_t *val = (wchar_t *)loader_stack_alloc(val_size * sizeof(wchar_t));
+    if (GetEnvironmentVariableW(name_utf16, val, val_size) != val_size - 1) {
+        return NULL;
+    }
+
+    int val_utf8_size = WideCharToMultiByte(CP_UTF8, 0, val, -1, NULL, 0, NULL, NULL);
+    if (val_utf8_size <= 0) {
+        return NULL;
+    }
+    char *val_utf8 = (char *)loader_instance_heap_alloc(inst, val_utf8_size * sizeof(char), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (val_utf8 == NULL) {
+        return NULL;
+    }
+    if (WideCharToMultiByte(CP_UTF8, 0, val, -1, val_utf8, val_utf8_size, NULL, NULL) != val_utf8_size) {
+        loader_instance_heap_free(inst, val_utf8);
+        return NULL;
+    }
+    return val_utf8;
 }
 
 char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {

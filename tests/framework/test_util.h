@@ -107,7 +107,6 @@
 #if defined(WIN32)
 void set_env_var(std::string const& name, std::string const& value);
 void remove_env_var(std::string const& name);
-#define ENV_VAR_BUFFER_SIZE 4096
 std::string get_env_var(std::string const& name, bool report_failure = true);
 
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
@@ -243,13 +242,22 @@ inline void copy_string_to_char_array(std::string const& src, char* dst, size_t 
 }
 
 #if defined(WIN32)
+// Convert an UTF-16 wstring to an UTF-8 string
+std::string narrow(const std::wstring &utf16);
+// Convert an UTF-8 string to an UTF-16 wstring
+std::wstring widen(const std::string &utf8);
+#endif
+
+#if defined(WIN32)
 typedef HMODULE loader_platform_dl_handle;
 static loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
+    std::wstring lib_path_utf16 = widen(lib_path);
     // Try loading the library the original way first.
-    loader_platform_dl_handle lib_handle = LoadLibrary(lib_path);
+    loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path_utf16.c_str());
     if (lib_handle == nullptr && GetLastError() == ERROR_MOD_NOT_FOUND) {
         // If that failed, then try loading it with broader search folders.
-        lib_handle = LoadLibraryEx(lib_path, nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        lib_handle =
+            LoadLibraryExW(lib_path_utf16.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     }
     return lib_handle;
 }
