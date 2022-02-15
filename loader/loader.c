@@ -2430,7 +2430,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
     // Read in the pre-instance stuff
     cJSON *pre_instance = cJSON_GetObjectItem(layer_node, "pre_instance_functions");
-    if (pre_instance) {
+    if (NULL != pre_instance) {
         if (!layer_json_supports_pre_instance_tag(&version)) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "Found pre_instance_functions section in layer from \"%s\". This section is only valid in manifest version "
@@ -2443,9 +2443,9 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                        filename);
         } else {
             cJSON *inst_ext_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceExtensionProperties");
-            if (inst_ext_json) {
+            if (NULL != inst_ext_json) {
                 char *inst_ext_name = cJSON_Print(inst, inst_ext_json);
-                if (inst_ext_name == NULL) {
+                if (NULL == inst_ext_name) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
@@ -2456,9 +2456,9 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             }
 
             cJSON *inst_layer_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceLayerProperties");
-            if (inst_layer_json) {
+            if (NULL != inst_layer_json) {
                 char *inst_layer_name = cJSON_Print(inst, inst_layer_json);
-                if (inst_layer_name == NULL) {
+                if (NULL == inst_layer_name) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
@@ -2469,9 +2469,9 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             }
 
             cJSON *inst_version_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceVersion");
-            if (inst_version_json) {
+            if (NULL != inst_version_json) {
                 char *inst_version_name = cJSON_Print(inst, inst_version_json);
-                if (inst_version_json == NULL) {
+                if (NULL == inst_version_name) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
