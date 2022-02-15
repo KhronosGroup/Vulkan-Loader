@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -627,7 +627,7 @@ TEST(DriverManifest, NonVulkanVariant) {
     ASSERT_TRUE(log.find("\'api_version\' field contains a non-zero variant value of 1.  Skipping ICD JSON."));
 }
 
-TEST(LayerManifest, NonVulkanVariant) {
+TEST(LayerManifest, ImplicitNonVulkanVariant) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 0, 0)));
     env.get_test_icd().physical_devices.push_back({});
@@ -646,5 +646,26 @@ TEST(LayerManifest, NonVulkanVariant) {
     FillDebugUtilsCreateDetails(inst.create_info, log);
     inst.CheckCreate();
     ASSERT_TRUE(log.find(std::string("Layer ") + implicit_layer_name +
+                         " has an \'api_version\' field which contains a non-zero variant value of 1.  Skipping Layer."));
+}
+
+TEST(LayerManifest, ExplicitNonVulkanVariant) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 0, 0)));
+    env.get_test_icd().physical_devices.push_back({});
+
+    const char* explicit_layer_name = "ExplicitTestLayer";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name)
+                                                         .set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0))
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                           "explicit_test_layer.json");
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0)).add_layer(explicit_layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+    ASSERT_TRUE(log.find(std::string("Layer ") + explicit_layer_name +
                          " has an \'api_version\' field which contains a non-zero variant value of 1.  Skipping Layer."));
 }
