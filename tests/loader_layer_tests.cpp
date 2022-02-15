@@ -2578,7 +2578,7 @@ TEST(TestLayers, EnvironEnableExplicitLayer) {
     for (uint32_t ext = 0; ext < extension_count; ++ext) {
         if (string_eq(extensions[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME) ||
             string_eq(extensions[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-            ASSERT_EQ(false, true);
+            FAIL() << "Extension should not be present";
         }
     }
 
@@ -2668,7 +2668,7 @@ TEST(TestLayers, DoNotUseDeviceLayer) {
     for (uint32_t ext = 0; ext < extension_count; ++ext) {
         if (string_eq(extensions[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME) ||
             string_eq(extensions[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-            ASSERT_EQ(false, true);
+            FAIL() << "Extension should not be present";
         }
     }
 
@@ -2694,7 +2694,7 @@ TEST(TestLayers, DoNotUseDeviceLayer) {
     for (uint32_t ext = 0; ext < extension_count; ++ext) {
         if (string_eq(extensions[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME) ||
             string_eq(extensions[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-            ASSERT_EQ(false, true);
+            FAIL() << "Extension should not be present";
         }
     }
 
