@@ -18,20 +18,21 @@ By default the Vulkan-Loader repo doesn't enable testing.
 
 To turn on building of the tests, set `BUILD_TESTS=ON` in the CMake configuration.
 
-Ensure that `googletest` is in the `external` directory.
+Use the CMake configuration `UPDATE_DEPS=ON` to automatically get all required test dependencies.
+Or Ensure that `googletest` is in the `external` directory.
+And on Windows only, ensure that the `Detours` library is in the `external` directory.
 
-Windows only: Ensure that the `Detours` library is in the `external` directory.
-
-Linux only: Optionally enable the CMake Configuration `TEST_USE_ADDRESS_SANITIZER` to
+Linux only: The CMake Configuration `TEST_USE_ADDRESS_SANITIZER` can be used to
 enable Address Sanitizer inside the testing framework.
 
 Run the test executables as normal
 
 The executables available are:
 * `test_regression`
-* `test_wsi`
 
 Alternatively, in the build directory run `ctest` to start the test framework.
+
+Use the `ctest` command line parameter `--output-on-failure` to printout logs in failing tests
 
 Note: The test framework was not designed to allow multiple tests to be run in parallel due to the extensive use of files and folders on the system.
 
@@ -150,8 +151,6 @@ There are many utilities that the test framework and tests have access to. These
   * InstanceCreateInfo
   * DeviceCreateInfo
   * DeviceQueueCreateInfo
-* InstWrapper - helper to construct and then destroy a vulkan instance during tests
-* DeviceWrapper - helper to construct and then destroy a vulkan device during tests
 * Comparison operators for various vulkan structs
 
 ### Test Environment
@@ -159,6 +158,8 @@ There are many utilities that the test framework and tests have access to. These
 The `test_environment.h/.cpp` contains classes which organize all the disparate parts of the framework into an easy to use entity that allows setting up and configuring the environment tests run in.
 
 The core components are:
+* InstWrapper - helper to construct and then destroy a vulkan instance during tests
+* DeviceWrapper - helper to construct and then destroy a vulkan device during tests
 * PlatformShimWrapper - opens and configures the platform specific shim library
   * Sets up the overrides
   * Resets state (clearing out previous test state)
@@ -180,9 +181,14 @@ The core components are:
   * Allows adding ICD's and Layers
     * Writes the json manifest file to the correct folder
 
-The `FrameworkEnvironment` class is then derived from to create easy to use 'environments'.
-Extends it to provide the custom environment setup behavior necessary
-Currently there are the following extension classes:
-* EnvVarICDOverrideShim - uses `VK_ICD_FILENAMES` to tell the loader where to look for a single ICD
-* SingleICDShim - Pass in a single ICDDetails to set the icd to use
-* MultiICDShim - Pass in a vector of ICDDetails to set the icds to use
+The `FrameworkEnvironment` class is used to easily create 'environments'.
+
+The `add_XXX()` member functions of `FrameworkEnvironment` make it easy to add drivers and layers to the environment a test runs in.
+
+The `get_test_icd()` and `get_test_layer()` functions allow querying references to the underlying
+drivers and layers that are in the environment, allowing quick modification of their behavior.
+
+The `reset_test_icd()` and `reset_test_layer()` are similar to the above functions but additionally
+reset the layer or driver to its initial state.
+Use this if you need to reset a driver during a test.
+These functions are called on the drivers and layers when the framework is being create in each test.
