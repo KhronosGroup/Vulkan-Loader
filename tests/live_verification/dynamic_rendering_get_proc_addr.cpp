@@ -65,15 +65,15 @@ int main() {
             alloc_info.commandPool = command_pool;
             funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
             PFN_vkBeginCommandBuffer vkBeginCommandBuffer =
-                reinterpret_cast<PFN_vkBeginCommandBuffer>(vk_funcs.vkGetInstanceProcAddr(inst, "vkBeginCommandBuffer"));
+                reinterpret_cast<PFN_vkBeginCommandBuffer>(vk_funcs.vkGetInstanceProcAddr(inst.inst, "vkBeginCommandBuffer"));
             VkCommandBufferBeginInfo begin_info{};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             VkResult res = vkBeginCommandBuffer(command_buffer, &begin_info);
             assert(res == VK_SUCCESS);
 
-            // call the dynamic rendering function
+            // call the dynamic rendering function -- should not go into the physical device function trampoline.
             PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR =
-                reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vk_funcs.vkGetDeviceProcAddr(dev.dev, "vkCmdBeginRenderingKHR"));
+                reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vk_funcs.vkGetInstanceProcAddr(inst.inst, "vkCmdBeginRenderingKHR"));
             VkRenderingInfoKHR rendering_info{};
             rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
             vkCmdBeginRenderingKHR(command_buffer, &rendering_info);

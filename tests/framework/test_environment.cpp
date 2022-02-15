@@ -89,7 +89,7 @@ std::vector<VkExtensionProperties> EnumerateDeviceExtensions(InstWrapper const& 
     EXPECT_EQ(VK_SUCCESS, res);
     std::vector<VkExtensionProperties> extensions;
     extensions.resize(ext_count);
-    res = inst.functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);
+    res = inst.functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, extensions.data());
     EXPECT_EQ(VK_SUCCESS, res);
     extensions.resize(ext_count);
     return extensions;
