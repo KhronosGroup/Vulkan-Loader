@@ -2586,10 +2586,8 @@ TEST(TestLayers, EnvironEnableExplicitLayer) {
     DeviceWrapper dev1{inst1};
     dev1.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev1.CheckCreate(phys_dev1);
-    PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolBefore =
-        reinterpret_cast<PFN_vkTrimCommandPoolKHR>(dev1->vkGetDeviceProcAddr(dev1.dev, "vkTrimCommandPoolKHR"));
-    PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusBefore =
-        reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(dev1->vkGetDeviceProcAddr(dev1.dev, "vkGetSwapchainStatusKHR"));
+    PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolBefore = dev1.load("vkTrimCommandPoolKHR");
+    PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusBefore = dev1.load("vkGetSwapchainStatusKHR");
     handle_assert_null(pfn_TrimCommandPoolBefore);
     handle_assert_null(pfn_GetSwapchainStatusBefore);
 
@@ -2602,7 +2600,7 @@ TEST(TestLayers, EnvironEnableExplicitLayer) {
     inst2.CheckCreate();
     VkPhysicalDevice phys_dev2 = inst2.GetPhysDev();
 
-    // Make sure the extensions in the layer aren't present
+    // Make sure the extensions in the layer are present
     extension_count = 40;
     EXPECT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev2, nullptr, &extension_count, extensions.data()));
@@ -2625,14 +2623,156 @@ TEST(TestLayers, EnvironEnableExplicitLayer) {
         .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev2.CheckCreate(phys_dev2);
 
-    PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolAfter =
-        reinterpret_cast<PFN_vkTrimCommandPoolKHR>(dev2->vkGetDeviceProcAddr(dev2.dev, "vkTrimCommandPoolKHR"));
-    PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusAfter =
-        reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(dev2->vkGetDeviceProcAddr(dev2.dev, "vkGetSwapchainStatusKHR"));
+    PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolAfter = dev2.load("vkTrimCommandPoolKHR");
+    PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusAfter = dev2.load("vkGetSwapchainStatusKHR");
     handle_assert_has_value(pfn_TrimCommandPoolAfter);
     handle_assert_has_value(pfn_GetSwapchainStatusAfter);
 
     ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, pfn_GetSwapchainStatusAfter(dev2.dev, VK_NULL_HANDLE));
 
     remove_env_var("VK_INSTANCE_LAYERS");
+}
+
+// Add a device layer, should not work
+TEST(TestLayers, DoNotUseDeviceLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    VkPhysicalDeviceProperties properties{};
+    properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    env.get_test_icd().add_physical_device({});
+    env.get_test_icd().physical_devices.back().set_properties(properties);
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(explicit_layer_name)
+                .set_lib_path(TEST_LAYER_WRAP_OBJECTS_3)
+                .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
+                .add_device_extension({VK_KHR_MAINTENANCE1_EXTENSION_NAME, 1, {"vkTrimCommandPoolKHR"}})
+                .add_device_extension({VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, 1, {"vkGetSwapchainStatusKHR"}})),
+        "explicit_wrap_layer_both_dev.json");
+
+    // First, test an instance/device without the layer forced on.  The extensions shouldn't be present and
+    // the function pointers should be NULL.
+    InstWrapper inst1{env.vulkan_functions};
+    inst1.CheckCreate();
+    VkPhysicalDevice phys_dev1 = inst1.GetPhysDev();
+
+    // Make sure the extensions in the layer aren't present
+    uint32_t extension_count = 40;
+    std::array<VkExtensionProperties, 40> extensions;
+    EXPECT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev1, nullptr, &extension_count, extensions.data()));
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        if (string_eq(extensions[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME) ||
+            string_eq(extensions[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
+            ASSERT_EQ(false, true);
+        }
+    }
+
+    // Create a device and query the function pointers
+    DeviceWrapper dev1{inst1};
+    dev1.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev1.CheckCreate(phys_dev1);
+    PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolBefore = dev1.load("vkTrimCommandPoolKHR");
+    PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusBefore = dev1.load("vkGetSwapchainStatusKHR");
+    handle_assert_null(pfn_TrimCommandPoolBefore);
+    handle_assert_null(pfn_GetSwapchainStatusBefore);
+
+    // Now, test an instance/device with the layer forced on.  The extensions should be present and
+    // the function pointers should be valid.
+    InstWrapper inst2{env.vulkan_functions};
+    inst2.CheckCreate();
+    VkPhysicalDevice phys_dev2 = inst2.GetPhysDev();
+
+    // Make sure the extensions in the layer aren't present
+    extension_count = 40;
+    EXPECT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev1, nullptr, &extension_count, extensions.data()));
+    for (uint32_t ext = 0; ext < extension_count; ++ext) {
+        if (string_eq(extensions[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME) ||
+            string_eq(extensions[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
+            ASSERT_EQ(false, true);
+        }
+    }
+
+    DeviceWrapper dev2{inst2};
+    dev2.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
+        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
+        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f))
+        .add_layer(explicit_layer_name);
+    dev2.CheckCreate(phys_dev2, VK_ERROR_EXTENSION_NOT_PRESENT);
+
+    DeviceWrapper dev3{inst2};
+    dev3.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f)).add_layer(explicit_layer_name);
+    dev3.CheckCreate(phys_dev2);
+
+    PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolAfter = dev3.load("vkTrimCommandPoolKHR");
+    PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusAfter = dev3.load("vkGetSwapchainStatusKHR");
+    handle_assert_null(pfn_TrimCommandPoolAfter);
+    handle_assert_null(pfn_GetSwapchainStatusAfter);
+}
+
+// Make sure that a layer enabled as both an instance and device layer works properly.
+TEST(TestLayers, InstanceAndDeviceLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    VkPhysicalDeviceProperties properties{};
+    properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    env.get_test_icd().add_physical_device({});
+    env.get_test_icd().physical_devices.back().set_properties(properties);
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(explicit_layer_name)
+                .set_lib_path(TEST_LAYER_WRAP_OBJECTS_3)
+                .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
+                .add_device_extension({VK_KHR_MAINTENANCE1_EXTENSION_NAME, 1, {"vkTrimCommandPoolKHR"}})
+                .add_device_extension({VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, 1, {"vkGetSwapchainStatusKHR"}})),
+        "explicit_wrap_layer_both_dev.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_name);
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
+        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
+        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f))
+        .add_layer(explicit_layer_name);
+    dev.CheckCreate(phys_dev);
+
+    PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolAfter = dev.load("vkTrimCommandPoolKHR");
+    PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusAfter = dev.load("vkGetSwapchainStatusKHR");
+    handle_assert_has_value(pfn_TrimCommandPoolAfter);
+    handle_assert_has_value(pfn_GetSwapchainStatusAfter);
+
+    ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, pfn_GetSwapchainStatusAfter(dev.dev, VK_NULL_HANDLE));
+}
+
+// Make sure loader does not throw an error for a device layer  that is not present
+TEST(TestLayers, DeviceLayerNotPresent) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    VkPhysicalDeviceProperties properties{};
+    properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    env.get_test_icd().add_physical_device({});
+    env.get_test_icd().physical_devices.back().set_properties(properties);
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_layer(explicit_layer_name);
+    dev.CheckCreate(phys_dev);
 }

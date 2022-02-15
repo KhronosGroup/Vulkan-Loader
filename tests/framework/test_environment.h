@@ -136,6 +136,10 @@ struct InstWrapper {
     operator VkInstance() { return inst; }
     VulkanFunctions* operator->() { return functions; }
 
+    FromVoidStarFunc load(const char* func_name) {
+        return FromVoidStarFunc(functions->vkGetInstanceProcAddr(inst, func_name));
+    }
+
     // Enumerate physical devices using googletest to assert if it succeeded
     std::vector<VkPhysicalDevice> GetPhysDevs(VkResult result_to_check = VK_SUCCESS);  // query all physical devices
     std::vector<VkPhysicalDevice> GetPhysDevs(uint32_t phys_dev_count,
@@ -168,6 +172,10 @@ struct DeviceWrapper {
     // Convenience
     operator VkDevice() { return dev; }
     VulkanFunctions* operator->() { return functions; }
+
+    FromVoidStarFunc load(const char* func_name) {
+        return FromVoidStarFunc(functions->vkGetDeviceProcAddr(dev, func_name));
+    }
 
     VulkanFunctions* functions = nullptr;
     VkDevice dev = VK_NULL_HANDLE;
