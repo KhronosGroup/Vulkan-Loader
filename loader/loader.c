@@ -4351,6 +4351,9 @@ bool loader_phys_dev_ext_gpa(struct loader_instance *inst, const char *funcName,
     if (perform_checking && !loader_name_in_phys_dev_ext_table(inst, &idx, funcName)) {
         uint32_t i;
 
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                   "loader_phys_dev_ext_gpa: Found unknown physical function %s, using index %u in table", funcName, idx);
+
         // Only need to add first one to get index in Instance.  Others will use
         // the same index.
         if (!loader_add_phys_dev_ext_table(inst, &idx, funcName)) {
@@ -4370,6 +4373,9 @@ bool loader_phys_dev_ext_gpa(struct loader_instance *inst, const char *funcName,
                 // loader's terminator now since we can at least handle it
                 // in one ICD.
                 inst->disp->phys_dev_ext[idx] = loader_get_phys_dev_ext_termin(idx);
+
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "loader_phys_dev_ext_gpa: Driver %s returned ptr %p for %s",
+                           icd_term->scanned_icd->lib_name, inst->disp->phys_dev_ext[idx], funcName);
             } else {
                 icd_term->phys_dev_ext[idx] = NULL;
             }
@@ -4385,6 +4391,8 @@ bool loader_phys_dev_ext_gpa(struct loader_instance *inst, const char *funcName,
                 inst->disp->phys_dev_ext[idx] =
                     (PFN_PhysDevExt)layer_prop->functions.get_physical_device_proc_addr((VkInstance)inst->instance, funcName);
                 if (NULL != inst->disp->phys_dev_ext[idx]) {
+                    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "loader_phys_dev_ext_gpa: Layer %s returned ptr %p for %s",
+                               layer_prop->info.layerName, inst->disp->phys_dev_ext[idx], funcName);
                     break;
                 }
             }
