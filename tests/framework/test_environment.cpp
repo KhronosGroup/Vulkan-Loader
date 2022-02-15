@@ -65,12 +65,34 @@ std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, 
     return physical_devices;
 }
 
+std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(VkResult result_to_check) {
+    uint32_t physical_count = 0;
+    VkResult res = functions->vkEnumeratePhysicalDevices(inst, &physical_count, nullptr);
+    std::vector<VkPhysicalDevice> physical_devices;
+    physical_devices.resize(physical_count);
+    res = functions->vkEnumeratePhysicalDevices(inst, &physical_count, physical_devices.data());
+    EXPECT_EQ(result_to_check, res);
+    return physical_devices;
+}
+
 VkPhysicalDevice InstWrapper::GetPhysDev(VkResult result_to_check) {
     uint32_t physical_count = 1;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkResult res = this->functions->vkEnumeratePhysicalDevices(inst, &physical_count, &physical_device);
     EXPECT_EQ(result_to_check, res);
     return physical_device;
+}
+
+std::vector<VkExtensionProperties> EnumerateDeviceExtensions(InstWrapper const& inst, VkPhysicalDevice physical_device) {
+    uint32_t ext_count = 1;
+    VkResult res = inst.functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);
+    EXPECT_EQ(VK_SUCCESS, res);
+    std::vector<VkExtensionProperties> extensions;
+    extensions.resize(ext_count);
+    res = inst.functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);
+    EXPECT_EQ(VK_SUCCESS, res);
+    extensions.resize(ext_count);
+    return extensions;
 }
 
 DeviceWrapper::DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks) noexcept

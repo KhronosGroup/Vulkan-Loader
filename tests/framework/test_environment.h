@@ -137,7 +137,9 @@ struct InstWrapper {
     VulkanFunctions* operator->() { return functions; }
 
     // Enumerate physical devices using googletest to assert if it succeeded
-    std::vector<VkPhysicalDevice> GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check = VK_SUCCESS);
+    std::vector<VkPhysicalDevice> GetPhysDevs(VkResult result_to_check = VK_SUCCESS);  // query all physical devices
+    std::vector<VkPhysicalDevice> GetPhysDevs(uint32_t phys_dev_count,
+                                              VkResult result_to_check = VK_SUCCESS);  // query only phys_dev_count devices
     // Enumerate a single physical device using googletest to assert if it succeeded
     VkPhysicalDevice GetPhysDev(VkResult result_to_check = VK_SUCCESS);
 
@@ -146,6 +148,8 @@ struct InstWrapper {
     VkAllocationCallbacks* callbacks = nullptr;
     InstanceCreateInfo create_info{};
 };
+
+std::vector<VkExtensionProperties> EnumerateDeviceExtensions(InstWrapper const& inst, VkPhysicalDevice physical_device);
 
 struct DeviceWrapper {
     DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks = nullptr) noexcept;

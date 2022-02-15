@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2018 Valve Corporation
-# Copyright (c) 2014-2018 LunarG, Inc.
+# Copyright (c) 2014-2022 Valve Corporation
+# Copyright (c) 2014-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,3 +58,6 @@ endif()
 
 # must happen after the dll's get copied over
 gtest_discover_tests(test_regression)
+
+# executables that are meant for testing against real drivers rather than the mocks
+add_subdirectory(live_verification)
