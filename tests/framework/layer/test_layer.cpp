@@ -104,6 +104,7 @@ VkLayerDeviceCreateInfo* get_chain_info(const VkDeviceCreateInfo* pCreateInfo, V
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount, VkLayerProperties* pProperties) {
     return VK_SUCCESS;
 }
+
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
                                                                            VkExtensionProperties* pProperties) {
     if (pLayerName && string_eq(pLayerName, layer.unique_name.c_str())) {
@@ -117,6 +118,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceLayerProperties(VkPhysicalD
                                                                      VkLayerProperties* pProperties) {
     return VK_SUCCESS;
 }
+
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
                                                                          uint32_t* pPropertyCount,
                                                                          VkExtensionProperties* pProperties) {
@@ -172,6 +174,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_override_vkCreateInstance(const VkInstanceCr
                                                      const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
     return VK_ERROR_INVALID_SHADER_NV;
 }
+
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
     layer.instance_dispatch_table.DestroyInstance(instance, pAllocator);
 }
@@ -330,7 +333,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_layer_GetInstance
     return get_instance_func(instance, pName);
 }
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_override_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
-    if (string_eq(pName, "vkCreateInstance")) return TO_VOID_PFN(test_override_vkCreateInstance);
+    if (string_eq(pName, "vkCreateInstance")) return to_vkVoidFunction(test_override_vkCreateInstance);
     return get_instance_func(instance, pName);
 }
 #endif
