@@ -5,6 +5,15 @@ This directory contains a test suite for the Vulkan loader.
 These tests are not exhaustive &mdash; they are expected to be supplemented with other tests, such as CTS.
 
 
+## Test specific CMake Configuration
+
+| Option                         | Platform | Default | Description                                              |
+| ------------------------------ | -------- | ------- | -------------------------------------------------------- |
+| BUILD_TESTS                    | All      | `OFF`   | Controls whether or not the loader tests are built.      |
+| ENABLE_LIVE_VERIFICATION_TESTS | All      | `OFF`   | Enables building of tests meant to run with live drivers |
+| TEST_USE_ADDRESS_SANITIZER     | Linux    | `OFF`   | Enables Address Sanitizer in the loader and tests        |
+| TEST_USE_THREAD_SANITIZER      | Linux    | `OFF`   | Enables Thread Sanitizer in the loader and tests         |
+
 ## Running Tests
 
 For most purposes `ctest` is the desired method of running tests.
