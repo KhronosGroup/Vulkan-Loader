@@ -37,7 +37,7 @@ endif()
 if (HAVE___SECURE_GETENV)
     target_compile_definitions(loader_specific_options INTERFACE HAVE___SECURE_GETENV)
 endif()
-if(NOT (HAVE_SECURE_GETENV OR HAVE___SECURE_GETENV))
+if(NOT MSVC AND NOT (HAVE_SECURE_GETENV OR HAVE___SECURE_GETENV))
     message(WARNING "Using non-secure environmental lookups. This loader will not properly disable environent variables when run with elevated permissions.")
 endif()
 
