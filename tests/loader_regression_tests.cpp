@@ -817,13 +817,13 @@ TEST_F(EnumeratePhysicalDevices, MultipleAddRemoves) {
         }
     }
     // Items matching from first call (must be >= since handle re-use does occur)
-    ASSERT_EQ(found_items[1], 3);
-    ASSERT_GE(found_items[2], 1);
-    ASSERT_GE(found_items[3], 3);
-    ASSERT_GE(found_items[4], 2);
-    ASSERT_GE(found_items[5], 2);
-    ASSERT_GE(found_items[6], 1);
-    ASSERT_GE(found_items[7], 2);
+    ASSERT_EQ(found_items[1], 3U);
+    ASSERT_GE(found_items[2], 1U);
+    ASSERT_GE(found_items[3], 3U);
+    ASSERT_GE(found_items[4], 2U);
+    ASSERT_GE(found_items[5], 2U);
+    ASSERT_GE(found_items[6], 1U);
+    ASSERT_GE(found_items[7], 2U);
 
     memset(found_items, 0, 8 * sizeof(uint32_t));
     for (uint32_t handle = 0; handle < 7; ++handle) {
@@ -837,13 +837,13 @@ TEST_F(EnumeratePhysicalDevices, MultipleAddRemoves) {
         }
     }
     // Items matching from last call (must be >= since handle re-use does occur)
-    ASSERT_GE(found_items[0], 2);
-    ASSERT_GE(found_items[1], 2);
-    ASSERT_GE(found_items[2], 3);
-    ASSERT_GE(found_items[3], 4);
-    ASSERT_GE(found_items[4], 4);
-    ASSERT_GE(found_items[5], 4);
-    ASSERT_GE(found_items[6], 4);
+    ASSERT_GE(found_items[0], 2U);
+    ASSERT_GE(found_items[1], 2U);
+    ASSERT_GE(found_items[2], 3U);
+    ASSERT_GE(found_items[3], 4U);
+    ASSERT_GE(found_items[4], 4U);
+    ASSERT_GE(found_items[5], 4U);
+    ASSERT_GE(found_items[6], 4U);
 }
 
 TEST_F(CreateDevice, ExtensionNotPresent) {
