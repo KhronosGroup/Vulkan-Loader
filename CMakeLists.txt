@@ -300,7 +300,13 @@ if(MSVC)
     # /w34701, /w34703: Warn about potentially uninitialized variables
     # /w34057: Warn about different indirection types.
     # /w34245: Warn about signed/unsigned mismatch.
-    target_compile_options(loader_common_options INTERFACE /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
+    # /guard:cf: Enable control flow guard
+    # /permissive-: Use standard conformance mode
+    target_compile_options(loader_common_options INTERFACE /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245 /guard:cf /permissive-)
+
+    # Enable control flow guard
+    list(APPEND CMAKE_SHARED_LINKER_FLAGS /guard:cf)
+    list(APPEND CMAKE_EXE_LINKER_FLAGS /guard:cf)
 
     # Prevent <windows.h> from polluting the code. guards against things like MIN and MAX
     target_compile_definitions(loader_common_options INTERFACE WIN32_LEAN_AND_MEAN)

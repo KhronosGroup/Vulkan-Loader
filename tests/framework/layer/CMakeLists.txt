@@ -17,13 +17,7 @@
 
 add_library(test_layer_deps INTERFACE)
 
-target_compile_options(test_layer_deps  INTERFACE
-    $<$<PLATFORM_ID:WIN32>:${MSVC_LOADER_COMPILE_OPTIONS},/permissive->)
-
-target_compile_definitions(test_layer_deps  INTERFACE
-    # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
-    $<$<PLATFORM_ID:WIN32>:-DWIN32_LEAN_AND_MEAN,-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING>
-    VK_NO_PROTOTYPES)
+target_compile_definitions(test_layer_deps INTERFACE VK_NO_PROTOTYPES)
 
 target_link_libraries(test_layer_deps INTERFACE testing_framework_util)
 

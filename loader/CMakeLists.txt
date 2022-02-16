@@ -42,36 +42,26 @@ if(NOT MSVC AND NOT (HAVE_SECURE_GETENV OR HAVE___SECURE_GETENV))
 endif()
 
 if(WIN32)
-    if(MSVC AND NOT MSVC_VERSION LESS 1900)
-        # Enable control flow guard
-        message(STATUS "Building loader with control flow guard")
-        set(MSVC_LOADER_COMPILE_OPTIONS ${MSVC_LOADER_COMPILE_OPTIONS} /guard:cf)
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /guard:cf")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /guard:cf")
-    endif()
-endif()
-
-if(WIN32)
     if(MSVC)
-    # Use static MSVCRT libraries
-    foreach(configuration
-            in
-            CMAKE_C_FLAGS_DEBUG
-            CMAKE_C_FLAGS_MINSIZEREL
-            CMAKE_C_FLAGS_RELEASE
-            CMAKE_C_FLAGS_RELWITHDEBINFO
-            CMAKE_CXX_FLAGS_DEBUG
-            CMAKE_CXX_FLAGS_MINSIZEREL
-            CMAKE_CXX_FLAGS_RELEASE
-            CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        if(${configuration} MATCHES "/MD")
-            string(REGEX
-                   REPLACE "/MD"
-                           "/MT"
-                           ${configuration}
-                           "${${configuration}}")
-        endif()
-    endforeach()
+        # Use static MSVCRT libraries
+        foreach(configuration
+                in
+                CMAKE_C_FLAGS_DEBUG
+                CMAKE_C_FLAGS_MINSIZEREL
+                CMAKE_C_FLAGS_RELEASE
+                CMAKE_C_FLAGS_RELWITHDEBINFO
+                CMAKE_CXX_FLAGS_DEBUG
+                CMAKE_CXX_FLAGS_MINSIZEREL
+                CMAKE_CXX_FLAGS_RELEASE
+                CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+            if(${configuration} MATCHES "/MD")
+                string(REGEX
+                    REPLACE "/MD"
+                            "/MT"
+                            ${configuration}
+                            "${${configuration}}")
+            endif()
+        endforeach()
     endif()
 
     if(ENABLE_WIN10_ONECORE)
@@ -81,7 +71,7 @@ if(WIN32)
         set(CMAKE_C_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES})
     endif()
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_SECURE_NO_WARNINGS")
+    target_compile_options(loader_specific_options INTERFACE -D_CRT_SECURE_NO_WARNINGS)
     # ~~~
     # Build dev_ext_trampoline.c and unknown_ext_chain.c with /O2 to allow tail-call optimization.
     # Setup two CMake targets (loader-norm and loader-opt) for the different compilation flags.
@@ -180,6 +170,7 @@ if(WIN32)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
         add_library(loader-unknown-chain OBJECT unknown_ext_chain_masm.asm)
         target_link_libraries(loader-unknown-chain Vulkan::Headers)
+        target_include_directories(loader-unknown-chain PUBLIC $<TARGET_PROPERTY:loader_asm_gen_files,BINARY_DIR>)
         add_dependencies(loader-unknown-chain loader_asm_gen_files)
     else()
         message(WARNING "Could not find working MASM assebler\n${ASM_FAILURE_MSG}")
@@ -187,7 +178,6 @@ if(WIN32)
         add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
         target_link_libraries(loader-unknown-chain loader_specific_options)
         set_target_properties(loader-unknown-chain PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
-        target_compile_options(loader-unknown-chain PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     endif()
 elseif(APPLE)
     # For MacOS, use the C code and force the compiler's tail-call optimization instead of using assembly code.
@@ -241,8 +231,6 @@ if(WIN32)
     target_link_libraries(loader-opt PUBLIC loader_specific_options)
     add_dependencies(loader-opt loader_asm_gen_files)
     set_target_properties(loader-opt PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
-    target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
-    target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
     add_library(vulkan
                 SHARED
@@ -252,8 +240,6 @@ if(WIN32)
                 ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
 
     target_link_libraries(vulkan loader_specific_options loader-opt)
-    target_compile_options(vulkan PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
-    target_include_directories(vulkan PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
     if (UPDATE_DEPS)
         add_dependencies(vulkan vl_update_deps)
