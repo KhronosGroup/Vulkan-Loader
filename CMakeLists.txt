@@ -240,8 +240,6 @@ if(WIN32)
     option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
 endif()
 
-option(BUILD_LOADER "Build loader" ON)
-
 add_library(platform_wsi_defines INTERFACE)
 if(WIN32)
     target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_WIN32_KHR)
@@ -366,9 +364,7 @@ if(NOT TARGET uninstall)
     set_target_properties(uninstall PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 endif()
 
-if(BUILD_LOADER)
-    add_subdirectory(loader)
-endif()
+add_subdirectory(loader)
 
 if(BUILD_TESTS)
     # Set gtest build configuration
