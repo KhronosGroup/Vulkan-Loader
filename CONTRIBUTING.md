@@ -45,6 +45,8 @@ current assignee.
 * Please base your fixes on the master branch.
   SDK branches are generally not updated except for critical fixes needed to
   repair an SDK release.
+* Provide one or more tests which show a failure for the issue before your changes
+  but pass successfully with your changes.
 * The resulting Pull Request will be assigned to a repository maintainer.
   It is the maintainer's responsibility to ensure the Pull Request
   passes the Google/LunarG internal CI processes.
@@ -119,13 +121,16 @@ scripts and before building and testing your changes. More details can be found 
 
 #### Testing Your Changes
 
-* Run the existing tests in the `tests` directory of the repository
-  before and after each of your commits to check for any regressions.
-  * Linux: `run_all_tests.sh`
-  * Windows: `run_all_tests.ps1`
-
-* Run tests that explicitly exercise your changes.
-* Feel free to subject your code changes to other tests as well!
+* In order to run tests, you must first build the loader with testing enabled (see details
+  in the BUILD.md file).
+* If your changes expose an issue not previously tested against, please also provide one or more
+  tests which show a failure for the issue before your changes but pass successfully with your changes.
+* Once built, simply change to the build folder, and type "ctest"
+  * This will run all tests the loader has defined at the time
+* Additionally, once your change has begun the process of reviewing in Github,
+  it may be processed through the CI system.
+  * This may show additional failures on other platforms, so watch and be prepared to fix any
+    additional issues.
 
 #### Coding Conventions for [CMake](http://cmake.org) files
 
