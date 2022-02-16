@@ -220,78 +220,77 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                                VkPhysicalDevice* pPhysicalDevices) {
-#if !TEST_PHYSDEV_LAYER_REMOVE && !TEST_PHYSDEV_LAYER_ADD && !TEST_PHYSDEV_LAYER_REORDER
-    return layer.instance_dispatch_table.EnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-#else  // TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
-    VkResult res = VK_SUCCESS;
+    if (layer.add_phys_devs || layer.remove_phys_devs || layer.reorder_phys_devs) {
+        VkResult res = VK_SUCCESS;
 
-    if (layer.complete_physical_devices.size() == 0) {
-        // Get list of all physical devices from lower down
-        // NOTE: This only works if we don't test changing the number of devices
-        //       underneath us when using this test.
-        uint32_t icd_count = 0;
-        layer.instance_dispatch_table.EnumeratePhysicalDevices(instance, &icd_count, nullptr);
-        std::vector<VkPhysicalDevice> tmp_vector;
-        tmp_vector.resize(icd_count);
-        layer.instance_dispatch_table.EnumeratePhysicalDevices(instance, &icd_count, tmp_vector.data());
-        layer.complete_physical_devices.clear();
+        if (layer.complete_physical_devices.size() == 0) {
+            // Get list of all physical devices from lower down
+            // NOTE: This only works if we don't test changing the number of devices
+            //       underneath us when using this test.
+            uint32_t icd_count = 0;
+            layer.instance_dispatch_table.EnumeratePhysicalDevices(instance, &icd_count, nullptr);
+            std::vector<VkPhysicalDevice> tmp_vector;
+            tmp_vector.resize(icd_count);
+            layer.instance_dispatch_table.EnumeratePhysicalDevices(instance, &icd_count, tmp_vector.data());
+            layer.complete_physical_devices.clear();
 
-#if TEST_PHYSDEV_LAYER_REMOVE
-        // Erase the 3rd and 4th items
-        layer.removed_physical_devices.push_back(tmp_vector[3]);
-        layer.removed_physical_devices.push_back(tmp_vector[4]);
-        tmp_vector.erase(tmp_vector.begin() + 3);
-        tmp_vector.erase(tmp_vector.begin() + 3);
-#endif  // TEST_PHYSDEV_LAYER_REMOVE
+            if (layer.remove_phys_devs) {
+                // Erase the 3rd and 4th items
+                layer.removed_physical_devices.push_back(tmp_vector[3]);
+                layer.removed_physical_devices.push_back(tmp_vector[4]);
+                tmp_vector.erase(tmp_vector.begin() + 3);
+                tmp_vector.erase(tmp_vector.begin() + 3);
+            }
 
-#if TEST_PHYSDEV_LAYER_ADD
-        // Insert a new device in the beginning, middle, and end
-        uint32_t middle = static_cast<uint32_t>(tmp_vector.size() / 2);
-        VkPhysicalDevice new_phys_dev = reinterpret_cast<VkPhysicalDevice>((size_t)(0xABCD0000));
-        layer.added_physical_devices.push_back(new_phys_dev);
-        tmp_vector.insert(tmp_vector.begin(), new_phys_dev);
-        new_phys_dev = reinterpret_cast<VkPhysicalDevice>((size_t)(0xBADC0000));
-        layer.added_physical_devices.push_back(new_phys_dev);
-        tmp_vector.insert(tmp_vector.begin() + middle, new_phys_dev);
-        new_phys_dev = reinterpret_cast<VkPhysicalDevice>((size_t)(0xDCBA0000));
-        layer.added_physical_devices.push_back(new_phys_dev);
-        tmp_vector.push_back(new_phys_dev);
-#endif  // TEST_PHYSDEV_LAYER_ADD
+            if (layer.add_phys_devs) {
+                // Insert a new device in the beginning, middle, and end
+                uint32_t middle = static_cast<uint32_t>(tmp_vector.size() / 2);
+                VkPhysicalDevice new_phys_dev = reinterpret_cast<VkPhysicalDevice>((size_t)(0xABCD0000));
+                layer.added_physical_devices.push_back(new_phys_dev);
+                tmp_vector.insert(tmp_vector.begin(), new_phys_dev);
+                new_phys_dev = reinterpret_cast<VkPhysicalDevice>((size_t)(0xBADC0000));
+                layer.added_physical_devices.push_back(new_phys_dev);
+                tmp_vector.insert(tmp_vector.begin() + middle, new_phys_dev);
+                new_phys_dev = reinterpret_cast<VkPhysicalDevice>((size_t)(0xDCBA0000));
+                layer.added_physical_devices.push_back(new_phys_dev);
+                tmp_vector.push_back(new_phys_dev);
+            }
 
-#if TEST_PHYSDEV_LAYER_REORDER
-        // Flip the order of items
-        for (int32_t dev = static_cast<int32_t>(tmp_vector.size() - 1); dev >= 0; --dev) {
-            layer.complete_physical_devices.push_back(tmp_vector[dev]);
+            if (layer.reorder_phys_devs) {
+                // Flip the order of items
+                for (int32_t dev = static_cast<int32_t>(tmp_vector.size() - 1); dev >= 0; --dev) {
+                    layer.complete_physical_devices.push_back(tmp_vector[dev]);
+                }
+            } else {
+                // Otherwise, keep the order the same
+                for (uint32_t dev = 0; dev < tmp_vector.size(); ++dev) {
+                    layer.complete_physical_devices.push_back(tmp_vector[dev]);
+                }
+            }
         }
-#else   // !TEST_PHYSDEV_LAYER_REORDER
-        // Otherwise, keep the order the same
-        for (uint32_t dev = 0; dev < tmp_vector.size(); ++dev) {
-            layer.complete_physical_devices.push_back(tmp_vector[dev]);
-        }
-#endif  // !TEST_PHYSDEV_LAYER_REORDER
-    }
 
-    if (nullptr == pPhysicalDevices) {
-        *pPhysicalDeviceCount = static_cast<uint32_t>(layer.complete_physical_devices.size());
+        if (nullptr == pPhysicalDevices) {
+            *pPhysicalDeviceCount = static_cast<uint32_t>(layer.complete_physical_devices.size());
+        } else {
+            uint32_t adj_count = static_cast<uint32_t>(layer.complete_physical_devices.size());
+            if (*pPhysicalDeviceCount < adj_count) {
+                adj_count = *pPhysicalDeviceCount;
+                res = VK_INCOMPLETE;
+            }
+            for (uint32_t dev = 0; dev < adj_count; ++dev) {
+                pPhysicalDevices[dev] = layer.complete_physical_devices[dev];
+            }
+            *pPhysicalDeviceCount = adj_count;
+        }
+
+        return res;
     } else {
-        uint32_t adj_count = static_cast<uint32_t>(layer.complete_physical_devices.size());
-        if (*pPhysicalDeviceCount < adj_count) {
-            adj_count = *pPhysicalDeviceCount;
-            res = VK_INCOMPLETE;
-        }
-        for (uint32_t dev = 0; dev < adj_count; ++dev) {
-            pPhysicalDevices[dev] = layer.complete_physical_devices[dev];
-        }
-        *pPhysicalDeviceCount = adj_count;
+        return layer.instance_dispatch_table.EnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
     }
-
-    return res;
-#endif  // TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
 }
 
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                               VkPhysicalDeviceProperties* pProperties) {
-#if TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
     if (std::find(layer.removed_physical_devices.begin(), layer.removed_physical_devices.end(), physicalDevice) !=
         layer.removed_physical_devices.end()) {
         // Should not get here since the application should not know about those devices
@@ -309,9 +308,6 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice p
         strncpy(pProperties->deviceName, "physdev_added_xx", VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
     } else {
-#else  // !TEST_PHYSDEV_LAYER_REMOVE && !TEST_PHYSDEV_LAYER_ADD && !TEST_PHYSDEV_LAYER_REORDER
-    {
-#endif
         // Not an affected device so just return
         layer.instance_dispatch_table.GetPhysicalDeviceProperties(physicalDevice, pProperties);
     }
@@ -319,92 +315,92 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice p
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
     VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
-#if !TEST_PHYSDEV_LAYER_REMOVE && !TEST_PHYSDEV_LAYER_ADD && !TEST_PHYSDEV_LAYER_REORDER
-    return layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount,
-                                                                       pPhysicalDeviceGroupProperties);
-#else  // TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
-    VkResult res = VK_SUCCESS;
+    if (layer.add_phys_devs || layer.remove_phys_devs || layer.reorder_phys_devs) {
+        VkResult res = VK_SUCCESS;
 
-    if (layer.complete_physical_device_groups.size() == 0) {
-        uint32_t fake_count = 1000;
-        // Call EnumerateDevices to add remove devices as needed
-        test_vkEnumeratePhysicalDevices(instance, &fake_count, nullptr);
+        if (layer.complete_physical_device_groups.size() == 0) {
+            uint32_t fake_count = 1000;
+            // Call EnumerateDevices to add remove devices as needed
+            test_vkEnumeratePhysicalDevices(instance, &fake_count, nullptr);
 
-        // Get list of all physical devices from lower down
-        // NOTE: This only works if we don't test changing the number of devices
-        //       underneath us when using this test.
-        uint32_t icd_group_count = 0;
-        layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, nullptr);
-        std::vector<VkPhysicalDeviceGroupProperties> tmp_vector(icd_group_count);
-        for (uint32_t group = 0; group < icd_group_count; ++group) {
-            tmp_vector[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-        }
-        layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, tmp_vector.data());
-        layer.complete_physical_device_groups.clear();
-
-#if TEST_PHYSDEV_LAYER_REMOVE
-        // Now, if a device has been removed, and it was the only group, we need to remove the group as well.
-        for (uint32_t rem_dev = 0; rem_dev < layer.removed_physical_devices.size(); ++rem_dev) {
+            // Get list of all physical devices from lower down
+            // NOTE: This only works if we don't test changing the number of devices
+            //       underneath us when using this test.
+            uint32_t icd_group_count = 0;
+            layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, nullptr);
+            std::vector<VkPhysicalDeviceGroupProperties> tmp_vector(icd_group_count);
             for (uint32_t group = 0; group < icd_group_count; ++group) {
-                for (uint32_t grp_dev = 0; grp_dev < tmp_vector[group].physicalDeviceCount; ++grp_dev) {
-                    if (tmp_vector[group].physicalDevices[grp_dev] == layer.removed_physical_devices[rem_dev]) {
-                        for (uint32_t cp_item = grp_dev + 1; cp_item < tmp_vector[group].physicalDeviceCount; ++cp_item) {
-                            tmp_vector[group].physicalDevices[grp_dev] = tmp_vector[group].physicalDevices[cp_item];
+                tmp_vector[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+            }
+            layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, tmp_vector.data());
+            layer.complete_physical_device_groups.clear();
+
+            if (layer.remove_phys_devs) {
+                // Now, if a device has been removed, and it was the only group, we need to remove the group as well.
+                for (uint32_t rem_dev = 0; rem_dev < layer.removed_physical_devices.size(); ++rem_dev) {
+                    for (uint32_t group = 0; group < icd_group_count; ++group) {
+                        for (uint32_t grp_dev = 0; grp_dev < tmp_vector[group].physicalDeviceCount; ++grp_dev) {
+                            if (tmp_vector[group].physicalDevices[grp_dev] == layer.removed_physical_devices[rem_dev]) {
+                                for (uint32_t cp_item = grp_dev + 1; cp_item < tmp_vector[group].physicalDeviceCount; ++cp_item) {
+                                    tmp_vector[group].physicalDevices[grp_dev] = tmp_vector[group].physicalDevices[cp_item];
+                                }
+                                tmp_vector[group].physicalDeviceCount--;
+                            }
                         }
-                        tmp_vector[group].physicalDeviceCount--;
+                    }
+                }
+                for (uint32_t group = 0; group < tmp_vector.size(); ++group) {
+                    if (tmp_vector[group].physicalDeviceCount == 0) {
+                        layer.removed_physical_device_groups.push_back(tmp_vector[group]);
+                        tmp_vector.erase(tmp_vector.begin() + group);
+                        --group;
                     }
                 }
             }
-        }
-        for (uint32_t group = 0; group < tmp_vector.size(); ++group) {
-            if (tmp_vector[group].physicalDeviceCount == 0) {
-                layer.removed_physical_device_groups.push_back(tmp_vector[group]);
-                tmp_vector.erase(tmp_vector.begin() + group);
-                --group;
+
+            if (layer.add_phys_devs) {
+                // Add a new group for each physical device not associated with a current group
+                for (uint32_t dev = 0; dev < layer.added_physical_devices.size(); ++dev) {
+                    VkPhysicalDeviceGroupProperties props{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+                    props.physicalDeviceCount = 1;
+                    props.physicalDevices[0] = layer.added_physical_devices[dev];
+                    tmp_vector.push_back(props);
+                    layer.added_physical_device_groups.push_back(props);
+                }
+            }
+
+            if (layer.reorder_phys_devs) {
+                // Flip the order of items
+                for (int32_t dev = static_cast<int32_t>(tmp_vector.size() - 1); dev >= 0; --dev) {
+                    layer.complete_physical_device_groups.push_back(tmp_vector[dev]);
+                }
+            } else {
+                // Otherwise, keep the order the same
+                for (uint32_t dev = 0; dev < tmp_vector.size(); ++dev) {
+                    layer.complete_physical_device_groups.push_back(tmp_vector[dev]);
+                }
             }
         }
-#endif  // TEST_PHYSDEV_LAYER_REMOVE
 
-#if TEST_PHYSDEV_LAYER_ADD
-        // Add a new group for each physical device not associated with a current group
-        for (uint32_t dev = 0; dev < layer.added_physical_devices.size(); ++dev) {
-            VkPhysicalDeviceGroupProperties props{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
-            props.physicalDeviceCount = 1;
-            props.physicalDevices[0] = layer.added_physical_devices[dev];
-            tmp_vector.push_back(props);
-            layer.added_physical_device_groups.push_back(props);
+        if (nullptr == pPhysicalDeviceGroupProperties) {
+            *pPhysicalDeviceGroupCount = static_cast<uint32_t>(layer.complete_physical_device_groups.size());
+        } else {
+            uint32_t adj_count = static_cast<uint32_t>(layer.complete_physical_device_groups.size());
+            if (*pPhysicalDeviceGroupCount < adj_count) {
+                adj_count = *pPhysicalDeviceGroupCount;
+                res = VK_INCOMPLETE;
+            }
+            for (uint32_t dev = 0; dev < adj_count; ++dev) {
+                pPhysicalDeviceGroupProperties[dev] = layer.complete_physical_device_groups[dev];
+            }
+            *pPhysicalDeviceGroupCount = adj_count;
         }
-#endif  // TEST_PHYSDEV_LAYER_ADD
 
-#if TEST_PHYSDEV_LAYER_REORDER
-        // Flip the order of items
-        for (int32_t dev = static_cast<int32_t>(tmp_vector.size() - 1); dev >= 0; --dev) {
-            layer.complete_physical_device_groups.push_back(tmp_vector[dev]);
-        }
-#else   // !TEST_PHYSDEV_LAYER_REORDER
-        // Otherwise, keep the order the same
-        for (uint32_t dev = 0; dev < tmp_vector.size(); ++dev) {
-            layer.complete_physical_device_groups.push_back(tmp_vector[dev]);
-        }
-#endif  // !TEST_PHYSDEV_LAYER_REORDER
-    }
-
-    if (nullptr == pPhysicalDeviceGroupProperties) {
-        *pPhysicalDeviceGroupCount = static_cast<uint32_t>(layer.complete_physical_device_groups.size());
+        return res;
     } else {
-        uint32_t adj_count = static_cast<uint32_t>(layer.complete_physical_device_groups.size());
-        if (*pPhysicalDeviceGroupCount < adj_count) {
-            adj_count = *pPhysicalDeviceGroupCount;
-            res = VK_INCOMPLETE;
-        }
-        for (uint32_t dev = 0; dev < adj_count; ++dev) {
-            pPhysicalDeviceGroupProperties[dev] = layer.complete_physical_device_groups[dev];
-        }
-        *pPhysicalDeviceGroupCount = adj_count;
+        return layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount,
+                                                                           pPhysicalDeviceGroupProperties);
     }
-
-    return res;
-#endif  // TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
 }
 
 // device functions
