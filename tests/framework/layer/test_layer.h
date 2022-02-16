@@ -80,21 +80,6 @@ Interface Version 2
 
 // Added manifest version 1.1.0
 
-// vkEnumeratePhysicalDevices and vkEnumeratePhysicalDeviceGroups add a new item
-#ifndef TEST_PHYSDEV_LAYER_ADD
-#define TEST_PHYSDEV_LAYER_ADD 0
-#endif
-
-// vkEnumeratePhysicalDevices and vkEnumeratePhysicalDeviceGroups remove an item
-#ifndef TEST_PHYSDEV_LAYER_REMOVE
-#define TEST_PHYSDEV_LAYER_REMOVE 0
-#endif
-
-// vkEnumeratePhysicalDevices and vkEnumeratePhysicalDeviceGroups reorders items
-#ifndef TEST_PHYSDEV_LAYER_REORDER
-#define TEST_PHYSDEV_LAYER_REORDER 0
-#endif
-
 struct TestLayer;
 
 // Callbacks allow tests to implement custom functionality without modifying the layer binary
@@ -133,14 +118,18 @@ struct TestLayer {
     BUILDER_VALUE(TestLayer, std::function<VkResult(TestLayer& layer)>, create_instance_callback, {})
     // Called in vkCreateDevice after calling down the chain & returning
     BUILDER_VALUE(TestLayer, std::function<VkResult(TestLayer& layer)>, create_device_callback, {})
-#if TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
+
+    // Physical device modifier test flags and members.  This data is primarily used to test adding, removing and
+    // re-ordering physical device data in a layer.
+    BUILDER_VALUE(TestLayer, bool, add_phys_devs, false)
+    BUILDER_VALUE(TestLayer, bool, remove_phys_devs, false)
+    BUILDER_VALUE(TestLayer, bool, reorder_phys_devs, false)
     BUILDER_VECTOR(TestLayer, VkPhysicalDevice, complete_physical_devices, complete_physical_device)
     BUILDER_VECTOR(TestLayer, VkPhysicalDevice, removed_physical_devices, removed_physical_device)
     BUILDER_VECTOR(TestLayer, VkPhysicalDevice, added_physical_devices, added_physical_device)
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, complete_physical_device_groups, complete_physical_device_group)
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, removed_physical_device_groups, removed_physical_device_group)
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, added_physical_device_groups, added_physical_device_group)
-#endif // TEST_PHYSDEV_LAYER_REMOVE || TEST_PHYSDEV_LAYER_ADD || TEST_PHYSDEV_LAYER_REORDER
 
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
