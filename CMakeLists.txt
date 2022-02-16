@@ -186,24 +186,12 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(LOADER_HELPER_FOLDER "Helper Targets")
 
 if(UNIX)
-    set(
-        FALLBACK_CONFIG_DIRS "/etc/xdg"
-        CACHE
-            STRING
-            "Search path to use when XDG_CONFIG_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant."
-        )
-    set(
-        FALLBACK_DATA_DIRS "/usr/local/share:/usr/share"
-        CACHE
-            STRING
-            "Search path to use when XDG_DATA_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant."
-        )
-    set(
-        SYSCONFDIR ""
-        CACHE
-            STRING
-            "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used."
-        )
+    set(FALLBACK_CONFIG_DIRS "/etc/xdg" CACHE STRING
+            "Search path to use when XDG_CONFIG_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant.")
+    set(FALLBACK_DATA_DIRS "/usr/local/share:/usr/share" CACHE STRING
+            "Search path to use when XDG_DATA_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant.")
+    set(SYSCONFDIR "" CACHE STRING
+            "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used.")
 endif()
 
 if(UNIX AND NOT APPLE) # i.e.: Linux
