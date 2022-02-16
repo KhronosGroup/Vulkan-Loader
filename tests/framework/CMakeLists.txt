@@ -76,9 +76,4 @@ target_compile_definitions(test-environment PUBLIC "GTEST_LINKED_AS_SHARED_LIBRA
 
 add_library(testing_dependencies INTERFACE)
 
-target_compile_options(testing_dependencies INTERFACE $<$<PLATFORM_ID:WIN32>:${MSVC_LOADER_COMPILE_OPTIONS},/permissive->)
-target_compile_definitions(testing_dependencies INTERFACE
-# Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
-    $<$<PLATFORM_ID:WIN32>:-DWIN32_LEAN_AND_MEAN,-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING>)
-
 target_link_libraries(testing_dependencies INTERFACE Vulkan::Headers testing_framework_util test-environment)
