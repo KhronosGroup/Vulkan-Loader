@@ -352,25 +352,26 @@ TEST_F(MetaLayers, ExplicitMetaLayer) {
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_test_layer.json");
+    {  // global functions
+        // should find 1, the 'regular' layer
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 2);
 
-    // should find 1, the 'regular' layer
-    uint32_t layer_count = 0;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 2);
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 2);
+        EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
 
-    std::array<VkLayerProperties, 2> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 2);
-    EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
+        uint32_t extension_count = 0;
+        std::array<VkExtensionProperties, 2> extensions;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
 
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 2> extensions;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
-
-    EXPECT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 2);
+        EXPECT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        EXPECT_EQ(extension_count, 2);
+    }
     {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
         InstWrapper inst{env->vulkan_functions};
         inst.CheckCreate(VK_SUCCESS);
@@ -529,10 +530,12 @@ TEST_F(MetaLayers, DeviceExtensionInComponentLayer) {
             .set_file_format_version(ManifestVersion(1, 1, 2))
             .add_layer(ManifestLayer::LayerDescription{}.set_name(meta_layer_name).add_component_layers({regular_layer_name})),
         "meta_test_layer.json");
-
-    uint32_t extension_count = 0;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 0);
+    {
+        uint32_t extension_count = 0;
+        EXPECT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, nullptr));
+        EXPECT_EQ(extension_count, 0);
+    }
     {  // layer is not enabled
         InstWrapper inst{env->vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
@@ -624,15 +627,16 @@ TEST_F(OverrideMetaLayer, OlderVersionThanInstance) {
                                                .set_disable_environment("DisableMeIfYouCan")
                                                .add_component_layers({regular_layer_name})),
                             "meta_test_layer.json");
+    {  // global functions
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 2);
 
-    uint32_t layer_count = 0;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 2);
-
-    std::array<VkLayerProperties, 2> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 2);
-    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 2);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    }
     {  // 1.1 instance
         InstWrapper inst{env->vulkan_functions};
         inst.create_info.api_version = VK_API_VERSION_1_1;
@@ -682,16 +686,16 @@ TEST_F(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
                                                .add_component_layers({regular_layer_name})
                                                .set_disable_environment("DisableMeIfYouCan")),
                             "meta_test_layer.json");
+    {  // global functions
+        uint32_t layer_count = 2;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 2);
 
-    uint32_t layer_count = 2;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 2);
-
-    std::array<VkLayerProperties, 2> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 2);
-    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
-
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 2);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    }
     {
         // 1.1 instance
         InstWrapper inst{env->vulkan_functions};
@@ -749,17 +753,17 @@ TEST_F(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
                                                .add_component_layers({regular_layer_name})
                                                .set_disable_environment("DisableMeIfYouCan")),
                             "meta_test_layer.json");
+    {  // global functions
+        uint32_t layer_count = 1;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 1);
 
-    uint32_t layer_count = 1;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 1);
-
-    std::array<VkLayerProperties, 1> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 1);
-    // Expect the explicit layer to still be found
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
-
+        std::array<VkLayerProperties, 1> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 1);
+        // Expect the explicit layer to still be found
+        EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+    }
     {
         // 1.1 instance
         InstWrapper inst{env->vulkan_functions};
@@ -820,16 +824,16 @@ TEST_F(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
                                                .add_component_layers({regular_layer_name})
                                                .set_disable_environment("DisableMeIfYouCan")),
                             "meta_test_layer.json");
+    {  // global functions
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 1);
 
-    uint32_t layer_count = 0;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 1);
-
-    std::array<VkLayerProperties, 1> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 1);
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
-
+        std::array<VkLayerProperties, 1> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 1);
+        EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+    }
     {
         // 1.1 instance
         InstWrapper inst{env->vulkan_functions};
@@ -2404,16 +2408,16 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                                          .set_disable_environment("DisableMeIfYouCan")),
                            "regular_test_layer.json");
+    {  // global functions
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 1);
 
-    uint32_t layer_count = 0;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 1);
-
-    std::array<VkLayerProperties, 1> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 1);
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
-
+        std::array<VkLayerProperties, 1> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 1);
+        EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+    }
     {  // 1.1 instance - should find the implicit layer
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
@@ -2464,16 +2468,17 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 0, 1, 0))
                                                          .set_disable_environment("DisableMeIfYouCan")),
                            "regular_test_layer.json");
+    {  // global functions
 
-    uint32_t layer_count = 0;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 1);
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 1);
 
-    std::array<VkLayerProperties, 1> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 1);
-    EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
-
+        std::array<VkLayerProperties, 1> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 1);
+        EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+    }
     {  // 1.0 instance -- instance layer should be found
         DebugUtilsLogger log;
         InstWrapper inst{env.vulkan_functions};
@@ -3177,7 +3182,11 @@ TEST_F(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
             dev_name += vendor_char;
             dev_name += "_";
             dev_name += dev_char;
+#if defined(_WIN32)
+            strncpy_s(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
             cur_icd.add_physical_device({});
             cur_icd.physical_devices.back().set_properties(properties);
         }
