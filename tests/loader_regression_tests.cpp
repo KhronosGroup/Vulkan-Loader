@@ -2131,15 +2131,30 @@ TEST(EnvironmentVariables, VK_LAYER_PATH) {
             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "test_layer.json");
 
-    InstWrapper inst{env.vulkan_functions};
-    inst.create_info.add_layer(layer_name);
-    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-    inst.CheckCreate();
+    InstWrapper inst1{env.vulkan_functions};
+    inst1.create_info.add_layer(layer_name);
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
 
     // look for VK_LAYER_PATHS
     EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
     EXPECT_TRUE(env.debug_log.find("/tandy"));
     EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/").str()));
+    EXPECT_FALSE(env.debug_log.find("Ignoring override VK_LAYER_PATH due to high-integrity"));
+
+    env.debug_log.clear();
+
+    env.platform_shim->set_elevated_privilege(true);
+
+    InstWrapper inst2{env.vulkan_functions};
+    inst2.create_info.add_layer(layer_name);
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    EXPECT_TRUE(env.debug_log.find("Ignoring override VK_LAYER_PATH due to high-integrity"));
+    EXPECT_FALSE(env.debug_log.find("/tmp/carol"));
+
+    env.platform_shim->set_elevated_privilege(false);
 
     remove_env_var("VK_LAYER_PATH");
 }

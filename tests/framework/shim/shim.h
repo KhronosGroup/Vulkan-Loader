@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -132,8 +132,8 @@ struct PlatformShim {
 // platform specific shim interface
 #if defined(WIN32)
     // Control Platform Elevation Level
+    void set_elevated_privilege(bool elev) { (elev) ? SECURITY_MANDATORY_HIGH_RID : SECURITY_MANDATORY_LOW_RID; }
     unsigned long elevation_level = SECURITY_MANDATORY_LOW_RID;
-    void set_elevation_level(unsigned long new_elevation_level) { elevation_level = new_elevation_level; }
 
     void add_dxgi_adapter(fs::path const& manifest_path, GpuType gpu_preference, uint32_t known_driver_index,
                           DXGI_ADAPTER_DESC1 desc1);
@@ -162,6 +162,8 @@ struct PlatformShim {
 
     std::unordered_map<std::string, fs::path> redirection_map;
 
+    void set_elevated_privilege(bool elev) { use_fake_elevation = elev; }
+    bool use_fake_elevation = false;
 #endif
 };
 

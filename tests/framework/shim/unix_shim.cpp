@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2022 Valve Corporation
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -46,19 +46,27 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
 #define OPENDIR_FUNC_NAME opendir
 #define ACCESS_FUNC_NAME access
 #define FOPEN_FUNC_NAME fopen
+#define GETEUID_FUNC_NAME geteuid
+#define GETEGID_FUNC_NAME getegid
 #elif defined(__APPLE__)
 #define OPENDIR_FUNC_NAME my_opendir
 #define ACCESS_FUNC_NAME my_access
 #define FOPEN_FUNC_NAME my_fopen
+#define GETEUID_FUNC_NAME my_geteuid
+#define GETEGID_FUNC_NAME my_getegid
 #endif
 
 using PFN_OPENDIR = DIR* (*)(const char* path_name);
 using PFN_ACCESS = int (*)(const char* pathname, int mode);
 using PFN_FOPEN = FILE* (*)(const char* filename, const char* mode);
+using PFN_GETEUID = uid_t (*)(void);
+using PFN_GETEGID = gid_t (*)(void);
 
 static PFN_OPENDIR real_opendir = nullptr;
 static PFN_ACCESS real_access = nullptr;
 static PFN_FOPEN real_fopen = nullptr;
+static PFN_GETEUID real_geteuid = nullptr;
+static PFN_GETEGID real_getegid = nullptr;
 
 FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
     if (!real_opendir) real_opendir = (PFN_OPENDIR)dlsym(RTLD_NEXT, "opendir");
@@ -109,6 +117,28 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
     return f_ptr;
 }
 
+FRAMEWORK_EXPORT uid_t GETEUID_FUNC_NAME(void) {
+    if (!real_geteuid) real_geteuid = (PFN_GETEUID)dlsym(RTLD_NEXT, "geteuid");
+
+    if (platform_shim.use_fake_elevation) {
+        // Root on linux is 0, so force pretending like we're root
+        return 0;
+    } else {
+        return real_geteuid();
+    }
+}
+
+FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
+    if (!real_getegid) real_getegid = (PFN_GETEGID)dlsym(RTLD_NEXT, "getegid");
+
+    if (platform_shim.use_fake_elevation) {
+        // Root on linux is 0, so force pretending like we're root
+        return 0;
+    } else {
+        return real_getegid();
+    }
+}
+
 /* Shiming functions on apple is limited by the linker prefering to not use functions in the
  * executable in loaded dylibs. By adding an interposer, we redirect the linker to use our
  * version of the function over the real one, thus shimming the system function.
@@ -125,5 +155,7 @@ struct Interposer {
 __attribute__((used)) static Interposer _interpose_opendir MACOS_ATTRIB = {VOIDP_CAST(my_opendir), VOIDP_CAST(opendir)};
 __attribute__((used)) static Interposer _interpose_access MACOS_ATTRIB = {VOIDP_CAST(my_access), VOIDP_CAST(access)};
 __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_CAST(my_fopen), VOIDP_CAST(fopen)};
+__attribute__((used)) static Interposer _interpose_euid MACOS_ATTRIB = {VOIDP_CAST(my_geteuid), VOIDP_CAST(geteuid)};
+__attribute__((used)) static Interposer _interpose_egid MACOS_ATTRIB = {VOIDP_CAST(my_getegid), VOIDP_CAST(getegid)};
 #endif
 }  // extern "C"
