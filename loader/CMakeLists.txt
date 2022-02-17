@@ -200,7 +200,7 @@ else() # i.e.: Linux
         elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64" OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^i.86$")
             check_include_file("cet.h" HAVE_CET_H)
             if(HAVE_CET_H)
-                set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS HAVE_CET_H)
+                target_compile_definitions(loader_specific_options INTERFACE HAVE_CET_H)
             endif()
 
             try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_x86.S)

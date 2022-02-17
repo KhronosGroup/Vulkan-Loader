@@ -27,9 +27,6 @@ set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM OFF)
 
 project(Vulkan-Loader)
 
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
-
-
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
 
@@ -256,6 +253,7 @@ else()
 endif()
 
 add_library(loader_common_options INTERFACE)
+target_compile_definitions(loader_common_options INTERFACE API_NAME="Vulkan")
 target_link_libraries(loader_common_options INTERFACE platform_wsi_defines)
 
 # Enable beta Vulkan extensions
@@ -333,17 +331,17 @@ endif()
 
 
 if(UNIX)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS FALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}" FALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
+    target_compile_definitions(loader_common_options INTERFACE FALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}" FALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
 
     if(NOT (SYSCONFDIR STREQUAL ""))
         # SYSCONFDIR is specified, use it and do not force /etc.
-        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS SYSCONFDIR="${SYSCONFDIR}")
+        target_compile_definitions(loader_common_options INTERFACE SYSCONFDIR="${SYSCONFDIR}")
     else()
-        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS SYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
+        target_compile_definitions(loader_common_options INTERFACE SYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 
         # Make sure /etc is searched by the loader
         if(NOT (CMAKE_INSTALL_FULL_SYSCONFDIR STREQUAL "/etc"))
-            set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS EXTRASYSCONFDIR="/etc")
+            target_compile_definitions(loader_common_options INTERFACE EXTRASYSCONFDIR="/etc")
         endif()
     endif()
 endif()
