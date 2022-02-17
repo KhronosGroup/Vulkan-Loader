@@ -292,9 +292,9 @@ else()
         # Use CONFIGURE_DEPENDS to ensure that if the header files are updated, this list is also updated
         # Note: CONFIGURE_DEPENDS is a 3.12 feature - gate it for now and remove when CMake minimum version is higher
         if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
-            file(GLOB_RECURSE FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS} CONFIGURE_DEPENDS)
+            file(GLOB_RECURSE CONFIGURE_DEPENDS FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS})
         else()
-            file(GLOB_RECURSE FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS} CONFIGURE_DEPENDS)
+            file(GLOB_RECURSE FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS})
         endif()
         if(BUILD_STATIC_LOADER)
             add_library(vulkan-framework STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
