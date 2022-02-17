@@ -65,18 +65,18 @@ set(WRAP_LAYER_VERSION_3_EXPORTS
         TEST_LAYER_EXPORT_PRESENT_IMAGE=1
     )
 
-add_library(test_layer_wrap_objects SHARED wrap_objects)
+add_library(test_layer_wrap_objects SHARED wrap_objects.cpp)
 target_link_libraries(test_layer_wrap_objects PRIVATE test_layer_deps)
 
-add_library(test_layer_wrap_objects_1 SHARED wrap_objects)
+add_library(test_layer_wrap_objects_1 SHARED wrap_objects.cpp)
 target_link_libraries(test_layer_wrap_objects_1 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_wrap_objects_1 PRIVATE ${WRAP_LAYER_VERSION_1_EXPORTS})
 
-add_library(test_layer_wrap_objects_2 SHARED wrap_objects)
+add_library(test_layer_wrap_objects_2 SHARED wrap_objects.cpp)
 target_link_libraries(test_layer_wrap_objects_2 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_wrap_objects_2 PRIVATE ${WRAP_LAYER_VERSION_2_EXPORTS})
 
-add_library(test_layer_wrap_objects_3 SHARED wrap_objects)
+add_library(test_layer_wrap_objects_3 SHARED wrap_objects.cpp)
 target_link_libraries(test_layer_wrap_objects_3 PRIVATE test_layer_deps)
 target_compile_definitions(test_layer_wrap_objects_3 PRIVATE ${WRAP_LAYER_VERSION_3_EXPORTS})
 
