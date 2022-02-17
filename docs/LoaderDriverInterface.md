@@ -703,12 +703,15 @@ In this way, it compares "pName" to every physical device function supported in
 the driver.
 
 The following rules apply:
-* If it is the name of a physical device function supported by the driver, the
-pointer to the driver's corresponding function should be returned.
-* If it is the name of a valid function which is **not** a physical device
-function (i.e. an instance, device, or other function implemented by the
-driver), then the value of `NULL` should be returned.
-* If the driver has no idea what this function is, it should return `NULL`.
+* If `pName` is the name of a Vulkan API entrypoint that takes a `VkPhysicalDevice`
+  as its primary dispatch handle, and the driver supports the entrypoint, then
+  the driver **must** return the valid function pointer to the driver's
+  implementation of that entrypoint.
+* If `pName` is the name of a Vulkan API entrypoint that takes something other than
+  a `VkPhysicalDevice` as its primary dispatch handle, then the driver **must**
+  return `NULL`.
+* If the driver is unaware of any entrypoint with the name `pName`, it **must**
+  return `NULL`.
 
 This support is optional and should not be considered a requirement.
 This is only required if a driver intends to support some functionality not
