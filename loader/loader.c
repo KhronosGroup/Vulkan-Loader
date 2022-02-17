@@ -2969,13 +2969,11 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     if (path_override != NULL) {
         override_path = path_override;
     } else if (env_override != NULL) {
-#ifndef _WIN32
-        if (geteuid() != getuid() || getegid() != getgid()) {
-            // Don't allow setuid apps to use the env var:
-            env_override = NULL;
-        } else
-#endif
-        {
+        // Don't allow setuid apps to use the env var
+        if (is_high_integrity()) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "read_data_files_in_search_paths: Ignoring override %s due to high-integrity", env_override);
+        } else {
             override_env = loader_secure_getenv(env_override, inst);
 
             // The ICD override is actually a specific list of filenames, not directories
@@ -3065,7 +3063,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                         cur_path_ptr += rel_size;
                         *cur_path_ptr++ = PATH_SEPARATOR;
                         // only for ICD manifests
-                        if (env_override != NULL && strcmp(VK_ICD_FILENAMES_ENV_VAR, env_override) == 0) {
+                        if (!is_high_integrity() && env_override != NULL && strcmp(VK_ICD_FILENAMES_ENV_VAR, env_override) == 0) {
                             use_first_found_manifest = true;
                         }
                     }
