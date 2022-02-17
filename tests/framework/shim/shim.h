@@ -132,7 +132,9 @@ struct PlatformShim {
 // platform specific shim interface
 #if defined(WIN32)
     // Control Platform Elevation Level
-    void set_elevated_privilege(bool elev) { (elev) ? SECURITY_MANDATORY_HIGH_RID : SECURITY_MANDATORY_LOW_RID; }
+    void set_elevated_privilege(bool elev) {
+        (elev) ? elevation_level = SECURITY_MANDATORY_HIGH_RID : elevation_level = SECURITY_MANDATORY_LOW_RID;
+    }
     unsigned long elevation_level = SECURITY_MANDATORY_LOW_RID;
 
     void add_dxgi_adapter(fs::path const& manifest_path, GpuType gpu_preference, uint32_t known_driver_index,
