@@ -15,8 +15,9 @@
 # limitations under the License.
 # ~~~
 
-add_library(testing_framework_util STATIC test_util.cpp test_util.h)
+add_library(testing_framework_util STATIC test_util.cpp)
 target_link_libraries(testing_framework_util PUBLIC Vulkan::Headers loader_common_options platform_wsi_defines)
+
 if(UNIX OR APPLE)
     target_link_libraries(testing_framework_util PUBLIC ${CMAKE_DL_LIBS})
 endif()

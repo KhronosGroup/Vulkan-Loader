@@ -259,6 +259,9 @@ target_link_libraries(loader_common_options INTERFACE platform_wsi_defines)
 # Enable beta Vulkan extensions
 target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)
 
+target_compile_features(loader_common_options INTERFACE c_std_99)
+target_compile_features(loader_common_options INTERFACE cxx_std_11)
+
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     target_compile_options(loader_common_options INTERFACE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-strict-aliasing -fno-builtin-memcmp)
 
@@ -299,8 +302,7 @@ if(MSVC)
     # /w34057: Warn about different indirection types.
     # /w34245: Warn about signed/unsigned mismatch.
     # /guard:cf: Enable control flow guard
-    # /permissive-: Use standard conformance mode
-    target_compile_options(loader_common_options INTERFACE /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245 /guard:cf /permissive-)
+    target_compile_options(loader_common_options INTERFACE /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245 /guard:cf)
 
     # Enable control flow guard
     list(APPEND CMAKE_SHARED_LINKER_FLAGS /guard:cf)
