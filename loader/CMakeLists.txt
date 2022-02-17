@@ -106,6 +106,12 @@ if(WIN32)
     # Configure the file to include the versioning info
     # Place it in the current directory for check-in - so the GN build has up to date info
     configure_file(loader.rc.in ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
+else()
+    # Used to make alloca() and secure_getenv() available
+    target_compile_definitions(loader_specific_options INTERFACE _GNU_SOURCE)
+    if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+        target_compile_definitions(loader_specific_options INTERFACE __BSD_VISIBLE=1)
+    endif()
 endif()
 
 set(NORMAL_LOADER_SRCS
@@ -276,12 +282,7 @@ else()
     if (NOT ANDROID)
         target_link_libraries(vulkan Threads::Threads)
     endif()
-    # Used to make alloca() and secure_getenv() available
-    target_compile_definitions(vulkan PRIVATE _GNU_SOURCE)
-    if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-        target_compile_definitions(vulkan PRIVATE __BSD_VISIBLE=1)
-        target_compile_definitions(asm_offset PRIVATE __BSD_VISIBLE=1)
-    endif()
+
     if(APPLE)
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
         target_link_libraries(vulkan "-framework CoreFoundation")
