@@ -17,5 +17,6 @@
 
 add_executable(dynamic_rendering_get_proc_addr dynamic_rendering_get_proc_addr.cpp)
 target_link_libraries(dynamic_rendering_get_proc_addr testing_dependencies)
+set_target_properties(dynamic_rendering_get_proc_addr ${LOADER_STANDARD_CXX_PROPERTIES})
 
 add_subdirectory(dynamic_loader_behavior)

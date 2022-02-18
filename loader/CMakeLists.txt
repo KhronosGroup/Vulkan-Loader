@@ -331,6 +331,11 @@ endif()
 # common attributes of the vulkan library
 target_link_libraries(vulkan loader_specific_options)
 
+set_target_properties(vulkan ${LOADER_STANDARD_C_PROPERTIES})
+if (TARGET asm_offset)
+    set_target_properties(asm_offset ${LOADER_STANDARD_C_PROPERTIES})
+endif()
+
 # Generate pkg-config file.
 include(FindPkgConfig QUIET)
 if(PKG_CONFIG_FOUND)

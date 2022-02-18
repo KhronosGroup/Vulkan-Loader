@@ -261,6 +261,8 @@ target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENS
 
 target_compile_features(loader_common_options INTERFACE c_std_99)
 target_compile_features(loader_common_options INTERFACE cxx_std_11)
+set(LOADER_STANDARD_C_PROPERTIES PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS OFF)
+set(LOADER_STANDARD_CXX_PROPERTIES PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     target_compile_options(loader_common_options INTERFACE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-strict-aliasing -fno-builtin-memcmp)

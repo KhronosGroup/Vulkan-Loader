@@ -15,52 +15,27 @@
 # limitations under the License.
 # ~~~
 
-set(CMAKE_CXX_STANDARD 11)
-
-add_library(test_icd_deps INTERFACE)
-
-target_compile_definitions(test_icd_deps INTERFACE VK_NO_PROTOTYPES)
-
-target_link_libraries(test_icd_deps INTERFACE testing_framework_util)
-
-set(TEST_ICD_SOURCES test_icd.cpp test_icd.h)
-
-# test icd without any config macros defined
-add_library(test_icd_export_none SHARED ${TEST_ICD_SOURCES})
-target_link_libraries(test_icd_export_none PRIVATE test_icd_deps)
-
-add_library(test_icd_export_icd_gipa SHARED ${TEST_ICD_SOURCES})
-target_link_libraries(test_icd_export_icd_gipa PRIVATE test_icd_deps)
-target_compile_definitions(test_icd_export_icd_gipa PRIVATE TEST_ICD_EXPORT_ICD_GIPA=1)
-
-add_library(test_icd_export_negotiate_interface_version SHARED ${TEST_ICD_SOURCES})
-target_link_libraries(test_icd_export_negotiate_interface_version PRIVATE test_icd_deps)
-target_compile_definitions(test_icd_export_negotiate_interface_version PRIVATE TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION=1)
 
 set(TEST_ICD_VERSION_2_DEFINES TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION=1 TEST_ICD_EXPORT_ICD_GIPA=1)
 
-add_library(test_icd_version_2 SHARED ${TEST_ICD_SOURCES})
-target_link_libraries(test_icd_version_2 PRIVATE test_icd_deps)
-target_compile_definitions(test_icd_version_2 PRIVATE ${TEST_ICD_VERSION_2_DEFINES})
-
-add_library(test_icd_version_2_export_icd_enumerate_adapter_physical_devices SHARED ${TEST_ICD_SOURCES})
-target_link_libraries(test_icd_version_2_export_icd_enumerate_adapter_physical_devices PRIVATE test_icd_deps)
-target_compile_definitions(test_icd_version_2_export_icd_enumerate_adapter_physical_devices PRIVATE TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES=1 ${TEST_ICD_VERSION_2_DEFINES})
-
-add_library(test_icd_version_2_export_icd_gpdpa SHARED ${TEST_ICD_SOURCES})
-target_link_libraries(test_icd_version_2_export_icd_gpdpa PRIVATE test_icd_deps)
-target_compile_definitions(test_icd_version_2_export_icd_gpdpa PRIVATE TEST_ICD_EXPORT_ICD_GPDPA=1 ${TEST_ICD_VERSION_2_DEFINES})
-
-add_library(test_icd_version_6 SHARED ${TEST_ICD_SOURCES})
-target_link_libraries(test_icd_version_6 PRIVATE test_icd_deps)
-target_compile_definitions(test_icd_version_6 PRIVATE TEST_ICD_EXPORT_ICD_GPDPA=1 TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES=1 ${TEST_ICD_VERSION_2_DEFINES})
-
-if (WIN32)
-    target_sources(test_icd_export_none PRIVATE export_definitions/test_icd_0.def)
-    target_sources(test_icd_export_icd_gipa PRIVATE export_definitions/test_icd_gipa.def)
-    target_sources(test_icd_export_negotiate_interface_version PRIVATE export_definitions/test_icd_negotiate_version.def)
-    target_sources(test_icd_version_2 PRIVATE export_definitions/test_icd_2.def)
-    target_sources(test_icd_version_2_export_icd_enumerate_adapter_physical_devices PRIVATE export_definitions/test_icd_2_enum_adapter.def)
-    target_sources(test_icd_version_2_export_icd_gpdpa PRIVATE export_definitions/test_icd_2_gpdpa.def)
-    target_sources(test_icd_version_6 PRIVATE export_definitions/test_icd_6.def)
-endif()
+AddSharedLibrary(test_icd_export_none DEF_FILE test_icd_0
+    SOURCES test_icd.cpp
+    DEFINITIONS "")
+AddSharedLibrary(test_icd_export_icd_gipa DEF_FILE test_icd_gipa
+    SOURCES test_icd.cpp
+    DEFINITIONS TEST_ICD_EXPORT_ICD_GIPA=1)
+AddSharedLibrary(test_icd_export_negotiate_interface_version DEF_FILE test_icd_negotiate_version
+    SOURCES test_icd.cpp
+    DEFINITIONS TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION=1)
+AddSharedLibrary(test_icd_version_2 DEF_FILE test_icd_2
+    SOURCES test_icd.cpp
+    DEFINITIONS ${TEST_ICD_VERSION_2_DEFINES})
+AddSharedLibrary(test_icd_version_2_export_icd_enumerate_adapter_physical_devices DEF_FILE test_icd_2_enum_adapter
+    SOURCES test_icd.cpp
+    DEFINITIONS TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES=1 ${TEST_ICD_VERSION_2_DEFINES})
+AddSharedLibrary(test_icd_version_2_export_icd_gpdpa DEF_FILE test_icd_2_gpdpa
+    SOURCES test_icd.cpp
+    DEFINITIONS TEST_ICD_EXPORT_ICD_GPDPA=1 ${TEST_ICD_VERSION_2_DEFINES})
+AddSharedLibrary(test_icd_version_6 DEF_FILE test_icd_6
+    SOURCES test_icd.cpp
+    DEFINITIONS TEST_ICD_EXPORT_ICD_GPDPA=1 TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES=1 ${TEST_ICD_VERSION_2_DEFINES})

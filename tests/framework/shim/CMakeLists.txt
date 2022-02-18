@@ -17,7 +17,8 @@
 
 add_library(shim-common STATIC shim_common.cpp)
 target_link_libraries(shim-common PUBLIC testing_framework_util)
-target_include_directories(shim-common PUBLIC ${CMAKE_BINARY_DIR}/loader ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(shim-common PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+set_target_properties(shim-common ${LOADER_STANDARD_CXX_PROPERTIES})
 
 if (WIN32)
     # need adapters.h which is in the loader folder
@@ -36,3 +37,4 @@ elseif(UNIX)
 endif()
 #common attributes
 target_link_libraries(shim-library PUBLIC shim-common)
+set_target_properties(shim-library ${LOADER_STANDARD_CXX_PROPERTIES})

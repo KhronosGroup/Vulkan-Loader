@@ -82,6 +82,10 @@
 
 #endif
 
+#if !defined(VK_NO_PROTOTYPES)
+#define VK_NO_PROTOTYPES
+#endif
+
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_icd.h>
 #include <vulkan/vk_layer.h>
