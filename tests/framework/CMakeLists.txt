@@ -16,7 +16,8 @@
 # ~~~
 
 add_library(testing_framework_util STATIC test_util.cpp)
-target_link_libraries(testing_framework_util PUBLIC Vulkan::Headers loader_common_options platform_wsi_defines)
+target_link_libraries(testing_framework_util PUBLIC loader_common_options Vulkan::Headers)
+set_target_properties(testing_framework_util ${LOADER_STANDARD_CXX_PROPERTIES})
 
 if(UNIX OR APPLE)
     target_link_libraries(testing_framework_util PUBLIC ${CMAKE_DL_LIBS})
@@ -43,6 +44,23 @@ if (UNIX)
     endif()
 endif()
 
+include(CMakeParseArguments)
+function(AddSharedLibrary LIBRARY_NAME)
+    set(singleValueArgs DEF_FILE)
+    set(multiValueArgs SOURCES DEFINITIONS)
+    cmake_parse_arguments(PARSED_ARGS "" "${singleValueArgs}"
+                          "${multiValueArgs}" ${ARGN} )
+
+    add_library(${LIBRARY_NAME} SHARED ${PARSED_ARGS_SOURCES})
+    target_link_libraries(${LIBRARY_NAME} PUBLIC testing_framework_util)
+    target_compile_definitions(${LIBRARY_NAME} PRIVATE ${PARSED_ARGS_DEFINITIONS})
+    set_target_properties(${LIBRARY_NAME} ${LOADER_STANDARD_CXX_PROPERTIES})
+    # Windows requires export definitions for these libraries
+    if(WIN32)
+        target_sources(${LIBRARY_NAME} PRIVATE export_definitions/${PARSED_ARGS_DEF_FILE}.def)
+    endif()
+endfunction()
+
 add_subdirectory(data)
 add_subdirectory(shim)
 add_subdirectory(icd)
@@ -68,13 +86,9 @@ add_custom_command(
 add_custom_target (generate_framework_config DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h")
 add_dependencies (testing_framework_util generate_framework_config)
 
-add_library(test-environment STATIC test_environment.cpp test_environment.h)
-target_link_libraries(test-environment
-    PUBLIC gtest
-    testing_framework_util shim-library)
-target_include_directories(test-environment PUBLIC ${CMAKE_BINARY_DIR}/tests/framework)
-target_compile_definitions(test-environment PUBLIC "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-
-add_library(testing_dependencies INTERFACE)
-
-target_link_libraries(testing_dependencies INTERFACE Vulkan::Headers testing_framework_util test-environment)
+add_library(testing_dependencies STATIC test_environment.cpp test_environment.h)
+target_link_libraries(testing_dependencies
+    PUBLIC gtest Vulkan::Headers testing_framework_util shim-library)
+target_include_directories(testing_dependencies PUBLIC ${CMAKE_BINARY_DIR}/tests/framework)
+target_compile_definitions(testing_dependencies PUBLIC "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+set_target_properties(testing_dependencies ${LOADER_STANDARD_CXX_PROPERTIES})
