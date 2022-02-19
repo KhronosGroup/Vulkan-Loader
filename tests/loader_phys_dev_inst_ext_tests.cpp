@@ -1425,7 +1425,7 @@ static uint32_t FillInRandomQueueFamilyData(std::vector<MockQueueFamilyPropertie
         props[i].properties.minImageTransferGranularity.width = (rand() % 30) + 1;
         props[i].properties.minImageTransferGranularity.height = (rand() % 30) + 1;
         props[i].properties.minImageTransferGranularity.depth = (rand() % 30) + 1;
-        props[i].support_present = (rand() % 2);
+        props[i].support_present = rand() % 2 == 0;
     }
     return static_cast<uint32_t>(props.size());
 }

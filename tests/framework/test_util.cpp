@@ -57,15 +57,13 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
     LocalFree(lpMsgBuf);
 }
 
-bool set_env_var(std::string const& name, std::string const& value) {
-    bool ret = SetEnvironmentVariableA(name.c_str(), value.c_str());
-    if (ret == false) {
+void set_env_var(std::string const& name, std::string const& value) {
+    BOOL ret = SetEnvironmentVariableA(name.c_str(), value.c_str());
+    if (ret == 0) {
         print_error_message(ERROR_SETENV_FAILED, "SetEnvironmentVariableA");
-        return true;
     }
-    return false;
 }
-bool remove_env_var(std::string const& name) { return SetEnvironmentVariableA(name.c_str(), nullptr); }
+void remove_env_var(std::string const& name) { SetEnvironmentVariableA(name.c_str(), nullptr); }
 #define ENV_VAR_BUFFER_SIZE 4096
 std::string get_env_var(std::string const& name, bool report_failure) {
     std::string value;
@@ -84,8 +82,8 @@ std::string get_env_var(std::string const& name, bool report_failure) {
 }
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 
-bool set_env_var(std::string const& name, std::string const& value) { return setenv(name.c_str(), value.c_str(), 1); }
-bool remove_env_var(std::string const& name) { return unsetenv(name.c_str()); }
+void set_env_var(std::string const& name, std::string const& value) { setenv(name.c_str(), value.c_str(), 1); }
+void remove_env_var(std::string const& name) { unsetenv(name.c_str()); }
 std::string get_env_var(std::string const& name, bool report_failure) {
     char* ret = getenv(name.c_str());
     if (ret == nullptr) {
