@@ -307,8 +307,12 @@ if(MSVC)
     target_compile_options(loader_common_options INTERFACE /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245 /guard:cf)
 
     # Enable control flow guard
-    list(APPEND CMAKE_SHARED_LINKER_FLAGS /guard:cf)
-    list(APPEND CMAKE_EXE_LINKER_FLAGS /guard:cf)
+    if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+        target_link_options(loader_common_options INTERFACE "LINKER:/guard:cf")
+    else()
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /guard:cf")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /guard:cf")
+    endif()
 
     # Prevent <windows.h> from polluting the code. guards against things like MIN and MAX
     target_compile_definitions(loader_common_options INTERFACE WIN32_LEAN_AND_MEAN)
