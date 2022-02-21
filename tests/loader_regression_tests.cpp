@@ -113,6 +113,21 @@ TEST_F(CreateInstance, LayerPresent) {
     inst.CheckCreate();
 }
 
+TEST_F(CreateInstance, ConsecutiveCreate) {
+    for (uint32_t i = 0; i < 100; i++) {
+        InstWrapper inst{env->vulkan_functions};
+        inst.CheckCreate();
+    }
+}
+
+TEST_F(CreateInstance, ConsecutiveCreateWithoutDestruction) {
+    std::vector<InstWrapper> instances;
+    for (uint32_t i = 0; i < 100; i++) {
+        instances.emplace_back(env->vulkan_functions);
+        instances.back().CheckCreate();
+    }
+}
+
 TEST(NoDrivers, CreateInstance) {
     FrameworkEnvironment env{};
     InstWrapper inst{env.vulkan_functions};
@@ -885,10 +900,51 @@ TEST_F(CreateDevice, LayersNotPresent) {
     ASSERT_EQ(families, family_props.properties);
 
     DeviceWrapper dev{inst};
-    DeviceCreateInfo dev_create_info;
     dev.create_info.add_layer("NotPresent").add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
     dev.CheckCreate(phys_dev);
+}
+
+TEST_F(CreateDevice, ConsecutiveCreate) {
+    auto& driver = env->get_test_icd();
+
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    for (uint32_t i = 0; i < 100; i++) {
+        driver.physical_devices.emplace_back("physical_device_0");
+        driver.physical_devices.back().queue_family_properties.push_back(family_props);
+    }
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+
+    auto phys_devs = inst.GetPhysDevs(100);
+    for (uint32_t i = 0; i < 100; i++) {
+        DeviceWrapper dev{inst};
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev.CheckCreate(phys_devs[i]);
+    }
+}
+
+TEST_F(CreateDevice, ConsecutiveCreateWithoutDestruction) {
+    auto& driver = env->get_test_icd();
+
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+    for (uint32_t i = 0; i < 100; i++) {
+        driver.physical_devices.emplace_back("physical_device_0");
+        driver.physical_devices.back().queue_family_properties.push_back(family_props);
+    }
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+
+    auto phys_devs = inst.GetPhysDevs(100);
+
+    std::vector<DeviceWrapper> devices;
+    for (uint32_t i = 0; i < 100; i++) {
+        devices.emplace_back(inst);
+        DeviceWrapper& dev = devices.back();
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+        dev.CheckCreate(phys_devs[i]);
+    }
 }
 
 TEST(TryLoadWrongBinaries, WrongICD) {
