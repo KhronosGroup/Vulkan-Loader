@@ -1448,12 +1448,15 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         ASSERT_EQ(group_count, returned_group_count);
 
         returned_group_count = 1;
-        std::array<VkPhysicalDeviceGroupProperties, 1> group_props{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+        std::array<VkPhysicalDeviceGroupProperties, 1> group_props{};
+        group_props[0].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, group_props.data()));
         ASSERT_EQ(1, returned_group_count);
 
         returned_group_count = 2;
-        std::array<VkPhysicalDeviceGroupProperties, 2> group_props_2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+        std::array<VkPhysicalDeviceGroupProperties, 2> group_props_2{};
+        group_props_2[0].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+        group_props_2[1].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, group_props_2.data()));
         ASSERT_EQ(2, returned_group_count);
 
@@ -1487,12 +1490,15 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         ASSERT_EQ(group_count, returned_group_count);
 
         returned_group_count = 1;
-        std::array<VkPhysicalDeviceGroupPropertiesKHR, 1> group_props{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR};
+        std::array<VkPhysicalDeviceGroupPropertiesKHR, 1> group_props{};
+        group_props[0].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_INCOMPLETE, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, group_props.data()));
         ASSERT_EQ(1, returned_group_count);
 
         returned_group_count = 2;
-        std::array<VkPhysicalDeviceGroupPropertiesKHR, 2> group_props_2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR};
+        std::array<VkPhysicalDeviceGroupPropertiesKHR, 2> group_props_2{};
+        group_props_2[0].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+        group_props_2[1].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, group_props_2.data()));
         ASSERT_EQ(2, returned_group_count);
 
@@ -2100,9 +2106,9 @@ TEST_F(EnumeratePhysicalDeviceGroups, FakePNext) {
     const uint32_t max_phys_dev_groups = 4;
     uint32_t group_count = max_phys_dev_groups;
     std::array<FakePnextSharedWithICD, max_phys_dev_groups> fake_structs;
-    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups{};
     for (uint32_t group = 0; group < max_phys_dev_groups; ++group) {
+        physical_device_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         fake_structs[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT;
         physical_device_groups[group].pNext = &fake_structs[group];
     }
@@ -2630,8 +2636,8 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
 
     const uint32_t max_phys_dev_groups = 6;
     uint32_t group_count = max_phys_dev_groups;
-    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups{};
+    for (auto& group : physical_device_groups) group.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups.data()));
     ASSERT_EQ(group_count, max_phys_dev_groups);
 
@@ -2708,8 +2714,9 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
     }
 
     // Make sure if we call enumerate again, the information is the same
-    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups_again{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups_again{};
+    for (auto& group : physical_device_groups_again) group.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups_again.data()));
     ASSERT_EQ(group_count, max_phys_dev_groups);
     for (uint32_t group = 0; group < max_phys_dev_groups; ++group) {
@@ -2815,8 +2822,9 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
 
     const uint32_t max_phys_dev_groups = 6;
     uint32_t group_count = max_phys_dev_groups;
-    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups{};
+    for (auto& group : physical_device_groups) group.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups.data()));
     ASSERT_EQ(group_count, max_phys_dev_groups);
 
@@ -2880,8 +2888,9 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     ASSERT_EQ(false, sorted);
 
     // Make sure if we call enumerate again, the information is the same
-    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups_again{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES};
+    std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups_again{};
+    for (auto& group : physical_device_groups_again) group.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups_again.data()));
     ASSERT_EQ(group_count, max_phys_dev_groups);
     for (uint32_t group = 0; group < max_phys_dev_groups; ++group) {
