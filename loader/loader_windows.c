@@ -738,8 +738,8 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
         goto out;
     }
 
-    // This call looks into the Khronos non-device specific section of the registry.
-    bool use_secondary_hive = (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) && (!is_high_integrity());
+    // This call looks into the Khronos non-device specific section of the registry for layer files.
+    bool use_secondary_hive = (data_file_type != LOADER_DATA_FILE_MANIFEST_DRIVER) && (!is_high_integrity());
     VkResult reg_result = windows_get_registry_files(inst, registry_location, use_secondary_hive, &search_path, &reg_size);
     if (reg_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
         vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -754,7 +754,8 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
             vk_result = VK_ERROR_INCOMPATIBLE_DRIVER;
         } else {
             if (warn_if_not_present) {
-                if (data_file_type == LOADER_DATA_FILE_MANIFEST_LAYER) {
+                if (data_file_type == LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER ||
+                    data_file_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER) {
                     // This is only a warning for layers
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | log_target_flag, 0,
                                "windows_read_data_files_in_registry: Registry lookup failed to get layer manifest files.");
