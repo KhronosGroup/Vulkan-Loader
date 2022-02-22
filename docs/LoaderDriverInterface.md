@@ -103,6 +103,9 @@ drivers with either the `VK_DRIVER_FILES` or the older `VK_ICD_FILENAMES`
 environment variable.
 Both these environment variables behave the same, but `VK_ICD_FILENAMES`
 should be considered deprecated.
+If both `VK_DRIVER_FILES` and `VK_ICD_FILENAMES` environment variables are
+present, then the newer `VK_DRIVER_FILES` will be used, and the values in
+`VK_ICD_FILENAMES` will be ignored.
 
 The `VK_DRIVER_FILES` environment variable is a list of Driver Manifest
 files, containing the full path to the driver JSON Manifest file.

@@ -136,9 +136,7 @@ struct InstWrapper {
     operator VkInstance() { return inst; }
     VulkanFunctions* operator->() { return functions; }
 
-    FromVoidStarFunc load(const char* func_name) {
-        return FromVoidStarFunc(functions->vkGetInstanceProcAddr(inst, func_name));
-    }
+    FromVoidStarFunc load(const char* func_name) { return FromVoidStarFunc(functions->vkGetInstanceProcAddr(inst, func_name)); }
 
     // Enumerate physical devices using googletest to assert if it succeeded
     std::vector<VkPhysicalDevice> GetPhysDevs(VkResult result_to_check = VK_SUCCESS);  // query all physical devices
@@ -173,9 +171,7 @@ struct DeviceWrapper {
     operator VkDevice() { return dev; }
     VulkanFunctions* operator->() { return functions; }
 
-    FromVoidStarFunc load(const char* func_name) {
-        return FromVoidStarFunc(functions->vkGetDeviceProcAddr(dev, func_name));
-    }
+    FromVoidStarFunc load(const char* func_name) { return FromVoidStarFunc(functions->vkGetDeviceProcAddr(dev, func_name)); }
 
     VulkanFunctions* functions = nullptr;
     VkDevice dev = VK_NULL_HANDLE;
@@ -323,7 +319,8 @@ struct TestLayerDetails {
 };
 
 struct FrameworkEnvironment {
-    FrameworkEnvironment(DebugMode debug_mode = DebugMode::none, bool override_icds = false, bool override_layers = false) noexcept;
+    FrameworkEnvironment(DebugMode debug_mode = DebugMode::none, bool override_icds = false,
+                         bool override_explicit_layers = false) noexcept;
 
     void add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;

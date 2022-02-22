@@ -2896,11 +2896,10 @@ out:
 
 // Look for data files in the provided paths, but first check the environment override to determine if we should use that
 // instead.
-static VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enum loader_json_type json_type,
+static VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enum loader_data_files_type manifest_type,
                                                 const char *path_override, bool *override_active,
                                                 struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
-    bool is_icd = false;
     char *override_env = NULL;
     const char *override_path = NULL;
     char *relative_location = NULL;
@@ -2995,24 +2994,27 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     }
 #endif  // !_WIN32
 
-    switch (json_type) {
-        case VULKAN_LOADER_JSON_DRIVER:
-            is_icd = true;
+    switch (manifest_type) {
+        case LOADER_DATA_FILE_MANIFEST_DRIVER:
             override_env = loader_secure_getenv(VK_DRIVER_FILES_ENV_VAR, inst);
             if (NULL == override_env) {
                 // Not there, so fall back to the old name
                 override_env = loader_secure_getenv(VK_ICD_FILENAMES_ENV_VAR, inst);
             }
             additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
+            additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
             relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
             break;
-        case VULKAN_LOADER_JSON_IMPLICIT_LAYER:
+        case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
             relative_location = VK_ILAYERS_INFO_RELATIVE_DIR;
             break;
-        case VULKAN_LOADER_JSON_EXPLICIT_LAYER:
+        case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
             override_env = loader_secure_getenv(VK_LAYER_PATH_ENV_VAR, inst);
             additional_env = loader_secure_getenv(VK_ADDITIONAL_LAYER_PATH_ENV_VAR, inst);
             relative_location = VK_ELAYERS_INFO_RELATIVE_DIR;
+            break;
+        default:
+            assert(false && "Shouldn't get here!");
             break;
     }
 
@@ -3095,8 +3097,11 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
 
             // Remove the last path separator
-            --cur_path_ptr;
             *cur_path_ptr = '\0';
+            if (search_path[strlen(search_path) - 1] == ':') {
+                --cur_path_ptr;
+                *cur_path_ptr = '\0';
+            }
         }
     } else {
         // Add any additional search paths defined in the additive environment variable
@@ -3120,7 +3125,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                         cur_path_ptr += rel_size;
                         *cur_path_ptr++ = PATH_SEPARATOR;
                         // only for ICD manifests
-                        if (override_env != NULL && is_icd) {
+                        if (override_env != NULL && manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
                             use_first_found_manifest = true;
                         }
                     }
@@ -3194,7 +3199,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
         if (NULL != tmp_search_path) {
             strncpy(tmp_search_path, search_path, search_path_size);
             tmp_search_path[search_path_size] = '\0';
-            if (is_icd) {
+            if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
                 log_flags = VULKAN_LOADER_DRIVER_BIT;
                 loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
             } else {
@@ -3276,7 +3281,7 @@ out:
 // Find the Vulkan library manifest files.
 //
 // This function scans the appropriate locations for a list of JSON manifest files based on the
-// "json_type".  The location is interpreted as Registry path on Windows and a directory path(s)
+// "manifest_type".  The location is interpreted as Registry path on Windows and a directory path(s)
 // on Linux.
 // "home_location" is an additional directory in the users home directory to look at. It is
 // expanded into the dir path $XDG_DATA_HOME/home_location or $HOME/.local/share/home_location
@@ -3296,8 +3301,8 @@ out:
 // Linux ICD  | dirs     | files
 // Linux Layer| dirs     | dirs
 
-VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_json_type json_type, const char *path_override,
-                               struct loader_data_files *out_files) {
+VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_data_files_type manifest_type,
+                               const char *path_override, struct loader_data_files *out_files) {
     VkResult res = VK_SUCCESS;
     bool override_active = false;
 
@@ -3315,7 +3320,7 @@ VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_j
     out_files->alloc_count = 0;
     out_files->filename_list = NULL;
 
-    res = read_data_files_in_search_paths(inst, json_type, path_override, &override_active, out_files);
+    res = read_data_files_in_search_paths(inst, manifest_type, path_override, &override_active, out_files);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -3325,22 +3330,19 @@ VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_j
     if (!override_active) {
         bool warn_if_not_present = false;
         char *registry_location = NULL;
-        enum loader_data_files_type manifest_type = LOADER_DATA_FILE_MANIFEST_DRIVER;
 
-        switch (json_type) {
+        switch (manifest_type) {
             default:
                 goto out;
-            case VULKAN_LOADER_JSON_DRIVER:
+            case LOADER_DATA_FILE_MANIFEST_DRIVER:
                 warn_if_not_present = true;
                 registry_location = VK_DRIVERS_INFO_REGISTRY_LOC;
                 break;
-            case VULKAN_LOADER_JSON_IMPLICIT_LAYER:
-                manifest_type = LOADER_DATA_FILE_MANIFEST_LAYER;
+            case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
                 registry_location = VK_ILAYERS_INFO_REGISTRY_LOC;
                 break;
-            case VULKAN_LOADER_JSON_EXPLICIT_LAYER:
+            case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
                 warn_if_not_present = true;
-                manifest_type = LOADER_DATA_FILE_MANIFEST_LAYER;
                 registry_location = VK_ELAYERS_INFO_REGISTRY_LOC;
                 break;
         }
@@ -3399,7 +3401,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         goto out;
     }
     // Get a list of manifest files for ICDs
-    res = loader_get_data_files(inst, VULKAN_LOADER_JSON_DRIVER, NULL, &manifest_files);
+    res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_DRIVER, NULL, &manifest_files);
     if (VK_SUCCESS != res || manifest_files.count == 0) {
         goto out;
     }
@@ -3457,7 +3459,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             json = NULL;
             continue;
         }
-        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Found ICD manifest file %s, version %s", file_str, file_vers);
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Found ICD manifest file %s, version %s", file_str, file_vers);
 
         // Get the version of the driver manifest
         json_file_version = loader_make_api_version(file_vers);
@@ -3578,7 +3580,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                                        fullpath);
                             break;
                         case LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE: {
-                            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                            loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0,
                                        "Requested layer %s was wrong bit-type. Ignoring this JSON", fullpath);
                             break;
                         }
@@ -3646,7 +3648,7 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
     loader_platform_thread_lock_mutex(&loader_json_lock);
 
     // Get a list of manifest files for any implicit layers
-    if (VK_SUCCESS != loader_get_data_files(inst, VULKAN_LOADER_JSON_IMPLICIT_LAYER, NULL, &manifest_files)) {
+    if (VK_SUCCESS != loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, &manifest_files)) {
         goto out;
     }
 
@@ -3706,7 +3708,7 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
     }
 
     // Get a list of manifest files for explicit layers
-    if (VK_SUCCESS != loader_get_data_files(inst, VULKAN_LOADER_JSON_EXPLICIT_LAYER, override_paths, &manifest_files)) {
+    if (VK_SUCCESS != loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, &manifest_files)) {
         goto out;
     }
 
@@ -3778,7 +3780,7 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
     // a failure occurs before allocating the manifest filename_list.
     memset(&manifest_files, 0, sizeof(struct loader_data_files));
 
-    VkResult res = loader_get_data_files(inst, VULKAN_LOADER_JSON_IMPLICIT_LAYER, NULL, &manifest_files);
+    VkResult res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, &manifest_files);
     if (VK_SUCCESS != res || manifest_files.count == 0) {
         goto out;
     }
@@ -3853,7 +3855,7 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
     // explicit layer info as well.  Not to worry, though, all explicit layers not included
     // in the override layer will be removed below in loader_remove_layers_in_blacklist().
     if (override_layer_valid || implicit_metalayer_present) {
-        if (VK_SUCCESS != loader_get_data_files(inst, VULKAN_LOADER_JSON_EXPLICIT_LAYER, override_paths, &manifest_files)) {
+        if (VK_SUCCESS != loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, &manifest_files)) {
             goto out;
         }
 
