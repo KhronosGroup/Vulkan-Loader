@@ -27,89 +27,19 @@
  */
 
 // Terminators which have simple logic belong here, since they are mostly "pass through"
-// Function declarations are in vk_loader_extensions.h, thus not needed here
+// Function declarations are in vk_loader_terminators.h, thus not needed here
 
 #include "allocation.h"
 #include "loader_common.h"
 #include "loader.h"
 #include "log.h"
+#include "debug_utils.h"
+#include "extension_manual.h"
+#include "vk_loader_platform.h"
+#include "wsi.h"
+#include <vulkan/vk_icd.h>
 
 // Terminators for 1.0 functions
-
-VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                                  VkPhysicalDeviceProperties *pProperties) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL != icd_term->dispatch.GetPhysicalDeviceProperties) {
-        icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, pProperties);
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                             uint32_t *pQueueFamilyPropertyCount,
-                                                                             VkQueueFamilyProperties *pProperties) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL != icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties) {
-        icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties(phys_dev_term->phys_dev, pQueueFamilyPropertyCount, pProperties);
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
-                                                                        VkPhysicalDeviceMemoryProperties *pProperties) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL != icd_term->dispatch.GetPhysicalDeviceMemoryProperties) {
-        icd_term->dispatch.GetPhysicalDeviceMemoryProperties(phys_dev_term->phys_dev, pProperties);
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice,
-                                                                VkPhysicalDeviceFeatures *pFeatures) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL != icd_term->dispatch.GetPhysicalDeviceFeatures) {
-        icd_term->dispatch.GetPhysicalDeviceFeatures(phys_dev_term->phys_dev, pFeatures);
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                        VkFormatProperties *pFormatInfo) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL != icd_term->dispatch.GetPhysicalDeviceFormatProperties) {
-        icd_term->dispatch.GetPhysicalDeviceFormatProperties(phys_dev_term->phys_dev, format, pFormatInfo);
-    }
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                                 VkImageType type, VkImageTiling tiling,
-                                                                                 VkImageUsageFlags usage, VkImageCreateFlags flags,
-                                                                                 VkImageFormatProperties *pImageFormatProperties) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL == icd_term->dispatch.GetPhysicalDeviceImageFormatProperties) {
-        loader_log(
-            icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-            "The icd's vkGetPhysicalDeviceImageFormatProperties was null, returning with VK_ERROR_INITIALIZATION_FAILED instead.");
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
-    return icd_term->dispatch.GetPhysicalDeviceImageFormatProperties(phys_dev_term->phys_dev, format, type, tiling, usage, flags,
-                                                                     pImageFormatProperties);
-}
-
-VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                                   VkImageType type, VkSampleCountFlagBits samples,
-                                                                                   VkImageUsageFlags usage, VkImageTiling tiling,
-                                                                                   uint32_t *pNumProperties,
-                                                                                   VkSparseImageFormatProperties *pProperties) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL != icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties) {
-        icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties(phys_dev_term->phys_dev, format, type, samples, usage,
-                                                                        tiling, pNumProperties, pProperties);
-    }
-}
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                          VkLayerProperties *pProperties) {
@@ -136,7 +66,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceFeatures2 = icd_term->dispatch.GetPhysicalDeviceFeatures2;
     }
-    if (fpGetPhysicalDeviceFeatures2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    if (fpGetPhysicalDeviceFeatures2 == NULL && inst->inst_ext_enables.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceFeatures2 = icd_term->dispatch.GetPhysicalDeviceFeatures2KHR;
     }
 
@@ -192,7 +122,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
     }
-    if (fpGetPhysicalDeviceProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    if (fpGetPhysicalDeviceProperties2 == NULL && inst->inst_ext_enables.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
     }
 
@@ -215,7 +145,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
                     VkPhysicalDeviceIDPropertiesKHR *id_properties = (VkPhysicalDeviceIDPropertiesKHR *)pNext;
 
                     // Verify that "VK_KHR_external_memory_capabilities" is enabled
-                    if (icd_term->this_instance->enabled_known_extensions.khr_external_memory_capabilities) {
+                    if (icd_term->this_instance->inst_ext_enables.khr_external_memory_capabilities) {
                         loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
                                    "vkGetPhysicalDeviceProperties2: Emulation cannot generate unique IDs for struct "
                                    "VkPhysicalDeviceIDProperties - setting IDs to zero instead");
@@ -255,7 +185,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2(VkPhysi
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceFormatProperties2;
     }
-    if (fpGetPhysicalDeviceFormatProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    if (fpGetPhysicalDeviceFormatProperties2 == NULL && inst->inst_ext_enables.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceFormatProperties2KHR;
     }
 
@@ -293,7 +223,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceImageFormatProperties2;
     }
-    if (fpGetPhysicalDeviceImageFormatProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    if (fpGetPhysicalDeviceImageFormatProperties2 == NULL && inst->inst_ext_enables.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceImageFormatProperties2KHR;
     }
 
@@ -333,7 +263,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(Vk
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceQueueFamilyProperties2 = icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties2;
     }
-    if (fpGetPhysicalDeviceQueueFamilyProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    if (fpGetPhysicalDeviceQueueFamilyProperties2 == NULL && inst->inst_ext_enables.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceQueueFamilyProperties2 = icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties2KHR;
     }
 
@@ -391,7 +321,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2(VkPhysi
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceMemoryProperties2 = icd_term->dispatch.GetPhysicalDeviceMemoryProperties2;
     }
-    if (fpGetPhysicalDeviceMemoryProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    if (fpGetPhysicalDeviceMemoryProperties2 == NULL && inst->inst_ext_enables.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceMemoryProperties2 = icd_term->dispatch.GetPhysicalDeviceMemoryProperties2KHR;
     }
 
@@ -429,8 +359,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceSparseImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties2;
     }
-    if (fpGetPhysicalDeviceSparseImageFormatProperties2 == NULL &&
-        inst->enabled_known_extensions.khr_get_physical_device_properties2) {
+    if (fpGetPhysicalDeviceSparseImageFormatProperties2 == NULL && inst->inst_ext_enables.khr_get_physical_device_properties2) {
         fpGetPhysicalDeviceSparseImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties2KHR;
     }
 
@@ -499,7 +428,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties(
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalBufferProperties = icd_term->dispatch.GetPhysicalDeviceExternalBufferProperties;
     }
-    if (fpGetPhysicalDeviceExternalBufferProperties == NULL && inst->enabled_known_extensions.khr_external_memory_capabilities) {
+    if (fpGetPhysicalDeviceExternalBufferProperties == NULL && inst->inst_ext_enables.khr_external_memory_capabilities) {
         fpGetPhysicalDeviceExternalBufferProperties = icd_term->dispatch.GetPhysicalDeviceExternalBufferPropertiesKHR;
     }
 
@@ -542,8 +471,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperti
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalSemaphoreProperties = icd_term->dispatch.GetPhysicalDeviceExternalSemaphoreProperties;
     }
-    if (fpGetPhysicalDeviceExternalSemaphoreProperties == NULL &&
-        inst->enabled_known_extensions.khr_external_semaphore_capabilities) {
+    if (fpGetPhysicalDeviceExternalSemaphoreProperties == NULL && inst->inst_ext_enables.khr_external_semaphore_capabilities) {
         fpGetPhysicalDeviceExternalSemaphoreProperties = icd_term->dispatch.GetPhysicalDeviceExternalSemaphorePropertiesKHR;
     }
 
@@ -589,7 +517,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties(
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalFenceProperties = icd_term->dispatch.GetPhysicalDeviceExternalFenceProperties;
     }
-    if (fpGetPhysicalDeviceExternalFenceProperties == NULL && inst->enabled_known_extensions.khr_external_fence_capabilities) {
+    if (fpGetPhysicalDeviceExternalFenceProperties == NULL && inst->inst_ext_enables.khr_external_fence_capabilities) {
         fpGetPhysicalDeviceExternalFenceProperties = icd_term->dispatch.GetPhysicalDeviceExternalFencePropertiesKHR;
     }
 
@@ -626,23 +554,73 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
                                                                           VkPhysicalDeviceToolProperties *pToolProperties) {
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    VkResult res = VK_SUCCESS;
+    uint32_t ext_count = 0;
+    VkExtensionProperties *ext_props = NULL;
+    VkResult enumerate_res = VK_SUCCESS;
 
-    if (NULL == icd_term->dispatch.GetPhysicalDeviceToolProperties) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "terminator_GetPhysicalDeviceToolProperties: The ICD's vkGetPhysicalDeviceToolProperties was NULL yet "
-                   "the physical device supports Vulkan API Version 1.3.");
-    } else {
-        VkPhysicalDeviceProperties properties;
-        if (icd_term->dispatch.GetPhysicalDeviceProperties) {
-            icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
+    if (pToolCount != NULL && pToolProperties == NULL) {
+        *pToolCount = 0;
+    }
 
-            if (VK_API_VERSION_MINOR(properties.apiVersion) >= 3) {
-                return icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+    VkPhysicalDeviceProperties properties;
+    if (icd_term->dispatch.GetPhysicalDeviceProperties) {
+        icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
+
+        // If this is Vulkan 1.3 or newer, then it may support the API (but then again, it may not).
+        // Because of this, check for NULL before trying to call down.
+        if (VK_API_VERSION_MINOR(properties.apiVersion) >= 3) {
+            if (NULL == icd_term->dispatch.GetPhysicalDeviceToolProperties) {
+                loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                           "terminator_GetPhysicalDeviceToolProperties: The ICD's vkGetPhysicalDeviceToolProperties was NULL yet "
+                           "the physical device supports Vulkan API Version 1.3.");
+            } else {
+                res = icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+                goto out;
+            }
+        }
+
+        // If we get here, we should check if the extension is present, not the core version and then
+        // also verify the pointer is non-NULL.
+        enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, NULL);
+        if (enumerate_res != VK_SUCCESS) {
+            goto out;
+        }
+
+        ext_props = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * ext_count,
+                                               VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (!ext_props) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+
+        enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, ext_props);
+        if (enumerate_res != VK_SUCCESS) {
+            goto out;
+        }
+
+        for (uint32_t i = 0; i < ext_count; i++) {
+            if (strncmp(ext_props[i].extensionName, VK_EXT_TOOLING_INFO_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+                if (icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
+                    res =
+                        icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+                }
+                break;
             }
         }
     }
 
-    // In the case the driver didn't support 1.3, make sure that the first layer doesn't find the count uninitialized
-    *pToolCount = 0;
-    return VK_SUCCESS;
+out:
+    if (ext_props) {
+        loader_instance_heap_free(icd_term->this_instance, ext_props);
+    }
+
+    return res;
 }
+
+// -----------------------------------------------------------------------------------------------------------
+// -- NOTE: This must be last since it implements dispatch table look-up functions that use all terminators!!
+// -----------------------------------------------------------------------------------------------------------
+
+// Generated loader terminators are in the following file
+#include "vk_loader_terminators.c"

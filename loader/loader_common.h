@@ -30,6 +30,7 @@
 #pragma once
 
 #include "vk_loader_platform.h"
+#include "vk_loader_extension_utils.h"
 
 typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_NONE = 0x00000000,
@@ -184,14 +185,7 @@ struct loader_device {
     VkAllocationCallbacks alloc_callbacks;
 
     // List of activated device extensions that have terminators implemented in the loader
-    struct {
-        bool khr_swapchain_enabled;
-        bool khr_display_swapchain_enabled;
-        bool khr_device_group_enabled;
-        bool ext_debug_marker_enabled;
-        bool ext_debug_utils_enabled;
-        bool ext_full_screen_exclusive_enabled;
-    } extensions;
+    union loader_device_extension_enables dev_ext_enables;
 
     struct loader_device *next;
 };

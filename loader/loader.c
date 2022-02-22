@@ -73,7 +73,9 @@
 #endif  // LOADER_ENABLE_LINUX_SORT
 
 // Generated file containing all the extension data
-#include "vk_loader_extensions.c"
+#include "vk_loader_extension_utils.h"
+#include "vk_loader_terminators.h"
+#include "vk_loader_extension_utils.c"
 
 struct loader_struct loader = {0};
 
@@ -3940,6 +3942,12 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator
     return NULL;
 }
 
+// Prototypes for functions defined below
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
+                                                         const VkAllocationCallbacks *pAllocator, VkInstance *pInstance);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkDevice *pDevice);
+
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_internal(VkInstance inst, const char *pName) {
     if (!strcmp(pName, "vkGetInstanceProcAddr")) {
         return (PFN_vkVoidFunction)loader_gpa_instance_internal;
@@ -5344,7 +5352,7 @@ out:
 }
 
 VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
-    struct loader_instance *ptr_instance = loader_get_instance(instance);
+    struct loader_instance *ptr_instance = convert_to_loader_instance(instance);
     if (NULL == ptr_instance) {
         return;
     }
@@ -5473,7 +5481,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     // Before we continue, If KHX_device_group is the list of enabled and viable extensions, then we then need to look for the
     // corresponding VkDeviceGroupDeviceCreateInfo struct in the device list and replace all the physical device values (which
     // are really loader physical device terminator values) with the ICD versions.
-    // if (icd_term->this_instance->enabled_known_extensions.khr_device_group_creation == 1) {
+    // if (icd_term->this_instance->inst_ext_enables.khr_device_group_creation == 1) {
     {
         VkBaseOutStructure *pNext = (VkBaseOutStructure *)localCreateInfo.pNext;
         VkBaseOutStructure *pPrev = (VkBaseOutStructure *)&localCreateInfo;
@@ -5536,7 +5544,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                                    icd_term->scanned_icd->lib_name);
 
                         // Verify that VK_KHR_get_physical_device_properties2 is enabled
-                        if (icd_term->this_instance->enabled_known_extensions.khr_get_physical_device_properties2) {
+                        if (icd_term->this_instance->inst_ext_enables.khr_get_physical_device_properties2) {
                             localCreateInfo.pEnabledFeatures = &features->features;
                         }
                     }
@@ -5587,31 +5595,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
     // Every extension that has a loader-defined terminator needs to be marked as enabled or disabled so that we know whether or
     // not to return that terminator when vkGetDeviceProcAddr is called
-    for (uint32_t i = 0; i < localCreateInfo.enabledExtensionCount; ++i) {
-        if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-            dev->extensions.khr_swapchain_enabled = true;
-        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)) {
-            dev->extensions.khr_display_swapchain_enabled = true;
-        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-            dev->extensions.khr_device_group_enabled = true;
-        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
-            dev->extensions.ext_debug_marker_enabled = true;
-        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], "VK_EXT_full_screen_exclusive")) {
-            dev->extensions.ext_full_screen_exclusive_enabled = true;
-        }
-    }
-    dev->extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
-
-    VkPhysicalDeviceProperties properties;
-    icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
-    if (!dev->extensions.khr_device_group_enabled) {
-        if (properties.apiVersion >= VK_API_VERSION_1_1) {
-            dev->extensions.khr_device_group_enabled = true;
-        }
-    }
-
-    loader_log(icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-               "       Using \"%s\" with driver: \"%s\"\n", properties.deviceName, icd_term->scanned_icd->lib_name);
+    extensions_create_device(dev, icd_term, phys_dev_term->phys_dev, &localCreateInfo);
 
     res = fpCreateDevice(phys_dev_term->phys_dev, &localCreateInfo, pAllocator, &dev->icd_device);
     if (res != VK_SUCCESS) {
@@ -6392,14 +6376,6 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain,
-                                                                   uint32_t *pApiVersion) {
-    // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
-    // prefers us crashing.
-    *pApiVersion = VK_HEADER_VERSION_COMPLETE;
-    return VK_SUCCESS;
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL
 terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensionPropertiesChain *chain, const char *pLayerName,
                                                 uint32_t *pPropertyCount, VkExtensionProperties *pProperties) {
@@ -6527,6 +6503,14 @@ out:
 
 // ---- Vulkan Core 1.1 terminators
 
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain,
+                                                                   uint32_t *pApiVersion) {
+    // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
+    // prefers us crashing.
+    *pApiVersion = VK_HEADER_VERSION_COMPLETE;
+    return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties) {
     struct loader_instance *inst = (struct loader_instance *)instance;
@@ -6546,7 +6530,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
     icd_term = inst->icd_terms;
     for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
         // Get the function pointer to use to call into the ICD. This could be the core or KHR version
-        if (inst->enabled_known_extensions.khr_device_group_creation) {
+        if (inst->inst_ext_enables.khr_device_group_creation) {
             fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR;
         } else {
             fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroups;
@@ -6619,7 +6603,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             uint32_t count_this_time = total_count - cur_icd_group_count;
 
             // Get the function pointer to use to call into the ICD. This could be the core or KHR version
-            if (inst->enabled_known_extensions.khr_device_group_creation) {
+            if (inst->inst_ext_enables.khr_device_group_creation) {
                 fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR;
             } else {
                 fpEnumeratePhysicalDeviceGroups = icd_term->dispatch.EnumeratePhysicalDeviceGroups;

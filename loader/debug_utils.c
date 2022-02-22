@@ -873,9 +873,9 @@ void debug_utils_AddInstanceExtensions(const struct loader_instance *inst, struc
 void debug_utils_CreateInstance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME) == 0) {
-            ptr_instance->enabled_known_extensions.ext_debug_report = 1;
+            ptr_instance->inst_ext_enables.ext_debug_report = 1;
         } else if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0) {
-            ptr_instance->enabled_known_extensions.ext_debug_utils = 1;
+            ptr_instance->inst_ext_enables.ext_debug_utils = 1;
         }
     }
 }
@@ -887,26 +887,26 @@ bool debug_utils_InstanceGpa(struct loader_instance *ptr_instance, const char *n
 
     if (!strcmp("vkCreateDebugReportCallbackEXT", name)) {
         *addr =
-            ptr_instance->enabled_known_extensions.ext_debug_report == 1 ? (void *)debug_utils_CreateDebugReportCallbackEXT : NULL;
+            ptr_instance->inst_ext_enables.ext_debug_report == 1 ? (void *)debug_utils_CreateDebugReportCallbackEXT : NULL;
         ret_type = true;
     } else if (!strcmp("vkDestroyDebugReportCallbackEXT", name)) {
         *addr =
-            ptr_instance->enabled_known_extensions.ext_debug_report == 1 ? (void *)debug_utils_DestroyDebugReportCallbackEXT : NULL;
+            ptr_instance->inst_ext_enables.ext_debug_report == 1 ? (void *)debug_utils_DestroyDebugReportCallbackEXT : NULL;
         ret_type = true;
     } else if (!strcmp("vkDebugReportMessageEXT", name)) {
-        *addr = ptr_instance->enabled_known_extensions.ext_debug_report == 1 ? (void *)debug_utils_DebugReportMessageEXT : NULL;
+        *addr = ptr_instance->inst_ext_enables.ext_debug_report == 1 ? (void *)debug_utils_DebugReportMessageEXT : NULL;
         return true;
     }
     if (!strcmp("vkCreateDebugUtilsMessengerEXT", name)) {
         *addr =
-            ptr_instance->enabled_known_extensions.ext_debug_utils == 1 ? (void *)debug_utils_CreateDebugUtilsMessengerEXT : NULL;
+            ptr_instance->inst_ext_enables.ext_debug_utils == 1 ? (void *)debug_utils_CreateDebugUtilsMessengerEXT : NULL;
         ret_type = true;
     } else if (!strcmp("vkDestroyDebugUtilsMessengerEXT", name)) {
         *addr =
-            ptr_instance->enabled_known_extensions.ext_debug_utils == 1 ? (void *)debug_utils_DestroyDebugUtilsMessengerEXT : NULL;
+            ptr_instance->inst_ext_enables.ext_debug_utils == 1 ? (void *)debug_utils_DestroyDebugUtilsMessengerEXT : NULL;
         ret_type = true;
     } else if (!strcmp("vkSubmitDebugUtilsMessageEXT", name)) {
-        *addr = ptr_instance->enabled_known_extensions.ext_debug_utils == 1 ? (void *)debug_utils_SubmitDebugUtilsMessageEXT : NULL;
+        *addr = ptr_instance->inst_ext_enables.ext_debug_utils == 1 ? (void *)debug_utils_SubmitDebugUtilsMessageEXT : NULL;
         ret_type = true;
     }
 

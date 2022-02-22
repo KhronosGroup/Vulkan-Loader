@@ -31,6 +31,8 @@
 
 #include "loader_common.h"
 
+static inline struct loader_instance *convert_to_loader_instance(VkInstance instance) { return (struct loader_instance *)instance; }
+
 static inline VkPhysicalDevice loader_unwrap_physical_device(VkPhysicalDevice physicalDevice) {
     struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
     if (PHYS_TRAMP_MAGIC_NUMBER != phys_dev->magic) {
@@ -164,6 +166,34 @@ char *loader_get_next_path(char *path);
 VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_data_files *out_files,
                         bool use_first_found_manifest);
 
+// Prototypes for items terminators defined in loader.c
+// -----------------------------------------------------
+
+// ---- Vulkan Core 1.0 terminators
+VKAPI_ATTR VkResult VKAPI_CALL
+terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensionPropertiesChain *chain, const char *pLayerName,
+                                                uint32_t *pPropertyCount, VkExtensionProperties *pProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(const VkEnumerateInstanceLayerPropertiesChain *chain,
+                                                                           uint32_t *pPropertyCount,
+                                                                           VkLayerProperties *pProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
+                                                         const VkAllocationCallbacks *pAllocator, VkInstance *pInstance);
+VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                                                   VkPhysicalDevice *pPhysicalDevices);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
+                                                                             const char *pLayerName, uint32_t *pPropertyCount,
+                                                                             VkExtensionProperties *pProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkDevice *pDevice);
+
+// ---- Vulkan Core 1.1 terminators
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain,
+                                                                   uint32_t *pApiVersion);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties);
+
+// ---- Version utility functions and macros
 loader_api_version loader_make_version(uint32_t version);
 loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32_t patch);
 

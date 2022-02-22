@@ -42,9 +42,13 @@ def main(argv):
                  '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                  '-quiet',
                  filename] for filename in ['vk_dispatch_table_helper.h',
+                                            'vk_loader_extension_utils.h',
+                                            'vk_loader_extension_utils.c',
+                                            'vk_loader_trampolines.h',
+                                            'vk_loader_trampolines.c',
+                                            'vk_loader_terminators.h',
+                                            'vk_loader_terminators.c',
                                             'vk_layer_dispatch_table.h',
-                                            'vk_loader_extensions.h',
-                                            'vk_loader_extensions.c',
                                             'vk_object_types.h',
                                             'loader_generated_header_version.cmake']]
 

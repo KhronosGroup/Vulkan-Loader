@@ -75,7 +75,7 @@
 
 #include "vk_loader_layer.h"
 #include "vk_layer_dispatch_table.h"
-#include "vk_loader_extensions.h"
+#include "vk_loader_terminators.h"
 
 #if defined(__GNUC__) && __GNUC__ >= 4
 #define LOADER_EXPORT __attribute__((visibility("default")))

@@ -142,60 +142,150 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
+    genOpts['vk_loader_extension_utils.h'] = [
+          LoaderTrampTermOutputGenerator,
+          LoaderTrampTermGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_loader_extension_utils.h',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
+    genOpts['vk_loader_extension_utils.c'] = [
+          LoaderTrampTermOutputGenerator,
+          LoaderTrampTermGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_loader_extension_utils.c',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
+    genOpts['vk_loader_trampolines.h'] = [
+          LoaderTrampTermOutputGenerator,
+          LoaderTrampTermGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_loader_trampolines.h',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
+    genOpts['vk_loader_trampolines.c'] = [
+          LoaderTrampTermOutputGenerator,
+          LoaderTrampTermGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_loader_trampolines.c',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
+    genOpts['vk_loader_terminators.h'] = [
+          LoaderTrampTermOutputGenerator,
+          LoaderTrampTermGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_loader_terminators.h',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
+    genOpts['vk_loader_terminators.c'] = [
+          LoaderTrampTermOutputGenerator,
+          LoaderTrampTermGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_loader_terminators.c',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
     # Options for Layer dispatch table generator
     genOpts['vk_layer_dispatch_table.h'] = [
-          LoaderExtensionOutputGenerator,
-          LoaderExtensionGeneratorOptions(
+          LoaderTrampTermOutputGenerator,
+          LoaderTrampTermGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_layer_dispatch_table.h',
-            directory         = directory,
-            genpath           = None,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants = False)
-        ]
-
-    # Options for loader extension source generator
-    genOpts['vk_loader_extensions.h'] = [
-          LoaderExtensionOutputGenerator,
-          LoaderExtensionGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'vk_loader_extensions.h',
-            directory         = directory,
-            genpath           = None,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants = False)
-        ]
-
-    # Options for loader extension source generator
-    genOpts['vk_loader_extensions.c'] = [
-          LoaderExtensionOutputGenerator,
-          LoaderExtensionGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'vk_loader_extensions.c',
             directory         = directory,
             genpath           = None,
             apiname           = 'vulkan',
@@ -380,7 +470,7 @@ if __name__ == '__main__':
 
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
-    from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
+    from loader_tramp_term_generator import LoaderTrampTermOutputGenerator, LoaderTrampTermGeneratorOptions
     from loader_versioning_generator import LoaderVersioningGenerator, LoaderVersioningGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
