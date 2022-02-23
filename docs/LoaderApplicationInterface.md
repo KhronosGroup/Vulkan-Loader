@@ -892,7 +892,7 @@ names.
 
 ## Physical Device Ordering
 
-Prior to the 1.2.204 loader, physical devices on Linux could be returned in an
+Prior to the 1.3.204 loader, physical devices on Linux could be returned in an
 inconsistent order.
 To remedy this, the Vulkan loader will now sort devices once they have been
 received from the drivers (before returning the information to any enabled
