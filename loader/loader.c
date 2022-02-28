@@ -2969,19 +2969,13 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     if (path_override != NULL) {
         override_path = path_override;
     } else if (env_override != NULL) {
-        // Don't allow setuid apps to use the env var
-        if (is_high_integrity()) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "read_data_files_in_search_paths: Ignoring override %s due to high-integrity", env_override);
-        } else {
-            override_env = loader_secure_getenv(env_override, inst);
+        override_env = loader_secure_getenv(env_override, inst);
 
-            // The ICD override is actually a specific list of filenames, not directories
-            if (is_icd && NULL != override_env) {
-                is_directory_list = false;
-            }
-            override_path = override_env;
+        // The ICD override is actually a specific list of filenames, not directories
+        if (is_icd && NULL != override_env) {
+            is_directory_list = false;
         }
+        override_path = override_env;
     }
 
     // Add two by default for NULL terminator and one path separator on end (just in case)
@@ -3063,7 +3057,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                         cur_path_ptr += rel_size;
                         *cur_path_ptr++ = PATH_SEPARATOR;
                         // only for ICD manifests
-                        if (!is_high_integrity() && env_override != NULL && strcmp(VK_ICD_FILENAMES_ENV_VAR, env_override) == 0) {
+                        if (env_override != NULL && strcmp(VK_ICD_FILENAMES_ENV_VAR, env_override) == 0) {
                             use_first_found_manifest = true;
                         }
                     }

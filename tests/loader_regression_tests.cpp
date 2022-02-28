@@ -2202,7 +2202,6 @@ TEST(EnvironmentVariables, VK_LAYER_PATH) {
     EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
     EXPECT_TRUE(env.debug_log.find("/tandy"));
     EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/").str()));
-    EXPECT_FALSE(env.debug_log.find("Ignoring override VK_LAYER_PATH due to high-integrity"));
 
     env.debug_log.clear();
 
@@ -2213,7 +2212,6 @@ TEST(EnvironmentVariables, VK_LAYER_PATH) {
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
     inst2.CheckCreate();
 
-    EXPECT_TRUE(env.debug_log.find("Ignoring override VK_LAYER_PATH due to high-integrity"));
     EXPECT_FALSE(env.debug_log.find("/tmp/carol"));
 
     env.platform_shim->set_elevated_privilege(false);
