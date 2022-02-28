@@ -25,6 +25,10 @@
  * Author: Charles Giessen <charles@lunarg.com>
  */
 
+#if !defined(VULKAN_NON_CMAKE_BUILD)
+#include "loader_cmake_config.h"
+#endif  // !defined(VULKAN_NON_CMAKE_BUILD)
+
 #include "shim.h"
 
 static PlatformShim platform_shim;
@@ -48,12 +52,24 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
 #define FOPEN_FUNC_NAME fopen
 #define GETEUID_FUNC_NAME geteuid
 #define GETEGID_FUNC_NAME getegid
+#if defined(HAVE_SECURE_GETENV)
+#define SECURE_GETENV_FUNC_NAME secure_getenv
+#endif
+#if defined(HAVE___SECURE_GETENV)
+#define __SECURE_GETENV_FUNC_NAME __secure_getenv
+#endif
 #elif defined(__APPLE__)
 #define OPENDIR_FUNC_NAME my_opendir
 #define ACCESS_FUNC_NAME my_access
 #define FOPEN_FUNC_NAME my_fopen
 #define GETEUID_FUNC_NAME my_geteuid
 #define GETEGID_FUNC_NAME my_getegid
+#if defined(HAVE_SECURE_GETENV)
+#define SECURE_GETENV_FUNC_NAME my_secure_getenv
+#endif
+#if defined(HAVE___SECURE_GETENV)
+#define __SECURE_GETENV_FUNC_NAME my__secure_getenv
+#endif
 #endif
 
 using PFN_OPENDIR = DIR* (*)(const char* path_name);
@@ -61,12 +77,21 @@ using PFN_ACCESS = int (*)(const char* pathname, int mode);
 using PFN_FOPEN = FILE* (*)(const char* filename, const char* mode);
 using PFN_GETEUID = uid_t (*)(void);
 using PFN_GETEGID = gid_t (*)(void);
+#if defined(HAVE_SECURE_GETENV) || defined(HAVE___SECURE_GETENV)
+using PFN_SEC_GETENV = char* (*)(const char* name);
+#endif
 
 static PFN_OPENDIR real_opendir = nullptr;
 static PFN_ACCESS real_access = nullptr;
 static PFN_FOPEN real_fopen = nullptr;
 static PFN_GETEUID real_geteuid = nullptr;
 static PFN_GETEGID real_getegid = nullptr;
+#if defined(HAVE_SECURE_GETENV)
+static PFN_SEC_GETENV real_secure_getenv = nullptr;
+#endif
+#if defined(HAVE___SECURE_GETENV)
+static PFN_SEC_GETENV real__secure_getenv = nullptr;
+#endif
 
 FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
     if (!real_opendir) real_opendir = (PFN_OPENDIR)dlsym(RTLD_NEXT, "opendir");
@@ -139,6 +164,29 @@ FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
     }
 }
 
+#if defined(HAVE_SECURE_GETENV)
+FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char *name) {
+    if (!real_secure_getenv) real_secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "secure_getenv");
+
+    if (platform_shim.use_fake_elevation) {
+        return NULL;
+    } else {
+        return real_secure_getenv(name);
+    }
+}
+#endif
+#if defined(HAVE___SECURE_GETENV)
+FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char *name) {
+    if (!real__secure_getenv) real__secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "__secure_getenv");
+
+    if (platform_shim.use_fake_elevation) {
+        return NULL;
+    } else {
+        return real__secure_getenv(name);
+    }
+}
+#endif
+
 /* Shiming functions on apple is limited by the linker prefering to not use functions in the
  * executable in loaded dylibs. By adding an interposer, we redirect the linker to use our
  * version of the function over the real one, thus shimming the system function.
@@ -157,5 +205,11 @@ __attribute__((used)) static Interposer _interpose_access MACOS_ATTRIB = {VOIDP_
 __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_CAST(my_fopen), VOIDP_CAST(fopen)};
 __attribute__((used)) static Interposer _interpose_euid MACOS_ATTRIB = {VOIDP_CAST(my_geteuid), VOIDP_CAST(geteuid)};
 __attribute__((used)) static Interposer _interpose_egid MACOS_ATTRIB = {VOIDP_CAST(my_getegid), VOIDP_CAST(getegid)};
+#if defined(HAVE_SECURE_GETENV)
+__attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my_secure_getenv), VOIDP_CAST(secure_getenv)};
+#endif
+#if defined(HAVE___SECURE_GETENV)
+__attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my__secure_getenv), VOIDP_CAST(__secure_getenv)};
+#endif
 #endif
 }  // extern "C"
