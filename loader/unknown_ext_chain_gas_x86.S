@@ -48,7 +48,7 @@ vkPhysDevExtTramp\num:
 .global vkPhysDevExtTermin\num
 vkPhysDevExtTermin\num:
     _CET_ENDBR
-    mov     rax, [rdi + ICD_TERM_OFFSET_PHYS_DEV_TERM]                          # Store the loader_icd_term* in rax
+    mov     rax, qword ptr [rdi + ICD_TERM_OFFSET_PHYS_DEV_TERM]                # Store the loader_icd_term* in rax
     cmp     qword ptr [rax + (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num))], 0 # Check if the next function in the chain is NULL
     je      terminError\num                                                     # Go to the error section if it is NULL
     mov     rdi, [rdi + PHYS_DEV_OFFSET_PHYS_DEV_TERM]                          # Load the unwrapped VkPhysicalDevice into the first arg
