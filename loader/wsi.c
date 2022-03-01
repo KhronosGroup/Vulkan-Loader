@@ -161,7 +161,7 @@ bool wsi_unsupported_instance_extension(const VkExtensionProperties *ext_prop) {
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 #ifndef VK_USE_PLATFORM_SCREEN_QNX
     if (!strcmp(ext_prop->extensionName, "VK_QNX_screen_surface")) return true;
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 
     return false;
 }
@@ -1132,7 +1132,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
     if (!loader_inst->wsi_directfb_surface_enabled) {
         loader_log(
             loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-            "VK_EXT_directfb_surface extension not enabled. vkGetPhysicalDeviceWaylandPresentationSupportKHR not executed!\n");
+            "VK_EXT_directfb_surface extension not enabled. vkGetPhysicalDeviceDirectFBPresentationSupportKHR not executed!\n");
         return VK_SUCCESS;
     }
 
