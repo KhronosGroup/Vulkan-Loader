@@ -6226,6 +6226,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     struct loader_phys_dev_per_icd *icd_phys_dev_array = NULL;
     struct loader_physical_device_term **new_phys_devs = NULL;
     struct loader_phys_dev_per_icd *sorted_phys_dev_array = NULL;
+    uint32_t unsorted_icd_idx = 0;
     uint32_t icd_idx = 0;
     uint32_t sorted_count = 0;
 
@@ -6261,6 +6262,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
         if (sorted_count && icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL) {
             icd_term = icd_term->next;
+            ++unsorted_icd_idx;
             continue;
         }
 #endif
@@ -6290,8 +6292,10 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
         }
         inst->total_gpu_count += icd_phys_dev_array[icd_idx].device_count;
         icd_phys_dev_array[icd_idx].icd_term = icd_term;
+        icd_phys_dev_array[icd_idx].icd_index = unsorted_icd_idx;
         icd_term = icd_term->next;
         ++icd_idx;
+        ++unsorted_icd_idx;
     }
 
     if (0 == inst->total_gpu_count) {
@@ -6351,18 +6355,29 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     // Copy over everything found through sorted enumeration
     struct loader_phys_dev_per_icd *phys_dev_array = icd_phys_dev_array;
     uint32_t max_count = inst->total_icd_count;
+    uint32_t presorted_count = 0;
+    struct loader_phys_dev_per_icd *presorted_dev_array = NULL;
 #if defined(_WIN32)
     if (sorted_count > 0) {
-        phys_dev_array = sorted_phys_dev_array;
-        max_count = sorted_count;
+        presorted_dev_array = sorted_phys_dev_array;
+        presorted_count = sorted_count;
     }
 #endif
     for (uint32_t i = 0; i < max_count; ++i) {
-        for (uint32_t j = 0; j < phys_dev_array[i].device_count; ++j) {
+        struct loader_phys_dev_per_icd *current_dev;
+        if (i < presorted_count) {
+            assert(presorted_dev_array != NULL);
+            // Sorted devices go first.
+            current_dev = &(presorted_dev_array[i]);
+        } else {
+            // Unsorted to follow.
+            current_dev = &(phys_dev_array[i - presorted_count]);
+        }
+        for (uint32_t j = 0; j < current_dev->device_count; ++j) {
             // Check if this physical device is already in the old buffer
             if (NULL != inst->phys_devs_term) {
                 for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
-                    if (phys_dev_array[i].physical_devices[j] == inst->phys_devs_term[old_idx]->phys_dev) {
+                    if (current_dev->physical_devices[j] == inst->phys_devs_term[old_idx]->phys_dev) {
                         new_phys_devs[idx] = inst->phys_devs_term[old_idx];
                         break;
                     }
@@ -6382,9 +6397,9 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                 }
 
                 loader_set_dispatch((void *)new_phys_devs[idx], inst->disp);
-                new_phys_devs[idx]->this_icd_term = phys_dev_array[i].icd_term;
-                new_phys_devs[idx]->icd_index = (uint8_t)(phys_dev_array[i].icd_index);
-                new_phys_devs[idx]->phys_dev = phys_dev_array[i].physical_devices[j];
+                new_phys_devs[idx]->this_icd_term = current_dev->icd_term;
+                new_phys_devs[idx]->icd_index = (uint8_t)(current_dev->icd_index);
+                new_phys_devs[idx]->phys_dev = current_dev->physical_devices[j];
             }
 
             // Increment the count of new physical devices
