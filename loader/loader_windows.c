@@ -857,7 +857,7 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, stru
                     continue;
                 }
 
-                uint32_t count;
+                uint32_t count = 0;
                 VkResult vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, description.AdapterLuid,
                                                                                         &count, NULL);
                 if (vkres == VK_ERROR_INCOMPATIBLE_DRIVER) {

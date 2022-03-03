@@ -443,6 +443,64 @@ TEST(MultipleDriverConfig, DifferentICDsWithDevicesAndGroups) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, group_props.data()));
     ASSERT_EQ(group_count, returned_group_count);
 }
+#if defined(WIN32)
+TEST(MultipleICDConfig, version_5_and_version_6) {
+    FrameworkEnvironment env;
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer1";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(regular_layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                         .set_disable_environment("DisableMeIfYouCan")),
+                           "regular_test_layer.json");
+
+    uint32_t physical_count = 0;
+    for (uint32_t i = 0; i < 3; i++) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& driver_5 = env.get_test_icd(i * 2 + 1);
+        driver_5.set_max_icd_interface_version(5);
+        driver_5.physical_devices.push_back({});
+        driver_5.physical_devices.push_back({});
+        driver_5.physical_devices.push_back({});
+        physical_count += static_cast<uint32_t>(driver_5.physical_devices.size());
+
+        auto& driver_6 = env.get_test_icd(i * 2);
+        driver_6.physical_devices.emplace_back("physical_device_0");
+        driver_6.physical_devices.emplace_back("physical_device_1");
+        physical_count += static_cast<uint32_t>(driver_6.physical_devices.size());
+
+        driver_6.set_max_icd_interface_version(6);
+
+        uint32_t driver_index = i % 4;  // which drive this test pretends to be, must stay below 4
+        auto& known_driver = known_driver_list.at(driver_index);
+        DXGI_ADAPTER_DESC1 desc1{};
+        std::wstring str = L"TestDriver" + std::to_wstring(2);
+        wcsncpy_s(&desc1.Description[0], 128, str.c_str(), 128);
+        desc1.VendorId = known_driver.vendor_id;
+        desc1.AdapterLuid = LUID{100 + i, static_cast<LONG>(100 + i)};
+        driver_6.set_adapterLUID(desc1.AdapterLuid);
+        desc1.Flags = DXGI_ADAPTER_FLAG_NONE;
+        env.platform_shim->add_dxgi_adapter(GpuType::discrete, driver_index, desc1);
+    }
+    uint32_t returned_physical_count = 0;
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+    ASSERT_EQ(physical_count, returned_physical_count);
+    std::vector<VkPhysicalDevice> physical_device_handles{returned_physical_count};
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, physical_device_handles.data()));
+    ASSERT_EQ(physical_count, returned_physical_count);
+    for (uint32_t i = 0; i < 3; i++) {
+        auto& driver_6 = env.get_test_icd(i * 2);
+        ASSERT_EQ(driver_6.called_enumerate_adapter_physical_devices, CalledEnumerateAdapterPhysicalDevices::called);
+    }
+}
+
+#endif  // defined(WIN32)
 
 // shim function pointers for 1.3
 // Should use autogen for this - it generates 'shim' functions for validation layers, maybe that could be used here.
