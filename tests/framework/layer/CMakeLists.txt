@@ -47,3 +47,4 @@ AddSharedLibrary(test_layer_wrap_objects DEF_FILE test_layer_wrap_objects SOURCE
 AddSharedLibrary(test_layer_wrap_objects_1 DEF_FILE test_layer_wrap_objects SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_1_EXPORTS})
 AddSharedLibrary(test_layer_wrap_objects_2 DEF_FILE test_layer_wrap_objects SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_2_EXPORTS})
 AddSharedLibrary(test_layer_wrap_objects_3 DEF_FILE test_layer_wrap_objects SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_3_EXPORTS})
+AddSharedLibrary(test_layer_entrypoints DEF_FILE test_layer_entrypoints SOURCES ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_layer.cpp DEFINITIONS "")

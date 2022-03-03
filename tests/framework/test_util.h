@@ -345,7 +345,7 @@ struct LibraryWrapper {
         void* symbol = loader_platform_get_proc_address(lib_handle, symbol_name);
         if (symbol == nullptr) {
             fprintf(stderr, "Unable to open symbol %s: %s\n", symbol_name, loader_platform_get_proc_address_error(symbol_name));
-            assert(symbol != nullptr && "Must be able to get symbol");
+            //assert(symbol != nullptr && "Must be able to get symbol");
         }
         return FromVoidStarFunc(symbol);
     }

@@ -1,0 +1,4 @@
+LIBRARY test_driver_entrypoints
+EXPORTS
+    vk_icdGetInstanceProcAddr
+    vk_icdNegotiateLoaderICDInterfaceVersion

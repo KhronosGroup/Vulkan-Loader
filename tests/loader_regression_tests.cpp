@@ -186,7 +186,7 @@ TEST(EnumerateInstanceExtensionProperties, UsageChecks) {
 
     Extension first_ext{"VK_EXT_validation_features"};  // known instance extensions
     Extension second_ext{"VK_EXT_headless_surface"};
-    env.reset_icd().add_instance_extensions({first_ext, second_ext});
+    env.reset_test_icd().add_instance_extensions({first_ext, second_ext});
 
     {  // One Pass
         uint32_t extension_count = 4;
@@ -254,7 +254,7 @@ TEST(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
 
     Extension first_ext{"FirstTestExtension"};  // unknown instance extensions
     Extension second_ext{"SecondTestExtension"};
-    env.reset_icd().add_instance_extensions({first_ext, second_ext});
+    env.reset_test_icd().add_instance_extensions({first_ext, second_ext});
     {
         uint32_t extension_count = 0;
         ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));

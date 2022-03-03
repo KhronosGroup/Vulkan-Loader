@@ -1,0 +1,5 @@
+LIBRARY test_layer_entrypoints
+EXPORTS
+    layer_GetInstanceProcAddr
+    layer_GetDeviceProcAddr
+    vkNegotiateLoaderLayerInterfaceVersion

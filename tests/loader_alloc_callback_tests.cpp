@@ -586,7 +586,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         fail_index++;  // applies to the next loop
         uint32_t physical_dev_count = starting_physical_dev_count;
         VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        auto& driver = env.reset_icd();
+        auto& driver = env.reset_test_icd();
 
         for (uint32_t i = 0; i < physical_dev_count; i++) {
             driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));

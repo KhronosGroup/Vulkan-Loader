@@ -69,6 +69,7 @@
 
 #include "icd/physical_device.h"
 #include "icd/test_icd.h"
+#include "../generated/vk_test_entrypoint_driver.h"
 
 #include "layer/test_layer.h"
 
@@ -275,8 +276,10 @@ struct PlatformShimWrapper {
 struct TestICDHandle {
     TestICDHandle() noexcept;
     TestICDHandle(fs::path const& icd_path) noexcept;
-    TestICD& reset_icd() noexcept;
+    TestICD& reset_test_icd() noexcept;
     TestICD& get_test_icd() noexcept;
+    EntrypointTestDriver& reset_ep_driver() noexcept;
+    EntrypointTestDriver& get_ep_driver() noexcept;
     fs::path get_icd_full_path() noexcept;
     fs::path get_icd_manifest_path() noexcept;
 
@@ -285,6 +288,8 @@ struct TestICDHandle {
     GetTestICDFunc proc_addr_get_test_icd = nullptr;
     GetNewTestICDFunc proc_addr_reset_icd = nullptr;
     fs::path manifest_path;
+    GetEPDriverFunc proc_addr_get_ep_driver;
+    GetNewEPDriverFunc proc_addr_reset_ep_driver;
 };
 struct TestLayerHandle {
     TestLayerHandle() noexcept;
@@ -337,9 +342,12 @@ struct FrameworkEnvironment {
     void add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
 
     TestICD& get_test_icd(size_t index = 0) noexcept;
-    TestICD& reset_icd(size_t index = 0) noexcept;
+    TestICD& reset_test_icd(size_t index = 0) noexcept;
     fs::path get_test_icd_path(size_t index = 0) noexcept;
     fs::path get_icd_manifest_path(size_t index = 0) noexcept;
+
+    EntrypointTestDriver& reset_ep_driver(size_t index = 0) noexcept;
+    EntrypointTestDriver& get_ep_driver(size_t index = 0) noexcept;
 
     TestLayer& get_test_layer(size_t index = 0) noexcept;
     TestLayer& reset_layer(size_t index = 0) noexcept;

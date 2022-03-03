@@ -39,3 +39,6 @@ AddSharedLibrary(test_icd_version_2_export_icd_gpdpa DEF_FILE test_icd_2_gpdpa
 AddSharedLibrary(test_icd_version_6 DEF_FILE test_icd_6
     SOURCES test_icd.cpp
     DEFINITIONS TEST_ICD_EXPORT_ICD_GPDPA=1 TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES=1 ${TEST_ICD_VERSION_2_DEFINES})
+AddSharedLibrary(test_driver_entrypoints DEF_FILE test_driver_entrypoints
+    SOURCES ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_driver.cpp
+    DEFINITIONS "")

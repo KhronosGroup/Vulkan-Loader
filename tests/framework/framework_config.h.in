@@ -51,6 +51,9 @@
 // All possible defines for v6
 #define TEST_ICD_PATH_VERSION_6 "$<TARGET_FILE:test_icd_version_6>"
 
+// Basic all supported entrypoint driver
+#define TEST_ENTRYPOINT_DRIVER "$<TARGET_FILE:test_driver_entrypoints>"
+
 // TestLayer binaries
 #define TEST_LAYER_PATH_EXPORT_BASE "$<TARGET_FILE:test_layer_export_base>"
 #define TEST_LAYER_PATH_EXPORT_VERSION_0 "$<TARGET_FILE:test_layer_export_version_0>"
@@ -60,6 +63,9 @@
 #define TEST_LAYER_WRAP_OBJECTS_1 "$<TARGET_FILE:test_layer_wrap_objects_1>"
 #define TEST_LAYER_WRAP_OBJECTS_2 "$<TARGET_FILE:test_layer_wrap_objects_2>"
 #define TEST_LAYER_WRAP_OBJECTS_3 "$<TARGET_FILE:test_layer_wrap_objects_3>"
+
+// Basic all supported entrypoint layer
+#define TEST_ENTRYPOINT_LAYER "$<TARGET_FILE:test_layer_entrypoints>"
 
 // Dummy Binaries
 #if _WIN32 || _WIN64

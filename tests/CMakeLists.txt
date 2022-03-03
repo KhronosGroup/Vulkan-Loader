@@ -38,7 +38,10 @@ add_executable(
         loader_phys_dev_inst_ext_tests.cpp
         loader_version_tests.cpp
         loader_unknown_ext_tests.cpp
-        loader_wsi_tests.cpp)
+        loader_wsi_tests.cpp
+        ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_core_tests.cpp
+        ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_extension_tests.cpp
+        )
 target_link_libraries(test_regression PUBLIC testing_dependencies)
 set_target_properties(test_regression ${LOADER_STANDARD_CXX_PROPERTIES})
 target_compile_definitions(test_regression PUBLIC VK_NO_PROTOTYPES)

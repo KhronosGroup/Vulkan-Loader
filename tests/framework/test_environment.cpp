@@ -156,15 +156,26 @@ TestICDHandle::TestICDHandle() noexcept {}
 TestICDHandle::TestICDHandle(fs::path const& icd_path) noexcept : icd_library(icd_path) {
     proc_addr_get_test_icd = icd_library.get_symbol(GET_TEST_ICD_FUNC_STR);
     proc_addr_reset_icd = icd_library.get_symbol(RESET_ICD_FUNC_STR);
+    proc_addr_get_ep_driver = icd_library.get_symbol(GET_EP_DRIVER_STR);
+    proc_addr_reset_ep_driver = icd_library.get_symbol(RESET_EP_DRIVER_STR);
 }
 TestICD& TestICDHandle::get_test_icd() noexcept {
     assert(proc_addr_get_test_icd != NULL && "symbol must be loaded before use");
     return *proc_addr_get_test_icd();
 }
-TestICD& TestICDHandle::reset_icd() noexcept {
+TestICD& TestICDHandle::reset_test_icd() noexcept {
     assert(proc_addr_reset_icd != NULL && "symbol must be loaded before use");
     return *proc_addr_reset_icd();
 }
+EntrypointTestDriver& TestICDHandle::reset_ep_driver() noexcept {
+    assert(proc_addr_get_ep_driver != NULL && "symbol must be loaded before use");
+    return *proc_addr_get_ep_driver();
+}
+EntrypointTestDriver& TestICDHandle::get_ep_driver() noexcept {
+    assert(proc_addr_reset_ep_driver != NULL && "symbol must be loaded before use");
+    return *proc_addr_reset_ep_driver();
+}
+
 fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
 fs::path TestICDHandle::get_icd_manifest_path() noexcept { return manifest_path; }
 
@@ -215,7 +226,12 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         auto new_driver_location = icd_folder.copy_file(icd_details.icd_manifest.lib_path, new_driver_name.str());
 
         icds.push_back(TestICDHandle(new_driver_location));
-        icds.back().reset_icd();
+        if (icds.back().proc_addr_reset_icd != NULL) {
+            icds.back().reset_test_icd();
+        }
+        else if (icds.back().proc_addr_reset_ep_driver != NULL) {
+            icds.back().reset_ep_driver();
+        }
         icd_details.icd_manifest.lib_path = new_driver_location.str();
     }
     std::string full_json_name = icd_details.json_name + "_" + std::to_string(cur_icd_index) + ".json";
@@ -296,9 +312,12 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::Fo
 }
 
 TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
-TestICD& FrameworkEnvironment::reset_icd(size_t index) noexcept { return icds[index].reset_icd(); }
+TestICD& FrameworkEnvironment::reset_test_icd(size_t index) noexcept { return icds[index].reset_test_icd(); }
 fs::path FrameworkEnvironment::get_test_icd_path(size_t index) noexcept { return icds[index].get_icd_full_path(); }
 fs::path FrameworkEnvironment::get_icd_manifest_path(size_t index) noexcept { return icds[index].get_icd_manifest_path(); }
+
+EntrypointTestDriver& FrameworkEnvironment::reset_ep_driver(size_t index ) noexcept { return icds[index].get_ep_driver(); }
+EntrypointTestDriver& FrameworkEnvironment::get_ep_driver(size_t index) noexcept { return icds[index].reset_ep_driver(); }
 
 TestLayer& FrameworkEnvironment::get_test_layer(size_t index) noexcept { return layers[index].get_test_layer(); }
 TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return layers[index].reset_layer(); }

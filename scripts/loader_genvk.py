@@ -329,6 +329,150 @@ def makeGenOpts(args):
             helper_file_type  = 'object_types_header')
         ]
 
+    # Helper file generator options for vk_test_entrypoint_core_tests.cpp
+    genOpts['vk_test_entrypoint_core_tests.cpp'] = [
+          LoaderTestOutputGenerator,
+          LoaderTestGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_test_entrypoint_core_tests.cpp',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 4,
+            expandEnumerants  = False)
+        ]
+
+    # Helper file generator options for vk_test_entrypoint_extension_tests.cpp
+    genOpts['vk_test_entrypoint_extension_tests.cpp'] = [
+          LoaderTestOutputGenerator,
+          LoaderTestGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_test_entrypoint_extension_tests.cpp',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 4,
+            expandEnumerants  = False)
+        ]
+
+    # Helper file generator options for vk_test_entrypoint_layer.h
+    genOpts['vk_test_entrypoint_layer.h'] = [
+          LoaderTestOutputGenerator,
+          LoaderTestGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_test_entrypoint_layer.h',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 4,
+            expandEnumerants  = False)
+        ]
+
+    # Helper file generator options for vk_test_entrypoint_layer.cpp
+    genOpts['vk_test_entrypoint_layer.cpp'] = [
+          LoaderTestOutputGenerator,
+          LoaderTestGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_test_entrypoint_layer.cpp',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 4,
+            expandEnumerants  = False)
+        ]
+
+    # Helper file generator options for vk_test_entrypoint_driver.h
+    genOpts['vk_test_entrypoint_driver.h'] = [
+          LoaderTestOutputGenerator,
+          LoaderTestGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_test_entrypoint_driver.h',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 4,
+            expandEnumerants  = False)
+        ]
+
+    # Helper file generator options for vk_test_entrypoint_driver.cpp
+    genOpts['vk_test_entrypoint_driver.cpp'] = [
+          LoaderTestOutputGenerator,
+          LoaderTestGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_test_entrypoint_driver.cpp',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 4,
+            expandEnumerants  = False)
+        ]
+
     # Loader Generated Header Version Options for loader_generated_header_version.cmake
     genOpts['loader_generated_header_version.cmake'] = [
           LoaderVersioningGenerator,
@@ -472,6 +616,7 @@ if __name__ == '__main__':
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
     from loader_tramp_term_generator import LoaderTrampTermOutputGenerator, LoaderTrampTermGeneratorOptions
     from loader_versioning_generator import LoaderVersioningGenerator, LoaderVersioningGeneratorOptions
+    from loader_test_generator import LoaderTestOutputGenerator, LoaderTestGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
