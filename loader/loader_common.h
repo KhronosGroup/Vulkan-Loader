@@ -185,7 +185,7 @@ struct loader_device {
     VkAllocationCallbacks alloc_callbacks;
 
     // List of activated device extensions that have terminators implemented in the loader
-    union loader_device_extension_enables dev_ext_enables;
+    struct loader_device_extension_enables dev_ext_enables;
 
     struct loader_device *next;
 };
@@ -274,7 +274,7 @@ struct loader_instance {
     VkInstance instance;  // layers/ICD instance returned to trampoline
 
     struct loader_extension_list ext_list;  // icds and loaders extensions
-    struct loader_instance_extension_enables enabled_known_extensions;
+    struct loader_instance_extension_enables inst_ext_enables;
 
     VkLayerDbgFunctionNode *DbgFunctionHead;
     uint32_t num_tmp_report_callbacks;

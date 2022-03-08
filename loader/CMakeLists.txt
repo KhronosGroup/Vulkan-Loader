@@ -110,6 +110,9 @@ set(NORMAL_LOADER_SRCS
     trampoline.c
     unknown_function_handling.c
     wsi.c
+    generated/vk_loader_trampolines.c
+    generated/vk_loader_terminators.c
+    generated/vk_loader_extension_utils.c
     )
 
 if(WIN32)

@@ -75,7 +75,6 @@
 // Generated file containing all the extension data
 #include "vk_loader_extension_utils.h"
 #include "vk_loader_terminators.h"
-#include "vk_loader_extension_utils.c"
 
 struct loader_struct loader = {0};
 
@@ -3941,12 +3940,6 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator
     loader_log(NULL, VULKAN_LOADER_DEBUG_BIT, 0, "loader_gpdpa_instance_terminator() unrecognized name %s", pName);
     return NULL;
 }
-
-// Prototypes for functions defined below
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
-                                                         const VkAllocationCallbacks *pAllocator, VkInstance *pInstance);
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkDevice *pDevice);
 
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_internal(VkInstance inst, const char *pName) {
     if (!strcmp(pName, "vkGetInstanceProcAddr")) {

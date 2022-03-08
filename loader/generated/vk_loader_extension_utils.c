@@ -23,6 +23,15 @@
  */
 
 // clang-format off
+#include <stdlib.h>
+#include <string.h>
+
+#include "allocation.h"
+#include "debug_utils.h"
+#include "gpa_helper.h"
+#include "loader.h"
+#include "log.h"
+#include "vk_loader_platform.h"
 
 // A function that can be used to query enabled extensions during a vkCreateInstance call
 void extensions_create_instance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo) {

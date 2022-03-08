@@ -192,6 +192,38 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnume
                                                                    uint32_t *pApiVersion);
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                         VkLayerProperties *pProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
+                                                                 VkPhysicalDeviceFeatures2 *pFeatures);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                                   VkPhysicalDeviceProperties2 *pProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                         VkFormatProperties2 *pFormatProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2KHR *pImageFormatInfo,
+    VkImageFormatProperties2KHR *pImageFormatProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                              uint32_t *pQueueFamilyPropertyCount,
+                                                                              VkQueueFamilyProperties2KHR *pQueueFamilyProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
+                                                                         VkPhysicalDeviceMemoryProperties2 *pMemoryProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2KHR *pFormatInfo, uint32_t *pPropertyCount,
+    VkSparseImageFormatProperties2KHR *pProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo *pExternalBufferInfo,
+    VkExternalBufferProperties *pExternalBufferProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo *pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties *pExternalSemaphoreProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo *pExternalFenceInfo,
+    VkExternalFenceProperties *pExternalFenceProperties);
+
+// ---- Vulkan Core 1.3 terminators
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
+                                                                          VkPhysicalDeviceToolProperties *pToolProperties);
 
 // ---- Version utility functions and macros
 loader_api_version loader_make_version(uint32_t version);

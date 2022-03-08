@@ -42,6 +42,20 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
 // a terminator.
 PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName);
 
+// Manually implemented terminators
+// --------------------------------
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties( VkPhysicalDevice physicalDevice, const char* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2( VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2( VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties( VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo, VkExternalBufferProperties* pExternalBufferProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperties( VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo, VkExternalSemaphoreProperties* pExternalSemaphoreProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties( VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo, VkExternalFenceProperties* pExternalFenceProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2( VkPhysicalDevice physicalDevice, VkFormat format, VkFormatProperties2* pFormatProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties2( VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo, VkImageFormatProperties2* pImageFormatProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2( VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2( VkPhysicalDevice physicalDevice, VkPhysicalDeviceMemoryProperties2* pMemoryProperties);
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperties2( VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount, VkSparseImageFormatProperties2* pProperties);
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties( VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolProperties* pToolProperties);
 
 // ------------------------------------------------------------------
 // ---- Vulkan instance extension VK_EXT_debug_utils terminators ----

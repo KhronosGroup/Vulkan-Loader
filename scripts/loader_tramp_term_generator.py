@@ -277,6 +277,38 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         if self.genOpts.filename[-2:] == '.h':
             preamble += '#pragma once\n'
+        if self.genOpts.filename == 'vk_loader_extension_utils.c':
+            preamble += '#include <stdlib.h>\n'
+            preamble += '#include <string.h>\n'
+            preamble += '\n'
+            preamble += '#include "allocation.h"\n'
+            preamble += '#include "debug_utils.h"\n'
+            preamble += '#include "gpa_helper.h"\n'
+            preamble += '#include "loader.h"\n'
+            preamble += '#include "log.h"\n'
+            preamble += '#include "vk_loader_platform.h"\n'
+        elif self.genOpts.filename == 'vk_loader_trampolines.c':
+            preamble += '#include <stdlib.h>\n'
+            preamble += '#include <string.h>\n'
+            preamble += '\n'
+            preamble += '#include "allocation.h"\n'
+            preamble += '#include "debug_utils.h"\n'
+            preamble += '#include "gpa_helper.h"\n'
+            preamble += '#include "loader.h"\n'
+            preamble += '#include "log.h"\n'
+            preamble += '#include "vk_loader_platform.h"\n'
+            preamble += '#include "vk_loader_extension_utils.h"\n'
+            preamble += '#include "wsi.h"\n'
+            preamble += '#include <vulkan/vk_icd.h>\n'
+        elif self.genOpts.filename == 'vk_loader_terminators.c':
+            preamble += '#include "allocation.h"\n'
+            preamble += '#include "loader.h"\n'
+            preamble += '#include "log.h"\n'
+            preamble += '#include "debug_utils.h"\n'
+            preamble += '#include "extension_manual.h"\n'
+            preamble += '#include "vk_loader_platform.h"\n'
+            preamble += '#include "wsi.h"\n'
+            preamble += '#include <vulkan/vk_icd.h>\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
@@ -304,7 +336,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         elif self.genOpts.filename == 'vk_loader_extension_utils.h':
             file_data += self.OutputInstaceExtensionPrototypes()
-            file_data += self.OutputExtensionEnableUnions()
+            file_data += self.OutputExtensionEnableStructs()
 
         elif self.genOpts.filename == 'vk_loader_extension_utils.c':
             file_data += self.OutputInstanceExtensionEnableCheck()
@@ -1150,6 +1182,25 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         prototypes += '// a terminator.\n'
         prototypes += 'PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName);\n'
         prototypes += '\n'
+
+        skip_commands = ['vkEnumerateInstanceExtensionProperties',
+                         'vkEnumerateInstanceLayerProperties',
+                         'vkEnumerateInstanceVersion',
+                        ]
+
+        prototypes += '// Manually implemented terminators\n'
+        prototypes += '// --------------------------------\n'
+        for term in MANUALLY_IMPLEMENTED_TERMINATORS:
+            if term in skip_commands:
+                continue
+            for cmd in self.basic_commands:
+                if cmd.name == term:
+                    cmd_proto = cmd.cdecl.replace('VKAPI_CALL vk', 'VKAPI_CALL terminator_')
+                    cmd_proto = re.sub('\n', ' ', cmd_proto)
+                    cmd_proto = re.sub(' +', ' ', cmd_proto)
+                    prototypes += cmd_proto
+                    prototypes += '\n'
+                    break
         return prototypes
 
     # Output a function terminator prototype
@@ -1596,36 +1647,30 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         protos += '\n'
         return protos
 
-    # Create the extension enable union
-    def OutputExtensionEnableUnions(self):
-        unions = ''
-        unions += '// Union of all known instance extensions that the loader may need to refer to when\n'
-        unions += '// making function pointer decisions.\n'
-        unions += 'union loader_instance_extension_enables {\n'
-        unions += '    struct {\n'
+    # Create the extension enable structs
+    def OutputExtensionEnableStructs(self):
+        structs = ''
+        structs += '// Struct of all known instance extensions that the loader may need to refer to when\n'
+        structs += '// making function pointer decisions.\n'
+        structs += 'struct loader_instance_extension_enables {\n'
 
         ext_used = self.GenerateInstanceExtensionList()
 
         # Print out the function
         for ext in ext_used:
-            unions += '        uint8_t %s : 1;\n' % ext.ext_name[3:].lower()
+            structs += '    uint8_t %s : 1;\n' % ext.ext_name[3:].lower()
 
-        unions += '    };\n'
-        unions += '    uint64_t padding[4];\n'
-        unions += '};\n\n'
-        unions += ''
-        unions += '// Union of all device extensions that the loader has to override at least one command for\n'
-        unions += 'union loader_device_extension_enables {\n'
-        unions += '    struct {\n'
+        structs += '};\n\n'
+        structs += ''
+        structs += '// Struct of all device extensions that the loader has to override at least one command for\n'
+        structs += 'struct loader_device_extension_enables {\n'
 
         # Print out the function
         for ext in self.dev_extensions_tracked_by_loader:
-            unions += '        uint8_t %s : 1;\n' % ext[3:].lower()
+            structs += '    uint8_t %s : 1;\n' % ext[3:].lower()
 
-        unions += '    };\n'
-        unions += '    uint64_t padding[4];\n'
-        unions += '};\n\n'
-        return unions
+        structs += '};\n\n'
+        return structs
 
     # Create the extension enable check during vkCreateInstance
     def OutputInstanceExtensionEnableCheck(self):

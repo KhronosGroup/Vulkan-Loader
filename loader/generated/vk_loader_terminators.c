@@ -23,6 +23,14 @@
  */
 
 // clang-format off
+#include "allocation.h"
+#include "loader.h"
+#include "log.h"
+#include "debug_utils.h"
+#include "extension_manual.h"
+#include "vk_loader_platform.h"
+#include "wsi.h"
+#include <vulkan/vk_icd.h>
 
 
 // --------------------------------------------

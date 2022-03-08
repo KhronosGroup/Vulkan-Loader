@@ -617,10 +617,3 @@ out:
 
     return res;
 }
-
-// -----------------------------------------------------------------------------------------------------------
-// -- NOTE: This must be last since it implements dispatch table look-up functions that use all terminators!!
-// -----------------------------------------------------------------------------------------------------------
-
-// Generated loader terminators are in the following file
-#include "vk_loader_terminators.c"

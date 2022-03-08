@@ -920,10 +920,3 @@ out:
     loader_platform_thread_unlock_mutex(&loader_lock);
     return res;
 }
-
-
-// -----------------------------------------------------------------------------------------------------------
-// -- NOTE: This must be last since it implements dispatch table look-up functions that use all trampolines!!
-// -----------------------------------------------------------------------------------------------------------
-// Generated loader trampolines are in the following file
-#include "vk_loader_trampolines.c"
