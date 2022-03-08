@@ -1275,17 +1275,13 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         valid += '        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(%s);\n' % var_name
         valid += '        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {\n'
         valid += '        %sicd_term->dispatch.%s(' % (return_prefix, base_name)
-        count = 0
+        out_list = []
         for param in cmd.params:
-            if count != 0:
-                valid += ', '
-
             if param.type == 'VkSurfaceKHR':
-                valid += 'icd_surface->real_icd_surfaces[icd_index]'
+                out_list.append('icd_surface->real_icd_surfaces[icd_index]')
             else:
-                valid += param.name
-
-            count += 1
+                out_list.append(param.name)
+        valid += ', '.join(out_list)
         valid += ');\n'
         if len(return_prefix) == 0:
             valid += '                return;\n'
