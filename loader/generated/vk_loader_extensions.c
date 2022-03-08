@@ -992,6 +992,10 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_EXT_pageable_device_local_memory extension commands
     table->SetDeviceMemoryPriorityEXT = (PFN_vkSetDeviceMemoryPriorityEXT)gdpa(dev, "vkSetDeviceMemoryPriorityEXT");
 
+    // ---- VK_VALVE_descriptor_set_host_mapping extension commands
+    table->GetDescriptorSetLayoutHostMappingInfoVALVE = (PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE)gdpa(dev, "vkGetDescriptorSetLayoutHostMappingInfoVALVE");
+    table->GetDescriptorSetHostMappingVALVE = (PFN_vkGetDescriptorSetHostMappingVALVE)gdpa(dev, "vkGetDescriptorSetHostMappingVALVE");
+
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gdpa(dev, "vkDestroyAccelerationStructureKHR");
@@ -1924,6 +1928,10 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_EXT_pageable_device_local_memory extension commands
     if (!strcmp(name, "SetDeviceMemoryPriorityEXT")) return (void *)table->SetDeviceMemoryPriorityEXT;
+
+    // ---- VK_VALVE_descriptor_set_host_mapping extension commands
+    if (!strcmp(name, "GetDescriptorSetLayoutHostMappingInfoVALVE")) return (void *)table->GetDescriptorSetLayoutHostMappingInfoVALVE;
+    if (!strcmp(name, "GetDescriptorSetHostMappingVALVE")) return (void *)table->GetDescriptorSetHostMappingVALVE;
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -6286,6 +6294,37 @@ VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
 }
 
 
+// ---- VK_VALVE_descriptor_set_host_mapping extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(
+    VkDevice                                    device,
+    const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
+    VkDescriptorSetLayoutHostMappingInfoVALVE*  pHostMapping) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDescriptorSetLayoutHostMappingInfoVALVE: Invalid device "
+                   "[VUID-vkGetDescriptorSetLayoutHostMappingInfoVALVE-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    void**                                      ppData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDescriptorSetHostMappingVALVE: Invalid device "
+                   "[VUID-vkGetDescriptorSetHostMappingVALVE-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+}
+
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -7952,6 +7991,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_EXT_pageable_device_local_memory extension commands
     if (!strcmp("vkSetDeviceMemoryPriorityEXT", name)) {
         *addr = (void *)SetDeviceMemoryPriorityEXT;
+        return true;
+    }
+
+    // ---- VK_VALVE_descriptor_set_host_mapping extension commands
+    if (!strcmp("vkGetDescriptorSetLayoutHostMappingInfoVALVE", name)) {
+        *addr = (void *)GetDescriptorSetLayoutHostMappingInfoVALVE;
+        return true;
+    }
+    if (!strcmp("vkGetDescriptorSetHostMappingVALVE", name)) {
+        *addr = (void *)GetDescriptorSetHostMappingVALVE;
         return true;
     }
 
