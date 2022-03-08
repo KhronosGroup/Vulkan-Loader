@@ -131,6 +131,8 @@ struct TestLayer {
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, removed_physical_device_groups, removed_physical_device_group)
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, added_physical_device_groups, added_physical_device_group)
 
+    BUILDER_VECTOR(TestLayer, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
+
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;

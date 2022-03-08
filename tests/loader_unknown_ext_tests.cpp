@@ -26,6 +26,7 @@
  */
 
 #include "test_environment.h"
+#include <functional>
 
 class UnknownFunction : public ::testing::Test {
    protected:
@@ -43,9 +44,70 @@ class UnknownFunction : public ::testing::Test {
  is called, will return the custom_physical_device_function if the function name matches vkNotRealFuncTEST. The test then calls the
  function to verify that the unknown physical device function dispatching is working correctly.
 */
+template <typename DispatchableHandleType>
+struct custom_functions {
+    static VKAPI_ATTR uint32_t VKAPI_CALL func_zero(DispatchableHandleType handle, uint32_t foo) { return foo; };
+    static VKAPI_ATTR uint32_t VKAPI_CALL func_one(DispatchableHandleType handle, uint32_t foo, uint32_t bar) { return foo + bar; };
+    static VKAPI_ATTR float VKAPI_CALL func_two(DispatchableHandleType handle, uint32_t foo, uint32_t bar, float baz) {
+        return baz + foo + bar;
+    };
+    static VKAPI_ATTR int VKAPI_CALL func_three(DispatchableHandleType handle, int* ptr_a, int* ptr_b) { return *ptr_a + *ptr_b; };
+    static VKAPI_ATTR float VKAPI_CALL func_four(DispatchableHandleType handle, int* ptr_a, int* ptr_b, int foo, int bar, float k,
+                                                 float l, char a, char b, char c) {
+        return *ptr_a + *ptr_b + foo + bar + k + l + static_cast<int>(a) + static_cast<int>(b) + static_cast<int>(c);
+    };
+};
 
-VKAPI_ATTR int VKAPI_CALL custom_physical_device_function(VkPhysicalDevice device, int foo, int bar) { return foo + bar; }
-using PFN_custom_physical_device_function = decltype(&custom_physical_device_function);
+template <typename FunctionStruct>
+void fill_custom_functions(std::vector<VulkanFunction>& driver_function_list, std::vector<std::string>& fake_function_names,
+                           FunctionStruct const& funcs, uint32_t function_count) {
+    for (uint32_t i = 0; i < function_count;) {
+        fake_function_names.push_back(std::string("vkNotIntRealFuncTEST_") + std::to_string(i++));
+        driver_function_list.push_back(VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(funcs.func_zero)});
+
+        fake_function_names.push_back(std::string("vkNotIntRealIntFuncTEST_") + std::to_string(i++));
+        driver_function_list.push_back(VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(funcs.func_one)});
+
+        fake_function_names.push_back(std::string("vkIntNotIntRealFloatFuncTEST_") + std::to_string(i++));
+        driver_function_list.push_back(VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(funcs.func_two)});
+
+        fake_function_names.push_back(std::string("vkNotRealFuncPointerPointerTEST_") + std::to_string(i++));
+        driver_function_list.push_back(VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(funcs.func_three)});
+
+        fake_function_names.push_back(std::string("vkNotRealFuncTEST_pointer_pointer_int_int_float_float_char_char_char_") +
+                                      std::to_string(i++));
+        driver_function_list.push_back(VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(funcs.func_four)});
+    }
+}
+template <typename FunctionLoader, typename ParentType, typename DispatchableHandleType, typename FunctionStruct>
+void check_custom_functions(FunctionLoader& loader, ParentType parent, DispatchableHandleType handle, FunctionStruct const& s,
+                            std::vector<std::string>& fake_function_names, uint32_t function_count) {
+    for (uint32_t i = 0; i < function_count;) {
+        decltype(FunctionStruct::func_zero)* returned_func_i = loader.load(parent, fake_function_names.at(i++).c_str());
+        ASSERT_NE(returned_func_i, nullptr);
+        EXPECT_EQ(returned_func_i(handle, i * 10), i * 10);
+
+        decltype(FunctionStruct::func_one)* returned_func_ii = loader.load(parent, fake_function_names.at(i++).c_str());
+        ASSERT_NE(returned_func_ii, nullptr);
+        EXPECT_EQ(returned_func_ii(handle, i * 10, i * 5), i * 10 + i * 5);
+
+        decltype(FunctionStruct::func_two)* returned_func_iif = loader.load(parent, fake_function_names.at(i++).c_str());
+        ASSERT_NE(returned_func_iif, nullptr);
+        EXPECT_NEAR(returned_func_iif(handle, i * 10, i * 5, 0.1234f), i * 10 + i * 5 + 0.1234f, 0.001);
+
+        int x = 5;
+        int y = -505;
+        decltype(FunctionStruct::func_three)* returned_func_pp = loader.load(parent, fake_function_names.at(i++).c_str());
+        ASSERT_NE(returned_func_pp, nullptr);
+        EXPECT_EQ(returned_func_pp(handle, &x, &y), -500);
+
+        decltype(FunctionStruct::func_four)* returned_func_ppiiffccc = loader.load(parent, fake_function_names.at(i++).c_str());
+        ASSERT_NE(returned_func_ppiiffccc, nullptr);
+        EXPECT_NEAR(returned_func_ppiiffccc(handle, &x, &y, 200, 300, 0.123f, 1001.89f, 'a', 'b', 'c'),
+                    -500 + 200 + 300 + 0.123 + 1001.89 + 97 + 98 + 99, 0.001f);
+    }
+}
+using custom_physical_device_functions = custom_functions<VkPhysicalDevice>;
 
 TEST_F(UnknownFunction, PhysicalDeviceFunction) {
 #if defined(__APPLE__)
@@ -56,24 +118,14 @@ TEST_F(UnknownFunction, PhysicalDeviceFunction) {
     std::vector<std::string> fake_function_names;
 
     driver.physical_devices.emplace_back("physical_device_0");
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-
-        driver.custom_physical_device_functions.push_back(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_physical_device_function)});
-    }
+    fill_custom_functions(driver.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
+                          function_count);
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_physical_device_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(phys_dev, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
+                           function_count);
 }
 
 TEST_F(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayer) {
@@ -85,12 +137,8 @@ TEST_F(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayer) {
     std::vector<std::string> fake_function_names;
 
     driver.physical_devices.emplace_back("physical_device_0");
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-
-        driver.custom_physical_device_functions.push_back(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_physical_device_function)});
-    }
+    fill_custom_functions(driver.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
+                          function_count);
 
     env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
@@ -102,18 +150,38 @@ TEST_F(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayer) {
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_physical_device_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(phys_dev, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
+                           function_count);
 }
 
-VKAPI_ATTR int VKAPI_CALL custom_device_function(VkDevice device, int foo, int bar) { return foo + bar; }
-using PFN_custom_device_function = decltype(&custom_device_function);
+TEST_F(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
+#if defined(__APPLE__)
+    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
+#endif
+    uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
+    auto& driver = env->get_test_icd();
+    std::vector<std::string> fake_function_names;
+
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                          .set_disable_environment("DISABLE_ME")),
+                            "implicit_layer_unknown_function_intercept.json");
+    auto& layer = env->get_test_layer();
+    fill_custom_functions(layer.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
+                          function_count);
+
+    InstWrapper inst{env->vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+    check_custom_functions(env->vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
+                           function_count);
+}
+
+using custom_device_functions = custom_functions<VkDevice>;
 
 TEST_F(UnknownFunction, DeviceFunctionFromGetInstanceProcAddr) {
 #if defined(__APPLE__)
@@ -123,28 +191,17 @@ TEST_F(UnknownFunction, DeviceFunctionFromGetInstanceProcAddr) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_device_function)});
-    }
+
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
+                          function_count);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    // auto createCommandPool =
-    //    reinterpret_cast<PFN_vkCreateCommandPool>(env->vulkan_functions.vkGetInstanceProcAddr(inst, "vkCreateCommandPool"));
-    // createCommandPool(dev.dev, nullptr, nullptr, nullptr);
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_device_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(dev.dev, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, dev.dev, custom_device_functions{}, fake_function_names,
+                           function_count);
 }
 
 TEST_F(UnknownFunction, DeviceFunctionFromGetInstanceProcAddrWithImplicitLayer) {
@@ -155,11 +212,8 @@ TEST_F(UnknownFunction, DeviceFunctionFromGetInstanceProcAddrWithImplicitLayer) 
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_device_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
+                          function_count);
 
     env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
@@ -172,14 +226,8 @@ TEST_F(UnknownFunction, DeviceFunctionFromGetInstanceProcAddrWithImplicitLayer) 
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_device_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(dev.dev, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, dev.dev, custom_device_functions{}, fake_function_names,
+                           function_count);
 }
 
 TEST_F(UnknownFunction, DeviceFunctionFromGetDeviceProcAddr) {
@@ -187,25 +235,15 @@ TEST_F(UnknownFunction, DeviceFunctionFromGetDeviceProcAddr) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_device_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
+                          function_count);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_device_function returned_func = env->vulkan_functions.load(dev.dev, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(dev, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, dev.dev, dev.dev, custom_device_functions{}, fake_function_names, function_count);
 }
 
 TEST_F(UnknownFunction, DeviceFunctionFromGetDeviceProcAddrWithImplicitLayer) {
@@ -213,12 +251,8 @@ TEST_F(UnknownFunction, DeviceFunctionFromGetDeviceProcAddrWithImplicitLayer) {
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_device_function)});
-    }
-
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
+                          function_count);
     env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
                                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -230,21 +264,10 @@ TEST_F(UnknownFunction, DeviceFunctionFromGetDeviceProcAddrWithImplicitLayer) {
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_device_function returned_func = env->vulkan_functions.load(dev.dev, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(dev, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, dev.dev, dev.dev, custom_device_functions{}, fake_function_names, function_count);
 }
 
-VKAPI_ATTR int VKAPI_CALL custom_command_buffer_function(VkCommandBuffer commandBuffer, int foo, int bar) { return foo + bar; }
-using PFN_custom_command_buffer_function = decltype(&custom_command_buffer_function);
-
-// command buffer
-// command buffer with implicit layer
+using custom_command_buffer_functions = custom_functions<VkCommandBuffer>;
 
 TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
     uint32_t function_count = 1000;
@@ -252,11 +275,9 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_command_buffer_function)});
-    }
+
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
+                          custom_command_buffer_functions{}, function_count);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -274,14 +295,8 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_command_buffer_function returned_func = env->vulkan_functions.load(dev.dev, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(command_buffer, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, dev.dev, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+                           function_count);
 }
 
 TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddrWithImplicitLayer) {
@@ -290,11 +305,8 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddrWithImplicitLa
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_command_buffer_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
+                          custom_command_buffer_functions{}, function_count);
 
     env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
@@ -318,14 +330,8 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddrWithImplicitLa
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_command_buffer_function returned_func = env->vulkan_functions.load(dev.dev, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(command_buffer, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, dev.dev, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+                           function_count);
 }
 
 TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddr) {
@@ -337,11 +343,8 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddr) {
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_command_buffer_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
+                          custom_command_buffer_functions{}, function_count);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -359,14 +362,8 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddr) {
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_command_buffer_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(command_buffer, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+                           function_count);
 }
 
 TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddrWithImplicitLayer) {
@@ -378,11 +375,8 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddrWithImplicit
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_command_buffer_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
+                          custom_command_buffer_functions{}, function_count);
 
     env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
@@ -406,18 +400,11 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddrWithImplicit
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_command_buffer_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(command_buffer, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+                           function_count);
 }
 
-VKAPI_ATTR int VKAPI_CALL custom_queue_function(VkQueue queue, int foo, int bar) { return foo + bar; }
-using PFN_custom_queue_function = decltype(&custom_queue_function);
+using custom_queue_functions = custom_functions<VkQueue>;
 
 TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddr) {
     uint32_t function_count = 1000;
@@ -425,11 +412,8 @@ TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddr) {
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_queue_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
+                          function_count);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -440,14 +424,7 @@ TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddr) {
     VkQueue queue{};
     env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_queue_function returned_func = env->vulkan_functions.load(dev.dev, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(queue, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, dev.dev, queue, custom_queue_functions{}, fake_function_names, function_count);
 }
 
 TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddrWithImplicitLayer) {
@@ -456,11 +433,8 @@ TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddrWithImplicitLayer) {
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_queue_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
+                          function_count);
 
     env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
@@ -477,14 +451,7 @@ TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddrWithImplicitLayer) {
     VkQueue queue{};
     env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_queue_function returned_func = env->vulkan_functions.load(dev.dev, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(queue, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, dev.dev, queue, custom_queue_functions{}, fake_function_names, function_count);
 }
 
 TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddr) {
@@ -496,11 +463,8 @@ TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddr) {
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_queue_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
+                          function_count);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -511,14 +475,7 @@ TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddr) {
     VkQueue queue{};
     env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_queue_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(queue, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, queue, custom_queue_functions{}, fake_function_names, function_count);
 }
 
 TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddrWithImplicitLayer) {
@@ -530,11 +487,8 @@ TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddrWithImplicitLayer) {
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
-    for (uint32_t i = 0; i < function_count; i++) {
-        fake_function_names.push_back(std::string("vkNotRealFuncTEST_") + std::to_string(i));
-        driver.physical_devices.back().add_device_function(
-            VulkanFunction{fake_function_names.back(), reinterpret_cast<void*>(custom_queue_function)});
-    }
+    fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
+                          function_count);
 
     env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                           .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
@@ -551,12 +505,5 @@ TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddrWithImplicitLayer) {
     VkQueue queue{};
     env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    int i = 0, j = 1000;
-    for (const auto& function_name : fake_function_names) {
-        PFN_custom_queue_function returned_func = env->vulkan_functions.load(inst.inst, function_name.c_str());
-        ASSERT_NE(returned_func, nullptr);
-        ASSERT_EQ(returned_func(queue, i, j), i + j);
-        i++;
-        j--;
-    }
+    check_custom_functions(env->vulkan_functions, inst.inst, queue, custom_queue_functions{}, fake_function_names, function_count);
 }

@@ -429,6 +429,12 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
     if (string_eq(pName, "vkEnumeratePhysicalDevices")) return (PFN_vkVoidFunction)test_vkEnumeratePhysicalDevices;
     if (string_eq(pName, "vkEnumeratePhysicalDeviceGroups")) return (PFN_vkVoidFunction)test_vkEnumeratePhysicalDeviceGroups;
     if (string_eq(pName, "vkGetPhysicalDeviceProperties")) return (PFN_vkVoidFunction)test_vkGetPhysicalDeviceProperties;
+
+    for (auto& func : layer.custom_physical_device_functions) {
+        if (func.name == pName) {
+            return to_vkVoidFunction(func.function);
+        }
+    }
     return nullptr;
 }
 
@@ -570,6 +576,8 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDe
 #if TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance,
                                                                                             const char* pName) {
+    auto func = get_physical_device_func(instance, pName);
+    if (func != nullptr) return func;
     return layer.next_GetPhysicalDeviceProcAddr(instance, pName);
 }
 #endif
