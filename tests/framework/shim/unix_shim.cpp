@@ -25,10 +25,6 @@
  * Author: Charles Giessen <charles@lunarg.com>
  */
 
-#if !defined(VULKAN_NON_CMAKE_BUILD)
-#include "loader_cmake_config.h"
-#endif  // !defined(VULKAN_NON_CMAKE_BUILD)
-
 #include "shim.h"
 
 static PlatformShim platform_shim;
@@ -165,7 +161,7 @@ FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
 }
 
 #if defined(HAVE_SECURE_GETENV)
-FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char *name) {
+FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char* name) {
     if (!real_secure_getenv) real_secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "secure_getenv");
 
     if (platform_shim.use_fake_elevation) {
@@ -176,7 +172,7 @@ FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char *name) {
 }
 #endif
 #if defined(HAVE___SECURE_GETENV)
-FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char *name) {
+FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char* name) {
     if (!real__secure_getenv) real__secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "__secure_getenv");
 
     if (platform_shim.use_fake_elevation) {
@@ -206,10 +202,12 @@ __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_C
 __attribute__((used)) static Interposer _interpose_euid MACOS_ATTRIB = {VOIDP_CAST(my_geteuid), VOIDP_CAST(geteuid)};
 __attribute__((used)) static Interposer _interpose_egid MACOS_ATTRIB = {VOIDP_CAST(my_getegid), VOIDP_CAST(getegid)};
 #if defined(HAVE_SECURE_GETENV)
-__attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my_secure_getenv), VOIDP_CAST(secure_getenv)};
+__attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my_secure_getenv),
+                                                                                 VOIDP_CAST(secure_getenv)};
 #endif
 #if defined(HAVE___SECURE_GETENV)
-__attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my__secure_getenv), VOIDP_CAST(__secure_getenv)};
+__attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my__secure_getenv),
+                                                                                  VOIDP_CAST(__secure_getenv)};
 #endif
 #endif
 }  // extern "C"
