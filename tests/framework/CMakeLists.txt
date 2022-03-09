@@ -53,7 +53,7 @@ function(AddSharedLibrary LIBRARY_NAME)
 
     add_library(${LIBRARY_NAME} SHARED ${PARSED_ARGS_SOURCES})
     target_link_libraries(${LIBRARY_NAME} PUBLIC testing_framework_util)
-    target_compile_definitions(${LIBRARY_NAME} PRIVATE ${PARSED_ARGS_DEFINITIONS})
+    target_compile_definitions(${LIBRARY_NAME} PRIVATE ${PARSED_ARGS_DEFINITIONS} VK_NO_PROTOTYPES)
     set_target_properties(${LIBRARY_NAME} ${LOADER_STANDARD_CXX_PROPERTIES})
     # Windows requires export definitions for these libraries
     if(WIN32)
