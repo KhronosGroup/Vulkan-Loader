@@ -125,6 +125,9 @@ Driver Manifest files, containing the full path to the driver JSON Manifest file
 This list is colon-separated on Linux and macOS, and semicolon-separated on
 Windows.
 It will be added prior to the standard driver search files.
+If `VK_DRIVER_FILES` or `VK_ICD_FILENAMES` is present, then
+`VK_ADD_DRIVER_FILES` will not be used by the loader and any values will be
+ignored.
 
 #### Exception for Elevated Privileges
 

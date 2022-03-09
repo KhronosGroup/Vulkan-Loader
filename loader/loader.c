@@ -3002,7 +3002,6 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                 override_env = loader_secure_getenv(VK_ICD_FILENAMES_ENV_VAR, inst);
             }
             additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
-            additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
             relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
             break;
         case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
@@ -3031,15 +3030,6 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     if (NULL != override_path) {
         // Local folder and null terminator
         search_path_size += strlen(override_path) + 2;
-
-        // Add the size of any additional search paths defined in the additive environment variable
-        if (NULL != additional_env) {
-            search_path_size += determine_data_file_path_size(additional_env, 0) + 2;
-        }
-    } else if (NULL == relative_location) {
-        // If there's no override, and no relative location, bail out.  This is usually
-        // the case when we're on Windows and the default path is to use the registry.
-        goto out;
     } else {
         // Add the size of any additional search paths defined in the additive environment variable
         if (NULL != additional_env) {
@@ -3091,18 +3081,6 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     if (NULL != override_path) {
         strcpy(cur_path_ptr, override_path);
         cur_path_ptr += strlen(override_path);
-        if (NULL != additional_env) {
-            *cur_path_ptr++ = PATH_SEPARATOR;
-
-            copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
-
-            // Remove the last path separator
-            *cur_path_ptr = '\0';
-            if (search_path[strlen(search_path) - 1] == ':') {
-                --cur_path_ptr;
-                *cur_path_ptr = '\0';
-            }
-        }
     } else {
         // Add any additional search paths defined in the additive environment variable
         if (NULL != additional_env) {
