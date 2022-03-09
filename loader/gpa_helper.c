@@ -26,6 +26,7 @@
 
 #include "loader.h"
 #include "debug_utils.h"
+#include "unknown_function_handling.h"
 #include "wsi.h"
 
 void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcName) {
