@@ -109,6 +109,7 @@ set(NORMAL_LOADER_SRCS
     murmurhash.c
     terminator.c
     trampoline.c
+    unknown_function_handling.c
     wsi.c
     )
 
