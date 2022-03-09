@@ -24,23 +24,6 @@ add_library(loader_specific_options INTERFACE)
 target_link_libraries(loader_specific_options INTERFACE loader_common_options Vulkan::Headers)
 target_include_directories(loader_specific_options INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
 
-# Check for the existance of the secure_getenv or __secure_getenv commands
-include(CheckFunctionExists)
-include(CheckIncludeFile)
-
-check_function_exists(secure_getenv HAVE_SECURE_GETENV)
-check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
-
-if (HAVE_SECURE_GETENV)
-    target_compile_definitions(loader_specific_options INTERFACE HAVE_SECURE_GETENV)
-endif()
-if (HAVE___SECURE_GETENV)
-    target_compile_definitions(loader_specific_options INTERFACE HAVE___SECURE_GETENV)
-endif()
-if(NOT MSVC AND NOT (HAVE_SECURE_GETENV OR HAVE___SECURE_GETENV))
-    message(WARNING "Using non-secure environmental lookups. This loader will not properly disable environent variables when run with elevated permissions.")
-endif()
-
 if(WIN32)
     if(MSVC)
         # Use static MSVCRT libraries
