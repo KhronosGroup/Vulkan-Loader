@@ -45,10 +45,10 @@ vkPhysDevExtTermin\num:
     ldr     x0, [x0, PHYS_DEV_OFFSET_PHYS_DEV_TERM]             // Unwrap the VkPhysicalDevice in x0
     br      x10                                                 // Jump to the next function in the chain
 terminError\num:
-    mov     x10, (HASH_OFFSET_INSTANCE + (HASH_SIZE * \num) + FUNC_NAME_OFFSET_HASH) // Offset of the function name string in the instance
+    mov     x10, (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num)) // Offset of the function name string in the instance
     ldr     x11, [x9, INSTANCE_OFFSET_ICD_TERM] // Load the instance pointer
     mov     x0, x11                             // Vulkan instance pointer (first arg)
-    mov     x1, VK_DEBUG_REPORT_ERROR_BIT_EXT   // The error logging bit (second arg)
+    mov     x1, VULKAN_LOADER_ERROR_BIT         // The error logging bit (second arg)
     mov     x2, #0                              // Zero (third arg)
     adrp    x9, termin_error_string
     add     x3, x9, #:lo12:termin_error_string  // The error string (fourth arg)

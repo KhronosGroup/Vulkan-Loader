@@ -330,7 +330,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_d
                                                              VkDevice dev) {
     VkLayerDispatchTable *table = &dev_table->core_dispatch;
     table->magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;
-    for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch.dev_ext[i] = (PFN_vkDevExt)vkDevExtError;
+    for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch[i] = (PFN_vkDevExt)vkDevExtError;
 
     // ---- Core 1_0 commands
     table->GetDeviceProcAddr = gpa;

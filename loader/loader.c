@@ -3931,7 +3931,8 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_internal(V
         return addr;
     }
 
-    if (loader_phys_dev_ext_gpa(loader_get_instance(inst), pName, true, NULL, &addr)) return addr;
+    addr = loader_phys_dev_ext_gpa_term(loader_get_instance(inst), pName);
+    if (NULL != addr) return addr;
 
     // Don't call down the chain, this would be an infinite loop
     loader_log(NULL, VULKAN_LOADER_DEBUG_BIT, 0, "loader_gpdpa_instance_internal() unrecognized name %s", pName);
@@ -3956,9 +3957,8 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator
 
     // Get the terminator, but don't perform checking since it should already
     // have been setup if we get here.
-    if (loader_phys_dev_ext_gpa(loader_get_instance(inst), pName, false, NULL, &addr)) {
-        return addr;
-    }
+    addr = loader_phys_dev_ext_gpa_term_no_check(loader_get_instance(inst), pName);
+    if (NULL != addr) return addr;
 
     // Don't call down the chain, this would be an infinite loop
     loader_log(NULL, VULKAN_LOADER_DEBUG_BIT, 0, "loader_gpdpa_instance_terminator() unrecognized name %s", pName);
@@ -5380,7 +5380,7 @@ out:
 }
 
 VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
-    struct loader_instance *ptr_instance = loader_instance(instance);
+    struct loader_instance *ptr_instance = loader_get_instance(instance);
     if (NULL == ptr_instance) {
         return;
     }

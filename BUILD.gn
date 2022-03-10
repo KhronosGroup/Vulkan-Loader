@@ -121,11 +121,11 @@ if (!is_android) {
       "loader/loader.h",
       "loader/log.c",
       "loader/log.h",
-      "loader/murmurhash.c",
-      "loader/murmurhash.h",
       "loader/phys_dev_ext.c",
       "loader/terminator.c",
       "loader/trampoline.c",
+      "loader/unknown_function_handling.h",
+      "loader/unknown_function_handling.c",
       "loader/vk_loader_layer.h",
 
       # TODO(jmadill): Use assembler where available.
