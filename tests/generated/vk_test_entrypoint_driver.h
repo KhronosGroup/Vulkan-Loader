@@ -54,8 +54,8 @@ struct EntrypointTestDriver {
     std::vector<DispatchableHandle<VkDevice>*> dev_handles;
     std::vector<std::string> enabled_device_extensions;
 
-    DispatchableHandle<VkQueue> queue_handle;
-    DispatchableHandle<VkCommandBuffer> commandbuffer_handle;
+    std::vector<DispatchableHandle<VkQueue>*> queue_handles;
+    std::vector<DispatchableHandle<VkCommandBuffer>*> commandbuffer_handles;
 };
 
 using GetEPDriverFunc = EntrypointTestDriver* (*)();

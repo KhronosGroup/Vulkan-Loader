@@ -151,6 +151,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
                 [
                     'type',             # Data type of the command parameter
                     'name',             # Name of the parameter
+                    'length_info',      # Name of a length item that adjust this parameter
                     'is_const',         # Boolean for is this a constant param
                     'is_pointer',       # Boolean for is this a pointer param
                     'is_array',         # Boolean for is this a array param
@@ -290,15 +291,19 @@ class LoaderTestOutputGenerator(OutputGenerator):
         file_data = ''
         
         if self.genOpts.filename == 'vk_test_entrypoint_core_tests.cpp':
-            for ext in self.basic_extensions:
-                if 'VK_VERSION_' in ext.name:
-                    file_data += self.GenerateCoreTest(ext)
+            for count in range(0, 2):
+                use_dispatch_table = True
+                if count == 1:
+                    use_dispatch_table = False
+                for ext in self.basic_extensions:
+                    if 'VK_VERSION_' in ext.name:
+                        file_data += self.GenerateCoreTest(ext, use_dispatch_table)
         elif self.genOpts.filename == 'vk_test_entrypoint_extension_tests.cpp':
             for ext in self.basic_extensions:
                 if (not 'VK_VERSION_' in ext.name and
                     ext.name not in EXTENSIONS_TO_SKIP_TESTING and
                     len(ext.command_data) > 0):
-                    file_data += self.GenerateExtensionTest(ext)
+                    file_data += self.GenerateExtensionTest(ext, True)
         elif self.genOpts.filename == 'vk_test_entrypoint_layer.h':
             file_data += self.GenerateLayerHeader()
         elif self.genOpts.filename == 'vk_test_entrypoint_layer.cpp':
@@ -494,6 +499,35 @@ class LoaderTestOutputGenerator(OutputGenerator):
                 protect = self.featureExtraProtect,
                 members = members_data))
 
+    # Check if the parameter passed in is a static array
+    def paramIsStaticArray(self, param):
+        isstaticarray = 0
+        paramname = param.find('name')
+        if (paramname.tail is not None) and ('[' in paramname.tail):
+            isstaticarray = paramname.tail.count('[')
+        return isstaticarray
+
+    # Retrieve the value of the len tag
+    def getLen(self, param):
+        result = None
+        # Default to altlen when available to avoid LaTeX markup
+        if 'altlen' in param.attrib:
+            len = param.attrib.get('altlen')
+        else:
+            len = param.attrib.get('len')
+        if len and len != 'null-terminated':
+            # Only first level is supported for multidimensional arrays. Conveniently, this also strips the trailing
+            # 'null-terminated' from arrays of strings
+            len = len.split(',')[0]
+            # Convert scope notation to pointer access
+            result = str(len).replace('::', '->')
+        elif self.paramIsStaticArray(param):
+            # For static arrays get length from inside []
+            array_match = re.search(r'\[(\d+)\]', param.find('name').tail)
+            if array_match:
+                result = array_match.group(1)
+        return result
+
     # Check if the parameter passed in is a pointer
     def paramIsPointer(self, param):
         is_pointer = False
@@ -555,12 +589,24 @@ class LoaderTestOutputGenerator(OutputGenerator):
                     if handle.name in return_type.text:
                         handles_used.append(handle.name)
 
-        is_create_command = any(filter(lambda pat: pat in name, ('Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL')))
+        is_create_command = any(
+                                filter(
+                                    lambda pat: pat in name, (
+                                        'Create',
+                                        'Allocate',
+                                        'Enumerate',
+                                        'RegisterDeviceEvent',
+                                        'RegisterDisplayEvent',
+                                        'AcquirePerformanceConfigurationINTEL'
+                                    )
+                                )
+                            )
         is_create = is_create_command 
         is_destroy_command = any([destroy_txt in name for destroy_txt in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL']])
         is_begin = 'Begin' in name
         is_end = 'End' in name
 
+        lens = set()
         params = cmdinfo.elem.findall('param')
         num_params = len(params)
         last = num_params - 1
@@ -569,6 +615,10 @@ class LoaderTestOutputGenerator(OutputGenerator):
             param_type = paramInfo[0]
             param_name = paramInfo[1]
             param_cdecl = self.makeCParamDecl(params[index], 0)
+
+            length_info = self.getLen(params[index])
+            if length_info:
+                lens.add(length_info)
 
             is_pointer = self.paramIsPointer(params[index])
             is_array = self.paramIsArray(params[index])
@@ -582,6 +632,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
             cmd_params.append(self.CommandParam(type = param_type,
                                                 name = param_name,
                                                 cdecl = param_cdecl,
+                                                length_info = length_info,
                                                 is_const = is_const,
                                                 is_pointer = is_pointer,
                                                 is_array = is_array,
@@ -693,7 +744,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
     def GenerateDriver(self):
         test = []
 
-    def OutputTestStart(self, major_ver, minor_ver, ext):
+    def OutputTestStart(self, major_ver, minor_ver, ext, use_dispatch_table):
         test_start = ''
         additional_ext = ''
         uses_surfaces = False
@@ -701,7 +752,10 @@ class LoaderTestOutputGenerator(OutputGenerator):
         destroy_surface_cmd = ''
         if 'VK_VERSION_' in ext.name:
             test_start += '// Test for Vulkan Core %d.%d\n' % (major_ver, minor_ver)
-            test_start += 'TEST(BasicEntrypointTest, VulkanCore_%d_%d) {\n' % (major_ver, minor_ver)
+            disp_str = '_LoaderExports'
+            if use_dispatch_table:
+                disp_str = '_DispatchTable'
+            test_start += 'TEST(BasicEntrypointTest, VulkanCore_%d_%d%s) {\n' % (major_ver, minor_ver, disp_str)
         else:
             test_start += '// Test for %s\n' % ext.name
             test_start += 'TEST(BasicEntrypointTest, %s) {\n' % ext.name[3:]
@@ -787,19 +841,20 @@ class LoaderTestOutputGenerator(OutputGenerator):
         test_start += '    DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};\n'
         test_start += '    CreateDebugUtilsMessenger(log);\n'
         test_start += '\n'
-        test_start += '    VkLayerInstanceDispatchTable inst_disp_table;\n'
-        test_start += '    layer_init_instance_dispatch_table(instance, &inst_disp_table, instance.functions->vkGetInstanceProcAddr);\n'
-        test_start += '\n'
+        if use_dispatch_table:
+            test_start += '    VkLayerInstanceDispatchTable inst_disp_table;\n'
+            test_start += '    layer_init_instance_dispatch_table(instance, &inst_disp_table, instance.functions->vkGetInstanceProcAddr);\n'
+            test_start += '\n'
 
         # If there's a surface create command, trigger it now that we've created
         # the instance
         if len(create_surface_cmd) > 0:
             for cmd in self.basic_commands:
                 if cmd.name == create_surface_cmd:
-                    test_start += self.OutputTestEntrypoint(cmd, ext)
+                    test_start += self.OutputTestEntrypoint(cmd, ext, use_dispatch_table)
         return test_start, destroy_surface_cmd
 
-    def OutputTestEnd(self, major_ver, minor_ver, ext, destroy_surface_cmd):
+    def OutputTestEnd(self, major_ver, minor_ver, ext, destroy_surface_cmd, use_dispatch_table):
         test_end = ''
 
         # If there's a surface destroy command, trigger it before we exit the
@@ -807,7 +862,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         if len(destroy_surface_cmd) > 0:
             for cmd in self.basic_commands:
                 if cmd.name == destroy_surface_cmd:
-                    test_end += self.OutputTestEntrypoint(cmd, ext)
+                    test_end += self.OutputTestEntrypoint(cmd, ext, use_dispatch_table)
                     break
 
         test_end += '} '
@@ -817,10 +872,18 @@ class LoaderTestOutputGenerator(OutputGenerator):
             test_end += '// Test for %s\n' % ext.name
         return test_end
 
+    # This function finds any previously defined variable for the given parameter type.
+    # If it's not found, it creates one.
+    # It has 3 returns:
+    #   name          The name of the variable to use for this parameter type
+    #   define_var    The definition statement of a new variable if one is required
+    #   length_info   The length information for a given parameter, this is a previously
+    #                 defined parameter that is used for the count of this parameter.
     def FindOrAddParamVariable(self, param):
         found = False
         name = ''
         define_var = None
+        length_info = None
         os_types = [
             'Display',
             'xcb_connection_t',
@@ -849,7 +912,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
             name = 'big_chunk_of_mem'
         elif param.type == 'VkAllocationCallbacks':
             # The automatic tests don't try to use the allocation callback items
-            return 'nullptr', None
+            return 'nullptr', None, None
         else:
             # First, look for the variable in the list of existing variables
             # making sure that it matches the type and at least the array
@@ -917,11 +980,13 @@ class LoaderTestOutputGenerator(OutputGenerator):
                 new_name += "%s" % name
                 new_name += ")"
             else:
+                if param.is_pointer and param.length_info is not None:
+                    length_info = '%s' % param.length_info
                 new_name += "&%s" % name
             name = new_name
-        return name, define_var
+        return name, define_var, length_info
 
-    def OutputTestEntrypoint(self, command, ext):
+    def OutputTestEntrypoint(self, command, ext, use_dispatch_table):
         test_ep = ''
 
         if 'ProcAddr' in command.name:
@@ -957,8 +1022,9 @@ class LoaderTestOutputGenerator(OutputGenerator):
                     test_ep += 'add_extension(%s).' % additional_ext
             test_ep += 'add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));\n'
             test_ep += '    dev.CheckCreate(var_vkphysicaldevice);\n\n'
-            test_ep += '    VkLayerDispatchTable device_disp_table;\n'
-            test_ep += '    layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);\n\n'
+            if use_dispatch_table:
+                test_ep += '    VkLayerDispatchTable device_disp_table;\n'
+                test_ep += '    layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);\n\n'
             self.test_variables.append(
                 self.TestVariableNames(
                     type = 'VkDevice',
@@ -974,23 +1040,39 @@ class LoaderTestOutputGenerator(OutputGenerator):
         else:
             param_names = []
             for param in command.params:
-                name, define_var = self.FindOrAddParamVariable(param)
+                name, define_var, length_info = self.FindOrAddParamVariable(param)
+
+                # If there's a define for a new variable, add it right away
                 if define_var is not None:
                     test_ep += define_var
+
+                # If this parameter has a length, we need to adjust the length to match one of the
+                # variables we have already defined using the correct name and dereferences.
+                if length_info is not None:
+                    length_var_name = length_info.split('-')[0]
+                    length_var_name = length_var_name.split('.')[0]
+                    for param_index in range (0, len(command.params)):
+                        if length_var_name == command.params[param_index].name:
+                            length_info = length_info.replace(length_var_name, param_names[param_index])
+                            if '&' in length_info:
+                                length_info = length_info.replace('&','').replace('->','.')
+                            var_init_str = '    %s = 1;\n' % length_info
+                            if var_init_str not in test_ep:
+                                test_ep += var_init_str
+
                 param_names.append(name)
-            # Call the command with the correct dispatch table
-            if (command.handle_type == 'VkInstance' or command.handle_type == 'VkPhysicalDevice' or
-                command.handle_type == 'VkSurfaceKHR'):
-                test_ep += '    inst_disp_table.%s(' % command.name[2:]
-            else:
-                test_ep += '    device_disp_table.%s(' % command.name[2:]
-            first = True
-            for param in param_names:
-                if first:
-                    first = False
+
+            if use_dispatch_table:
+                # Call the command with the correct dispatch table
+                if (command.handle_type == 'VkInstance' or command.handle_type == 'VkPhysicalDevice' or
+                    command.handle_type == 'VkSurfaceKHR'):
+                    test_ep += '    inst_disp_table.%s(' % command.name[2:]
                 else:
-                    test_ep += ", "
-                test_ep += '%s' % param
+                    test_ep += '    device_disp_table.%s(' % command.name[2:]
+            else:
+                test_ep += '    %s(' % command.name
+
+            test_ep += ', '.join(param_names)
             test_ep += ');\n'
             if command.alias is not None:
                 # If it has an alias, the layer and drivers may use the same function for
@@ -1006,7 +1088,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
 
         return test_ep
 
-    def CallUsageFuncs(self, usage_funcs, major_ver, minor_ver, ext):
+    def CallUsageFuncs(self, usage_funcs, major_ver, minor_ver, ext, use_dispatch_table):
         call_funcs = ''
         for usage in usage_funcs:
             if usage.is_create or usage.is_destroy:
@@ -1023,7 +1105,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
                             ext_minor_ver = version_numbers[1]
                             break
                     if (major_ver == ext_major_ver and minor_ver >= ext_minor_ver):
-                        call_funcs += self.OutputTestEntrypoint(usage, ext)
+                        call_funcs += self.OutputTestEntrypoint(usage, ext, use_dispatch_table)
         return call_funcs
 
     def PickCreateDestroyFunc(self, cur_handle_name, create_funcs, destroy_funcs, major_ver, minor_ver, ext_name):
@@ -1078,7 +1160,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         return chosen_create, chosen_destroy
 
 
-    def GenHandleTest(self, cur_handle_name, handles_to_test, major_ver, minor_ver, ext):
+    def GenHandleTest(self, cur_handle_name, handles_to_test, major_ver, minor_ver, ext, use_dispatch_table):
         test = ''
         for cur_handle in self.handle_tree:
             if cur_handle_name == cur_handle.name:
@@ -1098,16 +1180,16 @@ class LoaderTestOutputGenerator(OutputGenerator):
 
                 if cur_handle_name != 'VkInstance' or 'VK_VERSION_' not in ext.name:
                     if create is not None:
-                        test += self.OutputTestEntrypoint(create, ext)
+                        test += self.OutputTestEntrypoint(create, ext, use_dispatch_table)
 
-                    test += self.CallUsageFuncs(cur_handle.usage_funcs, major_ver, minor_ver, ext)
+                    test += self.CallUsageFuncs(cur_handle.usage_funcs, major_ver, minor_ver, ext, use_dispatch_table)
 
                 for child in cur_handle.children:
                     if child in handles_to_test:
-                        test += self.GenHandleTest(child, handles_to_test, major_ver, minor_ver, ext)
+                        test += self.GenHandleTest(child, handles_to_test, major_ver, minor_ver, ext, use_dispatch_table)
 
                 if destroy is not None:
-                    test += self.OutputTestEntrypoint(destroy, ext)
+                    test += self.OutputTestEntrypoint(destroy, ext, use_dispatch_table)
         return test
 
     # Generate the list of required handles to test.  We need to have at least a creation path
@@ -1140,7 +1222,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         return handle_list
 
     # Generate the test
-    def GenerateCoreTest(self, ext):
+    def GenerateCoreTest(self, ext, use_dispatch_table):
         test = ''
         self.test_variables = []
         self.test_variables.append(
@@ -1159,15 +1241,15 @@ class LoaderTestOutputGenerator(OutputGenerator):
 
         required_handle_list = self.GenerateTestHandleList(ext)
 
-        test_str, destroy_surface_cmd = self.OutputTestStart(major_ver, minor_ver, ext)
+        test_str, destroy_surface_cmd = self.OutputTestStart(major_ver, minor_ver, ext, use_dispatch_table)
         test += test_str
-        test += self.GenHandleTest('VkInstance', required_handle_list, major_ver, minor_ver, ext)
-        test += self.OutputTestEnd(major_ver, minor_ver, ext, destroy_surface_cmd)
+        test += self.GenHandleTest('VkInstance', required_handle_list, major_ver, minor_ver, ext, use_dispatch_table)
+        test += self.OutputTestEnd(major_ver, minor_ver, ext, destroy_surface_cmd, use_dispatch_table)
         test += '\n'
         return test
 
     # Generate the test
-    def GenerateExtensionTest(self, ext):
+    def GenerateExtensionTest(self, ext, use_dispatch_table):
         test = ''
         self.test_variables = []
         self.test_variables.append(
@@ -1185,10 +1267,10 @@ class LoaderTestOutputGenerator(OutputGenerator):
         if (ext.protect is not None):
             test += '#ifdef %s\n' % ext.protect
 
-        test_str, destroy_surface_cmd = self.OutputTestStart(self.max_major, self.max_minor, ext)
+        test_str, destroy_surface_cmd = self.OutputTestStart(self.max_major, self.max_minor, ext, use_dispatch_table)
         test += test_str
-        test += self.GenHandleTest('VkInstance', required_handle_list, self.max_major, self.max_minor, ext)
-        test += self.OutputTestEnd(self.max_major, self.max_minor, ext, destroy_surface_cmd)
+        test += self.GenHandleTest('VkInstance', required_handle_list, self.max_major, self.max_minor, ext, use_dispatch_table)
+        test += self.OutputTestEnd(self.max_major, self.max_minor, ext, destroy_surface_cmd, use_dispatch_table)
 
         if (ext.protect is not None):
             test += '#endif // %s\n' % ext.protect
@@ -1655,7 +1737,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
                 handle.name == 'VkDevice'):
                 continue
             if handle.is_dispatchable:
-                driver_header += '    DispatchableHandle<%s> %s_handle;\n' % (handle.name, handle.name[2:].lower())
+                driver_header += '    std::vector<DispatchableHandle<%s>*> %s_handles;\n' % (handle.name, handle.name[2:].lower())
         driver_header += '};\n'
         driver_header += '\n'
         driver_header += 'using GetEPDriverFunc = EntrypointTestDriver* (*)();\n'
@@ -1936,6 +2018,15 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '            driver.dev_handles.erase(driver.dev_handles.begin() + ii);\n'
         common_src += '        }\n'
         common_src += '    }\n'
+        common_src += '    if (driver.dev_handles.size() == 0) {\n'
+        for handle in self.basic_handles:
+            if handle.is_dispatchable and handle.name != 'VkInstance' and handle.name != 'VkPhysicalDevice' and handle.name != 'VkDevice':
+                handle_vect_name = 'driver.%s_handles' % handle.name[2:].lower()
+                common_src += '        for (uint32_t ii = 0; ii < %s.size(); ++ii) {\n' % handle_vect_name
+                common_src += '            delete %s[ii];\n' % handle_vect_name
+                common_src += '        }\n'
+                common_src += '        %s.clear();\n' % handle_vect_name
+        common_src += '    }\n'
         common_src += '}\n'
         return common_src
 
@@ -2083,9 +2174,25 @@ class LoaderTestOutputGenerator(OutputGenerator):
                         for handle in self.basic_handles:
                             if basic_cmd.modified_handle == handle.name:
                                 if handle.is_dispatchable:
-                                    cmd_str += '    *%s = driver.%s_handle.handle;\n' % (basic_cmd.params[-1].name, basic_cmd.modified_handle[2:].lower())
+                                    cmd_str += '    DispatchableHandle<%s>* temp_handle = new DispatchableHandle<%s>();\n' % (basic_cmd.modified_handle, basic_cmd.modified_handle)
+                                    cmd_str += '    driver.%s_handles.push_back(temp_handle);\n' % basic_cmd.modified_handle[2:].lower()
+                                    cmd_str += '    *%s = temp_handle->handle;\n' % basic_cmd.params[-1].name
                                 else:
                                     cmd_str += '    *%s = (%s)((uintptr_t)0xdeadbeefdeadbeef);\n' % (basic_cmd.params[-1].name, basic_cmd.params[-1].type)
+                    elif basic_cmd.is_destroy:
+                        for handle in self.basic_handles:
+                            if basic_cmd.modified_handle == handle.name:
+                                if handle.is_dispatchable:
+                                    handle_vect_name = 'driver.%s_handles' % basic_cmd.modified_handle[2:].lower()
+                                    param_name = basic_cmd.params[-1].name
+                                    if basic_cmd.params[-1].is_pointer:
+                                        param_name = '*' + param_name
+                                    cmd_str += '    for (uint32_t ii = 0; ii < %s.size(); ++ii) {\n' % handle_vect_name
+                                    cmd_str += '        if (%s[ii]->handle == %s) {\n' % (handle_vect_name, param_name)
+                                    cmd_str += '            delete %s[ii];\n' % handle_vect_name
+                                    cmd_str += '            %s.erase(%s.begin() + ii);\n' % (handle_vect_name, handle_vect_name)
+                                    cmd_str += '        }\n'
+                                    cmd_str += '    }\n'
 
                     if basic_cmd.return_type is not None:
                         if 'VkResult' == basic_cmd.return_type.text:

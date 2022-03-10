@@ -693,6 +693,16 @@ VKAPI_ATTR void VKAPI_CALL driver_DestroyDevice(VkDevice device, const VkAllocat
             driver.dev_handles.erase(driver.dev_handles.begin() + ii);
         }
     }
+    if (driver.dev_handles.size() == 0) {
+        for (uint32_t ii = 0; ii < driver.queue_handles.size(); ++ii) {
+            delete driver.queue_handles[ii];
+        }
+        driver.queue_handles.clear();
+        for (uint32_t ii = 0; ii < driver.commandbuffer_handles.size(); ++ii) {
+            delete driver.commandbuffer_handles[ii];
+        }
+        driver.commandbuffer_handles.clear();
+    }
 }
 
 // ----- VK_VERSION_1_0
@@ -740,7 +750,9 @@ VKAPI_ATTR void VKAPI_CALL driver_GetDeviceQueue(
     uint32_t queueIndex,
     VkQueue* pQueue) {
     log_driver_message("Generated Driver vkGetDeviceQueue");
-    *pQueue = driver.queue_handle.handle;
+    DispatchableHandle<VkQueue>* temp_handle = new DispatchableHandle<VkQueue>();
+    driver.queue_handles.push_back(temp_handle);
+    *pQueue = temp_handle->handle;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL driver_QueueSubmit(
@@ -1342,7 +1354,9 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_AllocateCommandBuffers(
     const VkCommandBufferAllocateInfo* pAllocateInfo,
     VkCommandBuffer* pCommandBuffers) {
     log_driver_message("Generated Driver vkAllocateCommandBuffers");
-    *pCommandBuffers = driver.commandbuffer_handle.handle;
+    DispatchableHandle<VkCommandBuffer>* temp_handle = new DispatchableHandle<VkCommandBuffer>();
+    driver.commandbuffer_handles.push_back(temp_handle);
+    *pCommandBuffers = temp_handle->handle;
     return VK_SUCCESS;
 }
 
@@ -1352,6 +1366,12 @@ VKAPI_ATTR void VKAPI_CALL driver_FreeCommandBuffers(
     uint32_t commandBufferCount,
     const VkCommandBuffer* pCommandBuffers) {
     log_driver_message("Generated Driver vkFreeCommandBuffers");
+    for (uint32_t ii = 0; ii < driver.commandbuffer_handles.size(); ++ii) {
+        if (driver.commandbuffer_handles[ii]->handle == *pCommandBuffers) {
+            delete driver.commandbuffer_handles[ii];
+            driver.commandbuffer_handles.erase(driver.commandbuffer_handles.begin() + ii);
+        }
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL driver_BeginCommandBuffer(
@@ -1877,7 +1897,9 @@ VKAPI_ATTR void VKAPI_CALL driver_GetDeviceQueue2(
     const VkDeviceQueueInfo2* pQueueInfo,
     VkQueue* pQueue) {
     log_driver_message("Generated Driver vkGetDeviceQueue2");
-    *pQueue = driver.queue_handle.handle;
+    DispatchableHandle<VkQueue>* temp_handle = new DispatchableHandle<VkQueue>();
+    driver.queue_handles.push_back(temp_handle);
+    *pQueue = temp_handle->handle;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL driver_CreateSamplerYcbcrConversion(

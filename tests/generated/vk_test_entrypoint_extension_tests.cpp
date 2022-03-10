@@ -59,6 +59,7 @@ TEST(BasicEntrypointTest, KHR_surface) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -77,12 +78,14 @@ TEST(BasicEntrypointTest, KHR_surface) {
     log.logger.clear();
 
     VkSurfaceFormatKHR var_vksurfaceformatkhr{};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceSurfaceFormatsKHR(var_vkphysicaldevice, var_vksurfacekhr, &var_uint32_t, &var_vksurfaceformatkhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceSurfaceFormatsKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceSurfaceFormatsKHR"));
     log.logger.clear();
 
     VkPresentModeKHR var_vkpresentmodekhr{};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceSurfacePresentModesKHR(var_vkphysicaldevice, var_vksurfacekhr, &var_uint32_t, &var_vkpresentmodekhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceSurfacePresentModesKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceSurfacePresentModesKHR"));
@@ -128,12 +131,14 @@ TEST(BasicEntrypointTest, KHR_swapchain) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
     VkRect2D var_vkrect2d{};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDevicePresentRectanglesKHR(var_vkphysicaldevice, var_vksurfacekhr, &var_uint32_t, &var_vkrect2d);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDevicePresentRectanglesKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDevicePresentRectanglesKHR"));
@@ -248,18 +253,21 @@ TEST(BasicEntrypointTest, KHR_display) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
     VkDisplayPropertiesKHR var_vkdisplaypropertieskhr{};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceDisplayPropertiesKHR(var_vkphysicaldevice, &var_uint32_t, &var_vkdisplaypropertieskhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceDisplayPropertiesKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceDisplayPropertiesKHR"));
     log.logger.clear();
 
     VkDisplayPlanePropertiesKHR var_vkdisplayplanepropertieskhr{};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceDisplayPlanePropertiesKHR(var_vkphysicaldevice, &var_uint32_t, &var_vkdisplayplanepropertieskhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
@@ -267,6 +275,7 @@ TEST(BasicEntrypointTest, KHR_display) {
 
     VkDisplayKHR var_vkdisplaykhr{};
     VkDisplayModePropertiesKHR var_vkdisplaymodepropertieskhr{};
+    var_uint32_t = 1;
     inst_disp_table.GetDisplayModePropertiesKHR(var_vkphysicaldevice, var_vkdisplaykhr, &var_uint32_t, &var_vkdisplaymodepropertieskhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetDisplayModePropertiesKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetDisplayModePropertiesKHR"));
@@ -279,6 +288,7 @@ TEST(BasicEntrypointTest, KHR_display) {
     ASSERT_TRUE(log.find("Generated Driver vkGetDisplayPlaneCapabilitiesKHR"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     inst_disp_table.GetDisplayPlaneSupportedDisplaysKHR(var_vkphysicaldevice, var_uint32_t, &var_uint32_t, &var_vkdisplaykhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetDisplayPlaneSupportedDisplaysKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetDisplayPlaneSupportedDisplaysKHR"));
@@ -323,6 +333,7 @@ TEST(BasicEntrypointTest, KHR_display_swapchain) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -371,6 +382,7 @@ TEST(BasicEntrypointTest, KHR_xlib_surface) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -426,6 +438,7 @@ TEST(BasicEntrypointTest, KHR_xcb_surface) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -481,6 +494,7 @@ TEST(BasicEntrypointTest, KHR_wayland_surface) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -535,6 +549,7 @@ TEST(BasicEntrypointTest, KHR_win32_surface) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -580,6 +595,7 @@ TEST(BasicEntrypointTest, KHR_video_queue) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -594,6 +610,7 @@ TEST(BasicEntrypointTest, KHR_video_queue) {
 
     VkPhysicalDeviceVideoFormatInfoKHR var_vkphysicaldevicevideoformatinfokhr{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_FORMAT_INFO_KHR};
     VkVideoFormatPropertiesKHR var_vkvideoformatpropertieskhr{VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceVideoFormatPropertiesKHR(var_vkphysicaldevice, &var_vkphysicaldevicevideoformatinfokhr, &var_uint32_t, &var_vkvideoformatpropertieskhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceVideoFormatPropertiesKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceVideoFormatPropertiesKHR"));
@@ -608,12 +625,14 @@ TEST(BasicEntrypointTest, KHR_video_queue) {
 
     VkVideoSessionKHR var_vkvideosessionkhr{};
     VkVideoGetMemoryPropertiesKHR var_vkvideogetmemorypropertieskhr{VK_STRUCTURE_TYPE_VIDEO_GET_MEMORY_PROPERTIES_KHR};
+    var_uint32_t = 1;
     device_disp_table.GetVideoSessionMemoryRequirementsKHR(dev.dev, var_vkvideosessionkhr, &var_uint32_t, &var_vkvideogetmemorypropertieskhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetVideoSessionMemoryRequirementsKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetVideoSessionMemoryRequirementsKHR"));
     log.logger.clear();
 
     VkVideoBindMemoryKHR var_vkvideobindmemorykhr{VK_STRUCTURE_TYPE_VIDEO_BIND_MEMORY_KHR};
+    var_uint32_t = 1;
     device_disp_table.BindVideoSessionMemoryKHR(dev.dev, var_vkvideosessionkhr, var_uint32_t, &var_vkvideobindmemorykhr);
     ASSERT_TRUE(log.find("Generated Layer vkBindVideoSessionMemoryKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkBindVideoSessionMemoryKHR"));
@@ -628,6 +647,7 @@ TEST(BasicEntrypointTest, KHR_video_queue) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -652,6 +672,7 @@ TEST(BasicEntrypointTest, KHR_video_queue) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -709,6 +730,7 @@ TEST(BasicEntrypointTest, KHR_video_decode_queue) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -723,6 +745,7 @@ TEST(BasicEntrypointTest, KHR_video_decode_queue) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -735,6 +758,7 @@ TEST(BasicEntrypointTest, KHR_video_decode_queue) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -769,6 +793,7 @@ TEST(BasicEntrypointTest, KHR_dynamic_rendering) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -783,6 +808,7 @@ TEST(BasicEntrypointTest, KHR_dynamic_rendering) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -804,6 +830,7 @@ TEST(BasicEntrypointTest, KHR_dynamic_rendering) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -837,6 +864,7 @@ TEST(BasicEntrypointTest, KHR_get_physical_device_properties2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -853,6 +881,7 @@ TEST(BasicEntrypointTest, KHR_get_physical_device_properties2) {
 
     VkPhysicalDeviceSparseImageFormatInfo2 var_vkphysicaldevicesparseimageformatinfo2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2};
     VkSparseImageFormatProperties2 var_vksparseimageformatproperties2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceSparseImageFormatProperties2KHR(var_vkphysicaldevice, &var_vkphysicaldevicesparseimageformatinfo2, &var_uint32_t, &var_vksparseimageformatproperties2);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceSparseImageFormatProperties2KHR") ||
                 log.find("Generated Layer vkGetPhysicalDeviceSparseImageFormatProperties2"));
@@ -888,6 +917,7 @@ TEST(BasicEntrypointTest, KHR_device_group) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -910,6 +940,7 @@ TEST(BasicEntrypointTest, KHR_device_group) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -930,6 +961,7 @@ TEST(BasicEntrypointTest, KHR_device_group) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -963,6 +995,7 @@ TEST(BasicEntrypointTest, KHR_maintenance1) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1049,6 +1082,7 @@ TEST(BasicEntrypointTest, KHR_external_memory_capabilities) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1092,6 +1126,7 @@ TEST(BasicEntrypointTest, KHR_external_memory_win32) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1147,6 +1182,7 @@ TEST(BasicEntrypointTest, KHR_external_memory_fd) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1201,6 +1237,7 @@ TEST(BasicEntrypointTest, KHR_external_semaphore_capabilities) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1244,6 +1281,7 @@ TEST(BasicEntrypointTest, KHR_external_semaphore_win32) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1298,6 +1336,7 @@ TEST(BasicEntrypointTest, KHR_external_semaphore_fd) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1351,6 +1390,7 @@ TEST(BasicEntrypointTest, KHR_push_descriptor) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1377,6 +1417,7 @@ TEST(BasicEntrypointTest, KHR_push_descriptor) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -1384,6 +1425,7 @@ TEST(BasicEntrypointTest, KHR_push_descriptor) {
 
     VkPipelineBindPoint var_vkpipelinebindpoint{};
     VkWriteDescriptorSet var_vkwritedescriptorset{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    var_uint32_t = 1;
     device_disp_table.CmdPushDescriptorSetKHR(var_vkcommandbuffer, var_vkpipelinebindpoint, var_vkpipelinelayout, var_uint32_t, var_uint32_t, &var_vkwritedescriptorset);
     ASSERT_TRUE(log.find("Generated Layer vkCmdPushDescriptorSetKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdPushDescriptorSetKHR"));
@@ -1398,6 +1440,7 @@ TEST(BasicEntrypointTest, KHR_push_descriptor) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -1442,6 +1485,7 @@ TEST(BasicEntrypointTest, KHR_descriptor_update_template) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1466,12 +1510,14 @@ TEST(BasicEntrypointTest, KHR_descriptor_update_template) {
     log.logger.clear();
 
     VkDescriptorSetAllocateInfo var_vkdescriptorsetallocateinfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    var_vkdescriptorsetallocateinfo.descriptorSetCount = 1;
     device_disp_table.AllocateDescriptorSets(dev.dev, &var_vkdescriptorsetallocateinfo, &var_vkdescriptorset);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateDescriptorSets"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateDescriptorSets"));
     log.logger.clear();
 
     VkDescriptorPool var_vkdescriptorpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeDescriptorSets(dev.dev, var_vkdescriptorpool, var_uint32_t, &var_vkdescriptorset);
     ASSERT_TRUE(log.find("Generated Layer vkFreeDescriptorSets"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeDescriptorSets"));
@@ -1516,6 +1562,7 @@ TEST(BasicEntrypointTest, KHR_create_renderpass2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1530,6 +1577,7 @@ TEST(BasicEntrypointTest, KHR_create_renderpass2) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -1560,6 +1608,7 @@ TEST(BasicEntrypointTest, KHR_create_renderpass2) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -1593,6 +1642,7 @@ TEST(BasicEntrypointTest, KHR_shared_presentable_image) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1639,6 +1689,7 @@ TEST(BasicEntrypointTest, KHR_external_fence_capabilities) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1682,6 +1733,7 @@ TEST(BasicEntrypointTest, KHR_external_fence_win32) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1736,6 +1788,7 @@ TEST(BasicEntrypointTest, KHR_external_fence_fd) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1789,6 +1842,7 @@ TEST(BasicEntrypointTest, KHR_performance_query) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1853,6 +1907,7 @@ TEST(BasicEntrypointTest, KHR_get_surface_capabilities2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1867,6 +1922,7 @@ TEST(BasicEntrypointTest, KHR_get_surface_capabilities2) {
     log.logger.clear();
 
     VkSurfaceFormat2KHR var_vksurfaceformat2khr{VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceSurfaceFormats2KHR(var_vkphysicaldevice, &var_vkphysicaldevicesurfaceinfo2khr, &var_uint32_t, &var_vksurfaceformat2khr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceSurfaceFormats2KHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceSurfaceFormats2KHR"));
@@ -1905,18 +1961,21 @@ TEST(BasicEntrypointTest, KHR_get_display_properties2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
     VkDisplayProperties2KHR var_vkdisplayproperties2khr{VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceDisplayProperties2KHR(var_vkphysicaldevice, &var_uint32_t, &var_vkdisplayproperties2khr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceDisplayProperties2KHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceDisplayProperties2KHR"));
     log.logger.clear();
 
     VkDisplayPlaneProperties2KHR var_vkdisplayplaneproperties2khr{VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceDisplayPlaneProperties2KHR(var_vkphysicaldevice, &var_uint32_t, &var_vkdisplayplaneproperties2khr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceDisplayPlaneProperties2KHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceDisplayPlaneProperties2KHR"));
@@ -1924,6 +1983,7 @@ TEST(BasicEntrypointTest, KHR_get_display_properties2) {
 
     VkDisplayKHR var_vkdisplaykhr{};
     VkDisplayModeProperties2KHR var_vkdisplaymodeproperties2khr{VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR};
+    var_uint32_t = 1;
     inst_disp_table.GetDisplayModeProperties2KHR(var_vkphysicaldevice, var_vkdisplaykhr, &var_uint32_t, &var_vkdisplaymodeproperties2khr);
     ASSERT_TRUE(log.find("Generated Layer vkGetDisplayModeProperties2KHR"));
     ASSERT_TRUE(log.find("Generated Driver vkGetDisplayModeProperties2KHR"));
@@ -1964,6 +2024,7 @@ TEST(BasicEntrypointTest, KHR_get_memory_requirements2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -1995,6 +2056,7 @@ TEST(BasicEntrypointTest, KHR_get_memory_requirements2) {
 
     VkImageSparseMemoryRequirementsInfo2 var_vkimagesparsememoryrequirementsinfo2{VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2};
     VkSparseImageMemoryRequirements2 var_vksparseimagememoryrequirements2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2};
+    var_uint32_t = 1;
     device_disp_table.GetImageSparseMemoryRequirements2KHR(dev.dev, &var_vkimagesparsememoryrequirementsinfo2, &var_uint32_t, &var_vksparseimagememoryrequirements2);
     ASSERT_TRUE(log.find("Generated Layer vkGetImageSparseMemoryRequirements2KHR") ||
                 log.find("Generated Layer vkGetImageSparseMemoryRequirements2"));
@@ -2030,6 +2092,7 @@ TEST(BasicEntrypointTest, KHR_sampler_ycbcr_conversion) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2070,6 +2133,7 @@ TEST(BasicEntrypointTest, KHR_bind_memory2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2083,6 +2147,7 @@ TEST(BasicEntrypointTest, KHR_bind_memory2) {
     layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);
 
     VkBindBufferMemoryInfo var_vkbindbuffermemoryinfo{VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO};
+    var_uint32_t = 1;
     device_disp_table.BindBufferMemory2KHR(dev.dev, var_uint32_t, &var_vkbindbuffermemoryinfo);
     ASSERT_TRUE(log.find("Generated Layer vkBindBufferMemory2KHR") ||
                 log.find("Generated Layer vkBindBufferMemory2"));
@@ -2091,6 +2156,7 @@ TEST(BasicEntrypointTest, KHR_bind_memory2) {
     log.logger.clear();
 
     VkBindImageMemoryInfo var_vkbindimagememoryinfo{VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO};
+    var_uint32_t = 1;
     device_disp_table.BindImageMemory2KHR(dev.dev, var_uint32_t, &var_vkbindimagememoryinfo);
     ASSERT_TRUE(log.find("Generated Layer vkBindImageMemory2KHR") ||
                 log.find("Generated Layer vkBindImageMemory2"));
@@ -2126,6 +2192,7 @@ TEST(BasicEntrypointTest, KHR_maintenance3) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2166,6 +2233,7 @@ TEST(BasicEntrypointTest, KHR_draw_indirect_count) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2192,6 +2260,7 @@ TEST(BasicEntrypointTest, KHR_draw_indirect_count) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -2213,6 +2282,7 @@ TEST(BasicEntrypointTest, KHR_draw_indirect_count) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -2246,6 +2316,7 @@ TEST(BasicEntrypointTest, KHR_timeline_semaphore) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2322,6 +2393,7 @@ TEST(BasicEntrypointTest, KHR_fragment_shading_rate) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2336,6 +2408,7 @@ TEST(BasicEntrypointTest, KHR_fragment_shading_rate) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -2349,6 +2422,7 @@ TEST(BasicEntrypointTest, KHR_fragment_shading_rate) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -2382,6 +2456,7 @@ TEST(BasicEntrypointTest, KHR_present_wait) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2429,6 +2504,7 @@ TEST(BasicEntrypointTest, KHR_buffer_device_address) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2492,6 +2568,7 @@ TEST(BasicEntrypointTest, KHR_deferred_host_operations) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2558,6 +2635,7 @@ TEST(BasicEntrypointTest, KHR_pipeline_executable_properties) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2599,6 +2677,7 @@ TEST(BasicEntrypointTest, KHR_video_encode_queue) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2613,6 +2692,7 @@ TEST(BasicEntrypointTest, KHR_video_encode_queue) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -2625,6 +2705,7 @@ TEST(BasicEntrypointTest, KHR_video_encode_queue) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -2659,6 +2740,7 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2679,6 +2761,7 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
     log.logger.clear();
 
     VkSubmitInfo2 var_vksubmitinfo2{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};
+    var_uint32_t = 1;
     VkFence var_vkfence{};
     device_disp_table.QueueSubmit2KHR(var_vkqueue, var_uint32_t, &var_vksubmitinfo2, var_vkfence);
     ASSERT_TRUE(log.find("Generated Layer vkQueueSubmit2KHR") ||
@@ -2688,6 +2771,7 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
     log.logger.clear();
 
     VkCheckpointData2NV var_vkcheckpointdata2nv{VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV};
+    var_uint32_t = 1;
     device_disp_table.GetQueueCheckpointData2NV(var_vkqueue, &var_uint32_t, &var_vkcheckpointdata2nv);
     ASSERT_TRUE(log.find("Generated Layer vkGetQueueCheckpointData2NV"));
     ASSERT_TRUE(log.find("Generated Driver vkGetQueueCheckpointData2NV"));
@@ -2742,6 +2826,7 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -2763,6 +2848,7 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
                 log.find("Generated Driver vkCmdResetEvent2"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     device_disp_table.CmdWaitEvents2KHR(var_vkcommandbuffer, var_uint32_t, &var_vkevent, &var_vkdependencyinfo);
     ASSERT_TRUE(log.find("Generated Layer vkCmdWaitEvents2KHR") ||
                 log.find("Generated Layer vkCmdWaitEvents2"));
@@ -2791,6 +2877,7 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -2824,6 +2911,7 @@ TEST(BasicEntrypointTest, KHR_copy_commands2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2838,6 +2926,7 @@ TEST(BasicEntrypointTest, KHR_copy_commands2) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -2892,6 +2981,7 @@ TEST(BasicEntrypointTest, KHR_copy_commands2) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -2925,6 +3015,7 @@ TEST(BasicEntrypointTest, KHR_maintenance4) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -2955,6 +3046,7 @@ TEST(BasicEntrypointTest, KHR_maintenance4) {
     log.logger.clear();
 
     VkSparseImageMemoryRequirements2 var_vksparseimagememoryrequirements2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2};
+    var_uint32_t = 1;
     device_disp_table.GetDeviceImageSparseMemoryRequirementsKHR(dev.dev, &var_vkdeviceimagememoryrequirements, &var_uint32_t, &var_vksparseimagememoryrequirements2);
     ASSERT_TRUE(log.find("Generated Layer vkGetDeviceImageSparseMemoryRequirementsKHR") ||
                 log.find("Generated Layer vkGetDeviceImageSparseMemoryRequirements"));
@@ -3027,6 +3119,7 @@ TEST(BasicEntrypointTest, EXT_debug_marker) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3053,6 +3146,7 @@ TEST(BasicEntrypointTest, EXT_debug_marker) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -3075,6 +3169,7 @@ TEST(BasicEntrypointTest, EXT_debug_marker) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -3108,6 +3203,7 @@ TEST(BasicEntrypointTest, EXT_transform_feedback) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3146,22 +3242,26 @@ TEST(BasicEntrypointTest, EXT_transform_feedback) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     VkDeviceSize var_vkdevicesize{};
     device_disp_table.CmdBindTransformFeedbackBuffersEXT(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkbuffer, &var_vkdevicesize, &var_vkdevicesize);
     ASSERT_TRUE(log.find("Generated Layer vkCmdBindTransformFeedbackBuffersEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdBindTransformFeedbackBuffersEXT"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     device_disp_table.CmdBeginTransformFeedbackEXT(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkbuffer, &var_vkdevicesize);
     ASSERT_TRUE(log.find("Generated Layer vkCmdBeginTransformFeedbackEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdBeginTransformFeedbackEXT"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     device_disp_table.CmdEndTransformFeedbackEXT(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkbuffer, &var_vkdevicesize);
     ASSERT_TRUE(log.find("Generated Layer vkCmdEndTransformFeedbackEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdEndTransformFeedbackEXT"));
@@ -3184,6 +3284,7 @@ TEST(BasicEntrypointTest, EXT_transform_feedback) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -3217,6 +3318,7 @@ TEST(BasicEntrypointTest, NVX_binary_import) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3231,6 +3333,7 @@ TEST(BasicEntrypointTest, NVX_binary_import) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -3243,6 +3346,7 @@ TEST(BasicEntrypointTest, NVX_binary_import) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -3276,6 +3380,7 @@ TEST(BasicEntrypointTest, NVX_image_view_handle) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3334,6 +3439,7 @@ TEST(BasicEntrypointTest, AMD_draw_indirect_count) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3360,6 +3466,7 @@ TEST(BasicEntrypointTest, AMD_draw_indirect_count) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -3381,6 +3488,7 @@ TEST(BasicEntrypointTest, AMD_draw_indirect_count) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -3414,6 +3522,7 @@ TEST(BasicEntrypointTest, AMD_shader_info) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3439,6 +3548,7 @@ TEST(BasicEntrypointTest, AMD_shader_info) {
 
     VkPipelineCache var_vkpipelinecache{};
     VkGraphicsPipelineCreateInfo var_vkgraphicspipelinecreateinfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+    var_uint32_t = 1;
     device_disp_table.CreateGraphicsPipelines(dev.dev, var_vkpipelinecache, var_uint32_t, &var_vkgraphicspipelinecreateinfo, nullptr, &var_vkpipeline);
     ASSERT_TRUE(log.find("Generated Layer vkCreateGraphicsPipelines"));
     ASSERT_TRUE(log.find("Generated Driver vkCreateGraphicsPipelines"));
@@ -3517,6 +3627,7 @@ TEST(BasicEntrypointTest, NV_external_memory_capabilities) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3563,6 +3674,7 @@ TEST(BasicEntrypointTest, NV_external_memory_win32) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3663,6 +3775,7 @@ TEST(BasicEntrypointTest, EXT_conditional_rendering) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3677,6 +3790,7 @@ TEST(BasicEntrypointTest, EXT_conditional_rendering) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -3694,6 +3808,7 @@ TEST(BasicEntrypointTest, EXT_conditional_rendering) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -3727,6 +3842,7 @@ TEST(BasicEntrypointTest, NV_clip_space_w_scaling) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3741,18 +3857,21 @@ TEST(BasicEntrypointTest, NV_clip_space_w_scaling) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
     VkViewportWScalingNV var_vkviewportwscalingnv{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetViewportWScalingNV(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkviewportwscalingnv);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetViewportWScalingNV"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdSetViewportWScalingNV"));
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -3786,6 +3905,7 @@ TEST(BasicEntrypointTest, EXT_direct_mode_display) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3826,6 +3946,7 @@ TEST(BasicEntrypointTest, EXT_acquire_xlib_display) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3881,6 +4002,7 @@ TEST(BasicEntrypointTest, EXT_display_surface_counter) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3925,6 +4047,7 @@ TEST(BasicEntrypointTest, EXT_display_control) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -3980,6 +4103,7 @@ TEST(BasicEntrypointTest, GOOGLE_display_timing) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4000,6 +4124,7 @@ TEST(BasicEntrypointTest, GOOGLE_display_timing) {
     log.logger.clear();
 
     VkPastPresentationTimingGOOGLE var_vkpastpresentationtiminggoogle{};
+    var_uint32_t = 1;
     device_disp_table.GetPastPresentationTimingGOOGLE(dev.dev, var_vkswapchainkhr, &var_uint32_t, &var_vkpastpresentationtiminggoogle);
     ASSERT_TRUE(log.find("Generated Layer vkGetPastPresentationTimingGOOGLE"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPastPresentationTimingGOOGLE"));
@@ -4033,6 +4158,7 @@ TEST(BasicEntrypointTest, EXT_discard_rectangles) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4047,18 +4173,21 @@ TEST(BasicEntrypointTest, EXT_discard_rectangles) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
     VkRect2D var_vkrect2d{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetDiscardRectangleEXT(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkrect2d);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetDiscardRectangleEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdSetDiscardRectangleEXT"));
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -4092,6 +4221,7 @@ TEST(BasicEntrypointTest, EXT_hdr_metadata) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4105,6 +4235,7 @@ TEST(BasicEntrypointTest, EXT_hdr_metadata) {
     layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);
 
     VkSwapchainKHR var_vkswapchainkhr{};
+    var_uint32_t = 1;
     VkHdrMetadataEXT var_vkhdrmetadataext{VK_STRUCTURE_TYPE_HDR_METADATA_EXT};
     device_disp_table.SetHdrMetadataEXT(dev.dev, var_uint32_t, &var_vkswapchainkhr, &var_vkhdrmetadataext);
     ASSERT_TRUE(log.find("Generated Layer vkSetHdrMetadataEXT"));
@@ -4219,6 +4350,7 @@ TEST(BasicEntrypointTest, EXT_sample_locations) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4240,6 +4372,7 @@ TEST(BasicEntrypointTest, EXT_sample_locations) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -4252,6 +4385,7 @@ TEST(BasicEntrypointTest, EXT_sample_locations) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -4285,6 +4419,7 @@ TEST(BasicEntrypointTest, EXT_image_drm_format_modifier) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4337,6 +4472,7 @@ TEST(BasicEntrypointTest, EXT_validation_cache) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4350,6 +4486,7 @@ TEST(BasicEntrypointTest, EXT_validation_cache) {
     layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);
 
     VkValidationCacheEXT var_vkvalidationcacheext{};
+    var_uint32_t = 1;
     device_disp_table.MergeValidationCachesEXT(dev.dev, var_vkvalidationcacheext, var_uint32_t, &var_vkvalidationcacheext);
     ASSERT_TRUE(log.find("Generated Layer vkMergeValidationCachesEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkMergeValidationCachesEXT"));
@@ -4402,6 +4539,7 @@ TEST(BasicEntrypointTest, NV_shading_rate_image) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4428,6 +4566,7 @@ TEST(BasicEntrypointTest, NV_shading_rate_image) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -4440,6 +4579,7 @@ TEST(BasicEntrypointTest, NV_shading_rate_image) {
     log.logger.clear();
 
     VkShadingRatePaletteNV var_vkshadingratepalettenv{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetViewportShadingRatePaletteNV(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkshadingratepalettenv);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetViewportShadingRatePaletteNV"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdSetViewportShadingRatePaletteNV"));
@@ -4447,12 +4587,14 @@ TEST(BasicEntrypointTest, NV_shading_rate_image) {
 
     VkCoarseSampleOrderTypeNV var_vkcoarsesampleordertypenv{};
     VkCoarseSampleOrderCustomNV var_vkcoarsesampleordercustomnv{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetCoarseSampleOrderNV(var_vkcommandbuffer, var_vkcoarsesampleordertypenv, var_uint32_t, &var_vkcoarsesampleordercustomnv);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetCoarseSampleOrderNV"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdSetCoarseSampleOrderNV"));
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -4486,6 +4628,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4506,6 +4649,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
     log.logger.clear();
 
     VkBindAccelerationStructureMemoryInfoNV var_vkbindaccelerationstructurememoryinfonv{VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV};
+    var_uint32_t = 1;
     device_disp_table.BindAccelerationStructureMemoryNV(dev.dev, var_uint32_t, &var_vkbindaccelerationstructurememoryinfonv);
     ASSERT_TRUE(log.find("Generated Layer vkBindAccelerationStructureMemoryNV"));
     ASSERT_TRUE(log.find("Generated Driver vkBindAccelerationStructureMemoryNV"));
@@ -4570,6 +4714,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
     log.logger.clear();
 
     VkGraphicsPipelineCreateInfo var_vkgraphicspipelinecreateinfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+    var_uint32_t = 1;
     device_disp_table.CreateGraphicsPipelines(dev.dev, var_vkpipelinecache, var_uint32_t, &var_vkgraphicspipelinecreateinfo, nullptr, &var_vkpipeline);
     ASSERT_TRUE(log.find("Generated Layer vkCreateGraphicsPipelines"));
     ASSERT_TRUE(log.find("Generated Driver vkCreateGraphicsPipelines"));
@@ -4582,6 +4727,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -4606,6 +4752,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
     ASSERT_TRUE(log.find("Generated Driver vkCmdTraceRaysNV"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     VkQueryType var_vkquerytype{};
     device_disp_table.CmdWriteAccelerationStructuresPropertiesNV(var_vkcommandbuffer, var_uint32_t, &var_vkaccelerationstructurenv, var_vkquerytype, var_vkquerypool, var_uint32_t);
     ASSERT_TRUE(log.find("Generated Layer vkCmdWriteAccelerationStructuresPropertiesNV"));
@@ -4613,6 +4760,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -4657,6 +4805,7 @@ TEST(BasicEntrypointTest, EXT_external_memory_host) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4706,6 +4855,7 @@ TEST(BasicEntrypointTest, AMD_buffer_marker) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4732,6 +4882,7 @@ TEST(BasicEntrypointTest, AMD_buffer_marker) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -4745,6 +4896,7 @@ TEST(BasicEntrypointTest, AMD_buffer_marker) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -4778,12 +4930,14 @@ TEST(BasicEntrypointTest, EXT_calibrated_timestamps) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
     VkTimeDomainEXT var_vktimedomainext{};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceCalibrateableTimeDomainsEXT(var_vkphysicaldevice, &var_uint32_t, &var_vktimedomainext);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
@@ -4797,6 +4951,7 @@ TEST(BasicEntrypointTest, EXT_calibrated_timestamps) {
     layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);
 
     VkCalibratedTimestampInfoEXT var_vkcalibratedtimestampinfoext{VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT};
+    var_uint32_t = 1;
     uint64_t var_uint64_t = 1;
     device_disp_table.GetCalibratedTimestampsEXT(dev.dev, var_uint32_t, &var_vkcalibratedtimestampinfoext, &var_uint64_t, &var_uint64_t);
     ASSERT_TRUE(log.find("Generated Layer vkGetCalibratedTimestampsEXT"));
@@ -4831,6 +4986,7 @@ TEST(BasicEntrypointTest, NV_mesh_shader) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4857,6 +5013,7 @@ TEST(BasicEntrypointTest, NV_mesh_shader) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -4879,6 +5036,7 @@ TEST(BasicEntrypointTest, NV_mesh_shader) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -4912,6 +5070,7 @@ TEST(BasicEntrypointTest, NV_scissor_exclusive) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4926,18 +5085,21 @@ TEST(BasicEntrypointTest, NV_scissor_exclusive) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
     VkRect2D var_vkrect2d{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetExclusiveScissorNV(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkrect2d);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetExclusiveScissorNV"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdSetExclusiveScissorNV"));
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -4971,6 +5133,7 @@ TEST(BasicEntrypointTest, NV_device_diagnostic_checkpoints) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -4991,6 +5154,7 @@ TEST(BasicEntrypointTest, NV_device_diagnostic_checkpoints) {
     log.logger.clear();
 
     VkCheckpointDataNV var_vkcheckpointdatanv{VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV};
+    var_uint32_t = 1;
     device_disp_table.GetQueueCheckpointDataNV(var_vkqueue, &var_uint32_t, &var_vkcheckpointdatanv);
     ASSERT_TRUE(log.find("Generated Layer vkGetQueueCheckpointDataNV"));
     ASSERT_TRUE(log.find("Generated Driver vkGetQueueCheckpointDataNV"));
@@ -4998,6 +5162,7 @@ TEST(BasicEntrypointTest, NV_device_diagnostic_checkpoints) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -5011,6 +5176,7 @@ TEST(BasicEntrypointTest, NV_device_diagnostic_checkpoints) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -5044,6 +5210,7 @@ TEST(BasicEntrypointTest, INTEL_performance_query) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5089,6 +5256,7 @@ TEST(BasicEntrypointTest, INTEL_performance_query) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -5113,6 +5281,7 @@ TEST(BasicEntrypointTest, INTEL_performance_query) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -5157,6 +5326,7 @@ TEST(BasicEntrypointTest, AMD_display_native_hdr) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5284,6 +5454,7 @@ TEST(BasicEntrypointTest, EXT_buffer_device_address) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5332,6 +5503,7 @@ TEST(BasicEntrypointTest, EXT_tooling_info) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5365,12 +5537,14 @@ TEST(BasicEntrypointTest, NV_cooperative_matrix) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
     VkCooperativeMatrixPropertiesNV var_vkcooperativematrixpropertiesnv{VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(var_vkphysicaldevice, &var_uint32_t, &var_vkcooperativematrixpropertiesnv);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceCooperativeMatrixPropertiesNV"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceCooperativeMatrixPropertiesNV"));
@@ -5404,6 +5578,7 @@ TEST(BasicEntrypointTest, NV_coverage_reduction_mode) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5445,6 +5620,7 @@ TEST(BasicEntrypointTest, EXT_full_screen_exclusive) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5453,6 +5629,7 @@ TEST(BasicEntrypointTest, EXT_full_screen_exclusive) {
     VkPhysicalDeviceSurfaceInfo2KHR var_vkphysicaldevicesurfaceinfo2khr{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
     var_vkphysicaldevicesurfaceinfo2khr.surface = var_vksurfacekhr;
     VkPresentModeKHR var_vkpresentmodekhr{};
+    var_uint32_t = 1;
     inst_disp_table.GetPhysicalDeviceSurfacePresentModes2EXT(var_vkphysicaldevice, &var_vkphysicaldevicesurfaceinfo2khr, &var_uint32_t, &var_vkpresentmodekhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceSurfacePresentModes2EXT"));
     ASSERT_TRUE(log.find("Generated Driver vkGetPhysicalDeviceSurfacePresentModes2EXT"));
@@ -5548,6 +5725,7 @@ TEST(BasicEntrypointTest, EXT_line_rasterization) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5562,6 +5740,7 @@ TEST(BasicEntrypointTest, EXT_line_rasterization) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -5574,6 +5753,7 @@ TEST(BasicEntrypointTest, EXT_line_rasterization) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -5607,6 +5787,7 @@ TEST(BasicEntrypointTest, EXT_host_query_reset) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5666,6 +5847,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5692,6 +5874,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -5722,6 +5905,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
     log.logger.clear();
 
     VkViewport var_vkviewport{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetViewportWithCountEXT(var_vkcommandbuffer, var_uint32_t, &var_vkviewport);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetViewportWithCountEXT") ||
                 log.find("Generated Layer vkCmdSetViewportWithCount"));
@@ -5730,6 +5914,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
     log.logger.clear();
 
     VkRect2D var_vkrect2d{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetScissorWithCountEXT(var_vkcommandbuffer, var_uint32_t, &var_vkrect2d);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetScissorWithCountEXT") ||
                 log.find("Generated Layer vkCmdSetScissorWithCount"));
@@ -5737,6 +5922,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
                 log.find("Generated Driver vkCmdSetScissorWithCount"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     VkDeviceSize var_vkdevicesize{};
     device_disp_table.CmdBindVertexBuffers2EXT(var_vkcommandbuffer, var_uint32_t, var_uint32_t, &var_vkbuffer, &var_vkdevicesize, &var_vkdevicesize, &var_vkdevicesize);
     ASSERT_TRUE(log.find("Generated Layer vkCmdBindVertexBuffers2EXT") ||
@@ -5792,6 +5978,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -5825,6 +6012,7 @@ TEST(BasicEntrypointTest, NV_device_generated_commands) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5846,6 +6034,7 @@ TEST(BasicEntrypointTest, NV_device_generated_commands) {
 
     VkPipelineCache var_vkpipelinecache{};
     VkGraphicsPipelineCreateInfo var_vkgraphicspipelinecreateinfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+    var_uint32_t = 1;
     VkPipeline var_vkpipeline{};
     device_disp_table.CreateGraphicsPipelines(dev.dev, var_vkpipelinecache, var_uint32_t, &var_vkgraphicspipelinecreateinfo, nullptr, &var_vkpipeline);
     ASSERT_TRUE(log.find("Generated Layer vkCreateGraphicsPipelines"));
@@ -5859,6 +6048,7 @@ TEST(BasicEntrypointTest, NV_device_generated_commands) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -5883,6 +6073,7 @@ TEST(BasicEntrypointTest, NV_device_generated_commands) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -5916,6 +6107,7 @@ TEST(BasicEntrypointTest, EXT_acquire_drm_display) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -5961,6 +6153,7 @@ TEST(BasicEntrypointTest, EXT_private_data) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6029,6 +6222,7 @@ TEST(BasicEntrypointTest, NV_fragment_shading_rate_enums) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6043,6 +6237,7 @@ TEST(BasicEntrypointTest, NV_fragment_shading_rate_enums) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -6056,6 +6251,7 @@ TEST(BasicEntrypointTest, NV_fragment_shading_rate_enums) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -6090,6 +6286,7 @@ TEST(BasicEntrypointTest, NV_acquire_winrt_display) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6143,6 +6340,7 @@ TEST(BasicEntrypointTest, EXT_directfb_surface) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6188,6 +6386,7 @@ TEST(BasicEntrypointTest, EXT_vertex_input_dynamic_state) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6202,12 +6401,14 @@ TEST(BasicEntrypointTest, EXT_vertex_input_dynamic_state) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
     VkVertexInputBindingDescription2EXT var_vkvertexinputbindingdescription2ext{VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT};
+    var_uint32_t = 1;
     VkVertexInputAttributeDescription2EXT var_vkvertexinputattributedescription2ext{VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT};
     device_disp_table.CmdSetVertexInputEXT(var_vkcommandbuffer, var_uint32_t, &var_vkvertexinputbindingdescription2ext, var_uint32_t, &var_vkvertexinputattributedescription2ext);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetVertexInputEXT"));
@@ -6215,6 +6416,7 @@ TEST(BasicEntrypointTest, EXT_vertex_input_dynamic_state) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -6249,6 +6451,7 @@ TEST(BasicEntrypointTest, FUCHSIA_external_memory) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6305,6 +6508,7 @@ TEST(BasicEntrypointTest, FUCHSIA_external_semaphore) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6360,6 +6564,7 @@ TEST(BasicEntrypointTest, FUCHSIA_buffer_collection) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6425,6 +6630,7 @@ TEST(BasicEntrypointTest, HUAWEI_subpass_shading) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6457,6 +6663,7 @@ TEST(BasicEntrypointTest, HUAWEI_subpass_shading) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -6468,6 +6675,7 @@ TEST(BasicEntrypointTest, HUAWEI_subpass_shading) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -6501,6 +6709,7 @@ TEST(BasicEntrypointTest, HUAWEI_invocation_mask) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6527,6 +6736,7 @@ TEST(BasicEntrypointTest, HUAWEI_invocation_mask) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -6539,6 +6749,7 @@ TEST(BasicEntrypointTest, HUAWEI_invocation_mask) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -6572,6 +6783,7 @@ TEST(BasicEntrypointTest, NV_external_memory_rdma) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6619,6 +6831,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state2) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6633,6 +6846,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state2) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -6672,6 +6886,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state2) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -6713,6 +6928,7 @@ TEST(BasicEntrypointTest, QNX_screen_surface) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6758,6 +6974,7 @@ TEST(BasicEntrypointTest, EXT_color_write_enable) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6772,18 +6989,21 @@ TEST(BasicEntrypointTest, EXT_color_write_enable) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
     VkBool32 var_vkbool32{};
+    var_uint32_t = 1;
     device_disp_table.CmdSetColorWriteEnableEXT(var_vkcommandbuffer, var_uint32_t, &var_vkbool32);
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetColorWriteEnableEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdSetColorWriteEnableEXT"));
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -6817,6 +7037,7 @@ TEST(BasicEntrypointTest, EXT_multi_draw) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6831,18 +7052,21 @@ TEST(BasicEntrypointTest, EXT_multi_draw) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
     VkMultiDrawInfoEXT var_vkmultidrawinfoext{};
+    var_uint32_t = 1;
     device_disp_table.CmdDrawMultiEXT(var_vkcommandbuffer, var_uint32_t, &var_vkmultidrawinfoext, var_uint32_t, var_uint32_t, var_uint32_t);
     ASSERT_TRUE(log.find("Generated Layer vkCmdDrawMultiEXT"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdDrawMultiEXT"));
     log.logger.clear();
 
     VkMultiDrawIndexedInfoEXT var_vkmultidrawindexedinfoext{};
+    var_uint32_t = 1;
     int32_t var_int32_t{};
     device_disp_table.CmdDrawMultiIndexedEXT(var_vkcommandbuffer, var_uint32_t, &var_vkmultidrawindexedinfoext, var_uint32_t, var_uint32_t, var_uint32_t, &var_int32_t);
     ASSERT_TRUE(log.find("Generated Layer vkCmdDrawMultiIndexedEXT"));
@@ -6850,6 +7074,7 @@ TEST(BasicEntrypointTest, EXT_multi_draw) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -6883,6 +7108,7 @@ TEST(BasicEntrypointTest, EXT_pageable_device_local_memory) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6941,6 +7167,7 @@ TEST(BasicEntrypointTest, VALVE_descriptor_set_host_mapping) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -6962,12 +7189,14 @@ TEST(BasicEntrypointTest, VALVE_descriptor_set_host_mapping) {
     log.logger.clear();
 
     VkDescriptorSetAllocateInfo var_vkdescriptorsetallocateinfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    var_vkdescriptorsetallocateinfo.descriptorSetCount = 1;
     device_disp_table.AllocateDescriptorSets(dev.dev, &var_vkdescriptorsetallocateinfo, &var_vkdescriptorset);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateDescriptorSets"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateDescriptorSets"));
     log.logger.clear();
 
     VkDescriptorPool var_vkdescriptorpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeDescriptorSets(dev.dev, var_vkdescriptorpool, var_uint32_t, &var_vkdescriptorset);
     ASSERT_TRUE(log.find("Generated Layer vkFreeDescriptorSets"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeDescriptorSets"));
@@ -7001,6 +7230,7 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -7015,6 +7245,7 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
 
     VkDeferredOperationKHR var_vkdeferredoperationkhr{};
     VkAccelerationStructureBuildGeometryInfoKHR var_vkaccelerationstructurebuildgeometryinfokhr{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR};
+    var_uint32_t = 1;
     VkAccelerationStructureBuildRangeInfoKHR var_vkaccelerationstructurebuildrangeinfokhr{};
     device_disp_table.BuildAccelerationStructuresKHR(dev.dev, var_vkdeferredoperationkhr, var_uint32_t, &var_vkaccelerationstructurebuildgeometryinfokhr, reinterpret_cast<const VkAccelerationStructureBuildRangeInfoKHR* const*>(&var_vkaccelerationstructurebuildrangeinfokhr));
     ASSERT_TRUE(log.find("Generated Layer vkBuildAccelerationStructuresKHR"));
@@ -7040,6 +7271,7 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
     log.logger.clear();
 
     VkAccelerationStructureKHR var_vkaccelerationstructurekhr{};
+    var_uint32_t = 1;
     VkQueryType var_vkquerytype{};
     size_t var_size_t{};
     uint64_t big_chunk_of_mem[512][512];
@@ -7063,6 +7295,7 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
     log.logger.clear();
 
     VkAccelerationStructureBuildTypeKHR var_vkaccelerationstructurebuildtypekhr{};
+    var_vkaccelerationstructurebuildgeometryinfokhr.geometryCount = 1;
     VkAccelerationStructureBuildSizesInfoKHR var_vkaccelerationstructurebuildsizesinfokhr{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
     device_disp_table.GetAccelerationStructureBuildSizesKHR(dev.dev, var_vkaccelerationstructurebuildtypekhr, &var_vkaccelerationstructurebuildgeometryinfokhr, &var_uint32_t, &var_vkaccelerationstructurebuildsizesinfokhr);
     ASSERT_TRUE(log.find("Generated Layer vkGetAccelerationStructureBuildSizesKHR"));
@@ -7083,16 +7316,19 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     device_disp_table.CmdBuildAccelerationStructuresKHR(var_vkcommandbuffer, var_uint32_t, &var_vkaccelerationstructurebuildgeometryinfokhr, reinterpret_cast<const VkAccelerationStructureBuildRangeInfoKHR* const*>(&var_vkaccelerationstructurebuildrangeinfokhr));
     ASSERT_TRUE(log.find("Generated Layer vkCmdBuildAccelerationStructuresKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdBuildAccelerationStructuresKHR"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     VkDeviceAddress var_vkdeviceaddress{};
     device_disp_table.CmdBuildAccelerationStructuresIndirectKHR(var_vkcommandbuffer, var_uint32_t, &var_vkaccelerationstructurebuildgeometryinfokhr, &var_vkdeviceaddress, &var_uint32_t, reinterpret_cast<const uint32_t* const*>(&var_uint32_t));
     ASSERT_TRUE(log.find("Generated Layer vkCmdBuildAccelerationStructuresIndirectKHR"));
@@ -7114,12 +7350,14 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
     ASSERT_TRUE(log.find("Generated Driver vkCmdCopyMemoryToAccelerationStructureKHR"));
     log.logger.clear();
 
+    var_uint32_t = 1;
     device_disp_table.CmdWriteAccelerationStructuresPropertiesKHR(var_vkcommandbuffer, var_uint32_t, &var_vkaccelerationstructurekhr, var_vkquerytype, var_vkquerypool, var_uint32_t);
     ASSERT_TRUE(log.find("Generated Layer vkCmdWriteAccelerationStructuresPropertiesKHR"));
     ASSERT_TRUE(log.find("Generated Driver vkCmdWriteAccelerationStructuresPropertiesKHR"));
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));
@@ -7164,6 +7402,7 @@ TEST(BasicEntrypointTest, KHR_ray_tracing_pipeline) {
 
     uint32_t var_uint32_t = 1;
     VkPhysicalDevice var_vkphysicaldevice{};
+    var_uint32_t = 1;
     inst_disp_table.EnumeratePhysicalDevices(instance, &var_uint32_t, &var_vkphysicaldevice);
     ASSERT_TRUE(log.find("Generated Layer vkEnumeratePhysicalDevices"));
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
@@ -7209,6 +7448,7 @@ TEST(BasicEntrypointTest, KHR_ray_tracing_pipeline) {
     log.logger.clear();
 
     VkGraphicsPipelineCreateInfo var_vkgraphicspipelinecreateinfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+    var_uint32_t = 1;
     device_disp_table.CreateGraphicsPipelines(dev.dev, var_vkpipelinecache, var_uint32_t, &var_vkgraphicspipelinecreateinfo, nullptr, &var_vkpipeline);
     ASSERT_TRUE(log.find("Generated Layer vkCreateGraphicsPipelines"));
     ASSERT_TRUE(log.find("Generated Driver vkCreateGraphicsPipelines"));
@@ -7221,6 +7461,7 @@ TEST(BasicEntrypointTest, KHR_ray_tracing_pipeline) {
 
     VkCommandBufferAllocateInfo var_vkcommandbufferallocateinfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     VkCommandBuffer var_vkcommandbuffer{};
+    var_vkcommandbufferallocateinfo.commandBufferCount = 1;
     device_disp_table.AllocateCommandBuffers(dev.dev, &var_vkcommandbufferallocateinfo, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkAllocateCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
@@ -7244,6 +7485,7 @@ TEST(BasicEntrypointTest, KHR_ray_tracing_pipeline) {
     log.logger.clear();
 
     VkCommandPool var_vkcommandpool{};
+    var_uint32_t = 1;
     device_disp_table.FreeCommandBuffers(dev.dev, var_vkcommandpool, var_uint32_t, &var_vkcommandbuffer);
     ASSERT_TRUE(log.find("Generated Layer vkFreeCommandBuffers"));
     ASSERT_TRUE(log.find("Generated Driver vkFreeCommandBuffers"));

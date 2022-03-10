@@ -39,8 +39,6 @@ add_executable(
         loader_version_tests.cpp
         loader_unknown_ext_tests.cpp
         loader_wsi_tests.cpp
-        ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_core_tests.cpp
-        ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_extension_tests.cpp
         )
 target_link_libraries(test_regression PUBLIC testing_dependencies)
 set_target_properties(test_regression ${LOADER_STANDARD_CXX_PROPERTIES})
@@ -54,6 +52,18 @@ target_link_libraries(test_threading PUBLIC testing_dependencies)
 set_target_properties(test_threading ${LOADER_STANDARD_CXX_PROPERTIES})
 target_compile_definitions(test_threading PUBLIC VK_NO_PROTOTYPES)
 
+add_executable(
+    test_entrypoints
+        loader_testing_main.cpp
+        ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_core_tests.cpp
+        ${CMAKE_SOURCE_DIR}/tests/generated/vk_test_entrypoint_extension_tests.cpp
+    )
+target_link_libraries(test_entrypoints
+    PUBLIC
+        Vulkan::Vulkan
+    PRIVATE
+        testing_dependencies)
+
 # executables that are meant for testing against real drivers rather than the mocks
 if (ENABLE_LIVE_VERIFICATION_TESTS)
     add_subdirectory(live_verification)
@@ -63,10 +73,14 @@ if(WIN32)
     # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
     add_custom_command(TARGET test_regression POST_BUILD
                        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gtest> $<TARGET_FILE_DIR:test_regression>)
+    add_custom_command(TARGET test_entrypoints POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gtest> $<TARGET_FILE_DIR:test_entrypoints>)
     # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
     if(TARGET vulkan)
         add_custom_command(TARGET test_regression POST_BUILD
                            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:test_regression>)
+        add_custom_command(TARGET test_entrypoints POST_BUILD
+                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:test_entrypoints>)
     endif()
 
     # Copy the gtest shared lib (if built) to the live verification tests directory so the tests finds it.
@@ -78,3 +92,4 @@ endif()
 
 # must happen after the dll's get copied over
 gtest_discover_tests(test_regression)
+gtest_discover_tests(test_entrypoints)
