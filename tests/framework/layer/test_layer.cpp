@@ -151,12 +151,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    layer.next_vkGetInstanceProcAddr = fpGetInstanceProcAddr;
-    layer.next_GetPhysicalDeviceProcAddr =
-        reinterpret_cast<PFN_GetPhysicalDeviceProcAddr>(fpGetInstanceProcAddr(*pInstance, "vk_layerGetPhysicalDeviceProcAddr"));
-
     // Advance the link info for the next element of the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+    layer.next_vkGetInstanceProcAddr = fpGetInstanceProcAddr;
 
     // Continue call down the chain
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
@@ -164,6 +161,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         return result;
     }
     layer.instance_handle = *pInstance;
+    layer.next_GetPhysicalDeviceProcAddr =
+        reinterpret_cast<PFN_GetPhysicalDeviceProcAddr>(fpGetInstanceProcAddr(*pInstance, "vk_layerGetPhysicalDeviceProcAddr"));
 
     // Init layer's dispatch table using GetInstanceProcAddr of
     // next layer in the chain.

@@ -51,7 +51,7 @@ vkPhysDevExtTermin&num&:
 terminError&num&:
     sub     rsp, 56                                                             ; Create the stack frame
     mov     rcx, qword ptr [rax + INSTANCE_OFFSET_ICD_TERM]                     ; Load the loader_instance into rcx (first arg)
-    mov     rax, qword ptr [rcx + (HASH_OFFSET_INSTANCE + (HASH_SIZE * num) + FUNC_NAME_OFFSET_HASH)] ; Load the func name into rax
+    mov     rax, qword ptr [rcx + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * num))] ; Load the func name into rax
     lea     r9, termin_error_string                                             ; Load the error string into r9 (fourth arg)
     xor     r8d, r8d                                                            ; Set r8 to zero (third arg)
     mov     qword ptr [rsp + 32], rax                                           ; Move the func name onto the stack (fifth arg)
@@ -94,7 +94,7 @@ _vkPhysDevExtTermin&num&@4:
     jmp     dword ptr [eax + (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * num))]     ; Jump to the next function in the chain
 terminError&num&:
     mov     eax, dword ptr [eax + INSTANCE_OFFSET_ICD_TERM]                     ; Load the loader_instance into eax
-    push    dword ptr [eax + (HASH_OFFSET_INSTANCE + (HASH_SIZE * num) + FUNC_NAME_OFFSET_HASH)] ; Push the func name (fifth arg)
+    push    dword ptr [eax + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * num))] ; Push the func name (fifth arg)
     push    offset termin_error_string                                          ; Push the error string (fourth arg)
     push    0                                                                   ; Push zero (third arg)
     push    VULKAN_LOADER_ERROR_BIT                                             ; Push the error logging bit (second arg)

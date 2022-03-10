@@ -56,10 +56,10 @@ vkPhysDevExtTermin\num:
 terminError\num:
     sub     rsp, 56                                                             # Create the stack frame
     mov     rdi, [rax + INSTANCE_OFFSET_ICD_TERM]                               # Load the loader_instance into rdi (first arg)
-    mov     r8, [rdi + (HASH_OFFSET_INSTANCE + (HASH_SIZE * \num) + FUNC_NAME_OFFSET_HASH)] # Load the func name into r8 (fifth arg)
-    lea     rcx, termin_error_string@GOTPCREL                                   # Load the error string into rcx (fourth arg)
-    xor     edx, edx                                                            # Set rdx to zero (third arg)
-    lea     esi, [rdx + VK_DEBUG_REPORT_ERROR_BIT_EXT]                          # Write the error logging bit to rsi (second arg)
+    lea     rsi, [VULKAN_LOADER_ERROR_BIT]                                      # Write the error logging bit to rsi (second arg)
+    xor     rdx, rdx                                                            # Set rdx to zero (third arg)
+    lea     rcx, [rip + termin_error_string]                                   # Load the error string into rcx (fourth arg)
+    mov     r8, [rdi + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))]     # Load the func name into r8 (fifth arg)
     call    loader_log                                                          # Log the error message before we crash
     add     rsp, 56                                                             # Clean up the stack frame
     mov     rax, 0
@@ -99,16 +99,16 @@ vkPhysDevExtTermin\num:
     mov     [esp + 4], ecx                                                      # Copy the unwrapped VkPhysicalDevice into the first arg
     jmp     [eax + (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num))]              # Jump to the next function in the chain
 terminError\num:
-    mov     eax, [eax + INSTANCE_OFFSET_ICD_TERM]                               # Load the loader_instance into eax
-    push    [eax + (HASH_OFFSET_INSTANCE + (HASH_SIZE * \num) + FUNC_NAME_OFFSET_HASH)] # Push the func name (fifth arg)
-    push    offset termin_error_string@GOT                                      # Push the error string (fourth arg)
-    push    0                                                                   # Push zero (third arg)
-    push    VK_DEBUG_REPORT_ERROR_BIT_EXT                                       # Push the error logging bit (second arg)
-    push    eax                                                                 # Push the loader_instance (first arg)
-    call    loader_log                                                          # Log the error message before we crash
-    add     esp, 20                                                             # Clean up the args
+    mov     eax, [eax + INSTANCE_OFFSET_ICD_TERM]                       # Load the loader_instance into eax
+    push    [eax + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))] # Push the func name (fifth arg)
+    push    offset termin_error_string@GOT                              # Push the error string (fourth arg)
+    push    0                                                           # Push zero (third arg)
+    push    VULKAN_LOADER_ERROR_BIT                                     # Push the error logging bit (second arg)
+    push    eax                                                         # Push the loader_instance (first arg)
+    call    loader_log                                                  # Log the error message before we crash
+    add     esp, 20                                                     # Clean up the args
     mov     eax, 0
-    jmp     eax                                                                 # Crash intentionally by jumping to address zero
+    jmp     eax                                                         # Crash intentionally by jumping to address zero
 .endm
 
 .macro DevExtTramp num

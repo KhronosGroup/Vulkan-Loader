@@ -768,7 +768,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 tables += '                                                             VkDevice dev) {\n'
                 tables += '    VkLayerDispatchTable *table = &dev_table->core_dispatch;\n'
                 tables += '    table->magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;\n'
-                tables += '    for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch.dev_ext[i] = (PFN_vkDevExt)vkDevExtError;\n'
+                tables += '    for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch[i] = (PFN_vkDevExt)vkDevExtError;\n'
 
             elif x == 1:
                 cur_type = 'device'

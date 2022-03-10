@@ -159,29 +159,11 @@ struct loader_layer_list {
     struct loader_layer_properties *list;
 };
 
-struct loader_dispatch_hash_list {
-    size_t capacity;
-    uint32_t count;
-    uint32_t *index;  // index into the dev_ext dispatch table
-};
-
-// loader_dispatch_hash_entry and loader_dev_ext_dispatch_table.dev_ext have
-// one to one correspondence; one loader_dispatch_hash_entry for one dev_ext
-// dispatch entry.
-// Also have a one to one correspondence with functions in dev_ext_trampoline.c
-struct loader_dispatch_hash_entry {
-    char *func_name;
-    struct loader_dispatch_hash_list list;  // to handle hashing collisions
-};
-
 typedef VkResult(VKAPI_PTR *PFN_vkDevExt)(VkDevice device);
-struct loader_dev_ext_dispatch_table {
-    PFN_vkDevExt dev_ext[MAX_NUM_UNKNOWN_EXTS];
-};
 
 struct loader_dev_dispatch_table {
     VkLayerDispatchTable core_dispatch;
-    struct loader_dev_ext_dispatch_table ext_dispatch;
+    PFN_vkDevExt ext_dispatch[MAX_NUM_UNKNOWN_EXTS];
 };
 
 // per CreateDevice structure
@@ -278,8 +260,10 @@ struct loader_instance {
     struct loader_icd_term *icd_terms;
     struct loader_icd_tramp_list icd_tramp_list;
 
-    struct loader_dispatch_hash_entry dev_ext_disp_hash[MAX_NUM_UNKNOWN_EXTS];
-    struct loader_dispatch_hash_entry phys_dev_ext_disp_hash[MAX_NUM_UNKNOWN_EXTS];
+    uint32_t dev_ext_disp_function_count;
+    char *dev_ext_disp_functions[MAX_NUM_UNKNOWN_EXTS];
+    uint32_t phys_dev_ext_disp_function_count;
+    char *phys_dev_ext_disp_functions[MAX_NUM_UNKNOWN_EXTS];
 
     struct loader_msg_callback_map_entry *icd_msg_callback_map;
 

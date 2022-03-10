@@ -106,7 +106,6 @@ set(NORMAL_LOADER_SRCS
     gpa_helper.c
     loader.c
     log.c
-    murmurhash.c
     terminator.c
     trampoline.c
     unknown_function_handling.c

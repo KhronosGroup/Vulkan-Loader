@@ -50,7 +50,7 @@
         struct loader_instance *inst = (struct loader_instance *)icd_term->this_instance;                          \
         if (NULL == icd_term->phys_dev_ext[num]) {                                                                 \
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Extension %s not supported for this physical device",    \
-                       inst->phys_dev_ext_disp_hash[num].func_name);                                               \
+                       inst->phys_dev_ext_disp_functions[num]);                                                    \
         }                                                                                                          \
         icd_term->phys_dev_ext[num](phys_dev_term->phys_dev);                                                      \
     }
@@ -60,7 +60,7 @@
     VKAPI_ATTR void VKAPI_CALL vkdev_ext##num(VkDevice device) { \
         const struct loader_dev_dispatch_table *disp;            \
         disp = loader_get_dev_dispatch(device);                  \
-        disp->ext_dispatch.dev_ext[num](device);                 \
+        disp->ext_dispatch[num](device);                         \
     }
 
 // clang-format off

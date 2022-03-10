@@ -31,8 +31,6 @@
 
 #include "loader_common.h"
 
-static inline struct loader_instance *loader_instance(VkInstance instance) { return (struct loader_instance *)instance; }
-
 static inline VkPhysicalDevice loader_unwrap_physical_device(VkPhysicalDevice physicalDevice) {
     struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
     if (PHYS_TRAMP_MAGIC_NUMBER != phys_dev->magic) {

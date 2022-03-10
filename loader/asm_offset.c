@@ -53,16 +53,14 @@ int main(int argc, char **argv) {
 
     struct ValueInfo values[] = {
         // clang-format off
-        { .name = "VK_DEBUG_REPORT_ERROR_BIT_EXT", .value = (size_t) VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            .comment = "The numerical value of the enum value 'VK_DEBUG_REPORT_ERROR_BIT_EXT'" },
         { .name = "VULKAN_LOADER_ERROR_BIT", .value = (size_t) VULKAN_LOADER_ERROR_BIT,
             .comment = "The numerical value of the enum value 'VULKAN_LOADER_ERROR_BIT'" },
         { .name = "PTR_SIZE", .value = sizeof(void*),
             .comment = "The size of a pointer" },
-        { .name = "HASH_SIZE", .value = sizeof(struct loader_dispatch_hash_entry),
-            .comment = "The size of a 'loader_dispatch_hash_entry' struct" },
-        { .name = "HASH_OFFSET_INSTANCE", .value = offsetof(struct loader_instance, phys_dev_ext_disp_hash),
-            .comment = "The offset of 'phys_dev_ext_disp_hash' within a 'loader_instance' struct" },
+        { .name = "CHAR_PTR_SIZE", .value = sizeof(char *),
+            .comment = "The size of a 'const char *' struct" },
+        { .name = "FUNCTION_OFFSET_INSTANCE", .value = offsetof(struct loader_instance, phys_dev_ext_disp_functions),
+            .comment = "The offset of 'phys_dev_ext_disp_functions' within a 'loader_instance' struct" },
         { .name = "PHYS_DEV_OFFSET_INST_DISPATCH", .value = offsetof(struct loader_instance_dispatch_table, phys_dev_ext),
             .comment = "The offset of 'phys_dev_ext' within in 'loader_instance_dispatch_table' struct" },
         { .name = "PHYS_DEV_OFFSET_PHYS_DEV_TRAMP", .value = offsetof(struct loader_physical_device_tramp, phys_dev),
@@ -75,8 +73,6 @@ int main(int argc, char **argv) {
             .comment = "The offset of 'this_instance' within a 'loader_icd_term' struct" },
         { .name = "DISPATCH_OFFSET_ICD_TERM", .value = offsetof(struct loader_icd_term, phys_dev_ext),
             .comment = "The offset of 'phys_dev_ext' within a 'loader_icd_term' struct" },
-        { .name = "FUNC_NAME_OFFSET_HASH", .value = offsetof(struct loader_dispatch_hash_entry, func_name),
-            .comment = "The offset of 'func_name' within a 'loader_dispatch_hash_entry' struct" },
         { .name = "EXT_OFFSET_DEVICE_DISPATCH", .value = offsetof(struct loader_dev_dispatch_table, ext_dispatch),
             .comment = "The offset of 'ext_dispatch' within a 'loader_dev_dispatch_table' struct" },
         // clang-format on
@@ -90,19 +86,20 @@ int main(int argc, char **argv) {
         }
     } else if (!strcmp(assembler, "GAS")) {
 #if defined(__x86_64__) || defined(__i386__)
-        const char* comment_delimiter = "#";
+        const char *comment_delimiter = "#";
 #if defined(__x86_64__)
         fprintf(file, ".set X86_64, 1\n");
-#endif // defined(__x86_64__)
+#endif  // defined(__x86_64__)
 #elif defined(__aarch64__)
-        const char* comment_delimiter = "//";
+        const char *comment_delimiter = "//";
         fprintf(file, ".set AARCH_64, 1\n");
 #else
         // Default comment delimiter
-        const char* comment_delimiter = "#";
+        const char *comment_delimiter = "#";
 #endif
         for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
-            fprintf(file, ".set %-32s, " SIZE_T_FMT "%s %s\n", values[i].name, values[i].value, comment_delimiter, values[i].comment);
+            fprintf(file, ".set %-32s, " SIZE_T_FMT "%s %s\n", values[i].name, values[i].value, comment_delimiter,
+                    values[i].comment);
         }
     }
     return fclose(file);
