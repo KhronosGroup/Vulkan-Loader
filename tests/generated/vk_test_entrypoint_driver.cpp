@@ -505,7 +505,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_EnumerateInstanceExtensionProperties(const
     VkResult res = VK_SUCCESS;
     if (pLayerName == nullptr) {
         if (pProperties != nullptr) {
-            uint32_t count = driver.instance_extensions.size();
+            uint32_t count = static_cast<uint32_t>(driver.instance_extensions.size());
             if (*pPropertyCount < count) {
                 count = *pPropertyCount;
                 res = VK_INCOMPLETE;
@@ -519,7 +519,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_EnumerateInstanceExtensionProperties(const
 #endif
             }
         } else {
-            *pPropertyCount = driver.instance_extensions.size();
+            *pPropertyCount = static_cast<uint32_t>(driver.instance_extensions.size());
         }
     }
 
@@ -648,7 +648,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_EnumerateDeviceExtensionProperties(VkPhysi
     VkResult res = VK_SUCCESS;
     if (pLayerName == nullptr) {
         if (pProperties != nullptr) {
-            uint32_t count = driver.device_extensions.size();
+            uint32_t count = static_cast<uint32_t>(driver.device_extensions.size());
             if (*pPropertyCount < count) {
                 count = *pPropertyCount;
                 res = VK_INCOMPLETE;
@@ -662,7 +662,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_EnumerateDeviceExtensionProperties(VkPhysi
 #endif
             }
         } else {
-            *pPropertyCount = driver.device_extensions.size();
+            *pPropertyCount = static_cast<uint32_t>(driver.device_extensions.size());
         }
     }
 
@@ -687,18 +687,18 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDevice(VkPhysicalDevice physicalDevi
 
 VKAPI_ATTR void VKAPI_CALL driver_DestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
     log_driver_message("Generated Driver vkDestroyDevice");
-    for (uint32_t ii = 0; ii < driver.dev_handles.size(); ++ii) {
+    for (uint32_t ii = 0; ii < static_cast<uint32_t>(driver.dev_handles.size()); ++ii) {
         if (driver.dev_handles[ii]->handle == device) {
             delete driver.dev_handles[ii];
             driver.dev_handles.erase(driver.dev_handles.begin() + ii);
         }
     }
     if (driver.dev_handles.size() == 0) {
-        for (uint32_t ii = 0; ii < driver.queue_handles.size(); ++ii) {
+        for (uint32_t ii = 0; ii < static_cast<uint32_t>(driver.queue_handles.size()); ++ii) {
             delete driver.queue_handles[ii];
         }
         driver.queue_handles.clear();
-        for (uint32_t ii = 0; ii < driver.commandbuffer_handles.size(); ++ii) {
+        for (uint32_t ii = 0; ii < static_cast<uint32_t>(driver.commandbuffer_handles.size()); ++ii) {
             delete driver.commandbuffer_handles[ii];
         }
         driver.commandbuffer_handles.clear();
@@ -1366,7 +1366,7 @@ VKAPI_ATTR void VKAPI_CALL driver_FreeCommandBuffers(
     uint32_t commandBufferCount,
     const VkCommandBuffer* pCommandBuffers) {
     log_driver_message("Generated Driver vkFreeCommandBuffers");
-    for (uint32_t ii = 0; ii < driver.commandbuffer_handles.size(); ++ii) {
+    for (uint32_t ii = 0; ii < static_cast<uint32_t>(driver.commandbuffer_handles.size()); ++ii) {
         if (driver.commandbuffer_handles[ii]->handle == *pCommandBuffers) {
             delete driver.commandbuffer_handles[ii];
             driver.commandbuffer_handles.erase(driver.commandbuffer_handles.begin() + ii);

@@ -123,8 +123,8 @@ void DeviceWrapper::CheckCreate(VkPhysicalDevice phys_dev, VkResult result_to_ch
 }
 
 VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils) {
-    return debug_utils.vkCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
-                                                      &debug_utils.messenger);
+    return debug_utils.pfnCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
+                                                       &debug_utils.messenger);
 }
 
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger) {
@@ -228,8 +228,7 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         icds.push_back(TestICDHandle(new_driver_location));
         if (icds.back().proc_addr_reset_icd != NULL) {
             icds.back().reset_test_icd();
-        }
-        else if (icds.back().proc_addr_reset_ep_driver != NULL) {
+        } else if (icds.back().proc_addr_reset_ep_driver != NULL) {
             icds.back().reset_ep_driver();
         }
         icd_details.icd_manifest.lib_path = new_driver_location.str();

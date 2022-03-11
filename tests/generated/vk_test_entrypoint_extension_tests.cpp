@@ -388,7 +388,7 @@ TEST(BasicEntrypointTest, KHR_xlib_surface) {
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     VisualID var_visualid{};
     inst_disp_table.GetPhysicalDeviceXlibPresentationSupportKHR(var_vkphysicaldevice, var_uint32_t, reinterpret_cast<Display*>(&big_chunk_of_mem), var_visualid);
@@ -444,7 +444,7 @@ TEST(BasicEntrypointTest, KHR_xcb_surface) {
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     xcb_visualid_t var_xcb_visualid_t{};
     inst_disp_table.GetPhysicalDeviceXcbPresentationSupportKHR(var_vkphysicaldevice, var_uint32_t, reinterpret_cast<xcb_connection_t*>(&big_chunk_of_mem), var_xcb_visualid_t);
@@ -500,7 +500,7 @@ TEST(BasicEntrypointTest, KHR_wayland_surface) {
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     inst_disp_table.GetPhysicalDeviceWaylandPresentationSupportKHR(var_vkphysicaldevice, var_uint32_t, reinterpret_cast<struct wl_display*>(&big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
@@ -1432,7 +1432,7 @@ TEST(BasicEntrypointTest, KHR_push_descriptor) {
     log.logger.clear();
 
     VkDescriptorUpdateTemplate var_vkdescriptorupdatetemplate{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.CmdPushDescriptorSetWithTemplateKHR(var_vkcommandbuffer, var_vkdescriptorupdatetemplate, var_vkpipelinelayout, var_uint32_t, reinterpret_cast<void**>(big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkCmdPushDescriptorSetWithTemplateKHR"));
@@ -1500,7 +1500,7 @@ TEST(BasicEntrypointTest, KHR_descriptor_update_template) {
 
     VkDescriptorSet var_vkdescriptorset{};
     VkDescriptorUpdateTemplate var_vkdescriptorupdatetemplate{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.UpdateDescriptorSetWithTemplateKHR(dev.dev, var_vkdescriptorset, var_vkdescriptorupdatetemplate, reinterpret_cast<void**>(big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkUpdateDescriptorSetWithTemplateKHR") ||
@@ -3539,7 +3539,7 @@ TEST(BasicEntrypointTest, AMD_shader_info) {
     VkShaderStageFlagBits var_vkshaderstageflagbits{};
     VkShaderInfoTypeAMD var_vkshaderinfotypeamd{};
     size_t var_size_t{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.GetShaderInfoAMD(dev.dev, var_vkpipeline, var_vkshaderstageflagbits, var_vkshaderinfotypeamd, &var_size_t, reinterpret_cast<void**>(big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkGetShaderInfoAMD"));
@@ -3952,7 +3952,7 @@ TEST(BasicEntrypointTest, EXT_acquire_xlib_display) {
     ASSERT_TRUE(log.find("Generated Driver vkEnumeratePhysicalDevices"));
     log.logger.clear();
 
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     VkDisplayKHR var_vkdisplaykhr{};
     inst_disp_table.AcquireXlibDisplayEXT(var_vkphysicaldevice, reinterpret_cast<Display*>(&big_chunk_of_mem), var_vkdisplaykhr);
@@ -4493,7 +4493,7 @@ TEST(BasicEntrypointTest, EXT_validation_cache) {
     log.logger.clear();
 
     size_t var_size_t{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.GetValidationCacheDataEXT(dev.dev, var_vkvalidationcacheext, &var_size_t, reinterpret_cast<void**>(big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkGetValidationCacheDataEXT"));
@@ -4657,7 +4657,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
 
     VkPipeline var_vkpipeline{};
     size_t var_size_t{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.GetRayTracingShaderGroupHandlesNV(dev.dev, var_vkpipeline, var_uint32_t, var_uint32_t, var_size_t, reinterpret_cast<void**>(big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkGetRayTracingShaderGroupHandlesNV") ||
@@ -4819,7 +4819,7 @@ TEST(BasicEntrypointTest, EXT_external_memory_host) {
     layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);
 
     VkExternalMemoryHandleTypeFlagBits var_vkexternalmemoryhandletypeflagbits{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     VkMemoryHostPointerPropertiesEXT var_vkmemoryhostpointerpropertiesext{VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT};
     device_disp_table.GetMemoryHostPointerPropertiesEXT(dev.dev, var_vkexternalmemoryhandletypeflagbits, reinterpret_cast<void**>(big_chunk_of_mem), &var_vkmemoryhostpointerpropertiesext);
@@ -5168,7 +5168,7 @@ TEST(BasicEntrypointTest, NV_device_diagnostic_checkpoints) {
     ASSERT_TRUE(log.find("Generated Driver vkAllocateCommandBuffers"));
     log.logger.clear();
 
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.CmdSetCheckpointNV(var_vkcommandbuffer, reinterpret_cast<void**>(big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkCmdSetCheckpointNV"));
@@ -7181,7 +7181,7 @@ TEST(BasicEntrypointTest, VALVE_descriptor_set_host_mapping) {
     layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);
 
     VkDescriptorSet var_vkdescriptorset{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.GetDescriptorSetHostMappingVALVE(dev.dev, var_vkdescriptorset, reinterpret_cast<void**>(&big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkGetDescriptorSetHostMappingVALVE"));
@@ -7274,7 +7274,7 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
     var_uint32_t = 1;
     VkQueryType var_vkquerytype{};
     size_t var_size_t{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.WriteAccelerationStructuresPropertiesKHR(dev.dev, var_uint32_t, &var_vkaccelerationstructurekhr, var_vkquerytype, var_size_t, reinterpret_cast<void**>(big_chunk_of_mem), var_size_t);
     ASSERT_TRUE(log.find("Generated Layer vkWriteAccelerationStructuresPropertiesKHR"));
@@ -7417,7 +7417,7 @@ TEST(BasicEntrypointTest, KHR_ray_tracing_pipeline) {
 
     VkPipeline var_vkpipeline{};
     size_t var_size_t{};
-    uint64_t big_chunk_of_mem[512][512];
+    uint64_t big_chunk_of_mem[8][8];
 
     device_disp_table.GetRayTracingShaderGroupHandlesKHR(dev.dev, var_vkpipeline, var_uint32_t, var_uint32_t, var_size_t, reinterpret_cast<void**>(big_chunk_of_mem));
     ASSERT_TRUE(log.find("Generated Layer vkGetRayTracingShaderGroupHandlesKHR"));

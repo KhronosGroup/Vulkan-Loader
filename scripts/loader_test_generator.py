@@ -746,10 +746,10 @@ class LoaderTestOutputGenerator(OutputGenerator):
 
     def OutputTestStart(self, major_ver, minor_ver, ext, use_dispatch_table):
         test_start = ''
-        additional_ext = ''
         uses_surfaces = False
         create_surface_cmd = ''
         destroy_surface_cmd = ''
+        req_additional_ext = []
         if 'VK_VERSION_' in ext.name:
             test_start += '// Test for Vulkan Core %d.%d\n' % (major_ver, minor_ver)
             disp_str = '_LoaderExports'
@@ -760,7 +760,6 @@ class LoaderTestOutputGenerator(OutputGenerator):
             test_start += '// Test for %s\n' % ext.name
             test_start += 'TEST(BasicEntrypointTest, %s) {\n' % ext.name[3:]
 
-            req_additional_ext = []
             if ext.type == 'instance':
                 req_additional_ext.append(ext.define_name)
 
@@ -816,9 +815,6 @@ class LoaderTestOutputGenerator(OutputGenerator):
                 elif 'VK_KHR_SURFACE_EXTENSION_NAME' not in req_additional_ext:
                     req_additional_ext.append('VK_KHR_SURFACE_EXTENSION_NAME')
 
-            if len(req_additional_ext) > 0:
-                additional_ext = ', {' + '}, {'.join(req_additional_ext) + '}'
-
         test_start += '    FrameworkEnvironment env{};\n'
         test_start += '    uint32_t vulkan_version = VK_API_VERSION_%d_%d;\n' % (major_ver, minor_ver)
         test_start += '    env.add_icd(TestICDDetails(TEST_ENTRYPOINT_DRIVER, vulkan_version));\n'
@@ -829,21 +825,50 @@ class LoaderTestOutputGenerator(OutputGenerator):
         test_start += '            ManifestLayer::LayerDescription{}.set_name(entrypoint_test_layer_name).set_lib_path(TEST_ENTRYPOINT_LAYER)),\n'
         test_start += '        "regular_test_layer.json");\n'
         test_start += '\n'
-        test_start += '    InstWrapper instance(env.vulkan_functions);\n'
-        test_start += '    instance.create_info.set_api_version(vulkan_version);\n'
-        if len(additional_ext) > 0:
-            test_start += '    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}%s});\n' % additional_ext
-        else:
-            test_start += '    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);\n'
-        test_start += '    instance.create_info.add_layer(entrypoint_test_layer_name);\n'
-        test_start += '    instance.CheckCreate();\n'
-        test_start += '\n'
-        test_start += '    DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};\n'
-        test_start += '    CreateDebugUtilsMessenger(log);\n'
-        test_start += '\n'
         if use_dispatch_table:
+            test_start += '    InstWrapper instance(env.vulkan_functions);\n'
+            test_start += '    instance.create_info.set_api_version(vulkan_version);\n'
+            if len(req_additional_ext) > 0:
+                additional_ext = ', {' + '}, {'.join(req_additional_ext) + '}'
+                test_start += '    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}%s});\n' % additional_ext
+            else:
+                test_start += '    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);\n'
+            test_start += '    instance.create_info.add_layer(entrypoint_test_layer_name);\n'
+            test_start += '    instance.CheckCreate();\n'
+            test_start += '\n'
+            test_start += '    DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};\n'
+            test_start += '    CreateDebugUtilsMessenger(log);\n'
+            test_start += '\n'
             test_start += '    VkLayerInstanceDispatchTable inst_disp_table;\n'
             test_start += '    layer_init_instance_dispatch_table(instance, &inst_disp_table, instance.functions->vkGetInstanceProcAddr);\n'
+            test_start += '\n'
+        else:
+            test_start += '    std::vector<const char*> enabled_layers;\n'
+            test_start += '    enabled_layers.push_back(entrypoint_test_layer_name);\n\n'
+            test_start += '    std::vector<const char*> enabled_inst_exts;\n'
+            test_start += '    enabled_inst_exts.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);\n'
+            for add_ext in req_additional_ext:
+                test_start += '    enabled_inst_exts.push_back(%s);\n' % add_ext
+            test_start += '\n'
+            test_start += '    VkApplicationInfo app_info{VK_STRUCTURE_TYPE_APPLICATION_INFO};\n'
+            test_start += '    app_info.apiVersion = vulkan_version;\n'
+            test_start += '    VkInstanceCreateInfo inst_create_info{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};\n'
+            test_start += '    inst_create_info.pApplicationInfo = &app_info;\n'
+            test_start += '    inst_create_info.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());\n'
+            test_start += '    inst_create_info.ppEnabledLayerNames = (enabled_layers.empty() ? nullptr : enabled_layers.data());\n'
+            test_start += '    inst_create_info.enabledExtensionCount = static_cast<uint32_t>(enabled_inst_exts.size());\n'
+            test_start += '    inst_create_info.ppEnabledExtensionNames = (enabled_inst_exts.empty() ? nullptr : enabled_inst_exts.data());\n'
+            test_start += '\n'
+            test_start += '    VkInstance instance;\n'
+            test_start += '    vkCreateInstance(&inst_create_info, nullptr, &instance);\n'
+            test_start += '\n'
+            test_start += '    PFN_vkCreateDebugUtilsMessengerEXT debug_utils_create =\n'
+            test_start += '        reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));\n'
+            test_start += '    PFN_vkDestroyDebugUtilsMessengerEXT debug_utils_destroy =\n'
+            test_start += '        reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));\n'
+            test_start += '    DebugUtilsWrapper* log = new DebugUtilsWrapper{instance, debug_utils_create, debug_utils_destroy, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};\n'
+            test_start += '    ASSERT_TRUE(log != nullptr);\n'
+            test_start += '    CreateDebugUtilsMessenger(*log);\n'
             test_start += '\n'
 
         # If there's a surface create command, trigger it now that we've created
@@ -864,6 +889,11 @@ class LoaderTestOutputGenerator(OutputGenerator):
                 if cmd.name == destroy_surface_cmd:
                     test_end += self.OutputTestEntrypoint(cmd, ext, use_dispatch_table)
                     break
+
+        if not use_dispatch_table:
+            test_end += '\n'
+            test_end += '    delete log;\n'
+            test_end += '    vkDestroyInstance(instance, nullptr);\n'
 
         test_end += '} '
         if 'VK_VERSION_' in ext.name:
@@ -908,7 +938,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
                         array_2nd_size = 512
                     )
                 )
-                define_var = '    uint64_t big_chunk_of_mem[512][512];\n\n'
+                define_var = '    uint64_t big_chunk_of_mem[8][8];\n\n'
             name = 'big_chunk_of_mem'
         elif param.type == 'VkAllocationCallbacks':
             # The automatic tests don't try to use the allocation callback items
@@ -1012,31 +1042,67 @@ class LoaderTestOutputGenerator(OutputGenerator):
                                 bas_ext.define_name not in req_additional_ext):
                                 req_additional_ext.append(bas_ext.define_name)
                                 break
-            test_ep += '    DeviceWrapper dev{instance};\n'
-            test_ep += '    dev.create_info.'
-            if len(req_additional_ext) > 0:
-                additional_ext = '{' + '}, {'.join(req_additional_ext) + '}'
-                if len(req_additional_ext) > 1:
-                    test_ep += 'add_extensions({%s}).' % additional_ext
-                else:
-                    test_ep += 'add_extension(%s).' % additional_ext
-            test_ep += 'add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));\n'
-            test_ep += '    dev.CheckCreate(var_vkphysicaldevice);\n\n'
             if use_dispatch_table:
+                test_ep += '    DeviceWrapper dev{instance};\n'
+                test_ep += '    dev.create_info.'
+                if len(req_additional_ext) > 0:
+                    additional_ext = '{' + '}, {'.join(req_additional_ext) + '}'
+                    if len(req_additional_ext) > 1:
+                        test_ep += 'add_extensions({%s}).' % additional_ext
+                    else:
+                        test_ep += 'add_extension(%s).' % additional_ext
+                test_ep += 'add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));\n'
+                test_ep += '    dev.CheckCreate(var_vkphysicaldevice);\n'
+                test_ep += '\n'
                 test_ep += '    VkLayerDispatchTable device_disp_table;\n'
                 test_ep += '    layer_init_device_dispatch_table(dev.dev, &device_disp_table, instance.functions->vkGetDeviceProcAddr);\n\n'
-            self.test_variables.append(
-                self.TestVariableNames(
-                    type = 'VkDevice',
-                    name = 'dev.dev',
-                    is_array = False,
-                    array_1st_size = 1,
-                    array_2nd_size = 0
+                self.test_variables.append(
+                    self.TestVariableNames(
+                        type = 'VkDevice',
+                        name = 'dev.dev',
+                        is_array = False,
+                        array_1st_size = 1,
+                        array_2nd_size = 0
+                    )
                 )
-            )
+            else:
+                test_ep += '    std::vector<const char*> enabled_dev_exts;\n'
+                for add_ext in req_additional_ext:
+                    test_ep += '    enabled_dev_exts.push_back(%s);\n' % add_ext
+                test_ep += '\n'
+                test_ep += '    VkDeviceQueueCreateInfo queue_create_info{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};\n'
+                test_ep += '    queue_create_info.queueFamilyIndex = 0;\n'
+                test_ep += '    queue_create_info.queueCount = 1;\n'
+                test_ep += '    float priority = 0.f;\n'
+                test_ep += '    queue_create_info.pQueuePriorities = &priority;\n'
+                test_ep += '\n'
+                test_ep += '    VkDeviceCreateInfo dev_create_info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};\n'
+                test_ep += '    dev_create_info.enabledExtensionCount = static_cast<uint32_t>(enabled_dev_exts.size());\n'
+                test_ep += '    dev_create_info.ppEnabledExtensionNames = (enabled_dev_exts.empty() ? nullptr : enabled_dev_exts.data());\n'
+                test_ep += '    dev_create_info.queueCreateInfoCount = 1;\n'
+                test_ep += '    dev_create_info.pQueueCreateInfos = &queue_create_info;\n'
+                test_ep += '\n'
+                test_ep += '    VkDevice device;\n'
+                test_ep += '    vkCreateDevice(var_vkphysicaldevice, &dev_create_info, nullptr, &device);\n'
+                test_ep += '    ASSERT_TRUE(log->find("Generated Layer vkCreateDevice"));\n'
+                test_ep += '    ASSERT_TRUE(log->find("Generated Driver vkCreateDevice"));\n'
+                test_ep += '    log->logger.clear();\n\n'
+                self.test_variables.append(
+                    self.TestVariableNames(
+                        type = 'VkDevice',
+                        name = 'device',
+                        is_array = False,
+                        array_1st_size = 1,
+                        array_2nd_size = 0
+                    )
+                )
         elif 'vkDestroyDevice' == command.name:
-            # Nothing to do since wrapper takes care of it
             test_ep = ''
+            if not use_dispatch_table:
+                test_ep += '    vkDestroyDevice(device, nullptr);\n'
+                test_ep += '    ASSERT_TRUE(log->find("Generated Layer vkDestroyDevice"));\n'
+                test_ep += '    ASSERT_TRUE(log->find("Generated Driver vkDestroyDevice"));\n'
+                test_ep += '    log->logger.clear();\n\n'
         else:
             param_names = []
             for param in command.params:
@@ -1074,17 +1140,22 @@ class LoaderTestOutputGenerator(OutputGenerator):
 
             test_ep += ', '.join(param_names)
             test_ep += ');\n'
+
+            log_call = 'log.'
+            if not use_dispatch_table:
+                log_call = 'log->'
+
             if command.alias is not None:
                 # If it has an alias, the layer and drivers may use the same function for
                 # each, so check both and one should be true
-                test_ep += '    ASSERT_TRUE(log.find("Generated Layer %s") ||\n' % command.name
-                test_ep += '                log.find("Generated Layer %s"));\n' % command.alias
-                test_ep += '    ASSERT_TRUE(log.find("Generated Driver %s") ||\n' % command.name
-                test_ep += '                log.find("Generated Driver %s"));\n' % command.alias
+                test_ep += '    ASSERT_TRUE(%sfind("Generated Layer %s") ||\n' % (log_call, command.name)
+                test_ep += '                %sfind("Generated Layer %s"));\n' % (log_call, command.alias)
+                test_ep += '    ASSERT_TRUE(%sfind("Generated Driver %s") ||\n' % (log_call, command.name)
+                test_ep += '                %sfind("Generated Driver %s"));\n' % (log_call, command.alias)
             else:
-                test_ep += '    ASSERT_TRUE(log.find("Generated Layer %s"));\n' % command.name
-                test_ep += '    ASSERT_TRUE(log.find("Generated Driver %s"));\n' % command.name
-            test_ep += '    log.logger.clear();\n\n'
+                test_ep += '    ASSERT_TRUE(%sfind("Generated Layer %s"));\n' % (log_call, command.name)
+                test_ep += '    ASSERT_TRUE(%sfind("Generated Driver %s"));\n' % (log_call, command.name)
+            test_ep += '    %slogger.clear();\n\n' % log_call
 
         return test_ep
 
@@ -1830,7 +1901,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '    VkResult res = VK_SUCCESS;\n'
         common_src += '    if (pLayerName == nullptr) {\n'
         common_src += '        if (pProperties != nullptr) {\n'
-        common_src += '            uint32_t count = driver.instance_extensions.size();\n'
+        common_src += '            uint32_t count = static_cast<uint32_t>(driver.instance_extensions.size());\n'
         common_src += '            if (*pPropertyCount < count) {\n'
         common_src += '                count = *pPropertyCount;\n'
         common_src += '                res = VK_INCOMPLETE;\n'
@@ -1844,7 +1915,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '#endif\n'
         common_src += '            }\n'
         common_src += '        } else {\n'
-        common_src += '            *pPropertyCount = driver.instance_extensions.size();\n'
+        common_src += '            *pPropertyCount = static_cast<uint32_t>(driver.instance_extensions.size());\n'
         common_src += '        }\n'
         common_src += '    }\n'
         common_src += '\n'
@@ -1973,7 +2044,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '    VkResult res = VK_SUCCESS;\n'
         common_src += '    if (pLayerName == nullptr) {\n'
         common_src += '        if (pProperties != nullptr) {\n'
-        common_src += '            uint32_t count = driver.device_extensions.size();\n'
+        common_src += '            uint32_t count = static_cast<uint32_t>(driver.device_extensions.size());\n'
         common_src += '            if (*pPropertyCount < count) {\n'
         common_src += '                count = *pPropertyCount;\n'
         common_src += '                res = VK_INCOMPLETE;\n'
@@ -1987,7 +2058,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '#endif\n'
         common_src += '            }\n'
         common_src += '        } else {\n'
-        common_src += '            *pPropertyCount = driver.device_extensions.size();\n'
+        common_src += '            *pPropertyCount = static_cast<uint32_t>(driver.device_extensions.size());\n'
         common_src += '        }\n'
         common_src += '    }\n'
         common_src += '\n'
@@ -2012,7 +2083,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '\n'
         common_src += 'VKAPI_ATTR void VKAPI_CALL driver_DestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {\n'
         common_src += '    log_driver_message("Generated Driver vkDestroyDevice");\n'
-        common_src += '    for (uint32_t ii = 0; ii < driver.dev_handles.size(); ++ii) {\n'
+        common_src += '    for (uint32_t ii = 0; ii < static_cast<uint32_t>(driver.dev_handles.size()); ++ii) {\n'
         common_src += '        if (driver.dev_handles[ii]->handle == device) {\n'
         common_src += '            delete driver.dev_handles[ii];\n'
         common_src += '            driver.dev_handles.erase(driver.dev_handles.begin() + ii);\n'
@@ -2022,7 +2093,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         for handle in self.basic_handles:
             if handle.is_dispatchable and handle.name != 'VkInstance' and handle.name != 'VkPhysicalDevice' and handle.name != 'VkDevice':
                 handle_vect_name = 'driver.%s_handles' % handle.name[2:].lower()
-                common_src += '        for (uint32_t ii = 0; ii < %s.size(); ++ii) {\n' % handle_vect_name
+                common_src += '        for (uint32_t ii = 0; ii < static_cast<uint32_t>(%s.size()); ++ii) {\n' % handle_vect_name
                 common_src += '            delete %s[ii];\n' % handle_vect_name
                 common_src += '        }\n'
                 common_src += '        %s.clear();\n' % handle_vect_name
@@ -2187,7 +2258,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
                                     param_name = basic_cmd.params[-1].name
                                     if basic_cmd.params[-1].is_pointer:
                                         param_name = '*' + param_name
-                                    cmd_str += '    for (uint32_t ii = 0; ii < %s.size(); ++ii) {\n' % handle_vect_name
+                                    cmd_str += '    for (uint32_t ii = 0; ii < static_cast<uint32_t>(%s.size()); ++ii) {\n' % handle_vect_name
                                     cmd_str += '        if (%s[ii]->handle == %s) {\n' % (handle_vect_name, param_name)
                                     cmd_str += '            delete %s[ii];\n' % handle_vect_name
                                     cmd_str += '            %s.erase(%s.begin() + ii);\n' % (handle_vect_name, handle_vect_name)

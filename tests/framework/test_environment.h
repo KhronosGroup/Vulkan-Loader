@@ -225,14 +225,23 @@ struct DebugUtilsWrapper {
                                                                      VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
                       VkAllocationCallbacks* callbacks = nullptr)
         : logger(severity), inst(inst_wrapper.inst), callbacks(callbacks) {
-        vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        pfnCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
             inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkCreateDebugUtilsMessengerEXT"));
-        vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        pfnDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
             inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkDestroyDebugUtilsMessengerEXT"));
     };
+    DebugUtilsWrapper(VkInstance& instance, PFN_vkCreateDebugUtilsMessengerEXT create, PFN_vkDestroyDebugUtilsMessengerEXT destroy,
+                      VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+                      VkAllocationCallbacks* callbacks = nullptr)
+        : logger(severity),
+          inst(instance),
+          callbacks(callbacks),
+          pfnCreateDebugUtilsMessengerEXT(create),
+          pfnDestroyDebugUtilsMessengerEXT(destroy){};
     ~DebugUtilsWrapper() noexcept {
         if (messenger) {
-            vkDestroyDebugUtilsMessengerEXT(inst, messenger, callbacks);
+            pfnDestroyDebugUtilsMessengerEXT(inst, messenger, callbacks);
         }
     }
     // Immoveable object
@@ -247,8 +256,8 @@ struct DebugUtilsWrapper {
     DebugUtilsLogger logger;
     VkInstance inst = VK_NULL_HANDLE;
     VkAllocationCallbacks* callbacks = nullptr;
-    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
-    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+    PFN_vkCreateDebugUtilsMessengerEXT pfnCreateDebugUtilsMessengerEXT = nullptr;
+    PFN_vkDestroyDebugUtilsMessengerEXT pfnDestroyDebugUtilsMessengerEXT = nullptr;
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
 };
 
