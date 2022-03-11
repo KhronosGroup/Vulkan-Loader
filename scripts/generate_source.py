@@ -96,28 +96,28 @@ def main(argv):
         test_repo_files = set(os.listdir(test_repo_dir))
         files_match = True
         for filename in sorted((temp_files | repo_files | test_repo_files) - set(verify_exclude)):
-            if 'vk_test_entrypoint' in filename and filename not in test_repo_files:
-                print('ERROR: Missing repo file', filename)
-                files_match = False
-            elif (not 'vk_test_entrypoint' in filename) and filename not in repo_files:
+            is_test_file = ('vk_test_entrypoint' in filename)
+            compare_repo_path = repo_dir
+            compare_repo_files = repo_files
+            if is_test_file:
+                compare_repo_path = test_repo_dir
+                compare_repo_files = test_repo_files
+            if filename not in compare_repo_files:
                 print('ERROR: Missing repo file', filename)
                 files_match = False
             elif filename not in temp_files:
                 print('ERROR: Missing generator for', filename)
                 files_match = False
             else:
-                if 'vk_test_entrypoint' in filename:
-                    if not filecmp.cmp(os.path.join(temp_dir, filename),
-                                    os.path.join(test_repo_dir, filename),
-                                    shallow=False):
-                        print('ERROR: Repo files do not match generator output for', filename)
-                        files_match = False
-                else:
-                    if not filecmp.cmp(os.path.join(temp_dir, filename),
-                                    os.path.join(repo_dir, filename),
-                                    shallow=False):
-                        print('ERROR: Repo files do not match generator output for', filename)
-                        files_match = False
+                orig_file = os.path.join(compare_repo_path, filename)
+                orig_size = os.stat(orig_file)
+                temp_file = os.path.join(temp_dir, filename)
+                temp_size = os.stat(temp_file)
+                if not filecmp.cmp(temp_file, orig_file, shallow=False):
+                    print('ERROR: Repo files do not match generator output for', filename)
+                    print('          orig %s (size %d)'%(orig_file, orig_size.st_size))
+                    print('          temp %s (size %d)' %(temp_file, temp_size.st_size))
+                    files_match = False
 
         # return code for test scripts
         if files_match:
@@ -128,9 +128,9 @@ def main(argv):
     elif args.incremental:
         # copy missing or differing files from temp directory to repo
         for filename in os.listdir(temp_dir):
-            out_dir = repo_dir
+            compare_repo_path = repo_dir
             if 'vk_test_entrypoint' in filename:
-                out_dir = test_repo_dir
+                compare_repo_path = test_repo_dir
             temp_filename = os.path.join(temp_dir, filename)
             repo_filename = os.path.join(out_dir, filename)
             if not os.path.exists(repo_filename) or \

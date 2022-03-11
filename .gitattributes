@@ -19,4 +19,6 @@
 loader/generated/*.c text eol=lf
 loader/generated/*.h text eol=lf
 loader/generated/*.cmake text eol=lf
-
+tests/generated/*.c text eol=lf
+tests/generated/*.cpp text eol=lf
+tests/generated/*.h text eol=lf
