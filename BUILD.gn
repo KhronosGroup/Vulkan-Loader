@@ -190,10 +190,8 @@ if (!is_android) {
       frameworks = [ "CoreFoundation.framework" ]
     }
     public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
-    if (build_with_chromium) {
-      configs -= [ "//build/config/compiler:chromium_code" ]
-      configs += [ "//build/config/compiler:no_chromium_code" ]
-    }
+    configs -= [ "//build/config/compiler:chromium_code" ]
+    configs += [ "//build/config/compiler:no_chromium_code" ]
     configs += [ ":vulkan_internal_config" ]
     public_configs = [ ":vulkan_loader_config" ]
     configs -= vulkan_undefine_configs
