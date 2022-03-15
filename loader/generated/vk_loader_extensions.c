@@ -8487,6 +8487,7 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME,
                                                   VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME,
                                                   VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME,
+                                                  VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
                                                   VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_GGP
                                                   VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME,
