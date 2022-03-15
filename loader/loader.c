@@ -1393,7 +1393,14 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
 
     fp_get_proc_addr = loader_platform_get_proc_address(handle, "vk_icdGetInstanceProcAddr");
     if (NULL == fp_get_proc_addr) {
-        assert(interface_vers == 0);
+        if (interface_vers != 0) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "loader_scanned_icd_add: ICD %s reports an interface version of %d but doesn't export "
+                       "vk_icdGetInstanceProcAddr, skip "
+                       "this ICD.",
+                       filename, interface_vers);
+            goto out;
+        }
         // Use deprecated interface from version 0
         fp_get_proc_addr = loader_platform_get_proc_address(handle, "vkGetInstanceProcAddr");
         if (NULL == fp_get_proc_addr) {
