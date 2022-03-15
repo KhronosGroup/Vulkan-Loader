@@ -481,15 +481,15 @@ void loader_remove_layers_not_in_implicit_meta_layers(const struct loader_instan
             continue;
         }
         for (j = 0; j < layer_count; j++) {
-            struct loader_layer_properties layer_to_check = layer_list->list[j];
+            struct loader_layer_properties *layer_to_check = &layer_list->list[j];
 
             if (i == j) {
                 continue;
             }
 
-            if (layer_to_check.type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            if (layer_to_check->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
                 // For all layers found in this meta layer, we want to keep them as well.
-                if (loader_find_layer_name_in_meta_layer(inst, cur_layer_prop->info.layerName, layer_list, &layer_to_check)) {
+                if (loader_find_layer_name_in_meta_layer(inst, cur_layer_prop->info.layerName, layer_list, layer_to_check)) {
                     cur_layer_prop->keep = true;
                 }
             }
@@ -499,13 +499,13 @@ void loader_remove_layers_not_in_implicit_meta_layers(const struct loader_instan
     // Remove any layers we don't want to keep (Don't use layer_count here as we need it to be
     // dynamically updated if we delete a layer property in the list).
     for (i = 0; i < (int32_t)(layer_list->count); i++) {
-        struct loader_layer_properties cur_layer_prop = layer_list->list[i];
-        if (!cur_layer_prop.keep) {
+        struct loader_layer_properties *cur_layer_prop = &layer_list->list[i];
+        if (!cur_layer_prop->keep) {
             loader_log(
                 inst, VULKAN_LOADER_DEBUG_BIT, 0,
                 "loader_remove_layers_not_in_implicit_meta_layers : Implicit meta-layers are active, and layer %s is not list "
                 "inside of any.  So removing layer from current layer list.",
-                cur_layer_prop.info.layerName);
+                cur_layer_prop->info.layerName);
             loader_remove_layer_in_list(inst, layer_list, i);
             i--;
         }
@@ -984,12 +984,9 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
     uint16_t meta_layer_api_major_version = VK_API_VERSION_MAJOR(prop->info.specVersion);
     uint16_t meta_layer_api_minor_version = VK_API_VERSION_MINOR(prop->info.specVersion);
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
-        bool found_comp = false;
         const struct loader_layer_properties *search_prop =
             loader_find_layer_property(prop->component_layer_names[comp_layer], source_list);
         if (search_prop != NULL) {
-            found_comp = true;
-
             uint16_t search_layer_api_major_version = VK_API_VERSION_MAJOR(search_prop->info.specVersion);
             uint16_t search_layer_api_minor_version = VK_API_VERSION_MINOR(search_prop->info.specVersion);
             if (meta_layer_api_major_version != search_layer_api_major_version ||
@@ -1015,11 +1012,10 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
                     }
                 }
             }
-        }
-        if (!found_comp) {
+        } else {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "loader_add_meta_layer: Failed to find layer name %s component layer %s to activate (Policy #LLP_LAYER_7)",
-                       search_prop->info.layerName, prop->component_layer_names[comp_layer]);
+                       prop->component_layer_names[comp_layer], prop->component_layer_names[comp_layer]);
             found = false;
         }
     }
@@ -6055,7 +6051,7 @@ out:
             for (uint32_t i = 0; i < inst->phys_dev_count_term; i++) {
                 bool found = false;
                 for (uint32_t j = 0; j < inst->total_gpu_count; j++) {
-                    if (inst->phys_devs_term[i] == new_phys_devs[j]) {
+                    if (new_phys_devs != NULL && inst->phys_devs_term[i] == new_phys_devs[j]) {
                         found = true;
                         break;
                     }

@@ -223,10 +223,11 @@ HRESULT __stdcall ShimEnumAdapters1_1(IDXGIFactory1 *This,
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_INVALID_CALL;
     }
-    auto *pAdapter = create_IDXGIAdapter1();
-    *ppAdapter = pAdapter;
-
-    platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+    if (ppAdapter != nullptr) {
+        auto* pAdapter = create_IDXGIAdapter1();
+        *ppAdapter = pAdapter;
+        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+    }
     return S_OK;
 }
 
@@ -237,10 +238,11 @@ HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_INVALID_CALL;
     }
-    auto *pAdapter = create_IDXGIAdapter1();
-    *ppAdapter = pAdapter;
-
-    platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+    if (ppAdapter != nullptr) {
+        auto* pAdapter = create_IDXGIAdapter1();
+        *ppAdapter = pAdapter;
+        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+    }
     return S_OK;
 }
 
@@ -253,10 +255,11 @@ HRESULT __stdcall ShimEnumAdapterByGpuPreference(IDXGIFactory6 *This, _In_ UINT 
     // Update the shim if this isn't the case
     assert(GpuPreference == DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_UNSPECIFIED &&
            "Test shim assumes the GpuPreference is unspecified.");
-
-    auto *pAdapter = create_IDXGIAdapter1();
-    *ppvAdapter = pAdapter;
-    platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+    if (ppvAdapter != nullptr) {
+        auto* pAdapter = create_IDXGIAdapter1();
+        *ppvAdapter = pAdapter;
+        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+    }
     return S_OK;
 }
 

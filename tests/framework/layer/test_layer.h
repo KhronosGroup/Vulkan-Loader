@@ -137,12 +137,12 @@ struct TestLayer {
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;
 
-    VkInstance instance_handle;
-    VkLayerInstanceDispatchTable instance_dispatch_table;
+    VkInstance instance_handle = VK_NULL_HANDLE;
+    VkLayerInstanceDispatchTable instance_dispatch_table{};
 
     struct Device {
-        VkDevice device_handle;
-        VkLayerDispatchTable dispatch_table;
+        VkDevice device_handle = VK_NULL_HANDLE;
+        VkLayerDispatchTable dispatch_table{};
     };
     std::vector<Device> created_devices;
 };
