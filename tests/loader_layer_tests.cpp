@@ -955,6 +955,7 @@ TEST_F(OverrideMetaLayer, BasicOverridePaths) {
     FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
     inst.CheckCreate();
     ASSERT_TRUE(env->debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+    env->layers.clear();
 }
 
 TEST_F(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
@@ -995,6 +996,7 @@ TEST_F(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
     FillDebugUtilsCreateDetails(inst.create_info, env->debug_log);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
     ASSERT_FALSE(env->debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+    env->layers.clear();
 }
 
 TEST_F(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
@@ -1041,6 +1043,7 @@ TEST_F(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
     ASSERT_FALSE(env->debug_log.find(std::string("Insert instance layer ") + env_var_layer_name));
 
+    env->layers.clear();
     remove_env_var("VK_LAYER_PATH");
 }
 
@@ -1084,6 +1087,7 @@ TEST_F(OverrideMetaLayer, OverridePathsEnableImplicitLayerInDefaultPaths) {
     ASSERT_FALSE(env->debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
     ASSERT_TRUE(
         env->debug_log.find("Removing meta-layer VK_LAYER_LUNARG_override from instance layer list since it appears invalid."));
+    env->layers.clear();
 }
 
 TEST_F(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
@@ -1115,6 +1119,7 @@ TEST_F(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
     inst.CheckCreate();
     ASSERT_TRUE(env->debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
     ASSERT_TRUE(env->debug_log.find("Indicating meta-layer-specific override paths, but using older JSON file version."));
+    env->layers.clear();
 }
 
 // This test makes sure that any layer calling GetPhysicalDeviceProperties2 inside of CreateInstance
