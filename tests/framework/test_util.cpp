@@ -349,7 +349,7 @@ int create_folder(path const& path) {
 #endif
 }
 
-int delete_folder(path const& folder) {
+int delete_folder_contents(path const& folder) {
 #if defined(WIN32)
     if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(folder.c_str()) && GetLastError() == ERROR_FILE_NOT_FOUND) {
         // nothing to delete
@@ -371,7 +371,6 @@ int delete_folder(path const& folder) {
             }
         } while (::FindNextFile(hFind, &fd));
         ::FindClose(hFind);
-        _rmdir(folder.c_str());
     }
     return 0;
 #else
@@ -399,13 +398,23 @@ int delete_folder(path const& folder) {
         ret = ret2;
     }
     closedir(dir);
-
-    if (!ret) ret = rmdir(folder.c_str());
     return ret;
 #endif
 }
 
+int delete_folder(path const& folder) {
+    int ret = delete_folder_contents(folder);
+    if (ret != 0) return ret;
+#if defined(WIN32)
+    _rmdir(folder.c_str());
+    return 0;
+#else
+    return rmdir(folder.c_str());
+#endif
+}
+
 FolderManager::FolderManager(path root_path, std::string name, DebugMode debug) : debug(debug), folder(root_path / name) {
+    delete_folder_contents(folder);
     create_folder(folder);
 }
 FolderManager::~FolderManager() {
