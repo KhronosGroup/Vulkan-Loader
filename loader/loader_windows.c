@@ -233,6 +233,9 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
 #endif
 
     wchar_t childGuid[MAX_GUID_STRING_LEN + 2];  // +2 for brackets {}
+    for (uint32_t i = 0; i < MAX_GUID_STRING_LEN + 2; i++) {
+        childGuid[i] = L'\0';
+    }
     ULONG childGuidSize = sizeof(childGuid);
 
     DEVINST devID = 0, childID = 0;
@@ -571,10 +574,16 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
     char *json_path = NULL;
     size_t json_path_size = 0;
 
+    HMODULE gdi32_dll = GetModuleHandle("gdi32.dll");
+    if (gdi32_dll == NULL) {
+        result = VK_ERROR_INCOMPATIBLE_DRIVER;
+        goto out;
+    }
+
     PFN_LoaderEnumAdapters2 fpLoaderEnumAdapters2 =
-        (PFN_LoaderEnumAdapters2)GetProcAddress(GetModuleHandle("gdi32.dll"), "D3DKMTEnumAdapters2");
+        (PFN_LoaderEnumAdapters2)GetProcAddress(gdi32_dll, "D3DKMTEnumAdapters2");
     PFN_LoaderQueryAdapterInfo fpLoaderQueryAdapterInfo =
-        (PFN_LoaderQueryAdapterInfo)GetProcAddress(GetModuleHandle("gdi32.dll"), "D3DKMTQueryAdapterInfo");
+        (PFN_LoaderQueryAdapterInfo)GetProcAddress(gdi32_dll, "D3DKMTQueryAdapterInfo");
     if (fpLoaderEnumAdapters2 == NULL || fpLoaderQueryAdapterInfo == NULL) {
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;

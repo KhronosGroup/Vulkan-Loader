@@ -167,6 +167,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
+    memset(libs, 0, sizeof(loader_platform_dl_handle) * layers.count);
     size_t lib_count = 0;
 
     // Prepend layers onto the chain if they implement this entry point
@@ -198,7 +199,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
         }
-
+        memset(chain_link, 0, sizeof(VkEnumerateInstanceLayerPropertiesChain));
         chain_link->header.type = VK_CHAIN_TYPE_ENUMERATE_INSTANCE_EXTENSION_PROPERTIES;
         chain_link->header.version = VK_CURRENT_CHAIN_VERSION;
         chain_link->header.size = sizeof(*chain_link);
@@ -257,6 +258,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 
     // We'll need to save the dl handles so we can close them later
     loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
+    memset(libs, 0, sizeof(loader_platform_dl_handle) * layers.count);
     if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -291,7 +293,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
         }
-
+        memset(chain_link, 0, sizeof(VkEnumerateInstanceLayerPropertiesChain));
         chain_link->header.type = VK_CHAIN_TYPE_ENUMERATE_INSTANCE_LAYER_PROPERTIES;
         chain_link->header.version = VK_CURRENT_CHAIN_VERSION;
         chain_link->header.size = sizeof(*chain_link);
@@ -360,6 +362,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
+    memset(libs, 0, sizeof(loader_platform_dl_handle) * layers.count);
     size_t lib_count = 0;
 
     // Prepend layers onto the chain if they implement this entry point
@@ -389,7 +392,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
         }
-
+        memset(chain_link, 0, sizeof(VkEnumerateInstanceLayerPropertiesChain));
         chain_link->header.type = VK_CHAIN_TYPE_ENUMERATE_INSTANCE_VERSION;
         chain_link->header.version = VK_CURRENT_CHAIN_VERSION;
         chain_link->header.size = sizeof(*chain_link);

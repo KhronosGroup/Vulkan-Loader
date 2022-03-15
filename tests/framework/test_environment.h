@@ -244,7 +244,7 @@ struct DebugUtilsWrapper {
     VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return logger.get(); }
 
     DebugUtilsLogger logger;
-    VkInstance inst;
+    VkInstance inst = VK_NULL_HANDLE;
     VkAllocationCallbacks* callbacks = nullptr;
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
     PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
@@ -282,8 +282,8 @@ struct TestICDHandle {
 
     // Must use statically
     LibraryWrapper icd_library;
-    GetTestICDFunc proc_addr_get_test_icd;
-    GetNewTestICDFunc proc_addr_reset_icd;
+    GetTestICDFunc proc_addr_get_test_icd = nullptr;
+    GetNewTestICDFunc proc_addr_reset_icd = nullptr;
     fs::path manifest_path;
 };
 struct TestLayerHandle {
@@ -296,8 +296,8 @@ struct TestLayerHandle {
 
     // Must use statically
     LibraryWrapper layer_library;
-    GetTestLayerFunc proc_addr_get_test_layer;
-    GetNewTestLayerFunc proc_addr_reset_layer;
+    GetTestLayerFunc proc_addr_get_test_layer = nullptr;
+    GetNewTestLayerFunc proc_addr_reset_layer = nullptr;
     fs::path manifest_path;
 };
 
