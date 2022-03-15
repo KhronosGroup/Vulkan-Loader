@@ -651,7 +651,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupp
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWin32PresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not exportvkGetPhysicalDeviceWin32PresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!\n");
         abort();
     }
 

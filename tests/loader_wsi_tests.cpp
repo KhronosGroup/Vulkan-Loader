@@ -151,7 +151,8 @@ TEST_F(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1);
 
-    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceWin32PresentationSupportKHR(physical_device, 0), "");
+    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceWin32PresentationSupportKHR(physical_device, 0),
+                 "ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!");
 }
 
 TEST_F(WsiTests, GetPhysicalDeviceWin32PresentICDSupport) {
@@ -285,7 +286,8 @@ TEST_F(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1);
 
-    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceXcbPresentationSupportKHR(physical_device, 0, nullptr, 0), "");
+    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceXcbPresentationSupportKHR(physical_device, 0, nullptr, 0),
+                 "ICD for selected physical device does not exportvkGetPhysicalDeviceXcbPresentationSupportKHR!");
 }
 
 TEST_F(WsiTests, GetPhysicalDeviceXcbPresentICDSupport) {
@@ -419,7 +421,8 @@ TEST_F(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1);
 
-    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceXlibPresentationSupportKHR(physical_device, 0, nullptr, 0), "");
+    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceXlibPresentationSupportKHR(physical_device, 0, nullptr, 0),
+                 "ICD for selected physical device does not exportvkGetPhysicalDeviceXlibPresentationSupportKHR!");
 }
 
 TEST_F(WsiTests, GetPhysicalDeviceXlibPresentICDSupport) {
@@ -553,7 +556,8 @@ TEST_F(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1);
 
-    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceWaylandPresentationSupportKHR(physical_device, 0, nullptr), "");
+    ASSERT_DEATH(env->vulkan_functions.vkGetPhysicalDeviceWaylandPresentationSupportKHR(physical_device, 0, nullptr),
+                 "ICD for selected physical device does not exportvkGetPhysicalDeviceWaylandPresentationSupportKHR!");
 }
 
 TEST_F(WsiTests, GetPhysicalDeviceWaylandPresentICDSupport) {

@@ -275,6 +275,86 @@ HRESULT __stdcall ShimCreateDXGIFactory1(REFIID riid, void **ppFactory) {
     return S_FALSE;
 }
 
+// Windows Registry shims
+using PFN_RegOpenKeyExA = LSTATUS(__stdcall *)(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult);
+static PFN_RegOpenKeyExA fpRegOpenKeyExA = RegOpenKeyExA;
+using PFN_RegQueryValueExA = LSTATUS(__stdcall *)(HKEY hKey, LPCSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData,
+                                                  LPDWORD lpcbData);
+static PFN_RegQueryValueExA fpRegQueryValueExA = RegQueryValueExA;
+using PFN_RegEnumValueA = LSTATUS(__stdcall *)(HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName,
+                                               LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData);
+static PFN_RegEnumValueA fpRegEnumValueA = RegEnumValueA;
+
+using PFN_RegCloseKey = LSTATUS(__stdcall *)(HKEY hKey);
+static PFN_RegCloseKey fpRegCloseKey = RegCloseKey;
+
+LSTATUS __stdcall ShimRegOpenKeyExA(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult) {
+    if (HKEY_LOCAL_MACHINE != hKey && HKEY_CURRENT_USER != hKey) return ERROR_BADKEY;
+    std::string hive = "";
+    if (HKEY_LOCAL_MACHINE == hKey)
+        hive = "HKEY_LOCAL_MACHINE";
+    else if (HKEY_CURRENT_USER == hKey)
+        hive = "HKEY_CURRENT_USER";
+
+    platform_shim.created_keys.emplace_back(platform_shim.created_key_count++, hive + "\\" + lpSubKey);
+    *phkResult = platform_shim.created_keys.back().get();
+    return 0;
+}
+const std::string *get_path_of_created_key(HKEY hKey) {
+    for (const auto &key : platform_shim.created_keys) {
+        if (key.key == hKey) {
+            return &key.path;
+        }
+    }
+    return nullptr;
+}
+std::vector<RegistryEntry> *get_registry_vector(std::string const &path) {
+    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\Drivers") return &platform_shim.hkey_local_machine_drivers;
+    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers")
+        return &platform_shim.hkey_local_machine_explicit_layers;
+    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers")
+        return &platform_shim.hkey_local_machine_implicit_layers;
+    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers")
+        return &platform_shim.hkey_current_user_explicit_layers;
+    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers")
+        return &platform_shim.hkey_current_user_implicit_layers;
+    return nullptr;
+}
+LSTATUS __stdcall ShimRegQueryValueExA(HKEY hKey, LPCSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData,
+                                       LPDWORD lpcbData) {
+    // TODO:
+    return ERROR_SUCCESS;
+}
+LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName, LPDWORD lpReserved,
+                                    LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData) {
+    const std::string *path = get_path_of_created_key(hKey);
+    if (path == nullptr) return ERROR_NO_MORE_ITEMS;
+    const auto *location_ptr = get_registry_vector(*path);
+    if (location_ptr == nullptr) return ERROR_NO_MORE_ITEMS;
+    const auto &location = *location_ptr;
+    if (dwIndex >= location.size()) return ERROR_NO_MORE_ITEMS;
+    if (*lpcchValueName < location[dwIndex].name.size()) return ERROR_NO_MORE_ITEMS;
+    for (size_t i = 0; i < location[dwIndex].name.size(); i++) {
+        lpValueName[i] = location[dwIndex].name[i];
+    }
+    lpValueName[location[dwIndex].name.size()] = '\0';
+    *lpcchValueName = static_cast<DWORD>(location[dwIndex].name.size() + 1);
+    if (*lpcbData < sizeof(DWORD)) return ERROR_NO_MORE_ITEMS;
+    DWORD *lpcbData_dword = reinterpret_cast<DWORD *>(lpData);
+    *lpcbData_dword = location[dwIndex].value;
+    *lpcbData = sizeof(DWORD);
+    return ERROR_SUCCESS;
+}
+LSTATUS __stdcall ShimRegCloseKey(HKEY hKey) {
+    for (size_t i = 0; i < platform_shim.created_keys.size(); i++) {
+        if (platform_shim.created_keys[i].get() == hKey) {
+            platform_shim.created_keys.erase(platform_shim.created_keys.begin() + i);
+            return ERROR_SUCCESS;
+        }
+    }
+    return ERROR_SUCCESS;
+}
+
 // Initialization
 void WINAPI DetourFunctions() {
     if (!gdi32_dll) {
@@ -318,6 +398,10 @@ void WINAPI DetourFunctions() {
     DetourAttach(&(PVOID &)REAL_CM_Get_DevNode_Registry_PropertyW, SHIM_CM_Get_DevNode_Registry_PropertyW);
     DetourAttach(&(PVOID &)REAL_CM_Get_Sibling, SHIM_CM_Get_Sibling);
     DetourAttach(&(PVOID &)RealCreateDXGIFactory1, ShimCreateDXGIFactory1);
+    DetourAttach(&(PVOID &)fpRegOpenKeyExA, ShimRegOpenKeyExA);
+    DetourAttach(&(PVOID &)fpRegQueryValueExA, ShimRegQueryValueExA);
+    DetourAttach(&(PVOID &)fpRegEnumValueA, ShimRegEnumValueA);
+    DetourAttach(&(PVOID &)fpRegCloseKey, ShimRegCloseKey);
     LONG error = DetourTransactionCommit();
 
     if (error != NO_ERROR) {
@@ -341,6 +425,10 @@ void DetachFunctions() {
     DetourDetach(&(PVOID &)REAL_CM_Get_DevNode_Registry_PropertyW, SHIM_CM_Get_DevNode_Registry_PropertyW);
     DetourDetach(&(PVOID &)REAL_CM_Get_Sibling, SHIM_CM_Get_Sibling);
     DetourDetach(&(PVOID &)RealCreateDXGIFactory1, ShimCreateDXGIFactory1);
+    DetourDetach(&(PVOID &)fpRegOpenKeyExA, ShimRegOpenKeyExA);
+    DetourDetach(&(PVOID &)fpRegQueryValueExA, ShimRegQueryValueExA);
+    DetourDetach(&(PVOID &)fpRegEnumValueA, ShimRegEnumValueA);
+    DetourDetach(&(PVOID &)fpRegCloseKey, ShimRegCloseKey);
     DetourTransactionCommit();
 }
 

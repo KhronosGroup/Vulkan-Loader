@@ -47,23 +47,23 @@ enum class ManifestCategory { implicit_layer, explicit_layer, icd };
 enum class GpuType { unspecified, integrated, discrete, external };
 
 #if defined(WIN32)
+struct RegistryEntry {
+    RegistryEntry() = default;
+    RegistryEntry(std::string const& name) noexcept : name(name) {}
+    RegistryEntry(std::string const& name, DWORD value) noexcept : name(name), value(value) {}
+    std::string name;
+    DWORD value{};
+};
 
-struct KeyWrapper {
-    explicit KeyWrapper(HKEY key) noexcept;
-    explicit KeyWrapper(HKEY key_root, const char* key_path) noexcept;
-    ~KeyWrapper() noexcept;
-    explicit KeyWrapper(KeyWrapper const&) = delete;
-    KeyWrapper& operator=(KeyWrapper const&) = delete;
-    explicit KeyWrapper(KeyWrapper&& other) noexcept;
-    KeyWrapper& operator=(KeyWrapper&& other) noexcept;
+struct HKeyHandle {
+    explicit HKeyHandle(const size_t value, const std::string& key_path) noexcept : key(HKEY{}), path(key_path) {
+        key = reinterpret_cast<HKEY>(value);
+    }
 
     HKEY get() const noexcept { return key; }
-    operator HKEY() { return key; }
-    operator HKEY() const { return key; }
-    operator HKEY&() { return key; }
-    operator HKEY const &() const { return key; }
 
     HKEY key{};
+    std::string path;
 };
 
 static const char* pnp_registry_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
@@ -110,16 +110,11 @@ struct D3DKMT_Adapter {
     fs::path path;
 };
 
-uint32_t setup_override(DebugMode debug_mode);
-void clear_override(DebugMode debug_mode, uint32_t random_base_path);
 #endif
 // Necessary to have inline definitions as shim is a dll and thus functions
 // defined in the .cpp wont be found by the rest of the application
 struct PlatformShim {
     // Test Framework interface
-    void setup_override(DebugMode debug_mode = DebugMode::none);
-    void clear_override(DebugMode debug_mode = DebugMode::none);
-
     void reset(DebugMode debug_mode = DebugMode::none);
 
     void redirect_all_paths(fs::path const& path);
@@ -140,7 +135,6 @@ struct PlatformShim {
     void add_dxgi_adapter(fs::path const& manifest_path, GpuType gpu_preference, uint32_t known_driver_index,
                           DXGI_ADAPTER_DESC1 desc1);
     void add_d3dkmt_adapter(SHIM_D3DKMT_ADAPTERINFO adapter, fs::path const& path);
-    void add_CM_Device_ID(std::wstring const& id, fs::path const& icd_path, fs::path const& layer_path);
 
     uint32_t next_adapter_handle = 1;  // increment everytime add_dxgi_adapter is called
     std::vector<DXGIAdapter> dxgi_adapters;
@@ -148,12 +142,24 @@ struct PlatformShim {
     // next two are a pair
     std::vector<D3DKMT_Adapter> d3dkmt_adapters;
 
+    // TODO:
+    void add_CM_Device_ID(std::wstring const& id, fs::path const& icd_path, fs::path const& layer_path);
     std::wstring CM_device_ID_list = {L'\0'};
-    std::vector<KeyWrapper> CM_device_ID_registry_keys;
+    std::vector<RegistryEntry> CM_device_ID_registry_keys;
 
     uint32_t random_base_path = 0;
 
     std::vector<fs::path> icd_paths;
+
+    std::vector<RegistryEntry> hkey_current_user_explicit_layers;
+    std::vector<RegistryEntry> hkey_current_user_implicit_layers;
+    std::vector<RegistryEntry> hkey_local_machine_explicit_layers;
+    std::vector<RegistryEntry> hkey_local_machine_implicit_layers;
+    std::vector<RegistryEntry> hkey_local_machine_drivers;
+
+    // When a key is created, return the index of the
+    size_t created_key_count = 0;
+    std::vector<HKeyHandle> created_keys;
 
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     bool is_fake_path(fs::path const& path);

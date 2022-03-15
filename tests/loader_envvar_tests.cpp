@@ -70,22 +70,12 @@ TEST(EnvVarICDOverrideSetup, version_1_icd_gipa) {
 }
 
 // support vk_icdNegotiateLoaderICDInterfaceVersion but not vk_icdGetInstanceProcAddr
-// should assert that `interface_vers == 0` due to version mismatch, only checkable in Debug Mode
 TEST(EnvVarICDOverrideSetup, version_negotiate_interface_version_death_test) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION).set_use_env_var_icd_filenames(true));
 
     InstWrapper inst{env.vulkan_functions};
-
-#if !defined(NDEBUG)
-#if defined(WIN32)
-    ASSERT_DEATH(inst.CheckCreate(), "");
-#else
-    ASSERT_DEATH(inst.CheckCreate(), "interface_vers == 0");
-#endif
-#else
-    inst.CheckCreate();
-#endif
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
 }
 
 // export vk_icdNegotiateLoaderICDInterfaceVersion and vk_icdGetInstanceProcAddr
