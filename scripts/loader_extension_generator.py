@@ -1143,6 +1143,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     # error here.
                     if ext_cmd.ext_type =='instance' and has_return_type:
                         funcs += '        return VK_ERROR_INITIALIZATION_FAILED;\n'
+                    else:
+                        funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                     funcs += '    }\n'
 
                     if has_surface == 1:

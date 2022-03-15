@@ -202,7 +202,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     if (result != VK_SUCCESS) {
         return result;
     }
-    TestLayer::Device device{*pDevice};
+    TestLayer::Device device{};
+    device.device_handle = *pDevice;
 
     // initialize layer's dispatch table
     layer_init_device_dispatch_table(device.device_handle, &device.dispatch_table, fpGetDeviceProcAddr);
