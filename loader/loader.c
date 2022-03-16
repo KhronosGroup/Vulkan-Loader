@@ -4844,28 +4844,30 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
-        if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "vkCreateDevice layer callstack setup to:");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Application>");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader>");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-            for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
-                uint32_t index = num_activated_layers - cur_layer - 1;
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
-                           activated_layers[index].is_implicit ? "Implicit" : "Explicit");
-                if (activated_layers[index].is_implicit) {
-                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
-                               activated_layers[index].disable_env);
+        uint32_t layer_driver_bits = VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT;
+        if ((loader_get_debug_level() & layer_driver_bits) != 0) {
+            loader_log(inst, layer_driver_bits, 0, "vkCreateDevice layer callstack setup to:");
+            loader_log(inst, layer_driver_bits, 0, "   <Application>");
+            loader_log(inst, layer_driver_bits, 0, "     ||");
+            loader_log(inst, layer_driver_bits, 0, "   <Loader>");
+            loader_log(inst, layer_driver_bits, 0, "     ||");
+            if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
+                for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
+                    uint32_t index = num_activated_layers - cur_layer - 1;
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
+                               activated_layers[index].is_implicit ? "Implicit" : "Explicit");
+                    if (activated_layers[index].is_implicit) {
+                        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
+                                   activated_layers[index].disable_env);
+                    }
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifest: %s", activated_layers[index].manifest);
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
                 }
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifest: %s", activated_layers[index].manifest);
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             }
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Device>\n");
+            loader_log(inst, layer_driver_bits, 0, "   <Device>");
         }
-
         create_info_disp.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp;
         res = fpCreateDevice(pd, &loader_create_info, pAllocator, &created_device);
@@ -5623,13 +5625,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     }
     dev->extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
 
+    VkPhysicalDeviceProperties properties;
+    icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
     if (!dev->extensions.khr_device_group_enabled) {
-        VkPhysicalDeviceProperties properties;
-        icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
         if (properties.apiVersion >= VK_API_VERSION_1_1) {
             dev->extensions.khr_device_group_enabled = true;
         }
     }
+
+    loader_log(icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+               "       Using \"%s\" with driver: \"%s\"\n", properties.deviceName, icd_term->scanned_icd->lib_name);
 
     res = fpCreateDevice(phys_dev_term->phys_dev, &localCreateInfo, pAllocator, &dev->icd_device);
     if (res != VK_SUCCESS) {
