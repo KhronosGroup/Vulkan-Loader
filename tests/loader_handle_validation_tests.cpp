@@ -452,7 +452,7 @@ TEST(LoaderHandleValidTests, BadInstCreateXlibSurf) {
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
     ASSERT_DEATH(env.vulkan_functions.vkCreateXlibSurfaceKHR(bad_instance, &surf_create_info, nullptr, &created_surface),
-                 "vkCreateXlibSurfaceKHR: Invalid instance \\[VUID-vkCreateXlibSurfaceKHR-instance-parameter\\]");
+                 "vkCreateXlibSurfaceKHR: Invalid instance [VUID-vkCreateXlibSurfaceKHR-instance-parameter]");
     // TODO: Look for "invalid instance" in stderr log to make sure correct error is thrown
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
@@ -472,9 +472,8 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceFeatures features = {};
-    ASSERT_DEATH(
-        env.vulkan_functions.vkGetPhysicalDeviceFeatures(bad_physical_dev, &features),
-        "vkGetPhysicalDeviceFeatures: Invalid physicalDevice \\[VUID-vkGetPhysicalDeviceFeatures-physicalDevice-parameter\\]");
+    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceFeatures(bad_physical_dev, &features),
+                 "VUID-vkGetPhysicalDeviceFeatures-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps) {
@@ -490,9 +489,9 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkFormatProperties format_info = {};
-    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceFormatProperties(bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM, &format_info),
-                 "vkGetPhysicalDeviceFormatProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceFormatProperties-physicalDevice-parameter\\]");
+    ASSERT_DEATH(
+        env.vulkan_functions.vkGetPhysicalDeviceFormatProperties(bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM, &format_info),
+        "VUID-vkGetPhysicalDeviceFormatProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps) {
@@ -509,10 +508,9 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps) {
 
     VkImageFormatProperties format_info = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceImageFormatProperties(bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM,
-                                                                               VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_LINEAR,
-                                                                               VK_IMAGE_USAGE_STORAGE_BIT, 0, &format_info),
-                 "vkGetPhysicalDeviceImageFormatProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceImageFormatProperties-physicalDevice-parameter\\]");
+                                                                                VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_LINEAR,
+                                                                                VK_IMAGE_USAGE_STORAGE_BIT, 0, &format_info),
+                 "VUID-vkGetPhysicalDeviceImageFormatProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevProps) {
@@ -528,9 +526,8 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevProps) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceProperties properties = {};
-    ASSERT_DEATH(
-        env.vulkan_functions.vkGetPhysicalDeviceProperties(bad_physical_dev, &properties),
-        "vkGetPhysicalDeviceProperties: Invalid physicalDevice \\[VUID-vkGetPhysicalDeviceProperties-physicalDevice-parameter\\]");
+    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceProperties(bad_physical_dev, &properties),
+                 "VUID-vkGetPhysicalDeviceProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps) {
@@ -546,8 +543,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceQueueFamilyProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceQueueFamilyProperties-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceQueueFamilyProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps) {
@@ -564,8 +560,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps) {
 
     VkPhysicalDeviceMemoryProperties properties = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceMemoryProperties(bad_physical_dev, &properties),
-                 "vkGetPhysicalDeviceMemoryProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceMemoryProperties-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceMemoryProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevCreateDevice) {
@@ -601,7 +596,7 @@ TEST(LoaderHandleValidTests, BadPhysDevCreateDevice) {
     dev_create_info.pEnabledFeatures = nullptr;
     VkDevice created_dev = VK_NULL_HANDLE;
     ASSERT_DEATH(env.vulkan_functions.vkCreateDevice(bad_physical_dev, &dev_create_info, nullptr, &created_dev),
-                 "vkCreateDevice: Invalid physicalDevice \\[VUID-vkCreateDevice-physicalDevice-parameter\\]");
+                 "VUID-vkCreateDevice-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevEnumDevExtProps) {
@@ -617,8 +612,7 @@ TEST(LoaderHandleValidTests, BadPhysDevEnumDevExtProps) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkEnumerateDeviceExtensionProperties(bad_physical_dev, nullptr, &count, nullptr),
-                 "vkEnumerateDeviceExtensionProperties: Invalid physicalDevice "
-                 "\\[VUID-vkEnumerateDeviceExtensionProperties-physicalDevice-parameter\\]");
+                 "VUID-vkEnumerateDeviceExtensionProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevEnumDevLayerProps) {
@@ -634,8 +628,7 @@ TEST(LoaderHandleValidTests, BadPhysDevEnumDevLayerProps) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkEnumerateDeviceLayerProperties(bad_physical_dev, &count, nullptr),
-                 "vkEnumerateDeviceLayerProperties: Invalid physicalDevice "
-                 "\\[VUID-vkEnumerateDeviceLayerProperties-physicalDevice-parameter\\]");
+                 "VUID-vkEnumerateDeviceLayerProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps) {
@@ -654,8 +647,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps) {
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSparseImageFormatProperties(
                      bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D, VK_SAMPLE_COUNT_1_BIT,
                      VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_LINEAR, &count, nullptr),
-                 "vkGetPhysicalDeviceSparseImageFormatProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSparseImageFormatProperties-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature2) {
@@ -673,9 +665,8 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature2) {
     VkPhysicalDeviceFeatures2 features = {};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     features.pNext = nullptr;
-    ASSERT_DEATH(
-        env.vulkan_functions.vkGetPhysicalDeviceFeatures2(bad_physical_dev, &features),
-        "vkGetPhysicalDeviceFeatures2: Invalid physicalDevice \\[VUID-vkGetPhysicalDeviceFeatures2-physicalDevice-parameter\\]");
+    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceFeatures2(bad_physical_dev, &features),
+                 "VUID-vkGetPhysicalDeviceFeatures2-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps2) {
@@ -693,9 +684,9 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps2) {
     VkFormatProperties2 properties = {};
     properties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
     properties.pNext = nullptr;
-    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceFormatProperties2(bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM, &properties),
-                 "vkGetPhysicalDeviceFormatProperties2: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceFormatProperties2-physicalDevice-parameter\\]");
+    ASSERT_DEATH(
+        env.vulkan_functions.vkGetPhysicalDeviceFormatProperties2(bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM, &properties),
+        "VUID-vkGetPhysicalDeviceFormatProperties2-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps2) {
@@ -717,8 +708,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps2) {
     properties.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
     properties.pNext = nullptr;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceImageFormatProperties2(bad_physical_dev, &format_info, &properties),
-                 "vkGetPhysicalDeviceImageFormatProperties2: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceImageFormatProperties2-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceImageFormatProperties2-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevProps2) {
@@ -737,8 +727,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevProps2) {
     properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     properties.pNext = nullptr;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceProperties2(bad_physical_dev, &properties),
-                 "vkGetPhysicalDeviceProperties2: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceProperties2-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceProperties2-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps2) {
@@ -754,8 +743,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps2) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties2(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceQueueFamilyProperties2: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps2) {
@@ -774,8 +762,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps2) {
     properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
     properties.pNext = nullptr;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceMemoryProperties2(bad_physical_dev, &properties),
-                 "vkGetPhysicalDeviceMemoryProperties2: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceMemoryProperties2-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceMemoryProperties2-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps2) {
@@ -795,8 +782,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps2) {
     info.pNext = nullptr;
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSparseImageFormatProperties2(bad_physical_dev, &info, &count, nullptr),
-                 "vkGetPhysicalDeviceSparseImageFormatProperties2: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternFenceProps) {
@@ -816,8 +802,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternFenceProps) {
     info.pNext = nullptr;
     VkExternalFenceProperties props = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceExternalFenceProperties(bad_physical_dev, &info, &props),
-                 "vkGetPhysicalDeviceExternalFenceProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceExternalFenceProperties-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceExternalFenceProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternBufferProps) {
@@ -837,8 +822,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternBufferProps) {
     info.pNext = nullptr;
     VkExternalBufferProperties props = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceExternalBufferProperties(bad_physical_dev, &info, &props),
-                 "vkGetPhysicalDeviceExternalBufferProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceExternalBufferProperties-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceExternalBufferProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternSemaphoreProps) {
@@ -858,8 +842,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternSemaphoreProps) {
     info.pNext = nullptr;
     VkExternalSemaphoreProperties props = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceExternalSemaphoreProperties(bad_physical_dev, &info, &props),
-                 "vkGetPhysicalDeviceExternalSemaphoreProperties: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceSupportKHR) {
@@ -879,8 +862,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceSupportKHR) {
     VkBool32 supported = VK_FALSE;
 
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceSupportKHR(bad_physical_dev, 0, VK_NULL_HANDLE, &supported),
-                 "vkGetPhysicalDeviceSurfaceSupportKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSurfaceSupportKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCapsKHR) {
@@ -899,8 +881,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCapsKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkSurfaceCapabilitiesKHR caps = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(bad_physical_dev, VK_NULL_HANDLE, &caps),
-                 "vkGetPhysicalDeviceSurfaceCapabilitiesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormatsKHR) {
@@ -919,8 +900,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormatsKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceFormatsKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
-                 "vkGetPhysicalDeviceSurfaceFormatsKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModesKHR) {
@@ -939,8 +919,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModesKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfacePresentModesKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
-                 "vkGetPhysicalDeviceSurfacePresentModesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-physicalDevice-parameter");
 }
 
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
@@ -958,8 +937,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     IDirectFB directfb;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDirectFBPresentationSupportEXT(bad_physical_dev, 0, &directfb),
-                 "vkGetPhysicalDeviceDirectFBPresentationSupportEXT: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-physicalDevice-parameter");
 }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
@@ -977,8 +955,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     ASSERT_DEATH(env.vulkan_functions.PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX(bad_physical_dev, 0, nullptr),
-                 "vkGetPhysicalDeviceScreenPresentationSupportQNX: Invalid instance "
-                 "\\[VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-instance-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-instance-parameter");
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -996,8 +973,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceWaylandPresentationSupportKHR(bad_physical_dev, 0, nullptr),
-                 "vkGetPhysicalDeviceWaylandPresentationSupportKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-physicalDevice-parameter");
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
@@ -1015,8 +991,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceWin32PresentationSupportKHR(bad_physical_dev, 0),
-                 "vkGetPhysicalDeviceWin32PresentationSupportKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-physicalDevice-parameter");
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1035,8 +1010,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
 
     xcb_visualid_t visual = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceXcbPresentationSupportKHR(bad_physical_dev, 0, nullptr, visual),
-                 "vkGetPhysicalDeviceXcbPresentationSupportKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-physicalDevice-parameter");
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
@@ -1056,8 +1030,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetXlibPresentSupportKHR) {
 
     VisualID visual = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceXlibPresentationSupportKHR(bad_physical_dev, 0, nullptr, visual),
-                 "vkGetPhysicalDeviceXlibPresentationSupportKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-physicalDevice-parameter");
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
@@ -1078,8 +1051,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPropsKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayPropertiesKHR(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceDisplayPropertiesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlanePropsKHR) {
@@ -1099,8 +1071,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlanePropsKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayPlanePropertiesKHR(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceDisplayPlanePropertiesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneSupportedDisplaysKHR) {
@@ -1120,8 +1091,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneSupportedDisplaysKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetDisplayPlaneSupportedDisplaysKHR(bad_physical_dev, 0, &count, nullptr),
-                 "vkGetDisplayPlaneSupportedDisplaysKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetDisplayModePropsKHR) {
@@ -1140,9 +1110,8 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayModePropsKHR) {
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
-    ASSERT_DEATH(
-        env.vulkan_functions.vkGetDisplayModePropertiesKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
-        "vkGetDisplayModePropertiesKHR: Invalid physicalDevice \\[VUID-vkGetDisplayModePropertiesKHR-physicalDevice-parameter\\]");
+    ASSERT_DEATH(env.vulkan_functions.vkGetDisplayModePropertiesKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
+                 "VUID-vkGetDisplayModePropertiesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevCreateDisplayModeKHR) {
@@ -1166,7 +1135,7 @@ TEST(LoaderHandleValidTests, BadPhysDevCreateDisplayModeKHR) {
     VkDisplayModeKHR display_mode;
     ASSERT_DEATH(
         env.vulkan_functions.vkCreateDisplayModeKHR(bad_physical_dev, VK_NULL_HANDLE, &create_info, nullptr, &display_mode),
-        "vkCreateDisplayModeKHR: Invalid physicalDevice \\[VUID-vkCreateDisplayModeKHR-physicalDevice-parameter\\]");
+        "VUID-vkCreateDisplayModeKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCapsKHR) {
@@ -1186,8 +1155,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCapsKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkDisplayPlaneCapabilitiesKHR caps = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetDisplayPlaneCapabilitiesKHR(bad_physical_dev, VK_NULL_HANDLE, 0, &caps),
-                 "vkGetDisplayPlaneCapabilitiesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetDisplayPlaneCapabilitiesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetDisplayPlaneCapabilitiesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevPresentRectsKHR) {
@@ -1207,8 +1175,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevPresentRectsKHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDevicePresentRectanglesKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
-                 "vkGetPhysicalDevicePresentRectanglesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDevicePresentRectanglesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDevicePresentRectanglesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayProps2KHR) {
@@ -1228,8 +1195,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayProps2KHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayProperties2KHR(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceDisplayProperties2KHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceDisplayProperties2KHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceDisplayProperties2KHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlaneProps2KHR) {
@@ -1249,8 +1215,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlaneProps2KHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayPlaneProperties2KHR(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceDisplayPlaneProperties2KHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetDisplayModeProps2KHR) {
@@ -1270,8 +1235,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayModeProps2KHR) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetDisplayModeProperties2KHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
-                 "vkGetDisplayModeProperties2KHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetDisplayModeProperties2KHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetDisplayModeProperties2KHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCaps2KHR) {
@@ -1294,8 +1258,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCaps2KHR) {
     disp_plane_info.pNext = nullptr;
     VkDisplayPlaneCapabilities2KHR caps = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetDisplayPlaneCapabilities2KHR(bad_physical_dev, &disp_plane_info, &caps),
-                 "vkGetDisplayPlaneCapabilities2KHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetDisplayPlaneCapabilities2KHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetDisplayPlaneCapabilities2KHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCaps2KHR) {
@@ -1318,8 +1281,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCaps2KHR) {
     phys_dev_surf_info.pNext = nullptr;
     VkSurfaceCapabilities2KHR caps = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceCapabilities2KHR(bad_physical_dev, &phys_dev_surf_info, &caps),
-                 "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormats2KHR) {
@@ -1340,9 +1302,9 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormats2KHR) {
     phys_dev_surf_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
     phys_dev_surf_info.pNext = nullptr;
     uint32_t count = 0;
-    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceFormats2KHR(bad_physical_dev, &phys_dev_surf_info, &count, nullptr),
-                 "vkGetPhysicalDeviceSurfaceFormats2KHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-physicalDevice-parameter\\]");
+    ASSERT_DEATH(
+        env.vulkan_functions.vkGetPhysicalDeviceSurfaceFormats2KHR(bad_physical_dev, &phys_dev_surf_info, &count, nullptr),
+        "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevEnumPhysDevQueueFamilyPerfQueryCountersKHR) {
@@ -1360,8 +1322,7 @@ TEST(LoaderHandleValidTests, BadPhysDevEnumPhysDevQueueFamilyPerfQueryCountersKH
         instance.load("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, 0, &count, nullptr, nullptr),
-                 "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR: Invalid physicalDevice "
-                 "\\[VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-physicalDevice-parameter\\]");
+                 "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamilyPerfQueryPassesKHR) {
@@ -1382,8 +1343,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamilyPerfQueryPassesKHR) 
         instance.load("vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, &create_info, &count),
-                 "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFragmentShadingRatesKHR) {
@@ -1400,8 +1360,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFragmentShadingRatesKHR) {
     PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR pfn = instance.load("vkGetPhysicalDeviceFragmentShadingRatesKHR");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceFragmentShadingRatesKHR: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevMSPropsEXT) {
@@ -1418,8 +1377,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevMSPropsEXT) {
     PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT pfn = instance.load("vkGetPhysicalDeviceMultisamplePropertiesEXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, VK_SAMPLE_COUNT_1_BIT, &props),
-                 "vkGetPhysicalDeviceMultisamplePropertiesEXT: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceMultisamplePropertiesEXT-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceMultisamplePropertiesEXT-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevAcquireDrmDisplayEXT) {
@@ -1438,8 +1396,7 @@ TEST(LoaderHandleValidTests, BadPhysDevAcquireDrmDisplayEXT) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     PFN_vkAcquireDrmDisplayEXT pfn = instance.load("vkAcquireDrmDisplayEXT");
     ASSERT_NE(pfn, nullptr);
-    ASSERT_DEATH(pfn(bad_physical_dev, 0, VK_NULL_HANDLE),
-                 "vkAcquireDrmDisplayEXT: Invalid physicalDevice \\[VUID-vkAcquireDrmDisplayEXT-physicalDevice-parameter\\]");
+    ASSERT_DEATH(pfn(bad_physical_dev, 0, VK_NULL_HANDLE), "VUID-vkAcquireDrmDisplayEXT-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetDrmDisplayEXT) {
@@ -1458,9 +1415,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDrmDisplayEXT) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     PFN_vkGetDrmDisplayEXT pfn = instance.load("vkGetDrmDisplayEXT");
     ASSERT_NE(pfn, nullptr);
-    ASSERT_DEATH(pfn(bad_physical_dev, 0, 0, VK_NULL_HANDLE),
-                 "vkGetDrmDisplayEXT: Invalid physicalDevice "
-                 "\\[VUID-vkGetDrmDisplayEXT-physicalDevice-parameter\\]");
+    ASSERT_DEATH(pfn(bad_physical_dev, 0, 0, VK_NULL_HANDLE), "VUID-vkGetDrmDisplayEXT-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevReleaseDisplayEXT) {
@@ -1479,8 +1434,7 @@ TEST(LoaderHandleValidTests, BadPhysDevReleaseDisplayEXT) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     PFN_vkReleaseDisplayEXT pfn = instance.load("vkReleaseDisplayEXT");
     ASSERT_NE(pfn, nullptr);
-    ASSERT_DEATH(pfn(bad_physical_dev, VK_NULL_HANDLE),
-                 "vkReleaseDisplayEXT: Invalid physicalDevice \\[VUID-vkReleaseDisplayEXT-physicalDevice-parameter\\]");
+    ASSERT_DEATH(pfn(bad_physical_dev, VK_NULL_HANDLE), "VUID-vkReleaseDisplayEXT-physicalDevice-parameter");
 }
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
@@ -1500,8 +1454,7 @@ TEST(LoaderHandleValidTests, BadPhysDevAcquireXlibDisplayEXT) {
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     PFN_vkAcquireXlibDisplayEXT pfn = instance.load("vkAcquireXlibDisplayEXT");
     ASSERT_NE(pfn, nullptr);
-    ASSERT_DEATH(pfn(bad_physical_dev, nullptr, VK_NULL_HANDLE),
-                 "vkAcquireXlibDisplayEXT: Invalid physicalDevice \\[VUID-vkAcquireXlibDisplayEXT-physicalDevice-parameter\\]");
+    ASSERT_DEATH(pfn(bad_physical_dev, nullptr, VK_NULL_HANDLE), "VUID-vkAcquireXlibDisplayEXT-physicalDevice-parameter");
 }
 
 TEST(LoaderHandleValidTests, BadPhysDevGetRandROutputDisplayEXT) {
@@ -1522,9 +1475,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetRandROutputDisplayEXT) {
     VkDisplayKHR disp;
     PFN_vkGetRandROutputDisplayEXT pfn = instance.load("vkGetRandROutputDisplayEXT");
     ASSERT_NE(pfn, nullptr);
-    ASSERT_DEATH(
-        pfn(bad_physical_dev, nullptr, rrout, &disp),
-        "vkGetRandROutputDisplayEXT: Invalid physicalDevice \\[VUID-vkGetRandROutputDisplayEXT-physicalDevice-parameter\\]");
+    ASSERT_DEATH(pfn(bad_physical_dev, nullptr, rrout, &disp), "VUID-vkGetRandROutputDisplayEXT-physicalDevice-parameter");
 }
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
@@ -1547,8 +1498,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModes2EXT) {
     PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT pfn = instance.load("vkGetPhysicalDeviceSurfacePresentModes2EXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, &phys_dev_surf_info, &count, nullptr),
-                 "vkGetPhysicalDeviceSurfacePresentModes2EXT: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter\\]");
+                 "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter");
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1565,9 +1515,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevToolPropertiesEXT) {
     PFN_vkGetPhysicalDeviceToolPropertiesEXT pfn = instance.load("vkGetPhysicalDeviceToolPropertiesEXT");
     ASSERT_NE(pfn, nullptr);
     uint32_t count = 0;
-    ASSERT_DEATH(pfn(bad_physical_dev, &count, nullptr),
-                 "vkGetPhysicalDeviceToolPropertiesEXT: Invalid physicalDevice "
-                 "\\[VUID-vkGetPhysicalDeviceToolPropertiesEXT-physicalDevice-parameter\\]");
+    ASSERT_DEATH(pfn(bad_physical_dev, &count, nullptr), "VUID-vkGetPhysicalDeviceToolProperties.*physicalDevice-parameter");
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
