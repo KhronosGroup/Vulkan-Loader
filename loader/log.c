@@ -89,6 +89,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     char msg[512];
     char cmd_line_msg[512];
     size_t cmd_line_size = sizeof(cmd_line_msg);
+    size_t num_used = 0;
     va_list ap;
     int ret;
 
@@ -149,72 +150,65 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         util_SubmitDebugUtilsMessageEXT(inst, severity, type, &callback_data);
     }
 
-    if (!(msg_type & g_loader_debug)) {
+    uint32_t filtered_msg_type = (msg_type & g_loader_debug);
+    if (0 == filtered_msg_type) {
         return;
     }
 
     cmd_line_msg[0] = '\0';
     cmd_line_size -= 1;
-    size_t original_size = cmd_line_size;
+    num_used = 1;
 
     if ((msg_type & VULKAN_LOADER_ERROR_BIT) != 0) {
-        strncat(cmd_line_msg, "ERROR", cmd_line_size);
-        cmd_line_size -= 5;
+        strncat(cmd_line_msg, "ERROR", cmd_line_size - num_used);
+        num_used += 5;
+    } else if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
+        strncat(cmd_line_msg, "WARNING", cmd_line_size - num_used);
+        num_used += 7;
+    } else if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0) {
+        strncat(cmd_line_msg, "INFO", cmd_line_size - num_used);
+        num_used += 4;
+    } else if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
+        strncat(cmd_line_msg, "DEBUG", cmd_line_size - num_used);
+        num_used += 5;
     }
-    if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
+    // For the remaining messages, we only want to add any tags that are
+    // explicitly enabled by the tools.
+    if ((filtered_msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
+        if (num_used > 1) {
+            strncat(cmd_line_msg, " | ", cmd_line_size - num_used);
+            num_used += 3;
         }
-        strncat(cmd_line_msg, "WARNING", cmd_line_size);
-        cmd_line_size -= 7;
+        strncat(cmd_line_msg, "PERF", cmd_line_size - num_used);
+        num_used += 4;
     }
-    if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
+    if ((filtered_msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
+        if (num_used > 1) {
+            strncat(cmd_line_msg, " | ", cmd_line_size - num_used);
+            num_used += 3;
         }
-        strncat(cmd_line_msg, "LAYER", cmd_line_size);
-        cmd_line_size -= 5;
+        strncat(cmd_line_msg, "DRIVER", cmd_line_size - num_used);
+        num_used += 6;
     }
-    if ((msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
+    if ((filtered_msg_type & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if (num_used > 1) {
+            strncat(cmd_line_msg, " | ", cmd_line_size - num_used);
+            num_used += 3;
         }
-        strncat(cmd_line_msg, "DRIVER", cmd_line_size);
-        cmd_line_size -= 6;
+        strncat(cmd_line_msg, "LAYER", cmd_line_size - num_used);
+        num_used += 5;
     }
-    if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "PERF", cmd_line_size);
-        cmd_line_size -= 4;
+    // Add any preceeding spaces so we can have clean output
+    if (num_used > 1) {
+        strncat(cmd_line_msg, ": ", cmd_line_size - num_used);
+        num_used += 2;
     }
-    if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "INFO", cmd_line_size);
-        cmd_line_size -= 4;
-    }
-    if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
-        if (cmd_line_size != original_size) {
-            strncat(cmd_line_msg, " | ", cmd_line_size);
-            cmd_line_size -= 3;
-        }
-        strncat(cmd_line_msg, "DEBUG", cmd_line_size);
-        cmd_line_size -= 5;
-    }
-    if (cmd_line_size != original_size) {
-        strncat(cmd_line_msg, ": ", cmd_line_size);
-        cmd_line_size -= 2;
+    while (num_used < 19) {
+        strncat(cmd_line_msg, " ", cmd_line_size - num_used);
+        num_used++;
     }
 
-    if (0 < cmd_line_size) {
+    if (num_used) {
         // If the message is too long, trim it down
         if (strlen(msg) > cmd_line_size) {
             msg[cmd_line_size - 1] = '\0';
