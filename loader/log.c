@@ -208,23 +208,24 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         num_used++;
     }
 
-    if (num_used) {
+    size_t available_space = cmd_line_size - num_used;
+    if (available_space > 0) {
         // If the message is too long, trim it down
-        if (strlen(msg) > cmd_line_size) {
-            msg[cmd_line_size - 1] = '\0';
+        if (strlen(msg) > available_space) {
+            msg[available_space - 1] = '\0';
         }
         strncat(cmd_line_msg, msg, cmd_line_size);
+
+#if defined(WIN32)
+        OutputDebugString(cmd_line_msg);
+        OutputDebugString("\n");
+#endif
+
+        fputs(cmd_line_msg, stderr);
+        fputc('\n', stderr);
     } else {
         // Shouldn't get here, but check to make sure if we've already overrun
         // the string boundary
         assert(false);
     }
-
-#if defined(WIN32)
-    OutputDebugString(cmd_line_msg);
-    OutputDebugString("\n");
-#endif
-
-    fputs(cmd_line_msg, stderr);
-    fputc('\n', stderr);
 }
