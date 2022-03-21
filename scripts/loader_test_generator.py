@@ -1835,7 +1835,10 @@ class LoaderTestOutputGenerator(OutputGenerator):
     def OutputCommonInstanceDeviceDriverFuncs(self):
         max_api_version = 'VK_API_VERSION_%d_%d' % (self.max_major, self.max_minor)
         common_src = ''
-        common_src += '\n// Instance extensions supported\n'
+        common_src += '\n//Temporary device name\n'
+        common_src += 'const char driver_phys_device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE] = "TestDriverFakePhysicalDevice";\n'
+        common_src += '\n'
+        common_src += '// Instance extensions supported\n'
         common_src += 'const char inst_ext_arr[][VK_MAX_EXTENSION_NAME_SIZE] = {\n'
         for ext in self.basic_extensions:
             if ext.type == 'instance':
@@ -1995,6 +1998,11 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '        pProperties->vendorID = 0xFEEDF00D;\n'
         common_src += '        pProperties->deviceID = 1;\n'
         common_src += '        pProperties->deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;\n'
+        common_src += '#if defined(_WIN32)\n'
+        common_src += '        strncpy_s(pProperties->deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, driver_phys_device_name, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);\n'
+        common_src += '#else\n'
+        common_src += '        strncpy(pProperties->deviceName, driver_phys_device_name, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);\n'
+        common_src += '#endif\n'
         common_src += '    }\n'
         common_src += '}\n'
         common_src += '\n'

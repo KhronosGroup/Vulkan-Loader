@@ -118,6 +118,9 @@ VKAPI_ATTR void VKAPI_CALL driver_CmdSetDepthBiasEnable(VkCommandBuffer commandB
 VKAPI_ATTR void VKAPI_CALL driver_CmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable);
 
 
+//Temporary device name
+const char driver_phys_device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE] = "TestDriverFakePhysicalDevice";
+
 // Instance extensions supported
 const char inst_ext_arr[][VK_MAX_EXTENSION_NAME_SIZE] = {
     "VK_KHR_surface",
@@ -599,6 +602,11 @@ VKAPI_ATTR void VKAPI_CALL driver_GetPhysicalDeviceProperties(VkPhysicalDevice p
         pProperties->vendorID = 0xFEEDF00D;
         pProperties->deviceID = 1;
         pProperties->deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+#if defined(_WIN32)
+        strncpy_s(pProperties->deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, driver_phys_device_name, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#else
+        strncpy(pProperties->deviceName, driver_phys_device_name, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+#endif
     }
 }
 
