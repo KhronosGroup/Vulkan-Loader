@@ -626,16 +626,22 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
 
-    VkPhysicalDeviceProperties properties;
-    if (icd_term->dispatch.GetPhysicalDeviceProperties) {
-        icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceToolProperties) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "terminator_GetPhysicalDeviceToolProperties: The ICD's vkGetPhysicalDeviceToolProperties was NULL yet "
+                   "the physical device supports Vulkan API Version 1.3.");
+    } else {
+        VkPhysicalDeviceProperties properties;
+        if (icd_term->dispatch.GetPhysicalDeviceProperties) {
+            icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
 
-        if (VK_API_VERSION_MINOR(properties.apiVersion) >= 3 && icd_term->dispatch.GetPhysicalDeviceToolProperties) {
-            return icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+            if (VK_API_VERSION_MINOR(properties.apiVersion) >= 3) {
+                return icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+            }
         }
     }
 
-    // In the case the driver didn't support the extension, make sure that the first layer doesn't find the count uninitialized
+    // In the case the driver didn't support 1.3, make sure that the first layer doesn't find the count uninitialized
     *pToolCount = 0;
     return VK_SUCCESS;
 }
