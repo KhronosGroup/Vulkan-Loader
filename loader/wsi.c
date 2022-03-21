@@ -2225,8 +2225,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayProperties2KHR
     }
 
     // We have to emulate the function.
-    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-               "vkGetPhysicalDeviceDisplayProperties2KHR: Emulating call in ICD \"%s\"", icd_term->scanned_icd->lib_name);
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+               "vkGetPhysicalDeviceDisplayProperties2KHR: Emulating call for driver \"%s\" device \"%s\"",
+               icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
     // If the icd doesn't support VK_KHR_display, then no properties are available
     if (icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR == NULL) {
@@ -2280,8 +2281,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     }
 
     // We have to emulate the function.
-    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-               "vkGetPhysicalDeviceDisplayPlaneProperties2KHR: Emulating call in ICD \"%s\"", icd_term->scanned_icd->lib_name);
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+               "vkGetPhysicalDeviceDisplayPlaneProperties2KHR: Emulating call for driver \"%s\" device \"%s\"",
+               icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
     // If the icd doesn't support VK_KHR_display, then no properties are available
     if (icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR == NULL) {
@@ -2337,8 +2339,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModeProperties2KHR(VkPhysica
     }
 
     // We have to emulate the function.
-    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0, "vkGetDisplayModeProperties2KHR: Emulating call in ICD \"%s\"",
-               icd_term->scanned_icd->lib_name);
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+               "vkGetDisplayModeProperties2KHR: Emulating call for driver \"%s\" device \"%s\"", icd_term->scanned_icd->lib_name,
+               phys_dev_term->properties.deviceName);
 
     // If the icd doesn't support VK_KHR_display, then no properties are available
     if (icd_term->dispatch.GetDisplayModePropertiesKHR == NULL) {
@@ -2393,8 +2396,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhys
     }
 
     // We have to emulate the function.
-    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-               "vkGetDisplayPlaneCapabilities2KHR: Emulating call in ICD \"%s\"", icd_term->scanned_icd->lib_name);
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+               "vkGetDisplayPlaneCapabilities2KHR: Emulating call for driver \"%s\" device \"%s\"", icd_term->scanned_icd->lib_name,
+               phys_dev_term->properties.deviceName);
 
     // Just call into the old version of the function.
     // If the icd doesn't support VK_KHR_display, there are zero planes and this call is invalid (and will crash)
@@ -2540,10 +2544,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
         }
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulating call in ICD \"%s\" using "
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulating call for driver \"%s\" device \"%s\" using "
                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
-                   icd_term->scanned_icd->lib_name);
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         if (pSurfaceInfo->pNext != NULL) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
@@ -2613,9 +2617,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
         }
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulating call in ICD \"%s\" using vkGetPhysicalDeviceSurfaceFormatsKHR",
-                   icd_term->scanned_icd->lib_name);
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulating call for driver \"%s\" device \"%s\" using "
+                   "vkGetPhysicalDeviceSurfaceFormatsKHR",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         if (pSurfaceInfo->pNext != NULL) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,

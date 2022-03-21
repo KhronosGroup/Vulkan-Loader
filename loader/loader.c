@@ -5588,7 +5588,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
     // Every extension that has a loader-defined terminator needs to be marked as enabled or disabled so that we know whether or
     // not to return that terminator when vkGetDeviceProcAddr is called
-    extensions_create_device(dev, icd_term, phys_dev_term->phys_dev, &localCreateInfo);
+    extensions_create_device(dev, phys_dev_term, &localCreateInfo);
 
     res = fpCreateDevice(phys_dev_term->phys_dev, &localCreateInfo, pAllocator, &dev->icd_device);
     if (res != VK_SUCCESS) {
@@ -6026,6 +6026,16 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                 if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
                     goto out;
                 }
+
+                loader_set_dispatch((void *)new_phys_devs[idx], inst->disp);
+                new_phys_devs[idx]->this_icd_term = phys_dev_array[i].icd_term;
+                new_phys_devs[idx]->icd_index = (uint8_t)(phys_dev_array[i].icd_index);
+                new_phys_devs[idx]->phys_dev = phys_dev_array[i].physical_devices[j];
+
+                // Fill in the properties
+                new_phys_devs[idx]->this_icd_term->dispatch.GetPhysicalDeviceProperties(new_phys_devs[idx]->phys_dev,
+                                                                                        &new_phys_devs[idx]->properties);
+
                 // Increment the count of new physical devices
                 idx++;
             }

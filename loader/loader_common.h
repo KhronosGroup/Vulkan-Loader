@@ -363,6 +363,7 @@ struct loader_physical_device_term {
     struct loader_icd_term *this_icd_term;
     uint8_t icd_index;
     VkPhysicalDevice phys_dev;  // object from ICD
+    VkPhysicalDeviceProperties properties;
 };
 
 #ifdef LOADER_ENABLE_LINUX_SORT

@@ -257,7 +257,8 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
 }
 
 // A function that can be used to query enabled extensions during a vkCreateDevice call
-void extensions_create_device(struct loader_device *dev, struct loader_icd_term *icd_term, VkPhysicalDevice phys_dev, const VkDeviceCreateInfo *pCreateInfo) {
+void extensions_create_device(struct loader_device *dev, const struct loader_physical_device_term *phys_dev_term,
+                              const VkDeviceCreateInfo *pCreateInfo) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (!strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
             dev->dev_ext_enables.khr_swapchain = 1;
@@ -275,18 +276,15 @@ void extensions_create_device(struct loader_device *dev, struct loader_icd_term 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     }
-    dev->dev_ext_enables.ext_debug_utils = icd_term->this_instance->inst_ext_enables.ext_debug_utils;
+    dev->dev_ext_enables.ext_debug_utils = phys_dev_term->this_icd_term->this_instance->inst_ext_enables.ext_debug_utils;
 
-    VkPhysicalDeviceProperties properties;
-    icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev, &properties);
-
-    if (!dev->dev_ext_enables.khr_device_group && properties.apiVersion >= VK_API_VERSION_1_1) {
+    if (!dev->dev_ext_enables.khr_device_group && phys_dev_term->properties.apiVersion >= VK_API_VERSION_1_1) {
         dev->dev_ext_enables.khr_device_group = 1;
     }
 
-    loader_log(icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-               "       Using \"%s\" with driver: \"%s\"\n",
-               properties.deviceName, icd_term->scanned_icd->lib_name);
+    loader_log(phys_dev_term->this_icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+               "       Using \"%s\" using driver \"%s\"\n",
+               phys_dev_term->properties.deviceName, phys_dev_term->this_icd_term->scanned_icd->lib_name);
 }
 
 // A null-terminated list of all of the instance extensions supported by the loader.

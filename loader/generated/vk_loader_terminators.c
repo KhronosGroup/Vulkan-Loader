@@ -44,8 +44,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceFeatures) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceFeatures");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceFeatures",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceFeatures(phys_dev_term->phys_dev, pFeatures);
 }
@@ -57,8 +58,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceFormatProperties) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceFormatProperties");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceFormatProperties",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceFormatProperties(phys_dev_term->phys_dev, format, pFormatProperties);
 }
@@ -74,8 +76,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceImageFormatProperties) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceImageFormatProperties");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceImageFormatProperties",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetPhysicalDeviceImageFormatProperties(phys_dev_term->phys_dev, format, type, tiling, usage, flags, pImageFormatProperties);
 }
@@ -86,8 +89,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceProperties) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceProperties");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceProperties",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, pProperties);
 }
@@ -99,8 +103,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceQueueFamilyProperties");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceQueueFamilyProperties",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties(phys_dev_term->phys_dev, pQueueFamilyPropertyCount, pQueueFamilyProperties);
 }
@@ -111,8 +116,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceMemoryProperties) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceMemoryProperties");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceMemoryProperties",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceMemoryProperties(phys_dev_term->phys_dev, pMemoryProperties);
 }
@@ -129,8 +135,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSparseImageFormatProperties");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceSparseImageFormatProperties",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties(phys_dev_term->phys_dev, format, type, samples, usage, tiling, pPropertyCount, pProperties);
 }
@@ -148,8 +155,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceVideoCapabilitiesKHR(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceVideoCapabilitiesKHR) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceVideoCapabilitiesKHR");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceVideoCapabilitiesKHR",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetPhysicalDeviceVideoCapabilitiesKHR(phys_dev_term->phys_dev, pVideoProfile, pCapabilities);
 }
@@ -162,8 +170,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceVideoFormatProperties
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceVideoFormatPropertiesKHR) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceVideoFormatPropertiesKHR");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceVideoFormatPropertiesKHR",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetPhysicalDeviceVideoFormatPropertiesKHR(phys_dev_term->phys_dev, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties);
 }
@@ -183,8 +192,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceQueueFamilyPerf
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(phys_dev_term->phys_dev, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
 }
@@ -196,8 +206,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyPerformanceQue
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(phys_dev_term->phys_dev, pPerformanceQueryCreateInfo, pNumPasses);
 }
@@ -214,8 +225,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceFragmentShadingRatesK
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceFragmentShadingRatesKHR) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceFragmentShadingRatesKHR");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceFragmentShadingRatesKHR",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetPhysicalDeviceFragmentShadingRatesKHR(phys_dev_term->phys_dev, pFragmentShadingRateCount, pFragmentShadingRates);
 }
@@ -292,8 +304,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_ReleaseDisplayEXT(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.ReleaseDisplayEXT) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support ReleaseDisplayEXT");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support ReleaseDisplayEXT",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
         return VK_ERROR_INITIALIZATION_FAILED;
     }
     return icd_term->dispatch.ReleaseDisplayEXT(phys_dev_term->phys_dev, display);
@@ -436,8 +449,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMultisamplePropertiesEXT(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceMultisamplePropertiesEXT) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceMultisamplePropertiesEXT");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceMultisamplePropertiesEXT",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     icd_term->dispatch.GetPhysicalDeviceMultisamplePropertiesEXT(phys_dev_term->phys_dev, samples, pMultisampleProperties);
 }
@@ -454,8 +468,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCalibrateableTimeDoma
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceCalibrateableTimeDomainsEXT) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCalibrateableTimeDomainsEXT");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceCalibrateableTimeDomainsEXT",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetPhysicalDeviceCalibrateableTimeDomainsEXT(phys_dev_term->phys_dev, pTimeDomainCount, pTimeDomains);
 }
@@ -472,8 +487,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixProp
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixPropertiesNV) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCooperativeMatrixPropertiesNV");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceCooperativeMatrixPropertiesNV",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixPropertiesNV(phys_dev_term->phys_dev, pPropertyCount, pProperties);
 }
@@ -490,8 +506,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSupportedFramebufferM
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(phys_dev_term->phys_dev, pCombinationCount, pCombinations);
 }
@@ -508,8 +525,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireDrmDisplayEXT(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.AcquireDrmDisplayEXT) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support AcquireDrmDisplayEXT");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support AcquireDrmDisplayEXT",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
         return VK_ERROR_INITIALIZATION_FAILED;
     }
     return icd_term->dispatch.AcquireDrmDisplayEXT(phys_dev_term->phys_dev, drmFd, display);
@@ -523,8 +541,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDrmDisplayEXT(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetDrmDisplayEXT) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetDrmDisplayEXT");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetDrmDisplayEXT",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
         return VK_ERROR_INITIALIZATION_FAILED;
     }
     return icd_term->dispatch.GetDrmDisplayEXT(phys_dev_term->phys_dev, drmFd, connectorId, display);
@@ -542,8 +561,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireWinrtDisplayNV(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.AcquireWinrtDisplayNV) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support AcquireWinrtDisplayNV");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support AcquireWinrtDisplayNV",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.AcquireWinrtDisplayNV(phys_dev_term->phys_dev, display);
 }
@@ -555,8 +575,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetWinrtDisplayNV(
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetWinrtDisplayNV) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetWinrtDisplayNV");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver %s with VkPhysicalDevice \"%s\" does not support GetWinrtDisplayNV",
+                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
     }
     return icd_term->dispatch.GetWinrtDisplayNV(phys_dev_term->phys_dev, deviceRelativeId, pDisplay);
 }

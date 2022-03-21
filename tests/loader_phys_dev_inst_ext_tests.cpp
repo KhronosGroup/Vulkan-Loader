@@ -213,7 +213,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRInstanceSupports11) {
     ASSERT_EQ(props.deviceType, props2KHR.properties.deviceType);
     ASSERT_EQ(0, memcmp(props.pipelineCacheUUID, props2KHR.properties.pipelineCacheUUID, VK_UUID_SIZE));
 
-    ASSERT_FALSE(log.find("Emulating call in ICD"));
+    ASSERT_FALSE(log.find("Emulating call for driver"));
 }
 
 // Test vkGetPhysicalDeviceProperties2 where instance supports it with some ICDs that both support
@@ -534,7 +534,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceSupports11) {
     GetPhysDevFeats2(physical_device, &feats2);
     ASSERT_TRUE(CompareFeatures(feats, feats2));
 
-    ASSERT_FALSE(log.find("Emulating call in ICD"));
+    ASSERT_FALSE(log.find("Emulating call for driver"));
 }
 
 // Test vkGetPhysicalDeviceFeatures2 where instance supports it with some ICDs that both support
@@ -765,7 +765,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceSupports11) {
     ASSERT_EQ(props.linearTilingFeatures, props2KHR.formatProperties.linearTilingFeatures);
     ASSERT_EQ(props.optimalTilingFeatures, props2KHR.formatProperties.optimalTilingFeatures);
 
-    ASSERT_FALSE(log.find("Emulating call in ICD"));
+    ASSERT_FALSE(log.find("Emulating call for driver"));
 }
 
 // Test vkGetPhysicalDeviceFormatProperties2 where instance supports it with some ICDs that both support
@@ -1051,7 +1051,7 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRInstanceSupports11) {
     ASSERT_EQ(props.sampleCounts, props2KHR.imageFormatProperties.sampleCounts);
     ASSERT_EQ(props.maxResourceSize, props2KHR.imageFormatProperties.maxResourceSize);
 
-    ASSERT_FALSE(log.find("Emulating call in ICD"));
+    ASSERT_FALSE(log.find("Emulating call for driver"));
 }
 
 // Test vkGetPhysicalDeviceImageFormatProperties2 where instance supports it with some ICDs that both support
@@ -1309,7 +1309,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRInstanceSupports11) {
     GetPhysDevMemoryProps2KHR(physical_device, &props2KHR);
     ASSERT_TRUE(CompareMemoryData(props, props2KHR));
 
-    ASSERT_FALSE(log.find("Emulating call in ICD"));
+    ASSERT_FALSE(log.find("Emulating call for driver"));
 }
 // Test vkGetPhysicalDeviceMemoryProperties2 where instance supports it with some ICDs that both support
 // and don't support it:
@@ -1583,7 +1583,7 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRInstanceSupports11) {
     GetPhysDevQueueFamilyProps2KHR(physical_device, &ret_fam_2_khr, props2KHR.data());
     ASSERT_TRUE(CompareQueueFamilyData(props, props2KHR));
 
-    ASSERT_FALSE(log.find("Emulating call in ICD"));
+    ASSERT_FALSE(log.find("Emulating call for driver"));
 }
 
 // Test vkGetPhysicalDeviceQueueFamilyProperties2 where instance supports it with some ICDs that both support
@@ -1900,7 +1900,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRInstanceSupports11)
     ASSERT_EQ(sparse_count_1, sparse_count_2_khr);
     ASSERT_TRUE(CompareSparseImageFormatData(props, props2KHR));
 
-    ASSERT_FALSE(log.find("Emulating call in ICD"));
+    ASSERT_FALSE(log.find("Emulating call for driver"));
 }
 
 // Test vkGetPhysicalDeviceSparseImageFormatProperties2 where instance supports it with some ICDs that both support

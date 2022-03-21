@@ -61,7 +61,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceFeatures2 fpGetPhysicalDeviceFeatures2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceFeatures2 = icd_term->dispatch.GetPhysicalDeviceFeatures2;
@@ -76,8 +76,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceFeatures2: Emulating call in ICD \"%s\" using vkGetPhysicalDeviceFeatures",
-                   icd_term->scanned_icd->lib_name);
+                   "vkGetPhysicalDeviceFeatures2: Emulating call for driver \"%s\" device \"%s\" using vkGetPhysicalDeviceFeatures",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         // Write to the VkPhysicalDeviceFeatures2 struct
         icd_term->dispatch.GetPhysicalDeviceFeatures(phys_dev_term->phys_dev, &pFeatures->features);
@@ -117,7 +117,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceProperties2 fpGetPhysicalDeviceProperties2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
@@ -131,9 +131,10 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
         fpGetPhysicalDeviceProperties2(phys_dev_term->phys_dev, pProperties);
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceProperties2: Emulating call in ICD \"%s\" using vkGetPhysicalDeviceProperties",
-                   icd_term->scanned_icd->lib_name);
+        loader_log(
+            icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
+            "vkGetPhysicalDeviceProperties2: Emulating call for driver \"%s\" device \"%s\" using vkGetPhysicalDeviceProperties",
+            icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         // Write to the VkPhysicalDeviceProperties2 struct
         icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &pProperties->properties);
@@ -180,7 +181,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2(VkPhysi
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceFormatProperties2 fpGetPhysicalDeviceFormatProperties2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceFormatProperties2;
@@ -195,8 +196,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2(VkPhysi
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceFormatProperties2: Emulating call in ICD \"%s\" using vkGetPhysicalDeviceFormatProperties",
-                   icd_term->scanned_icd->lib_name);
+                   "vkGetPhysicalDeviceFormatProperties2: Emulating call for driver \"%s\" device \"%s\" using "
+                   "vkGetPhysicalDeviceFormatProperties",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         // Write to the VkFormatProperties2 struct
         icd_term->dispatch.GetPhysicalDeviceFormatProperties(phys_dev_term->phys_dev, format, &pFormatProperties->formatProperties);
@@ -218,7 +220,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceImageFormatProperties2 fpGetPhysicalDeviceImageFormatProperties2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceImageFormatProperties2;
@@ -233,9 +235,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceImageFormatProperties2: Emulating call in ICD \"%s\" using "
+                   "vkGetPhysicalDeviceImageFormatProperties2: Emulating call for driver \"%s\" device \"%s\" using "
                    "vkGetPhysicalDeviceImageFormatProperties",
-                   icd_term->scanned_icd->lib_name);
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         // If there is more info in  either pNext, then this is unsupported
         if (pImageFormatInfo->pNext != NULL || pImageFormatProperties->pNext != NULL) {
@@ -258,7 +260,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(Vk
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceQueueFamilyProperties2 fpGetPhysicalDeviceQueueFamilyProperties2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceQueueFamilyProperties2 = icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties2;
@@ -273,9 +275,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(Vk
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceQueueFamilyProperties2: Emulating call in ICD \"%s\" using "
+                   "vkGetPhysicalDeviceQueueFamilyProperties2: Emulating call for driver \"%s\" device \"%s\" using "
                    "vkGetPhysicalDeviceQueueFamilyProperties",
-                   icd_term->scanned_icd->lib_name);
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         if (pQueueFamilyProperties == NULL || *pQueueFamilyPropertyCount == 0) {
             // Write to pQueueFamilyPropertyCount
@@ -316,7 +318,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2(VkPhysi
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceMemoryProperties2 fpGetPhysicalDeviceMemoryProperties2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceMemoryProperties2 = icd_term->dispatch.GetPhysicalDeviceMemoryProperties2;
@@ -331,8 +333,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2(VkPhysi
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceMemoryProperties2: Emulating call in ICD \"%s\" using vkGetPhysicalDeviceMemoryProperties",
-                   icd_term->scanned_icd->lib_name);
+                   "vkGetPhysicalDeviceMemoryProperties2: Emulating call for driver \"%s\" device \"%s\" using "
+                   "vkGetPhysicalDeviceMemoryProperties",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         // Write to the VkPhysicalDeviceMemoryProperties2 struct
         icd_term->dispatch.GetPhysicalDeviceMemoryProperties(phys_dev_term->phys_dev, &pMemoryProperties->memoryProperties);
@@ -354,7 +357,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 fpGetPhysicalDeviceSparseImageFormatProperties2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceSparseImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties2;
@@ -369,9 +372,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceSparseImageFormatProperties2: Emulating call in ICD \"%s\" using "
+                   "vkGetPhysicalDeviceSparseImageFormatProperties2: Emulating call for driver \"%s\" device \"%s\" using "
                    "vkGetPhysicalDeviceSparseImageFormatProperties",
-                   icd_term->scanned_icd->lib_name);
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         if (pFormatInfo->pNext != NULL) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
@@ -423,7 +426,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties(
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceExternalBufferProperties fpGetPhysicalDeviceExternalBufferProperties = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalBufferProperties = icd_term->dispatch.GetPhysicalDeviceExternalBufferProperties;
@@ -438,7 +441,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties(
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceExternalBufferProperties: Emulating call in ICD \"%s\"", icd_term->scanned_icd->lib_name);
+                   "vkGetPhysicalDeviceExternalBufferProperties: Emulating call for driver \"%s\" device \"%s\"",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         if (pExternalBufferInfo->pNext != NULL) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
@@ -466,7 +470,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperti
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceExternalSemaphoreProperties fpGetPhysicalDeviceExternalSemaphoreProperties = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalSemaphoreProperties = icd_term->dispatch.GetPhysicalDeviceExternalSemaphoreProperties;
@@ -482,7 +486,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperti
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceExternalSemaphoreProperties: Emulating call in ICD \"%s\"", icd_term->scanned_icd->lib_name);
+                   "vkGetPhysicalDeviceExternalSemaphoreProperties: Emulating call for driver \"%s\" device \"%s\"",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         if (pExternalSemaphoreInfo->pNext != NULL) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
@@ -512,7 +517,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties(
 
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // Get the function pointer to use to call into the driver. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceExternalFenceProperties fpGetPhysicalDeviceExternalFenceProperties = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalFenceProperties = icd_term->dispatch.GetPhysicalDeviceExternalFenceProperties;
@@ -527,7 +532,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties(
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceExternalFenceProperties: Emulating call in ICD \"%s\"", icd_term->scanned_icd->lib_name);
+                   "vkGetPhysicalDeviceExternalFenceProperties: Emulating call for driver \"%s\" device \"%s\"",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         if (pExternalFenceInfo->pNext != NULL) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
@@ -563,50 +569,46 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
         *pToolCount = 0;
     }
 
-    VkPhysicalDeviceProperties properties;
-    if (icd_term->dispatch.GetPhysicalDeviceProperties) {
-        icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
+    // If this is Vulkan 1.3 or newer, then it may support the API (but then again, it may not).
+    // Because of this, check for NULL before trying to call down.
+    if (VK_API_VERSION_MINOR(phys_dev_term->properties.apiVersion) >= 3) {
+        if (NULL == icd_term->dispatch.GetPhysicalDeviceToolProperties) {
+            loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                        "terminator_GetPhysicalDeviceToolProperties: Driver \"%s\" device \"%s\" "
+                        "vkGetPhysicalDeviceToolProperties was NULL yet device claims supports for Vulkan 1.3",
+                        icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
+        } else {
+            res = icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
+            goto out;
+        }
+    }
 
-        // If this is Vulkan 1.3 or newer, then it may support the API (but then again, it may not).
-        // Because of this, check for NULL before trying to call down.
-        if (VK_API_VERSION_MINOR(properties.apiVersion) >= 3) {
-            if (NULL == icd_term->dispatch.GetPhysicalDeviceToolProperties) {
-                loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                           "terminator_GetPhysicalDeviceToolProperties: The ICD's vkGetPhysicalDeviceToolProperties was NULL yet "
-                           "the physical device supports Vulkan API Version 1.3.");
-            } else {
-                res = icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
-                goto out;
+    // If we get here, we should check if the extension is present, not the core version and then
+    // also verify the pointer is non-NULL.
+    enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, NULL);
+    if (enumerate_res != VK_SUCCESS) {
+        goto out;
+    }
+
+    ext_props = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * ext_count,
+                                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (!ext_props) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, ext_props);
+    if (enumerate_res != VK_SUCCESS) {
+        goto out;
+    }
+
+    for (uint32_t i = 0; i < ext_count; i++) {
+        if (strncmp(ext_props[i].extensionName, VK_EXT_TOOLING_INFO_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            if (icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
+                res =
+                    icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
             }
-        }
-
-        // If we get here, we should check if the extension is present, not the core version and then
-        // also verify the pointer is non-NULL.
-        enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, NULL);
-        if (enumerate_res != VK_SUCCESS) {
-            goto out;
-        }
-
-        ext_props = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * ext_count,
-                                               VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (!ext_props) {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-
-        enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, ext_props);
-        if (enumerate_res != VK_SUCCESS) {
-            goto out;
-        }
-
-        for (uint32_t i = 0; i < ext_count; i++) {
-            if (strncmp(ext_props[i].extensionName, VK_EXT_TOOLING_INFO_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-                if (icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
-                    res =
-                        icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
-                }
-                break;
-            }
+            break;
         }
     }
 

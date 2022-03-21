@@ -92,10 +92,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
                                                                            pSurfaceCapabilities);
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulating call in ICD \"%s\" using "
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulating call for driver \"%s\" device \"%s\" using "
                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
-                   icd_term->scanned_icd->lib_name);
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         VkSurfaceCapabilitiesKHR surface_caps;
         VkResult res =
@@ -135,8 +135,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireXlibDisplayEXT(VkPhysicalDevice
         return icd_term->dispatch.AcquireXlibDisplayEXT(phys_dev_term->phys_dev, dpy, display);
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkAcquireXLibDisplayEXT: Emulating call in ICD \"%s\" by returning error", icd_term->scanned_icd->lib_name);
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "vkAcquireXLibDisplayEXT: Emulating call for driver \"%s\" device \"%s\" by returning error",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         // Fail for the unsupported command
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -153,9 +154,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetRandROutputDisplayEXT(VkPhysicalDev
         return icd_term->dispatch.GetRandROutputDisplayEXT(phys_dev_term->phys_dev, dpy, rrOutput, pDisplay);
     } else {
         // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetRandROutputDisplayEXT: Emulating call in ICD \"%s\" by returning null display",
-                   icd_term->scanned_icd->lib_name);
+        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "vkGetRandROutputDisplayEXT: Emulating call for driver \"%s\" device \"%s\" by returning null display",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
 
         // Return a null handle to indicate this can't be done
         *pDisplay = VK_NULL_HANDLE;
@@ -172,8 +173,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModes2E
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSurfacePresentModes2EXT");
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Driver \"%s\" device \"%s\" does not support GetPhysicalDeviceSurfacePresentModes2EXT",
+                   icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
         abort();
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);

@@ -1244,10 +1244,11 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         valid += '    if (NULL == icd_term->dispatch.'
         valid += base_name
         valid += ') {\n'
-        valid += '        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,\n'
-        valid += '                   "ICD associated with VkPhysicalDevice does not support '
+        valid += '        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,\n'
+        valid += '                   "Driver %s with VkPhysicalDevice \\"%s\\" does not support '
         valid += base_name
-        valid += '");\n'
+        valid += '",\n'
+        valid += '                    icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);\n'
         # If this is an instance function taking a physical device (i.e. pre Vulkan 1.1), we need to behave and not crash so return an
         # error here.
         if ext_type =='instance' and has_return:
@@ -1602,6 +1603,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         protos += '// Define types as externally available structs where necessary\n'
         protos += 'struct loader_instance;\n'
         protos += 'struct loader_dev_dispatch_table;\n'
+        protos += 'struct loader_physical_device_term;\n'
         protos += '\n'
         protos += '\n'
         protos += '// Extension interception for vkCreateInstance function, so we can properly detect and\n'
@@ -1610,7 +1612,8 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         protos += '\n'
         protos += '// Extension interception for vkCreateDevice function, so we can properly detect and\n'
         protos += '// enable any device extension information for extensions we know about.\n'
-        protos += 'void extensions_create_device(struct loader_device *dev, struct loader_icd_term *icd_term, VkPhysicalDevice phys_dev, const VkDeviceCreateInfo *pCreateInfo);\n'
+        protos += 'void extensions_create_device(struct loader_device *dev, const struct loader_physical_device_term *phys_dev_term,\n'
+        protos += '                              const VkDeviceCreateInfo *pCreateInfo);\n'
         protos += '\n'
         protos += '// Array of extension strings for instance extensions we support.\n'
         protos += 'extern const char *const LOADER_INSTANCE_EXTENSIONS[];\n'
@@ -1705,7 +1708,8 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         create_funcs += '}\n\n'
 
         create_funcs += '// A function that can be used to query enabled extensions during a vkCreateDevice call\n'
-        create_funcs += 'void extensions_create_device(struct loader_device *dev, struct loader_icd_term *icd_term, VkPhysicalDevice phys_dev, const VkDeviceCreateInfo *pCreateInfo) {\n'
+        create_funcs += 'void extensions_create_device(struct loader_device *dev, const struct loader_physical_device_term *phys_dev_term,\n'
+        create_funcs += '                              const VkDeviceCreateInfo *pCreateInfo) {\n'
         create_funcs += '    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {\n'
 
         first = True
@@ -1732,19 +1736,15 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         create_funcs += '    }\n'
 
         # Hard code to determine if we can use VK_EXT_debug_utils
-        create_funcs += '    dev->dev_ext_enables.ext_debug_utils = icd_term->this_instance->inst_ext_enables.ext_debug_utils;\n\n'
-
-        # Get device properties
-        create_funcs += '    VkPhysicalDeviceProperties properties;\n'
-        create_funcs += '    icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev, &properties);\n\n'
+        create_funcs += '    dev->dev_ext_enables.ext_debug_utils = phys_dev_term->this_icd_term->this_instance->inst_ext_enables.ext_debug_utils;\n\n'
 
         # Hard code to determine if we can use VK_KHR_device_group
-        create_funcs += '    if (!dev->dev_ext_enables.khr_device_group && properties.apiVersion >= VK_API_VERSION_1_1) {\n'
+        create_funcs += '    if (!dev->dev_ext_enables.khr_device_group && phys_dev_term->properties.apiVersion >= VK_API_VERSION_1_1) {\n'
         create_funcs += '        dev->dev_ext_enables.khr_device_group = 1;\n'
         create_funcs += '    }\n\n'
-        create_funcs += '    loader_log(icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,\n'
-        create_funcs += '               "       Using \\"%s\\" with driver: \\"%s\\"\\n",\n'
-        create_funcs += '               properties.deviceName, icd_term->scanned_icd->lib_name);\n'
+        create_funcs += '    loader_log(phys_dev_term->this_icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,\n'
+        create_funcs += '               "       Using \\"%s\\" using driver \\"%s\\"\\n",\n'
+        create_funcs += '               phys_dev_term->properties.deviceName, phys_dev_term->this_icd_term->scanned_icd->lib_name);\n'
         create_funcs += '}\n\n'
         return create_funcs
 

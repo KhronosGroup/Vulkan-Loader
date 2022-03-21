@@ -58,8 +58,10 @@ def main(argv):
                                             'vk_test_entrypoint_extension_tests.cpp',
                                             'loader_generated_header_version.cmake']]
 
-    repo_dir = common_codegen.repo_relative('loader/generated')
+    loader_repo_dir = common_codegen.repo_relative('loader/generated')
     test_repo_dir = common_codegen.repo_relative('tests/generated')
+    gen_dir = loader_repo_dir
+    test_gen_dir = test_repo_dir
 
     # get directory where generators will run
     if args.verify or args.incremental:
@@ -68,22 +70,20 @@ def main(argv):
         temp_dir = temp_obj.name
         gen_dir = temp_dir
         test_gen_dir = temp_dir
-    else:
-        # generate directly in the repo
-        gen_dir = repo_dir
-        test_gen_dir = test_repo_dir
 
     # run each code generator
     for cmd in gen_cmds:
-        print(' '.join(cmd))
         try:
             out_dir = gen_dir
             if 'vk_test_entrypoint' in cmd[4]:
                 out_dir = test_gen_dir
+
+            print(' '.join(cmd), ' -> ', out_dir)
+
             subprocess.check_call([sys.executable] + cmd,
                                   # ignore generator output, vk_validation_stats.py is especially noisy
                                   stdout=subprocess.DEVNULL,
-                                  cwd=out_dir)
+                                  cwd=gen_dir)
         except Exception as e:
             print('ERROR:', str(e))
             return 1
@@ -92,13 +92,19 @@ def main(argv):
     if args.verify:
         # compare contents of temp dir and repo
         temp_files = set(os.listdir(temp_dir))
-        repo_files = set(os.listdir(repo_dir))
+        loader_repo_files = set(os.listdir(loader_repo_dir))
         test_repo_files = set(os.listdir(test_repo_dir))
+
+        search_folders = loader_repo_files | test_repo_files
+        if args.verify or args.incremental:
+            search_folders = temp_files | search_folders
+        search_folders = search_folders - set(verify_exclude)
+
         files_match = True
-        for filename in sorted((temp_files | repo_files | test_repo_files) - set(verify_exclude)):
+        for filename in sorted(search_folders):
             is_test_file = ('vk_test_entrypoint' in filename)
-            compare_repo_path = repo_dir
-            compare_repo_files = repo_files
+            compare_repo_path = loader_repo_dir
+            compare_repo_files = loader_repo_files
             if is_test_file:
                 compare_repo_path = test_repo_dir
                 compare_repo_files = test_repo_files
@@ -113,6 +119,7 @@ def main(argv):
                 orig_size = os.stat(orig_file)
                 temp_file = os.path.join(temp_dir, filename)
                 temp_size = os.stat(temp_file)
+                print('Comparing %s to %s' % (temp_file, orig_file))
                 if not filecmp.cmp(temp_file, orig_file, shallow=False):
                     print('ERROR: Repo files do not match generator output for', filename)
                     print('          orig %s (size %d)'%(orig_file, orig_size.st_size))
@@ -128,14 +135,14 @@ def main(argv):
     elif args.incremental:
         # copy missing or differing files from temp directory to repo
         for filename in os.listdir(temp_dir):
-            compare_repo_path = repo_dir
+            target_dir = loader_repo_dir
             if 'vk_test_entrypoint' in filename:
-                compare_repo_path = test_repo_dir
+                target_dir = test_repo_dir
             temp_filename = os.path.join(temp_dir, filename)
-            repo_filename = os.path.join(out_dir, filename)
+            repo_filename = os.path.join(target_dir, filename)
             if not os.path.exists(repo_filename) or \
                not filecmp.cmp(temp_filename, repo_filename, shallow=False):
-                print('update', repo_filename)
+                print('---Updating ', repo_filename)
                 shutil.copyfile(temp_filename, repo_filename)
 
     return 0

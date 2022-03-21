@@ -29,6 +29,7 @@
 // Define types as externally available structs where necessary
 struct loader_instance;
 struct loader_dev_dispatch_table;
+struct loader_physical_device_term;
 
 
 // Extension interception for vkCreateInstance function, so we can properly detect and
@@ -37,7 +38,8 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
 
 // Extension interception for vkCreateDevice function, so we can properly detect and
 // enable any device extension information for extensions we know about.
-void extensions_create_device(struct loader_device *dev, struct loader_icd_term *icd_term, VkPhysicalDevice phys_dev, const VkDeviceCreateInfo *pCreateInfo);
+void extensions_create_device(struct loader_device *dev, const struct loader_physical_device_term *phys_dev_term,
+                              const VkDeviceCreateInfo *pCreateInfo);
 
 // Array of extension strings for instance extensions we support.
 extern const char *const LOADER_INSTANCE_EXTENSIONS[];

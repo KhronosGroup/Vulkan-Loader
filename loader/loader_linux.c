@@ -336,6 +336,10 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
         loader_set_dispatch((void *)sorted_device_term[dev], inst->disp);
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s  %s", dev,
                    sorted_device_info[dev].device_name, (sorted_device_info[dev].default_device ? "[default]" : ""));
+
+        // Fill in the properties
+        sorted_device_term[dev]->this_icd_term->dispatch.GetPhysicalDeviceProperties(sorted_device_term[dev]->phys_dev,
+                                                                                     &sorted_device_term[dev]->properties);
     }
 
 out:
