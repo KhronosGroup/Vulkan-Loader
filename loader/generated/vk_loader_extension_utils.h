@@ -28,9 +28,17 @@
 
 // Define types as externally available structs where necessary
 struct loader_instance;
+struct loader_scanned_icd;
+struct loader_extension_list;
 struct loader_dev_dispatch_table;
 struct loader_physical_device_term;
 
+
+// Check to determine support of instance extensions by a driver.
+void instance_extensions_supported_by_driver(struct loader_scanned_icd* scanned_icd, struct loader_extension_list *ext_list);
+
+// Check to determine support of device extensions by a physical device.
+VkResult device_extensions_supported_by_physical_device(struct loader_physical_device_term* phys_dev_term);
 
 // Extension interception for vkCreateInstance function, so we can properly detect and
 // enable any instance extension information for extensions we know about.
@@ -129,6 +137,24 @@ struct loader_device_extension_enables {
     uint8_t ext_debug_marker : 1;
     uint8_t ext_debug_utils : 1;
     uint8_t ext_full_screen_exclusive : 1;
+};
+
+struct loader_driver_device_extension_enables {
+    uint8_t khr_swapchain : 1;
+    uint8_t khr_display_swapchain : 1;
+    uint8_t khr_device_group : 1;
+    uint8_t ext_debug_marker : 1;
+    uint8_t ext_debug_utils : 1;
+    uint8_t ext_full_screen_exclusive : 1;
+    uint8_t khr_video_queue : 1;
+    uint8_t khr_performance_query : 1;
+    uint8_t khr_fragment_shading_rate : 1;
+    uint8_t ext_sample_locations : 1;
+    uint8_t ext_calibrated_timestamps : 1;
+    uint8_t ext_tooling_info : 1;
+    uint8_t nv_cooperative_matrix : 1;
+    uint8_t nv_coverage_reduction_mode : 1;
+    uint8_t nv_acquire_winrt_display : 1;
 };
 
 // clang-format on

@@ -235,6 +235,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'is_const', 'is_pointer', 'cdecl'])
         self.CommandData = namedtuple('CommandData', ['name', 'require', 'protect', 'return_type', 'handle', 'handle_type', 'params', 'cdecl', 'alias', 'alias_ext', 'needs_tramp', 'needs_term', 'requires_term_disp'])
         self.dev_extensions_tracked_by_loader = []
+        self.dev_extensions_from_drivers = []
 
     #
     # Called once at the beginning of each run
@@ -325,10 +326,21 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         file_data = ''
 
-        # Now generate a list of device commands that we need to track
+        # Generate a list of device extensions the loader needs to follow (and also drivers)
         for ext_group in self.ext_command_groups:
             if ext_group.needs_dev_term_override or ext_group.ext_name in ADD_DEVICE_EXTS_TRACKED_BY_LOADER:
                 self.dev_extensions_tracked_by_loader.append(ext_group.ext_name)
+                self.dev_extensions_from_drivers.append(ext_group)
+
+        # Generate a list of device extensions that use physical devices
+        phys_dev_ext_list = self.GeneratePhysicalDeviceExtensionList()
+        for phys_dev_ext in phys_dev_ext_list:
+            found = False
+            for driver_ext in self.dev_extensions_from_drivers:
+                if driver_ext.ext_name == phys_dev_ext.ext_name:
+                    found = True
+            if not found:
+                self.dev_extensions_from_drivers.append(phys_dev_ext)
 
         if self.genOpts.filename == 'vk_layer_dispatch_table.h':
             file_data += self.OutputLayerInstanceTermDispatchTable(True)
@@ -339,6 +351,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
             file_data += self.OutputExtensionEnableStructs()
 
         elif self.genOpts.filename == 'vk_loader_extension_utils.c':
+            file_data += self.OutputDriverExtensionChecks()
             file_data += self.OutputInstanceExtensionEnableCheck()
             file_data += self.OutputInstantExtensionWhitelistArray()
             file_data += self.OutputLoaderDispatchTables()
@@ -1597,14 +1610,42 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         return ext_used
 
+    def GeneratePhysicalDeviceExtensionList(self):
+        ext_used = []
+        # First add instance extensions we need to verify are enabled
+        for cur_ext_cmd_group in self.ext_command_groups:
+            if cur_ext_cmd_group.ext_name not in ext_used:
+                if 'instance' != cur_ext_cmd_group.ext_type and 'android' not in cur_ext_cmd_group.ext_name.lower():
+                    for cur_cmd in cur_ext_cmd_group.cmds:
+                        if cur_cmd.handle_type == 'VkPhysicalDevice':
+                            ext_used.append(cur_ext_cmd_group)
+                            break
+
+        # Hack, make sure the first one is not protected or else it messes up the if else blocks
+        if ext_used[0].protect is not None:
+            for i in range(0, len(ext_used)):
+                if ext_used[i].protect is None:
+                    ext_used[0], ext_used[i] = ext_used[i], ext_used[0]
+                    break
+
+        return ext_used
+
     # Add externs and prototype
     def OutputInstaceExtensionPrototypes(self):
         protos = '\n'
         protos += '// Define types as externally available structs where necessary\n'
         protos += 'struct loader_instance;\n'
+        protos += 'struct loader_scanned_icd;\n'
+        protos += 'struct loader_extension_list;\n'
         protos += 'struct loader_dev_dispatch_table;\n'
         protos += 'struct loader_physical_device_term;\n'
         protos += '\n'
+        protos += '\n'
+        protos += '// Check to determine support of instance extensions by a driver.\n'
+        protos += 'void instance_extensions_supported_by_driver(struct loader_scanned_icd* scanned_icd, struct loader_extension_list *ext_list);\n'
+        protos += '\n'
+        protos += '// Check to determine support of device extensions by a physical device.\n'
+        protos += 'VkResult device_extensions_supported_by_physical_device(struct loader_physical_device_term* phys_dev_term);\n'
         protos += '\n'
         protos += '// Extension interception for vkCreateInstance function, so we can properly detect and\n'
         protos += '// enable any instance extension information for extensions we know about.\n'
@@ -1655,7 +1696,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         ext_used = self.GenerateInstanceExtensionList()
 
-        # Print out the function
+        # Print out the instance extension enable options
         for ext in ext_used:
             structs += '    uint8_t %s : 1;\n' % ext.ext_name[3:].lower()
 
@@ -1664,12 +1705,134 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
         structs += '// Struct of all device extensions that the loader has to override at least one command for\n'
         structs += 'struct loader_device_extension_enables {\n'
 
-        # Print out the function
+        # Print out the device extension enable options
         for ext in self.dev_extensions_tracked_by_loader:
             structs += '    uint8_t %s : 1;\n' % ext[3:].lower()
 
         structs += '};\n\n'
+
+        structs += 'struct loader_driver_device_extension_enables {\n'
+
+        # Print out the device extension enable options
+        for ext in self.dev_extensions_from_drivers:
+            structs += '    uint8_t %s : 1;\n' % ext.ext_name[3:].lower()
+
+        structs += '};\n\n'
         return structs
+
+    # Determine which instance extensions a driver supports
+    def OutputDriverExtensionChecks(self):
+        cur_extension_name = ''
+
+        driver_ext_check = ''
+        driver_ext_check += '// Check to determine support of instance extensions by a driver.\n'
+        driver_ext_check += 'void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_icd, struct loader_extension_list *ext_list) {\n'
+        driver_ext_check += '    // Fill in the supported extension structure\n'
+        driver_ext_check += '    for (uint32_t i = 0; i < ext_list->count; i++) {\n'
+
+        # Print out code to check for instance extension support
+        ext_used = self.GenerateInstanceExtensionList()
+        print_else = False
+        for ext in ext_used:
+            driver_ext_check += '\n        // ---- %s extension commands\n' % ext.ext_name
+            if ext.protect is not None:
+                driver_ext_check += '#ifdef %s\n' % ext.protect
+            driver_ext_check += '        '
+            if print_else:
+                driver_ext_check += '} else '
+            else:
+                print_else = True
+
+            driver_ext_check += 'if (strncmp(ext_list->list[i].extensionName, "'
+            driver_ext_check += ext.ext_name
+            driver_ext_check += '", VK_MAX_EXTENSION_NAME_SIZE) == 0) {\n'
+            driver_ext_check += '            scanned_icd->inst_ext_support.'
+            driver_ext_check += ext.ext_name[3:].lower()
+            driver_ext_check += ' = 1;\n'
+
+            if ext.protect is not None:
+                driver_ext_check += '#endif // %s\n' % ext.protect
+
+        driver_ext_check += '        }\n'
+        driver_ext_check += '    }\n'
+        driver_ext_check += '}\n'
+        driver_ext_check += '\n'
+        driver_ext_check += '// Check to determine support of device extensions by a physical device.\n'
+        driver_ext_check += 'VkResult device_extensions_supported_by_physical_device(struct loader_physical_device_term* phys_dev_term) {\n'
+        driver_ext_check += '    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;\n'
+        driver_ext_check += '    VkExtensionProperties *ext_props = NULL;\n'
+        driver_ext_check += '    uint32_t ext_count = 0;\n'
+        driver_ext_check += '    const struct loader_instance* driver_instance = icd_term->this_instance;\n'
+        driver_ext_check += '    VkPhysicalDevice driver_phys_dev = phys_dev_term->phys_dev;\n'
+        driver_ext_check += '\n'
+        driver_ext_check += '    // Get the extension count\n'
+        driver_ext_check += '    VkResult result = icd_term->dispatch.EnumerateDeviceExtensionProperties(driver_phys_dev, NULL, &ext_count, NULL);\n'
+        driver_ext_check += '    if (result != VK_SUCCESS) {\n'
+        driver_ext_check += '        loader_log(driver_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,\n'
+        driver_ext_check += '                   "device_extensions_supported_by_physical_device: calling driver \\"%s\\" "\n'
+        driver_ext_check += '                   "EnumerateDeviceExtensionProperties to query count failed!\\n",\n'
+        driver_ext_check += '                   icd_term->scanned_icd->lib_name);\n'
+        driver_ext_check += '        goto out;\n'
+        driver_ext_check += '    }\n'
+        driver_ext_check += '\n'
+        driver_ext_check += '    // Allocate space for us to store the extension information\n'
+        driver_ext_check += '    ext_props = loader_instance_heap_alloc(driver_instance, sizeof(VkExtensionProperties) * ext_count,\n'
+        driver_ext_check += '                                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);\n'
+        driver_ext_check += '    if (!ext_props) {\n'
+        driver_ext_check += '        loader_log(driver_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,\n'
+        driver_ext_check += '                   "device_extensions_supported_by_physical_device: failed allocating extension properties struct!\\n",\n'
+        driver_ext_check += '                   icd_term->scanned_icd->lib_name);\n'
+        driver_ext_check += '        result = VK_ERROR_OUT_OF_HOST_MEMORY;\n'
+        driver_ext_check += '        goto out;\n'
+        driver_ext_check += '    }\n'
+        driver_ext_check += '\n'
+        driver_ext_check += '    // Query the actual extension information\n'
+        driver_ext_check += '    result = icd_term->dispatch.EnumerateDeviceExtensionProperties(driver_phys_dev, NULL, &ext_count, ext_props);\n'
+        driver_ext_check += '    if (result != VK_SUCCESS) {\n'
+        driver_ext_check += '        loader_log(driver_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,\n'
+        driver_ext_check += '                   "device_extensions_supported_by_physical_device: calling driver \\"%s\\" "\n'
+        driver_ext_check += '                   "EnumerateDeviceExtensionProperties to query extensions failed!\\n",\n'
+        driver_ext_check += '                   icd_term->scanned_icd->lib_name);\n'
+        driver_ext_check += '        goto out;\n'
+        driver_ext_check += '    }\n'
+        driver_ext_check += '\n'
+        driver_ext_check += '    // Fill in the supported extension structure\n'
+        driver_ext_check += '    for (uint32_t i = 0; i < ext_count; i++) {\n'
+
+        # Print out code to check for device extension support
+        print_else = False
+        ext_used = self.dev_extensions_from_drivers
+        for ext in ext_used:
+            driver_ext_check += '\n        // ---- %s extension commands\n' % ext.ext_name
+            if ext.protect is not None:
+                driver_ext_check += '#ifdef %s\n' % ext.protect
+            driver_ext_check += '        '
+            if print_else:
+                driver_ext_check += '} else '
+            else:
+                print_else = True
+
+            driver_ext_check += 'if (strncmp(ext_props[i].extensionName, "'
+            driver_ext_check += ext.ext_name
+            driver_ext_check += '", VK_MAX_EXTENSION_NAME_SIZE) == 0) {\n'
+            driver_ext_check += '            phys_dev_term->dev_ext_support.'
+            driver_ext_check += ext.ext_name[3:].lower()
+            driver_ext_check += ' = 1;\n'
+
+            if ext.protect is not None:
+                driver_ext_check += '#endif // %s\n' % ext.protect
+
+        driver_ext_check += '        }\n'
+        driver_ext_check += '    }\n'
+        driver_ext_check += '\n'
+        driver_ext_check += 'out:\n'
+        driver_ext_check += '\n'
+        driver_ext_check += '    if (NULL != ext_props) {\n'
+        driver_ext_check += '        loader_instance_heap_free(driver_instance, ext_props);\n'
+        driver_ext_check += '    }\n'
+        driver_ext_check += '    return result;\n'
+        driver_ext_check += '}\n\n'
+        return driver_ext_check
 
     # Create the extension enable check during vkCreateInstance
     def OutputInstanceExtensionEnableCheck(self):

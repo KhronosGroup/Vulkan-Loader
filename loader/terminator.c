@@ -561,9 +561,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     VkResult res = VK_SUCCESS;
-    uint32_t ext_count = 0;
-    VkExtensionProperties *ext_props = NULL;
-    VkResult enumerate_res = VK_SUCCESS;
 
     if (pToolCount != NULL && pToolProperties == NULL) {
         *pToolCount = 0;
@@ -574,48 +571,20 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
     if (VK_API_VERSION_MINOR(phys_dev_term->properties.apiVersion) >= 3) {
         if (NULL == icd_term->dispatch.GetPhysicalDeviceToolProperties) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                        "terminator_GetPhysicalDeviceToolProperties: Driver \"%s\" device \"%s\" "
-                        "vkGetPhysicalDeviceToolProperties was NULL yet device claims supports for Vulkan 1.3",
-                        icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
+                       "terminator_GetPhysicalDeviceToolProperties: Driver \"%s\" device \"%s\" "
+                       "vkGetPhysicalDeviceToolProperties was NULL yet device claims supports for Vulkan 1.3",
+                       icd_term->scanned_icd->lib_name, phys_dev_term->properties.deviceName);
         } else {
             res = icd_term->dispatch.GetPhysicalDeviceToolProperties(phys_dev_term->phys_dev, pToolCount, pToolProperties);
             goto out;
         }
     }
 
-    // If we get here, we should check if the extension is present, not the core version and then
-    // also verify the pointer is non-NULL.
-    enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, NULL);
-    if (enumerate_res != VK_SUCCESS) {
-        goto out;
-    }
-
-    ext_props = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * ext_count,
-                                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (!ext_props) {
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-
-    enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, ext_props);
-    if (enumerate_res != VK_SUCCESS) {
-        goto out;
-    }
-
-    for (uint32_t i = 0; i < ext_count; i++) {
-        if (strncmp(ext_props[i].extensionName, VK_EXT_TOOLING_INFO_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            if (icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
-                res =
-                    icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
-            }
-            break;
-        }
+    // Try using the extension version if it's available
+    if (icd_term->scanned_icd->inst_ext_support.ext_tooling_info && NULL != icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
+        res = icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
     }
 
 out:
-    if (ext_props) {
-        loader_instance_heap_free(icd_term->this_instance, ext_props);
-    }
-
     return res;
 }

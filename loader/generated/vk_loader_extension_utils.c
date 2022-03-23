@@ -33,6 +33,348 @@
 #include "log.h"
 #include "vk_loader_platform.h"
 
+// Check to determine support of instance extensions by a driver.
+void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_icd, struct loader_extension_list *ext_list) {
+    // Fill in the supported extension structure
+    for (uint32_t i = 0; i < ext_list->count; i++) {
+
+        // ---- VK_KHR_surface extension commands
+        if (strncmp(ext_list->list[i].extensionName, "VK_KHR_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_surface = 1;
+
+        // ---- VK_KHR_swapchain extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_swapchain", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_swapchain = 1;
+
+        // ---- VK_KHR_display extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_display = 1;
+
+        // ---- VK_KHR_xlib_surface extension commands
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_xlib_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_xlib_surface = 1;
+#endif // VK_USE_PLATFORM_XLIB_KHR
+
+        // ---- VK_KHR_xcb_surface extension commands
+#ifdef VK_USE_PLATFORM_XCB_KHR
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_xcb_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_xcb_surface = 1;
+#endif // VK_USE_PLATFORM_XCB_KHR
+
+        // ---- VK_KHR_wayland_surface extension commands
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_wayland_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_wayland_surface = 1;
+#endif // VK_USE_PLATFORM_WAYLAND_KHR
+
+        // ---- VK_KHR_win32_surface extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_win32_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_win32_surface = 1;
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+        // ---- VK_KHR_video_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_video_queue", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_video_queue = 1;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+        // ---- VK_KHR_get_physical_device_properties2 extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_get_physical_device_properties2", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_get_physical_device_properties2 = 1;
+
+        // ---- VK_KHR_device_group_creation extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_device_group_creation", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_device_group_creation = 1;
+
+        // ---- VK_KHR_external_memory_capabilities extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_external_memory_capabilities", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_external_memory_capabilities = 1;
+
+        // ---- VK_KHR_external_semaphore_capabilities extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_external_semaphore_capabilities", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_external_semaphore_capabilities = 1;
+
+        // ---- VK_KHR_external_fence_capabilities extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_external_fence_capabilities", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_external_fence_capabilities = 1;
+
+        // ---- VK_KHR_performance_query extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_performance_query", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_performance_query = 1;
+
+        // ---- VK_KHR_get_surface_capabilities2 extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_get_surface_capabilities2", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_get_surface_capabilities2 = 1;
+
+        // ---- VK_KHR_get_display_properties2 extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_get_display_properties2", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_get_display_properties2 = 1;
+
+        // ---- VK_KHR_fragment_shading_rate extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_fragment_shading_rate", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_fragment_shading_rate = 1;
+
+        // ---- VK_KHR_surface_protected_capabilities extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_surface_protected_capabilities", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_surface_protected_capabilities = 1;
+
+        // ---- VK_KHR_portability_enumeration extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_portability_enumeration", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.khr_portability_enumeration = 1;
+
+        // ---- VK_EXT_debug_report extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_debug_report", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_debug_report = 1;
+
+        // ---- VK_GGP_stream_descriptor_surface extension commands
+#ifdef VK_USE_PLATFORM_GGP
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_GGP_stream_descriptor_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ggp_stream_descriptor_surface = 1;
+#endif // VK_USE_PLATFORM_GGP
+
+        // ---- VK_NV_external_memory_capabilities extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_NV_external_memory_capabilities", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.nv_external_memory_capabilities = 1;
+
+        // ---- VK_EXT_validation_flags extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_validation_flags", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_validation_flags = 1;
+
+        // ---- VK_NN_vi_surface extension commands
+#ifdef VK_USE_PLATFORM_VI_NN
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_NN_vi_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.nn_vi_surface = 1;
+#endif // VK_USE_PLATFORM_VI_NN
+
+        // ---- VK_EXT_direct_mode_display extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_direct_mode_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_direct_mode_display = 1;
+
+        // ---- VK_EXT_acquire_xlib_display extension commands
+#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_acquire_xlib_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_acquire_xlib_display = 1;
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+        // ---- VK_EXT_display_surface_counter extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_display_surface_counter", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_display_surface_counter = 1;
+
+        // ---- VK_EXT_swapchain_colorspace extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_swapchain_colorspace", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_swapchain_colorspace = 1;
+
+        // ---- VK_MVK_ios_surface extension commands
+#ifdef VK_USE_PLATFORM_IOS_MVK
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_MVK_ios_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.mvk_ios_surface = 1;
+#endif // VK_USE_PLATFORM_IOS_MVK
+
+        // ---- VK_MVK_macos_surface extension commands
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_MVK_macos_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.mvk_macos_surface = 1;
+#endif // VK_USE_PLATFORM_MACOS_MVK
+
+        // ---- VK_EXT_debug_utils extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_debug_utils", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_debug_utils = 1;
+
+        // ---- VK_EXT_sample_locations extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_sample_locations", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_sample_locations = 1;
+
+        // ---- VK_EXT_calibrated_timestamps extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_calibrated_timestamps", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_calibrated_timestamps = 1;
+
+        // ---- VK_FUCHSIA_imagepipe_surface extension commands
+#ifdef VK_USE_PLATFORM_FUCHSIA
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_FUCHSIA_imagepipe_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.fuchsia_imagepipe_surface = 1;
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+        // ---- VK_EXT_metal_surface extension commands
+#ifdef VK_USE_PLATFORM_METAL_EXT
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_metal_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_metal_surface = 1;
+#endif // VK_USE_PLATFORM_METAL_EXT
+
+        // ---- VK_EXT_tooling_info extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_tooling_info", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_tooling_info = 1;
+
+        // ---- VK_EXT_validation_features extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_validation_features", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_validation_features = 1;
+
+        // ---- VK_NV_cooperative_matrix extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_NV_cooperative_matrix", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.nv_cooperative_matrix = 1;
+
+        // ---- VK_NV_coverage_reduction_mode extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_NV_coverage_reduction_mode", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.nv_coverage_reduction_mode = 1;
+
+        // ---- VK_EXT_full_screen_exclusive extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_full_screen_exclusive", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_full_screen_exclusive = 1;
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+        // ---- VK_EXT_headless_surface extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_headless_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_headless_surface = 1;
+
+        // ---- VK_EXT_acquire_drm_display extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_acquire_drm_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_acquire_drm_display = 1;
+
+        // ---- VK_NV_acquire_winrt_display extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_NV_acquire_winrt_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.nv_acquire_winrt_display = 1;
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+        // ---- VK_EXT_directfb_surface extension commands
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_directfb_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.ext_directfb_surface = 1;
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
+        // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_QNX_screen_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.qnx_screen_surface = 1;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
+        // ---- VK_GOOGLE_surfaceless_query extension commands
+        } else if (strncmp(ext_list->list[i].extensionName, "VK_GOOGLE_surfaceless_query", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            scanned_icd->inst_ext_support.google_surfaceless_query = 1;
+        }
+    }
+}
+
+// Check to determine support of device extensions by a physical device.
+VkResult device_extensions_supported_by_physical_device(struct loader_physical_device_term* phys_dev_term) {
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    VkExtensionProperties *ext_props = NULL;
+    uint32_t ext_count = 0;
+    const struct loader_instance* driver_instance = icd_term->this_instance;
+    VkPhysicalDevice driver_phys_dev = phys_dev_term->phys_dev;
+
+    // Get the extension count
+    VkResult result = icd_term->dispatch.EnumerateDeviceExtensionProperties(driver_phys_dev, NULL, &ext_count, NULL);
+    if (result != VK_SUCCESS) {
+        loader_log(driver_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "device_extensions_supported_by_physical_device: calling driver \"%s\" "
+                   "EnumerateDeviceExtensionProperties to query count failed!\n",
+                   icd_term->scanned_icd->lib_name);
+        goto out;
+    }
+
+    // Allocate space for us to store the extension information
+    ext_props = loader_instance_heap_alloc(driver_instance, sizeof(VkExtensionProperties) * ext_count,
+                                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (!ext_props) {
+        loader_log(driver_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "device_extensions_supported_by_physical_device: failed allocating extension properties struct!\n",
+                   icd_term->scanned_icd->lib_name);
+        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    // Query the actual extension information
+    result = icd_term->dispatch.EnumerateDeviceExtensionProperties(driver_phys_dev, NULL, &ext_count, ext_props);
+    if (result != VK_SUCCESS) {
+        loader_log(driver_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "device_extensions_supported_by_physical_device: calling driver \"%s\" "
+                   "EnumerateDeviceExtensionProperties to query extensions failed!\n",
+                   icd_term->scanned_icd->lib_name);
+        goto out;
+    }
+
+    // Fill in the supported extension structure
+    for (uint32_t i = 0; i < ext_count; i++) {
+
+        // ---- VK_KHR_swapchain extension commands
+        if (strncmp(ext_props[i].extensionName, "VK_KHR_swapchain", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.khr_swapchain = 1;
+
+        // ---- VK_KHR_display_swapchain extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_KHR_display_swapchain", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.khr_display_swapchain = 1;
+
+        // ---- VK_KHR_device_group extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_KHR_device_group", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.khr_device_group = 1;
+
+        // ---- VK_EXT_debug_marker extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_EXT_debug_marker", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.ext_debug_marker = 1;
+
+        // ---- VK_EXT_debug_utils extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_EXT_debug_utils", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.ext_debug_utils = 1;
+
+        // ---- VK_EXT_full_screen_exclusive extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        } else if (strncmp(ext_props[i].extensionName, "VK_EXT_full_screen_exclusive", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.ext_full_screen_exclusive = 1;
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+        // ---- VK_KHR_video_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        } else if (strncmp(ext_props[i].extensionName, "VK_KHR_video_queue", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.khr_video_queue = 1;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+        // ---- VK_KHR_performance_query extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_KHR_performance_query", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.khr_performance_query = 1;
+
+        // ---- VK_KHR_fragment_shading_rate extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_KHR_fragment_shading_rate", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.khr_fragment_shading_rate = 1;
+
+        // ---- VK_EXT_sample_locations extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_EXT_sample_locations", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.ext_sample_locations = 1;
+
+        // ---- VK_EXT_calibrated_timestamps extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_EXT_calibrated_timestamps", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.ext_calibrated_timestamps = 1;
+
+        // ---- VK_EXT_tooling_info extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_EXT_tooling_info", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.ext_tooling_info = 1;
+
+        // ---- VK_NV_cooperative_matrix extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_NV_cooperative_matrix", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.nv_cooperative_matrix = 1;
+
+        // ---- VK_NV_coverage_reduction_mode extension commands
+        } else if (strncmp(ext_props[i].extensionName, "VK_NV_coverage_reduction_mode", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.nv_coverage_reduction_mode = 1;
+
+        // ---- VK_NV_acquire_winrt_display extension commands
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        } else if (strncmp(ext_props[i].extensionName, "VK_NV_acquire_winrt_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            phys_dev_term->dev_ext_support.nv_acquire_winrt_display = 1;
+#endif // VK_USE_PLATFORM_WIN32_KHR
+        }
+    }
+
+out:
+
+    if (NULL != ext_props) {
+        loader_instance_heap_free(driver_instance, ext_props);
+    }
+    return result;
+}
+
 // A function that can be used to query enabled extensions during a vkCreateInstance call
 void extensions_create_instance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {

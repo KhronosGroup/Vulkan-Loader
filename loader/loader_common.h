@@ -364,6 +364,7 @@ struct loader_physical_device_term {
     uint8_t icd_index;
     VkPhysicalDevice phys_dev;  // object from ICD
     VkPhysicalDeviceProperties properties;
+    struct loader_driver_device_extension_enables dev_ext_support;
 };
 
 #ifdef LOADER_ENABLE_LINUX_SORT
@@ -417,6 +418,7 @@ struct loader_scanned_icd {
     PFN_GetPhysicalDeviceProcAddr GetPhysicalDeviceProcAddr;
     PFN_vkCreateInstance CreateInstance;
     PFN_vkEnumerateInstanceExtensionProperties EnumerateInstanceExtensionProperties;
+    struct loader_instance_extension_enables inst_ext_support;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vk_icdEnumerateAdapterPhysicalDevices EnumerateAdapterPhysicalDevices;
 #endif

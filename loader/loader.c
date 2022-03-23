@@ -1136,6 +1136,8 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
         res = loader_add_instance_extensions(inst, icd_tramp_list->scanned_list[i].EnumerateInstanceExtensionProperties,
                                              icd_tramp_list->scanned_list[i].lib_name, &icd_exts);
         if (VK_SUCCESS == res) {
+            instance_extensions_supported_by_driver(&icd_tramp_list->scanned_list[i], &icd_exts);
+
             if (filter_extensions) {
                 // Remove any extensions not recognized by the loader
                 for (int32_t j = 0; j < (int32_t)icd_exts.count; j++) {
@@ -6035,6 +6037,9 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                 // Fill in the properties
                 new_phys_devs[idx]->this_icd_term->dispatch.GetPhysicalDeviceProperties(new_phys_devs[idx]->phys_dev,
                                                                                         &new_phys_devs[idx]->properties);
+
+                // Fill in driver support of loader-interested device extensions
+                device_extensions_supported_by_physical_device(new_phys_devs[idx]);
 
                 // Increment the count of new physical devices
                 idx++;
