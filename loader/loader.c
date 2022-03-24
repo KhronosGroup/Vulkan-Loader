@@ -1483,20 +1483,6 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
                    " Interface version 5 or newer required to support this version of Vulkan (Policy #LDP_DRIVER_7)",
                    filename, major_version, minor_version, interface_vers);
     }
-    if (interface_vers >= 1) {
-        if ((loader_platform_get_proc_address(handle, "vkEnumerateInstanceExtensionProperties") != NULL) ||
-            (loader_platform_get_proc_address(handle, "vkEnumerateInstanceLayerProperties") != NULL) ||
-            (loader_platform_get_proc_address(handle, "vkEnumerateInstanceVersion") != NULL) ||
-            (loader_platform_get_proc_address(handle, "vkGetInstanceProcAddr") != NULL) ||
-            (loader_platform_get_proc_address(handle, "vkCreateInstance") != NULL) ||
-            (loader_platform_get_proc_address(handle, "vkGetDeviceProcAddr") != NULL) ||
-            (loader_platform_get_proc_address(handle, "vkCreateDevice") != NULL)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "loader_scanned_icd_add: Driver %s says it supports interface version %u but still exports core "
-                       "entrypoints (Policy #LDP_DRIVER_6)",
-                       filename, interface_vers);
-        }
-    }
 
     new_scanned_icd = &(icd_tramp_list->scanned_list[icd_tramp_list->count]);
     new_scanned_icd->handle = handle;
