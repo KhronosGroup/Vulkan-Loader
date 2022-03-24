@@ -1334,29 +1334,12 @@ Android Vulkan documentation</a>.
   </tr>
   <tr>
     <td><small><b>LDP_DRIVER_6</b></small></td>
-    <td>A driver supporting loader/driver interface version 1 or newer <b>must
-        not</b> directly export standard Vulkan entry-points.
-        <br/>
-        Instead, it <b>must</b> export only the loader interface functions
-        required by the interface versions it does support (for example
-        <i>vk_icdGetInstanceProcAddr</i>). <br/>
-        This is because the dynamic linking on some platforms has been
-        problematic in the past and incorrectly links to exported functions from
-        the wrong dynamic library at times. <br/>
-        <b>NOTE:</b> This is actually true for all exports.
-        When in doubt, don't export any items from a driver that could cause
-        conflicts in other libraries.
+    <td>Removed - See <a href="#removed-driver-policies">Removed Driver Policies</a>
     </td>
-    <td>The behavior is undefined and may result in crashes or corruption.</td>
-    <td>Yes (except it always applies)</td>
-    <td>Yes</td>
-    <td><small>
-        <a href="#loader-and-driver-interface-negotiation">
-        Interface Negotiation</a></small>
-        and
-        <a href="#driver-vulkan-entry-point-discovery">
-        Vulkan Entry-point Discovery</a></small>
-    </td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
   </tr>
   <tr>
     <td><small><b>LDP_DRIVER_7</b></small></td>
@@ -1460,6 +1443,39 @@ Android Vulkan documentation</a>.
   </tr>
 </table>
 
+#### Removed Driver Policies
+
+These policies were in the loader source at some point but later removed. They are documented here for reference.
+
+<table>
+  <tr>
+    <th>Requirement Number</th>
+    <th>Requirement Description</th>
+    <th>Removal Reason</th>
+  </tr>
+  <tr>
+    <td><small><b>LDP_DRIVER_6</b></small></td>
+    <td>A driver supporting loader/driver interface version 1 or newer <b>must
+        not</b> directly export standard Vulkan entry-points.
+        <br/>
+        Instead, it <b>must</b> export only the loader interface functions
+        required by the interface versions it does support (for example
+        <i>vk_icdGetInstanceProcAddr</i>). <br/>
+        This is because the dynamic linking on some platforms has been
+        problematic in the past and incorrectly links to exported functions from
+        the wrong dynamic library at times. <br/>
+        <b>NOTE:</b> This is actually true for all exports.
+        When in doubt, don't export any items from a driver that could cause
+        conflicts in other libraries.<br/>
+    </td>
+    <td>
+        This policy has been removed due to there being valid circumstances for
+        drivers to export core entrypoints.
+        Additionally, it was not found that dynamic linking would cause many
+        issues in practice.
+    </td>
+  </tr>
+</table>
 
 ### Requirements of a Well-Behaved Loader
 
