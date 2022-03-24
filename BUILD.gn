@@ -83,7 +83,10 @@ config("vulkan_loader_config") {
   }
   if (is_linux || is_chromeos) {
     # assume secure_getenv() is available
-    defines += [ "HAVE_SECURE_GETENV" ]
+    defines += [
+      "HAVE_SECURE_GETENV",
+      "LOADER_ENABLE_LINUX_SORT",
+    ]
   }
 }
 
