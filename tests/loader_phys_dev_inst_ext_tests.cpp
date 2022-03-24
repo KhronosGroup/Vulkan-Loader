@@ -2727,8 +2727,11 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRInstanceAndICDSupport) {
     Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
     Extension second_ext{VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME};
     Extension third_ext{VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME};
-    env.get_test_icd(0).add_instance_extensions({first_ext, second_ext, third_ext});
-    env.get_test_icd(0).physical_devices.push_back({});
+    auto& cur_icd = env.get_test_icd(0);
+    cur_icd.add_instance_extensions({first_ext, second_ext, third_ext});
+    cur_icd.physical_devices.push_back({});
+    cur_icd.min_icd_interface_version = 3;
+    cur_icd.enable_icd_wsi = true;
     FillInRandomSurfaceCapsData(env.get_test_icd(0).physical_devices.back().surface_capabilities);
 
     InstWrapper instance(env.vulkan_functions);
@@ -2795,6 +2798,8 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRMixed) {
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
+        cur_icd.min_icd_interface_version = 3;
+        cur_icd.enable_icd_wsi = true;
         cur_icd.add_instance_extensions({first_ext, third_ext});
 
         // ICD 1 should not have 1.1
@@ -2928,8 +2933,11 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRInstanceAndICDSupport) {
     Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
     Extension second_ext{VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME};
     Extension third_ext{VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME};
-    env.get_test_icd(0).add_instance_extensions({first_ext, second_ext, third_ext});
-    env.get_test_icd(0).physical_devices.push_back({});
+    auto& cur_icd = env.get_test_icd(0);
+    cur_icd.add_instance_extensions({first_ext, second_ext, third_ext});
+    cur_icd.physical_devices.push_back({});
+    cur_icd.min_icd_interface_version = 3;
+    cur_icd.enable_icd_wsi = true;
     FillInRandomSurfaceFormatsData(env.get_test_icd(0).physical_devices.back().surface_formats);
 
     InstWrapper instance(env.vulkan_functions);
@@ -3005,6 +3013,8 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRMixed) {
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
+        cur_icd.enable_icd_wsi = true;
+        cur_icd.min_icd_interface_version = 3;
         cur_icd.add_instance_extensions({first_ext, third_ext});
 
         // ICD 1 should not have 1.1
