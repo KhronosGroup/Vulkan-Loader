@@ -59,11 +59,8 @@ NTSTATUS APIENTRY ShimEnumAdapters2(LoaderEnumAdapters2 *adapters) {
     }
     if (adapters->adapters != nullptr) {
         for (size_t i = 0; i < platform_shim.d3dkmt_adapters.size(); i++) {
-            adapters->adapters[i].handle = platform_shim.d3dkmt_adapters[i].info.hAdapter;
-            adapters->adapters[i].luid = platform_shim.d3dkmt_adapters[i].info.AdapterLuid;
-            adapters->adapters[i].source_count = platform_shim.d3dkmt_adapters[i].info.NumOfSources;
-            adapters->adapters[i].present_move_regions_preferred =
-                platform_shim.d3dkmt_adapters[i].info.bPresentMoveRegionsPreferred;
+            adapters->adapters[i].handle = platform_shim.d3dkmt_adapters[i].hAdapter;
+            adapters->adapters[i].luid = platform_shim.d3dkmt_adapters[i].adapter_luid;
         }
         adapters->adapter_count = static_cast<ULONG>(platform_shim.d3dkmt_adapters.size());
     } else {
@@ -76,23 +73,45 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo *query_info)
         return STATUS_INVALID_PARAMETER;
     }
     auto handle = query_info->handle;
-    auto it = std::find_if(platform_shim.d3dkmt_adapters.begin(), platform_shim.d3dkmt_adapters.end(),
-                           [handle](const D3DKMT_Adapter &adapter) { return handle == adapter.info.hAdapter; });
+    auto &it = std::find_if(platform_shim.d3dkmt_adapters.begin(), platform_shim.d3dkmt_adapters.end(),
+                            [handle](const D3DKMT_Adapter &adapter) { return handle == adapter.hAdapter; });
     if (it == platform_shim.d3dkmt_adapters.end()) {
         return STATUS_INVALID_PARAMETER;
     }
     auto &adapter = *it;
-
     auto *reg_info = reinterpret_cast<LoaderQueryRegistryInfo *>(query_info->private_data);
+
+    std::vector<std::wstring> *paths = nullptr;
+    if (reg_info->value_name[6] == L'D') {  // looking for drivers
+        paths = &adapter.driver_paths;
+    } else if (reg_info->value_name[6] == L'I') {  // looking for implicit layers
+        paths = &adapter.implicit_layer_paths;
+    } else if (reg_info->value_name[6] == L'E') {  // looking for explicit layers
+        paths = &adapter.explicit_layer_paths;
+    }
+
     reg_info->status = LOADER_QUERY_REGISTRY_STATUS_SUCCESS;
     if (reg_info->output_value_size == 0) {
-        reg_info->output_value_size = static_cast<ULONG>(it->path.size());
-    } else if (reg_info->output_value_size == it->path.size()) {
-        std::wstring path_wstr(1, L'\0');
-        path_wstr.assign(it->path.str().begin(), it->path.str().end());
-        wcscpy(&reg_info->output_string[0], path_wstr.c_str());
-    } else if (reg_info->output_value_size == it->path.size()) {
-        reg_info->status = LOADER_QUERY_REGISTRY_STATUS_BUFFER_OVERFLOW;
+        ULONG size = 2;  // final null terminator
+        for (auto const &path : *paths) size = static_cast<ULONG>(path.length() * sizeof(wchar_t));
+        // size in bytes, so multiply path size by two and add 2 for the null terminator
+        reg_info->output_value_size = size;
+        if (size != 2) {
+            // only want to write data if there is path data to write
+            reg_info->status = LOADER_QUERY_REGISTRY_STATUS_BUFFER_OVERFLOW;
+        }
+    } else if (reg_info->output_value_size > 2) {
+        size_t index = 0;
+        for (auto const &path : *paths) {
+            for (auto w : path) {
+                reg_info->output_string[index++] = w;
+            }
+            reg_info->output_string[index++] = L'\0';
+        }
+        // make sure there is a null terminator
+        reg_info->output_string[index++] = L'\0';
+
+        reg_info->status = LOADER_QUERY_REGISTRY_STATUS_SUCCESS;
     }
 
     return STATUS_SUCCESS;
@@ -228,7 +247,7 @@ HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
 HRESULT __stdcall ShimEnumAdapterByGpuPreference(IDXGIFactory6 *This, _In_ UINT Adapter, _In_ DXGI_GPU_PREFERENCE GpuPreference,
                                                  _In_ REFIID riid, _COM_Outptr_ void **ppvAdapter) {
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
-        return DXGI_ERROR_INVALID_CALL;
+        return DXGI_ERROR_NOT_FOUND;
     }
     // loader always uses DXGI_GPU_PREFERENCE_UNSPECIFIED
     // Update the shim if this isn't the case

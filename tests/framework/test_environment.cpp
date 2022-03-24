@@ -166,6 +166,7 @@ TestICD& TestICDHandle::reset_icd() noexcept {
     return *proc_addr_reset_icd();
 }
 fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
+fs::path TestICDHandle::get_icd_manifest_path() noexcept { return manifest_path; }
 
 TestLayerHandle::TestLayerHandle() noexcept {}
 TestLayerHandle::TestLayerHandle(fs::path const& layer_path) noexcept : layer_library(layer_path) {
@@ -181,6 +182,7 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
     return *proc_addr_reset_layer();
 }
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
+fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
 
 FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode, bool override_icds, bool override_explicit_layers) noexcept
     : platform_shim(debug_mode),
@@ -223,6 +225,7 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
                                                       .set_lib_path(fs::fixup_backslashes_in_path(icd_details.icd_path).str())
                                                       .set_api_version(icd_details.api_version)
                                                       .get_manifest_str());
+    icds.back().manifest_path = driver_loc;
 
     if (icd_details.use_env_var_icd_filenames) {
         if (!env_var_vk_icd_filenames.empty()) {
@@ -236,7 +239,7 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         }
         add_env_var_vk_icd_filenames += (icd_folder.location() / full_json_name).str();
         set_env_var("VK_ADD_DRIVER_FILES", add_env_var_vk_icd_filenames);
-    } else {
+    } else if (icd_details.add_manifest_to_default_driver_location) {
         platform_shim->add_manifest(ManifestCategory::icd, driver_loc);
     }
 }
@@ -269,6 +272,7 @@ void FrameworkEnvironment::add_explicit_layer(TestLayerDetails layer_details) no
 
 void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::FolderManager& folder_manager,
                                           ManifestCategory category) {
+    size_t new_layers_start = layers.size();
     for (auto& layer : layer_details.layer_manifest.layers) {
         size_t cur_layer_index = layers.size();
         if (!layer.lib_path.str().empty()) {
@@ -289,12 +293,18 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::Fo
     if (layer_details.add_to_regular_search_paths) {
         auto layer_loc = folder_manager.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
         platform_shim->add_manifest(category, layer_loc);
+        for (size_t i = new_layers_start; i < layers.size(); i++) {
+            layers.at(i).manifest_path = layer_loc;
+        }
     }
 }
 
 TestICD& FrameworkEnvironment::get_test_icd(int index) noexcept { return icds[index].get_test_icd(); }
 TestICD& FrameworkEnvironment::reset_icd(int index) noexcept { return icds[index].reset_icd(); }
 fs::path FrameworkEnvironment::get_test_icd_path(int index) noexcept { return icds[index].get_icd_full_path(); }
+fs::path FrameworkEnvironment::get_icd_manifest_path(int index) noexcept { return icds[index].get_icd_manifest_path(); }
 
 TestLayer& FrameworkEnvironment::get_test_layer(int index) noexcept { return layers[index].get_test_layer(); }
 TestLayer& FrameworkEnvironment::reset_layer(int index) noexcept { return layers[index].reset_layer(); }
+fs::path FrameworkEnvironment::get_test_layer_path(int index) noexcept { return layers[index].get_layer_full_path(); }
+fs::path FrameworkEnvironment::get_layer_manifest_path(int index) noexcept { return layers[index].get_layer_manifest_path(); }

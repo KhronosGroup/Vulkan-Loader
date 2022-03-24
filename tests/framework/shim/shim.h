@@ -84,30 +84,29 @@ static std::array<KnownDriverData, 4> known_driver_list = {
 };
 
 struct DXGIAdapter {
-    DXGIAdapter(fs::path const& manifest_path, GpuType gpu_preference, uint32_t known_driver_index, DXGI_ADAPTER_DESC1 desc1,
-                uint32_t adapter_index)
-        : manifest_path(manifest_path),
-          gpu_preference(gpu_preference),
-          known_driver_index(known_driver_index),
-          desc1(desc1),
-          adapter_index(adapter_index) {}
-    fs::path manifest_path;
+    DXGIAdapter(GpuType gpu_preference, DXGI_ADAPTER_DESC1 desc1, uint32_t adapter_index)
+        : gpu_preference(gpu_preference), desc1(desc1), adapter_index(adapter_index) {}
     GpuType gpu_preference = GpuType::unspecified;
-    uint32_t known_driver_index = UINT_MAX;  // index into the known_driver_list, UINT_MAX if it shouldn't index at all.
     DXGI_ADAPTER_DESC1 desc1{};
     uint32_t adapter_index = 0;
 };
 
-struct SHIM_D3DKMT_ADAPTERINFO {
-    UINT hAdapter;
-    LUID AdapterLuid;
-    ULONG NumOfSources;
-    BOOL bPresentMoveRegionsPreferred;
-};
-
 struct D3DKMT_Adapter {
-    SHIM_D3DKMT_ADAPTERINFO info;
-    fs::path path;
+    D3DKMT_Adapter() = default;
+    D3DKMT_Adapter(UINT hAdapter, LUID adapter_luid) noexcept : hAdapter(hAdapter), adapter_luid(adapter_luid) {}
+
+    D3DKMT_Adapter& add_driver_manifest_path(fs::path const& src);
+    D3DKMT_Adapter& add_implicit_layer_manifest_path(fs::path const& src);
+    D3DKMT_Adapter& add_explicit_layer_manifest_path(fs::path const& src);
+
+    UINT hAdapter;
+    LUID adapter_luid;
+    std::vector<std::wstring> driver_paths;
+    std::vector<std::wstring> implicit_layer_paths;
+    std::vector<std::wstring> explicit_layer_paths;
+
+   private:
+    D3DKMT_Adapter& add_path(fs::path src, std::vector<std::wstring>& dest);
 };
 
 #endif
@@ -132,9 +131,8 @@ struct PlatformShim {
     }
     unsigned long elevation_level = SECURITY_MANDATORY_LOW_RID;
 
-    void add_dxgi_adapter(fs::path const& manifest_path, GpuType gpu_preference, uint32_t known_driver_index,
-                          DXGI_ADAPTER_DESC1 desc1);
-    void add_d3dkmt_adapter(SHIM_D3DKMT_ADAPTERINFO adapter, fs::path const& path);
+    void add_dxgi_adapter(GpuType gpu_preference, DXGI_ADAPTER_DESC1 desc1);
+    void add_d3dkmt_adapter(D3DKMT_Adapter const& adapter);
 
     uint32_t next_adapter_handle = 1;  // increment everytime add_dxgi_adapter is called
     std::vector<DXGIAdapter> dxgi_adapters;
