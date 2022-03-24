@@ -1485,20 +1485,15 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProp
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
                                                                                       uint32_t* pPhysicalDeviceCount,
                                                                                       VkPhysicalDevice* pPhysicalDevices) {
-    icd.called_enumerate_adapter_physical_devices = CalledEnumerateAdapterPhysicalDevices::called;
+    if (adapterLUID.LowPart != icd.adapterLUID.LowPart || adapterLUID.HighPart != icd.adapterLUID.HighPart) {
+        *pPhysicalDeviceCount = 0;
+        return VK_SUCCESS;
+    }
+    icd.called_enumerate_adapter_physical_devices = true;
     VkResult res = test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-    // For this testing, flip order intentaionlly
+    // For this testing, flip order intentionally
     if (nullptr != pPhysicalDevices) {
-        for (uint32_t lower = 0; lower < *pPhysicalDeviceCount; ++lower) {
-            uint32_t upper = *pPhysicalDeviceCount - lower - 1;
-            // In case of odd numbered list we don't want to waste resources flipping itself
-            if (upper == lower) {
-                break;
-            }
-            VkPhysicalDevice temp = pPhysicalDevices[lower];
-            pPhysicalDevices[lower] = pPhysicalDevices[upper];
-            pPhysicalDevices[upper] = temp;
-        }
+        std::reverse(pPhysicalDevices, pPhysicalDevices + *pPhysicalDeviceCount);
     }
     return res;
 }

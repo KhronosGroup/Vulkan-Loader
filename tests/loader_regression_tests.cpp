@@ -476,25 +476,29 @@ TEST_F(EnumeratePhysicalDevices, TwoCallIncomplete) {
 
     std::array<VkPhysicalDevice, real_device_count> physical;
 
+    auto temp_ptr = std::unique_ptr<int>(new int());
+    physical[0] = reinterpret_cast<VkPhysicalDevice>(temp_ptr.get());
+    physical[1] = reinterpret_cast<VkPhysicalDevice>(temp_ptr.get());
+
+    // Use zero for the device count so we can get the VK_INCOMPLETE message and verify nothing was written into physical
+    physical_count = 0;
+    ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &physical_count, physical.data()));
+    ASSERT_EQ(physical_count, 0);
+    ASSERT_EQ(static_cast<void*>(physical[0]), static_cast<void*>(temp_ptr.get()));
+    ASSERT_EQ(static_cast<void*>(physical[1]), static_cast<void*>(temp_ptr.get()));
+
     // Remove one from the physical device count so we can get the VK_INCOMPLETE message
     physical_count = 1;
-
     ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &physical_count, physical.data()));
     ASSERT_EQ(physical_count, 1);
+    ASSERT_EQ(static_cast<void*>(physical[1]), static_cast<void*>(temp_ptr.get()));
 
     physical_count = 2;
     std::array<VkPhysicalDevice, real_device_count> physical_2;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &physical_count, physical_2.data()));
 
     // Verify that the first physical device shows up in the list of the second ones
-    bool found = false;
-    for (uint32_t dev = 0; dev < physical_count; ++dev) {
-        if (physical_2[dev] == physical[0]) {
-            found = true;
-            break;
-        }
-    }
-    ASSERT_EQ(true, found);
+    ASSERT_TRUE(std::find(physical_2.begin(), physical_2.end(), physical[0]) != physical_2.end());
 }
 
 TEST_F(EnumeratePhysicalDevices, ZeroPhysicalDevices) {

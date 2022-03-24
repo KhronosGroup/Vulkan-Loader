@@ -278,23 +278,27 @@ struct TestICDHandle {
     TestICD& reset_icd() noexcept;
     TestICD& get_test_icd() noexcept;
     fs::path get_icd_full_path() noexcept;
+    fs::path get_icd_manifest_path() noexcept;
 
     // Must use statically
     LibraryWrapper icd_library;
     GetTestICDFunc proc_addr_get_test_icd;
     GetNewTestICDFunc proc_addr_reset_icd;
+    fs::path manifest_path;
 };
 struct TestLayerHandle {
     TestLayerHandle() noexcept;
-    TestLayerHandle(fs::path const& icd_path) noexcept;
+    TestLayerHandle(fs::path const& layer_path) noexcept;
     TestLayer& reset_layer() noexcept;
     TestLayer& get_test_layer() noexcept;
     fs::path get_layer_full_path() noexcept;
+    fs::path get_layer_manifest_path() noexcept;
 
     // Must use statically
     LibraryWrapper layer_library;
     GetTestLayerFunc proc_addr_get_test_layer;
     GetNewTestLayerFunc proc_addr_reset_layer;
+    fs::path manifest_path;
 };
 
 struct TestICDDetails {
@@ -305,6 +309,7 @@ struct TestICDDetails {
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
     BUILDER_VALUE(TestICDDetails, bool, use_env_var_icd_filenames, false);
     BUILDER_VALUE(TestICDDetails, bool, use_add_env_var_icd_filenames, false);
+    BUILDER_VALUE(TestICDDetails, bool, add_manifest_to_default_driver_location, true);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
 };
 
@@ -333,10 +338,12 @@ struct FrameworkEnvironment {
     TestICD& get_test_icd(int index = 0) noexcept;
     TestICD& reset_icd(int index = 0) noexcept;
     fs::path get_test_icd_path(int index = 0) noexcept;
+    fs::path get_icd_manifest_path(int index = 0) noexcept;
 
     TestLayer& get_test_layer(int index = 0) noexcept;
     TestLayer& reset_layer(int index = 0) noexcept;
     fs::path get_test_layer_path(int index = 0) noexcept;
+    fs::path get_layer_manifest_path(int index = 0) noexcept;
 
     PlatformShimWrapper platform_shim;
     fs::FolderManager null_folder;
