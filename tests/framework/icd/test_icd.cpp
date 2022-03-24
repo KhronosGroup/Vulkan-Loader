@@ -618,6 +618,22 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceScreenPresentationSupport
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateHeadlessSurfaceEXT(VkInstance instance,
+                                                               const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
+                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (nullptr != pSurface) {
+        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        icd.surface_handles.push_back(fake_surf_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+#else
+        *pSurface = fake_surf_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                     const VkAllocationCallbacks* pAllocator) {
     if (surface != VK_NULL_HANDLE) {
@@ -665,6 +681,14 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapcha
 // VK_KHR_surface
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                          VkSurfaceKHR surface, VkBool32* pSupported) {
+    if (surface != VK_NULL_HANDLE) {
+        uint64_t fake_surf_handle = (uint64_t)(surface);
+        auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
+        if (found_iter == icd.surface_handles.end()) {
+            assert(false && "Surface not found during GetPhysicalDeviceSurfaceSupportKHR query!");
+            return VK_ERROR_UNKNOWN;
+        }
+    }
     if (nullptr != pSupported) {
         *pSupported = icd.GetPhysDevice(physicalDevice).queue_family_properties.at(queueFamilyIndex).support_present;
     }
@@ -672,6 +696,14 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysi
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                               VkSurfaceCapabilitiesKHR* pSurfaceCapabilities) {
+    if (surface != VK_NULL_HANDLE) {
+        uint64_t fake_surf_handle = (uint64_t)(surface);
+        auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
+        if (found_iter == icd.surface_handles.end()) {
+            assert(false && "Surface not found during GetPhysicalDeviceSurfaceCapabilitiesKHR query!");
+            return VK_ERROR_UNKNOWN;
+        }
+    }
     if (nullptr != pSurfaceCapabilities) {
         *pSurfaceCapabilities = icd.GetPhysDevice(physicalDevice).surface_capabilities;
     }
@@ -680,12 +712,28 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Vk
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                          uint32_t* pSurfaceFormatCount,
                                                                          VkSurfaceFormatKHR* pSurfaceFormats) {
+    if (surface != VK_NULL_HANDLE) {
+        uint64_t fake_surf_handle = (uint64_t)(surface);
+        auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
+        if (found_iter == icd.surface_handles.end()) {
+            assert(false && "Surface not found during GetPhysicalDeviceSurfaceFormatsKHR query!");
+            return VK_ERROR_UNKNOWN;
+        }
+    }
     FillCountPtr(icd.GetPhysDevice(physicalDevice).surface_formats, pSurfaceFormatCount, pSurfaceFormats);
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                               uint32_t* pPresentModeCount,
                                                                               VkPresentModeKHR* pPresentModes) {
+    if (surface != VK_NULL_HANDLE) {
+        uint64_t fake_surf_handle = (uint64_t)(surface);
+        auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
+        if (found_iter == icd.surface_handles.end()) {
+            assert(false && "Surface not found during GetPhysicalDeviceSurfacePresentModesKHR query!");
+            return VK_ERROR_UNKNOWN;
+        }
+    }
     FillCountPtr(icd.GetPhysDevice(physicalDevice).surface_present_modes, pPresentModeCount, pPresentModes);
     return VK_SUCCESS;
 }
@@ -1139,6 +1187,10 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return to_vkVoidFunction(test_vkGetPhysicalDeviceScreenPresentationSupportQNX);
         }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+        if (string_eq(pName, "vkCreateHeadlessSurfaceEXT")) {
+            return to_vkVoidFunction(test_vkCreateHeadlessSurfaceEXT);
+        }
 
         if (string_eq(pName, "vkDestroySurfaceKHR")) {
             icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;

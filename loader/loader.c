@@ -5928,6 +5928,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
         }
         inst->total_gpu_count += icd_phys_dev_array[icd_idx].device_count;
         icd_phys_dev_array[icd_idx].icd_term = icd_term;
+        icd_phys_dev_array[icd_idx].icd_index = icd_idx;
         icd_term = icd_term->next;
         ++icd_idx;
     }

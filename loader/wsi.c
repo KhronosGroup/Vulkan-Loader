@@ -224,8 +224,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceSupportKH
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    VkResult res = disp->GetPhysicalDeviceSurfaceSupportKHR(unwrapped_phys_dev, queueFamilyIndex, surface, pSupported);
-    return res;
+    return disp->GetPhysicalDeviceSurfaceSupportKHR(unwrapped_phys_dev, queueFamilyIndex, surface, pSupported);
 }
 
 // This is the instance chain terminator function for
@@ -277,8 +276,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceCapabilit
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    VkResult res = disp->GetPhysicalDeviceSurfaceCapabilitiesKHR(unwrapped_phys_dev, surface, pSurfaceCapabilities);
-    return res;
+    return disp->GetPhysicalDeviceSurfaceCapabilitiesKHR(unwrapped_phys_dev, surface, pSurfaceCapabilities);
 }
 
 // This is the instance chain terminator function for
@@ -331,8 +329,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceFormatsKH
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    VkResult res = disp->GetPhysicalDeviceSurfaceFormatsKHR(unwrapped_phys_dev, surface, pSurfaceFormatCount, pSurfaceFormats);
-    return res;
+    return disp->GetPhysicalDeviceSurfaceFormatsKHR(unwrapped_phys_dev, surface, pSurfaceFormatCount, pSurfaceFormats);
 }
 
 // This is the instance chain terminator function for
@@ -387,8 +384,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfacePresentMo
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    VkResult res = disp->GetPhysicalDeviceSurfacePresentModesKHR(unwrapped_phys_dev, surface, pPresentModeCount, pPresentModes);
-    return res;
+    return disp->GetPhysicalDeviceSurfacePresentModesKHR(unwrapped_phys_dev, surface, pPresentModeCount, pPresentModes);
 }
 
 // This is the instance chain terminator function for
@@ -414,7 +410,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfacePresentModesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not exportvkGetPhysicalDeviceSurfacePresentModesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfacePresentModesKHR!\n");
         abort();
     }
 
@@ -771,7 +767,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWaylandPresentationSu
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWaylandPresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not exportvkGetPhysicalDeviceWaylandPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceWaylandPresentationSupportKHR!\n");
         abort();
     }
 
@@ -893,7 +889,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXcbPresentationSuppor
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXcbPresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not exportvkGetPhysicalDeviceXcbPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceXcbPresentationSupportKHR!\n");
         abort();
     }
 
@@ -1014,7 +1010,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSuppo
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXlibPresentationSupportKHR) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not exportvkGetPhysicalDeviceXlibPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceXlibPresentationSupportKHR!\n");
         abort();
     }
 
@@ -1138,7 +1134,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDirectFBPresentationSupportEXT) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not exportvkGetPhysicalDeviceDirectFBPresentationSupportEXT!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceDirectFBPresentationSupportEXT!\n");
         abort();
     }
 
@@ -1653,7 +1649,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not exportvkGetPhysicalDeviceScreenPresentationSupportQNX!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceScreenPresentationSupportQNX!\n");
         abort();
     }
 
