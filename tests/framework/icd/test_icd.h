@@ -68,6 +68,7 @@ struct TestICD {
     BUILDER_VALUE(TestICD, uint32_t, icd_api_version, VK_API_VERSION_1_0)
     BUILDER_VECTOR(TestICD, LayerDefinition, instance_layers, instance_layer)
     BUILDER_VECTOR(TestICD, Extension, instance_extensions, instance_extension)
+    BUILDER_VECTOR(TestICD, Extension, enabled_instance_extensions, enabled_instance_extension)
 
     BUILDER_VECTOR_MOVE_ONLY(TestICD, PhysicalDevice, physical_devices, physical_device);
 
