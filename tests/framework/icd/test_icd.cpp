@@ -73,13 +73,13 @@ bool CheckLayer(std::vector<LayerDefinition>& layers, std::string layerName) {
 bool IsInstanceExtensionSupported(const char* extension_name) {
     return icd.instance_extensions.end() !=
            std::find_if(icd.instance_extensions.begin(), icd.instance_extensions.end(),
-                        [extension_name](Extension const& ext) { return ext.extensionName == extension_name; });
+                        [extension_name](Extension const& ext) { return string_eq(&ext.extensionName[0], extension_name); });
 }
 
 bool IsInstanceExtensionEnabled(const char* extension_name) {
     return icd.enabled_instance_extensions.end() !=
            std::find_if(icd.enabled_instance_extensions.begin(), icd.enabled_instance_extensions.end(),
-                        [extension_name](Extension const& ext) { return ext.extensionName == extension_name; });
+                        [extension_name](Extension const& ext) { return string_eq(&ext.extensionName[0], extension_name); });
 }
 
 bool IsPhysicalDeviceExtensionAvailable(const char* extension_name) {
