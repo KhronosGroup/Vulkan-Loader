@@ -237,7 +237,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
                                             struct loader_physical_device_term **sorted_device_term) {
     VkResult res = VK_SUCCESS;
     bool app_is_vulkan_1_1 = false;
-    if (inst->app_api_major_version >= 1 && inst->app_api_minor_version >= 1) {
+    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
         app_is_vulkan_1_1 = true;
     }
 
@@ -249,8 +249,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     }
     memset(sorted_device_info, 0, inst->total_gpu_count * sizeof(struct LinuxSortedDeviceInfo));
 
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-               "linux_read_sorted_physical_devices: (App Version %d.%d)", inst->app_api_major_version, inst->app_api_minor_version);
+    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_read_sorted_physical_devices:");
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     Original order:");
 
     // Grab all the necessary info we can about each device
