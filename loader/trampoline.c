@@ -78,7 +78,8 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkI
 
             // First check if instance is valid - loader_get_instance() returns NULL if it isn't.
             struct loader_instance *ptr_instance = loader_get_instance(instance);
-            if (ptr_instance != NULL && (ptr_instance->app_api_minor_version > 2)) {
+            if (ptr_instance != NULL &&
+                loader_check_version_meets_required(loader_combine_version(1, 3, 0), ptr_instance->app_api_version)) {
                 // New behavior
                 return NULL;
             } else {
@@ -474,11 +475,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
 
     // Save the application version
     if (NULL == pCreateInfo->pApplicationInfo || 0 == pCreateInfo->pApplicationInfo->apiVersion) {
-        ptr_instance->app_api_major_version = 1;
-        ptr_instance->app_api_minor_version = 0;
+        ptr_instance->app_api_version = LOADER_VERSION_1_0_0;
     } else {
-        ptr_instance->app_api_major_version = VK_API_VERSION_MAJOR(pCreateInfo->pApplicationInfo->apiVersion);
-        ptr_instance->app_api_minor_version = VK_API_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion);
+        ptr_instance->app_api_version = loader_make_version(pCreateInfo->pApplicationInfo->apiVersion);
+        // zero out the patch version since we don't actually want to compare with it
+        ptr_instance->app_api_version.patch = 0;
     }
 
     // Look for one or more VK_EXT_debug_report or VK_EXT_debug_utils create info structures

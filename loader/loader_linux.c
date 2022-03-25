@@ -236,10 +236,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
                                             struct loader_phys_dev_per_icd *icd_devices,
                                             struct loader_physical_device_term **sorted_device_term) {
     VkResult res = VK_SUCCESS;
-    bool app_is_vulkan_1_1 = false;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
-        app_is_vulkan_1_1 = true;
-    }
+    bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
 
     struct LinuxSortedDeviceInfo *sorted_device_info = loader_instance_heap_alloc(
         inst, inst->total_gpu_count * sizeof(struct LinuxSortedDeviceInfo), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
@@ -271,7 +268,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
             sorted_device_info[index].device_id = dev_props.deviceID;
 
             bool device_is_1_1_capable =
-                VK_API_VERSION_MAJOR(dev_props.apiVersion) == 1 && VK_API_VERSION_MINOR(dev_props.apiVersion) >= 1;
+                loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
             if (!sorted_device_info[index].has_pci_bus_info) {
                 uint32_t ext_count;
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(sorted_device_info[index].physical_device, NULL, &ext_count,
@@ -353,10 +350,7 @@ out:
 VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_t group_count,
                                            struct loader_physical_device_group_term *sorted_group_term) {
     VkResult res = VK_SUCCESS;
-    bool app_is_vulkan_1_1 = false;
-    if (inst->app_api_major_version >= 1 && inst->app_api_minor_version >= 1) {
-        app_is_vulkan_1_1 = true;
-    }
+    bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
 
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Original order:");
 
@@ -380,7 +374,7 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
             sorted_group_term[group].internal_device_info[gpu].device_id = dev_props.deviceID;
 
             bool device_is_1_1_capable =
-                VK_API_VERSION_MAJOR(dev_props.apiVersion) == 1 && VK_API_VERSION_MINOR(dev_props.apiVersion) >= 1;
+                loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
             if (!sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info) {
                 uint32_t ext_count;
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(

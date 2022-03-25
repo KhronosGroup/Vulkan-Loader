@@ -101,6 +101,32 @@ static struct loader_icd_tramp_list scanned_icds;
 
 LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
+loader_api_version loader_make_version(uint32_t version) {
+    loader_api_version out_version;
+    out_version.major = VK_API_VERSION_MAJOR(version);
+    out_version.minor = VK_API_VERSION_MINOR(version);
+    out_version.patch = VK_API_VERSION_PATCH(version);
+    return out_version;
+}
+
+loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32_t patch) {
+    loader_api_version out_version;
+    out_version.major = major;
+    out_version.minor = minor;
+    out_version.patch = patch;
+    return out_version;
+}
+
+// Helper macros for determining if a version is valid or not
+bool loader_check_version_meets_required(loader_api_version required, loader_api_version version) {
+    // major version is satisfied
+    return (version.major > required.major) ||
+           // major version is equal, minor version is patch version is gerater to minimum minor
+           (version.major == required.major && version.minor > required.minor) ||
+           // major and minor version are equal, patch version is greater or equal to minimum patch
+           (version.major == required.major && version.minor == required.minor && version.patch >= required.patch);
+}
+
 // Wrapper around opendir so that the dirent_on_windows gets the instance it needs
 // while linux opendir & readdir does not
 DIR *loader_opendir(const struct loader_instance *instance, const char *name) {
@@ -246,7 +272,7 @@ static size_t loader_platform_combine_path(char *dest, size_t len, ...) {
 
 // Given string of three part form "maj.min.pat" convert to a vulkan version number.
 // Also can understand four part form "variant.major.minor.patch" if provided.
-static uint32_t loader_make_version(char *vers_str) {
+static uint32_t loader_parse_version_string(char *vers_str) {
     uint32_t variant = 0, major = 0, minor = 0, patch = 0;
     char *vers_tok;
 
@@ -277,15 +303,6 @@ static uint32_t loader_make_version(char *vers_str) {
     }
 
     return VK_MAKE_API_VERSION(variant, major, minor, patch);
-}
-
-static loader_api_version loader_make_api_version(char *vers_str) {
-    uint32_t version = loader_make_version(vers_str);
-    loader_api_version api_version;
-    api_version.major = VK_API_VERSION_MAJOR(version);
-    api_version.minor = VK_API_VERSION_MINOR(version);
-    api_version.patch = VK_API_VERSION_PATCH(version);
-    return api_version;
 }
 
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2) {
@@ -949,15 +966,13 @@ static void loader_add_implicit_layer(const struct loader_instance *inst, const 
     // If the implicit layer is supposed to be enable, make sure the layer supports at least the same API version
     // that the application is asking (i.e. layer's API >= app's API).  If it's not, disable this layer.
     if (enable) {
-        uint16_t layer_api_major_version = VK_API_VERSION_MAJOR(prop->info.specVersion);
-        uint16_t layer_api_minor_version = VK_API_VERSION_MINOR(prop->info.specVersion);
-        if (inst->app_api_major_version > layer_api_major_version ||
-            (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
+        loader_api_version prop_version = loader_make_version(prop->info.specVersion);
+        if (!loader_check_version_meets_required(inst->app_api_version, prop_version)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "loader_add_implicit_layer: Disabling implicit layer %s for using an old API version %d.%d versus "
                        "application requested %d.%d",
-                       prop->info.layerName, layer_api_major_version, layer_api_minor_version, inst->app_api_major_version,
-                       inst->app_api_minor_version);
+                       prop->info.layerName, prop_version.major, prop_version.minor, inst->app_api_version.major,
+                       inst->app_api_version.minor);
             enable = false;
         }
     }
@@ -981,21 +996,18 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
     bool found = true;
 
     // We need to add all the individual component layers
-    uint16_t meta_layer_api_major_version = VK_API_VERSION_MAJOR(prop->info.specVersion);
-    uint16_t meta_layer_api_minor_version = VK_API_VERSION_MINOR(prop->info.specVersion);
+    loader_api_version meta_layer_api_version = loader_make_version(prop->info.specVersion);
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
         const struct loader_layer_properties *search_prop =
             loader_find_layer_property(prop->component_layer_names[comp_layer], source_list);
         if (search_prop != NULL) {
-            uint16_t search_layer_api_major_version = VK_API_VERSION_MAJOR(search_prop->info.specVersion);
-            uint16_t search_layer_api_minor_version = VK_API_VERSION_MINOR(search_prop->info.specVersion);
-            if (meta_layer_api_major_version != search_layer_api_major_version ||
-                meta_layer_api_minor_version > search_layer_api_minor_version) {
+            loader_api_version search_prop_version = loader_make_version(prop->info.specVersion);
+            if (!loader_check_version_meets_required(meta_layer_api_version, search_prop_version)) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                            "loader_add_meta_layer: Meta-layer API version %u.%u, component layer %s version %u.%u, may have "
                            "incompatibilities (Policy #LLP_LAYER_8)!",
-                           meta_layer_api_major_version, meta_layer_api_minor_version, search_prop->info.layerName,
-                           search_layer_api_major_version, meta_layer_api_minor_version);
+                           meta_layer_api_version.major, meta_layer_api_version.minor, search_prop->info.layerName,
+                           search_prop_version.major, search_prop_version.minor);
             }
 
             // If the component layer is itself an implicit layer, we need to do the implicit layer enable
@@ -1474,13 +1486,12 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
         icd_tramp_list->capacity *= 2;
     }
 
-    uint32_t major_version = VK_API_VERSION_MAJOR(api_version);
-    uint32_t minor_version = VK_API_VERSION_MINOR(api_version);
-    if (interface_vers <= 4 && 1 == major_version && 0 < minor_version) {
+    loader_api_version api_version_struct = loader_make_version(api_version);
+    if (interface_vers <= 4 && loader_check_version_meets_required(LOADER_VERSION_1_1_0, api_version_struct)) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "loader_scanned_icd_add: Driver %s supports Vulkan %u.%u, but only supports loader interface version %u."
                    " Interface version 5 or newer required to support this version of Vulkan (Policy #LDP_DRIVER_7)",
-                   filename, major_version, minor_version, interface_vers);
+                   filename, api_version_struct.major, api_version_struct.minor, interface_vers);
     }
 
     new_scanned_icd = &(icd_tramp_list->scanned_list[icd_tramp_list->count]);
@@ -1520,8 +1531,8 @@ void loader_initialize(void) {
     windows_initialization();
 #endif
 
-    loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Vulkan Loader Version %d.%d.%d", VK_API_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE),
-               VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE), VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+    loader_api_version version = loader_make_version(VK_HEADER_VERSION_COMPLETE);
+    loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Vulkan Loader Version %d.%d.%d", version.major, version.minor, version.patch);
 
 #if defined(GIT_BRANCH_NAME) && defined(GIT_TAG_INFO)
 #define LOADER_GIT_STRINGIFY(x) #x
@@ -1713,8 +1724,7 @@ out:
 static bool verify_meta_layer_component_layers(const struct loader_instance *inst, struct loader_layer_properties *prop,
                                                struct loader_layer_list *instance_layers) {
     bool success = true;
-    const uint32_t expected_major = VK_API_VERSION_MAJOR(prop->info.specVersion);
-    const uint32_t expected_minor = VK_API_VERSION_MINOR(prop->info.specVersion);
+    loader_api_version meta_layer_version = loader_make_version(prop->info.specVersion);
 
     for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
         struct loader_layer_properties *comp_prop =
@@ -1729,14 +1739,14 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
             break;
         }
 
-        // Check the version of each layer, they need to at least match MAJOR and MINOR
-        uint32_t cur_major = VK_API_VERSION_MAJOR(comp_prop->info.specVersion);
-        uint32_t cur_minor = VK_API_VERSION_MINOR(comp_prop->info.specVersion);
-        if (cur_major != expected_major || cur_minor != expected_minor) {
+        // Check the version of each layer, they need to be equal
+        loader_api_version comp_prop_version = loader_make_version(comp_prop->info.specVersion);
+        if (meta_layer_version.major != comp_prop_version.major || meta_layer_version.minor != comp_prop_version.minor) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "verify_meta_layer_component_layers: Meta-layer uses API version %d.%d, but component "
                        "layer %d uses API version %d.%d.  Skipping this layer.",
-                       expected_major, expected_minor, comp_layer, cur_major, cur_minor);
+                       meta_layer_version.major, meta_layer_version.minor, comp_layer, comp_prop_version.major,
+                       comp_prop_version.minor);
 
             success = false;
             break;
@@ -1898,11 +1908,6 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
     }
 }
 
-static inline bool layer_json_supports_pre_instance_tag(const loader_api_version *layer_json) {
-    // Supported versions started in 1.1.2, so anything newer
-    return layer_json->major > 1 || layer_json->minor > 1 || (layer_json->minor == 1 && layer_json->patch > 1);
-}
-
 static VkResult loader_read_layer_json(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
                                        cJSON *layer_node, loader_api_version version, cJSON *item, bool is_implicit,
                                        char *filename) {
@@ -2001,8 +2006,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     // is completely optional.  So, no check put in place.
     if (!strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
         cJSON *expiration;
-
-        if (version.major == 0 || (version.minor == 1 && version.patch < 2) || version.minor == 0) {
+        if (!loader_check_version_meets_required(loader_combine_version(1, 1, 2), version)) {
             loader_log(
                 inst, VULKAN_LOADER_WARN_BIT, 0,
                 "Override layer expiration date not added until version 1.1.2.  Please update JSON file version appropriately.");
@@ -2110,7 +2114,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             }
         }
     } else if (NULL != component_layers) {
-        if (version.major == 0 || (version.minor == 1 && version.patch < 1) || (version.minor == 0)) {
+        if (!loader_check_version_meets_required(LOADER_VERSION_1_1_0, version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific component_layers, but using older JSON file version.");
         }
@@ -2196,7 +2200,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
     override_paths = cJSON_GetObjectItem(layer_node, "override_paths");
     if (NULL != override_paths) {
-        if (version.major == 0 || (version.minor == 1 && version.patch < 1) || version.minor == 0) {
+        if (!loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific override paths, but using older JSON file version.");
         }
@@ -2241,7 +2245,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Layer name %s does not conform to naming standard (Policy #LLP_LAYER_3)",
                    props->info.layerName);
     }
-    props->info.specVersion = loader_make_version(api_version);
+    props->info.specVersion = loader_parse_version_string(api_version);
     props->info.implementationVersion = atoi(implementation_version);
     strncpy((char *)props->info.description, description, sizeof(props->info.description));
     props->info.description[sizeof(props->info.description) - 1] = '\0';
@@ -2306,7 +2310,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     //    vkNegotiateLoaderLayerInterfaceVersion (starting with JSON file 1.1.0)
     GET_JSON_OBJECT(layer_node, functions)
     if (functions != NULL) {
-        if (version.major > 1 || version.minor >= 1) {
+        if (loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
             GET_JSON_ITEM(inst, functions, vkNegotiateLoaderLayerInterfaceVersion)
             if (vkNegotiateLoaderLayerInterfaceVersion != NULL)
                 strncpy(props->functions.str_negotiate_interface, vkNegotiateLoaderLayerInterfaceVersion,
@@ -2319,7 +2323,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         GET_JSON_ITEM(inst, functions, vkGetDeviceProcAddr)
         if (vkGetInstanceProcAddr != NULL) {
             strncpy(props->functions.str_gipa, vkGetInstanceProcAddr, sizeof(props->functions.str_gipa));
-            if (version.major > 1 || version.minor >= 1) {
+            if (loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
                 loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                            "Layer \"%s\" using deprecated \'vkGetInstanceProcAddr\' tag which was deprecated starting with JSON "
                            "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
@@ -2330,7 +2334,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         props->functions.str_gipa[sizeof(props->functions.str_gipa) - 1] = '\0';
         if (vkGetDeviceProcAddr != NULL) {
             strncpy(props->functions.str_gdpa, vkGetDeviceProcAddr, sizeof(props->functions.str_gdpa));
-            if (version.major > 1 || version.minor >= 1) {
+            if (loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
                 loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                            "Layer \"%s\" using deprecated \'vkGetDeviceProcAddr\' tag which was deprecated starting with JSON "
                            "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
@@ -2435,7 +2439,8 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     // Read in the pre-instance stuff
     cJSON *pre_instance = cJSON_GetObjectItem(layer_node, "pre_instance_functions");
     if (NULL != pre_instance) {
-        if (!layer_json_supports_pre_instance_tag(&version)) {
+        // Supported versions started in 1.1.2, so anything newer
+        if (!loader_check_version_meets_required(loader_combine_version(1, 1, 2), version)) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "Found pre_instance_functions section in layer from \"%s\". This section is only valid in manifest version "
                        "1.1.2 or later. The section will be ignored",
@@ -2550,14 +2555,6 @@ static inline bool is_valid_layer_json_version(const loader_api_version *layer_j
     return false;
 }
 
-static inline bool layer_json_supports_multiple_layers(const loader_api_version *layer_json) {
-    // Supported versions started in 1.0.1, so anything newer
-    if ((layer_json->major > 1 || layer_json->minor > 0 || layer_json->patch > 1)) {
-        return true;
-    }
-    return false;
-}
-
 // Given a cJSON struct (json) of the top level JSON object from layer manifest
 // file, add entry to the layer_list. Fill out the layer_properties in this list
 // entry from the input cJSON object.
@@ -2590,7 +2587,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     }
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Found manifest file %s (file version %s)", filename, file_vers);
     // Get the major/minor/and patch as integers for easier comparison
-    json_version = loader_make_api_version(file_vers);
+    json_version = loader_make_version(loader_parse_version_string(file_vers));
 
     if (!is_valid_layer_json_version(&json_version)) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -2603,7 +2600,8 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     layers_node = cJSON_GetObjectItem(json, "layers");
     if (layers_node != NULL) {
         int numItems = cJSON_GetArraySize(layers_node);
-        if (!layer_json_supports_multiple_layers(&json_version)) {
+        // Supported versions started in 1.0.1, so anything newer
+        if (!loader_check_version_meets_required(loader_combine_version(1, 0, 1), json_version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "loader_add_layer_properties: \'layers\' tag not supported until file version 1.0.1, but %s is reporting "
                        "version %s",
@@ -2641,7 +2639,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
         // Throw a warning if we encounter multiple "layer" objects in file
         // versions newer than 1.0.0.  Having multiple objects with the same
         // name at the same level is actually a JSON standard violation.
-        if (layer_count > 1 && layer_json_supports_multiple_layers(&json_version)) {
+        if (layer_count > 1 && loader_check_version_meets_required(loader_combine_version(1, 0, 1), json_version)) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "loader_add_layer_properties: Multiple 'layer' nodes are deprecated starting in file version \"1.0.1\".  "
                        "Please use 'layers' : [] array instead in %s.",
@@ -3437,9 +3435,10 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Found ICD manifest file %s, version %s", file_str, file_vers);
 
         // Get the version of the driver manifest
-        json_file_version = loader_make_api_version(file_vers);
+        json_file_version = loader_make_version(loader_parse_version_string(file_vers));
 
-        if (json_file_version.major != 1 || json_file_version.minor != 0 || json_file_version.patch > 1) {
+        // Loader only knows versions 1.0.0 and 1.0.1, anything above it is unknown
+        if (loader_check_version_meets_required(loader_combine_version(1, 0, 2), json_file_version)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: %s has unknown icd manifest file version %d.%d.%d. May cause errors.", file_str,
                        json_file_version.major, json_file_version.minor, json_file_version.patch);
@@ -3525,7 +3524,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                         json = NULL;
                         continue;
                     }
-                    vers = loader_make_version(temp);
+                    vers = loader_parse_version_string(temp);
                     cJSON_Free(inst, temp);
                 } else {
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
@@ -4132,12 +4131,6 @@ out:
 
 VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
                                        const struct loader_layer_list *instance_layers) {
-    VkResult err = VK_SUCCESS;
-    uint16_t layer_api_major_version;
-    uint16_t layer_api_minor_version;
-    uint32_t i;
-    struct loader_layer_properties *prop;
-
     assert(inst && "Cannot have null instance");
 
     if (!loader_init_layer_list(inst, &inst->app_activated_layer_list)) {
@@ -4156,33 +4149,31 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
     loader_add_implicit_layers(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
 
     // Add any layers specified via environment variable next
-    err = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS",
-                                        &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
+    VkResult err =
+        loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS",
+                                      &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
     if (err != VK_SUCCESS) {
-        goto out;
+        return err;
     }
 
     // Add layers specified by the application
     err = loader_add_layer_names_to_list(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
                                          pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
 
-    for (i = 0; i < inst->expanded_activated_layer_list.count; i++) {
+    for (uint32_t i = 0; i < inst->expanded_activated_layer_list.count; i++) {
         // Verify that the layer api version is at least that of the application's request, if not, throw a warning since
         // undefined behavior could occur.
-        prop = inst->expanded_activated_layer_list.list + i;
-        layer_api_major_version = VK_API_VERSION_MAJOR(prop->info.specVersion);
-        layer_api_minor_version = VK_API_VERSION_MINOR(prop->info.specVersion);
-        if (inst->app_api_major_version > layer_api_major_version ||
-            (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
+        struct loader_layer_properties *prop = inst->expanded_activated_layer_list.list + i;
+        loader_api_version prop_spec_version = loader_make_version(prop->info.specVersion);
+        if (!loader_check_version_meets_required(inst->app_api_version, prop_spec_version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "loader_add_to_layer_list: Explicit layer %s is using an old API version %" PRIu16 ".%" PRIu16
                        " versus application requested %" PRIu16 ".%" PRIu16,
-                       prop->info.layerName, layer_api_major_version, layer_api_minor_version, inst->app_api_major_version,
-                       inst->app_api_minor_version);
+                       prop->info.layerName, prop_spec_version.major, prop_spec_version.minor, inst->app_api_version.major,
+                       inst->app_api_version.minor);
         }
     }
 
-out:
     return err;
 }
 
@@ -5177,7 +5168,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         // Force on "VK_KHR_get_physical_device_properties2" for Linux as we use it for GPU sorting.  This
         // should be done if the API version of either the application or the driver does not natively support
         // the core version of vkGetPhysicalDevicePoroperties2 entrypoint.
-        if ((ptr_instance->app_api_major_version == 1 && ptr_instance->app_api_minor_version == 0) ||
+        if ((ptr_instance->app_api_version.major == 1 && ptr_instance->app_api_version.minor == 0) ||
             (VK_API_VERSION_MAJOR(icd_term->scanned_icd->api_version) == 1 &&
              VK_API_VERSION_MINOR(icd_term->scanned_icd->api_version) == 0)) {
             prop = get_extension_property(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, &icd_exts);
@@ -5228,7 +5219,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         VkApplicationInfo icd_app_info;
         uint32_t icd_version_nopatch =
             VK_MAKE_API_VERSION(0, VK_API_VERSION_MAJOR(icd_version), VK_API_VERSION_MINOR(icd_version), 0);
-        uint32_t requested_version = pCreateInfo == NULL || pCreateInfo->pApplicationInfo == NULL
+        uint32_t requested_version = (pCreateInfo == NULL || pCreateInfo->pApplicationInfo == NULL)
                                          ? VK_API_VERSION_1_0
                                          : pCreateInfo->pApplicationInfo->apiVersion;
         if ((requested_version != 0) && (icd_version_nopatch == VK_API_VERSION_1_0)) {

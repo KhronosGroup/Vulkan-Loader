@@ -31,6 +31,7 @@
 
 #include "allocation.h"
 #include "loader_common.h"
+#include "loader.h"
 #include "log.h"
 
 // Terminators for 1.0 functions
@@ -132,7 +133,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceFeatures2 fpGetPhysicalDeviceFeatures2 = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceFeatures2 = icd_term->dispatch.GetPhysicalDeviceFeatures2;
     }
     if (fpGetPhysicalDeviceFeatures2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
@@ -188,7 +189,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceProperties2 fpGetPhysicalDeviceProperties2 = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
     }
     if (fpGetPhysicalDeviceProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
@@ -251,7 +252,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2(VkPhysi
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceFormatProperties2 fpGetPhysicalDeviceFormatProperties2 = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceFormatProperties2;
     }
     if (fpGetPhysicalDeviceFormatProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
@@ -289,7 +290,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceImageFormatProperties2 fpGetPhysicalDeviceImageFormatProperties2 = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceImageFormatProperties2;
     }
     if (fpGetPhysicalDeviceImageFormatProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
@@ -329,7 +330,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(Vk
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceQueueFamilyProperties2 fpGetPhysicalDeviceQueueFamilyProperties2 = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceQueueFamilyProperties2 = icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties2;
     }
     if (fpGetPhysicalDeviceQueueFamilyProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
@@ -387,7 +388,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2(VkPhysi
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceMemoryProperties2 fpGetPhysicalDeviceMemoryProperties2 = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceMemoryProperties2 = icd_term->dispatch.GetPhysicalDeviceMemoryProperties2;
     }
     if (fpGetPhysicalDeviceMemoryProperties2 == NULL && inst->enabled_known_extensions.khr_get_physical_device_properties2) {
@@ -425,7 +426,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 fpGetPhysicalDeviceSparseImageFormatProperties2 = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceSparseImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties2;
     }
     if (fpGetPhysicalDeviceSparseImageFormatProperties2 == NULL &&
@@ -495,7 +496,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties(
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceExternalBufferProperties fpGetPhysicalDeviceExternalBufferProperties = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalBufferProperties = icd_term->dispatch.GetPhysicalDeviceExternalBufferProperties;
     }
     if (fpGetPhysicalDeviceExternalBufferProperties == NULL && inst->enabled_known_extensions.khr_external_memory_capabilities) {
@@ -538,7 +539,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperti
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceExternalSemaphoreProperties fpGetPhysicalDeviceExternalSemaphoreProperties = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalSemaphoreProperties = icd_term->dispatch.GetPhysicalDeviceExternalSemaphoreProperties;
     }
     if (fpGetPhysicalDeviceExternalSemaphoreProperties == NULL &&
@@ -585,7 +586,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties(
 
     // Get the function pointer to use to call into the ICD. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceExternalFenceProperties fpGetPhysicalDeviceExternalFenceProperties = NULL;
-    if (inst->app_api_major_version > 1 || inst->app_api_minor_version >= 1) {
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
         fpGetPhysicalDeviceExternalFenceProperties = icd_term->dispatch.GetPhysicalDeviceExternalFenceProperties;
     }
     if (fpGetPhysicalDeviceExternalFenceProperties == NULL && inst->enabled_known_extensions.khr_external_fence_capabilities) {
