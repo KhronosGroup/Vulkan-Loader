@@ -194,7 +194,9 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
         -1,
 #endif
     };
-    if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), buffer, &size, NULL, 0) < 0) return NULL;
+    if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), buffer, &size, NULL, 0) < 0) {
+        return NULL;
+    }
 
     return buffer;
 }

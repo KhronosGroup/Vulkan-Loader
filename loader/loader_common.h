@@ -236,8 +236,7 @@ struct loader_instance {
     uint64_t magic;                               // Should be LOADER_MAGIC_NUMBER
 
     // Vulkan API version the app is intending to use.
-    uint16_t app_api_major_version;
-    uint16_t app_api_minor_version;
+    loader_api_version app_api_version;
 
     // We need to manually track physical devices over time.  If the user
     // re-queries the information, we don't want to delete old data or

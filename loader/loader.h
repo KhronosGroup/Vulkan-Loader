@@ -163,3 +163,18 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *char_arr
 char *loader_get_next_path(char *path);
 VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_data_files *out_files,
                         bool use_first_found_manifest);
+
+loader_api_version loader_make_version(uint32_t version);
+loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32_t patch);
+
+// Helper macros for determining if a version is valid or not
+bool loader_check_version_meets_required(loader_api_version required, loader_api_version version);
+
+// Convenience macros for common versions
+#ifndef LOADER_VERSION_1_0_0
+#define LOADER_VERSION_1_0_0 loader_combine_version(1, 0, 0)
+#endif
+
+#ifndef LOADER_VERSION_1_1_0
+#define LOADER_VERSION_1_1_0 loader_combine_version(1, 1, 0)
+#endif
