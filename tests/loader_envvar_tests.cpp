@@ -104,7 +104,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     std::array<VkPhysicalDevice, 5> phys_devs_array;
     uint32_t phys_dev_count = 1;
     ASSERT_EQ(inst1->vkEnumeratePhysicalDevices(inst1.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
-    ASSERT_EQ(phys_dev_count, 1);
+    ASSERT_EQ(phys_dev_count, 1U);
 
     for (uint32_t add = 0; add < 2; ++add) {
         env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_use_env_var_icd_filenames(true));
@@ -120,7 +120,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
 
     phys_dev_count = 5;
     ASSERT_EQ(inst2->vkEnumeratePhysicalDevices(inst2.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
-    ASSERT_EQ(phys_dev_count, 5);
+    ASSERT_EQ(phys_dev_count, 5U);
 
     env.debug_log.clear();
 
@@ -201,7 +201,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVar) {
     std::array<VkPhysicalDevice, 1> phys_devs_array;
     uint32_t phys_dev_count = 1;
     ASSERT_EQ(inst1->vkEnumeratePhysicalDevices(inst1.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
-    ASSERT_EQ(phys_dev_count, 1);
+    ASSERT_EQ(phys_dev_count, 1U);
 
     env.platform_shim->set_elevated_privilege(true);
 
@@ -235,7 +235,7 @@ TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
     std::array<VkPhysicalDevice, 3> phys_devs_array;
     uint32_t phys_dev_count = 3;
     ASSERT_EQ(inst->vkEnumeratePhysicalDevices(inst.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
-    ASSERT_EQ(phys_dev_count, 3);
+    ASSERT_EQ(phys_dev_count, 3U);
 
     remove_env_var("VK_DRIVER_FILES");
     remove_env_var("VK_ADD_DRIVER_FILES");

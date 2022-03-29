@@ -104,7 +104,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceProperties props{};
     instance->vkGetPhysicalDeviceProperties(physical_device, &props);
@@ -142,7 +142,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceProperties props{};
     instance->vkGetPhysicalDeviceProperties(physical_device, &props);
@@ -187,7 +187,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRInstanceSupports11) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceProperties props{};
     instance->vkGetPhysicalDeviceProperties(physical_device, &props);
@@ -452,7 +452,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceFeatures feats{};
     instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
@@ -483,7 +483,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceFeatures feats{};
     instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
@@ -521,7 +521,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceSupports11) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceFeatures feats{};
     instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
@@ -672,7 +672,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkFormatProperties props{};
     instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
@@ -706,7 +706,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkFormatProperties props{};
     instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
@@ -747,7 +747,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceSupports11) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkFormatProperties props{};
     instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
@@ -904,7 +904,7 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkImageFormatProperties props{};
     ASSERT_EQ(VK_SUCCESS,
@@ -954,7 +954,7 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkImageFormatProperties props{};
     ASSERT_EQ(VK_SUCCESS,
@@ -1012,7 +1012,7 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRInstanceSupports11) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkImageFormatProperties props{};
     ASSERT_EQ(VK_SUCCESS,
@@ -1225,7 +1225,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceMemoryProperties props{};
     instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
@@ -1257,7 +1257,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceMemoryProperties props{};
     instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
@@ -1296,7 +1296,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRInstanceSupports11) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceMemoryProperties props{};
     instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
@@ -1468,7 +1468,7 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     uint32_t ret_fam_1 = 0;
     std::vector<VkQueueFamilyProperties> props{};
@@ -1509,7 +1509,7 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     uint32_t ret_fam_1 = 0;
     std::vector<VkQueueFamilyProperties> props{};
@@ -1557,7 +1557,7 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRInstanceSupports11) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     uint32_t ret_fam_1 = 0;
     std::vector<VkQueueFamilyProperties> props{};
@@ -1742,19 +1742,19 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRInstanceAndICDSuppo
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkSparseImageFormatProperties> props{};
     uint32_t sparse_count_1 = 0;
     instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
                                                              VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
                                                              VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
-    ASSERT_NE(sparse_count_1, 0);
+    ASSERT_NE(sparse_count_1, 0U);
     props.resize(sparse_count_1);
     instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
                                                              VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
                                                              VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
-    ASSERT_NE(sparse_count_1, 0);
+    ASSERT_NE(sparse_count_1, 0U);
 
     VkPhysicalDeviceSparseImageFormatInfo2 info2{
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
@@ -1797,19 +1797,19 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkSparseImageFormatProperties> props{};
     uint32_t sparse_count_1 = 0;
     instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
                                                              VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
                                                              VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
-    ASSERT_NE(sparse_count_1, 0);
+    ASSERT_NE(sparse_count_1, 0U);
     props.resize(sparse_count_1);
     instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
                                                              VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
                                                              VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
-    ASSERT_NE(sparse_count_1, 0);
+    ASSERT_NE(sparse_count_1, 0U);
 
     VkPhysicalDeviceSparseImageFormatInfo2 info2{
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
@@ -1859,19 +1859,19 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRInstanceSupports11)
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkSparseImageFormatProperties> props{};
     uint32_t sparse_count_1 = 0;
     instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
                                                              VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
                                                              VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
-    ASSERT_NE(sparse_count_1, 0);
+    ASSERT_NE(sparse_count_1, 0U);
     props.resize(sparse_count_1);
     instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
                                                              VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
                                                              VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
-    ASSERT_NE(sparse_count_1, 0);
+    ASSERT_NE(sparse_count_1, 0U);
 
     VkPhysicalDeviceSparseImageFormatInfo2 info2{
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
@@ -1974,12 +1974,12 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatPropsMixed) {
         instance->vkGetPhysicalDeviceSparseImageFormatProperties(
             physical_devices[dev], VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
             VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
-        ASSERT_NE(sparse_count_1, 0);
+        ASSERT_NE(sparse_count_1, 0U);
         props.resize(sparse_count_1);
         instance->vkGetPhysicalDeviceSparseImageFormatProperties(
             physical_devices[dev], VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
             VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
-        ASSERT_NE(sparse_count_1, 0);
+        ASSERT_NE(sparse_count_1, 0U);
 
         VkPhysicalDeviceSparseImageFormatInfo2 info2{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
@@ -2076,7 +2076,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceExternalBufferInfoKHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR};
     VkExternalBufferPropertiesKHR props{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR};
@@ -2107,7 +2107,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceExternalBufferInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO};
     VkExternalBufferProperties props{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES};
@@ -2289,7 +2289,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceExternalSemaphoreInfoKHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR};
     VkExternalSemaphorePropertiesKHR props{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES_KHR};
@@ -2319,7 +2319,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceExternalSemaphoreInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO};
     VkExternalSemaphoreProperties props{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES};
@@ -2500,7 +2500,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceExternalFenceInfoKHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO_KHR};
     VkExternalFencePropertiesKHR props{VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES_KHR};
@@ -2530,7 +2530,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2Simple) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkPhysicalDeviceExternalFenceInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO};
     VkExternalFenceProperties props{VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES};
@@ -2755,7 +2755,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkSurfaceKHR surface;
     VkHeadlessSurfaceCreateInfoEXT create_info{VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT};
@@ -2961,7 +2961,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkSurfaceKHR surface;
     VkHeadlessSurfaceCreateInfoEXT create_info{VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT};
@@ -3077,10 +3077,10 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRMixed) {
         std::vector<VkSurfaceFormatKHR> props{};
         uint32_t count_1 = 0;
         ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats(physical_devices[dev], surface, &count_1, nullptr));
-        ASSERT_NE(0, count_1);
+        ASSERT_NE(0U, count_1);
         props.resize(count_1);
         ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats(physical_devices[dev], surface, &count_1, props.data()));
-        ASSERT_NE(0, count_1);
+        ASSERT_NE(0U, count_1);
 
         VkPhysicalDeviceSurfaceInfo2KHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface};
         std::vector<VkSurfaceFormat2KHR> props2{};
@@ -3187,7 +3187,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkDisplayPropertiesKHR> props{};
     uint32_t prop_count = 0;
@@ -3285,7 +3285,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(0, prop_count);
+                        ASSERT_EQ(0U, prop_count);
                     } else {
                         ASSERT_EQ(cur_dev.display_properties.size(), prop_count);
                         props.resize(prop_count);
@@ -3374,7 +3374,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkDisplayPlanePropertiesKHR> props{};
     uint32_t prop_count = 0;
@@ -3472,7 +3472,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(0, prop_count);
+                        ASSERT_EQ(0U, prop_count);
                     } else {
                         ASSERT_EQ(cur_dev.display_plane_properties.size(), prop_count);
                         props.resize(prop_count);
@@ -3559,7 +3559,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkDisplayKHR> disps{};
     uint32_t disp_count = 0;
@@ -3657,7 +3657,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(0, disp_count);
+                        ASSERT_EQ(0U, disp_count);
                     } else {
                         ASSERT_EQ(cur_dev.displays.size(), disp_count);
                         disps.resize(disp_count);
@@ -3751,7 +3751,7 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkDisplayModePropertiesKHR> props{};
     uint32_t props_count = 0;
@@ -3848,7 +3848,7 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(0, props_count);
+                        ASSERT_EQ(0U, props_count);
                     } else {
                         std::vector<VkDisplayModePropertiesKHR> props{};
                         ASSERT_EQ(cur_dev.display_mode_properties.size(), props_count);
@@ -3921,7 +3921,7 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkDisplayModeKHR mode{};
     VkDisplayModeCreateInfoKHR create_info{VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR};
@@ -4143,7 +4143,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkDisplayPlaneCapabilitiesKHR caps{};
     ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities(physical_device, 0, 0, &caps));
@@ -4318,12 +4318,12 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkDisplayPropertiesKHR> props{};
     uint32_t prop_count = 0;
     ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_device, &prop_count, nullptr));
-    ASSERT_NE(0, prop_count);
+    ASSERT_NE(0U, prop_count);
     props.resize(prop_count);
     ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_device, &prop_count, props.data()));
 
@@ -4411,7 +4411,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRMixed) {
         std::vector<VkDisplayPropertiesKHR> props{};
         uint32_t prop_count = 0;
         ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_devices[dev], &prop_count, nullptr));
-        ASSERT_NE(0, prop_count);
+        ASSERT_NE(0U, prop_count);
         props.resize(prop_count);
         ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_devices[dev], &prop_count, props.data()));
 
@@ -4492,12 +4492,12 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkDisplayPlanePropertiesKHR> props{};
     uint32_t prop_count = 0;
     ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_device, &prop_count, nullptr));
-    ASSERT_NE(0, prop_count);
+    ASSERT_NE(0U, prop_count);
     props.resize(prop_count);
     ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_device, &prop_count, props.data()));
 
@@ -4584,7 +4584,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRMixed) {
         std::vector<VkDisplayPlanePropertiesKHR> props{};
         uint32_t prop_count = 0;
         ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_devices[dev], &prop_count, nullptr));
-        ASSERT_NE(0, prop_count);
+        ASSERT_NE(0U, prop_count);
         props.resize(prop_count);
         ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_devices[dev], &prop_count, props.data()));
 
@@ -4668,12 +4668,12 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     std::vector<VkDisplayModePropertiesKHR> props{};
     uint32_t props_count1 = 0;
     ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_device, VK_NULL_HANDLE, &props_count1, nullptr));
-    ASSERT_NE(0, props_count1);
+    ASSERT_NE(0U, props_count1);
     props.resize(props_count1);
     ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_device, VK_NULL_HANDLE, &props_count1, props.data()));
 
@@ -4760,7 +4760,7 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRMixed) {
         std::vector<VkDisplayModePropertiesKHR> props{};
         uint32_t props_count1 = 0;
         ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_devices[dev], VK_NULL_HANDLE, &props_count1, nullptr));
-        ASSERT_NE(0, props_count1);
+        ASSERT_NE(0U, props_count1);
         props.resize(props_count1);
         ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_devices[dev], VK_NULL_HANDLE, &props_count1, props.data()));
 
@@ -4851,7 +4851,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkDisplayPlaneCapabilitiesKHR caps{};
     ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities(physical_device, 0, 0, &caps));
@@ -4994,7 +4994,7 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkDisplayKHR display = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, AcquireDrmDisplay(physical_device, 0, display));
@@ -5150,7 +5150,7 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTInstanceAndICDSupport) {
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1);
+    ASSERT_EQ(driver_count, 1U);
 
     VkDisplayKHR display = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, GetDrmDisplay(physical_device, 0, 0, &display));
