@@ -4013,6 +4013,11 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_internal(VkI
         return addr;
     }
 
+    addr = loader_phys_dev_ext_gpa_term(loader_get_instance(inst), pName);
+    if (addr) {
+        return addr;
+    }
+
     // Don't call down the chain, this would be an infinite loop
     loader_log(NULL, VULKAN_LOADER_DEBUG_BIT, 0, "loader_gpa_instance_internal() unrecognized name %s", pName);
     return NULL;
