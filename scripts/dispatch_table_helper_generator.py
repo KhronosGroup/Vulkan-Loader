@@ -197,7 +197,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 decl = decl.split('*PFN_vk')[1]
                 decl = decl.replace(')(', '(')
                 decl = 'static VKAPI_ATTR ' + return_type + ' VKAPI_CALL Stub' + decl
-                func_body = ' { ' + return_statement + ' };'
+                func_body = ' { ' + return_statement + ' }'
                 decl = decl.replace (';', func_body)
                 if self.featureExtraProtect is not None:
                     self.dev_ext_stub_list.append('#ifdef %s' % self.featureExtraProtect)

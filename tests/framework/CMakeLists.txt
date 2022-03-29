@@ -44,6 +44,11 @@ if (UNIX)
     endif()
 endif()
 
+if (MSVC)
+# silence hidden class member warnings in test framework
+    target_compile_options(testing_framework_util PUBLIC /wd4458)
+endif()
+
 include(CMakeParseArguments)
 function(AddSharedLibrary LIBRARY_NAME)
     set(singleValueArgs DEF_FILE)

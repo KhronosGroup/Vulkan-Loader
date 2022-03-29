@@ -216,8 +216,8 @@ static size_t loader_platform_combine_path(char *dest, size_t len, ...) {
     const char *component;
 
     va_start(ap, len);
-
-    while ((component = va_arg(ap, const char *))) {
+    component = va_arg(ap, const char *);
+    while (component) {
         if (required_len > 0) {
             // This path element is not the first non-empty element; prepend
             // a directory separator if space allows
@@ -231,6 +231,7 @@ static size_t loader_platform_combine_path(char *dest, size_t len, ...) {
             strncpy(dest + required_len, component, len - required_len);
         }
         required_len += strlen(component);
+        component = va_arg(ap, const char *);
     }
 
     va_end(ap);
@@ -280,7 +281,10 @@ static uint32_t loader_make_version(char *vers_str) {
 
 static loader_api_version loader_make_api_version(char *vers_str) {
     uint32_t version = loader_make_version(vers_str);
-    loader_api_version api_version = {VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version), VK_API_VERSION_PATCH(version)};
+    loader_api_version api_version;
+    api_version.major = VK_API_VERSION_MAJOR(version);
+    api_version.minor = VK_API_VERSION_MINOR(version);
+    api_version.patch = VK_API_VERSION_PATCH(version);
     return api_version;
 }
 
@@ -868,16 +872,15 @@ static bool check_expiration(const struct loader_instance *inst, const struct lo
     time_t current = time(NULL);
     struct tm tm_current = *localtime(&current);
 
-    struct tm tm_expiration = {
-        .tm_sec = 0,
-        .tm_min = prop->expiration.minute,
-        .tm_hour = prop->expiration.hour,
-        .tm_mday = prop->expiration.day,
-        .tm_mon = prop->expiration.month - 1,
-        .tm_year = prop->expiration.year - 1900,
-        .tm_isdst = tm_current.tm_isdst,
-        // wday and yday are ignored by mktime
-    };
+    struct tm tm_expiration;
+    tm_expiration.tm_sec = 0;
+    tm_expiration.tm_min = prop->expiration.minute;
+    tm_expiration.tm_hour = prop->expiration.hour;
+    tm_expiration.tm_mday = prop->expiration.day;
+    tm_expiration.tm_mon = prop->expiration.month - 1;
+    tm_expiration.tm_year = prop->expiration.year - 1900;
+    tm_expiration.tm_isdst = tm_current.tm_isdst;
+    // wday and yday are ignored by mktime
     time_t expiration = mktime(&tm_expiration);
 
     return current < expiration;
@@ -1615,19 +1618,24 @@ static void loader_expand_path(const char *path, const char *rel_base, size_t ou
 // file in the paths.  If filename already is a path then no searching in the given paths.
 //
 // @return - A string in out_fullpath of either the full path or file.
-static void loader_get_fullpath(const char *file, const char *dirs, size_t out_size, char *out_fullpath) {
-    if (!loader_platform_is_path(file) && *dirs) {
+static void loader_get_fullpath(const char *file, const char *in_dirs, size_t out_size, char *out_fullpath) {
+    if (!loader_platform_is_path(file) && *in_dirs) {
         char *dirs_copy, *dir, *next_dir;
 
-        dirs_copy = loader_stack_alloc(strlen(dirs) + 1);
-        strcpy(dirs_copy, dirs);
+        dirs_copy = loader_stack_alloc(strlen(in_dirs) + 1);
+        strcpy(dirs_copy, in_dirs);
 
         // find if file exists after prepending paths in given list
-        for (dir = dirs_copy; *dir && (next_dir = loader_get_next_path(dir)); dir = next_dir) {
+        // for (dir = dirs_copy; *dir && (next_dir = loader_get_next_path(dir)); dir = next_dir) {
+        dir = dirs_copy;
+        next_dir = loader_get_next_path(dir);
+        while (*dir && next_dir) {
             loader_platform_combine_path(out_fullpath, out_size, dir, file, NULL);
             if (loader_platform_file_exists(out_fullpath)) {
                 return;
             }
+            dir = next_dir;
+            next_dir = loader_get_next_path(dir);
         }
     }
 
@@ -2032,19 +2040,19 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                         }
                         switch (cur_item) {
                             case 0:  // Year
-                                props->expiration.year = atoi(cur_start);
+                                props->expiration.year = (uint16_t)atoi(cur_start);
                                 break;
                             case 1:  // Month
-                                props->expiration.month = atoi(cur_start);
+                                props->expiration.month = (uint8_t)atoi(cur_start);
                                 break;
                             case 2:  // Day
-                                props->expiration.day = atoi(cur_start);
+                                props->expiration.day = (uint8_t)atoi(cur_start);
                                 break;
                             case 3:  // Hour
-                                props->expiration.hour = atoi(cur_start);
+                                props->expiration.hour = (uint8_t)atoi(cur_start);
                                 break;
                             case 4:  // Minute
-                                props->expiration.minute = atoi(cur_start);
+                                props->expiration.minute = (uint8_t)atoi(cur_start);
                                 props->has_expiration = true;
                                 break;
                             default:  // Ignore
@@ -2900,9 +2908,9 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     size_t search_path_size = 0;
     char *search_path = NULL;
     char *cur_path_ptr = NULL;
-    size_t rel_size = 0;
     bool use_first_found_manifest = false;
 #ifndef _WIN32
+    size_t rel_size = 0;  // unused in windows, dont declare so no compiler warnings are generated
     bool xdg_config_home_secenv_alloc = true;
     bool xdg_config_dirs_secenv_alloc = true;
     bool xdg_data_home_secenv_alloc = true;
@@ -4586,37 +4594,25 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)next_gipa(*created_instance, "vkCreateInstance");
     if (fpCreateInstance) {
-        const VkLayerInstanceCreateInfo instance_dispatch = {
-            .sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO,
-            .pNext = loader_create_info.pNext,
-            .function = VK_LOADER_DATA_CALLBACK,
-            .u =
-                {
-                    .pfnSetInstanceLoaderData = vkSetInstanceDispatch,
-                },
-        };
-        const VkLayerInstanceCreateInfo device_callback = {
-            .sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO,
-            .pNext = &instance_dispatch,
-            .function = VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK,
-            .u =
-                {
-                    .layerDevice =
-                        {
-                            .pfnLayerCreateDevice = loader_layer_create_device,
-                            .pfnLayerDestroyDevice = loader_layer_destroy_device,
-                        },
-                },
-        };
-        const VkLayerInstanceCreateInfo loader_features = {
-            .sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO,
-            .pNext = &device_callback,
-            .function = VK_LOADER_FEATURES,
-            .u =
-                {
-                    .loaderFeatures = feature_flags,
-                },
-        };
+        VkLayerInstanceCreateInfo instance_dispatch;
+        instance_dispatch.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
+        instance_dispatch.pNext = loader_create_info.pNext;
+        instance_dispatch.function = VK_LOADER_DATA_CALLBACK;
+        instance_dispatch.u.pfnSetInstanceLoaderData = vkSetInstanceDispatch;
+
+        VkLayerInstanceCreateInfo device_callback;
+        device_callback.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
+        device_callback.pNext = &instance_dispatch;
+        device_callback.function = VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK;
+        device_callback.u.layerDevice.pfnLayerCreateDevice = loader_layer_create_device;
+        device_callback.u.layerDevice.pfnLayerDestroyDevice = loader_layer_destroy_device;
+
+        VkLayerInstanceCreateInfo loader_features;
+        loader_features.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
+        loader_features.pNext = &device_callback;
+        loader_features.function = VK_LOADER_FEATURES;
+        loader_features.u.loaderFeatures = feature_flags;
+
         loader_create_info.pNext = &loader_features;
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
@@ -6582,7 +6578,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 
         cur_icd_group_count = 0;
         icd_term = inst->icd_terms;
-        for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
+        for (uint8_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
             uint32_t count_this_time = total_count - cur_icd_group_count;
 
             // Get the function pointer to use to call into the ICD. This could be the core or KHR version

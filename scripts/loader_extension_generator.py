@@ -706,17 +706,14 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         extensions = self.instanceExtensions
 
         union = ''
-        union += 'union loader_instance_extension_enables {\n'
-        union += '    struct {\n'
+        union += 'struct loader_instance_extension_enables {\n'
         for ext in extensions:
             if ('VK_VERSION_' in ext.name or ext.name in WSI_EXT_NAMES or
                 ext.type == 'device' or ext.num_commands == 0):
                 continue
 
-            union += '        uint8_t %s : 1;\n' % ext.name[3:].lower()
+            union += '    uint8_t %s;\n' % ext.name[3:].lower()
 
-        union += '    };\n'
-        union += '    uint64_t padding[4];\n'
         union += '};\n\n'
         return union
 

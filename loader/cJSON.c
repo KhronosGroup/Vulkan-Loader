@@ -53,7 +53,8 @@ char *cJSON_strdup(const struct loader_instance *instance, const char *str) {
     char *copy;
 
     len = strlen(str) + 1;
-    if (!(copy = (char *)cJSON_malloc(instance, len))) return 0;
+    copy = (char *)cJSON_malloc(instance, len);
+    if (!copy) return 0;
     memcpy(copy, str, len);
     return copy;
 }
@@ -368,12 +369,14 @@ char *print_string_ptr(const struct loader_instance *instance, const char *str, 
         return out;
     }
     ptr = str;
-    while ((token = *ptr) && ++len) {
+    token = *ptr;
+    while (token && ++len) {
         if (strchr("\"\\\b\f\n\r\t", token))
             len++;
         else if (token < 32)
             len += 5;
         ptr++;
+        token = *ptr;
     }
 
     if (p)
@@ -597,7 +600,8 @@ const char *parse_array(const struct loader_instance *instance, cJSON *item, con
 
     while (*value == ',') {
         cJSON *new_item;
-        if (!(new_item = cJSON_New_Item(instance))) return 0; /* memory fail */
+        new_item = cJSON_New_Item(instance);
+        if (!new_item) return 0; /* memory fail */
         child->next = new_item;
         new_item->prev = child;
         child = new_item;
@@ -737,7 +741,8 @@ const char *parse_object(const struct loader_instance *instance, cJSON *item, co
 
     while (*value == ',') {
         cJSON *new_item;
-        if (!(new_item = cJSON_New_Item(instance))) return 0; /* memory fail */
+        new_item = cJSON_New_Item(instance);
+        if (!new_item) return 0; /* memory fail */
         child->next = new_item;
         new_item->prev = child;
         child = new_item;

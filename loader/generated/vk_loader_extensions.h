@@ -473,22 +473,19 @@ struct loader_icd_term_dispatch {
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 };
 
-union loader_instance_extension_enables {
-    struct {
-        uint8_t khr_get_physical_device_properties2 : 1;
-        uint8_t khr_device_group_creation : 1;
-        uint8_t khr_external_memory_capabilities : 1;
-        uint8_t khr_external_semaphore_capabilities : 1;
-        uint8_t khr_external_fence_capabilities : 1;
-        uint8_t ext_debug_report : 1;
-        uint8_t nv_external_memory_capabilities : 1;
-        uint8_t ext_direct_mode_display : 1;
-        uint8_t ext_acquire_xlib_display : 1;
-        uint8_t ext_display_surface_counter : 1;
-        uint8_t ext_debug_utils : 1;
-        uint8_t ext_acquire_drm_display : 1;
-    };
-    uint64_t padding[4];
+struct loader_instance_extension_enables {
+    uint8_t khr_get_physical_device_properties2;
+    uint8_t khr_device_group_creation;
+    uint8_t khr_external_memory_capabilities;
+    uint8_t khr_external_semaphore_capabilities;
+    uint8_t khr_external_fence_capabilities;
+    uint8_t ext_debug_report;
+    uint8_t nv_external_memory_capabilities;
+    uint8_t ext_direct_mode_display;
+    uint8_t ext_acquire_xlib_display;
+    uint8_t ext_display_surface_counter;
+    uint8_t ext_debug_utils;
+    uint8_t ext_acquire_drm_display;
 };
 
 
