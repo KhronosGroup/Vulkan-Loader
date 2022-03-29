@@ -28,17 +28,6 @@
 #include "test_environment.h"
 #include <functional>
 
-class UnknownFunction : public ::testing::Test {
-   protected:
-    virtual void SetUp() {
-        env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
-        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    }
-
-    virtual void TearDown() { env.reset(); }
-    std::unique_ptr<FrameworkEnvironment> env;
-};
-
 /*
  Creates a TestICD with a function unknown to the loader called vkNotRealFuncTEST. The TestICD, when vk_icdGetPhysicalDeviceProcAddr
  is called, will return the custom_physical_device_function if the function name matches vkNotRealFuncTEST. The test then calls the
@@ -109,32 +98,36 @@ void check_custom_functions(FunctionLoader& loader, ParentType parent, Dispatcha
 }
 using custom_physical_device_functions = custom_functions<VkPhysicalDevice>;
 
-TEST_F(UnknownFunction, PhysicalDeviceFunction) {
+TEST(UnknownFunction, PhysicalDeviceFunction) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
 
     driver.physical_devices.emplace_back("physical_device_0");
     fill_custom_functions(driver.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
                           function_count);
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
-    check_custom_functions(env->vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
+TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
-    env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    auto& driver_0 = env->get_test_icd(0);
-    auto& driver_1 = env->get_test_icd(1);
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    auto& driver_0 = env.get_test_icd(0);
+    auto& driver_1 = env.get_test_icd(1);
     std::vector<std::string> fake_function_names;
 
     // used to identify the GPUs
@@ -152,22 +145,22 @@ TEST_F(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
         fill_custom_functions(driver_1.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{}, 5,
                               i * 10 + 5);
     }
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     auto phys_devs = inst.GetPhysDevs(2);
     VkPhysicalDevice phys_dev_0 = phys_devs[0];
     VkPhysicalDevice phys_dev_1 = phys_devs[1];
-    env->vulkan_functions.vkGetPhysicalDeviceProperties(phys_devs[0], &props);
+    env.vulkan_functions.vkGetPhysicalDeviceProperties(phys_devs[0], &props);
     if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         phys_dev_0 = phys_devs[1];
         phys_dev_1 = phys_devs[0];
     }
     for (uint32_t i = 0; i < 25; i++) {
-        check_custom_functions(env->vulkan_functions, inst.inst, phys_dev_0, custom_physical_device_functions{},
-                               fake_function_names, 5, i * 10);
-        check_custom_functions(env->vulkan_functions, inst.inst, phys_dev_1, custom_physical_device_functions{},
-                               fake_function_names, 5, i * 10 + 5);
+        check_custom_functions(env.vulkan_functions, inst.inst, phys_dev_0, custom_physical_device_functions{}, fake_function_names,
+                               5, i * 10);
+        check_custom_functions(env.vulkan_functions, inst.inst, phys_dev_1, custom_physical_device_functions{}, fake_function_names,
+                               5, i * 10 + 5);
     }
 }
 
@@ -212,39 +205,43 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
     ASSERT_DEATH(returned_func_i(phys_dev_to_use, 0), "Extension vkNotIntRealFuncTEST_0 not supported for this physical device");
 }
 
-TEST_F(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayer) {
+TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayer) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
 
     driver.physical_devices.emplace_back("physical_device_0");
     fill_custom_functions(driver.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
                           function_count);
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
-    check_custom_functions(env->vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLayer) {
+TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLayer) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
-    env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    auto& driver_0 = env->get_test_icd(0);
-    auto& driver_1 = env->get_test_icd(1);
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    auto& driver_0 = env.get_test_icd(0);
+    auto& driver_1 = env.get_test_icd(1);
     std::vector<std::string> fake_function_names;
 
     // used to identify the GPUs
@@ -262,184 +259,197 @@ TEST_F(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitL
                               i * 10 + 5);
     }
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     auto phys_devs = inst.GetPhysDevs(2);
     VkPhysicalDevice phys_dev_0 = phys_devs[0];
     VkPhysicalDevice phys_dev_1 = phys_devs[1];
-    env->vulkan_functions.vkGetPhysicalDeviceProperties(phys_devs[0], &props);
+    env.vulkan_functions.vkGetPhysicalDeviceProperties(phys_devs[0], &props);
     if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         phys_dev_0 = phys_devs[1];
         phys_dev_1 = phys_devs[0];
     }
     for (uint32_t i = 0; i < 25; i++) {
-        check_custom_functions(env->vulkan_functions, inst.inst, phys_dev_0, custom_physical_device_functions{},
-                               fake_function_names, 5, i * 10);
-        check_custom_functions(env->vulkan_functions, inst.inst, phys_dev_1, custom_physical_device_functions{},
-                               fake_function_names, 5, i * 10 + 5);
+        check_custom_functions(env.vulkan_functions, inst.inst, phys_dev_0, custom_physical_device_functions{}, fake_function_names,
+                               5, i * 10);
+        check_custom_functions(env.vulkan_functions, inst.inst, phys_dev_1, custom_physical_device_functions{}, fake_function_names,
+                               5, i * 10 + 5);
     }
 }
 
-TEST_F(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
+TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
 
     driver.physical_devices.emplace_back("physical_device_0");
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
-    auto& layer = env->get_test_layer();
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
+    auto& layer = env.get_test_layer();
     fill_custom_functions(layer.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
                           function_count);
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
-    check_custom_functions(env->vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersInterception) {
+TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersInterception) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
-    auto& driver = env->get_test_icd();
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
 
     driver.physical_devices.emplace_back("physical_device_0");
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept_0")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept_0.json");
-    auto& layer_0 = env->get_test_layer();
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept_1")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept_1.json");
-    auto& layer_1 = env->get_test_layer();
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept_0")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept_0.json");
+    auto& layer_0 = env.get_test_layer();
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept_1")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept_1.json");
+    auto& layer_1 = env.get_test_layer();
     for (uint32_t i = 0; i < 25; i++) {
         fill_custom_functions(layer_0.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{}, 5,
                               i * 10);
         fill_custom_functions(layer_1.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{}, 5,
                               i * 10 + 5);
     }
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
-    check_custom_functions(env->vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names,
-                           250);
+    check_custom_functions(env.vulkan_functions, inst.inst, phys_dev, custom_physical_device_functions{}, fake_function_names, 250);
 }
 
 using custom_device_functions = custom_functions<VkDevice>;
 
-TEST_F(UnknownFunction, DeviceFunctionFromGetInstanceProcAddr) {
+TEST(UnknownFunction, DeviceFunctionFromGetInstanceProcAddr) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
 
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
                           function_count);
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    check_custom_functions(env->vulkan_functions, inst.inst, dev.dev, custom_device_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, inst.inst, dev.dev, custom_device_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, DeviceFunctionFromGetInstanceProcAddrWithImplicitLayer) {
+TEST(UnknownFunction, DeviceFunctionFromGetInstanceProcAddrWithImplicitLayer) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
                           function_count);
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    check_custom_functions(env->vulkan_functions, inst.inst, dev.dev, custom_device_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, inst.inst, dev.dev, custom_device_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, DeviceFunctionFromGetDeviceProcAddr) {
+TEST(UnknownFunction, DeviceFunctionFromGetDeviceProcAddr) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = 1000;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
                           function_count);
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    check_custom_functions(env->vulkan_functions, dev.dev, dev.dev, custom_device_functions{}, fake_function_names, function_count);
+    check_custom_functions(env.vulkan_functions, dev.dev, dev.dev, custom_device_functions{}, fake_function_names, function_count);
 }
 
-TEST_F(UnknownFunction, DeviceFunctionFromGetDeviceProcAddrWithImplicitLayer) {
+TEST(UnknownFunction, DeviceFunctionFromGetDeviceProcAddrWithImplicitLayer) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = 1000;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_device_functions{},
                           function_count);
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
-    check_custom_functions(env->vulkan_functions, dev.dev, dev.dev, custom_device_functions{}, fake_function_names, function_count);
+    check_custom_functions(env.vulkan_functions, dev.dev, dev.dev, custom_device_functions{}, fake_function_names, function_count);
 }
 
 using custom_command_buffer_functions = custom_functions<VkCommandBuffer>;
 
-TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
+TEST(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = 1000;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
@@ -447,13 +457,13 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
                           custom_command_buffer_functions{}, function_count);
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
 
-    DeviceFunctions funcs{env->vulkan_functions, dev};
+    DeviceFunctions funcs{env.vulkan_functions, dev};
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info{};
     funcs.vkCreateCommandPool(dev, &pool_create_info, nullptr, &command_pool);
@@ -463,32 +473,34 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    check_custom_functions(env->vulkan_functions, dev.dev, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, dev.dev, command_buffer, custom_command_buffer_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddrWithImplicitLayer) {
+TEST(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddrWithImplicitLayer) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = 1000;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
                           custom_command_buffer_functions{}, function_count);
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
 
-    DeviceFunctions funcs{env->vulkan_functions, dev};
+    DeviceFunctions funcs{env.vulkan_functions, dev};
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info{};
     funcs.vkCreateCommandPool(dev, &pool_create_info, nullptr, &command_pool);
@@ -498,29 +510,31 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddrWithImplicitLa
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    check_custom_functions(env->vulkan_functions, dev.dev, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, dev.dev, command_buffer, custom_command_buffer_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddr) {
+TEST(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddr) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
                           custom_command_buffer_functions{}, function_count);
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
 
-    DeviceFunctions funcs{env->vulkan_functions, dev};
+    DeviceFunctions funcs{env.vulkan_functions, dev};
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info{};
     funcs.vkCreateCommandPool(dev, &pool_create_info, nullptr, &command_pool);
@@ -530,35 +544,37 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddr) {
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    check_custom_functions(env->vulkan_functions, inst.inst, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, inst.inst, command_buffer, custom_command_buffer_functions{}, fake_function_names,
                            function_count);
 }
 
-TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddrWithImplicitLayer) {
+TEST(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddrWithImplicitLayer) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names,
                           custom_command_buffer_functions{}, function_count);
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(inst.GetPhysDev());
 
-    DeviceFunctions funcs{env->vulkan_functions, dev};
+    DeviceFunctions funcs{env.vulkan_functions, dev};
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info{};
     funcs.vkCreateCommandPool(dev, &pool_create_info, nullptr, &command_pool);
@@ -568,110 +584,118 @@ TEST_F(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddrWithImplicit
     alloc_info.commandPool = command_pool;
     funcs.vkAllocateCommandBuffers(dev, &alloc_info, &command_buffer);
 
-    check_custom_functions(env->vulkan_functions, inst.inst, command_buffer, custom_command_buffer_functions{}, fake_function_names,
+    check_custom_functions(env.vulkan_functions, inst.inst, command_buffer, custom_command_buffer_functions{}, fake_function_names,
                            function_count);
 }
 
 using custom_queue_functions = custom_functions<VkQueue>;
 
-TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddr) {
+TEST(UnknownFunction, QueueFunctionFromGetDeviceProcAddr) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = 1000;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
                           function_count);
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.create_info.add_device_queue({});
     dev.CheckCreate(inst.GetPhysDev());
     VkQueue queue{};
-    env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
+    env.vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    check_custom_functions(env->vulkan_functions, dev.dev, queue, custom_queue_functions{}, fake_function_names, function_count);
+    check_custom_functions(env.vulkan_functions, dev.dev, queue, custom_queue_functions{}, fake_function_names, function_count);
 }
 
-TEST_F(UnknownFunction, QueueFunctionFromGetDeviceProcAddrWithImplicitLayer) {
+TEST(UnknownFunction, QueueFunctionFromGetDeviceProcAddrWithImplicitLayer) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = 1000;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
                           function_count);
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.create_info.add_device_queue({});
     dev.CheckCreate(inst.GetPhysDev());
     VkQueue queue{};
-    env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
+    env.vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    check_custom_functions(env->vulkan_functions, dev.dev, queue, custom_queue_functions{}, fake_function_names, function_count);
+    check_custom_functions(env.vulkan_functions, dev.dev, queue, custom_queue_functions{}, fake_function_names, function_count);
 }
 
-TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddr) {
+TEST(UnknownFunction, QueueFunctionFromGetInstanceProcAddr) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
                           function_count);
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.create_info.add_device_queue({});
     dev.CheckCreate(inst.GetPhysDev());
     VkQueue queue{};
-    env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
+    env.vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    check_custom_functions(env->vulkan_functions, inst.inst, queue, custom_queue_functions{}, fake_function_names, function_count);
+    check_custom_functions(env.vulkan_functions, inst.inst, queue, custom_queue_functions{}, fake_function_names, function_count);
 }
 
-TEST_F(UnknownFunction, QueueFunctionFromGetInstanceProcAddrWithImplicitLayer) {
+TEST(UnknownFunction, QueueFunctionFromGetInstanceProcAddrWithImplicitLayer) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().add_queue_family_properties({});
     std::vector<std::string> fake_function_names;
     fill_custom_functions(driver.physical_devices.back().known_device_functions, fake_function_names, custom_queue_functions{},
                           function_count);
 
-    env->add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                          .set_disable_environment("DISABLE_ME")),
-                            "implicit_layer_unknown_function_intercept.json");
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_layer_unknown_function_intercept.json");
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
     dev.create_info.add_device_queue({});
     dev.CheckCreate(inst.GetPhysDev());
     VkQueue queue{};
-    env->vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
+    env.vulkan_functions.vkGetDeviceQueue(dev, 0, 0, &queue);
 
-    check_custom_functions(env->vulkan_functions, inst.inst, queue, custom_queue_functions{}, fake_function_names, function_count);
+    check_custom_functions(env.vulkan_functions, inst.inst, queue, custom_queue_functions{}, fake_function_names, function_count);
 }

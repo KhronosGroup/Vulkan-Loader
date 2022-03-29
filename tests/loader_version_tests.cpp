@@ -27,36 +27,30 @@
 
 #include "test_environment.h"
 
-class ICDInterfaceVersion2Plus : public ::testing::Test {
-   protected:
-    virtual void SetUp() {
-        env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
-        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    }
-    virtual void TearDown() { env.reset(); }
-    std::unique_ptr<FrameworkEnvironment> env;
-};
-
-TEST_F(ICDInterfaceVersion2Plus, vk_icdNegotiateLoaderICDInterfaceVersion) {
-    auto& driver = env->get_test_icd();
+TEST(ICDInterfaceVersion2Plus, vk_icdNegotiateLoaderICDInterfaceVersion) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.get_test_icd();
 
     for (uint32_t i = 0; i <= 6; i++) {
         for (uint32_t j = i; j <= 6; j++) {
             driver.min_icd_interface_version = i;
             driver.max_icd_interface_version = j;
-            InstWrapper inst{env->vulkan_functions};
+            InstWrapper inst{env.vulkan_functions};
             inst.CheckCreate();
         }
     }
 }
 
-TEST_F(ICDInterfaceVersion2Plus, version_3) {
-    auto& driver = env->get_test_icd();
+TEST(ICDInterfaceVersion2Plus, version_3) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     {
         driver.min_icd_interface_version = 2;
         driver.enable_icd_wsi = true;
-        InstWrapper inst{env->vulkan_functions};
+        InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
         ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
@@ -64,7 +58,7 @@ TEST_F(ICDInterfaceVersion2Plus, version_3) {
     {
         driver.min_icd_interface_version = 3;
         driver.enable_icd_wsi = false;
-        InstWrapper inst{env->vulkan_functions};
+        InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
         ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
@@ -72,34 +66,36 @@ TEST_F(ICDInterfaceVersion2Plus, version_3) {
     {
         driver.min_icd_interface_version = 3;
         driver.enable_icd_wsi = true;
-        InstWrapper inst{env->vulkan_functions};
+        InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
         ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::is_using);
     }
 }
 
-TEST_F(ICDInterfaceVersion2Plus, version_4) {
-    auto& driver = env->get_test_icd();
+TEST(ICDInterfaceVersion2Plus, version_4) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 }
 
-TEST_F(ICDInterfaceVersion2Plus, l4_icd4) {
+TEST(ICDInterfaceVersion2Plus, l4_icd4) {
     // ICD must fail with VK_ERROR_INCOMPATIBLE_DRIVER for all vkCreateInstance calls with apiVersion set to > Vulkan 1.0
     // because both the loader and ICD support interface version <= 4. Otherwise, the ICD should behave as normal.
 }
-TEST_F(ICDInterfaceVersion2Plus, l4_icd5) {
+TEST(ICDInterfaceVersion2Plus, l4_icd5) {
     // ICD must fail with VK_ERROR_INCOMPATIBLE_DRIVER for all vkCreateInstance calls with apiVersion set to > Vulkan 1.0
     // because the loader is still at interface version <= 4. Otherwise, the ICD should behave as normal.
 }
-TEST_F(ICDInterfaceVersion2Plus, l5_icd4) {
+TEST(ICDInterfaceVersion2Plus, l5_icd4) {
     // Loader will fail with VK_ERROR_INCOMPATIBLE_DRIVER if it can't handle the apiVersion. ICD may pass for all apiVersions,
     // but since its interface is <= 4, it is best if it assumes it needs to do the work of rejecting anything > Vulkan 1.0 and
     // fail with VK_ERROR_INCOMPATIBLE_DRIVER. Otherwise, the ICD should behave as normal.
 }
-TEST_F(ICDInterfaceVersion2Plus, l5_icd5) {
+TEST(ICDInterfaceVersion2Plus, l5_icd5) {
     // Loader will fail with VK_ERROR_INCOMPATIBLE_DRIVER if it can't handle the apiVersion, and ICDs should fail with
     // VK_ERROR_INCOMPATIBLE_DRIVER only if they can not support the specified apiVersion. Otherwise, the ICD should behave as
     // normal.
@@ -110,8 +106,10 @@ TEST_F(ICDInterfaceVersion2Plus, l5_icd5) {
 // Version 6 provides a mechanism to allow the loader to sort physical devices.
 // The loader will only attempt to sort physical devices on an ICD if version 6 of the interface is supported.
 // This version provides the vk_icdEnumerateAdapterPhysicalDevices function.
-TEST_F(ICDInterfaceVersion2Plus, version_5) {
-    auto& driver = env->get_test_icd();
+TEST(ICDInterfaceVersion2Plus, version_5) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_1");
     driver.physical_devices.emplace_back("physical_device_0");
     uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
@@ -120,11 +118,11 @@ TEST_F(ICDInterfaceVersion2Plus, version_5) {
 
     driver.min_icd_interface_version = 5;
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
-                                                                           physical_device_handles.data()));
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, physical_device_handles.data()));
     ASSERT_EQ(physical_count, returned_physical_count);
     ASSERT_FALSE(driver.called_enumerate_adapter_physical_devices);
 }
@@ -174,7 +172,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     returned_physical_count = 0;
     ASSERT_EQ(VK_INCOMPLETE,
               env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, physical_device_handles.data()));
-    ASSERT_EQ(0, returned_physical_count);
+    ASSERT_EQ(0U, returned_physical_count);
     for (auto& phys_dev : physical_device_handles) {
         ASSERT_EQ(phys_dev, reinterpret_cast<VkPhysicalDevice>(temp_ptr.get()));
     }
@@ -329,7 +327,7 @@ TEST(MultipleICDConfig, Basic) {
     std::array<VkPhysicalDevice, 3> phys_devs_array;
     uint32_t phys_dev_count = 3;
     ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
-    ASSERT_EQ(phys_dev_count, 3);
+    ASSERT_EQ(phys_dev_count, 3U);
     ASSERT_EQ(env.get_test_icd(0).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
     ASSERT_EQ(env.get_test_icd(1).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
     ASSERT_EQ(env.get_test_icd(2).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
@@ -356,7 +354,7 @@ TEST(MultipleDriverConfig, DifferentICDInterfaceVersions) {
     std::array<VkPhysicalDevice, 2> phys_devs_array;
     uint32_t phys_dev_count = 2;
     ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
-    ASSERT_EQ(phys_dev_count, 2);
+    ASSERT_EQ(phys_dev_count, 2U);
 }
 
 TEST(MultipleDriverConfig, DifferentICDsWithDevices) {
@@ -390,7 +388,7 @@ TEST(MultipleDriverConfig, DifferentICDsWithDevices) {
     std::array<VkPhysicalDevice, 4> phys_devs_array;
     uint32_t phys_dev_count = 4;
     ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
-    ASSERT_EQ(phys_dev_count, 4);
+    ASSERT_EQ(phys_dev_count, 4U);
 }
 
 TEST(MultipleDriverConfig, DifferentICDsWithDevicesAndGroups) {
@@ -561,7 +559,7 @@ TEST(MinorVersionUpdate, Version1_3) {
         inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolProperties"));
     uint32_t tool_count = 0;
     ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceToolProperties(phys_dev, &tool_count, nullptr));
-    ASSERT_EQ(tool_count, 0);
+    ASSERT_EQ(tool_count, 0U);
     VkPhysicalDeviceToolProperties props;
     ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceToolProperties(phys_dev, &tool_count, &props));
 

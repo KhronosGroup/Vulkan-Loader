@@ -30,17 +30,6 @@
 #include <mutex>
 #include <thread>
 
-class ThreadingTests : public ::testing::Test {
-   protected:
-    virtual void SetUp() {
-        env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
-        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    }
-
-    virtual void TearDown() { env.reset(); }
-    std::unique_ptr<FrameworkEnvironment> env;
-};
-
 void create_destroy_device_loop(uint32_t num_loops_create_destroy_device, uint32_t num_loops_try_get_proc_addr, InstWrapper* inst,
                                 VkPhysicalDevice phys_dev) {
     for (uint32_t i = 0; i < num_loops_create_destroy_device; i++) {
@@ -66,7 +55,6 @@ void create_destroy_device_loop(uint32_t num_loops_create_destroy_device, uint32
         }
     }
 }
-
 VKAPI_ATTR void VKAPI_CALL test_vkCmdBindPipeline(VkCommandBuffer cmd_buf, VkPipelineBindPoint pipelineBindPoint,
                                                   VkPipeline pipeline) {}
 VKAPI_ATTR void VKAPI_CALL test_vkCmdBindDescriptorSets(VkCommandBuffer cmd_buf, VkPipelineBindPoint pipelineBindPoint,
@@ -79,21 +67,26 @@ VKAPI_ATTR void VKAPI_CALL test_vkCmdBindIndexBuffer(VkCommandBuffer cmd_buf, ui
                                                      const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {}
 VKAPI_ATTR void VKAPI_CALL test_vkCmdDraw(VkCommandBuffer cmd_buf, uint32_t vertexCount, uint32_t instanceCount,
                                           uint32_t firstVertex, uint32_t firstInstance) {}
-TEST_F(ThreadingTests, ConcurentGetDeviceProcAddr) {
+TEST(ThreadingTests, ConcurentGetDeviceProcAddr) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
     uint32_t num_threads = 100;
     uint32_t num_loops_create_destroy_device = 10;
     uint32_t num_loops_try_get_proc_addr = 100;
-    auto& driver = env->get_test_icd();
+    auto& driver = env.get_test_icd();
 
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().known_device_functions.push_back({"vkCmdBindPipeline", (void*)test_vkCmdBindPipeline});
     driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindDescriptorSets", (void*)test_vkCmdBindDescriptorSets});
-    driver.physical_devices.back().known_device_functions.push_back({"vkCmdBindVertexBuffers", (void*)test_vkCmdBindVertexBuffers});
-    driver.physical_devices.back().known_device_functions.push_back({"vkCmdBindIndexBuffer", (void*)test_vkCmdBindIndexBuffer});
-    driver.physical_devices.back().known_device_functions.push_back({"vkCmdDraw", (void*)test_vkCmdDraw});
+        {"vkCmdBindPipeline", reinterpret_cast<void*>(test_vkCmdBindPipeline)});
+    driver.physical_devices.back().known_device_functions.push_back(
+        {"vkCmdBindDescriptorSets", reinterpret_cast<void*>(test_vkCmdBindDescriptorSets)});
+    driver.physical_devices.back().known_device_functions.push_back(
+        {"vkCmdBindVertexBuffers", reinterpret_cast<void*>(test_vkCmdBindVertexBuffers)});
+    driver.physical_devices.back().known_device_functions.push_back(
+        {"vkCmdBindIndexBuffer", reinterpret_cast<void*>(test_vkCmdBindIndexBuffer)});
+    driver.physical_devices.back().known_device_functions.push_back({"vkCmdDraw", reinterpret_cast<void*>(test_vkCmdDraw)});
 
-    InstWrapper inst{env->vulkan_functions};
+    InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
