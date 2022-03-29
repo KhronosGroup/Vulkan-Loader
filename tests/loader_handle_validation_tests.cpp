@@ -2359,9 +2359,10 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
-static VkBool32 JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                       VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+static VKAPI_ATTR VkBool32 VKAPI_CALL JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                             VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                             void* pUserData) {
     // This is just a stub callback in case the loader or any other layer triggers it.
     (void)messageSeverity;
     (void)messageTypes;

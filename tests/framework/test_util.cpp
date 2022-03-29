@@ -45,11 +45,11 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
     LPVOID lpMsgBuf;
     DWORD dw = GetLastError();
 
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, dw,
-                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dw,
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPTSTR>(&lpMsgBuf), 0, nullptr);
 
     std::cerr << function_name << " failed with " << win_api_error_str(status) << ": "
-              << std::string(static_cast<LPTSTR>(lpMsgBuf));
+              << std::string(reinterpret_cast<LPTSTR>(lpMsgBuf));
     if (optional_message != "") {
         std::cerr << " | " << optional_message;
     }
@@ -68,7 +68,7 @@ void remove_env_var(std::string const& name) { SetEnvironmentVariableA(name.c_st
 std::string get_env_var(std::string const& name, bool report_failure) {
     std::string value;
     value.resize(ENV_VAR_BUFFER_SIZE);
-    DWORD ret = GetEnvironmentVariable(name.c_str(), (LPSTR)value.c_str(), ENV_VAR_BUFFER_SIZE);
+    DWORD ret = GetEnvironmentVariable(name.c_str(), &value[0], ENV_VAR_BUFFER_SIZE);
     if (0 == ret) {
         if (report_failure) print_error_message(ERROR_ENVVAR_NOT_FOUND, "GetEnvironmentVariable");
         return std::string();

@@ -110,16 +110,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
 
-    VkIcdSurface *icd_surface = (VkIcdSurface *)(surface);
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
     uint8_t icd_index = phys_dev_term->icd_index;
 
     // Unwrap the surface if needed
     VkSurfaceKHR unwrapped_surface = surface;
-    if (icd_surface->real_icd_surfaces != NULL && (void *)icd_surface->real_icd_surfaces[icd_index] != NULL) {
+    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
         unwrapped_surface = icd_surface->real_icd_surfaces[icd_index];
     }
 
-    if (icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2EXT != NULL) {
+    if (NULL != icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2EXT) {
         // Pass the call to the driver
         return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2EXT(phys_dev_term->phys_dev, unwrapped_surface,
                                                                            pSurfaceCapabilities);
@@ -278,14 +278,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModes2E
                    "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSurfacePresentModes2EXT");
         abort();
     }
-    VkIcdSurface *icd_surface = (VkIcdSurface *)(pSurfaceInfo->surface);
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
     uint8_t icd_index = phys_dev_term->icd_index;
-    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)icd_surface->real_icd_surfaces[icd_index]) {
-        const VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy = {
-            .sType = pSurfaceInfo->sType,
-            .pNext = pSurfaceInfo->pNext,
-            .surface = icd_surface->real_icd_surfaces[icd_index],
-        };
+    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)icd_surface->real_icd_surfaces[icd_index]) {
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
+        surface_info_copy.sType = pSurfaceInfo->sType;
+        surface_info_copy.pNext = pSurfaceInfo->pNext;
+        surface_info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
         return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, &surface_info_copy,
                                                                            pPresentModeCount, pPresentModes);
     }
@@ -315,11 +314,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(
     if (NULL != icd_term && NULL != icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT) {
         VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pSurfaceInfo->surface;
         if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-            const VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy = {
-                .sType = pSurfaceInfo->sType,
-                .pNext = pSurfaceInfo->pNext,
-                .surface = icd_surface->real_icd_surfaces[icd_index],
-            };
+            VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
+            surface_info_copy.sType = pSurfaceInfo->sType;
+            surface_info_copy.pNext = pSurfaceInfo->pNext;
+            surface_info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
             return icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, &surface_info_copy, pModes);
         }
         return icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);

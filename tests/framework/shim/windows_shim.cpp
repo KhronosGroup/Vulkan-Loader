@@ -73,8 +73,8 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo *query_info)
         return STATUS_INVALID_PARAMETER;
     }
     auto handle = query_info->handle;
-    auto &it = std::find_if(platform_shim.d3dkmt_adapters.begin(), platform_shim.d3dkmt_adapters.end(),
-                            [handle](const D3DKMT_Adapter &adapter) { return handle == adapter.hAdapter; });
+    auto it = std::find_if(platform_shim.d3dkmt_adapters.begin(), platform_shim.d3dkmt_adapters.end(),
+                           [handle](D3DKMT_Adapter const &adapter) { return handle == adapter.hAdapter; });
     if (it == platform_shim.d3dkmt_adapters.end()) {
         return STATUS_INVALID_PARAMETER;
     }
@@ -404,23 +404,23 @@ void WINAPI DetourFunctions() {
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID &)fpGetSidSubAuthority, ShimGetSidSubAuthority);
-    DetourAttach(&(PVOID &)fpEnumAdapters2, ShimEnumAdapters2);
-    DetourAttach(&(PVOID &)fpQueryAdapterInfo, ShimQueryAdapterInfo);
-    DetourAttach(&(PVOID &)REAL_CM_Get_Device_ID_List_SizeW, SHIM_CM_Get_Device_ID_List_SizeW);
-    DetourAttach(&(PVOID &)REAL_CM_Get_Device_ID_ListW, SHIM_CM_Get_Device_ID_ListW);
-    DetourAttach(&(PVOID &)REAL_CM_Get_Device_ID_ListW, SHIM_CM_Get_Device_ID_ListW);
-    DetourAttach(&(PVOID &)REAL_CM_Locate_DevNodeW, SHIM_CM_Locate_DevNodeW);
-    DetourAttach(&(PVOID &)REAL_CM_Get_DevNode_Status, SHIM_CM_Get_DevNode_Status);
-    DetourAttach(&(PVOID &)REAL_CM_Get_Device_IDW, SHIM_CM_Get_Device_IDW);
-    DetourAttach(&(PVOID &)REAL_CM_Get_Child, SHIM_CM_Get_Child);
-    DetourAttach(&(PVOID &)REAL_CM_Get_DevNode_Registry_PropertyW, SHIM_CM_Get_DevNode_Registry_PropertyW);
-    DetourAttach(&(PVOID &)REAL_CM_Get_Sibling, SHIM_CM_Get_Sibling);
-    DetourAttach(&(PVOID &)RealCreateDXGIFactory1, ShimCreateDXGIFactory1);
-    DetourAttach(&(PVOID &)fpRegOpenKeyExA, ShimRegOpenKeyExA);
-    DetourAttach(&(PVOID &)fpRegQueryValueExA, ShimRegQueryValueExA);
-    DetourAttach(&(PVOID &)fpRegEnumValueA, ShimRegEnumValueA);
-    DetourAttach(&(PVOID &)fpRegCloseKey, ShimRegCloseKey);
+    DetourAttach(&(PVOID &)fpGetSidSubAuthority, (PVOID)ShimGetSidSubAuthority);
+    DetourAttach(&(PVOID &)fpEnumAdapters2, (PVOID)ShimEnumAdapters2);
+    DetourAttach(&(PVOID &)fpQueryAdapterInfo, (PVOID)ShimQueryAdapterInfo);
+    DetourAttach(&(PVOID &)REAL_CM_Get_Device_ID_List_SizeW, (PVOID)SHIM_CM_Get_Device_ID_List_SizeW);
+    DetourAttach(&(PVOID &)REAL_CM_Get_Device_ID_ListW, (PVOID)SHIM_CM_Get_Device_ID_ListW);
+    DetourAttach(&(PVOID &)REAL_CM_Get_Device_ID_ListW, (PVOID)SHIM_CM_Get_Device_ID_ListW);
+    DetourAttach(&(PVOID &)REAL_CM_Locate_DevNodeW, (PVOID)SHIM_CM_Locate_DevNodeW);
+    DetourAttach(&(PVOID &)REAL_CM_Get_DevNode_Status, (PVOID)SHIM_CM_Get_DevNode_Status);
+    DetourAttach(&(PVOID &)REAL_CM_Get_Device_IDW, (PVOID)SHIM_CM_Get_Device_IDW);
+    DetourAttach(&(PVOID &)REAL_CM_Get_Child, (PVOID)SHIM_CM_Get_Child);
+    DetourAttach(&(PVOID &)REAL_CM_Get_DevNode_Registry_PropertyW, (PVOID)SHIM_CM_Get_DevNode_Registry_PropertyW);
+    DetourAttach(&(PVOID &)REAL_CM_Get_Sibling, (PVOID)SHIM_CM_Get_Sibling);
+    DetourAttach(&(PVOID &)RealCreateDXGIFactory1, (PVOID)ShimCreateDXGIFactory1);
+    DetourAttach(&(PVOID &)fpRegOpenKeyExA, (PVOID)ShimRegOpenKeyExA);
+    DetourAttach(&(PVOID &)fpRegQueryValueExA, (PVOID)ShimRegQueryValueExA);
+    DetourAttach(&(PVOID &)fpRegEnumValueA, (PVOID)ShimRegEnumValueA);
+    DetourAttach(&(PVOID &)fpRegCloseKey, (PVOID)ShimRegCloseKey);
     LONG error = DetourTransactionCommit();
 
     if (error != NO_ERROR) {
@@ -432,22 +432,22 @@ void WINAPI DetourFunctions() {
 void DetachFunctions() {
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    DetourDetach(&(PVOID &)fpGetSidSubAuthority, ShimGetSidSubAuthority);
-    DetourDetach(&(PVOID &)fpEnumAdapters2, ShimEnumAdapters2);
-    DetourDetach(&(PVOID &)fpQueryAdapterInfo, ShimQueryAdapterInfo);
-    DetourDetach(&(PVOID &)REAL_CM_Get_Device_ID_List_SizeW, SHIM_CM_Get_Device_ID_List_SizeW);
-    DetourDetach(&(PVOID &)REAL_CM_Get_Device_ID_ListW, SHIM_CM_Get_Device_ID_ListW);
-    DetourDetach(&(PVOID &)REAL_CM_Locate_DevNodeW, SHIM_CM_Locate_DevNodeW);
-    DetourDetach(&(PVOID &)REAL_CM_Get_DevNode_Status, SHIM_CM_Get_DevNode_Status);
-    DetourDetach(&(PVOID &)REAL_CM_Get_Device_IDW, SHIM_CM_Get_Device_IDW);
-    DetourDetach(&(PVOID &)REAL_CM_Get_Child, SHIM_CM_Get_Child);
-    DetourDetach(&(PVOID &)REAL_CM_Get_DevNode_Registry_PropertyW, SHIM_CM_Get_DevNode_Registry_PropertyW);
-    DetourDetach(&(PVOID &)REAL_CM_Get_Sibling, SHIM_CM_Get_Sibling);
-    DetourDetach(&(PVOID &)RealCreateDXGIFactory1, ShimCreateDXGIFactory1);
-    DetourDetach(&(PVOID &)fpRegOpenKeyExA, ShimRegOpenKeyExA);
-    DetourDetach(&(PVOID &)fpRegQueryValueExA, ShimRegQueryValueExA);
-    DetourDetach(&(PVOID &)fpRegEnumValueA, ShimRegEnumValueA);
-    DetourDetach(&(PVOID &)fpRegCloseKey, ShimRegCloseKey);
+    DetourDetach(&(PVOID &)fpGetSidSubAuthority, (PVOID)ShimGetSidSubAuthority);
+    DetourDetach(&(PVOID &)fpEnumAdapters2, (PVOID)ShimEnumAdapters2);
+    DetourDetach(&(PVOID &)fpQueryAdapterInfo, (PVOID)ShimQueryAdapterInfo);
+    DetourDetach(&(PVOID &)REAL_CM_Get_Device_ID_List_SizeW, (PVOID)SHIM_CM_Get_Device_ID_List_SizeW);
+    DetourDetach(&(PVOID &)REAL_CM_Get_Device_ID_ListW, (PVOID)SHIM_CM_Get_Device_ID_ListW);
+    DetourDetach(&(PVOID &)REAL_CM_Locate_DevNodeW, (PVOID)SHIM_CM_Locate_DevNodeW);
+    DetourDetach(&(PVOID &)REAL_CM_Get_DevNode_Status, (PVOID)SHIM_CM_Get_DevNode_Status);
+    DetourDetach(&(PVOID &)REAL_CM_Get_Device_IDW, (PVOID)SHIM_CM_Get_Device_IDW);
+    DetourDetach(&(PVOID &)REAL_CM_Get_Child, (PVOID)SHIM_CM_Get_Child);
+    DetourDetach(&(PVOID &)REAL_CM_Get_DevNode_Registry_PropertyW, (PVOID)SHIM_CM_Get_DevNode_Registry_PropertyW);
+    DetourDetach(&(PVOID &)REAL_CM_Get_Sibling, (PVOID)SHIM_CM_Get_Sibling);
+    DetourDetach(&(PVOID &)RealCreateDXGIFactory1, (PVOID)ShimCreateDXGIFactory1);
+    DetourDetach(&(PVOID &)fpRegOpenKeyExA, (PVOID)ShimRegOpenKeyExA);
+    DetourDetach(&(PVOID &)fpRegQueryValueExA, (PVOID)ShimRegQueryValueExA);
+    DetourDetach(&(PVOID &)fpRegEnumValueA, (PVOID)ShimRegEnumValueA);
+    DetourDetach(&(PVOID &)fpRegCloseKey, (PVOID)ShimRegCloseKey);
     DetourTransactionCommit();
 }
 

@@ -43,10 +43,6 @@
  */
 #pragma once
 
-// Following items are needed for C++ to work with PRIxLEAST64
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -62,6 +58,7 @@
 #include <cassert>
 #include <cstring>
 #include <ctime>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -196,7 +193,7 @@ struct path {
     // get C++ style string
     std::string const& str() const { return contents; }
     std::string& str() { return contents; }
-    size_t size() const { return contents.size(); };
+    size_t size() const { return contents.size(); }
 
     // equality
     bool operator==(path const& other) const noexcept { return contents == other.contents; }
@@ -258,9 +255,9 @@ typedef HMODULE loader_platform_dl_handle;
 static loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
     // Try loading the library the original way first.
     loader_platform_dl_handle lib_handle = LoadLibrary(lib_path);
-    if (lib_handle == NULL && GetLastError() == ERROR_MOD_NOT_FOUND) {
+    if (lib_handle == nullptr && GetLastError() == ERROR_MOD_NOT_FOUND) {
         // If that failed, then try loading it with broader search folders.
-        lib_handle = LoadLibraryEx(lib_path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        lib_handle = LoadLibraryEx(lib_path, nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     }
     return lib_handle;
 }
@@ -273,7 +270,7 @@ inline void loader_platform_close_library(loader_platform_dl_handle library) { F
 inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
-    return (void*)GetProcAddress(library, name);
+    return reinterpret_cast<void*>(GetProcAddress(library, name));
 }
 inline char* loader_platform_get_proc_address_error(const char* name) {
     static char errorMsg[120];
@@ -315,14 +312,14 @@ struct LibraryWrapper {
     explicit LibraryWrapper() noexcept {}
     explicit LibraryWrapper(fs::path const& lib_path) noexcept : lib_path(lib_path) {
         lib_handle = loader_platform_open_library(lib_path.c_str());
-        if (lib_handle == NULL) {
+        if (lib_handle == nullptr) {
             fprintf(stderr, "Unable to open library %s: %s\n", lib_path.c_str(),
                     loader_platform_open_library_error(lib_path.c_str()));
-            assert(lib_handle != NULL && "Must be able to open library");
+            assert(lib_handle != nullptr && "Must be able to open library");
         }
     }
     ~LibraryWrapper() noexcept {
-        if (lib_handle != NULL) {
+        if (lib_handle != nullptr) {
             loader_platform_close_library(lib_handle);
             lib_handle = nullptr;
         }
@@ -502,7 +499,7 @@ inline std::string version_to_string(uint32_t version) {
 // class_name = class the member variable is apart of
 // type = type of the variable
 // name = name of the variable
-// singular_name = used for the `add_singluar_name` member function
+// singular_name = used for the `add_singular_name` member function
 #define BUILDER_VECTOR(class_name, type, name, singular_name)                    \
     std::vector<type> name;                                                      \
     class_name& add_##singular_name(type const& singular_name) {                 \

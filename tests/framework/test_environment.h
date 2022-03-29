@@ -335,15 +335,15 @@ struct FrameworkEnvironment {
     void add_fake_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
 
-    TestICD& get_test_icd(int index = 0) noexcept;
-    TestICD& reset_icd(int index = 0) noexcept;
-    fs::path get_test_icd_path(int index = 0) noexcept;
-    fs::path get_icd_manifest_path(int index = 0) noexcept;
+    TestICD& get_test_icd(size_t index = 0) noexcept;
+    TestICD& reset_icd(size_t index = 0) noexcept;
+    fs::path get_test_icd_path(size_t index = 0) noexcept;
+    fs::path get_icd_manifest_path(size_t index = 0) noexcept;
 
-    TestLayer& get_test_layer(int index = 0) noexcept;
-    TestLayer& reset_layer(int index = 0) noexcept;
-    fs::path get_test_layer_path(int index = 0) noexcept;
-    fs::path get_layer_manifest_path(int index = 0) noexcept;
+    TestLayer& get_test_layer(size_t index = 0) noexcept;
+    TestLayer& reset_layer(size_t index = 0) noexcept;
+    fs::path get_test_layer_path(size_t index = 0) noexcept;
+    fs::path get_layer_manifest_path(size_t index = 0) noexcept;
 
     PlatformShimWrapper platform_shim;
     fs::FolderManager null_folder;

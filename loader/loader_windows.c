@@ -346,7 +346,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
     // specified. This does disallow other vendors, but any new driver should use the device-specific registries anyway.
     static const struct {
         const char *filename;
-        int vendor_id;
+        unsigned int vendor_id;
     } known_drivers[] = {
 #if defined(_WIN64)
         {
@@ -455,7 +455,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                                hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR,
                                location);
                     if (is_driver) {
-                        int i;
+                        uint32_t i = 0;
                         for (i = 0; i < sizeof(known_drivers) / sizeof(known_drivers[0]); ++i) {
                             if (!strcmp(name + strlen(name) - strlen(known_drivers[i].filename), known_drivers[i].filename)) {
                                 break;
@@ -607,12 +607,11 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
             .physical_adapter_index = 0,
         };
         wcsncpy(filename_info.value_name, value_name, sizeof(filename_info.value_name) / sizeof(WCHAR));
-        LoaderQueryAdapterInfo query_info = {
-            .handle = adapters.adapters[i].handle,
-            .type = LOADER_QUERY_TYPE_REGISTRY,
-            .private_data = &filename_info,
-            .private_data_size = sizeof(filename_info),
-        };
+        LoaderQueryAdapterInfo query_info;
+        query_info.handle = adapters.adapters[i].handle;
+        query_info.type = LOADER_QUERY_TYPE_REGISTRY;
+        query_info.private_data = &filename_info;
+        query_info.private_data_size = sizeof(filename_info);
         status = fpLoaderQueryAdapterInfo(&query_info);
 
         // This error indicates that the type didn't match, so we'll try a REG_SZ

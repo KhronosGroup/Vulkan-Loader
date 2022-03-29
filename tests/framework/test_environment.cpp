@@ -299,12 +299,12 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, fs::Fo
     }
 }
 
-TestICD& FrameworkEnvironment::get_test_icd(int index) noexcept { return icds[index].get_test_icd(); }
-TestICD& FrameworkEnvironment::reset_icd(int index) noexcept { return icds[index].reset_icd(); }
-fs::path FrameworkEnvironment::get_test_icd_path(int index) noexcept { return icds[index].get_icd_full_path(); }
-fs::path FrameworkEnvironment::get_icd_manifest_path(int index) noexcept { return icds[index].get_icd_manifest_path(); }
+TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
+TestICD& FrameworkEnvironment::reset_icd(size_t index) noexcept { return icds[index].reset_icd(); }
+fs::path FrameworkEnvironment::get_test_icd_path(size_t index) noexcept { return icds[index].get_icd_full_path(); }
+fs::path FrameworkEnvironment::get_icd_manifest_path(size_t index) noexcept { return icds[index].get_icd_manifest_path(); }
 
-TestLayer& FrameworkEnvironment::get_test_layer(int index) noexcept { return layers[index].get_test_layer(); }
-TestLayer& FrameworkEnvironment::reset_layer(int index) noexcept { return layers[index].reset_layer(); }
-fs::path FrameworkEnvironment::get_test_layer_path(int index) noexcept { return layers[index].get_layer_full_path(); }
-fs::path FrameworkEnvironment::get_layer_manifest_path(int index) noexcept { return layers[index].get_layer_manifest_path(); }
+TestLayer& FrameworkEnvironment::get_test_layer(size_t index) noexcept { return layers[index].get_test_layer(); }
+TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return layers[index].reset_layer(); }
+fs::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept { return layers[index].get_layer_full_path(); }
+fs::path FrameworkEnvironment::get_layer_manifest_path(size_t index) noexcept { return layers[index].get_layer_manifest_path(); }

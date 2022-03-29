@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2019 Valve Corporation
-# Copyright (c) 2014-2019 LunarG, Inc.
+# Copyright (c) 2014-2022 Valve Corporation
+# Copyright (c) 2014-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -191,6 +191,17 @@ if(UNIX)
             "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used.")
 endif()
 
+# Because we use CMake 3.10.2, we can't use the policy which would disable adding /W3 by default. In the interim, replace the flags
+# When this project is updated to 3.15 and above, use the following line.
+#     cmake_policy(SET CMP0092 NEW)
+string(REGEX REPLACE "/W3" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+string(REGEX REPLACE "/W3" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+# For MSVC/Windows, replace /GR with an empty string, this prevents warnings of /GR being overriden by /GR-
+# Newer CMake versions (3.20) have better solutions for this through policy - using the old
+# way while waiting for when updating can occur
+string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 if(UNIX AND NOT APPLE) # i.e.: Linux
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
@@ -264,23 +275,33 @@ target_compile_features(loader_common_options INTERFACE cxx_std_11)
 set(LOADER_STANDARD_C_PROPERTIES PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS OFF)
 set(LOADER_STANDARD_CXX_PROPERTIES PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
 
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-    target_compile_options(loader_common_options INTERFACE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-strict-aliasing -fno-builtin-memcmp)
+# Set warnings as errors and the main diagnostic flags
+# Must be set first so the warning silencing later on works properly
+# Note that clang-cl.exe should use MSVC flavor flags, not GNU
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC"))
+    target_compile_options(loader_common_options INTERFACE /WX /W4)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # using GCC or Clang with the regular front end
+    target_compile_options(loader_common_options INTERFACE -Werror -Wall -Wextra)
+endif()
 
-    target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(loader_common_options INTERFACE -Wno-unused-parameter -Wno-unused-function -Wno-missing-field-initializers)
+
+    # need to prepend /clang: to compiler arguments when using clang-cl
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC")
+        target_compile_options(loader_common_options INTERFACE /clang:-fno-strict-aliasing /clang:-fno-builtin-memcmp)
+    else()
+        target_compile_options(loader_common_options INTERFACE -fno-strict-aliasing -fno-builtin-memcmp)
+    endif()
 
     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
     # all compilers until they all accept the C++17 standard
-    if(CMAKE_COMPILER_IS_GNUCC)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(loader_common_options INTERFACE -Wno-stringop-truncation -Wno-stringop-overflow)
         if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 7.1)
             target_compile_options(loader_common_options INTERFACE -Wimplicit-fallthrough=0)
         endif()
-    endif()
-
-    # clang-cl on Windows
-    if((CMAKE_C_COMPILER_ID MATCHES "Clang") AND (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
-        target_compile_options(loader_common_options INTERFACE -Xclang )
     endif()
 
     if(UNIX)
@@ -288,23 +309,15 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     endif()
 
     target_compile_options(loader_common_options INTERFACE -Wpointer-arith)
-
-    # Clang (and not gcc) warns about redefining a typedef with the same types, so disable that warning. Note that it will still
-    # throw an error if a typedef is redefined with a different type.
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-        target_compile_options(loader_common_options INTERFACE -Wno-typedef-redefinition)
-    endif()
 endif()
 
-if(MSVC)
-    # /WX: Treat warnings as errors
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC"))
     # /GR-: Disable RTTI
-    # /w34456: Warn about nested declarations
-    # /w34701, /w34703: Warn about potentially uninitialized variables
-    # /w34057: Warn about different indirection types.
-    # /w34245: Warn about signed/unsigned mismatch.
     # /guard:cf: Enable control flow guard
-    target_compile_options(loader_common_options INTERFACE /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245 /guard:cf)
+    # /wd4100: Disable warning on unreferenced formal parameter
+    # /wd4152: Disable warning on conversion of a function pointer to a data pointer
+    # /wd4201: Disable warning on anonymous struct/unions
+    target_compile_options(loader_common_options INTERFACE /GR- /guard:cf /wd4100 /wd4152 /wd4201)
 
     # Enable control flow guard
     if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
@@ -316,11 +329,6 @@ if(MSVC)
 
     # Prevent <windows.h> from polluting the code. guards against things like MIN and MAX
     target_compile_definitions(loader_common_options INTERFACE WIN32_LEAN_AND_MEAN)
-
-    # Replace /GR with an empty string, prevents warnings of /GR being overriden by /GR-
-    # Newer CMake versions (3.20) have better solutions for this through policy - using the old
-    # way while waiting for when updating can occur
-    string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
 # DEBUG enables runtime loader ICD verification
@@ -476,6 +484,10 @@ if(BUILD_TESTS)
                 set_target_properties(detours PROPERTIES COMPILE_FLAGS /EHsc)
             endif()
 
+            # Silence errors found in clang-cl
+            if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC")
+                target_compile_options(detours PRIVATE -Wno-sizeof-pointer-memaccess -Wno-microsoft-goto -Wno-microsoft-cast)
+            endif()
         endif()
     endif()
 

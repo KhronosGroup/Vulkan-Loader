@@ -39,15 +39,15 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-static const int MaxLoaderStringLength = 256;
-static const char UTF8_ONE_BYTE_CODE = 0xC0;
-static const char UTF8_ONE_BYTE_MASK = 0xE0;
-static const char UTF8_TWO_BYTE_CODE = 0xE0;
-static const char UTF8_TWO_BYTE_MASK = 0xF0;
-static const char UTF8_THREE_BYTE_CODE = 0xF0;
-static const char UTF8_THREE_BYTE_MASK = 0xF8;
-static const char UTF8_DATA_BYTE_CODE = 0x80;
-static const char UTF8_DATA_BYTE_MASK = 0xC0;
+static const int MaxLoaderStringLength = 256;           // 0xFF;
+static const unsigned char UTF8_ONE_BYTE_CODE = 192;    // 0xC0;
+static const unsigned char UTF8_ONE_BYTE_MASK = 224;    // 0xE0;
+static const unsigned char UTF8_TWO_BYTE_CODE = 224;    // 0xE0;
+static const unsigned char UTF8_TWO_BYTE_MASK = 240;    // 0xF0;
+static const unsigned char UTF8_THREE_BYTE_CODE = 240;  // 0xF0;
+static const unsigned char UTF8_THREE_BYTE_MASK = 248;  // 0xF8;
+static const unsigned char UTF8_DATA_BYTE_CODE = 128;   // 0x80;
+static const unsigned char UTF8_DATA_BYTE_MASK = 192;   // 0xC0;
 
 // form of all dynamic lists/arrays
 // only the list element should be changed
@@ -281,7 +281,7 @@ struct loader_instance {
     VkInstance instance;  // layers/ICD instance returned to trampoline
 
     struct loader_extension_list ext_list;  // icds and loaders extensions
-    union loader_instance_extension_enables enabled_known_extensions;
+    struct loader_instance_extension_enables enabled_known_extensions;
 
     VkLayerDbgFunctionNode *DbgFunctionHead;
     uint32_t num_tmp_report_callbacks;
