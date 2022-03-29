@@ -10,7 +10,7 @@ assignees: ''
 **Describe the bug**
 Description
 
-**Desktop (please complete the following information):**
+**Environment (please complete the following information):**
  - OS: [e.g. Windows 11, Fedora, MacOs]
  - Bitdepth: [32-bit / 64-bit]
  - GPU: [AMD Radeon RX 6900 XT, NVIDIA GEFORCE RTX 3060 Ti]
