@@ -275,14 +275,22 @@ target_compile_features(loader_common_options INTERFACE cxx_std_11)
 set(LOADER_STANDARD_C_PROPERTIES PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS OFF)
 set(LOADER_STANDARD_CXX_PROPERTIES PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
 
+option(ENABLE_WERROR "Enable warnings as errors" ON)
+
 # Set warnings as errors and the main diagnostic flags
 # Must be set first so the warning silencing later on works properly
 # Note that clang-cl.exe should use MSVC flavor flags, not GNU
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC"))
-    target_compile_options(loader_common_options INTERFACE /WX /W4)
+    if (ENABLE_WERROR)
+        target_compile_options(loader_common_options INTERFACE /WX)
+    endif()
+    target_compile_options(loader_common_options INTERFACE /W4)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # using GCC or Clang with the regular front end
-    target_compile_options(loader_common_options INTERFACE -Werror -Wall -Wextra)
+    if (ENABLE_WERROR)
+        target_compile_options(loader_common_options INTERFACE -Werror)
+    endif()
+    target_compile_options(loader_common_options INTERFACE -Wall -Wextra)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
