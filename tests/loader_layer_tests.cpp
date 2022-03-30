@@ -857,9 +857,9 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        ASSERT_TRUE(
-            env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses "
-                               "API version 1.0.  Skipping this layer."));
+        EXPECT_TRUE(
+            env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 has API "
+                               "version 1.0 that is lower.  Skipping this layer."));
         env.debug_log.clear();
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -877,8 +877,8 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
         ASSERT_TRUE(
-            env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 uses "
-                               "API version 1.0.  Skipping this layer."));
+            env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 has API "
+                               "version 1.0 that is lower.  Skipping this layer."));
         env.debug_log.clear();
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);

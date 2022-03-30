@@ -111,9 +111,9 @@ loader_api_version loader_make_version(uint32_t version) {
 
 loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32_t patch) {
     loader_api_version out_version;
-    out_version.major = major;
-    out_version.minor = minor;
-    out_version.patch = patch;
+    out_version.major = (uint16_t)major;
+    out_version.minor = (uint16_t)minor;
+    out_version.patch = (uint16_t)patch;
     return out_version;
 }
 
@@ -1739,12 +1739,12 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
             break;
         }
 
-        // Check the version of each layer, they need to be equal
+        // Check the version of each layer, they need to be at least MAJOR and MINOR
         loader_api_version comp_prop_version = loader_make_version(comp_prop->info.specVersion);
-        if (meta_layer_version.major != comp_prop_version.major || meta_layer_version.minor != comp_prop_version.minor) {
+        if (!loader_check_version_meets_required(meta_layer_version, comp_prop_version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "verify_meta_layer_component_layers: Meta-layer uses API version %d.%d, but component "
-                       "layer %d uses API version %d.%d.  Skipping this layer.",
+                       "layer %d has API version %d.%d that is lower.  Skipping this layer.",
                        meta_layer_version.major, meta_layer_version.minor, comp_layer, comp_prop_version.major,
                        comp_prop_version.minor);
 
