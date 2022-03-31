@@ -209,22 +209,18 @@ FrameworkEnvironment::FrameworkEnvironment(DebugMode debug_mode, bool override_i
 void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     size_t cur_icd_index = icds.size();
     if (!icd_details.is_fake) {
-        fs::path new_driver_name = fs::path(icd_details.icd_path).stem() + "_" + std::to_string(cur_icd_index) +
-                                   fs::path(icd_details.icd_path).extension();
+        fs::path new_driver_name = fs::path(icd_details.icd_manifest.lib_path).stem() + "_" + std::to_string(cur_icd_index) +
+                                   fs::path(icd_details.icd_manifest.lib_path).extension();
 
-        auto new_driver_location = icd_folder.copy_file(icd_details.icd_path, new_driver_name.str());
+        auto new_driver_location = icd_folder.copy_file(icd_details.icd_manifest.lib_path, new_driver_name.str());
 
         icds.push_back(TestICDHandle(new_driver_location));
         icds.back().reset_icd();
-        icd_details.icd_path = new_driver_location;
+        icd_details.icd_manifest.lib_path = new_driver_location.str();
     }
     std::string full_json_name = icd_details.json_name + "_" + std::to_string(cur_icd_index) + ".json";
 
-    auto driver_loc =
-        icd_folder.write_manifest(full_json_name, ManifestICD{}
-                                                      .set_lib_path(fs::fixup_backslashes_in_path(icd_details.icd_path).str())
-                                                      .set_api_version(icd_details.api_version)
-                                                      .get_manifest_str());
+    auto driver_loc = icd_folder.write_manifest(full_json_name, icd_details.icd_manifest.get_manifest_str());
     icds.back().manifest_path = driver_loc;
 
     if (icd_details.use_env_var_icd_filenames) {

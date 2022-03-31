@@ -302,10 +302,11 @@ struct TestLayerHandle {
 };
 
 struct TestICDDetails {
-    TestICDDetails(fs::path icd_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept
-        : icd_path(icd_path), api_version(api_version) {}
-    BUILDER_VALUE(TestICDDetails, fs::path, icd_path, {});
-    BUILDER_VALUE(TestICDDetails, uint32_t, api_version, VK_API_VERSION_1_0);
+    TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
+    TestICDDetails(fs::path icd_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
+        icd_manifest.set_lib_path(icd_path.str()).set_api_version(api_version);
+    }
+    BUILDER_VALUE(TestICDDetails, ManifestICD, icd_manifest, {});
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
     BUILDER_VALUE(TestICDDetails, bool, use_env_var_icd_filenames, false);
     BUILDER_VALUE(TestICDDetails, bool, use_add_env_var_icd_filenames, false);
