@@ -1595,11 +1595,6 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
             if cur_ext_cmd_group.ext_name not in ext_used:
                 if 'instance' == cur_ext_cmd_group.ext_type and 'android' not in cur_ext_cmd_group.ext_name.lower():
                     ext_used.append(cur_ext_cmd_group)
-                else:
-                    for cur_cmd in cur_ext_cmd_group.cmds:
-                        if cur_cmd.handle_type == 'VkPhysicalDevice':
-                            ext_used.append(cur_ext_cmd_group)
-                            break
 
         # Hack, make sure the first one is not protected or else it messes up the if else blocks
         if ext_used[0].protect is not None:
@@ -1698,7 +1693,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         # Print out the instance extension enable options
         for ext in ext_used:
-            structs += '    uint8_t %s : 1;\n' % ext.ext_name[3:].lower()
+            structs += '    int8_t %s : 2;\n' % ext.ext_name[3:].lower()
 
         structs += '};\n\n'
         structs += ''
@@ -1707,7 +1702,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         # Print out the device extension enable options
         for ext in self.dev_extensions_tracked_by_loader:
-            structs += '    uint8_t %s : 1;\n' % ext[3:].lower()
+            structs += '    int8_t %s : 2;\n' % ext[3:].lower()
 
         structs += '};\n\n'
 

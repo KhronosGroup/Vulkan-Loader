@@ -581,7 +581,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolProperties(VkPhys
     }
 
     // Try using the extension version if it's available
-    if (icd_term->scanned_icd->inst_ext_support.ext_tooling_info && NULL != icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
+    if (NULL != icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT) {
         res = icd_term->dispatch.GetPhysicalDeviceToolPropertiesEXT(phys_dev_term->phys_dev, pToolCount, pToolProperties);
     }
 

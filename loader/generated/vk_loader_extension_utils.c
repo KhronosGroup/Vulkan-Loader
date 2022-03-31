@@ -42,10 +42,6 @@ void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_
         if (strncmp(ext_list->list[i].extensionName, "VK_KHR_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.khr_surface = 1;
 
-        // ---- VK_KHR_swapchain extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_swapchain", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.khr_swapchain = 1;
-
         // ---- VK_KHR_display extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.khr_display = 1;
@@ -74,12 +70,6 @@ void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_
             scanned_icd->inst_ext_support.khr_win32_surface = 1;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-        // ---- VK_KHR_video_queue extension commands
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_video_queue", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.khr_video_queue = 1;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
         // ---- VK_KHR_get_physical_device_properties2 extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_get_physical_device_properties2", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.khr_get_physical_device_properties2 = 1;
@@ -100,10 +90,6 @@ void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_
         } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_external_fence_capabilities", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.khr_external_fence_capabilities = 1;
 
-        // ---- VK_KHR_performance_query extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_performance_query", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.khr_performance_query = 1;
-
         // ---- VK_KHR_get_surface_capabilities2 extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_get_surface_capabilities2", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.khr_get_surface_capabilities2 = 1;
@@ -111,10 +97,6 @@ void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_
         // ---- VK_KHR_get_display_properties2 extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_get_display_properties2", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.khr_get_display_properties2 = 1;
-
-        // ---- VK_KHR_fragment_shading_rate extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_fragment_shading_rate", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.khr_fragment_shading_rate = 1;
 
         // ---- VK_KHR_surface_protected_capabilities extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_KHR_surface_protected_capabilities", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
@@ -182,14 +164,6 @@ void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_
         } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_debug_utils", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.ext_debug_utils = 1;
 
-        // ---- VK_EXT_sample_locations extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_sample_locations", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.ext_sample_locations = 1;
-
-        // ---- VK_EXT_calibrated_timestamps extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_calibrated_timestamps", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.ext_calibrated_timestamps = 1;
-
         // ---- VK_FUCHSIA_imagepipe_surface extension commands
 #ifdef VK_USE_PLATFORM_FUCHSIA
         } else if (strncmp(ext_list->list[i].extensionName, "VK_FUCHSIA_imagepipe_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
@@ -202,27 +176,9 @@ void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_
             scanned_icd->inst_ext_support.ext_metal_surface = 1;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
-        // ---- VK_EXT_tooling_info extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_tooling_info", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.ext_tooling_info = 1;
-
         // ---- VK_EXT_validation_features extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_validation_features", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.ext_validation_features = 1;
-
-        // ---- VK_NV_cooperative_matrix extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_NV_cooperative_matrix", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.nv_cooperative_matrix = 1;
-
-        // ---- VK_NV_coverage_reduction_mode extension commands
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_NV_coverage_reduction_mode", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.nv_coverage_reduction_mode = 1;
-
-        // ---- VK_EXT_full_screen_exclusive extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_full_screen_exclusive", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.ext_full_screen_exclusive = 1;
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
         // ---- VK_EXT_headless_surface extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_headless_surface", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
@@ -231,12 +187,6 @@ void instance_extensions_supported_by_driver(struct loader_scanned_icd *scanned_
         // ---- VK_EXT_acquire_drm_display extension commands
         } else if (strncmp(ext_list->list[i].extensionName, "VK_EXT_acquire_drm_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             scanned_icd->inst_ext_support.ext_acquire_drm_display = 1;
-
-        // ---- VK_NV_acquire_winrt_display extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-        } else if (strncmp(ext_list->list[i].extensionName, "VK_NV_acquire_winrt_display", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            scanned_icd->inst_ext_support.nv_acquire_winrt_display = 1;
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
         // ---- VK_EXT_directfb_surface extension commands
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
@@ -383,10 +333,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
         if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SURFACE_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.khr_surface = 1;
 
-        // ---- VK_KHR_swapchain extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.khr_swapchain = 1;
-
         // ---- VK_KHR_display extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_DISPLAY_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.khr_display = 1;
@@ -415,12 +361,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
             ptr_instance->inst_ext_enables.khr_win32_surface = 1;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-        // ---- VK_KHR_video_queue extension commands
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.khr_video_queue = 1;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
         // ---- VK_KHR_get_physical_device_properties2 extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.khr_get_physical_device_properties2 = 1;
@@ -441,10 +381,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.khr_external_fence_capabilities = 1;
 
-        // ---- VK_KHR_performance_query extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.khr_performance_query = 1;
-
         // ---- VK_KHR_get_surface_capabilities2 extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.khr_get_surface_capabilities2 = 1;
@@ -452,10 +388,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
         // ---- VK_KHR_get_display_properties2 extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.khr_get_display_properties2 = 1;
-
-        // ---- VK_KHR_fragment_shading_rate extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.khr_fragment_shading_rate = 1;
 
         // ---- VK_KHR_surface_protected_capabilities extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME)) {
@@ -523,14 +455,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.ext_debug_utils = 1;
 
-        // ---- VK_EXT_sample_locations extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.ext_sample_locations = 1;
-
-        // ---- VK_EXT_calibrated_timestamps extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.ext_calibrated_timestamps = 1;
-
         // ---- VK_FUCHSIA_imagepipe_surface extension commands
 #ifdef VK_USE_PLATFORM_FUCHSIA
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME)) {
@@ -543,27 +467,9 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
             ptr_instance->inst_ext_enables.ext_metal_surface = 1;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
-        // ---- VK_EXT_tooling_info extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_TOOLING_INFO_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.ext_tooling_info = 1;
-
         // ---- VK_EXT_validation_features extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.ext_validation_features = 1;
-
-        // ---- VK_NV_cooperative_matrix extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.nv_cooperative_matrix = 1;
-
-        // ---- VK_NV_coverage_reduction_mode extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.nv_coverage_reduction_mode = 1;
-
-        // ---- VK_EXT_full_screen_exclusive extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.ext_full_screen_exclusive = 1;
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
         // ---- VK_EXT_headless_surface extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME)) {
@@ -572,12 +478,6 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
         // ---- VK_EXT_acquire_drm_display extension commands
         } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME)) {
             ptr_instance->inst_ext_enables.ext_acquire_drm_display = 1;
-
-        // ---- VK_NV_acquire_winrt_display extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NV_ACQUIRE_WINRT_DISPLAY_EXTENSION_NAME)) {
-            ptr_instance->inst_ext_enables.nv_acquire_winrt_display = 1;
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
         // ---- VK_EXT_directfb_surface extension commands
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
@@ -635,7 +535,6 @@ void extensions_create_device(struct loader_device *dev, const struct loader_phy
 // before passing the list of extensions to the application.
 const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_KHR_SURFACE_EXTENSION_NAME,
-                                                  VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                                                   VK_KHR_DISPLAY_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_XLIB_KHR
                                                   VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
@@ -649,18 +548,13 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
                                                   VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-                                                  VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,
-#endif // VK_ENABLE_BETA_EXTENSIONS
                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
                                                   VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
                                                   VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
                                                   VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
                                                   VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
-                                                  VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME,
                                                   VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME,
                                                   VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME,
-                                                  VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
                                                   VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME,
                                                   VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
                                                   VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
@@ -685,26 +579,15 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_MACOS_MVK
                                                   VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-                                                  VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME,
-                                                  VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_FUCHSIA
                                                   VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
                                                   VK_EXT_METAL_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_METAL_EXT
-                                                  VK_EXT_TOOLING_INFO_EXTENSION_NAME,
                                                   VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME,
-                                                  VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME,
-                                                  VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME,
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-                                                  VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
-#endif // VK_USE_PLATFORM_WIN32_KHR
                                                   VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
                                                   VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME,
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-                                                  VK_NV_ACQUIRE_WINRT_DISPLAY_EXTENSION_NAME,
-#endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
                                                   VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
