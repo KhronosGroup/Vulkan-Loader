@@ -1693,7 +1693,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         # Print out the instance extension enable options
         for ext in ext_used:
-            structs += '    int8_t %s : 2;\n' % ext.ext_name[3:].lower()
+            structs += '    int %s : 2;\n' % ext.ext_name[3:].lower()
 
         structs += '};\n\n'
         structs += ''
@@ -1702,7 +1702,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         # Print out the device extension enable options
         for ext in self.dev_extensions_tracked_by_loader:
-            structs += '    int8_t %s : 2;\n' % ext[3:].lower()
+            structs += '    int %s : 2;\n' % ext[3:].lower()
 
         structs += '};\n\n'
 
@@ -1710,7 +1710,7 @@ class LoaderTrampTermOutputGenerator(OutputGenerator):
 
         # Print out the device extension enable options
         for ext in self.dev_extensions_from_drivers:
-            structs += '    uint8_t %s : 1;\n' % ext.ext_name[3:].lower()
+            structs += '    int %s : 2;\n' % ext.ext_name[3:].lower()
 
         structs += '};\n\n'
         return structs

@@ -40,7 +40,9 @@ TEST(BasicEntrypointTest, KHR_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}, {VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -112,7 +114,9 @@ TEST(BasicEntrypointTest, KHR_swapchain) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}, {VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -234,7 +238,9 @@ TEST(BasicEntrypointTest, KHR_display) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_DISPLAY_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -321,7 +327,8 @@ TEST(BasicEntrypointTest, KHR_display_swapchain) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_DISPLAY_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -363,7 +370,9 @@ TEST(BasicEntrypointTest, KHR_xlib_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_XLIB_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -419,7 +428,9 @@ TEST(BasicEntrypointTest, KHR_xcb_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_XCB_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -475,7 +486,9 @@ TEST(BasicEntrypointTest, KHR_wayland_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -530,7 +543,9 @@ TEST(BasicEntrypointTest, KHR_win32_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_WIN32_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -583,7 +598,8 @@ TEST(BasicEntrypointTest, KHR_video_queue) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -781,7 +797,8 @@ TEST(BasicEntrypointTest, KHR_dynamic_rendering) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -852,7 +869,8 @@ TEST(BasicEntrypointTest, KHR_get_physical_device_properties2) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -905,7 +923,8 @@ TEST(BasicEntrypointTest, KHR_device_group) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1044,7 +1063,8 @@ TEST(BasicEntrypointTest, KHR_device_group_creation) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1070,7 +1090,9 @@ TEST(BasicEntrypointTest, KHR_external_memory_capabilities) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1225,7 +1247,9 @@ TEST(BasicEntrypointTest, KHR_external_semaphore_capabilities) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1378,7 +1402,8 @@ TEST(BasicEntrypointTest, KHR_push_descriptor) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1630,7 +1655,9 @@ TEST(BasicEntrypointTest, KHR_shared_presentable_image) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}, {VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1677,7 +1704,9 @@ TEST(BasicEntrypointTest, KHR_external_fence_capabilities) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1830,7 +1859,8 @@ TEST(BasicEntrypointTest, KHR_performance_query) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1888,7 +1918,10 @@ TEST(BasicEntrypointTest, KHR_get_surface_capabilities2) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}, {VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -1949,7 +1982,9 @@ TEST(BasicEntrypointTest, KHR_get_display_properties2) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME}, {VK_KHR_DISPLAY_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -2080,7 +2115,8 @@ TEST(BasicEntrypointTest, KHR_sampler_ycbcr_conversion) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -2180,7 +2216,8 @@ TEST(BasicEntrypointTest, KHR_maintenance3) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -2304,7 +2341,8 @@ TEST(BasicEntrypointTest, KHR_timeline_semaphore) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -2381,7 +2419,8 @@ TEST(BasicEntrypointTest, KHR_fragment_shading_rate) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -2492,7 +2531,8 @@ TEST(BasicEntrypointTest, KHR_buffer_device_address) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -2623,7 +2663,8 @@ TEST(BasicEntrypointTest, KHR_pipeline_executable_properties) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -2728,7 +2769,8 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3070,7 +3112,8 @@ TEST(BasicEntrypointTest, EXT_debug_report) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_DEBUG_REPORT_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3107,7 +3150,8 @@ TEST(BasicEntrypointTest, EXT_debug_marker) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_DEBUG_REPORT_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3191,7 +3235,8 @@ TEST(BasicEntrypointTest, EXT_transform_feedback) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3576,7 +3621,9 @@ TEST(BasicEntrypointTest, GGP_stream_descriptor_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3615,7 +3662,8 @@ TEST(BasicEntrypointTest, NV_external_memory_capabilities) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3724,7 +3772,9 @@ TEST(BasicEntrypointTest, NN_vi_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_NN_VI_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_NN_VI_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3893,7 +3943,9 @@ TEST(BasicEntrypointTest, EXT_direct_mode_display) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}, {VK_KHR_DISPLAY_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3934,7 +3986,9 @@ TEST(BasicEntrypointTest, EXT_acquire_xlib_display) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME}, {VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -3983,7 +4037,11 @@ TEST(BasicEntrypointTest, EXT_display_surface_counter) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME}, {VK_KHR_DISPLAY_EXTENSION_NAME}, {VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4035,7 +4093,8 @@ TEST(BasicEntrypointTest, EXT_display_control) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4146,7 +4205,8 @@ TEST(BasicEntrypointTest, EXT_discard_rectangles) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4259,7 +4319,9 @@ TEST(BasicEntrypointTest, MVK_ios_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_MVK_IOS_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_MVK_IOS_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4299,7 +4361,9 @@ TEST(BasicEntrypointTest, MVK_macos_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_MVK_MACOS_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4338,7 +4402,8 @@ TEST(BasicEntrypointTest, EXT_sample_locations) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4407,7 +4472,8 @@ TEST(BasicEntrypointTest, EXT_image_drm_format_modifier) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4527,7 +4593,8 @@ TEST(BasicEntrypointTest, NV_shading_rate_image) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4616,7 +4683,8 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4918,7 +4986,8 @@ TEST(BasicEntrypointTest, EXT_calibrated_timestamps) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -4974,7 +5043,8 @@ TEST(BasicEntrypointTest, NV_mesh_shader) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5058,7 +5128,8 @@ TEST(BasicEntrypointTest, NV_scissor_exclusive) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5121,7 +5192,8 @@ TEST(BasicEntrypointTest, NV_device_diagnostic_checkpoints) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5314,7 +5386,9 @@ TEST(BasicEntrypointTest, AMD_display_native_hdr) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}, {VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5363,7 +5437,9 @@ TEST(BasicEntrypointTest, FUCHSIA_imagepipe_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5403,7 +5479,9 @@ TEST(BasicEntrypointTest, EXT_metal_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_METAL_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5442,7 +5520,8 @@ TEST(BasicEntrypointTest, EXT_buffer_device_address) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5525,7 +5604,8 @@ TEST(BasicEntrypointTest, NV_cooperative_matrix) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5601,7 +5681,11 @@ TEST(BasicEntrypointTest, EXT_full_screen_exclusive) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}, {VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}, {VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5675,7 +5759,9 @@ TEST(BasicEntrypointTest, EXT_headless_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5713,7 +5799,8 @@ TEST(BasicEntrypointTest, EXT_line_rasterization) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5775,7 +5862,8 @@ TEST(BasicEntrypointTest, EXT_host_query_reset) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -5835,7 +5923,8 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6095,7 +6184,9 @@ TEST(BasicEntrypointTest, EXT_acquire_drm_display) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME}, {VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6274,7 +6365,8 @@ TEST(BasicEntrypointTest, NV_acquire_winrt_display) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6321,7 +6413,9 @@ TEST(BasicEntrypointTest, EXT_directfb_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6374,7 +6468,8 @@ TEST(BasicEntrypointTest, EXT_vertex_input_dynamic_state) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6439,7 +6534,8 @@ TEST(BasicEntrypointTest, FUCHSIA_external_memory) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6496,7 +6592,8 @@ TEST(BasicEntrypointTest, FUCHSIA_external_semaphore) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6819,7 +6916,8 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state2) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6909,7 +7007,9 @@ TEST(BasicEntrypointTest, QNX_screen_surface) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_QNX_SCREEN_SURFACE_EXTENSION_NAME}, {VK_KHR_SURFACE_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_QNX_SCREEN_SURFACE_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_SURFACE_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 
@@ -6962,7 +7062,8 @@ TEST(BasicEntrypointTest, EXT_color_write_enable) {
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.set_api_version(vulkan_version);
-    instance.create_info.add_extensions({{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}, {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}});
+    instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.create_info.add_layer(entrypoint_test_layer_name);
     instance.CheckCreate();
 

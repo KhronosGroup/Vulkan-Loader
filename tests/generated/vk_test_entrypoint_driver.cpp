@@ -630,7 +630,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDebugUtilsMessengerEXT(VkInstance in
                                                                    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                                                    const VkAllocationCallbacks* pAllocator,
                                                                    VkDebugUtilsMessengerEXT* pMessenger) {
-    *pMessenger = (VkDebugUtilsMessengerEXT)((uintptr_t)0xdeadbeefdeadbeef);
+    *pMessenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(0xdeadbeefdeadbeef);
     driver.debug_util_info.severities = pCreateInfo->messageSeverity;
     driver.debug_util_info.types = pCreateInfo->messageType;
     driver.debug_util_info.callback = pCreateInfo->pfnUserCallback;
@@ -790,7 +790,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_AllocateMemory(
     const VkAllocationCallbacks* pAllocator,
     VkDeviceMemory* pMemory) {
     log_driver_message("Generated Driver vkAllocateMemory");
-    *pMemory = (VkDeviceMemory)((uintptr_t)0xdeadbeefdeadbeef);
+    *pMemory = reinterpret_cast<VkDeviceMemory>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -908,7 +908,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateFence(
     const VkAllocationCallbacks* pAllocator,
     VkFence* pFence) {
     log_driver_message("Generated Driver vkCreateFence");
-    *pFence = (VkFence)((uintptr_t)0xdeadbeefdeadbeef);
+    *pFence = reinterpret_cast<VkFence>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -950,7 +950,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateSemaphore(
     const VkAllocationCallbacks* pAllocator,
     VkSemaphore* pSemaphore) {
     log_driver_message("Generated Driver vkCreateSemaphore");
-    *pSemaphore = (VkSemaphore)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSemaphore = reinterpret_cast<VkSemaphore>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -967,7 +967,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateEvent(
     const VkAllocationCallbacks* pAllocator,
     VkEvent* pEvent) {
     log_driver_message("Generated Driver vkCreateEvent");
-    *pEvent = (VkEvent)((uintptr_t)0xdeadbeefdeadbeef);
+    *pEvent = reinterpret_cast<VkEvent>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1005,7 +1005,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateQueryPool(
     const VkAllocationCallbacks* pAllocator,
     VkQueryPool* pQueryPool) {
     log_driver_message("Generated Driver vkCreateQueryPool");
-    *pQueryPool = (VkQueryPool)((uintptr_t)0xdeadbeefdeadbeef);
+    *pQueryPool = reinterpret_cast<VkQueryPool>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1035,7 +1035,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateBuffer(
     const VkAllocationCallbacks* pAllocator,
     VkBuffer* pBuffer) {
     log_driver_message("Generated Driver vkCreateBuffer");
-    *pBuffer = (VkBuffer)((uintptr_t)0xdeadbeefdeadbeef);
+    *pBuffer = reinterpret_cast<VkBuffer>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1052,7 +1052,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateBufferView(
     const VkAllocationCallbacks* pAllocator,
     VkBufferView* pView) {
     log_driver_message("Generated Driver vkCreateBufferView");
-    *pView = (VkBufferView)((uintptr_t)0xdeadbeefdeadbeef);
+    *pView = reinterpret_cast<VkBufferView>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1069,7 +1069,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateImage(
     const VkAllocationCallbacks* pAllocator,
     VkImage* pImage) {
     log_driver_message("Generated Driver vkCreateImage");
-    *pImage = (VkImage)((uintptr_t)0xdeadbeefdeadbeef);
+    *pImage = reinterpret_cast<VkImage>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1094,7 +1094,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateImageView(
     const VkAllocationCallbacks* pAllocator,
     VkImageView* pView) {
     log_driver_message("Generated Driver vkCreateImageView");
-    *pView = (VkImageView)((uintptr_t)0xdeadbeefdeadbeef);
+    *pView = reinterpret_cast<VkImageView>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1111,7 +1111,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateShaderModule(
     const VkAllocationCallbacks* pAllocator,
     VkShaderModule* pShaderModule) {
     log_driver_message("Generated Driver vkCreateShaderModule");
-    *pShaderModule = (VkShaderModule)((uintptr_t)0xdeadbeefdeadbeef);
+    *pShaderModule = reinterpret_cast<VkShaderModule>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1128,7 +1128,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreatePipelineCache(
     const VkAllocationCallbacks* pAllocator,
     VkPipelineCache* pPipelineCache) {
     log_driver_message("Generated Driver vkCreatePipelineCache");
-    *pPipelineCache = (VkPipelineCache)((uintptr_t)0xdeadbeefdeadbeef);
+    *pPipelineCache = reinterpret_cast<VkPipelineCache>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1165,7 +1165,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateGraphicsPipelines(
     const VkAllocationCallbacks* pAllocator,
     VkPipeline* pPipelines) {
     log_driver_message("Generated Driver vkCreateGraphicsPipelines");
-    *pPipelines = (VkPipeline)((uintptr_t)0xdeadbeefdeadbeef);
+    *pPipelines = reinterpret_cast<VkPipeline>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1177,7 +1177,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateComputePipelines(
     const VkAllocationCallbacks* pAllocator,
     VkPipeline* pPipelines) {
     log_driver_message("Generated Driver vkCreateComputePipelines");
-    *pPipelines = (VkPipeline)((uintptr_t)0xdeadbeefdeadbeef);
+    *pPipelines = reinterpret_cast<VkPipeline>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1194,7 +1194,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreatePipelineLayout(
     const VkAllocationCallbacks* pAllocator,
     VkPipelineLayout* pPipelineLayout) {
     log_driver_message("Generated Driver vkCreatePipelineLayout");
-    *pPipelineLayout = (VkPipelineLayout)((uintptr_t)0xdeadbeefdeadbeef);
+    *pPipelineLayout = reinterpret_cast<VkPipelineLayout>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1211,7 +1211,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateSampler(
     const VkAllocationCallbacks* pAllocator,
     VkSampler* pSampler) {
     log_driver_message("Generated Driver vkCreateSampler");
-    *pSampler = (VkSampler)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSampler = reinterpret_cast<VkSampler>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1228,7 +1228,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDescriptorSetLayout(
     const VkAllocationCallbacks* pAllocator,
     VkDescriptorSetLayout* pSetLayout) {
     log_driver_message("Generated Driver vkCreateDescriptorSetLayout");
-    *pSetLayout = (VkDescriptorSetLayout)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSetLayout = reinterpret_cast<VkDescriptorSetLayout>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1245,7 +1245,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDescriptorPool(
     const VkAllocationCallbacks* pAllocator,
     VkDescriptorPool* pDescriptorPool) {
     log_driver_message("Generated Driver vkCreateDescriptorPool");
-    *pDescriptorPool = (VkDescriptorPool)((uintptr_t)0xdeadbeefdeadbeef);
+    *pDescriptorPool = reinterpret_cast<VkDescriptorPool>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1269,7 +1269,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_AllocateDescriptorSets(
     const VkDescriptorSetAllocateInfo* pAllocateInfo,
     VkDescriptorSet* pDescriptorSets) {
     log_driver_message("Generated Driver vkAllocateDescriptorSets");
-    *pDescriptorSets = (VkDescriptorSet)((uintptr_t)0xdeadbeefdeadbeef);
+    *pDescriptorSets = reinterpret_cast<VkDescriptorSet>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1297,7 +1297,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateFramebuffer(
     const VkAllocationCallbacks* pAllocator,
     VkFramebuffer* pFramebuffer) {
     log_driver_message("Generated Driver vkCreateFramebuffer");
-    *pFramebuffer = (VkFramebuffer)((uintptr_t)0xdeadbeefdeadbeef);
+    *pFramebuffer = reinterpret_cast<VkFramebuffer>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1314,7 +1314,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateRenderPass(
     const VkAllocationCallbacks* pAllocator,
     VkRenderPass* pRenderPass) {
     log_driver_message("Generated Driver vkCreateRenderPass");
-    *pRenderPass = (VkRenderPass)((uintptr_t)0xdeadbeefdeadbeef);
+    *pRenderPass = reinterpret_cast<VkRenderPass>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1338,7 +1338,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateCommandPool(
     const VkAllocationCallbacks* pAllocator,
     VkCommandPool* pCommandPool) {
     log_driver_message("Generated Driver vkCreateCommandPool");
-    *pCommandPool = (VkCommandPool)((uintptr_t)0xdeadbeefdeadbeef);
+    *pCommandPool = reinterpret_cast<VkCommandPool>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1916,7 +1916,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateSamplerYcbcrConversion(
     const VkAllocationCallbacks* pAllocator,
     VkSamplerYcbcrConversion* pYcbcrConversion) {
     log_driver_message("Generated Driver vkCreateSamplerYcbcrConversion");
-    *pYcbcrConversion = (VkSamplerYcbcrConversion)((uintptr_t)0xdeadbeefdeadbeef);
+    *pYcbcrConversion = reinterpret_cast<VkSamplerYcbcrConversion>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -1933,7 +1933,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDescriptorUpdateTemplate(
     const VkAllocationCallbacks* pAllocator,
     VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) {
     log_driver_message("Generated Driver vkCreateDescriptorUpdateTemplate");
-    *pDescriptorUpdateTemplate = (VkDescriptorUpdateTemplate)((uintptr_t)0xdeadbeefdeadbeef);
+    *pDescriptorUpdateTemplate = reinterpret_cast<VkDescriptorUpdateTemplate>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2010,7 +2010,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateRenderPass2(
     const VkAllocationCallbacks* pAllocator,
     VkRenderPass* pRenderPass) {
     log_driver_message("Generated Driver vkCreateRenderPass2");
-    *pRenderPass = (VkRenderPass)((uintptr_t)0xdeadbeefdeadbeef);
+    *pRenderPass = reinterpret_cast<VkRenderPass>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2102,7 +2102,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreatePrivateDataSlot(
     const VkAllocationCallbacks* pAllocator,
     VkPrivateDataSlot* pPrivateDataSlot) {
     log_driver_message("Generated Driver vkCreatePrivateDataSlot");
-    *pPrivateDataSlot = (VkPrivateDataSlot)((uintptr_t)0xdeadbeefdeadbeef);
+    *pPrivateDataSlot = reinterpret_cast<VkPrivateDataSlot>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2399,7 +2399,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateSwapchainKHR(
     const VkAllocationCallbacks* pAllocator,
     VkSwapchainKHR* pSwapchain) {
     log_driver_message("Generated Driver vkCreateSwapchainKHR");
-    *pSwapchain = (VkSwapchainKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSwapchain = reinterpret_cast<VkSwapchainKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2416,7 +2416,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_GetSwapchainImagesKHR(
     uint32_t* pSwapchainImageCount,
     VkImage* pSwapchainImages) {
     log_driver_message("Generated Driver vkGetSwapchainImagesKHR");
-    *pSwapchainImages = (VkImage)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSwapchainImages = reinterpret_cast<VkImage>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2494,7 +2494,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_GetDisplayPlaneSupportedDisplaysKHR(
     uint32_t* pDisplayCount,
     VkDisplayKHR* pDisplays) {
     log_driver_message("Generated Driver vkGetDisplayPlaneSupportedDisplaysKHR");
-    *pDisplays = (VkDisplayKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pDisplays = reinterpret_cast<VkDisplayKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2514,7 +2514,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDisplayModeKHR(
     const VkAllocationCallbacks* pAllocator,
     VkDisplayModeKHR* pMode) {
     log_driver_message("Generated Driver vkCreateDisplayModeKHR");
-    *pMode = (VkDisplayModeKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pMode = reinterpret_cast<VkDisplayModeKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2533,7 +2533,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDisplayPlaneSurfaceKHR(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateDisplayPlaneSurfaceKHR");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2546,7 +2546,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateSharedSwapchainsKHR(
     const VkAllocationCallbacks* pAllocator,
     VkSwapchainKHR* pSwapchains) {
     log_driver_message("Generated Driver vkCreateSharedSwapchainsKHR");
-    *pSwapchains = (VkSwapchainKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSwapchains = reinterpret_cast<VkSwapchainKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2559,7 +2559,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateXlibSurfaceKHR(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateXlibSurfaceKHR");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2582,7 +2582,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateXcbSurfaceKHR(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateXcbSurfaceKHR");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2605,7 +2605,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateWaylandSurfaceKHR(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateWaylandSurfaceKHR");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2627,7 +2627,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateWin32SurfaceKHR(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateWin32SurfaceKHR");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2665,7 +2665,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateVideoSessionKHR(
     const VkAllocationCallbacks* pAllocator,
     VkVideoSessionKHR* pVideoSession) {
     log_driver_message("Generated Driver vkCreateVideoSessionKHR");
-    *pVideoSession = (VkVideoSessionKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pVideoSession = reinterpret_cast<VkVideoSessionKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -2700,7 +2700,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateVideoSessionParametersKHR(
     const VkAllocationCallbacks* pAllocator,
     VkVideoSessionParametersKHR* pVideoSessionParameters) {
     log_driver_message("Generated Driver vkCreateVideoSessionParametersKHR");
-    *pVideoSessionParameters = (VkVideoSessionParametersKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pVideoSessionParameters = reinterpret_cast<VkVideoSessionParametersKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3372,7 +3372,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDeferredOperationKHR(
     const VkAllocationCallbacks* pAllocator,
     VkDeferredOperationKHR* pDeferredOperation) {
     log_driver_message("Generated Driver vkCreateDeferredOperationKHR");
-    *pDeferredOperation = (VkDeferredOperationKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pDeferredOperation = reinterpret_cast<VkDeferredOperationKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3590,7 +3590,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDebugReportCallbackEXT(
     const VkAllocationCallbacks* pAllocator,
     VkDebugReportCallbackEXT* pCallback) {
     log_driver_message("Generated Driver vkCreateDebugReportCallbackEXT");
-    *pCallback = (VkDebugReportCallbackEXT)((uintptr_t)0xdeadbeefdeadbeef);
+    *pCallback = reinterpret_cast<VkDebugReportCallbackEXT>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3712,7 +3712,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateCuModuleNVX(
     const VkAllocationCallbacks* pAllocator,
     VkCuModuleNVX* pModule) {
     log_driver_message("Generated Driver vkCreateCuModuleNVX");
-    *pModule = (VkCuModuleNVX)((uintptr_t)0xdeadbeefdeadbeef);
+    *pModule = reinterpret_cast<VkCuModuleNVX>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3722,7 +3722,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateCuFunctionNVX(
     const VkAllocationCallbacks* pAllocator,
     VkCuFunctionNVX* pFunction) {
     log_driver_message("Generated Driver vkCreateCuFunctionNVX");
-    *pFunction = (VkCuFunctionNVX)((uintptr_t)0xdeadbeefdeadbeef);
+    *pFunction = reinterpret_cast<VkCuFunctionNVX>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3811,7 +3811,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateStreamDescriptorSurfaceGGP(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateStreamDescriptorSurfaceGGP");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3853,7 +3853,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateViSurfaceNN(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateViSurfaceNN");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3907,7 +3907,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_GetRandROutputDisplayEXT(
     RROutput rrOutput,
     VkDisplayKHR* pDisplay) {
     log_driver_message("Generated Driver vkGetRandROutputDisplayEXT");
-    *pDisplay = (VkDisplayKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pDisplay = reinterpret_cast<VkDisplayKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3938,7 +3938,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_RegisterDeviceEventEXT(
     const VkAllocationCallbacks* pAllocator,
     VkFence* pFence) {
     log_driver_message("Generated Driver vkRegisterDeviceEventEXT");
-    *pFence = (VkFence)((uintptr_t)0xdeadbeefdeadbeef);
+    *pFence = reinterpret_cast<VkFence>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -3949,7 +3949,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_RegisterDisplayEventEXT(
     const VkAllocationCallbacks* pAllocator,
     VkFence* pFence) {
     log_driver_message("Generated Driver vkRegisterDisplayEventEXT");
-    *pFence = (VkFence)((uintptr_t)0xdeadbeefdeadbeef);
+    *pFence = reinterpret_cast<VkFence>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4010,7 +4010,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateIOSSurfaceMVK(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateIOSSurfaceMVK");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4024,7 +4024,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateMacOSSurfaceMVK(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateMacOSSurfaceMVK");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4127,7 +4127,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateValidationCacheEXT(
     const VkAllocationCallbacks* pAllocator,
     VkValidationCacheEXT* pValidationCache) {
     log_driver_message("Generated Driver vkCreateValidationCacheEXT");
-    *pValidationCache = (VkValidationCacheEXT)((uintptr_t)0xdeadbeefdeadbeef);
+    *pValidationCache = reinterpret_cast<VkValidationCacheEXT>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4189,7 +4189,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateAccelerationStructureNV(
     const VkAllocationCallbacks* pAllocator,
     VkAccelerationStructureNV* pAccelerationStructure) {
     log_driver_message("Generated Driver vkCreateAccelerationStructureNV");
-    *pAccelerationStructure = (VkAccelerationStructureNV)((uintptr_t)0xdeadbeefdeadbeef);
+    *pAccelerationStructure = reinterpret_cast<VkAccelerationStructureNV>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4263,7 +4263,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateRayTracingPipelinesNV(
     const VkAllocationCallbacks* pAllocator,
     VkPipeline* pPipelines) {
     log_driver_message("Generated Driver vkCreateRayTracingPipelinesNV");
-    *pPipelines = (VkPipeline)((uintptr_t)0xdeadbeefdeadbeef);
+    *pPipelines = reinterpret_cast<VkPipeline>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4441,7 +4441,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_AcquirePerformanceConfigurationINTEL(
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
     VkPerformanceConfigurationINTEL* pConfiguration) {
     log_driver_message("Generated Driver vkAcquirePerformanceConfigurationINTEL");
-    *pConfiguration = (VkPerformanceConfigurationINTEL)((uintptr_t)0xdeadbeefdeadbeef);
+    *pConfiguration = reinterpret_cast<VkPerformanceConfigurationINTEL>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4485,7 +4485,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateImagePipeSurfaceFUCHSIA(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateImagePipeSurfaceFUCHSIA");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4499,7 +4499,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateMetalSurfaceEXT(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateMetalSurfaceEXT");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4586,7 +4586,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateHeadlessSurfaceEXT(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateHeadlessSurfaceEXT");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4743,7 +4743,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateIndirectCommandsLayoutNV(
     const VkAllocationCallbacks* pAllocator,
     VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) {
     log_driver_message("Generated Driver vkCreateIndirectCommandsLayoutNV");
-    *pIndirectCommandsLayout = (VkIndirectCommandsLayoutNV)((uintptr_t)0xdeadbeefdeadbeef);
+    *pIndirectCommandsLayout = reinterpret_cast<VkIndirectCommandsLayoutNV>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4770,7 +4770,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_GetDrmDisplayEXT(
     uint32_t connectorId,
     VkDisplayKHR* display) {
     log_driver_message("Generated Driver vkGetDrmDisplayEXT");
-    *display = (VkDisplayKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *display = reinterpret_cast<VkDisplayKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4837,7 +4837,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_GetWinrtDisplayNV(
     uint32_t deviceRelativeId,
     VkDisplayKHR* pDisplay) {
     log_driver_message("Generated Driver vkGetWinrtDisplayNV");
-    *pDisplay = (VkDisplayKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pDisplay = reinterpret_cast<VkDisplayKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4851,7 +4851,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateDirectFBSurfaceEXT(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateDirectFBSurfaceEXT");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -4924,7 +4924,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateBufferCollectionFUCHSIA(
     const VkAllocationCallbacks* pAllocator,
     VkBufferCollectionFUCHSIA* pCollection) {
     log_driver_message("Generated Driver vkCreateBufferCollectionFUCHSIA");
-    *pCollection = (VkBufferCollectionFUCHSIA)((uintptr_t)0xdeadbeefdeadbeef);
+    *pCollection = reinterpret_cast<VkBufferCollectionFUCHSIA>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -5038,7 +5038,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateScreenSurfaceQNX(
     const VkAllocationCallbacks* pAllocator,
     VkSurfaceKHR* pSurface) {
     log_driver_message("Generated Driver vkCreateScreenSurfaceQNX");
-    *pSurface = (VkSurfaceKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pSurface = reinterpret_cast<VkSurfaceKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -5116,7 +5116,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateAccelerationStructureKHR(
     const VkAllocationCallbacks* pAllocator,
     VkAccelerationStructureKHR* pAccelerationStructure) {
     log_driver_message("Generated Driver vkCreateAccelerationStructureKHR");
-    *pAccelerationStructure = (VkAccelerationStructureKHR)((uintptr_t)0xdeadbeefdeadbeef);
+    *pAccelerationStructure = reinterpret_cast<VkAccelerationStructureKHR>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
@@ -5265,7 +5265,7 @@ VKAPI_ATTR VkResult VKAPI_CALL driver_CreateRayTracingPipelinesKHR(
     const VkAllocationCallbacks* pAllocator,
     VkPipeline* pPipelines) {
     log_driver_message("Generated Driver vkCreateRayTracingPipelinesKHR");
-    *pPipelines = (VkPipeline)((uintptr_t)0xdeadbeefdeadbeef);
+    *pPipelines = reinterpret_cast<VkPipeline>(0xdeadbeefdeadbeef);
     return VK_SUCCESS;
 }
 
