@@ -149,7 +149,7 @@ TEST(BasicEntrypointTest, KHR_swapchain) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_SWAPCHAIN_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -347,7 +347,7 @@ TEST(BasicEntrypointTest, KHR_display_swapchain) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -633,7 +633,7 @@ TEST(BasicEntrypointTest, KHR_video_queue) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_VIDEO_QUEUE_EXTENSION_NAME}, {VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME).add_extension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -753,7 +753,7 @@ TEST(BasicEntrypointTest, KHR_video_decode_queue) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}, {VK_KHR_VIDEO_QUEUE_EXTENSION_NAME}, {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME).add_extension(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME).add_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -817,7 +817,7 @@ TEST(BasicEntrypointTest, KHR_dynamic_rendering) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -943,7 +943,7 @@ TEST(BasicEntrypointTest, KHR_device_group) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_DEVICE_GROUP_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1021,7 +1021,7 @@ TEST(BasicEntrypointTest, KHR_maintenance1) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_MAINTENANCE1_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1155,7 +1155,7 @@ TEST(BasicEntrypointTest, KHR_external_memory_win32) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}, {VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1211,7 +1211,7 @@ TEST(BasicEntrypointTest, KHR_external_memory_fd) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME}, {VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1312,7 +1312,7 @@ TEST(BasicEntrypointTest, KHR_external_semaphore_win32) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME}, {VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1367,7 +1367,7 @@ TEST(BasicEntrypointTest, KHR_external_semaphore_fd) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME}, {VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1422,7 +1422,7 @@ TEST(BasicEntrypointTest, KHR_push_descriptor) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1517,7 +1517,7 @@ TEST(BasicEntrypointTest, KHR_descriptor_update_template) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1594,7 +1594,7 @@ TEST(BasicEntrypointTest, KHR_create_renderpass2) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME}, {VK_KHR_MULTIVIEW_EXTENSION_NAME}, {VK_KHR_MAINTENANCE2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME).add_extension(VK_KHR_MULTIVIEW_EXTENSION_NAME).add_extension(VK_KHR_MAINTENANCE2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1676,7 +1676,7 @@ TEST(BasicEntrypointTest, KHR_shared_presentable_image) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1769,7 +1769,7 @@ TEST(BasicEntrypointTest, KHR_external_fence_win32) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME}, {VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1824,7 +1824,7 @@ TEST(BasicEntrypointTest, KHR_external_fence_fd) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME}, {VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -1885,7 +1885,7 @@ TEST(BasicEntrypointTest, KHR_performance_query) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2066,7 +2066,7 @@ TEST(BasicEntrypointTest, KHR_get_memory_requirements2) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2135,7 +2135,7 @@ TEST(BasicEntrypointTest, KHR_sampler_ycbcr_conversion) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}, {VK_KHR_MAINTENANCE1_EXTENSION_NAME}, {VK_KHR_BIND_MEMORY_2_EXTENSION_NAME}, {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME).add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_extension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME).add_extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2176,7 +2176,7 @@ TEST(BasicEntrypointTest, KHR_bind_memory2) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_BIND_MEMORY_2_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2236,7 +2236,7 @@ TEST(BasicEntrypointTest, KHR_maintenance3) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_MAINTENANCE3_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE3_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2277,7 +2277,7 @@ TEST(BasicEntrypointTest, KHR_draw_indirect_count) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2361,7 +2361,7 @@ TEST(BasicEntrypointTest, KHR_timeline_semaphore) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2439,7 +2439,7 @@ TEST(BasicEntrypointTest, KHR_fragment_shading_rate) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME}, {VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME).add_extension(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2502,7 +2502,7 @@ TEST(BasicEntrypointTest, KHR_present_wait) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_PRESENT_WAIT_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, {VK_KHR_PRESENT_ID_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_PRESENT_WAIT_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_extension(VK_KHR_PRESENT_ID_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2551,7 +2551,7 @@ TEST(BasicEntrypointTest, KHR_buffer_device_address) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2615,7 +2615,7 @@ TEST(BasicEntrypointTest, KHR_deferred_host_operations) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2683,7 +2683,7 @@ TEST(BasicEntrypointTest, KHR_pipeline_executable_properties) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2725,7 +2725,7 @@ TEST(BasicEntrypointTest, KHR_video_encode_queue) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}, {VK_KHR_VIDEO_QUEUE_EXTENSION_NAME}, {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME).add_extension(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME).add_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2789,7 +2789,7 @@ TEST(BasicEntrypointTest, KHR_synchronization2) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}, {VK_AMD_BUFFER_MARKER_EXTENSION_NAME}, {VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME).add_extension(VK_AMD_BUFFER_MARKER_EXTENSION_NAME).add_extension(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -2960,7 +2960,7 @@ TEST(BasicEntrypointTest, KHR_copy_commands2) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3064,7 +3064,7 @@ TEST(BasicEntrypointTest, KHR_maintenance4) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_KHR_MAINTENANCE_4_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE_4_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3170,7 +3170,7 @@ TEST(BasicEntrypointTest, EXT_debug_marker) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_DEBUG_MARKER_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3255,7 +3255,7 @@ TEST(BasicEntrypointTest, EXT_transform_feedback) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3370,7 +3370,7 @@ TEST(BasicEntrypointTest, NVX_binary_import) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_NVX_BINARY_IMPORT_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NVX_BINARY_IMPORT_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3432,7 +3432,7 @@ TEST(BasicEntrypointTest, NVX_image_view_handle) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3491,7 +3491,7 @@ TEST(BasicEntrypointTest, AMD_draw_indirect_count) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3574,7 +3574,7 @@ TEST(BasicEntrypointTest, AMD_shader_info) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_AMD_SHADER_INFO_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_AMD_SHADER_INFO_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3729,7 +3729,7 @@ TEST(BasicEntrypointTest, NV_external_memory_win32) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}, {VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME).add_extension(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3832,7 +3832,7 @@ TEST(BasicEntrypointTest, EXT_conditional_rendering) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -3899,7 +3899,7 @@ TEST(BasicEntrypointTest, NV_clip_space_w_scaling) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4113,7 +4113,7 @@ TEST(BasicEntrypointTest, EXT_display_control) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4169,7 +4169,7 @@ TEST(BasicEntrypointTest, GOOGLE_display_timing) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4225,7 +4225,7 @@ TEST(BasicEntrypointTest, EXT_discard_rectangles) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4288,7 +4288,7 @@ TEST(BasicEntrypointTest, EXT_hdr_metadata) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_EXT_HDR_METADATA_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_HDR_METADATA_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4429,7 +4429,7 @@ TEST(BasicEntrypointTest, EXT_sample_locations) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4492,7 +4492,7 @@ TEST(BasicEntrypointTest, EXT_image_drm_format_modifier) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME}, {VK_KHR_BIND_MEMORY_2_EXTENSION_NAME}, {VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME}, {VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME).add_extension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME).add_extension(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME).add_extension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4545,7 +4545,7 @@ TEST(BasicEntrypointTest, EXT_validation_cache) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_VALIDATION_CACHE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4613,7 +4613,7 @@ TEST(BasicEntrypointTest, NV_shading_rate_image) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4703,7 +4703,7 @@ TEST(BasicEntrypointTest, NV_ray_tracing) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_NV_RAY_TRACING_EXTENSION_NAME}, {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_RAY_TRACING_EXTENSION_NAME).add_extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4880,7 +4880,7 @@ TEST(BasicEntrypointTest, EXT_external_memory_host) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME}, {VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -4930,7 +4930,7 @@ TEST(BasicEntrypointTest, AMD_buffer_marker) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_AMD_BUFFER_MARKER_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_AMD_BUFFER_MARKER_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5013,7 +5013,7 @@ TEST(BasicEntrypointTest, EXT_calibrated_timestamps) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5063,7 +5063,7 @@ TEST(BasicEntrypointTest, NV_mesh_shader) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_NV_MESH_SHADER_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_MESH_SHADER_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5148,7 +5148,7 @@ TEST(BasicEntrypointTest, NV_scissor_exclusive) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5212,7 +5212,7 @@ TEST(BasicEntrypointTest, NV_device_diagnostic_checkpoints) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5289,7 +5289,7 @@ TEST(BasicEntrypointTest, INTEL_performance_query) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5407,7 +5407,7 @@ TEST(BasicEntrypointTest, AMD_display_native_hdr) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5540,7 +5540,7 @@ TEST(BasicEntrypointTest, EXT_buffer_device_address) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5720,7 +5720,7 @@ TEST(BasicEntrypointTest, EXT_full_screen_exclusive) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, {VK_KHR_DEVICE_GROUP_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME).add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME).add_extension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5819,7 +5819,7 @@ TEST(BasicEntrypointTest, EXT_line_rasterization) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5882,7 +5882,7 @@ TEST(BasicEntrypointTest, EXT_host_query_reset) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -5943,7 +5943,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6108,7 +6108,7 @@ TEST(BasicEntrypointTest, NV_device_generated_commands) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME}, {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME).add_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6251,7 +6251,7 @@ TEST(BasicEntrypointTest, EXT_private_data) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_PRIVATE_DATA_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_PRIVATE_DATA_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6320,7 +6320,7 @@ TEST(BasicEntrypointTest, NV_fragment_shading_rate_enums) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME}, {VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME).add_extension(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6488,7 +6488,7 @@ TEST(BasicEntrypointTest, EXT_vertex_input_dynamic_state) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6554,7 +6554,7 @@ TEST(BasicEntrypointTest, FUCHSIA_external_memory) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME}, {VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6612,7 +6612,7 @@ TEST(BasicEntrypointTest, FUCHSIA_external_semaphore) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_FUCHSIA_EXTERNAL_SEMAPHORE_EXTENSION_NAME}, {VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_FUCHSIA_EXTERNAL_SEMAPHORE_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6668,7 +6668,7 @@ TEST(BasicEntrypointTest, FUCHSIA_buffer_collection) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME}, {VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME}, {VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME).add_extension(VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME).add_extension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6734,7 +6734,7 @@ TEST(BasicEntrypointTest, HUAWEI_subpass_shading) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME}, {VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME}, {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME).add_extension(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME).add_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6813,7 +6813,7 @@ TEST(BasicEntrypointTest, HUAWEI_invocation_mask) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME}, {VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}, {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME).add_extension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME).add_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6887,7 +6887,7 @@ TEST(BasicEntrypointTest, NV_external_memory_rdma) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME}, {VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME).add_extension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -6936,7 +6936,7 @@ TEST(BasicEntrypointTest, EXT_extended_dynamic_state2) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -7082,7 +7082,7 @@ TEST(BasicEntrypointTest, EXT_color_write_enable) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -7145,7 +7145,7 @@ TEST(BasicEntrypointTest, EXT_multi_draw) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_EXT_MULTI_DRAW_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_MULTI_DRAW_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -7216,7 +7216,7 @@ TEST(BasicEntrypointTest, EXT_pageable_device_local_memory) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME}, {VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME).add_extension(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -7275,7 +7275,7 @@ TEST(BasicEntrypointTest, VALVE_descriptor_set_host_mapping) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extension({VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -7338,7 +7338,7 @@ TEST(BasicEntrypointTest, KHR_acceleration_structure) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}, {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}, {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}, {VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME).add_extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME).add_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME).add_extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;
@@ -7510,7 +7510,7 @@ TEST(BasicEntrypointTest, KHR_ray_tracing_pipeline) {
     log.logger.clear();
 
     DeviceWrapper dev{instance};
-    dev.create_info.add_extensions({{VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}, {VK_KHR_SPIRV_1_4_EXTENSION_NAME}, {VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME).add_extension(VK_KHR_SPIRV_1_4_EXTENSION_NAME).add_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(var_vkphysicaldevice);
 
     VkLayerDispatchTable device_disp_table;

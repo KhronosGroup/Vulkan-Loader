@@ -1043,12 +1043,8 @@ class LoaderTestOutputGenerator(OutputGenerator):
             if use_dispatch_table:
                 test_ep += '    DeviceWrapper dev{instance};\n'
                 test_ep += '    dev.create_info.'
-                if len(req_additional_ext) > 0:
-                    additional_ext = '{' + '}, {'.join(req_additional_ext) + '}'
-                    if len(req_additional_ext) > 1:
-                        test_ep += 'add_extensions({%s}).' % additional_ext
-                    else:
-                        test_ep += 'add_extension(%s).' % additional_ext
+                for req_ext in req_additional_ext:
+                    test_ep += 'add_extension(%s).' % req_ext
                 test_ep += 'add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));\n'
                 test_ep += '    dev.CheckCreate(var_vkphysicaldevice);\n'
                 test_ep += '\n'
@@ -1502,6 +1498,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_layer_funcs += '    layer.enabled_instance_major = 1;\n'
         common_layer_funcs += '    layer.enabled_instance_minor = 0;\n'
         common_layer_funcs += '    if (pCreateInfo->pApplicationInfo != NULL && pCreateInfo->pApplicationInfo->apiVersion != 0) {\n'
+        common_layer_funcs += '        layer.enabled_instance_major = static_cast<uint8_t>(VK_API_VERSION_MAJOR(pCreateInfo->pApplicationInfo->apiVersion));\n'
         common_layer_funcs += '        layer.enabled_instance_minor = static_cast<uint8_t>(VK_API_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion));\n'
         common_layer_funcs += '    }\n'
         common_layer_funcs += '\n'
@@ -1950,7 +1947,8 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '    driver.enabled_instance_major = 1;\n'
         common_src += '    driver.enabled_instance_minor = 0;\n'
         common_src += '    if (pCreateInfo->pApplicationInfo != NULL && pCreateInfo->pApplicationInfo->apiVersion != 0) {\n'
-        common_src += '        driver.enabled_instance_minor = VK_API_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion);\n'
+        common_src += '        driver.enabled_instance_major = static_cast<uint8_t>(VK_API_VERSION_MAJOR(pCreateInfo->pApplicationInfo->apiVersion));\n'
+        common_src += '        driver.enabled_instance_minor = static_cast<uint8_t>(VK_API_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion));\n'
         common_src += '    }\n'
         common_src += '\n'
         common_src += '    for (uint32_t ext = 0; ext < pCreateInfo->enabledExtensionCount; ++ext) {\n'
@@ -2024,7 +2022,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
         common_src += '                                                                   const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,\n'
         common_src += '                                                                   const VkAllocationCallbacks* pAllocator,\n'
         common_src += '                                                                   VkDebugUtilsMessengerEXT* pMessenger) {\n'
-        common_src += '    *pMessenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(0xdeadbeefdeadbeef);\n'
+        common_src += '    *pMessenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(reinterpret_cast<VkDebugUtilsMessengerEXT*>(0xdeadbeefdeadbeef));\n'
         common_src += '    driver.debug_util_info.severities = pCreateInfo->messageSeverity;\n'
         common_src += '    driver.debug_util_info.types = pCreateInfo->messageType;\n'
         common_src += '    driver.debug_util_info.callback = pCreateInfo->pfnUserCallback;\n'
@@ -2255,7 +2253,7 @@ class LoaderTestOutputGenerator(OutputGenerator):
                                     cmd_str += '    driver.%s_handles.push_back(temp_handle);\n' % basic_cmd.modified_handle[2:].lower()
                                     cmd_str += '    *%s = temp_handle->handle;\n' % basic_cmd.params[-1].name
                                 else:
-                                    cmd_str += '    *%s = reinterpret_cast<%s>(0xdeadbeefdeadbeef);\n' % (basic_cmd.params[-1].name, basic_cmd.params[-1].type)
+                                    cmd_str += '    *%s = reinterpret_cast<%s>(reinterpret_cast<%s*>(0xdeadbeefdeadbeef));\n' % (basic_cmd.params[-1].name, basic_cmd.params[-1].type, basic_cmd.params[-1].type)
                     elif basic_cmd.is_destroy:
                         for handle in self.basic_handles:
                             if basic_cmd.modified_handle == handle.name:

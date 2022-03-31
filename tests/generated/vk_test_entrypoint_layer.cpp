@@ -137,6 +137,7 @@ VKAPI_ATTR VkResult VKAPI_CALL layer_CreateInstance(const VkInstanceCreateInfo* 
     layer.enabled_instance_major = 1;
     layer.enabled_instance_minor = 0;
     if (pCreateInfo->pApplicationInfo != NULL && pCreateInfo->pApplicationInfo->apiVersion != 0) {
+        layer.enabled_instance_major = static_cast<uint8_t>(VK_API_VERSION_MAJOR(pCreateInfo->pApplicationInfo->apiVersion));
         layer.enabled_instance_minor = static_cast<uint8_t>(VK_API_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion));
     }
 
