@@ -2593,8 +2593,8 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     json_version = loader_make_api_version(file_vers);
 
     if (!is_valid_layer_json_version(&json_version)) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                   "loader_add_layer_properties: %s invalid layer manifest file version %d.%d.%d.  May cause errors.", filename,
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                   "loader_add_layer_properties: %s has unknown layer manifest file version %d.%d.%d.  May cause errors.", filename,
                    json_version.major, json_version.minor, json_version.patch);
     }
     cJSON_Free(inst, file_vers);
@@ -3440,8 +3440,9 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         json_file_version = loader_make_api_version(file_vers);
 
         if (json_file_version.major != 1 || json_file_version.minor != 0 || json_file_version.patch > 1) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                       "loader_icd_scan: Unexpected manifest file version (expected 1.0.0 or 1.0.1), may cause errors");
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                       "loader_icd_scan: %s has unknown icd manifest file version %d.%d.%d. May cause errors.", file_str,
+                       json_file_version.major, json_file_version.minor, json_file_version.patch);
         }
         cJSON_Free(inst, file_vers);
 
