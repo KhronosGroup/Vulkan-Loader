@@ -840,3 +840,43 @@ TEST(LayerManifest, ExplicitNonVulkanVariant) {
     ASSERT_TRUE(log.find(std::string("Layer ") + explicit_layer_name +
                          " has an \'api_version\' field which contains a non-zero variant value of 1.  Skipping Layer."));
 }
+
+TEST(DriverManifest, UnknownManifestVersion) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_6).set_file_format_version({3, 2, 1})));
+    env.get_test_icd().physical_devices.push_back({});
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+    ASSERT_TRUE(log.find("loader_icd_scan: "));
+    // log prints the path to the file, don't look for it since it is hard to determine inside the test what the path should be.
+    ASSERT_TRUE(log.find("has unknown icd manifest file version 3.2.1. May cause errors."));
+}
+
+TEST(LayerManifest, UnknownManifestVersion) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.get_test_icd().physical_devices.push_back({});
+
+    const char* implicit_layer_name = "ImplicitTestLayer";
+    env.add_implicit_layer(ManifestLayer{}
+                               .add_layer(ManifestLayer::LayerDescription{}
+                                              .set_name(implicit_layer_name)
+                                              .set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0))
+                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                              .set_disable_environment("DISABLE_ME"))
+                               .set_file_format_version({3, 2, 1}),
+                           "implicit_test_layer.json");
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+    ASSERT_TRUE(log.find("loader_add_layer_properties: "));
+    // log prints the path to the file, don't look for it since it is hard to determine inside the test what the path should be.
+    ASSERT_TRUE(log.find("has unknown layer manifest file version 3.2.1.  May cause errors."));
+}
