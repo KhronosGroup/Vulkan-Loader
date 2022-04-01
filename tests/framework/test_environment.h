@@ -363,3 +363,11 @@ struct FrameworkEnvironment {
    private:
     void add_layer_impl(TestLayerDetails layer_details, fs::FolderManager& folder_manager, ManifestCategory category);
 };
+
+// The following helpers setup an icd with the required extensions and setting to use with WSI
+// By default they use whatever the set VK_USE_PLATFORM_XXX macros define
+void setup_WSI_in_ICD(TestICD& icd);
+void setup_WSI_in_create_instance(InstWrapper& inst);
+// api_selection: optionally provide a VK_USE_PLATFORM_XXX string to select which API to create a surface with
+// Note: MUST provide api_selection on platforms with multiple viable API's, such as linux and MacOS
+VkSurfaceKHR create_surface(InstWrapper& inst, const char* api_selection = nullptr);

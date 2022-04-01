@@ -595,7 +595,9 @@ struct Extension {
     BUILDER_VALUE(Extension, std::string, extensionName, {})
     BUILDER_VALUE(Extension, uint32_t, specVersion, VK_API_VERSION_1_0)
 
-    Extension(std::string extensionName, uint32_t specVersion = VK_API_VERSION_1_0)
+    Extension(const char* name, uint32_t specVersion = VK_API_VERSION_1_0) noexcept
+        : extensionName(name), specVersion(specVersion) {}
+    Extension(std::string extensionName, uint32_t specVersion = VK_API_VERSION_1_0) noexcept
         : extensionName(extensionName), specVersion(specVersion) {}
 
     VkExtensionProperties get() const noexcept {

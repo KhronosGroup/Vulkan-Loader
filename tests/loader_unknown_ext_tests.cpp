@@ -103,7 +103,7 @@ TEST(UnknownFunction, PhysicalDeviceFunction) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
@@ -124,8 +124,8 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver_0 = env.get_test_icd(0);
     auto& driver_1 = env.get_test_icd(1);
     std::vector<std::string> fake_function_names;
@@ -170,8 +170,8 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver_0 = env.get_test_icd(0);
     auto& driver_1 = env.get_test_icd(1);
     std::vector<std::string> fake_function_names;
@@ -210,7 +210,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayer) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
@@ -238,8 +238,8 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLay
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver_0 = env.get_test_icd(0);
     auto& driver_1 = env.get_test_icd(1);
     std::vector<std::string> fake_function_names;
@@ -289,7 +289,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
@@ -318,7 +318,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersIntercepti
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     std::vector<std::string> fake_function_names;
 
@@ -356,7 +356,7 @@ TEST(UnknownFunction, DeviceFunctionFromGetInstanceProcAddr) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -379,7 +379,7 @@ TEST(UnknownFunction, DeviceFunctionFromGetInstanceProcAddrWithImplicitLayer) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -404,7 +404,7 @@ TEST(UnknownFunction, DeviceFunctionFromGetInstanceProcAddrWithImplicitLayer) {
 
 TEST(UnknownFunction, DeviceFunctionFromGetDeviceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = 1000;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -422,7 +422,7 @@ TEST(UnknownFunction, DeviceFunctionFromGetDeviceProcAddr) {
 
 TEST(UnknownFunction, DeviceFunctionFromGetDeviceProcAddrWithImplicitLayer) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = 1000;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -447,7 +447,7 @@ using custom_command_buffer_functions = custom_functions<VkCommandBuffer>;
 
 TEST(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = 1000;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -479,7 +479,7 @@ TEST(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddr) {
 
 TEST(UnknownFunction, CommandBufferFunctionFromGetDeviceProcAddrWithImplicitLayer) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = 1000;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -519,7 +519,7 @@ TEST(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddr) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -553,7 +553,7 @@ TEST(UnknownFunction, CommandBufferFunctionFromGetInstanceProcAddrWithImplicitLa
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -592,7 +592,7 @@ using custom_queue_functions = custom_functions<VkQueue>;
 
 TEST(UnknownFunction, QueueFunctionFromGetDeviceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = 1000;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -615,7 +615,7 @@ TEST(UnknownFunction, QueueFunctionFromGetDeviceProcAddr) {
 
 TEST(UnknownFunction, QueueFunctionFromGetDeviceProcAddrWithImplicitLayer) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = 1000;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -647,7 +647,7 @@ TEST(UnknownFunction, QueueFunctionFromGetInstanceProcAddr) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
@@ -673,7 +673,7 @@ TEST(UnknownFunction, QueueFunctionFromGetInstanceProcAddrWithImplicitLayer) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");

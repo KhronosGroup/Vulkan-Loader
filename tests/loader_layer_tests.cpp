@@ -45,7 +45,7 @@ const char* lunarg_meta_layer_name = "VK_LAYER_LUNARG_override";
 
 TEST(ImplicitLayers, WithEnableAndDisableEnvVar) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
@@ -93,7 +93,7 @@ TEST(ImplicitLayers, WithEnableAndDisableEnvVar) {
 
 TEST(ImplicitLayers, OnlyDisableEnvVar) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "ImplicitTestLayer";
     const char* disable_env_var = "DISABLE_ME";
 
@@ -130,7 +130,7 @@ TEST(ImplicitLayers, OnlyDisableEnvVar) {
 
 TEST(ImplicitLayers, PreInstanceEnumInstLayerProps) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "ImplicitTestLayer";
     const char* disable_env_var = "DISABLE_ME";
 
@@ -167,7 +167,7 @@ TEST(ImplicitLayers, PreInstanceEnumInstLayerProps) {
 
 TEST(ImplicitLayers, PreInstanceEnumInstExtProps) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "ImplicitTestLayer";
     const char* disable_env_var = "DISABLE_ME";
 
@@ -204,7 +204,7 @@ TEST(ImplicitLayers, PreInstanceEnumInstExtProps) {
 
 TEST(ImplicitLayers, PreInstanceVersion) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().physical_devices.push_back({});
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 3);
 
@@ -249,7 +249,7 @@ TEST(ImplicitLayers, PreInstanceVersion) {
 // tested through behavior above).
 TEST(ImplicitLayers, OverrideGetInstanceProcAddr) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().physical_devices.push_back({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
@@ -284,7 +284,7 @@ TEST(ImplicitLayers, OverrideGetInstanceProcAddr) {
 // Meta layer which contains component layers that do not exist.
 TEST(MetaLayers, InvalidComponentLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
     const char* invalid_layer_name_1 = "VK_LAYER_InvalidLayer1";
     const char* invalid_layer_name_2 = "VK_LAYER_InvalidLayer2";
@@ -334,7 +334,7 @@ TEST(MetaLayers, InvalidComponentLayer) {
 // Meta layer that is an explicit layer
 TEST(MetaLayers, ExplicitMetaLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
     const char* regular_layer_name = "VK_LAYER_TestLayer";
@@ -394,7 +394,7 @@ TEST(MetaLayers, ExplicitMetaLayer) {
 // Meta layer which adds itself in its list of component layers
 TEST(MetaLayers, MetaLayerNameInComponentLayers) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
     const char* regular_layer_name = "VK_LAYER_TestLayer";
     env.add_implicit_layer(ManifestLayer{}
@@ -442,7 +442,7 @@ TEST(MetaLayers, MetaLayerNameInComponentLayers) {
 // Meta layer which adds another meta layer as a component layer
 TEST(MetaLayers, MetaLayerWhichAddsMetaLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
     const char* meta_meta_layer_name = "VK_LAYER_MetaMetaTestLayer";
     const char* regular_layer_name = "VK_LAYER_TestLayer";
@@ -490,7 +490,7 @@ TEST(MetaLayers, MetaLayerWhichAddsMetaLayer) {
 
 TEST(MetaLayers, InstanceExtensionInComponentLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
     const char* regular_layer_name = "VK_LAYER_TestLayer";
@@ -519,7 +519,7 @@ TEST(MetaLayers, InstanceExtensionInComponentLayer) {
 
 TEST(MetaLayers, DeviceExtensionInComponentLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     const char* meta_layer_name = "VK_LAYER_MetaTestLayer";
     const char* regular_layer_name = "VK_LAYER_TestLayer";
@@ -583,7 +583,7 @@ TEST(MetaLayers, DeviceExtensionInComponentLayer) {
 // Override meta layer missing disable environment variable still enables the layer
 TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -617,7 +617,7 @@ TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
 // Override meta layer whose version is less than the api version of the instance
 TEST(OverrideMetaLayer, OlderVersionThanInstance) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -676,7 +676,7 @@ TEST(OverrideMetaLayer, OlderVersionThanInstance) {
 
 TEST(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
 
     const char* regular_layer_name = "VK_LAYER_TestLayer";
@@ -745,7 +745,7 @@ TEST(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
 
 TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
 
     const char* regular_layer_name = "VK_LAYER_TestLayer";
@@ -818,7 +818,7 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
 
 TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
 
     const char* regular_layer_name = "VK_LAYER_TestLayer";
@@ -889,7 +889,7 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
 
 TEST(OverrideMetaLayer, ApplicationEnabledLayerInBlacklist) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
 
     const char* automatic_regular_layer_name = "VK_LAYER_TestLayer_1";
@@ -945,7 +945,7 @@ TEST(OverrideMetaLayer, ApplicationEnabledLayerInBlacklist) {
 
 TEST(OverrideMetaLayer, BasicOverridePaths) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
 
@@ -978,7 +978,7 @@ TEST(OverrideMetaLayer, BasicOverridePaths) {
 
 TEST(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
 
@@ -1021,7 +1021,7 @@ TEST(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
 
 TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
 
     fs::FolderManager vk_layer_path_folder{FRAMEWORK_BUILD_DIRECTORY, "vk_layer_folder"};
@@ -1072,7 +1072,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
 // Make sure that implicit layers not in the override paths aren't found by mistake
 TEST(OverrideMetaLayer, OverridePathsEnableImplicitLayerInDefaultPaths) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
 
@@ -1116,7 +1116,7 @@ TEST(OverrideMetaLayer, OverridePathsEnableImplicitLayerInDefaultPaths) {
 
 TEST(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
     fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
 
@@ -1152,7 +1152,7 @@ TEST(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
 // succeeds and doesn't crash.
 TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().physical_devices.push_back({});
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
@@ -1193,7 +1193,7 @@ TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {
 
 TEST(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().physical_devices.push_back({});
     env.get_test_icd().add_instance_extension({"VK_KHR_get_physical_device_properties2", 0});
 
@@ -1226,7 +1226,7 @@ TEST(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
 
 TEST(ExplicitLayers, WrapObjects) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
 
     const char* wrap_objects_name = "VK_LAYER_LUNARG_wrap_objects";
@@ -1294,7 +1294,7 @@ TEST(ExplicitLayers, WrapObjects) {
 
 TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1347,7 +1347,7 @@ TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
 
 TEST(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1407,7 +1407,7 @@ TEST(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
 
 TEST(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1467,7 +1467,7 @@ TEST(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
 
 TEST(LayerExtensions, ImplicitBothInstanceExtensions) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1534,7 +1534,7 @@ TEST(LayerExtensions, ImplicitBothInstanceExtensions) {
 
 TEST(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1593,7 +1593,7 @@ TEST(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
 
 TEST(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1667,7 +1667,7 @@ TEST(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
 
 TEST(LayerExtensions, ExplicitDispSurfCountInstanceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1741,7 +1741,7 @@ TEST(LayerExtensions, ExplicitDispSurfCountInstanceExtension) {
 
 TEST(LayerExtensions, ExplicitBothInstanceExtensions) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1836,7 +1836,7 @@ TEST(LayerExtensions, ExplicitBothInstanceExtensions) {
 
 TEST(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1923,7 +1923,7 @@ TEST(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
 
 TEST(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -1984,7 +1984,7 @@ TEST(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
 
 TEST(LayerExtensions, ImplicitPresentImageDeviceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -2046,7 +2046,7 @@ TEST(LayerExtensions, ImplicitPresentImageDeviceExtension) {
 
 TEST(LayerExtensions, ImplicitBothDeviceExtensions) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -2113,7 +2113,7 @@ TEST(LayerExtensions, ImplicitBothDeviceExtensions) {
 
 TEST(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -2179,7 +2179,7 @@ TEST(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
 
 TEST(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -2250,7 +2250,7 @@ TEST(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
 
 TEST(LayerExtensions, ExplicitPresentImageDeviceExtension) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -2323,7 +2323,7 @@ TEST(LayerExtensions, ExplicitPresentImageDeviceExtension) {
 
 TEST(LayerExtensions, ExplicitBothDeviceExtensions) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -2413,7 +2413,7 @@ TEST(LayerExtensions, ExplicitBothDeviceExtensions) {
 
 TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2460,7 +2460,7 @@ TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
 
 TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2520,7 +2520,7 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
 
 TEST(TestLayers, ImplicitLayerPre10APIVersion) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2618,7 +2618,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
 // it is set with VK_INSTANCE_LAYERS
 TEST(TestLayers, EnvironEnableExplicitLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2708,7 +2708,7 @@ TEST(TestLayers, EnvironEnableExplicitLayer) {
 // Add a device layer, should not work
 TEST(TestLayers, DoNotUseDeviceLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2790,7 +2790,7 @@ TEST(TestLayers, DoNotUseDeviceLayer) {
 // Make sure that a layer enabled as both an instance and device layer works properly.
 TEST(TestLayers, InstanceAndDeviceLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2831,7 +2831,7 @@ TEST(TestLayers, InstanceAndDeviceLayer) {
 // Make sure loader does not throw an error for a device layer  that is not present
 TEST(TestLayers, DeviceLayerNotPresent) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2851,7 +2851,7 @@ TEST(TestLayers, DeviceLayerNotPresent) {
 
 TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_add_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -2930,7 +2930,7 @@ TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
 
 TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_remove_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -2982,7 +2982,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
 
 TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_reorder_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -3034,7 +3034,7 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
 
 TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_all_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -3112,7 +3112,7 @@ static bool GroupsAreTheSame(VkPhysicalDeviceGroupProperties a, VkPhysicalDevice
 
 TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_add_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -3202,7 +3202,7 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
 
 TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_remove_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -3257,7 +3257,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
 
 TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_reorder_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -3312,7 +3312,7 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
 
 TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VkLayer_LunarG_all_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
