@@ -580,8 +580,7 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
         goto out;
     }
 
-    PFN_LoaderEnumAdapters2 fpLoaderEnumAdapters2 =
-        (PFN_LoaderEnumAdapters2)GetProcAddress(gdi32_dll, "D3DKMTEnumAdapters2");
+    PFN_LoaderEnumAdapters2 fpLoaderEnumAdapters2 = (PFN_LoaderEnumAdapters2)GetProcAddress(gdi32_dll, "D3DKMTEnumAdapters2");
     PFN_LoaderQueryAdapterInfo fpLoaderQueryAdapterInfo =
         (PFN_LoaderQueryAdapterInfo)GetProcAddress(gdi32_dll, "D3DKMTQueryAdapterInfo");
     if (fpLoaderEnumAdapters2 == NULL || fpLoaderQueryAdapterInfo == NULL) {
@@ -793,8 +792,8 @@ out:
 }
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, struct loader_phys_dev_per_icd **sorted_devices,
-                                              uint32_t *sorted_count) {
+VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *sorted_devices_count,
+                                              struct loader_phys_dev_per_icd **sorted_devices) {
     VkResult res = VK_SUCCESS;
 
     uint32_t sorted_alloc = 0;
@@ -803,121 +802,119 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, stru
     HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void **)&dxgi_factory);
     if (hres != S_OK) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Failed to create DXGI factory 6. Physical devices will not be sorted");
-    } else {
-        sorted_alloc = 16;
-        *sorted_devices = loader_instance_heap_alloc(inst, sorted_alloc * sizeof(struct loader_phys_dev_per_icd),
-                                                     VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (*sorted_devices == NULL) {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
+        goto out;
+    }
+    sorted_alloc = 16;
+    *sorted_devices =
+        loader_instance_heap_alloc(inst, sorted_alloc * sizeof(struct loader_phys_dev_per_icd), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (*sorted_devices == NULL) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    memset(*sorted_devices, 0, sorted_alloc * sizeof(struct loader_phys_dev_per_icd));
+
+    for (uint32_t i = 0;; ++i) {
+        IDXGIAdapter1 *adapter;
+        hres = dxgi_factory->lpVtbl->EnumAdapterByGpuPreference(dxgi_factory, i, DXGI_GPU_PREFERENCE_UNSPECIFIED,
+                                                                &IID_IDXGIAdapter1, (void **)&adapter);
+        if (hres == DXGI_ERROR_NOT_FOUND) {
+            break;  // No more adapters
+        } else if (hres != S_OK) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "Failed to enumerate adapters by GPU preference at index %u. This adapter will not be sorted", i);
+            break;
         }
 
-        memset(*sorted_devices, 0, sorted_alloc * sizeof(struct loader_phys_dev_per_icd));
+        DXGI_ADAPTER_DESC1 description;
+        hres = adapter->lpVtbl->GetDesc1(adapter, &description);
+        if (hres != S_OK) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Failed to get adapter LUID index %u. This adapter will not be sorted", i);
+            continue;
+        }
 
-        *sorted_count = 0;
-        for (uint32_t i = 0;; ++i) {
-            IDXGIAdapter1 *adapter;
-            hres = dxgi_factory->lpVtbl->EnumAdapterByGpuPreference(dxgi_factory, i, DXGI_GPU_PREFERENCE_UNSPECIFIED,
-                                                                    &IID_IDXGIAdapter1, (void **)&adapter);
-            if (hres == DXGI_ERROR_NOT_FOUND) {
-                break;  // No more adapters
-            } else if (hres != S_OK) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "Failed to enumerate adapters by GPU preference at index %u. This adapter will not be sorted", i);
-                break;
+        if (sorted_alloc <= i) {
+            uint32_t old_size = sorted_alloc * sizeof(struct loader_phys_dev_per_icd);
+            *sorted_devices =
+                loader_instance_heap_realloc(inst, *sorted_devices, old_size, 2 * old_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (*sorted_devices == NULL) {
+                adapter->lpVtbl->Release(adapter);
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
             }
+            sorted_alloc *= 2;
+        }
+        struct loader_phys_dev_per_icd *sorted_array = *sorted_devices;
+        sorted_array[*sorted_devices_count].device_count = 0;
+        sorted_array[*sorted_devices_count].physical_devices = NULL;
 
-            DXGI_ADAPTER_DESC1 description;
-            hres = adapter->lpVtbl->GetDesc1(adapter, &description);
-            if (hres != S_OK) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Failed to get adapter LUID index %u. This adapter will not be sorted",
-                           i);
+        icd_term = inst->icd_terms;
+        for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
+            // This is the new behavior, which cannot be run unless the ICD provides EnumerateAdapterPhysicalDevices
+            if (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices == NULL) {
                 continue;
             }
 
-            if (sorted_alloc <= i) {
-                uint32_t old_size = sorted_alloc * sizeof(struct loader_phys_dev_per_icd);
-                *sorted_devices =
-                    loader_instance_heap_realloc(inst, *sorted_devices, old_size, 2 * old_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                if (*sorted_devices == NULL) {
-                    adapter->lpVtbl->Release(adapter);
-                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                sorted_alloc *= 2;
+            uint32_t count = 0;
+            VkResult vkres =
+                icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, description.AdapterLuid, &count, NULL);
+            if (vkres == VK_ERROR_INCOMPATIBLE_DRIVER) {
+                continue;  // This driver doesn't support the adapter
+            } else if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            } else if (vkres != VK_SUCCESS) {
+                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                           "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code");
+                continue;
             }
-            struct loader_phys_dev_per_icd *sorted_array = *sorted_devices;
-            sorted_array[*sorted_count].device_count = 0;
-            sorted_array[*sorted_count].physical_devices = NULL;
-            //*sorted_count = i;
 
-            icd_term = inst->icd_terms;
-            for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
-                // This is the new behavior, which cannot be run unless the ICD provides EnumerateAdapterPhysicalDevices
-                if (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices == NULL) {
-                    continue;
-                }
-
-                uint32_t count;
-                VkResult vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, description.AdapterLuid,
-                                                                                        &count, NULL);
-                if (vkres == VK_ERROR_INCOMPATIBLE_DRIVER) {
-                    continue;  // This driver doesn't support the adapter
-                } else if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
-                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                } else if (vkres != VK_SUCCESS) {
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                               "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code");
-                    continue;
-                }
-
-                // Get the actual physical devices
-                if (0 != count) {
-                    do {
-                        sorted_array[*sorted_count].physical_devices =
-                            loader_instance_heap_realloc(inst, sorted_array[*sorted_count].physical_devices,
-                                                         sorted_array[*sorted_count].device_count * sizeof(VkPhysicalDevice),
-                                                         count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                        if (sorted_array[*sorted_count].physical_devices == NULL) {
-                            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                            break;
-                        }
-                        sorted_array[*sorted_count].device_count = count;
-                    } while ((vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(
-                                  icd_term->instance, description.AdapterLuid, &count,
-                                  sorted_array[*sorted_count].physical_devices)) == VK_INCOMPLETE);
-                }
-
-                if (vkres != VK_SUCCESS) {
-                    loader_instance_heap_free(inst, sorted_array[*sorted_count].physical_devices);
-                    sorted_array[*sorted_count].physical_devices = NULL;
-                    if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            // Get the actual physical devices
+            if (0 != count) {
+                do {
+                    sorted_array[*sorted_devices_count].physical_devices =
+                        loader_instance_heap_realloc(inst, sorted_array[*sorted_devices_count].physical_devices,
+                                                     sorted_array[*sorted_devices_count].device_count * sizeof(VkPhysicalDevice),
+                                                     count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                    if (sorted_array[*sorted_devices_count].physical_devices == NULL) {
                         res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    } else {
-                        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
-                        continue;
+                        break;
                     }
-                }
-                inst->total_gpu_count += (sorted_array[*sorted_count].device_count = count);
-                sorted_array[*sorted_count].icd_index = icd_idx;
-                sorted_array[*sorted_count].icd_term = icd_term;
-                ++(*sorted_count);
+                    sorted_array[*sorted_devices_count].device_count = count;
+                } while ((vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(
+                              icd_term->instance, description.AdapterLuid, &count,
+                              sorted_array[*sorted_devices_count].physical_devices)) == VK_INCOMPLETE);
             }
 
-            adapter->lpVtbl->Release(adapter);
+            if (vkres != VK_SUCCESS) {
+                loader_instance_heap_free(inst, sorted_array[*sorted_devices_count].physical_devices);
+                sorted_array[*sorted_devices_count].physical_devices = NULL;
+                if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                } else {
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
+                    continue;
+                }
+            }
+            sorted_array[*sorted_devices_count].device_count = count;
+            sorted_array[*sorted_devices_count].icd_index = icd_idx;
+            sorted_array[*sorted_devices_count].icd_term = icd_term;
+            (*sorted_devices_count)++;
         }
 
-        dxgi_factory->lpVtbl->Release(dxgi_factory);
+        adapter->lpVtbl->Release(adapter);
     }
 
-out:
+    dxgi_factory->lpVtbl->Release(dxgi_factory);
 
-    if (*sorted_count == 0 && *sorted_devices != NULL) {
+out:
+    if (*sorted_devices_count == 0 && *sorted_devices != NULL) {
         loader_instance_heap_free(inst, *sorted_devices);
         *sorted_devices = NULL;
     }
+    *sorted_devices_count = *sorted_devices_count;
+    *sorted_devices = *sorted_devices;
     return res;
 }
 

@@ -99,8 +99,8 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
                                              struct loader_data_files *out_files);
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, struct loader_phys_dev_per_icd **sorted_devices,
-                                              uint32_t *sorted_count);
+VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *sorted_devices_count,
+                                              struct loader_phys_dev_per_icd **sorted_devices);
 
 // This function sorts an array in physical device groups based on the sorted physical device information
 VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const uint32_t group_count,
