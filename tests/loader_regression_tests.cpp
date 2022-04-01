@@ -2122,7 +2122,7 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
     //   PhysDev 6: pd6, Discrete, Vulkan 1.1, Bus 2
     //   Group 0: PhysDev 5, PhysDev 6
     //   Group 1: PhysDev 4
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& cur_icd_0 = env.get_test_icd(0);
     cur_icd_0.set_icd_api_version(VK_API_VERSION_1_1);
     cur_icd_0.physical_devices.push_back({"pd0", 7});
@@ -2143,7 +2143,7 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
         .use_physical_device(cur_icd_0.physical_devices[2]);
     cur_icd_0.physical_device_groups.push_back({cur_icd_0.physical_devices[1]});
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& cur_icd_1 = env.get_test_icd(1);
     cur_icd_1.set_icd_api_version(VK_API_VERSION_1_1);
     cur_icd_1.physical_devices.push_back({"pd4", 1});
@@ -2211,7 +2211,7 @@ TEST(ExtensionManual, ToolingProperties) {
                                                      "No-Layer"};
     {  // No support in driver
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
         env.get_test_icd().physical_devices.push_back({});
 
         InstWrapper inst{env.vulkan_functions};
@@ -2229,7 +2229,7 @@ TEST(ExtensionManual, ToolingProperties) {
     }
     {  // extension is supported in driver
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
         env.get_test_icd().physical_devices.push_back({});
         env.get_test_icd().supports_tooling_info_ext = true;
         env.get_test_icd().tooling_properties.push_back(icd_tool_props);
@@ -2253,7 +2253,7 @@ TEST(ExtensionManual, ToolingProperties) {
     }
     {  // core
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
         env.get_test_icd().physical_devices.push_back({});
         env.get_test_icd().physical_devices.back().properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
         env.get_test_icd().supports_tooling_info_core = true;

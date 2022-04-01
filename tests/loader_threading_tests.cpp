@@ -69,7 +69,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkCmdDraw(VkCommandBuffer cmd_buf, uint32_t vert
                                           uint32_t firstVertex, uint32_t firstInstance) {}
 TEST(ThreadingTests, ConcurentGetDeviceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t num_threads = 100;
     uint32_t num_loops_create_destroy_device = 10;
     uint32_t num_loops_try_get_proc_addr = 100;

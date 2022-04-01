@@ -30,6 +30,15 @@
 
 // ---- Invalid Instance tests
 
+struct BadData {
+    uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
+};
+template <typename T>
+T get_bad_handle() {
+    static BadData my_bad_data;
+    return reinterpret_cast<T>(static_cast<void*>(&my_bad_data));
+}
+
 TEST(LoaderHandleValidTests, BadInstEnumPhysDevices) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -39,10 +48,7 @@ TEST(LoaderHandleValidTests, BadInstEnumPhysDevices) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
     uint32_t returned_physical_count = 0;
 
     ASSERT_DEATH(env.vulkan_functions.vkEnumeratePhysicalDevices(bad_instance, &returned_physical_count, nullptr),
@@ -58,11 +64,7 @@ TEST(LoaderHandleValidTests, BadInstGetInstProcAddr) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
-
+    auto bad_instance = get_bad_handle<VkInstance>();
     ASSERT_DEATH(env.vulkan_functions.vkGetInstanceProcAddr(bad_instance, "vkGetBufferDeviceAddress"),
                  "vkGetInstanceProcAddr: Invalid instance \\[VUID-vkGetInstanceProcAddr-instance-parameter\\]");
 }
@@ -76,10 +78,7 @@ TEST(LoaderHandleValidTests, BadInstDestroyInstance) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     ASSERT_DEATH(env.vulkan_functions.vkDestroyInstance(bad_instance, nullptr),
                  "vkDestroyInstance: Invalid instance \\[VUID-vkDestroyInstance-instance-parameter\\]");
@@ -98,10 +97,7 @@ TEST(LoaderHandleValidTests, BadInstDestroySurface) {
     instance.create_info.add_extension("VK_KHR_surface");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     ASSERT_DEATH(env.vulkan_functions.vkDestroySurfaceKHR(bad_instance, VK_NULL_HANDLE, nullptr),
                  "vkDestroySurfaceKHR: Invalid instance \\[VUID-vkDestroySurfaceKHR-instance-parameter\\]");
@@ -121,10 +117,7 @@ TEST(LoaderHandleValidTests, BadInstCreateHeadlessSurf) {
     instance.create_info.add_extension("VK_EXT_headless_surface");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkHeadlessSurfaceCreateInfoEXT surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT;
@@ -148,10 +141,7 @@ TEST(LoaderHandleValidTests, BadInstCreateDisplayPlaneSurf) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkDisplaySurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR;
@@ -165,21 +155,15 @@ TEST(LoaderHandleValidTests, BadInstCreateDisplayPlaneSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateAndroidSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_android_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_android_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkAndroidSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
@@ -194,21 +178,15 @@ TEST(LoaderHandleValidTests, BadInstCreateAndroidSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateDirectFBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_EXT_directfb_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_EXT_directfb_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkDirectFBSurfaceCreateInfoEXT surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT;
@@ -223,21 +201,15 @@ TEST(LoaderHandleValidTests, BadInstCreateDirectFBSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateFuchsiaSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_FUCHSIA_imagepipe_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_FUCHSIA_imagepipe_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkImagePipeSurfaceCreateInfoFUCHSIA surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA;
@@ -252,21 +224,15 @@ TEST(LoaderHandleValidTests, BadInstCreateFuchsiaSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateGGPSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_GGP_stream_descriptor_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_GGP_stream_descriptor_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkStreamDescriptorSurfaceCreateInfoGGP surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP;
@@ -282,21 +248,15 @@ TEST(LoaderHandleValidTests, BadInstCreateGGPSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateIOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_MVK_ios_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_MVK_ios_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkIOSSurfaceCreateInfoMVK surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK;
@@ -311,21 +271,15 @@ TEST(LoaderHandleValidTests, BadInstCreateIOSSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateMacOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_MVK_macos_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_MVK_macos_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkMacOSSurfaceCreateInfoMVK surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
@@ -340,21 +294,15 @@ TEST(LoaderHandleValidTests, BadInstCreateMacOSSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateMetalSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_EXT_metal_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_EXT_metal_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkMetalSurfaceCreateInfoEXT surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
@@ -369,21 +317,15 @@ TEST(LoaderHandleValidTests, BadInstCreateMetalSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateQNXSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_QNX_screen_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_QNX_screen_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkScreenSurfaceCreateInfoQNX surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX;
@@ -399,23 +341,15 @@ TEST(LoaderHandleValidTests, BadInstCreateQNXSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateViNNSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_NN_vi_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_NN_vi_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkViSurfaceCreateInfoNN surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN;
@@ -431,21 +365,15 @@ TEST(LoaderHandleValidTests, BadInstCreateViNNSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateWaylandSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_wayland_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_wayland_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkWaylandSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
@@ -461,21 +389,15 @@ TEST(LoaderHandleValidTests, BadInstCreateWaylandSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateWin32Surf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_win32_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_win32_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkWin32SurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -491,21 +413,15 @@ TEST(LoaderHandleValidTests, BadInstCreateWin32Surf) {
 TEST(LoaderHandleValidTests, BadInstCreateXCBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_xcb_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_xcb_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkXcbSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
@@ -521,21 +437,15 @@ TEST(LoaderHandleValidTests, BadInstCreateXCBSurf) {
 TEST(LoaderHandleValidTests, BadInstCreateXlibSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_xlib_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_xlib_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkInstance bad_instance = (VkInstance)(&my_bad_data);
+    auto bad_instance = get_bad_handle<VkInstance>();
 
     VkXlibSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
@@ -559,10 +469,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceFeatures features = {};
     ASSERT_DEATH(
@@ -580,10 +487,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkFormatProperties format_info = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceFormatProperties(bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM, &format_info),
@@ -601,10 +505,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkImageFormatProperties format_info = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceImageFormatProperties(bad_physical_dev, VK_FORMAT_R8G8B8A8_UNORM,
@@ -624,10 +525,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceProperties properties = {};
     ASSERT_DEATH(
@@ -645,10 +543,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(bad_physical_dev, &count, nullptr),
                  "vkGetPhysicalDeviceQueueFamilyProperties: Invalid physicalDevice "
@@ -665,10 +560,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceMemoryProperties properties = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceMemoryProperties(bad_physical_dev, &properties),
@@ -686,10 +578,7 @@ TEST(LoaderHandleValidTests, BadPhysDevCreateDevice) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     float queue_priorities[3] = {0.0f, 0.5f, 1.0f};
     VkDeviceQueueCreateInfo dev_queue_create_info = {};
@@ -725,10 +614,7 @@ TEST(LoaderHandleValidTests, BadPhysDevEnumDevExtProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkEnumerateDeviceExtensionProperties(bad_physical_dev, nullptr, &count, nullptr),
                  "vkEnumerateDeviceExtensionProperties: Invalid physicalDevice "
@@ -745,10 +631,7 @@ TEST(LoaderHandleValidTests, BadPhysDevEnumDevLayerProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkEnumerateDeviceLayerProperties(bad_physical_dev, &count, nullptr),
                  "vkEnumerateDeviceLayerProperties: Invalid physicalDevice "
@@ -765,10 +648,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSparseImageFormatProperties(
@@ -788,10 +668,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFeature2) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceFeatures2 features = {};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -811,10 +688,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFormatProps2) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkFormatProperties2 properties = {};
     properties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
@@ -834,10 +708,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevImgFormatProps2) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceImageFormatInfo2 format_info = {};
     format_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
@@ -860,10 +731,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevProps2) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceProperties2 properties = {};
     properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -883,10 +751,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamProps2) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties2(bad_physical_dev, &count, nullptr),
                  "vkGetPhysicalDeviceQueueFamilyProperties2: Invalid physicalDevice "
@@ -903,10 +768,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDevMemProps2) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceMemoryProperties2 properties = {};
     properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
@@ -926,10 +788,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSparseImgFormatProps2) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceSparseImageFormatInfo2 info = {};
     info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2;
@@ -950,10 +809,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternFenceProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceExternalFenceInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO;
@@ -974,10 +830,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternBufferProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceExternalBufferInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO;
@@ -998,10 +851,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternSemaphoreProps) {
     instance.create_info.set_api_version(1, 1, 0);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VkPhysicalDeviceExternalSemaphoreInfoKHR info = {};
     info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO;
@@ -1025,10 +875,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceSupportKHR) {
     instance.create_info.add_extension("VK_KHR_surface");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkBool32 supported = VK_FALSE;
 
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceSupportKHR(bad_physical_dev, 0, VK_NULL_HANDLE, &supported),
@@ -1049,10 +896,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCapsKHR) {
     instance.create_info.add_extension("VK_KHR_surface");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkSurfaceCapabilitiesKHR caps = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(bad_physical_dev, VK_NULL_HANDLE, &caps),
                  "vkGetPhysicalDeviceSurfaceCapabilitiesKHR: Invalid physicalDevice "
@@ -1072,10 +916,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormatsKHR) {
     instance.create_info.add_extension("VK_KHR_surface");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfaceFormatsKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
                  "vkGetPhysicalDeviceSurfaceFormatsKHR: Invalid physicalDevice "
@@ -1095,10 +936,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModesKHR) {
     instance.create_info.add_extension("VK_KHR_surface");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceSurfacePresentModesKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
                  "vkGetPhysicalDeviceSurfacePresentModesKHR: Invalid physicalDevice "
@@ -1109,21 +947,15 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModesKHR) {
 TEST(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_EXT_directfb_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_EXT_directfb_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     IDirectFB directfb;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDirectFBPresentationSupportEXT(bad_physical_dev, 0, &directfb),
                  "vkGetPhysicalDeviceDirectFBPresentationSupportEXT: Invalid physicalDevice "
@@ -1135,21 +967,15 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
 TEST(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_QNX_screen_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_QNX_screen_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     ASSERT_DEATH(env.vulkan_functions.PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX(bad_physical_dev, 0, nullptr),
                  "vkGetPhysicalDeviceScreenPresentationSupportQNX: Invalid instance "
                  "\\[VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-instance-parameter\\]");
@@ -1160,21 +986,15 @@ TEST(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_wayland_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_wayland_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceWaylandPresentationSupportKHR(bad_physical_dev, 0, nullptr),
                  "vkGetPhysicalDeviceWaylandPresentationSupportKHR: Invalid physicalDevice "
                  "\\[VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-physicalDevice-parameter\\]");
@@ -1185,21 +1005,15 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_win32_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_win32_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceWin32PresentationSupportKHR(bad_physical_dev, 0),
                  "vkGetPhysicalDeviceWin32PresentationSupportKHR: Invalid physicalDevice "
                  "\\[VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-physicalDevice-parameter\\]");
@@ -1210,21 +1024,14 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
 TEST(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_xcb_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_xcb_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
-
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     xcb_visualid_t visual = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceXcbPresentationSupportKHR(bad_physical_dev, 0, nullptr, visual),
@@ -1237,21 +1044,15 @@ TEST(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
 TEST(LoaderHandleValidTests, BadPhysDevGetXlibPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_xlib_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_xlib_surface");
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
     VisualID visual = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceXlibPresentationSupportKHR(bad_physical_dev, 0, nullptr, visual),
@@ -1274,10 +1075,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPropsKHR) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayPropertiesKHR(bad_physical_dev, &count, nullptr),
                  "vkGetPhysicalDeviceDisplayPropertiesKHR: Invalid physicalDevice "
@@ -1298,10 +1096,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlanePropsKHR) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayPlanePropertiesKHR(bad_physical_dev, &count, nullptr),
                  "vkGetPhysicalDeviceDisplayPlanePropertiesKHR: Invalid physicalDevice "
@@ -1322,10 +1117,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneSupportedDisplaysKHR) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetDisplayPlaneSupportedDisplaysKHR(bad_physical_dev, 0, &count, nullptr),
                  "vkGetDisplayPlaneSupportedDisplaysKHR: Invalid physicalDevice "
@@ -1346,10 +1138,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayModePropsKHR) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(
         env.vulkan_functions.vkGetDisplayModePropertiesKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
@@ -1370,10 +1159,7 @@ TEST(LoaderHandleValidTests, BadPhysDevCreateDisplayModeKHR) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkDisplayModeCreateInfoKHR create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR;
     create_info.pNext = nullptr;
@@ -1397,10 +1183,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCapsKHR) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkDisplayPlaneCapabilitiesKHR caps = {};
     ASSERT_DEATH(env.vulkan_functions.vkGetDisplayPlaneCapabilitiesKHR(bad_physical_dev, VK_NULL_HANDLE, 0, &caps),
                  "vkGetDisplayPlaneCapabilitiesKHR: Invalid physicalDevice "
@@ -1421,10 +1204,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevPresentRectsKHR) {
     instance.create_info.add_extension("VK_KHR_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDevicePresentRectanglesKHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
                  "vkGetPhysicalDevicePresentRectanglesKHR: Invalid physicalDevice "
@@ -1445,10 +1225,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayProps2KHR) {
     instance.create_info.add_extension("VK_KHR_get_display_properties2");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayProperties2KHR(bad_physical_dev, &count, nullptr),
                  "vkGetPhysicalDeviceDisplayProperties2KHR: Invalid physicalDevice "
@@ -1469,10 +1246,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevDisplayPlaneProps2KHR) {
     instance.create_info.add_extension("VK_KHR_get_display_properties2");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceDisplayPlaneProperties2KHR(bad_physical_dev, &count, nullptr),
                  "vkGetPhysicalDeviceDisplayPlaneProperties2KHR: Invalid physicalDevice "
@@ -1493,10 +1267,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayModeProps2KHR) {
     instance.create_info.add_extension("VK_KHR_get_display_properties2");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     ASSERT_DEATH(env.vulkan_functions.vkGetDisplayModeProperties2KHR(bad_physical_dev, VK_NULL_HANDLE, &count, nullptr),
                  "vkGetDisplayModeProperties2KHR: Invalid physicalDevice "
@@ -1517,10 +1288,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDisplayPlaneCaps2KHR) {
     instance.create_info.add_extension("VK_KHR_get_display_properties2");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkDisplayPlaneInfo2KHR disp_plane_info = {};
     disp_plane_info.sType = VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR;
     disp_plane_info.pNext = nullptr;
@@ -1544,10 +1312,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceCaps2KHR) {
     instance.create_info.add_extension("VK_KHR_get_surface_capabilities2");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkPhysicalDeviceSurfaceInfo2KHR phys_dev_surf_info = {};
     phys_dev_surf_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
     phys_dev_surf_info.pNext = nullptr;
@@ -1570,10 +1335,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfaceFormats2KHR) {
     instance.create_info.add_extension("VK_KHR_get_surface_capabilities2");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkPhysicalDeviceSurfaceInfo2KHR phys_dev_surf_info = {};
     phys_dev_surf_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
     phys_dev_surf_info.pNext = nullptr;
@@ -1592,15 +1354,10 @@ TEST(LoaderHandleValidTests, BadPhysDevEnumPhysDevQueueFamilyPerfQueryCountersKH
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
     PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR pfn =
-        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
-            env.vulkan_functions.vkGetInstanceProcAddr(instance,
-                                                       "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
+        instance.load("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, 0, &count, nullptr, nullptr),
                  "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR: Invalid physicalDevice "
@@ -1616,17 +1373,13 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevQueueFamilyPerfQueryPassesKHR) 
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkQueryPoolPerformanceCreateInfoKHR create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
     create_info.pNext = nullptr;
     uint32_t count = 0;
     PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR pfn =
-        reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR>(
-            env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR"));
+        instance.load("vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, &create_info, &count),
                  "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR: Invalid physicalDevice "
@@ -1642,13 +1395,9 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevFragmentShadingRatesKHR) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     uint32_t count = 0;
-    PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR pfn = reinterpret_cast<PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFragmentShadingRatesKHR"));
+    PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR pfn = instance.load("vkGetPhysicalDeviceFragmentShadingRatesKHR");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, &count, nullptr),
                  "vkGetPhysicalDeviceFragmentShadingRatesKHR: Invalid physicalDevice "
@@ -1664,13 +1413,9 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevMSPropsEXT) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkMultisamplePropertiesEXT props = {};
-    PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT pfn = reinterpret_cast<PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMultisamplePropertiesEXT"));
+    PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT pfn = instance.load("vkGetPhysicalDeviceMultisamplePropertiesEXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, VK_SAMPLE_COUNT_1_BIT, &props),
                  "vkGetPhysicalDeviceMultisamplePropertiesEXT: Invalid physicalDevice "
@@ -1690,12 +1435,8 @@ TEST(LoaderHandleValidTests, BadPhysDevAcquireDrmDisplayEXT) {
     instance.create_info.add_extension("VK_EXT_acquire_drm_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
-    PFN_vkAcquireDrmDisplayEXT pfn = reinterpret_cast<PFN_vkAcquireDrmDisplayEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkAcquireDrmDisplayEXT"));
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
+    PFN_vkAcquireDrmDisplayEXT pfn = instance.load("vkAcquireDrmDisplayEXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, 0, VK_NULL_HANDLE),
                  "vkAcquireDrmDisplayEXT: Invalid physicalDevice \\[VUID-vkAcquireDrmDisplayEXT-physicalDevice-parameter\\]");
@@ -1714,12 +1455,8 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDrmDisplayEXT) {
     instance.create_info.add_extension("VK_EXT_acquire_drm_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
-    PFN_vkGetDrmDisplayEXT pfn =
-        reinterpret_cast<PFN_vkGetDrmDisplayEXT>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetDrmDisplayEXT"));
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
+    PFN_vkGetDrmDisplayEXT pfn = instance.load("vkGetDrmDisplayEXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, 0, 0, VK_NULL_HANDLE),
                  "vkGetDrmDisplayEXT: Invalid physicalDevice "
@@ -1739,12 +1476,8 @@ TEST(LoaderHandleValidTests, BadPhysDevReleaseDisplayEXT) {
     instance.create_info.add_extension("VK_EXT_direct_mode_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
-    PFN_vkReleaseDisplayEXT pfn =
-        reinterpret_cast<PFN_vkReleaseDisplayEXT>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkReleaseDisplayEXT"));
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
+    PFN_vkReleaseDisplayEXT pfn = instance.load("vkReleaseDisplayEXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, VK_NULL_HANDLE),
                  "vkReleaseDisplayEXT: Invalid physicalDevice \\[VUID-vkReleaseDisplayEXT-physicalDevice-parameter\\]");
@@ -1764,12 +1497,8 @@ TEST(LoaderHandleValidTests, BadPhysDevAcquireXlibDisplayEXT) {
     instance.create_info.add_extension("VK_EXT_acquire_xlib_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
-    PFN_vkAcquireXlibDisplayEXT pfn = reinterpret_cast<PFN_vkAcquireXlibDisplayEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkAcquireXlibDisplayEXT"));
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
+    PFN_vkAcquireXlibDisplayEXT pfn = instance.load("vkAcquireXlibDisplayEXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, nullptr, VK_NULL_HANDLE),
                  "vkAcquireXlibDisplayEXT: Invalid physicalDevice \\[VUID-vkAcquireXlibDisplayEXT-physicalDevice-parameter\\]");
@@ -1788,14 +1517,10 @@ TEST(LoaderHandleValidTests, BadPhysDevGetRandROutputDisplayEXT) {
     instance.create_info.add_extension("VK_EXT_acquire_xlib_display");
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     RROutput rrout = {};
     VkDisplayKHR disp;
-    PFN_vkGetRandROutputDisplayEXT pfn = reinterpret_cast<PFN_vkGetRandROutputDisplayEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetRandROutputDisplayEXT"));
+    PFN_vkGetRandROutputDisplayEXT pfn = instance.load("vkGetRandROutputDisplayEXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(
         pfn(bad_physical_dev, nullptr, rrout, &disp),
@@ -1808,21 +1533,18 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModes2EXT) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
+    setup_WSI_in_ICD(driver);
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
     VkPhysicalDeviceSurfaceInfo2KHR phys_dev_surf_info = {};
     phys_dev_surf_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
     phys_dev_surf_info.pNext = nullptr;
     uint32_t count = 0;
-    PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT pfn = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfacePresentModes2EXT"));
+    PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT pfn = instance.load("vkGetPhysicalDeviceSurfacePresentModes2EXT");
     ASSERT_NE(pfn, nullptr);
     ASSERT_DEATH(pfn(bad_physical_dev, &phys_dev_surf_info, &count, nullptr),
                  "vkGetPhysicalDeviceSurfacePresentModes2EXT: Invalid physicalDevice "
@@ -1839,12 +1561,8 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevToolPropertiesEXT) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    struct BadData {
-        uint64_t bad_array[3] = {0x123456789AB, 0x23456789AB1, 0x9876543210AB};
-    } my_bad_data;
-    VkPhysicalDevice bad_physical_dev = (VkPhysicalDevice)(&my_bad_data);
-    PFN_vkGetPhysicalDeviceToolPropertiesEXT pfn = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceToolPropertiesEXT"));
+    auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
+    PFN_vkGetPhysicalDeviceToolPropertiesEXT pfn = instance.load("vkGetPhysicalDeviceToolPropertiesEXT");
     ASSERT_NE(pfn, nullptr);
     uint32_t count = 0;
     ASSERT_DEATH(pfn(bad_physical_dev, &count, nullptr),
@@ -1856,10 +1574,8 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevToolPropertiesEXT) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_android_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1871,20 +1587,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_android_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkAndroidSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateAndroidSurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateAndroidSurfaceKHR"));
+    PFN_vkCreateAndroidSurfaceKHR pfn_CreateSurface = instance.load("vkCreateAndroidSurfaceKHR");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -1895,10 +1608,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_EXT_directfb_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1910,20 +1621,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_EXT_directfb_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkDirectFBSurfaceCreateInfoEXT surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateDirectFBSurfaceEXT pfn_CreateSurface = reinterpret_cast<PFN_vkCreateDirectFBSurfaceEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDirectFBSurfaceEXT"));
+    PFN_vkCreateDirectFBSurfaceEXT pfn_CreateSurface = instance.load("vkCreateDirectFBSurfaceEXT");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -1934,10 +1642,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_FUCHSIA_imagepipe_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1949,20 +1655,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_FUCHSIA_imagepipe_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkImagePipeSurfaceCreateInfoFUCHSIA surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateImagePipeSurfaceFUCHSIA pfn_CreateSurface = reinterpret_cast<PFN_vkCreateImagePipeSurfaceFUCHSIA>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateImagePipeSurfaceFUCHSIA"));
+    PFN_vkCreateImagePipeSurfaceFUCHSIA pfn_CreateSurface = instance.load("vkCreateImagePipeSurfaceFUCHSIA");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -1973,10 +1676,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_GGP_stream_descriptor_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1988,20 +1689,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_GGP_stream_descriptor_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkStreamDescriptorSurfaceCreateInfoGGP surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateStreamDescriptorSurfaceGGP pfn_CreateSurface = reinterpret_cast<PFN_vkCreateStreamDescriptorSurfaceGGP>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateStreamDescriptorSurfaceGGP"));
+    PFN_vkCreateStreamDescriptorSurfaceGGP pfn_CreateSurface = instance.load("vkCreateStreamDescriptorSurfaceGGP");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2012,10 +1710,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_MVK_ios_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2027,20 +1723,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_MVK_ios_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkIOSSurfaceCreateInfoMVK surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateIOSSurfaceMVK pfn_CreateSurface =
-        reinterpret_cast<PFN_vkCreateIOSSurfaceMVK>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateIOSSurfaceMVK"));
+    PFN_vkCreateIOSSurfaceMVK pfn_CreateSurface = instance.load("vkCreateIOSSurfaceMVK");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2051,10 +1744,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_MVK_macos_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2066,20 +1757,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_MVK_macos_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkMacOSSurfaceCreateInfoMVK surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateMacOSSurfaceMVK pfn_CreateSurface = reinterpret_cast<PFN_vkCreateMacOSSurfaceMVK>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateMacOSSurfaceMVK"));
+    PFN_vkCreateMacOSSurfaceMVK pfn_CreateSurface = instance.load("vkCreateMacOSSurfaceMVK");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2090,10 +1778,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_EXT_metal_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2105,20 +1791,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_EXT_metal_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkMetalSurfaceCreateInfoEXT surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateMetalSurfaceEXT pfn_CreateSurface = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateMetalSurfaceEXT"));
+    PFN_vkCreateMetalSurfaceEXT pfn_CreateSurface = instance.load("vkCreateMetalSurfaceEXT");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2129,10 +1812,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_QNX_screen_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2144,20 +1825,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_QNX_screen_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkScreenSurfaceCreateInfoQNX surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateScreenSurfaceQNX pfn_CreateSurface = reinterpret_cast<PFN_vkCreateScreenSurfaceQNX>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateScreenSurfaceQNX"));
+    PFN_vkCreateScreenSurfaceQNX pfn_CreateSurface = instance.load("vkCreateScreenSurfaceQNX");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2168,10 +1846,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_NN_vi_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2183,20 +1859,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_NN_vi_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkViSurfaceCreateInfoNN surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateViSurfaceNN pfn_CreateSurface =
-        reinterpret_cast<PFN_vkCreateViSurfaceNN>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateViSurfaceNN"));
+    PFN_vkCreateViSurfaceNN pfn_CreateSurface = instance.load("vkCreateViSurfaceNN");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2207,10 +1880,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_wayland_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2222,20 +1893,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_wayland_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkWaylandSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateWaylandSurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateWaylandSurfaceKHR"));
+    PFN_vkCreateWaylandSurfaceKHR pfn_CreateSurface = instance.load("vkCreateWaylandSurfaceKHR");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2246,10 +1914,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_win32_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2261,20 +1927,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_win32_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkWin32SurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateWin32SurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR"));
+    PFN_vkCreateWin32SurfaceKHR pfn_CreateSurface = instance.load("vkCreateWin32SurfaceKHR");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2285,10 +1948,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_xcb_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2300,20 +1961,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_xcb_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkXcbSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateXcbSurfaceKHR pfn_CreateSurface =
-        reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateXcbSurfaceKHR"));
+    PFN_vkCreateXcbSurfaceKHR pfn_CreateSurface = instance.load("vkCreateXcbSurfaceKHR");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2324,10 +1982,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
 TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    Extension first_ext{"VK_KHR_surface"};
-    Extension second_ext{"VK_KHR_xlib_surface"};
     auto& driver = env.get_test_icd();
-    driver.add_instance_extensions({first_ext, second_ext});
+    setup_WSI_in_ICD(driver);
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -2339,20 +1995,17 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    instance.create_info.add_extension("VK_KHR_surface");
-    instance.create_info.add_extension("VK_KHR_xlib_surface");
-    instance.create_info.add_layer(wrap_objects_name);
+    setup_WSI_in_create_instance(instance);
     instance.CheckCreate();
+    instance.create_info.add_layer(wrap_objects_name);
 
     VkXlibSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
     surf_create_info.pNext = nullptr;
     VkSurfaceKHR created_surface = VK_NULL_HANDLE;
-    PFN_vkCreateXlibSurfaceKHR pfn_CreateSurface = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateXlibSurfaceKHR"));
+    PFN_vkCreateXlibSurfaceKHR pfn_CreateSurface = instance.load("vkCreateXlibSurfaceKHR");
     ASSERT_NE(pfn_CreateSurface, nullptr);
-    PFN_vkDestroySurfaceKHR pfn_DestroySurface =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR pfn_DestroySurface = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(pfn_DestroySurface, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(instance, &surf_create_info, nullptr, &created_surface));
     pfn_DestroySurface(instance, created_surface, nullptr);
@@ -2400,11 +2053,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
         VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     debug_messenger_create_info.pfnUserCallback = reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(JunkDebugUtilsCallback);
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
-    PFN_vkCreateDebugUtilsMessengerEXT pfn_CreateMessenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    PFN_vkCreateDebugUtilsMessengerEXT pfn_CreateMessenger = instance.load("vkCreateDebugUtilsMessengerEXT");
     ASSERT_NE(pfn_CreateMessenger, nullptr);
-    PFN_vkDestroyDebugUtilsMessengerEXT pfn_DestroyMessenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+    PFN_vkDestroyDebugUtilsMessengerEXT pfn_DestroyMessenger = instance.load("vkDestroyDebugUtilsMessengerEXT");
     ASSERT_NE(pfn_DestroyMessenger, nullptr);
     ASSERT_EQ(VK_SUCCESS, pfn_CreateMessenger(instance, &debug_messenger_create_info, nullptr, &messenger));
     pfn_DestroyMessenger(instance, messenger, nullptr);

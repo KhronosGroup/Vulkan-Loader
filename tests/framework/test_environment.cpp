@@ -304,3 +304,168 @@ TestLayer& FrameworkEnvironment::get_test_layer(size_t index) noexcept { return 
 TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return layers[index].reset_layer(); }
 fs::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept { return layers[index].get_layer_full_path(); }
 fs::path FrameworkEnvironment::get_layer_manifest_path(size_t index) noexcept { return layers[index].get_layer_manifest_path(); }
+
+void setup_WSI_in_ICD(TestICD& icd) {
+    icd.enable_icd_wsi = true;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_KHR_android_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_EXT_directfb_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_FUCHSIA_imagepipe_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_GGP
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_GGP_stream_descriptor_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_IOS_MVK
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_MVK_ios_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_MVK_macos_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_EXT_metal_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_QNX_screen_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_VI_NN
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_NN_vi_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_XCB_KHR
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_KHR_xcb_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_KHR_xlib_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_KHR_wayland_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    icd.add_instance_extensions({"VK_KHR_surface", "VK_KHR_win32_surface"});
+#endif
+}
+void setup_WSI_in_create_instance(InstWrapper& inst) {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_KHR_android_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_EXT_directfb_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_FUCHSIA_imagepipe_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_GGP
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_GGP_stream_descriptor_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_IOS_MVK
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_MVK_ios_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_MVK_macos_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_EXT_metal_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_QNX_screen_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_VI_NN
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_NN_vi_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_XCB_KHR
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_KHR_xcb_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_KHR_xlib_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_KHR_wayland_surface"});
+#endif
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    inst.create_info.add_extensions({"VK_KHR_surface", "VK_KHR_win32_surface"});
+#endif
+}
+VkSurfaceKHR create_surface(InstWrapper& inst, const char* api_selection) {
+    VkSurfaceKHR surface{};
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    PFN_vkCreateAndroidSurfaceKHR pfn_CreateSurface = inst.load("vkCreateAndroidSurfaceKHR");
+    VkAndroidSurfaceCreateInfoKHR surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    PFN_vkCreateDirectFBSurfaceEXT pfn_CreateSurface = inst.load("vkCreateDirectFBSurfaceEXT");
+    VkDirectFBSurfaceCreateInfoEXT surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    PFN_vkCreateImagePipeSurfaceFUCHSIA pfn_CreateSurface = inst.load("vkCreateImagePipeSurfaceFUCHSIA");
+    VkImagePipeSurfaceCreateInfoFUCHSIA surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+#ifdef VK_USE_PLATFORM_GGP
+    PFN__vkCreateStreamDescriptorSurfaceGGP pfn_CreateSurface = inst.load("vkCreateStreamDescriptorSurfaceGGP");
+    VkStreamDescriptorSurfaceCreateInfoGGP surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+#ifdef VK_USE_PLATFORM_IOS_MVK
+    PFN_vkCreateIOSSurfaceMVK pfn_CreateSurface = inst.load("vkCreateIOSSurfaceMVK");
+    VkIOSSurfaceCreateInfoMVK surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+    if (string_eq(api_selection, "VK_USE_PLATFORM_MACOS_MVK")) {
+        PFN_vkCreateMacOSSurfaceMVK pfn_CreateSurface = inst.load("vkCreateMacOSSurfaceMVK");
+        VkMacOSSurfaceCreateInfoMVK surf_create_info{};
+        EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+    }
+#endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    if (string_eq(api_selection, "VK_USE_PLATFORM_METAL_EXT")) {
+        PFN_vkCreateMetalSurfaceEXT pfn_CreateSurface = inst.load("vkCreateMetalSurfaceEXT");
+        VkMetalSurfaceCreateInfoEXT surf_create_info{};
+        EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+    }
+#endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    PFN_vkCreateScreenSurfaceQNX pfn_CreateSurface = inst.load("vkCreateScreenSurfaceQNX");
+    VkScreenSurfaceCreateInfoQNX surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+#ifdef VK_USE_PLATFORM_VI_NN
+    PFN_vkCreateViSurfaceNN pfn_CreateSurface = inst.load("vkCreateViSurfaceNN");
+    VkViSurfaceCreateInfoNN surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    PFN_vkCreateWin32SurfaceKHR pfn_CreateSurface = inst.load("vkCreateWin32SurfaceKHR");
+    VkWin32SurfaceCreateInfoKHR surf_create_info{};
+    EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+#endif
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+    if (string_eq(api_selection, "VK_USE_PLATFORM_XCB_KHR")) {
+        PFN_vkCreateXcbSurfaceKHR pfn_CreateSurface = inst.load("vkCreateXcbSurfaceKHR");
+        VkXcbSurfaceCreateInfoKHR surf_create_info{};
+        EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+    }
+#endif
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+    if (string_eq(api_selection, "VK_USE_PLATFORM_XLIB_KHR")) {
+        PFN_vkCreateXlibSurfaceKHR pfn_CreateSurface = inst.load("vkCreateXlibSurfaceKHR");
+        VkXlibSurfaceCreateInfoKHR surf_create_info{};
+        EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+    }
+#endif
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+    if (string_eq(api_selection, "VK_USE_PLATFORM_WAYLAND_KHR")) {
+        PFN_vkCreateWaylandSurfaceKHR pfn_CreateSurface = inst.load("vkCreateWaylandSurfaceKHR");
+        VkWaylandSurfaceCreateInfoKHR surf_create_info{};
+        EXPECT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+    }
+#endif
+
+    return surface;
+}

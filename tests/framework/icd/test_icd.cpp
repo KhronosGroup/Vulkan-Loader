@@ -406,20 +406,42 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolProperties(VkPhysical
     return generic_tool_props_function(physicalDevice, pToolCount, pToolProperties);
 }
 
-//// WSI ////
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
-                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
+template <typename T>
+T to_nondispatch_handle(uint64_t handle) {
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
     defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
+    return reinterpret_cast<T>(handle);
 #else
-        *pSurface = fake_surf_handle;
+    return handle;
 #endif
+}
+
+template <typename T>
+uint64_t from_nondispatch_handle(T handle) {
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+    return reinterpret_cast<uint64_t>(handle);
+#else
+    return handle;
+#endif
+}
+
+//// WSI ////
+template <typename HandleType>
+void common_nondispatch_handle_creation(std::vector<uint64_t>& handles, HandleType* pHandle) {
+    if (nullptr != pHandle) {
+        if (handles.size() == 0)
+            handles.push_back(800851234);
+        else
+            handles.push_back(handles.back() + 102030);
+        *pHandle = to_nondispatch_handle<HandleType>(handles.back());
     }
+}
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif
@@ -427,16 +449,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instanc
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -449,16 +462,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWin32PresentationSupportK
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -471,16 +475,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWaylandPresentationSuppor
 #ifdef VK_USE_PLATFORM_XCB_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -495,16 +490,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXcbPresentationSupportKHR
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -519,16 +505,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXlibPresentationSupportKH
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT(VkInstance instance,
                                                                const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -542,16 +519,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceDirectFBPresentationSuppo
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
@@ -559,16 +527,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK(VkInstance instance,
 #ifdef VK_USE_PLATFORM_IOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
@@ -578,16 +537,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(VkInstanc
                                                                        const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
                                                                        const VkAllocationCallbacks* pAllocator,
                                                                        VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_GGP
@@ -595,16 +545,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(VkInstanc
 #if defined(VK_USE_PLATFORM_METAL_EXT)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -612,16 +553,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT(VkInstance instance,
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -635,29 +567,18 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceScreenPresentationSupport
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateHeadlessSurfaceEXT(VkInstance instance,
                                                                const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    if (nullptr != pSurface) {
-        uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.surface_handles.push_back(fake_surf_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSurface = reinterpret_cast<VkSurfaceKHR>(fake_surf_handle);
-#else
-        *pSurface = fake_surf_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                     const VkAllocationCallbacks* pAllocator) {
     if (surface != VK_NULL_HANDLE) {
-        uint64_t fake_surf_handle = (uint64_t)(surface);
+        uint64_t fake_surf_handle = from_nondispatch_handle(surface);
         auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
         if (found_iter != icd.surface_handles.end()) {
             // Remove it from the list
             icd.surface_handles.erase(found_iter);
-            // Delete the handle
-            delete (uint8_t*)fake_surf_handle;
         } else {
             assert(false && "Surface not found during destroy!");
         }
@@ -666,23 +587,14 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfa
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
-    if (nullptr != pSwapchain) {
-        uint64_t fake_swapchain_handle = reinterpret_cast<uint64_t>(new uint8_t);
-        icd.swapchain_handles.push_back(fake_swapchain_handle);
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-        *pSwapchain = reinterpret_cast<VkSwapchainKHR>(fake_swapchain_handle);
-#else
-        *pSwapchain = fake_swapchain_handle;
-#endif
-    }
+    common_nondispatch_handle_creation(icd.swapchain_handles, pSwapchain);
     return VK_SUCCESS;
 }
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                       const VkAllocationCallbacks* pAllocator) {
     if (swapchain != VK_NULL_HANDLE) {
-        uint64_t fake_swapchain_handle = (uint64_t)(swapchain);
+        uint64_t fake_swapchain_handle = from_nondispatch_handle(swapchain);
         auto found_iter = icd.swapchain_handles.erase(
             std::remove(icd.swapchain_handles.begin(), icd.swapchain_handles.end(), fake_swapchain_handle),
             icd.swapchain_handles.end());
