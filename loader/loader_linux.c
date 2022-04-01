@@ -233,7 +233,7 @@ static void linux_env_var_default_device(struct loader_instance *inst, uint32_t 
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
 VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32_t icd_count,
-                                            struct loader_phys_dev_per_icd *icd_devices,
+                                            struct loader_phys_dev_per_icd *icd_devices, uint32_t phys_dev_count,
                                             struct loader_physical_device_term **sorted_device_term) {
     VkResult res = VK_SUCCESS;
     bool app_is_vulkan_1_1 = false;
@@ -241,13 +241,13 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
         app_is_vulkan_1_1 = true;
     }
 
-    struct LinuxSortedDeviceInfo *sorted_device_info = loader_instance_heap_alloc(
-        inst, inst->total_gpu_count * sizeof(struct LinuxSortedDeviceInfo), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    struct LinuxSortedDeviceInfo *sorted_device_info =
+        loader_instance_heap_alloc(inst, phys_dev_count * sizeof(struct LinuxSortedDeviceInfo), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == sorted_device_info) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    memset(sorted_device_info, 0, inst->total_gpu_count * sizeof(struct LinuxSortedDeviceInfo));
+    memset(sorted_device_info, 0, phys_dev_count * sizeof(struct LinuxSortedDeviceInfo));
 
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_read_sorted_physical_devices:");
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     Original order:");
@@ -323,16 +323,16 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     }
 
     // Select default device if set in the environment variable
-    linux_env_var_default_device(inst, inst->total_gpu_count, sorted_device_info);
+    linux_env_var_default_device(inst, phys_dev_count, sorted_device_info);
 
     // Sort devices by PCI info
-    qsort(sorted_device_info, inst->total_gpu_count, sizeof(struct LinuxSortedDeviceInfo), compare_devices);
+    qsort(sorted_device_info, phys_dev_count, sizeof(struct LinuxSortedDeviceInfo), compare_devices);
 
     // If we have a selected index, add that first.
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     Sorted order:");
 
     // Add all others after (they've already been sorted)
-    for (uint32_t dev = 0; dev < inst->total_gpu_count; ++dev) {
+    for (uint32_t dev = 0; dev < phys_dev_count; ++dev) {
         sorted_device_term[dev]->this_icd_term = sorted_device_info[dev].icd_term;
         sorted_device_term[dev]->icd_index = sorted_device_info[dev].icd_index;
         sorted_device_term[dev]->phys_dev = sorted_device_info[dev].physical_device;
