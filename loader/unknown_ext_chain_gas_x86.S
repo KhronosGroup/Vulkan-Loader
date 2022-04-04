@@ -99,14 +99,14 @@ vkPhysDevExtTermin\num:
     mov     [esp + 4], ecx                                                      # Copy the unwrapped VkPhysicalDevice into the first arg
     jmp     [eax + (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num))]              # Jump to the next function in the chain
 terminError\num:
-    mov     eax, [eax + INSTANCE_OFFSET_ICD_TERM]                       # Load the loader_instance into eax
-    push    [eax + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))] # Push the func name (fifth arg)
-    push    offset termin_error_string@GOT                              # Push the error string (fourth arg)
-    push    0                                                           # Push zero (third arg)
-    push    VULKAN_LOADER_ERROR_BIT                                     # Push the error logging bit (second arg)
-    push    eax                                                         # Push the loader_instance (first arg)
-    call    loader_log                                                  # Log the error message before we crash
-    add     esp, 20                                                     # Clean up the args
+    mov     eax, dword ptr [eax + INSTANCE_OFFSET_ICD_TERM]                       # Load the loader_instance into eax
+    push    dword ptr [eax + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))] # Push the func name (fifth arg)
+    push    offset termin_error_string                                            # Push the error string (fourth arg)
+    push    0                                                                     # Push zero (third arg)
+    push    VULKAN_LOADER_ERROR_BIT                                               # Push the error logging bit (second arg)
+    push    eax                                                                   # Push the loader_instance (first arg)
+    call    loader_log                                                            # Log the error message before we crash
+    add     esp, 20                                                               # Clean up the args
     mov     eax, 0
     jmp     eax                                                         # Crash intentionally by jumping to address zero
 .endm
@@ -115,8 +115,9 @@ terminError\num:
 .global vkdev_ext\num
 vkdev_ext\num:
     _CET_ENDBR
-    mov     eax, [esp + 4]                                                      # Dereference the handle to get the dispatch table
-    jmp     [eax + (EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * \num))]            # Jump to the appropriate call chain
+    mov     eax, dword ptr [esp + 4]                                            # Dereference the handle to get the dispatch table
+    mov     eax, dword ptr [eax]                                                # Dereference the chain_device to get the loader_dispatch
+    jmp     dword ptr [eax + (EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * \num))]  # Jump to the appropriate call chain
 .endm
 
 .endif
