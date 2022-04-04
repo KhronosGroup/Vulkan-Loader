@@ -193,15 +193,16 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
             uint32_t i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
                 if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-                    if (NULL != icd_term->dispatch.DestroySurfaceKHR && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[i]) {
+                    if (NULL != icd_term->dispatch.DestroySurfaceKHR &&
+                        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[i]) {
                         icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_surface->real_icd_surfaces[i], pAllocator);
-                        icd_surface->real_icd_surfaces[i] = (VkSurfaceKHR)NULL;
+                        icd_surface->real_icd_surfaces[i] = (VkSurfaceKHR)(uintptr_t)NULL;
                     }
                 } else {
                     // The real_icd_surface for any ICD not supporting the
                     // proper interface version should be NULL.  If not, then
                     // we have a problem.
-                    assert((VkSurfaceKHR)NULL == icd_surface->real_icd_surfaces[i]);
+                    assert((VkSurfaceKHR)(uintptr_t)NULL == icd_surface->real_icd_surfaces[i]);
                 }
             }
             loader_instance_heap_free(loader_inst, icd_surface->real_icd_surfaces);
@@ -256,7 +257,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceSupportKHR(VkP
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
+    if (NULL != icd_surface->real_icd_surfaces &&
+        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
         return icd_term->dispatch.GetPhysicalDeviceSurfaceSupportKHR(
             phys_dev_term->phys_dev, queueFamilyIndex, icd_surface->real_icd_surfaces[phys_dev_term->icd_index], pSupported);
     }
@@ -307,7 +309,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilitiesKH
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
+    if (NULL != icd_surface->real_icd_surfaces &&
+        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
         return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(
             phys_dev_term->phys_dev, icd_surface->real_icd_surfaces[phys_dev_term->icd_index], pSurfaceCapabilities);
     }
@@ -360,7 +363,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormatsKHR(VkP
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
+    if (NULL != icd_surface->real_icd_surfaces &&
+        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
         return icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev,
                                                                      icd_surface->real_icd_surfaces[phys_dev_term->icd_index],
                                                                      pSurfaceFormatCount, pSurfaceFormats);
@@ -415,7 +419,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
+    if (NULL != icd_surface->real_icd_surfaces &&
+        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
         return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModesKHR(
             phys_dev_term->phys_dev, icd_surface->real_icd_surfaces[phys_dev_term->icd_index], pPresentModeCount, pPresentModes);
     }
@@ -447,7 +452,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSwapchainKHR(VkDevice device, co
     if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {
         VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfo->surface;
         if (NULL != icd_surface->real_icd_surfaces) {
-            if ((VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+            if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
                 // We found the ICD, and there is an ICD KHR surface
                 // associated with it, so copy the CreateInfo struct
                 // and point it at the ICD's surface.
@@ -603,7 +608,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -712,7 +718,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance ins
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -720,7 +726,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -833,7 +840,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXcbSurfaceKHR(VkInstance instanc
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -841,7 +848,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -956,7 +964,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instan
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -964,7 +972,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -1079,7 +1088,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance in
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -1087,7 +1096,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -1183,7 +1193,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
     pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_ANDROID;
     pIcdSurface->window = pCreateInfo->window;
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
     return VK_SUCCESS;
 }
@@ -1242,7 +1252,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -1250,7 +1260,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -1319,7 +1330,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance insta
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -1327,7 +1338,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -1380,7 +1392,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instanc
     pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_IOS;
     pIcdSurface->pView = pCreateInfo->pView;
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
     return VK_SUCCESS;
 }
@@ -1446,7 +1458,7 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -1454,7 +1466,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -1595,7 +1608,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance inst
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -1603,7 +1616,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -1712,7 +1726,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance,
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -1720,7 +1734,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -2030,7 +2045,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
         }
     }
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -2038,7 +2053,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
@@ -2075,7 +2091,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
     if (NULL != icd_term && NULL != icd_term->dispatch.CreateSharedSwapchainsKHR) {
         VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
         if (NULL != icd_surface->real_icd_surfaces) {
-            if ((VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+            if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
                 // We found the ICD, and there is an ICD KHR surface
                 // associated with it, so copy the CreateInfo struct
                 // and point it at the ICD's surface.
@@ -2126,7 +2142,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(V
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
     if (NULL != icd_term && NULL != icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR) {
         VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
             return icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR(device, icd_surface->real_icd_surfaces[icd_index],
                                                                            pModes);
         }
@@ -2455,7 +2471,8 @@ out:
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
             for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)NULL != pIcdSurface->real_icd_surfaces[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
+                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
