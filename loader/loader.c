@@ -1169,6 +1169,13 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
     // Traverse loader's extensions, adding non-duplicate extensions to the list
     debug_utils_AddInstanceExtensions(inst, inst_exts);
 
+    static const VkExtensionProperties portability_enumeration_extension_info[] = {
+        {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, VK_KHR_PORTABILITY_ENUMERATION_SPEC_VERSION}};
+
+    // Add VK_KHR_portability_subset
+    loader_add_to_ext_list(inst, inst_exts, sizeof(portability_enumeration_extension_info) / sizeof(VkExtensionProperties),
+                           portability_enumeration_extension_info);
+
 out:
     return res;
 }
@@ -1365,7 +1372,8 @@ static VkResult loader_scanned_icd_init(const struct loader_instance *inst, stru
 }
 
 static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
-                                       const char *filename, uint32_t api_version, enum loader_layer_library_status *lib_status) {
+                                       const char *filename, uint32_t api_version, bool is_portability_driver,
+                                       enum loader_layer_library_status *lib_status) {
     loader_platform_dl_handle handle;
     PFN_vkCreateInstance fp_create_inst;
     PFN_vkEnumerateInstanceExtensionProperties fp_get_inst_ext_props;
@@ -1505,6 +1513,7 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
     new_scanned_icd->EnumerateAdapterPhysicalDevices = fp_enum_dxgi_adapter_phys_devs;
 #endif
     new_scanned_icd->interface_version = interface_vers;
+    new_scanned_icd->portability_driver = is_portability_driver;
 
     new_scanned_icd->lib_name = (char *)loader_instance_heap_alloc(inst, strlen(filename) + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_scanned_icd->lib_name) {
@@ -3540,9 +3549,18 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     json = NULL;
                     continue;
                 }
+                bool portability_driver = false;
+                item = cJSON_GetObjectItem(itemICD, "is_portability_driver");
+                if (item != NULL && item->type == cJSON_True) {
+                    portability_driver = true;
+                    // TODO: skip over the driver if the is_portability_driver field is present and true but the portability
+                    // enumeration extension is present. Then emit an error if no drivers are present but a portability driver
+                    // was skipped.
+                }
+
                 VkResult icd_add_res = VK_SUCCESS;
                 enum loader_layer_library_status lib_status;
-                icd_add_res = loader_scanned_icd_add(inst, icd_tramp_list, fullpath, vers, &lib_status);
+                icd_add_res = loader_scanned_icd_add(inst, icd_tramp_list, fullpath, vers, portability_driver, &lib_status);
                 if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_add_res) {
                     res = icd_add_res;
                     goto out;
@@ -5414,6 +5432,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     dev->phys_dev_term = phys_dev_term;
 
     icd_exts.list = NULL;
+
+    // Check if the driver the VkPhysicalDevice comes from is a portability driver and emit a warning if the
+    // VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit isn't set
+    if (icd_term->scanned_icd->portability_driver && !icd_term->this_instance->portability_enumeration_enabled) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "vkCreateDevice: Attempting to create a VkDevice from a VkPhysicalDevice which is from a portability driver "
+                   "without the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags being set "
+                   "and the VK_KHR_portability_enumeration extension enabled. In future versions of the loader this "
+                   "VkPhysicalDevice will not be enumerated.");
+    }
 
     if (fpCreateDevice == NULL) {
         loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
