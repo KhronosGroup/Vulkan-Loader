@@ -321,13 +321,13 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
     EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
 
     uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 2> extensions;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
+    std::array<VkExtensionProperties, 3> extensions;
+    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
     EXPECT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 2);
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 3U);
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -364,13 +364,13 @@ TEST_F(MetaLayers, ExplicitMetaLayer) {
         EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
 
         uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 2> extensions;
-        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
+        std::array<VkExtensionProperties, 3> extensions;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
         EXPECT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        EXPECT_EQ(extension_count, 2);
+                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        EXPECT_EQ(extension_count, 3U);
     }
     {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
         InstWrapper inst{env->vulkan_functions};
@@ -425,13 +425,13 @@ TEST_F(MetaLayers, MetaLayerNameInComponentLayers) {
     EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
 
     uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 2> extensions;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
+    std::array<VkExtensionProperties, 3> extensions;
+    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
     EXPECT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 2);
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 3U);
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -472,13 +472,13 @@ TEST_F(MetaLayers, MetaLayerWhichAddsMetaLayer) {
     EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name, meta_meta_layer_name}, layer_props));
 
     uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 2> extensions;
-    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 2);  // return debug report & debug utils
+    std::array<VkExtensionProperties, 3> extensions;
+    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
     EXPECT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 2);
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+    EXPECT_EQ(extension_count, 3U);
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -1283,24 +1283,22 @@ TEST_F(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
     ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1);
 
-    // // set enable env-var, layer should load
+    // set enable env-var, layer should load
     set_env_var(enable_env_var, "1");
     CheckLogForLayerString(*env, implicit_layer_name, true);
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
 
-        // Make sure the extensions that are implemented only in the test layers is not present.
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-        }
-    }
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(extension_count, 3U);  // debug_utils, debug_report, and portability enumeration
+
+    // Make sure the extensions that are implemented only in the test layers is not present.
+    ASSERT_FALSE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+    ASSERT_FALSE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -1343,21 +1341,16 @@ TEST_F(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 3);  // the instance extension, debug_utils, and debug_report
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, 4U);  // the instance extension, debug_utils, debug_report, and portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(extension_count, 4U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
-    bool found = false;
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)) {
-            found = true;
-        }
-        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-    }
-    ASSERT_EQ(true, found);
+    ASSERT_TRUE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+    ASSERT_FALSE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
@@ -1402,21 +1395,16 @@ TEST_F(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 3);  // the instance extension, debug_utils, and debug_report
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, 4U);  // the instance extension, debug_utils, debug_report, and portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(extension_count, 4U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
-    bool found = false;
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)) {
-            found = true;
-        }
-        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-    }
-    ASSERT_EQ(true, found);
+    ASSERT_FALSE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+    ASSERT_TRUE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -1462,25 +1450,16 @@ TEST_F(LayerExtensions, ImplicitBothInstanceExtensions) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 4);  // the two instance extension plus debug_utils and debug_report
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, 5U);  // the two instance extension plus debug_utils, debug_report, portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(extension_count, 5U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
-    bool found[2] = {false, false};
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)) {
-            found[0] = true;
-        }
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)) {
-            found[1] = true;
-        }
-    }
-    for (uint32_t ext = 0; ext < 2; ++ext) {
-        ASSERT_EQ(true, found[ext]);
-    }
+    ASSERT_TRUE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+    ASSERT_TRUE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env->vulkan_functions};
     inst.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)
@@ -1513,35 +1492,25 @@ TEST_F(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, 3U);  // debug utils, debug report, portability enumeration
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(extension_count, 3U);
 
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-        }
+    // Make sure the extensions are not present
+    for (const auto& ext : extension_props) {
+        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
     }
 
     // Now query by layer name.
     extension_count = 0;
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
-              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count,
-                                                                                           extension_props.data()));
-
-        // Make sure the extensions still aren't present in this layer
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-        }
-    }
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, 0U);
 
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
@@ -1573,17 +1542,16 @@ TEST_F(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-        }
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, 3U);  // debug utils, debug report, portability enumeration
+    extension_props.resize(extension_count);
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+    ASSERT_EQ(extension_count, 3U);
+    // Make sure the extensions are not present
+    for (const auto& ext : extension_props) {
+        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
     }
 
     // Now query by layer name.

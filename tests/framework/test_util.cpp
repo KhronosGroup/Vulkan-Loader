@@ -128,13 +128,16 @@ void print_vector_of_strings(std::string& out, const char* object_name, std::vec
     }
 }
 
+std::string to_text(bool b) { return b ? std::string("true") : std::string("false"); }
+
 std::string ManifestICD::get_manifest_str() const {
     std::string out;
     out += "{\n";
     out += "    " + file_format_version.get_version_str() + "\n";
     out += "    \"ICD\": {\n";
     out += "        \"library_path\": \"" + fs::fixup_backslashes_in_path(lib_path) + "\",\n";
-    out += "        \"api_version\": \"" + version_to_string(api_version) + "\"\n";
+    out += "        \"api_version\": \"" + version_to_string(api_version) + "\",\n";
+    out += "        \"is_portability_driver\": " + to_text(is_portability_driver) + "\n";
     out += "    }\n";
     out += "}\n";
     return out;
@@ -639,6 +642,7 @@ VkInstanceCreateInfo* InstanceCreateInfo::get() noexcept {
         application_info.apiVersion = api_version;
         instance_info.pApplicationInfo = &application_info;
     }
+    instance_info.flags = flags;
     instance_info.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());
     instance_info.ppEnabledLayerNames = enabled_layers.data();
     instance_info.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());

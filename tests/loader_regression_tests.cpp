@@ -181,32 +181,34 @@ TEST_F(EnumerateInstanceExtensionProperties, UsageChecks) {
     env->reset_icd().add_instance_extensions({first_ext, second_ext});
 
     {  // One Pass
-        uint32_t extension_count = 4;
-        std::array<VkExtensionProperties, 4> extensions;
+        uint32_t extension_count = 5;
+        std::array<VkExtensionProperties, 5> extensions;
         ASSERT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 4);  // return debug report & debug utils + our two extensions
+                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 5U);  // return debug report & debug utils & portability enumeration + our two extensions
 
         // loader always adds the debug report & debug utils extensions
         ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
         ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
         ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
         ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
+        ASSERT_TRUE(string_eq("VK_KHR_portability_enumeration", extensions[4].extensionName));
     }
     {  // Two Pass
         uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 4> extensions;
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 4);  // return debug report & debug utils + our two extensions
+        std::array<VkExtensionProperties, 5> extensions;
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 5U);  // return debug report & debug utils + our two extensions
 
         ASSERT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 4);
+                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 5U);
         // loader always adds the debug report & debug utils extensions
         ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
         ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
         ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
         ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
+        ASSERT_TRUE(string_eq("VK_KHR_portability_enumeration", extensions[4].extensionName));
     }
 }
 
@@ -214,9 +216,9 @@ TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 2> extensions;
     {  // use nullptr for null string
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
-        extension_count = 1;            // artificially remove one extension
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
+        extension_count = 1;             // artificially remove one extension
 
         ASSERT_EQ(VK_INCOMPLETE,
                   env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
@@ -225,9 +227,9 @@ TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
         ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
     }
     {  // use "" for null string
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
-        extension_count = 1;            // artificially remove one extension
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
+        extension_count = 1;             // artificially remove one extension
 
         ASSERT_EQ(VK_INCOMPLETE,
                   env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
@@ -243,34 +245,34 @@ TEST_F(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
     env->reset_icd().add_instance_extensions({first_ext, second_ext});
     {
         uint32_t extension_count = 0;
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 2);  // return debug report & debug utils
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
-        std::array<VkExtensionProperties, 2> extensions;
-        ASSERT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 2);
+        std::array<VkExtensionProperties, 3> extensions;
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 3U);
         // loader always adds the debug report & debug utils extensions
         ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
         ASSERT_TRUE(string_eq(extensions[1].extensionName, "VK_EXT_debug_utils"));
+        ASSERT_TRUE(string_eq(extensions[2].extensionName, "VK_KHR_portability_enumeration"));
     }
     {  // Disable unknown instance extension filtering
         set_env_var("VK_LOADER_DISABLE_INST_EXT_FILTER", "1");
 
         uint32_t extension_count = 0;
-        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 4);
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 5U);
 
-        std::array<VkExtensionProperties, 4> extensions;
-        ASSERT_EQ(VK_SUCCESS,
-                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 4);
+        std::array<VkExtensionProperties, 5> extensions;
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 5U);
 
         ASSERT_EQ(extensions[0], first_ext.get());
         ASSERT_EQ(extensions[1], second_ext.get());
         // Loader always adds these two extensions
         ASSERT_TRUE(string_eq(extensions[2].extensionName, "VK_EXT_debug_report"));
         ASSERT_TRUE(string_eq(extensions[3].extensionName, "VK_EXT_debug_utils"));
+        ASSERT_TRUE(string_eq(extensions[4].extensionName, "VK_KHR_portability_enumeration"));
     }
 }
 
@@ -3026,3 +3028,170 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
 }
 
 #endif  // __linux__ || __FreeBSD__
+
+const char* portability_driver_warning =
+    "vkCreateDevice: Attempting to create a VkDevice from a VkPhysicalDevice which is from a portability driver "
+    "without the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags being set "
+    "and the VK_KHR_portability_enumeration extension enabled. In future versions of the loader this "
+    "VkPhysicalDevice will not be enumerated.";
+
+TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
+    FrameworkEnvironment env{};
+    env.add_icd(
+        TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_is_portability_driver(true)));
+
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.max_icd_interface_version = 1;
+    // TODO - Fix tests when portability devices are not longer enumerated by default
+    {  // enable portability extension and flag
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.create_info.add_extension("VK_KHR_portability_enumeration");
+        inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto phys_dev = inst.GetPhysDev();
+        handle_assert_has_value(phys_dev);
+
+        DeviceWrapper dev_info{inst};
+        dev_info.CheckCreate(phys_dev);
+        ASSERT_FALSE(log.find(portability_driver_warning));
+    }
+    {  // enable portability flag but not extension - shouldn't be able to create an instance when filtering is enabled
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto phys_dev = inst.GetPhysDev();
+        handle_assert_has_value(phys_dev);
+
+        DeviceWrapper dev_info{inst};
+        dev_info.CheckCreate(phys_dev);
+        ASSERT_TRUE(log.find(portability_driver_warning));
+    }
+    {  // enable portability extension but not flag - shouldn't be able to create an instance when filtering is enabled
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension("VK_KHR_portability_enumeration");
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto phys_dev = inst.GetPhysDev();
+        handle_assert_has_value(phys_dev);
+
+        DeviceWrapper dev_info{inst};
+        dev_info.CheckCreate(phys_dev);
+        ASSERT_TRUE(log.find(portability_driver_warning));
+    }
+    {  // enable neither the portability extension or the flag - shouldn't be able to create an instance when filtering is enabled
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.flags = 0;  // make sure its 0 - no portability
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto phys_dev = inst.GetPhysDev();
+        handle_assert_has_value(phys_dev);
+
+        DeviceWrapper dev_info{inst};
+        dev_info.CheckCreate(phys_dev);
+        ASSERT_TRUE(log.find(portability_driver_warning));
+    }
+}
+
+TEST(PortabilityICDConfiguration, PortabilityAndRegularICD) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)));
+    env.add_icd(
+        TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_is_portability_driver(true)));
+
+    auto& driver0 = env.get_test_icd(0);
+    auto& driver1 = env.get_test_icd(1);
+
+    driver0.physical_devices.emplace_back("physical_device_0");
+    driver0.max_icd_interface_version = 1;
+
+    driver1.physical_devices.emplace_back("portability_physical_device_1");
+    driver1.max_icd_interface_version = 1;
+    // TODO - Fix tests when portability devices are not longer enumerated by default
+    {  // enable portability extension and flag
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.create_info.add_extension("VK_KHR_portability_enumeration");
+        inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto phys_devs = inst.GetPhysDevs(2);
+        for (const auto& phys_dev : phys_devs) {
+            handle_assert_has_value(phys_dev);
+        }
+        DeviceWrapper dev_info_0{inst};
+        DeviceWrapper dev_info_1{inst};
+        dev_info_0.CheckCreate(phys_devs[0]);
+        dev_info_1.CheckCreate(phys_devs[1]);
+        ASSERT_FALSE(log.find(portability_driver_warning));
+    }
+    {  // enable portability extension but not flag - should only enumerate 1 physical device when filtering is enabled
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.create_info.add_extension("VK_KHR_portability_enumeration");
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto phys_devs = inst.GetPhysDevs(2);
+        for (const auto& phys_dev : phys_devs) {
+            handle_assert_has_value(phys_dev);
+        }
+        DeviceWrapper dev_info_0{inst};
+        DeviceWrapper dev_info_1{inst};
+        dev_info_0.CheckCreate(phys_devs[0]);
+        dev_info_1.CheckCreate(phys_devs[1]);
+        ASSERT_TRUE(log.find(portability_driver_warning));
+    }
+    {  // enable portability flag but not extension - should only enumerate 1 physical device when filtering is enabled
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto phys_devs = inst.GetPhysDevs(2);
+        for (const auto& phys_dev : phys_devs) {
+            handle_assert_has_value(phys_dev);
+        }
+        DeviceWrapper dev_info_0{inst};
+        DeviceWrapper dev_info_1{inst};
+        dev_info_0.CheckCreate(phys_devs[0]);
+        dev_info_1.CheckCreate(phys_devs[1]);
+        ASSERT_TRUE(log.find(portability_driver_warning));
+    }
+    {  // do not enable portability extension or flag - should only enumerate 1 physical device when filtering is enabled
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        inst.CheckCreate();
+        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+        auto phys_devs = inst.GetPhysDevs(2);
+        for (const auto& phys_dev : phys_devs) {
+            handle_assert_has_value(phys_dev);
+        }
+        DeviceWrapper dev_info_0{inst};
+        DeviceWrapper dev_info_1{inst};
+        dev_info_0.CheckCreate(phys_devs[0]);
+        dev_info_1.CheckCreate(phys_devs[1]);
+        ASSERT_TRUE(log.find(portability_driver_warning));
+    }
+}

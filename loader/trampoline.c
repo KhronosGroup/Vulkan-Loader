@@ -481,6 +481,18 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         ptr_instance->app_api_minor_version = VK_API_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion);
     }
 
+    // Check the VkInstanceCreateInfoFlags wether to allow the portability enumeration flag
+    if ((pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR) == 1) {
+        // Make sure the extension has been enabled
+        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+            if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0) {
+                ptr_instance->portability_enumeration_enabled = true;
+                loader_log(ptr_instance, VULKAN_LOADER_INFO_BIT, 0,
+                           "Portability enumeration bit was set, enumerating portability drivers.");
+            }
+        }
+    }
+
     // Look for one or more VK_EXT_debug_report or VK_EXT_debug_utils create info structures
     // and setup a callback(s) for each one found.
     ptr_instance->num_tmp_report_callbacks = 0;

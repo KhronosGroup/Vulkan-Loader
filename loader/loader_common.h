@@ -293,6 +293,8 @@ struct loader_instance {
 
     VkAllocationCallbacks alloc_callbacks;
 
+    bool portability_enumeration_enabled;
+
     bool wsi_surface_enabled;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool wsi_win32_surface_enabled;
@@ -426,6 +428,8 @@ struct loader_scanned_icd {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vk_icdEnumerateAdapterPhysicalDevices EnumerateAdapterPhysicalDevices;
 #endif
+    // whether the device is a portability driver
+    bool portability_driver;
 };
 
 enum loader_data_files_type {
