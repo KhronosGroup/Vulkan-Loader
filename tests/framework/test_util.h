@@ -536,6 +536,7 @@ struct ManifestICD {
     BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, ManifestVersion())
     BUILDER_VALUE(ManifestICD, uint32_t, api_version, 0)
     BUILDER_VALUE(ManifestICD, std::string, lib_path, {})
+    BUILDER_VALUE(ManifestICD, bool, is_portability_driver, false)
     std::string get_manifest_str() const;
 };
 
@@ -762,6 +763,7 @@ struct InstanceCreateInfo {
     BUILDER_VALUE(InstanceCreateInfo, VkApplicationInfo, application_info, {})
     BUILDER_VALUE(InstanceCreateInfo, std::string, app_name, {})
     BUILDER_VALUE(InstanceCreateInfo, std::string, engine_name, {})
+    BUILDER_VALUE(InstanceCreateInfo, uint32_t, flags, 0)
     BUILDER_VALUE(InstanceCreateInfo, uint32_t, app_version, 0)
     BUILDER_VALUE(InstanceCreateInfo, uint32_t, engine_version, 0)
     BUILDER_VALUE(InstanceCreateInfo, uint32_t, api_version, VK_API_VERSION_1_0)
@@ -852,4 +854,13 @@ bool check_permutation(std::initializer_list<const char*> expected, std::vector<
         if (!found) return false;
     }
     return true;
+}
+
+inline bool contains(std::vector<VkExtensionProperties> const& vec, const char* name) {
+    return std::any_of(std::begin(vec), std::end(vec),
+                       [name](VkExtensionProperties const& elem) { return string_eq(name, elem.extensionName); });
+}
+inline bool contains(std::vector<VkLayerProperties> const& vec, const char* name) {
+    return std::any_of(std::begin(vec), std::end(vec),
+                       [name](VkLayerProperties const& elem) { return string_eq(name, elem.layerName); });
 }
