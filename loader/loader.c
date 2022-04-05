@@ -6030,9 +6030,9 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                 }
 
                 loader_set_dispatch((void *)new_phys_devs[idx], inst->disp);
-                new_phys_devs[idx]->this_icd_term = phys_dev_array[i].icd_term;
-                new_phys_devs[idx]->icd_index = (uint8_t)(phys_dev_array[i].icd_index);
-                new_phys_devs[idx]->phys_dev = phys_dev_array[i].physical_devices[j];
+                new_phys_devs[idx]->this_icd_term = icd_phys_dev_array[i].icd_term;
+                new_phys_devs[idx]->icd_index = (uint8_t)(icd_phys_dev_array[i].icd_index);
+                new_phys_devs[idx]->phys_dev = icd_phys_dev_array[i].physical_devices[j];
 
                 // Fill in the properties
                 new_phys_devs[idx]->this_icd_term->dispatch.GetPhysicalDeviceProperties(new_phys_devs[idx]->phys_dev,
