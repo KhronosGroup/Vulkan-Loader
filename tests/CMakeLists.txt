@@ -74,4 +74,4 @@ if(WIN32)
 endif()
 
 # must happen after the dll's get copied over
-gtest_discover_tests(test_regression)
+gtest_discover_tests(test_regression PROPERTIES DISCOVERY_TIMEOUT 100)
