@@ -86,7 +86,7 @@ std::string category_path_name(ManifestCategory category) {
         return "Drivers";
 }
 
-void PlatformShim::reset(DebugMode debug_mode) {
+void PlatformShim::reset() {
     hkey_current_user_explicit_layers.clear();
     hkey_current_user_implicit_layers.clear();
     hkey_local_machine_explicit_layers.clear();
@@ -144,7 +144,7 @@ std::string category_path_name(ManifestCategory category) {
         return "icd.d";
 }
 
-void PlatformShim::reset(DebugMode debug_mode) { redirection_map.clear(); }
+void PlatformShim::reset() { redirection_map.clear(); }
 
 void PlatformShim::redirect_path(fs::path const& path, fs::path const& new_path) { redirection_map[path.str()] = new_path; }
 void PlatformShim::remove_redirect(fs::path const& path) { redirection_map.erase(path.str()); }

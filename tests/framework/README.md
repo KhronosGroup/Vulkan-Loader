@@ -135,7 +135,6 @@ There are many utilities that the test framework and tests have access to. These
 * `FRAMEWORK_EXPORT` - macro used for exporting shared library funtions
 * Environment Variable helpers: `get_env_var`, `set_env_var`, `remove_env_var`
 * Windows API error handling helpers
-* DebugMode enum - defines which actions to take when debugging the test suite.
 * filesystem abstractions:
   * `fs::path` - wrapper around std::string that has a similar API to C++17's `filesystem::path` library
   * `create_folder`/`delete_folder`

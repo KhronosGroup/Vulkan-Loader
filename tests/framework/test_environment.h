@@ -259,7 +259,7 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogg
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
 
 struct PlatformShimWrapper {
-    PlatformShimWrapper(DebugMode debug_mode = DebugMode::none) noexcept;
+    PlatformShimWrapper() noexcept;
     ~PlatformShimWrapper() noexcept;
     PlatformShimWrapper(PlatformShimWrapper const&) = delete;
     PlatformShimWrapper& operator=(PlatformShimWrapper const&) = delete;
@@ -269,7 +269,6 @@ struct PlatformShimWrapper {
 
     LibraryWrapper shim_library;
     PlatformShim* platform_shim;
-    DebugMode debug_mode = DebugMode::none;
 };
 
 struct TestICDHandle {
@@ -301,6 +300,14 @@ struct TestLayerHandle {
     fs::path manifest_path;
 };
 
+enum class ManifestDiscoveryType {
+    generic,          // put the manifest in the regular locations
+    none,             // don't add to regular locations - eg D3DKMT
+    env_var,          // use the corresponding env-var for it
+    add_env_var,      // use the corresponding add-env-var for it
+    override_folder,  // add to a special folder for the override layer to use
+};
+
 struct TestICDDetails {
     TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
     TestICDDetails(fs::path icd_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
@@ -308,9 +315,7 @@ struct TestICDDetails {
     }
     BUILDER_VALUE(TestICDDetails, ManifestICD, icd_manifest, {});
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
-    BUILDER_VALUE(TestICDDetails, bool, use_env_var_icd_filenames, false);
-    BUILDER_VALUE(TestICDDetails, bool, use_add_env_var_icd_filenames, false);
-    BUILDER_VALUE(TestICDDetails, bool, add_manifest_to_default_driver_location, true);
+    BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
 };
 
@@ -319,14 +324,12 @@ struct TestLayerDetails {
         : layer_manifest(layer_manifest), json_name(json_name) {}
     BUILDER_VALUE(TestLayerDetails, ManifestLayer, layer_manifest, {});
     BUILDER_VALUE(TestLayerDetails, std::string, json_name, "test_layer");
-    BUILDER_VALUE(TestLayerDetails, fs::FolderManager*, destination_folder, nullptr);
-    BUILDER_VALUE(TestLayerDetails, bool, add_to_regular_search_paths, true);
+    BUILDER_VALUE(TestLayerDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
 };
 
 struct FrameworkEnvironment {
-    FrameworkEnvironment(DebugMode debug_mode = DebugMode::none, bool override_icds = false,
-                         bool override_explicit_layers = false) noexcept;
+    FrameworkEnvironment() noexcept;
 
     void add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
@@ -349,8 +352,13 @@ struct FrameworkEnvironment {
     PlatformShimWrapper platform_shim;
     fs::FolderManager null_folder;
     fs::FolderManager icd_folder;
+    fs::FolderManager icd_env_vars_folder;
     fs::FolderManager explicit_layer_folder;
+    fs::FolderManager explicit_env_var_layer_folder;
+    fs::FolderManager explicit_add_env_var_layer_folder;
     fs::FolderManager implicit_layer_folder;
+    fs::FolderManager override_layer_folder;
+
     DebugUtilsLogger debug_log;
     VulkanFunctions vulkan_functions;
 
@@ -360,8 +368,11 @@ struct FrameworkEnvironment {
     std::string env_var_vk_icd_filenames;
     std::string add_env_var_vk_icd_filenames;
 
+    std::string env_var_vk_layer_paths;
+    std::string add_env_var_vk_layer_paths;
+
    private:
-    void add_layer_impl(TestLayerDetails layer_details, fs::FolderManager& folder_manager, ManifestCategory category);
+    void add_layer_impl(TestLayerDetails layer_details, ManifestCategory category);
 };
 
 // The following helpers setup an icd with the required extensions and setting to use with WSI

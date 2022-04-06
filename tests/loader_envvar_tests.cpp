@@ -49,7 +49,7 @@ class EnvVarICDOverrideSetup : public ::testing::Test {
 // must export vkGetInstanceProcAddr, vkCreateInstance, vkEnumerateInstanceExtensionProperties
 TEST(EnvVarICDOverrideSetup, version_0_none) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_use_env_var_icd_filenames(true));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -61,7 +61,7 @@ TEST(EnvVarICDOverrideSetup, version_0_none) {
 // the loader calls vk_icdGetInstanceProcAddr first
 TEST(EnvVarICDOverrideSetup, version_1_icd_gipa) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA).set_use_env_var_icd_filenames(true));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA).set_discovery_type(ManifestDiscoveryType::env_var));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -72,7 +72,8 @@ TEST(EnvVarICDOverrideSetup, version_1_icd_gipa) {
 // support vk_icdNegotiateLoaderICDInterfaceVersion but not vk_icdGetInstanceProcAddr
 TEST(EnvVarICDOverrideSetup, version_negotiate_interface_version_death_test) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION).set_use_env_var_icd_filenames(true));
+    env.add_icd(
+        TestICDDetails(TEST_ICD_PATH_EXPORT_NEGOTIATE_INTERFACE_VERSION).set_discovery_type(ManifestDiscoveryType::env_var));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
@@ -81,7 +82,7 @@ TEST(EnvVarICDOverrideSetup, version_negotiate_interface_version_death_test) {
 // export vk_icdNegotiateLoaderICDInterfaceVersion and vk_icdGetInstanceProcAddr
 TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_use_env_var_icd_filenames(true));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::env_var));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -91,8 +92,8 @@ TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa)
 
 // Test VK_DRIVER_FILES environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
-    FrameworkEnvironment env{DebugMode::none, true};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_use_env_var_icd_filenames(true));
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var));
     env.get_test_icd(0).physical_devices.emplace_back("pd0");
 
     InstWrapper inst1{env.vulkan_functions};
@@ -107,7 +108,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     ASSERT_EQ(phys_dev_count, 1U);
 
     for (uint32_t add = 0; add < 2; ++add) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_use_env_var_icd_filenames(true));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var));
         env.get_test_icd(add + 1).physical_devices.emplace_back("pd" + std::to_string(add) + "0");
         env.get_test_icd(add + 1).physical_devices.emplace_back("pd" + std::to_string(add) + "1");
     }
@@ -190,8 +191,8 @@ TEST(EnvVarICDOverrideSetup, XDG) {
 
 // Test VK_ADD_DRIVER_FILES environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVar) {
-    FrameworkEnvironment env{DebugMode::none, true};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_use_add_env_var_icd_filenames(true));
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::add_env_var));
     env.get_test_icd(0).physical_devices.emplace_back("pd0");
 
     InstWrapper inst1{env.vulkan_functions};
@@ -218,14 +219,14 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVar) {
 
 // Test Both VK_DRIVER_FILES and VK_ADD_DRIVER_FILES environment variable
 TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
-    FrameworkEnvironment env{DebugMode::none, true};
+    FrameworkEnvironment env{};
 
     // Add a driver that isn't enabled with the environment variable
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_use_env_var_icd_filenames(true));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var));
     env.get_test_icd(0).physical_devices.emplace_back("pd0");
     env.get_test_icd(0).physical_devices.emplace_back("pd1");
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_use_add_env_var_icd_filenames(true));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::add_env_var));
     env.get_test_icd(0).physical_devices.emplace_back("pd2");
 
     InstWrapper inst{env.vulkan_functions};
@@ -244,7 +245,19 @@ TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
 #if defined(__linux__) || defined(__FreeBSD__)
 // Test VK_LAYER_PATH environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
-    // Set up a layer path that includes default and user-specified locations,
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().physical_devices.push_back({});
+    env.platform_shim->redirect_path("/tmp/carol", env.explicit_env_var_layer_folder.location());
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        TestLayerDetails(ManifestLayer{}.add_layer(
+                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                         "test_layer.json")
+            .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    // Now set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
     fs::path HOME = "/home/fake_home";
@@ -252,17 +265,6 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     std::string vk_layer_path = ":/tmp/carol::::/:";
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
     set_env_var("VK_LAYER_PATH", vk_layer_path);
-
-    FrameworkEnvironment env{DebugMode::none, false, true};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().physical_devices.push_back({});
-    env.platform_shim->redirect_path("/tmp/carol", env.explicit_layer_folder.location());
-
-    const char* layer_name = "TestLayer";
-    env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
 
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_layer(layer_name);
@@ -292,6 +294,18 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
 
 // Test VK_ADD_LAYER_PATH environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().physical_devices.push_back({});
+    env.platform_shim->redirect_path("/tmp/carol", env.explicit_add_env_var_layer_folder.location());
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        TestLayerDetails(ManifestLayer{}.add_layer(
+                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                         "test_layer.json")
+            .set_discovery_type(ManifestDiscoveryType::add_env_var));
+
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
@@ -300,17 +314,6 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     std::string vk_layer_path = ":/tmp/carol::::/:";
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
     set_env_var("VK_ADD_LAYER_PATH", vk_layer_path);
-
-    FrameworkEnvironment env{DebugMode::none, false, true};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().physical_devices.push_back({});
-    env.platform_shim->redirect_path("/tmp/carol", env.explicit_layer_folder.location());
-
-    const char* layer_name = "TestLayer";
-    env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
 
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_layer(layer_name);

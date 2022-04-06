@@ -114,7 +114,7 @@ struct D3DKMT_Adapter {
 // defined in the .cpp wont be found by the rest of the application
 struct PlatformShim {
     // Test Framework interface
-    void reset(DebugMode debug_mode = DebugMode::none);
+    void reset();
 
     void redirect_all_paths(fs::path const& path);
     void redirect_category(fs::path const& new_path, ManifestCategory category);
