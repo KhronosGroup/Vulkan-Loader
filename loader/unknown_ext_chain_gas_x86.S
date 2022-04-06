@@ -101,7 +101,7 @@ vkPhysDevExtTermin\num:
 terminError\num:
     mov     eax, dword ptr [eax + INSTANCE_OFFSET_ICD_TERM]                       # Load the loader_instance into eax
     push    dword ptr [eax + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))] # Push the func name (fifth arg)
-    push    offset termin_error_string                                            # Push the error string (fourth arg)
+    push    offset termin_error_string@GOT                                        # Push the error string (fourth arg)
     push    0                                                                     # Push zero (third arg)
     push    VULKAN_LOADER_ERROR_BIT                                               # Push the error logging bit (second arg)
     push    eax                                                                   # Push the loader_instance (first arg)
