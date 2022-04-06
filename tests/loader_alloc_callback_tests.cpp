@@ -650,7 +650,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
 // leak memory if one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_add_manifest_to_default_driver_location(false));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_discovery_type(ManifestDiscoveryType::none));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     for (uint32_t i = 0; i < 2; i++) {

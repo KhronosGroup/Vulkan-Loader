@@ -1026,10 +1026,6 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
 
-    fs::FolderManager vk_layer_path_folder{FRAMEWORK_BUILD_DIRECTORY, "vk_layer_folder"};
-    set_env_var("VK_LAYER_PATH", vk_layer_path_folder.location().str());
-    fs::FolderManager override_path_folder{FRAMEWORK_BUILD_DIRECTORY, "override_path_folder"};
-
     // add explicit layer to VK_LAYER_PATH folder
     const char* env_var_layer_name = "VK_LAYER_env_var_set_path";
     env.add_explicit_layer(TestLayerDetails{ManifestLayer{}
@@ -1039,7 +1035,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
                                                                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                                .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                                             "regular_test_layer.json"}
-                               .set_destination_folder(&vk_layer_path_folder));
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
 
     // add layer to regular explicit layer folder
     const char* regular_layer_name = "VK_LAYER_regular_layer_path";
@@ -1048,7 +1044,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
                                                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                                           .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))),
                                             "regular_test_layer.json"}
-                               .set_destination_folder(&override_path_folder));
+                               .set_discovery_type(ManifestDiscoveryType::override_folder));
 
     env.add_implicit_layer(ManifestLayer{}
                                .set_file_format_version(ManifestVersion(1, 2, 0))
@@ -1057,7 +1053,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                               .add_component_layer(regular_layer_name)
                                               .set_disable_environment("DisableMeIfYouCan")
-                                              .add_override_path(override_path_folder.location().str())),
+                                              .add_override_path(env.override_layer_folder.location().str())),
                            "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};

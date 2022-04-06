@@ -413,7 +413,7 @@ int delete_folder(path const& folder) {
 #endif
 }
 
-FolderManager::FolderManager(path root_path, std::string name, DebugMode debug) : debug(debug), folder(root_path / name) {
+FolderManager::FolderManager(path root_path, std::string name) : folder(root_path / name) {
     delete_folder_contents(folder);
     create_folder(folder);
 }
@@ -424,17 +424,9 @@ FolderManager::~FolderManager() {
     // removing those. Since this is in an OOM situation, it is a low priority to fix. It does have the effect that Windows will
     // be unable to delete the binaries that were leaked.
     for (auto& file : list_of_files_to_delete) {
-        if (debug >= DebugMode::log) std::cout << "Removing manifest " << file << " at " << (folder / file).str() << "\n";
-        if (debug != DebugMode::no_delete) {
-            remove(file);
-        }
+        remove(file);
     }
-    if (debug != DebugMode::no_delete) {
-        delete_folder(folder);
-    }
-    if (debug >= DebugMode::log) {
-        std::cout << "Deleting folder " << folder.str() << "\n";
-    }
+    delete_folder(folder);
 }
 path FolderManager::write_manifest(std::string const& name, std::string const& contents) {
     path out_path = folder / name;
@@ -442,7 +434,6 @@ path FolderManager::write_manifest(std::string const& name, std::string const& c
     if (found != files.end()) {
         std::cout << "Overwriting manifest " << name << ". Was this intended?\n";
     } else {
-        if (debug >= DebugMode::log) std::cout << "Creating manifest " << name << " at " << out_path.str() << "\n";
         files.emplace_back(name);
     }
     auto file = std::ofstream(out_path.str(), std::ios_base::trunc | std::ios_base::out);
@@ -458,17 +449,15 @@ void FolderManager::remove(std::string const& name) {
     path out_path = folder / name;
     auto found = std::find(files.begin(), files.end(), name);
     if (found != files.end()) {
-        if (debug >= DebugMode::log) std::cout << "Removing file " << name << " at " << out_path.str() << "\n";
-        if (debug != DebugMode::no_delete) {
-            int rc = std::remove(out_path.c_str());
-            if (rc != 0 && debug >= DebugMode::log) {
-                std::cerr << "Failed to remove file " << name << " at " << out_path.str() << "\n";
-            }
-
-            files.erase(found);
+        int rc = std::remove(out_path.c_str());
+        if (rc != 0) {
+            std::cerr << "Failed to remove file " << name << " at " << out_path.str() << "\n";
         }
+
+        files.erase(found);
+
     } else {
-        if (debug >= DebugMode::log) std::cout << "Couldn't remove file " << name << " at " << out_path.str() << ".\n";
+        std::cout << "Couldn't remove file " << name << " at " << out_path.str() << ".\n";
     }
 }
 
@@ -477,11 +466,10 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
     auto new_filepath = folder / new_name;
     auto found = std::find(files.begin(), files.end(), new_name);
     if (found != files.end()) {
-        if (debug >= DebugMode::log) std::cout << "File location already contains" << new_name << ". Is this a bug?\n";
+        std::cout << "File location already contains" << new_name << ". Is this a bug?\n";
     } else if (file.str() == new_filepath.str()) {
-        if (debug >= DebugMode::log) std::cout << "Trying to copy " << new_name << " into itself. Is this a bug?\n";
+        std::cout << "Trying to copy " << new_name << " into itself. Is this a bug?\n";
     } else {
-        if (debug >= DebugMode::log) std::cout << "Copying file" << file.str() << " to " << new_filepath.str() << "\n";
         files.emplace_back(new_name);
     }
     std::ifstream src(file.str(), std::ios::binary);

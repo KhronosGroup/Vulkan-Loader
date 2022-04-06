@@ -133,7 +133,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6_in_drive
 // Make the version_6 driver found through the D3DKMT driver discovery mechanism of the loader
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_3}.set_add_manifest_to_default_driver_location(false));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_3}.set_discovery_type(ManifestDiscoveryType::none));
     // Version 6 provides a mechanism to allow the loader to sort physical devices.
     // The loader will only attempt to sort physical devices on an ICD if version 6 of the interface is supported.
     // This version provides the vk_icdEnumerateAdapterPhysicalDevices function.
@@ -186,7 +186,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
 // EnumerateAdapterPhysicalDevices
 TEST(ICDInterfaceVersion2, EnumAdapters2) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_add_manifest_to_default_driver_location(false));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::none));
     InstWrapper inst{env.vulkan_functions};
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_1");
@@ -211,8 +211,8 @@ TEST(ICDInterfaceVersion2, EnumAdapters2) {
 // Verify that the handles are correct by calling vkGetPhysicalDeviceProperties with them
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResults) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}
-                    .set_add_manifest_to_default_driver_location(false));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}.set_discovery_type(
+        ManifestDiscoveryType::none));
     auto& driver = env.get_test_icd();
     driver.min_icd_interface_version = 6;
     driver.set_icd_api_version(VK_API_VERSION_1_1);
@@ -255,8 +255,8 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResul
 // Make sure physical device groups enumerated through EnumerateAdapterPhysicalDevices are properly found
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}
-                    .set_add_manifest_to_default_driver_location(false));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}.set_discovery_type(
+        ManifestDiscoveryType::none));
     auto& driver = env.get_test_icd();
     driver.min_icd_interface_version = 6;
     driver.set_icd_api_version(VK_API_VERSION_1_1);

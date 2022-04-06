@@ -124,13 +124,6 @@ const char* win_api_error_str(LSTATUS status);
 void print_error_message(LSTATUS status, const char* function_name, std::string optional_message = "");
 #endif
 
-enum class DebugMode {
-    none,
-    log,       // log all folder and file creation & deletion
-    no_delete  // Will not delete create folders & files, but will report 'deleting them' to show when something *should* of been
-               // deleted
-};
-
 struct ManifestICD;    // forward declaration for FolderManager::write
 struct ManifestLayer;  // forward declaration for FolderManager::write
 
@@ -211,7 +204,7 @@ int delete_folder(path const& folder);
 
 class FolderManager {
    public:
-    explicit FolderManager(path root_path, std::string name, DebugMode debug = DebugMode::none);
+    explicit FolderManager(path root_path, std::string name);
     ~FolderManager();
     FolderManager(FolderManager const&) = delete;
     FolderManager& operator=(FolderManager const&) = delete;
@@ -228,7 +221,6 @@ class FolderManager {
     path location() const { return folder; }
 
    private:
-    DebugMode debug;
     path folder;
     std::vector<std::string> files;
 };
