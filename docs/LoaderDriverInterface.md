@@ -36,6 +36,7 @@
 - [Driver Manifest File Format](#driver-manifest-file-format)
     - [Driver Manifest File Versions](#driver-manifest-file-versions)
     - [Driver Manifest File Version 1.0.0](#driver-manifest-file-version-100)
+    - [Driver Manifest File Version 1.0.1](#driver-manifest-file-version-101)
 - [Driver Vulkan Entry Point Discovery](#driver-vulkan-entry-point-discovery)
 - [Driver API Version](#driver-api-version)
 - [Mixed Driver Instance Extension Support](#mixed-driver-instance-extension-support)
@@ -58,6 +59,7 @@
     - [Loader Version 0 Interface Requirements](#loader-version-0-interface-requirements)
     - [Additional Interface Notes:](#additional-interface-notes)
   - [Android Driver Negotiation](#android-driver-negotiation)
+- [Loader implementation of VK_KHR_portability_enumeration](#loader-implementation-of-vkkhrportabilityenumeration)
 - [Loader and Driver Policy](#loader-and-driver-policy)
   - [Number Format](#number-format)
   - [Android Differences](#android-differences)
@@ -275,16 +277,16 @@ For example, let us assume the registry contains the following data:
 ```
 [HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers\]
 
-"C:\vendor a\vk_vendora.json"=dword:00000000
-"C:\windows\system32\vendorb_vk.json"=dword:00000001
-"C:\windows\system32\vendorc_icd.json"=dword:00000000
+"C:\vendor a\vk_vendor_a.json"=dword:00000000
+"C:\windows\system32\vendor_b_vk.json"=dword:00000001
+"C:\windows\system32\vendor_c_icd.json"=dword:00000000
 ```
 
 In this case, the loader will step through each entry, and check the value.
 If the value is 0, then the loader will attempt to load the file.
 In this case, the loader will open the first and last listings, but not the
 middle.
-This is because the value of 1 for vendorb_vk.json disables the driver.
+This is because the value of 1 for vendor_b_vk.json disables the driver.
 
 The Vulkan loader will open each enabled manifest file found to obtain the name
 or pathname of a driver's shared library (".DLL") file.
@@ -499,19 +501,19 @@ The loader will load the driver via `hw_get_module` with the ID of "vulkan".
 
 ## Driver Manifest File Format
 
-The following section discusses the details of the Driver Manifest JSON
-file format.
+The following section discusses the details of the Driver Manifest JSON file format.
 The JSON file itself does not have any requirements for naming.
 The only requirement is that the extension suffix of the file is ".json".
 
 Here is an example driver JSON Manifest file:
 
-```
+```json
 {
-   "file_format_version": "1.0.0",
+   "file_format_version": "1.0.1",
    "ICD": {
       "library_path": "path to driver library",
-      "api_version": "1.0.5"
+      "api_version": "1.2.205",
+      "is_portability_driver": false
    }
 }
 ```
@@ -551,6 +553,12 @@ Here is an example driver JSON Manifest file:
         library files for the driver was built against.<br/>
         For example: 1.0.33.</td>
   </tr>
+  <tr>
+    <td>"is_portability_driver" </td>
+    <td>Defines whether the driver contains any VkPhysicalDevices which implement
+        the VK_KHR_portability_subset extension.<br/>
+    </td>
+  </tr>
 </table>
 
 **NOTE:** If the same driver shared library supports multiple, incompatible
@@ -559,8 +567,8 @@ for each (all of which may point to the same shared library).
 
 #### Driver Manifest File Versions
 
-There has only been one version of the Driver Manifest files supported.
-This is version 1.0.0.
+The current highest supported Layer Manifest file format supported is 1.0.1.
+Information about each version is detailed in the following sub-sections:
 
 #### Driver Manifest File Version 1.0.0
 
@@ -571,6 +579,13 @@ The fields supported in version 1.0.0 of the file format include:
  * "ICD"
  * "library\_path"
  * "api\_version"
+
+#### Driver Manifest File Version 1.0.1
+
+Added the `is_portability_driver` boolean field for drivers to self report that
+they contain VkPhysicalDevices which support the VK_KHR_portability_subset
+extension. This is an optional field. Omitting the field has the same effect as
+setting the field to `false`.
 
 
 ##  Driver Vulkan Entry Point Discovery
@@ -1200,6 +1215,24 @@ information directly from the respective libraries and does not use the JSON
 manifest files used by the Windows, Linux and macOS loaders.
 
 
+## Loader implementation of VK_KHR_portability_enumeration
+
+The loader implements the `VK_KHR_portability_enumeration` instance extension,
+which filters out any drivers that report support for the portability subset
+device extension. Unless the application explicitly requests enumeration of
+portability devices by setting the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
+bit in the VkInstanceCreateInfo::flags, the loader does not load any drivers
+that declare themselves to be portability drivers.
+
+Drivers declare whether they are portability drivers or not in the Driver Manifest
+Json file, with the `is_portability_driver` boolean field.
+[More information here](#driver-manifest-file-version-101)
+
+The initial support for this extension only reported errors when an application
+did not enable the portability enumeration feature. It did not filter out
+portability drivers. This was done to give a grace period for applications to
+update their instance creation logic without outright breaking the application.
+
 ## Loader and Driver Policy
 
 This section is intended to define proper behavior expected between the loader
@@ -1209,7 +1242,7 @@ maintaining consistency across platforms.
 In fact, much of the language can be found throughout this document, but is
 summarized here for convenience.
 Additionally, there should be a way to identify bad or non-conformant behavior
-in adriver and remedy it as soon as possible.
+in a driver and remedy it as soon as possible.
 Therefore, a policy numbering system is provided to clearly identify each
 policy statement in a unique way.
 

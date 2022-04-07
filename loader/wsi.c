@@ -1553,7 +1553,7 @@ out:
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
-// This is the trampoline entrypoint for CreateScrenSurfaceQNX
+// This is the trampoline entrypoint for CreateScreenSurfaceQNX
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance instance,
                                                                       const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
                                                                       const VkAllocationCallbacks *pAllocator,
@@ -2387,7 +2387,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhys
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
 
-    // If the function is abailable in the driver, just call into it
+    // If the function is available in the driver, just call into it
     if (icd_term->dispatch.GetDisplayPlaneCapabilities2KHR != NULL) {
         return icd_term->dispatch.GetDisplayPlaneCapabilities2KHR(phys_dev_term->phys_dev, pDisplayPlaneInfo, pCapabilities);
     }
