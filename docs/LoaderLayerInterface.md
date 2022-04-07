@@ -1106,7 +1106,7 @@ This mechanism consists of an extra parameter that will be passed to the layer
 intercept function when it is called.
 This parameter will be a pointer to a struct, defined as follows:
 
-```
+```cpp
 typedef struct Vk...Chain
 {
     struct {
@@ -1136,7 +1136,7 @@ must be that function's chain struct (passed as a const pointer).
 For example, a function that wishes to intercept
 `vkEnumerateInstanceExtensionProperties` would have the prototype:
 
-```
+```cpp
 VkResult
    InterceptFunctionName(
       const VkEnumerateInstanceExtensionPropertiesChain* pChain,
@@ -1157,7 +1157,7 @@ For example, a simple implementation for
 `vkEnumerateInstanceExtensionProperties` that does nothing but call down the
 chain would look like:
 
-```
+```cpp
 VkResult
    InterceptFunctionName(
       const VkEnumerateInstanceExtensionPropertiesChain* pChain,
@@ -1174,7 +1174,7 @@ When using a C++ compiler, each chain type also defines a function named
 `CallDown` which can be used to automatically handle the first argument.
 Implementing the above function using this method would look like:
 
-```
+```cpp
 VkResult
    InterceptFunctionName(
       const VkEnumerateInstanceExtensionPropertiesChain* pChain,
@@ -1226,14 +1226,14 @@ Layers which wrap dispatchable objects must ensure that the first field in the
 wrapping structure is a pointer to a dispatch table as defined in `vk_layer.h`.
 Specifically, an instance wrapped dispatchable object could be as follows:
 
-```
+```cpp
 struct my_wrapped_instance_obj_ {
     VkLayerInstanceDispatchTable *disp;
     // whatever data layer wants to add to this object
 };
 ```
 A device wrapped dispatchable object could be as follows:
-```
+```cpp
 struct my_wrapped_instance_obj_ {
     VkLayerDispatchTable *disp;
     // whatever data layer wants to add to this object
@@ -1418,7 +1418,7 @@ The only requirement is that the extension suffix of the file is ".json".
 
 Here is an example layer JSON Manifest file with a single layer:
 
-```
+```json
 {
    "file_format_version" : "1.0.0",
    "layer": {
@@ -1461,7 +1461,7 @@ Here is an example layer JSON Manifest file with a single layer:
 
 Here's a snippet with the changes required to support multiple layers per
 manifest file:
-```
+```json
 {
    "file_format_version" : "1.0.1",
    "layers": [
@@ -1480,7 +1480,7 @@ manifest file:
 ```
 
 Here's an example of a meta-layer manifest file:
-```
+```json
 {
    "file_format_version" : "1.1.1",
    "layer": {

@@ -5196,8 +5196,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 #ifdef LOADER_ENABLE_LINUX_SORT
         // Force on "VK_KHR_get_physical_device_properties2" for Linux as we use it for GPU sorting.  This
         // should be done if the API version of either the application or the driver does not natively support
-        // the core version of vkGetPhysicalDevicePoroperties2 entrypoint.
-        if ((ptr_instance->app_api_major_version == 1 && ptr_instance->app_api_minor_version == 0) ||
+        // the core version of vkGetPhysicalDeviceProperties2 entrypoint.
+        if ((ptr_instance->app_api_version.major == 1 && ptr_instance->app_api_version.minor == 0) ||
             (VK_API_VERSION_MAJOR(icd_term->scanned_icd->api_version) == 1 &&
              VK_API_VERSION_MINOR(icd_term->scanned_icd->api_version) == 0)) {
             prop = get_extension_property(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, &icd_exts);
@@ -5304,7 +5304,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 #endif  // VK_USE_PLATFORM_WIN32_KHR
                 NULL != icd_term->dispatch.DestroySurfaceKHR)) {
             loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
-                       "terminator_CreateInstance: Driver %s supports interface version %u but still exposes VkSurfacekHR"
+                       "terminator_CreateInstance: Driver %s supports interface version %u but still exposes VkSurfaceKHR"
                        " create/destroy entrypoints (Policy #LDP_DRIVER_8)",
                        ptr_instance->icd_tramp_list.scanned_list[i].lib_name,
                        ptr_instance->icd_tramp_list.scanned_list[i].interface_version);
@@ -6702,7 +6702,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     goto out;
                 }
                 if (cur_icd_group_count + count_this_time < *pPhysicalDeviceGroupCount) {
-                    // The total amount is still less than the amount of phsyical device group data passed in
+                    // The total amount is still less than the amount of physical device group data passed in
                     // by the callee.  Therefore, we don't have to allocate any temporary structures and we
                     // can just use the data that was passed in.
                     res = fpEnumeratePhysicalDeviceGroups(icd_term->instance, &count_this_time,
