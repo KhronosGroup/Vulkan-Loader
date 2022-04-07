@@ -121,7 +121,7 @@ void cJSON_AddItemToObjectCS(const struct loader_instance *instance, cJSON *obje
 void cJSON_AddItemReferenceToArray(const struct loader_instance *instance, cJSON *array, cJSON *item);
 void cJSON_AddItemReferenceToObject(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *item);
 
-/* Remove/Detatch items from Arrays/Objects. */
+/* Remove/Detach items from Arrays/Objects. */
 cJSON *cJSON_DetachItemFromArray(cJSON *array, int which);
 void cJSON_DeleteItemFromArray(const struct loader_instance *instance, cJSON *array, int which);
 cJSON *cJSON_DetachItemFromObject(cJSON *object, const char *string);

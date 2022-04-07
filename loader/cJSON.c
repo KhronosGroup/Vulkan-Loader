@@ -425,7 +425,7 @@ char *print_string_ptr(const struct loader_instance *instance, const char *str, 
     *ptr2++ = 0;
     return out;
 }
-/* Invote print_string_ptr (which is useful) on an item. */
+/* Invoke print_string_ptr (which is useful) on an item. */
 char *print_string(const struct loader_instance *instance, cJSON *item, printbuffer *p) {
     return print_string_ptr(instance, item->valuestring, p);
 }
