@@ -5197,7 +5197,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         // Force on "VK_KHR_get_physical_device_properties2" for Linux as we use it for GPU sorting.  This
         // should be done if the API version of either the application or the driver does not natively support
         // the core version of vkGetPhysicalDeviceProperties2 entrypoint.
-        if ((ptr_instance->app_api_version.major == 1 && ptr_instance->app_api_version.minor == 0) ||
+        if ((ptr_instance->app_api_major_version == 1 && ptr_instance->app_api_minor_version == 0) ||
             (VK_API_VERSION_MAJOR(icd_term->scanned_icd->api_version) == 1 &&
              VK_API_VERSION_MINOR(icd_term->scanned_icd->api_version) == 0)) {
             prop = get_extension_property(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, &icd_exts);

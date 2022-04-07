@@ -173,7 +173,9 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     ASSERT_EQ(driver.called_enumerate_adapter_physical_devices, CalledEnumerateAdapterPhysicalDevices::called);
 }
 
-TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, EnumAdapters2) {
+TEST(ICDInterfaceVersion2, EnumAdapters2) {
+    auto env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
+    env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     InstWrapper inst{env->vulkan_functions};
     auto& driver = env->get_test_icd();
     driver.physical_devices.emplace_back("physical_device_1");
@@ -230,11 +232,17 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevRes
     DXGI_ADAPTER_DESC1 desc1{};
     wcsncpy_s(&desc1.Description[0], 128, L"TestDriver1", 128);
     desc1.VendorId = known_driver.vendor_id;
-    desc1.AdapterLuid;
+    desc1.AdapterLuid = _LUID{10, 1000};
     desc1.Flags = DXGI_ADAPTER_FLAG_NONE;
     env->platform_shim->add_dxgi_adapter(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, GpuType::discrete,
                                          driver_index, desc1);
+    SHIM_D3DKMT_ADAPTERINFO d3dkmt_adapter_info{};
+    d3dkmt_adapter_info.hAdapter = 0;  //
+    d3dkmt_adapter_info.AdapterLuid = _LUID{10, 1000};
+    d3dkmt_adapter_info.NumOfSources = 1;
+    d3dkmt_adapter_info.bPresentMoveRegionsPreferred = true;
 
+    env->platform_shim->add_d3dkmt_adapter(d3dkmt_adapter_info, env->get_test_icd_path());
     InstWrapper inst2{env->vulkan_functions};
     inst2.CheckCreate();
 
@@ -303,10 +311,17 @@ TEST_F(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResul
     DXGI_ADAPTER_DESC1 desc1{};
     wcsncpy_s(&desc1.Description[0], 128, L"TestDriver1", 128);
     desc1.VendorId = known_driver.vendor_id;
-    desc1.AdapterLuid;
+    desc1.AdapterLuid = _LUID{10, 1000};
     desc1.Flags = DXGI_ADAPTER_FLAG_NONE;
     env->platform_shim->add_dxgi_adapter(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, GpuType::discrete,
                                          driver_index, desc1);
+    SHIM_D3DKMT_ADAPTERINFO d3dkmt_adapter_info{};
+    d3dkmt_adapter_info.hAdapter = 0;  //
+    d3dkmt_adapter_info.AdapterLuid = _LUID{10, 1000};
+    d3dkmt_adapter_info.NumOfSources = 1;
+    d3dkmt_adapter_info.bPresentMoveRegionsPreferred = true;
+
+    env->platform_shim->add_d3dkmt_adapter(d3dkmt_adapter_info, env->get_test_icd_path());
 
     InstWrapper inst2{env->vulkan_functions};
     inst2.CheckCreate();
@@ -550,7 +565,7 @@ VkResult test_vkSetPrivateData(VkDevice device, VkObjectType objectType, uint64_
 
 TEST(MinorVersionUpdate, Version1_3) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.push_back({});
     auto& icd_phys_dev = env.get_test_icd().physical_devices.back();
     icd_phys_dev.known_device_functions.insert(
@@ -770,7 +785,7 @@ TEST(MinorVersionUpdate, Version1_3) {
 
 TEST(ApplicationInfoVersion, NonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.push_back({});
 
     DebugUtilsLogger log;
@@ -785,7 +800,7 @@ TEST(ApplicationInfoVersion, NonVulkanVariant) {
 
 TEST(DriverManifest, NonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(1, 1, 0, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(1, 1, 0, 0)));
     env.get_test_icd().physical_devices.push_back({});
 
     DebugUtilsLogger log;
@@ -800,7 +815,7 @@ TEST(DriverManifest, NonVulkanVariant) {
 
 TEST(LayerManifest, ImplicitNonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 0, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 0, 0)));
     env.get_test_icd().physical_devices.push_back({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
@@ -822,7 +837,7 @@ TEST(LayerManifest, ImplicitNonVulkanVariant) {
 
 TEST(LayerManifest, ExplicitNonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 0, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 0, 0)));
     env.get_test_icd().physical_devices.push_back({});
 
     const char* explicit_layer_name = "ExplicitTestLayer";
@@ -843,7 +858,7 @@ TEST(LayerManifest, ExplicitNonVulkanVariant) {
 
 TEST(DriverManifest, UnknownManifestVersion) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_6).set_file_format_version({3, 2, 1})));
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2).set_file_format_version({3, 2, 1})));
     env.get_test_icd().physical_devices.push_back({});
 
     DebugUtilsLogger log;
@@ -858,7 +873,7 @@ TEST(DriverManifest, UnknownManifestVersion) {
 
 TEST(LayerManifest, UnknownManifestVersion) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.push_back({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";

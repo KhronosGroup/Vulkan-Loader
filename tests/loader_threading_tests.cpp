@@ -34,7 +34,7 @@ class ThreadingTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
         env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
-        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     }
 
     virtual void TearDown() { env.reset(); }

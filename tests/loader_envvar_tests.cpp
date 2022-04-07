@@ -141,7 +141,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
 // Make sure the loader reports the correct message based on if USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
@@ -169,7 +169,7 @@ TEST(EnvVarICDOverrideSetup, XDG) {
     set_env_var("XDG_DATA_HOME", "::::/tmp/goober3:/tmp/goober4/with spaces:::");
 
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.push_back({});
 
     InstWrapper inst{env.vulkan_functions};
@@ -254,7 +254,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     set_env_var("VK_LAYER_PATH", vk_layer_path);
 
     FrameworkEnvironment env{DebugMode::none, false, true};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.push_back({});
     env.platform_shim->redirect_path("/tmp/carol", env.explicit_layer_folder.location());
 
@@ -302,7 +302,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     set_env_var("VK_ADD_LAYER_PATH", vk_layer_path);
 
     FrameworkEnvironment env{DebugMode::none, false, true};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.push_back({});
     env.platform_shim->redirect_path("/tmp/carol", env.explicit_layer_folder.location());
 

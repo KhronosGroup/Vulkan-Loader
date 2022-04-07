@@ -31,7 +31,7 @@ class LayerTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
         env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
-        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     }
 
     virtual void TearDown() { env.reset(); }
@@ -322,11 +322,11 @@ TEST_F(MetaLayers, InvalidComponentLayer) {
 
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 3> extensions;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
     EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
     EXPECT_EQ(extension_count, 3U);
 
     InstWrapper inst{env->vulkan_functions};
@@ -365,11 +365,11 @@ TEST_F(MetaLayers, ExplicitMetaLayer) {
 
         uint32_t extension_count = 0;
         std::array<VkExtensionProperties, 3> extensions;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
         EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
         EXPECT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
         EXPECT_EQ(extension_count, 3U);
     }
     {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
@@ -426,11 +426,11 @@ TEST_F(MetaLayers, MetaLayerNameInComponentLayers) {
 
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 3> extensions;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
     EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
     EXPECT_EQ(extension_count, 3U);
 
     InstWrapper inst{env->vulkan_functions};
@@ -473,11 +473,11 @@ TEST_F(MetaLayers, MetaLayerWhichAddsMetaLayer) {
 
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 3> extensions;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    EXPECT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
     EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
     EXPECT_EQ(extension_count, 3U);
 
     InstWrapper inst{env->vulkan_functions};
@@ -1289,11 +1289,11 @@ TEST_F(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
 
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
     ASSERT_EQ(extension_count, 3U);  // debug_utils, debug_report, and portability enumeration
 
     // Make sure the extensions that are implemented only in the test layers is not present.
@@ -1341,11 +1341,11 @@ TEST_F(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     ASSERT_EQ(extension_count, 4U);  // the instance extension, debug_utils, debug_report, and portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
     ASSERT_EQ(extension_count, 4U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
@@ -1395,11 +1395,11 @@ TEST_F(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     ASSERT_EQ(extension_count, 4U);  // the instance extension, debug_utils, debug_report, and portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
     ASSERT_EQ(extension_count, 4U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
@@ -1450,11 +1450,11 @@ TEST_F(LayerExtensions, ImplicitBothInstanceExtensions) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     ASSERT_EQ(extension_count, 5U);  // the two instance extension plus debug_utils, debug_report, portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
     ASSERT_EQ(extension_count, 5U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
@@ -1492,11 +1492,11 @@ TEST_F(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     ASSERT_EQ(extension_count, 3U);  // debug utils, debug report, portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
     ASSERT_EQ(extension_count, 3U);
 
     // Make sure the extensions are not present
@@ -1509,7 +1509,7 @@ TEST_F(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
     extension_count = 0;
     extension_props.clear();
     ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
     ASSERT_EQ(extension_count, 0U);
 
     InstWrapper inst{env->vulkan_functions};
@@ -1542,11 +1542,11 @@ TEST_F(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     ASSERT_EQ(extension_count, 3U);  // debug utils, debug report, portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
+              env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
     ASSERT_EQ(extension_count, 3U);
     // Make sure the extensions are not present
     for (const auto& ext : extension_props) {
@@ -2320,7 +2320,7 @@ TEST_F(LayerExtensions, ExplicitBothDeviceExtensions) {
 
 TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2367,7 +2367,7 @@ TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
 
 TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2427,7 +2427,7 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
 
 TEST(TestLayers, ImplicitLayerPre10APIVersion) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2525,7 +2525,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
 // it is set with VK_INSTANCE_LAYERS
 TEST(TestLayers, EnvironEnableExplicitLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2615,7 +2615,7 @@ TEST(TestLayers, EnvironEnableExplicitLayer) {
 // Add a device layer, should not work
 TEST(TestLayers, DoNotUseDeviceLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2697,7 +2697,7 @@ TEST(TestLayers, DoNotUseDeviceLayer) {
 // Make sure that a layer enabled as both an instance and device layer works properly.
 TEST(TestLayers, InstanceAndDeviceLayer) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2738,7 +2738,7 @@ TEST(TestLayers, InstanceAndDeviceLayer) {
 // Make sure loader does not throw an error for a device layer  that is not present
 TEST(TestLayers, DeviceLayerNotPresent) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
     VkPhysicalDeviceProperties properties{};
     properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);

@@ -32,7 +32,7 @@ class UnknownFunction : public ::testing::Test {
    protected:
     virtual void SetUp() {
         env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
-        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     }
 
     virtual void TearDown() { env.reset(); }
@@ -132,7 +132,7 @@ TEST_F(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
-    env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver_0 = env->get_test_icd(0);
     auto& driver_1 = env->get_test_icd(1);
     std::vector<std::string> fake_function_names;
@@ -177,8 +177,8 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver_0 = env.get_test_icd(0);
     auto& driver_1 = env.get_test_icd(1);
     std::vector<std::string> fake_function_names;
@@ -242,7 +242,7 @@ TEST_F(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitL
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
-    env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver_0 = env->get_test_icd(0);
     auto& driver_1 = env->get_test_icd(1);
     std::vector<std::string> fake_function_names;

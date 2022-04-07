@@ -30,7 +30,7 @@
 // Verify that the various ways to get vkGetInstanceProcAddr return the same value
 TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
     {
         InstWrapper inst{env.vulkan_functions};
@@ -62,7 +62,7 @@ TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
 // Verify that the various ways to get vkGetDeviceProcAddr return the same value
 TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     InstWrapper inst{env.vulkan_functions};
@@ -90,7 +90,7 @@ TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
 // Call the function to make sure it is callable, don't care about what is returned.
 TEST(GetProcAddr, GlobalFunctions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     auto& gipa = env.vulkan_functions.vkGetInstanceProcAddr;

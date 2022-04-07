@@ -184,7 +184,7 @@ TEST_F(EnumerateInstanceExtensionProperties, UsageChecks) {
         uint32_t extension_count = 5;
         std::array<VkExtensionProperties, 5> extensions;
         ASSERT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
         ASSERT_EQ(extension_count, 5U);  // return debug report & debug utils & portability enumeration + our two extensions
 
         // loader always adds the debug report & debug utils extensions
@@ -197,11 +197,11 @@ TEST_F(EnumerateInstanceExtensionProperties, UsageChecks) {
     {  // Two Pass
         uint32_t extension_count = 0;
         std::array<VkExtensionProperties, 5> extensions;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
         ASSERT_EQ(extension_count, 5U);  // return debug report & debug utils + our two extensions
 
         ASSERT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
         ASSERT_EQ(extension_count, 5U);
         // loader always adds the debug report & debug utils extensions
         ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
@@ -216,7 +216,7 @@ TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
     uint32_t extension_count = 0;
     std::array<VkExtensionProperties, 2> extensions;
     {  // use nullptr for null string
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
         ASSERT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
         extension_count = 1;             // artificially remove one extension
 
@@ -227,7 +227,7 @@ TEST_F(EnumerateInstanceExtensionProperties, PropertyCountLessThanAvailable) {
         ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
     }
     {  // use "" for null string
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
         ASSERT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
         extension_count = 1;             // artificially remove one extension
 
@@ -245,11 +245,12 @@ TEST_F(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
     env->reset_icd().add_instance_extensions({first_ext, second_ext});
     {
         uint32_t extension_count = 0;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
         ASSERT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
 
         std::array<VkExtensionProperties, 3> extensions;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
+        ASSERT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
         ASSERT_EQ(extension_count, 3U);
         // loader always adds the debug report & debug utils extensions
         ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
@@ -260,11 +261,12 @@ TEST_F(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
         set_env_var("VK_LOADER_DISABLE_INST_EXT_FILTER", "1");
 
         uint32_t extension_count = 0;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
         ASSERT_EQ(extension_count, 5U);
 
         std::array<VkExtensionProperties, 5> extensions;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
+        ASSERT_EQ(VK_SUCCESS,
+                  env->vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
         ASSERT_EQ(extension_count, 5U);
 
         ASSERT_EQ(extensions[0], first_ext.get());
@@ -2044,7 +2046,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, FakePNext) {
     //   PhysDev 6: pd6, Discrete, Vulkan 1.1, Bus 2
     //   Group 0: PhysDev 5, PhysDev 6
     //   Group 1: PhysDev 4
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd_0 = env.get_test_icd(0);
     cur_icd_0.set_icd_api_version(VK_API_VERSION_1_1);
     cur_icd_0.physical_devices.push_back({"pd0", 7});
@@ -2065,7 +2067,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, FakePNext) {
         .use_physical_device(cur_icd_0.physical_devices[2]);
     cur_icd_0.physical_device_groups.push_back({cur_icd_0.physical_devices[1]});
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd_1 = env.get_test_icd(1);
     cur_icd_1.set_icd_api_version(VK_API_VERSION_1_1);
     cur_icd_1.physical_devices.push_back({"pd4", 1});
@@ -2133,7 +2135,7 @@ TEST(ExtensionManual, ToolingProperties) {
                                                      "No-Layer"};
     {  // No support in driver
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
         env.get_test_icd().physical_devices.push_back({});
 
         InstWrapper inst{env.vulkan_functions};
@@ -2151,7 +2153,7 @@ TEST(ExtensionManual, ToolingProperties) {
     }
     {  // extension is supported in driver
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
         env.get_test_icd().physical_devices.push_back({});
         env.get_test_icd().supports_tooling_info_ext = true;
         env.get_test_icd().tooling_properties.push_back(icd_tool_props);
@@ -2175,7 +2177,7 @@ TEST(ExtensionManual, ToolingProperties) {
     }
     {  // core
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
         env.get_test_icd().physical_devices.push_back({});
         env.get_test_icd().physical_devices.back().properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
         env.get_test_icd().supports_tooling_info_core = true;

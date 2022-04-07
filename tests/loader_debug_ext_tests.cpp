@@ -52,7 +52,7 @@ class DebugReportTest : public ::testing::Test {
     virtual void SetUp() {
         env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
         for (uint32_t icd = 0; icd < 3; ++icd) {
-            env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_0));
+            env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
             env->get_test_icd(icd).physical_devices.push_back({});
             env->get_test_icd(icd).physical_devices.push_back({});
         }
@@ -413,7 +413,7 @@ class DebugUtilTest : public ::testing::Test {
     virtual void SetUp() {
         env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
         for (uint32_t icd = 0; icd < 3; ++icd) {
-            env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_0));
+            env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
             env->get_test_icd(icd).physical_devices.push_back({});
             env->get_test_icd(icd).physical_devices.push_back({});
         }

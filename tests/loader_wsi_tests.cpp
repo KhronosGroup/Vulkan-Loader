@@ -369,7 +369,7 @@ TEST(WsiTests, XcbGetPhysicalDeviceSurfaceSupportKHR) {
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.set_min_icd_interface_version(5);
         cur_icd.add_instance_extensions({first_ext, second_ext});
-        std::string dev_name = "phys_dev_" + icd;
+        std::string dev_name = "phys_dev_" + std::to_string(icd);
         cur_icd.physical_devices.emplace_back(dev_name.c_str());
         cur_icd.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
         cur_icd.enable_icd_wsi = true;
@@ -554,7 +554,7 @@ TEST(WsiTests, XlibGetPhysicalDeviceSurfaceSupportKHR) {
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.set_min_icd_interface_version(5);
         cur_icd.add_instance_extensions({first_ext, second_ext});
-        std::string dev_name = "phys_dev_" + icd;
+        std::string dev_name = "phys_dev_" + std::to_string(icd);
         cur_icd.physical_devices.emplace_back(dev_name.c_str());
         cur_icd.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
         cur_icd.enable_icd_wsi = true;
@@ -739,7 +739,7 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.set_min_icd_interface_version(5);
         cur_icd.add_instance_extensions({first_ext, second_ext});
-        std::string dev_name = "phys_dev_" + icd;
+        std::string dev_name = "phys_dev_" + std::to_string(icd);
         cur_icd.physical_devices.emplace_back(dev_name.c_str());
         cur_icd.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
         cur_icd.enable_icd_wsi = true;
@@ -768,4 +768,3 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
     env.vulkan_functions.vkDestroySurfaceKHR(instance.inst, surface, nullptr);
 }
 #endif
-
