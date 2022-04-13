@@ -142,7 +142,7 @@ that do not use elevated privileges.
 For more information see
 [Elevated Privilege Caveats](LoaderInterfaceArchitecture.md#elevated-privilege-caveats)
 in the top-level
-[LoaderInterfaceArchitecture.md][LoaderInterfaceArchitecture.md] document.
+[LoaderInterfaceArchitecture.md](LoaderInterfaceArchitecture.md) document.
 
 #### Examples
 
