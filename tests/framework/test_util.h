@@ -574,6 +574,7 @@ struct ManifestLayer {
         BUILDER_VECTOR(LayerDescription, std::string, blacklisted_layers, blacklisted_layer)
         BUILDER_VECTOR(LayerDescription, std::string, override_paths, override_path)
         BUILDER_VECTOR(LayerDescription, FunctionOverride, pre_instance_functions, pre_instance_function)
+        BUILDER_VECTOR(LayerDescription, std::string, app_keys, app_key)
 
         std::string get_manifest_str() const;
         VkLayerProperties get_layer_properties() const;
@@ -856,3 +857,96 @@ inline bool contains(std::vector<VkLayerProperties> const& vec, const char* name
     return std::any_of(std::begin(vec), std::end(vec),
                        [name](VkLayerProperties const& elem) { return string_eq(name, elem.layerName); });
 }
+
+#if defined(__linux__)
+
+// find application path + name. Path cannot be longer than 1024, returns NULL if it is greater than that.
+static inline std::string test_platform_executable_path() {
+    std::string buffer;
+    buffer.resize(1024);
+    ssize_t count = readlink("/proc/self/exe", &buffer[0], buffer.size());
+    if (count == -1) return NULL;
+    if (count == 0) return NULL;
+    buffer[count] = '\0';
+    buffer.resize(count);
+    return buffer;
+}
+#elif defined(__APPLE__)  // defined(__linux__)
+#include <libproc.h>
+static inline std::string test_platform_executable_path() {
+    std::string buffer;
+    buffer.resize(1024);
+    pid_t pid = getpid();
+    int ret = proc_pidpath(pid, &buffer[0], buffer.size());
+    if (ret <= 0) return NULL;
+    buffer[ret] = '\0';
+    buffer.resize(ret);
+    return buffer;
+}
+#elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
+#include <sys/sysctl.h>
+static inline std::string test_platform_executable_path() {
+    int mib[] = {
+        CTL_KERN,
+#if defined(__NetBSD__)
+        KERN_PROC_ARGS,
+        -1,
+        KERN_PROC_PATHNAME,
+#else
+        KERN_PROC,
+        KERN_PROC_PATHNAME,
+        -1,
+#endif
+    };
+    std::string buffer;
+    buffer.resize(1024);
+    size_t size = buffer.size();
+    if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), &buffer[0], &size, NULL, 0) < 0) {
+        return NULL;
+    }
+    buffer.resize(size);
+
+    return buffer;
+}
+#elif defined(__Fuchsia__)
+static inline std::string test_platform_executable_path() { return {}; }
+#elif defined(__QNXNTO__)
+
+#define SYSCONFDIR "/etc"
+
+#include <fcntl.h>
+#include <sys/stat.h>
+
+static inline std::string test_platform_executable_path() {
+    std::string buffer;
+    buffer.resize(1024);
+    int fd = open("/proc/self/exefile", O_RDONLY);
+    size_t rdsize;
+
+    if (fd == -1) {
+        return NULL;
+    }
+
+    rdsize = read(fd, &buffer[0], buffer.size());
+    if (rdsize == size) {
+        return NULL;
+    }
+    buffer[rdsize] = 0x00;
+    close(fd);
+    buffer.resize(rdsize);
+
+    return buffer;
+}
+#endif  // defined (__QNXNTO__)
+#if defined(WIN32)
+static inline std::string test_platform_executable_path() {
+    std::string buffer;
+    buffer.resize(1024);
+    DWORD ret = GetModuleFileName(NULL, static_cast<LPSTR>(&buffer[0]), (DWORD)buffer.size());
+    if (ret == 0) return NULL;
+    if (ret > buffer.size()) return NULL;
+    buffer.resize(ret);
+    buffer[ret] = '\0';
+    return buffer;
+}
+#endif

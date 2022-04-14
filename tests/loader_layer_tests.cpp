@@ -1146,6 +1146,103 @@ TEST(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
     env.layers.clear();
 }
 
+// app_key contains test executable name, should activate the override layer
+TEST(OverrideMetaLayer, AppKeysDoesContainCurrentApplication) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 2, 0))
+            .add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_test_layer.json");
+
+    std::string cur_path = test_platform_executable_path();
+
+    env.add_implicit_layer(ManifestLayer{}
+                               .set_file_format_version(ManifestVersion(1, 2, 0))
+                               .add_layer(ManifestLayer::LayerDescription{}
+                                              .set_name(lunarg_meta_layer_name)
+                                              .add_component_layers({regular_layer_name})
+                                              .set_disable_environment("DisableMeIfYouCan")
+                                              .add_app_key(cur_path)),
+                           "meta_test_layer.json");
+    {  // global functions
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 2U);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    }
+    {
+        // instance
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        EXPECT_EQ(2U, count);
+        std::array<VkLayerProperties, 2> layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        EXPECT_EQ(2U, count);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    }
+}
+
+// app_key contains random strings, should not activate the override layer
+TEST(OverrideMetaLayer, AppKeysDoesNotContainCurrentApplication) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 2, 0))
+            .add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_test_layer.json");
+
+    env.add_implicit_layer(ManifestLayer{}
+                               .set_file_format_version(ManifestVersion(1, 2, 0))
+                               .add_layer(ManifestLayer::LayerDescription{}
+                                              .set_name(lunarg_meta_layer_name)
+                                              .add_component_layers({regular_layer_name})
+                                              .set_disable_environment("DisableMeIfYouCan")
+                                              .add_app_keys({"/Hello", "Hi", "./../Uh-oh", "C:/Windows/Only"})),
+                           "meta_test_layer.json");
+    {  // global functions
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 1U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 1U);
+        EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+    }
+    {
+        // instance
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        EXPECT_EQ(0U, count);
+        std::array<VkLayerProperties, 2> layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        EXPECT_EQ(0U, count);
+    }
+}
+
 // This test makes sure that any layer calling GetPhysicalDeviceProperties2 inside of CreateInstance
 // succeeds and doesn't crash.
 TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {

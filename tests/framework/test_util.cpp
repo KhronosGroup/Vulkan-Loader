@@ -174,6 +174,7 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     print_vector_of_strings(out, "component_layers", component_layers);
     print_vector_of_strings(out, "blacklisted_layers", blacklisted_layers);
     print_vector_of_strings(out, "override_paths", override_paths);
+    print_vector_of_strings(out, "app_keys", app_keys);
     print_list_of_t(out, "pre_instance_functions", pre_instance_functions);
 
     out += "\n\t}";
