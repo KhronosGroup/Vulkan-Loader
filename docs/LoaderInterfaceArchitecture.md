@@ -340,7 +340,7 @@ More information about device extensions can be found later in this document.
 Vulkan uses an object model to control the scope of a particular action or
 operation.
 The object to be acted on is always the first parameter of a Vulkan call and is
-a dispatchable object (see Vulkan specification section 2.3 Object Model).
+a dispatchable object (see Vulkan specification section 3.3 Object Model).
 Under the covers, the dispatchable object handle is a pointer to a structure,
 which in turn, contains a pointer to a dispatch table maintained by the loader.
 This dispatch table contains pointers to the Vulkan functions appropriate to
