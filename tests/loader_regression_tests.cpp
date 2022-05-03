@@ -3116,10 +3116,10 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
 #endif  // __linux__ || __FreeBSD__
 
 const char* portability_driver_warning =
-    "vkCreateDevice: Attempting to create a VkDevice from a VkPhysicalDevice which is from a portability driver "
-    "without the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags being set "
-    "and the VK_KHR_portability_enumeration extension enabled. In future versions of the loader this "
-    "VkPhysicalDevice will not be enumerated.";
+    "vkCreateInstance: Found drivers that contain devices which support the portability subset, but the "
+    "portability enumeration bit was not set!. Applications that wish to enumerate portability drivers must set the "
+    "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags and"
+    "enable the VK_KHR_portability_enumeration instance extension.";
 
 TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
     FrameworkEnvironment env{};
@@ -3129,14 +3129,15 @@ TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.max_icd_interface_version = 1;
-    // TODO - Fix tests when portability devices are not longer enumerated by default
     {  // enable portability extension and flag
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         inst.create_info.add_extension("VK_KHR_portability_enumeration");
         inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(portability_driver_warning));
+
         DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
@@ -3151,46 +3152,25 @@ TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        inst.CheckCreate();
-        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
-        CreateDebugUtilsMessenger(log);
-
-        auto phys_dev = inst.GetPhysDev();
-        handle_assert_has_value(phys_dev);
-
-        DeviceWrapper dev_info{inst};
-        dev_info.CheckCreate(phys_dev);
-        ASSERT_TRUE(log.find(portability_driver_warning));
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+        ASSERT_TRUE(env.debug_log.find(portability_driver_warning));
     }
     {  // enable portability extension but not flag - shouldn't be able to create an instance when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_extension("VK_KHR_portability_enumeration");
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        inst.CheckCreate();
-        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
-        CreateDebugUtilsMessenger(log);
-
-        auto phys_dev = inst.GetPhysDev();
-        handle_assert_has_value(phys_dev);
-
-        DeviceWrapper dev_info{inst};
-        dev_info.CheckCreate(phys_dev);
-        ASSERT_TRUE(log.find(portability_driver_warning));
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+        ASSERT_TRUE(env.debug_log.find(portability_driver_warning));
     }
     {  // enable neither the portability extension or the flag - shouldn't be able to create an instance when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.flags = 0;  // make sure its 0 - no portability
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        inst.CheckCreate();
-        DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
-        CreateDebugUtilsMessenger(log);
-
-        auto phys_dev = inst.GetPhysDev();
-        handle_assert_has_value(phys_dev);
-
-        DeviceWrapper dev_info{inst};
-        dev_info.CheckCreate(phys_dev);
-        ASSERT_TRUE(log.find(portability_driver_warning));
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+        ASSERT_TRUE(env.debug_log.find(portability_driver_warning));
     }
 }
 
@@ -3208,13 +3188,15 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICD) {
 
     driver1.physical_devices.emplace_back("portability_physical_device_1");
     driver1.max_icd_interface_version = 1;
-    // TODO - Fix tests when portability devices are not longer enumerated by default
     {  // enable portability extension and flag
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         inst.create_info.add_extension("VK_KHR_portability_enumeration");
         inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(portability_driver_warning));
+
         DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
@@ -3226,58 +3208,49 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICD) {
         DeviceWrapper dev_info_1{inst};
         dev_info_0.CheckCreate(phys_devs[0]);
         dev_info_1.CheckCreate(phys_devs[1]);
-        ASSERT_FALSE(log.find(portability_driver_warning));
     }
     {  // enable portability extension but not flag - should only enumerate 1 physical device when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         inst.create_info.add_extension("VK_KHR_portability_enumeration");
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(portability_driver_warning));
+
         DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
         CreateDebugUtilsMessenger(log);
-
-        auto phys_devs = inst.GetPhysDevs(2);
-        for (const auto& phys_dev : phys_devs) {
-            handle_assert_has_value(phys_dev);
-        }
+        auto phys_dev = inst.GetPhysDev();
+        handle_assert_has_value(phys_dev);
         DeviceWrapper dev_info_0{inst};
-        DeviceWrapper dev_info_1{inst};
-        dev_info_0.CheckCreate(phys_devs[0]);
-        dev_info_1.CheckCreate(phys_devs[1]);
-        ASSERT_TRUE(log.find(portability_driver_warning));
+        dev_info_0.CheckCreate(phys_dev);
     }
     {  // enable portability flag but not extension - should only enumerate 1 physical device when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(portability_driver_warning));
+
         DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
         CreateDebugUtilsMessenger(log);
-
-        auto phys_devs = inst.GetPhysDevs(2);
-        for (const auto& phys_dev : phys_devs) {
-            handle_assert_has_value(phys_dev);
-        }
+        auto phys_dev = inst.GetPhysDev();
+        handle_assert_has_value(phys_dev);
         DeviceWrapper dev_info_0{inst};
-        DeviceWrapper dev_info_1{inst};
-        dev_info_0.CheckCreate(phys_devs[0]);
-        dev_info_1.CheckCreate(phys_devs[1]);
-        ASSERT_TRUE(log.find(portability_driver_warning));
+        dev_info_0.CheckCreate(phys_dev);
     }
     {  // do not enable portability extension or flag - should only enumerate 1 physical device when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(portability_driver_warning));
+
         DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
         CreateDebugUtilsMessenger(log);
-        auto phys_devs = inst.GetPhysDevs(2);
-        for (const auto& phys_dev : phys_devs) {
-            handle_assert_has_value(phys_dev);
-        }
+        auto phys_dev = inst.GetPhysDev();
+        handle_assert_has_value(phys_dev);
         DeviceWrapper dev_info_0{inst};
-        DeviceWrapper dev_info_1{inst};
-        dev_info_0.CheckCreate(phys_devs[0]);
-        dev_info_1.CheckCreate(phys_devs[1]);
-        ASSERT_TRUE(log.find(portability_driver_warning));
+        dev_info_0.CheckCreate(phys_dev);
     }
 }

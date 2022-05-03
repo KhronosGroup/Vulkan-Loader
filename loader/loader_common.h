@@ -427,8 +427,6 @@ struct loader_scanned_icd {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vk_icdEnumerateAdapterPhysicalDevices EnumerateAdapterPhysicalDevices;
 #endif
-    // whether the device is a portability driver
-    bool portability_driver;
 };
 
 enum loader_data_files_type {
