@@ -1544,11 +1544,7 @@ void loader_initialize(void) {
     loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Vulkan Loader Version %d.%d.%d", version.major, version.minor, version.patch);
 
 #if defined(GIT_BRANCH_NAME) && defined(GIT_TAG_INFO)
-#define LOADER_GIT_STRINGIFY(x) #x
-#define LOADER_GIT_TOSTRING(x) LOADER_GIT_STRINGIFY(x)
-    const char git_branch_name[] = LOADER_GIT_TOSTRING(GIT_BRANCH_NAME);
-    const char git_tag_info[] = LOADER_GIT_TOSTRING(GIT_TAG_INFO);
-    loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "[Git - Tag: %s, Branch/Commit: %s]", git_tag_info, git_branch_name);
+    loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "[Vulkan Loader Git - Tag: " GIT_BRANCH_NAME ", Branch/Commit: " GIT_TAG_INFO "]");
 #endif
 }
 
