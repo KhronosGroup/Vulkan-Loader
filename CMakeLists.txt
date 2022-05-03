@@ -148,15 +148,17 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH 1)
 endif()
 
+set(GIT_BRANCH_NAME "--unknown--")
+set(GIT_TAG_INFO "--unknown--")
 find_package (Git)
-if (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git/HEAD")
+if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git/HEAD")
     execute_process(
         COMMAND ${GIT_EXECUTABLE} describe --tags --always
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT_VARIABLE GIT_TAG_INFO)
     string(REGEX REPLACE "\n$" "" GIT_TAG_INFO "${GIT_TAG_INFO}")
 
-    file(READ ".git/HEAD" GIT_HEAD_REF_INFO)
+    file(READ "${CMAKE_CURRENT_LIST_DIR}/.git/HEAD" GIT_HEAD_REF_INFO)
     if (GIT_HEAD_REF_INFO)
         string(REGEX MATCH "ref: refs/heads/(.*)" _ ${GIT_HEAD_REF_INFO})
         if (CMAKE_MATCH_1)
@@ -165,12 +167,7 @@ if (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git/HEAD")
             set(GIT_BRANCH_NAME ${GIT_HEAD_REF_INFO})
         endif()
         string(REGEX REPLACE "\n$" "" GIT_BRANCH_NAME "${GIT_BRANCH_NAME}")
-    else()
-        set(GIT_BRANCH_NAME "--unknown--")
     endif()
-else()
-    set(GIT_BRANCH_NAME "--unknown--")
-    set(GIT_TAG_INFO "--unknown--")
 endif()
 
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -341,7 +338,7 @@ endif()
 
 # DEBUG enables runtime loader ICD verification
 # Add git branch and tag info in debug mode
-target_compile_definitions(loader_common_options INTERFACE $<$<CONFIG:DEBUG>:DEBUG;GIT_BRANCH_NAME=${GIT_BRANCH_NAME};GIT_TAG_INFO=${GIT_TAG_INFO}>)
+target_compile_definitions(loader_common_options INTERFACE $<$<CONFIG:DEBUG>:DEBUG;GIT_BRANCH_NAME="${GIT_BRANCH_NAME}";GIT_TAG_INFO="${GIT_TAG_INFO}">)
 
 # Check for the existance of the secure_getenv or __secure_getenv commands
 include(CheckFunctionExists)
