@@ -563,18 +563,22 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
 
     // Scan/discover all ICD libraries
     memset(&ptr_instance->icd_tramp_list, 0, sizeof(ptr_instance->icd_tramp_list));
-    res = loader_icd_scan(ptr_instance, &ptr_instance->icd_tramp_list);
-    if (res == VK_SUCCESS && ptr_instance->icd_tramp_list.count == 0) {
+    bool skipped_portability_drivers = false;
+    res = loader_icd_scan(ptr_instance, &ptr_instance->icd_tramp_list, &skipped_portability_drivers);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    } else if (ptr_instance->icd_tramp_list.count == 0) {
         // No drivers found
+        if (skipped_portability_drivers) {
+            loader_log(
+                ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                "vkCreateInstance: Found drivers that contain devices which support the portability subset, but the "
+                "portability enumeration bit was not set!. Applications that wish to enumerate portability drivers must set the "
+                "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags and"
+                "enable the VK_KHR_portability_enumeration instance extension.");
+        }
         loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "vkCreateInstance: Found no drivers!");
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
-        goto out;
-    }
-    if (res != VK_SUCCESS) {
-        if (res != VK_ERROR_OUT_OF_HOST_MEMORY && ptr_instance->icd_tramp_list.count == 0) {
-            loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "vkCreateInstance: Found no drivers!");
-            res = VK_ERROR_INCOMPATIBLE_DRIVER;
-        }
         goto out;
     }
 
