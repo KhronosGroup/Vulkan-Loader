@@ -42,8 +42,11 @@ static inline VkPhysicalDevice loader_unwrap_physical_device(VkPhysicalDevice ph
 static inline void loader_set_dispatch(void *obj, const void *data) { *((const void **)obj) = data; }
 
 static inline VkLayerDispatchTable *loader_get_dispatch(const void *obj) {
+    if (VK_NULL_HANDLE == obj) {
+        return NULL;
+    }
     VkLayerDispatchTable *disp = *((VkLayerDispatchTable **)obj);
-    if (VK_NULL_HANDLE == obj || DEVICE_DISP_TABLE_MAGIC_NUMBER != disp->magic) {
+    if (VK_NULL_HANDLE == disp || DEVICE_DISP_TABLE_MAGIC_NUMBER != disp->magic) {
         return NULL;
     }
     return disp;
