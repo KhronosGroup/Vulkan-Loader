@@ -1402,6 +1402,8 @@ for explicit layers.
 For example, when both the meta layer override paths and `VK_LAYER_PATH` are
 present, none of the layers in `VK_LAYER_PATH` are discoverable, and the
 loader will not find them.
+
+
 ## Layer Manifest File Format
 
 The Khronos loader uses manifest files to discover available layer libraries
@@ -1502,19 +1504,162 @@ Here's an example of a meta-layer manifest file:
   <tr>
     <th>JSON Node</th>
     <th>Description and Notes</th>
+    <th>Restrictions</th>
+    <th>Parent</th>
     <th>Introspection Query</th>
+  </tr>
+  <tr>
+    <td>"api_version"</td>
+    <td>The major.minor.patch version number of the Vulkan API that the shared
+        library file for the library was built against. </br>
+        For example: 1.0.33.
+    </td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>vkEnumerateInstanceLayerProperties</small></td>
+  </tr>
+  <tr>
+    <td>"app_keys"</td>
+    <td>List of paths to executables that the meta-layer applies to.
+    </td>
+    <td><b>Meta-layers Only</b></td>
+    <td>"layer"/"layers"</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td>"blacklisted_layers"</td>
+    <td>List of explicit layer names that should not be loaded even if
+        requested by the application.
+    </td>
+    <td><b>Meta-layers Only</b></td>
+    <td>"layer"/"layers"</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td>"component_layers"</td>
+    <td>Indicates the component layer names that are
+        part of a meta-layer.
+        The names listed must be the "name" identified in each of the component
+        layer's Mainfest file "name" tag (this is the same as the name of the
+        layer that is passed to the `vkCreateInstance` command).
+        All component layers must be present on the system and found by the
+        loader in order for this meta-layer to be available and activated. <br/>
+        <b>This field must not be present if "library_path" is defined</b>.
+    </td>
+    <td><b>Meta-layers Only</b></td>
+    <td>"layer"/"layers"</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td>"description"</td>
+    <td>A high-level description of the layer and its intended use.</td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>vkEnumerateInstanceLayerProperties</small></td>
+  </tr>
+  <tr>
+    <td>"device_extensions"</td>
+    <td><b>OPTIONAL:</b> Contains the list of device extension names supported
+        by this layer. One "device\_extensions" node with an array of one or
+        more elements is required if any device extensions are supported by a
+        layer; otherwise the node is optional.
+        Each element of the array must have the nodes "name" and "spec_version"
+        which correspond to `VkExtensionProperties` "extensionName" and
+        "specVersion" respectively.
+        Additionally, each element of the array of device extensions must have
+        the node "entrypoints" if the device extension adds Vulkan API
+        functions; otherwise this node is not required.
+        The "entrypoint" node is an array of the names of all entry-points added
+        by the supported extension.
+    </td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>vkEnumerateDeviceExtensionProperties</small></td>
+  </tr>
+  <tr>
+    <td>"disable_environment"</td>
+    <td><b>REQUIRED:</b> Indicates an environment variable used to disable the
+        Implicit Layer (when defined to any non-empty string value).<br/>
+        In rare cases of an application not working with an implicit layer, the
+        application can set this environment variable (before calling Vulkan
+        functions) in order to "blacklist" the layer.
+        This environment variable (which may vary with each variation of the
+        layer) must be set (not particularly to any value).
+        If both the "enable_environment" and "disable_environment" variables are
+        set, the implicit layer is disabled.
+    </td>
+    <td><b>Implicit Layers Only</b></td>
+    <td>"layer"/"layers"</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td>"enable_environment"</td>
+    <td><b>OPTIONAL:</b> Indicates an environment variable used to enable the
+        Implicit Layer (when defined to any non-empty string value).<br/>
+        This environment variable (which may vary with each variation of the
+        layer) must be set to the given value or else the implicit layer is not
+        loaded.
+        This is for application environments (e.g. Steam) which want to enable a
+        layer(s) only for applications that they launch, and allows for
+        applications run outside of an application environment to not get that
+        implicit layer(s).
+    </td>
+    <td><b>Implicit Layers Only</b></td>
+    <td>"layer"/"layers"</td>
+    <td><small>N/A</small></td>
   </tr>
   <tr>
     <td>"file_format_version"</td>
     <td>Manifest format major.minor.patch version number.<br/>
         Supported versions are: 1.0.0, 1.0.1, 1.1.0, 1.1.1, and 1.1.2.
     </td>
+    <td>None</td>
+    <td>None</td>
     <td><small>N/A</small></td>
+  </tr>
+  <tr>
+    <td>"functions"</td>
+    <td><b>OPTIONAL:</b> This section can be used to identify a different
+        function name for the loader to use in place of standard layer interface
+        functions.
+        The "functions" node is required if the layer is using an alternative
+        name for `vkNegotiateLoaderLayerInterfaceVersion`.
+    </td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>vkGet*ProcAddr</small></td>
+  </tr>
+  <tr>
+    <td>"implementation_version"</td>
+    <td>The version of the layer implemented.
+        If the layer itself has any major changes, this number should change so
+        the loader and/or application can identify it properly.
+    </td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>vkEnumerateInstanceLayerProperties</small></td>
+  </tr>
+  <tr>
+    <td>"instance_extensions"</td>
+    <td><b>OPTIONAL:</b> Contains the list of instance extension names
+        supported by this layer.
+        One "instance_extensions" node with an array of one or more elements is
+        required if any instance extensions are supported by a layer; otherwise
+        the node is optional.
+        Each element of the array must have the nodes "name" and "spec_version"
+        which correspond to `VkExtensionProperties` "extensionName" and
+        "specVersion" respectively.
+    </td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>vkEnumerateInstanceExtensionProperties</small></td>
   </tr>
   <tr>
     <td>"layer"</td>
     <td>The identifier used to group a single layer's information together.
     </td>
+    <td>None</td>
+    <td>None</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
@@ -1522,26 +1667,9 @@ Here's an example of a meta-layer manifest file:
     <td>The identifier used to group multiple layers' information together.
         This requires a minimum Manifest file format version of 1.0.1.
     </td>
+    <td>None</td>
+    <td>None</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
-  </tr>
-  <tr>
-    <td>"name"</td>
-    <td>The string used to uniquely identify this layer to applications.</td>
-    <td><small>vkEnumerateInstanceLayerProperties</small></td>
-  </tr>
-  <tr>
-    <td>"type"</td>
-    <td>This field indicates the type of layer.  The values can be: GLOBAL, or
-        INSTANCE.<br/>
-        <b> NOTE: </b> Prior to deprecation, the "type" node was used to
-        indicate which layer chain(s) to activate the layer upon: instance,
-        device, or both.
-        Distinct instance and device layers are deprecated; there are now just
-        instance layers.
-        Originally, allowable values were "INSTANCE", "GLOBAL" and, "DEVICE."
-        But now "DEVICE" layers are skipped over by the loader as if they were
-        not found.</td>
-    <td><small>vkEnumerate*LayerProperties</small></td>
   </tr>
   <tr>
     <td>"library_path"</td>
@@ -1558,125 +1686,60 @@ Here's an example of a meta-layer manifest file:
         ".so" on Linux, and ".dylib" on macOS).<br/>
         <b>This field must not be present if "component_layers" is defined</b>.
     </td>
+    <td><b>Not Valid For Meta-layers</b></td>
+    <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
-    <td>"api_version"</td>
-    <td>The major.minor.patch version number of the Vulkan API that the shared
-        library file for the library was built against. </br>
-        For example: 1.0.33.
-    </td>
+    <td>"name"</td>
+    <td>The string used to uniquely identify this layer to applications.</td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
-    <td>"implementation_version"</td>
-    <td>The version of the layer implemented.
-        If the layer itself has any major changes, this number should change so
-        the loader and/or application can identify it properly.
+    <td>"override_paths"</td>
+    <td>List of paths which will be used as the search location for component
+        layers.
     </td>
-    <td><small>vkEnumerateInstanceLayerProperties</small></td>
-  </tr>
-  <tr>
-    <td>"description"</td>
-    <td>A high-level description of the layer and its intended use.</td>
-    <td><small>vkEnumerateInstanceLayerProperties</small></td>
-  </tr>
-  <tr>
-    <td>"functions"</td>
-    <td><b>OPTIONAL:</b> This section can be used to identify a different
-        function name for the loader to use in place of standard layer interface
-        functions.
-        The "functions" node is required if the layer is using an alternative
-        name for `vkNegotiateLoaderLayerInterfaceVersion`.
-    </td>
-    <td><small>vkGet*ProcAddr</small></td>
-  </tr>
-  <tr>
-    <td>"instance_extensions"</td>
-    <td><b>OPTIONAL:</b> Contains the list of instance extension names
-        supported by this layer.
-        One "instance_extensions" node with an array of one or more elements is
-        required if any instance extensions are supported by a layer; otherwise
-        the node is optional.
-        Each element of the array must have the nodes "name" and "spec_version"
-        which correspond to `VkExtensionProperties` "extensionName" and
-        "specVersion" respectively.
-    </td>
-    <td><small>vkEnumerateInstanceExtensionProperties</small></td>
-  </tr>
-  <tr>
-    <td>"device_extensions"</td>
-    <td><b>OPTIONAL:</b> Contains the list of device extension names supported
-        by this layer. One "device\_extensions" node with an array of one or
-        more elements is required if any device extensions are supported by a
-        layer; otherwise the node is optional.
-        Each element of the array must have the nodes "name" and "spec_version"
-        which correspond to `VkExtensionProperties` "extensionName" and
-        "specVersion" respectively.
-        Additionally, each element of the array of device extensions must have
-        the node "entrypoints" if the device extension adds Vulkan API
-        functions; otherwise this node is not required.
-        The "entrypoint" node is an array of the names of all entry-points added
-        by the supported extension.</td>
-    <td><small>vkEnumerateDeviceExtensionProperties</small></td>
-  </tr>
-  <tr>
-    <td>"enable_environment"</td>
-    <td><b>Implicit Layers Only</b> - <b>OPTIONAL:</b> Indicates an environment
-        variable used to enable the Implicit Layer (when defined to any
-         non-empty string value).<br/>
-        This environment variable (which may vary with each variation of the
-        layer) must be set to the given value or else the implicit layer is not
-        loaded.
-        This is for application environments (e.g. Steam) which want to enable a
-        layer(s) only for applications that they launch, and allows for
-        applications run outside of an application environment to not get that
-        implicit layer(s).</td>
-    <td><small>N/A</small></td>
-  </tr>
-  <tr>
-    <td>"disable_environment"</td>
-    <td><b>Implicit Layers Only</b> - <b>REQUIRED:</b> Indicates an environment
-        variable used to disable the Implicit Layer (when defined to any
-        non-empty string value).<br/>
-        In rare cases of an application not working with an implicit layer, the
-        application can set this environment variable (before calling Vulkan
-        functions) in order to "blacklist" the layer.
-        This environment variable (which may vary with each variation of the
-        layer) must be set (not particularly to any value).
-        If both the "enable_environment" and "disable_environment" variables are
-        set, the implicit layer is disabled.</td>
-    <td><small>N/A</small></td>
-  </tr>
-  <tr>
-    <td>"component_layers"</td>
-    <td><b>Meta-layers Only</b> - Indicates the component layer names that are
-        part of a meta-layer.
-        The names listed must be the "name" identified in each of the component
-        layer's Mainfest file "name" tag (this is the same as the name of the
-        layer that is passed to the `vkCreateInstance` command).
-        All component layers must be present on the system and found by the
-        loader in order for this meta-layer to be available and activated. <br/>
-        <b>This field must not be present if "library_path" is defined</b>.
-    </td>
+    <td><b>Meta-layers Only</b></td>
+    <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
     <td>"pre_instance_functions"</td>
-    <td><b>Implicit Layers Only</b> - <b>OPTIONAL:</b> Indicates which
-        functions the layer wishes to intercept, that do not require that an
-        instance has been created.
+    <td><b>OPTIONAL:</b> Indicates which functions the layer wishes to
+        intercept, that do not require that an instance has been created.
         This should be an object where each function to be intercepted is
         defined as a string entry where the key is the Vulkan function name and
         the value is the name of the intercept function in the layer's dynamic
         library.
         Available in layer manifest versions 1.1.2 and up. <br/>
         See <a href="#pre-instance-functions">Pre-Instance Functions</a> for
-        more information.</td>
+        more information.
+    </td>
+    <td><b>Implicit Layers Only</b></td>
+    <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstance*Properties</small></td>
   </tr>
+  <tr>
+    <td>"type"</td>
+    <td>This field indicates the type of layer.  The values can be: GLOBAL, or
+        INSTANCE.<br/>
+        <b> NOTE: </b> Prior to deprecation, the "type" node was used to
+        indicate which layer chain(s) to activate the layer upon: instance,
+        device, or both.
+        Distinct instance and device layers are deprecated; there are now just
+        instance layers.
+        Originally, allowable values were "INSTANCE", "GLOBAL" and, "DEVICE."
+        But now "DEVICE" layers are skipped over by the loader as if they were
+        not found.
+    </td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>vkEnumerate*LayerProperties</small></td>
+  </tr>
 </table>
-
 
 ### Layer Manifest File Version History
 
