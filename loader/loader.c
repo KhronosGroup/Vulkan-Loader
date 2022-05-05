@@ -1870,8 +1870,8 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
                             found_active_override_layer = true;
                         } else {
                             loader_log(
-                                inst, VULKAN_LOADER_WARN_BIT, 0,
-                                "remove_all_non_valid_override_layers: Multiple override layers where the samepath in app_keys "
+                                inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                                "remove_all_non_valid_override_layers: Multiple override layers where the same path in app_keys "
                                 "was found. Using the first layer found");
 
                             // Remove duplicate active override layers that have the same app_key_path
@@ -1881,6 +1881,11 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
                     }
                 }
                 if (!found_active_override_layer) {
+                    loader_log(
+                        inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                        "--Override layer found but not used because app \'%s\' is not in \'app_keys\' list!",
+                        cur_path);
+
                     // Remove non-global override layers that don't have an app_key that matches cur_path
                     loader_remove_layer_in_list(inst, instance_layers, i);
                     i--;
@@ -1890,7 +1895,7 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
                     global_layer_index = i;
                 } else {
                     loader_log(
-                        inst, VULKAN_LOADER_WARN_BIT, 0,
+                        inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                         "remove_all_non_valid_override_layers: Multiple global override layers found. Using the first global "
                         "layer found");
                     loader_remove_layer_in_list(inst, instance_layers, i);
@@ -2500,7 +2505,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     app_keys = cJSON_GetObjectItem(layer_node, "app_keys");
     if (app_keys != NULL) {
         if (strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Layer %s contains app_keys, but any app_keys can only be provided by the override metalayer. "
                        "These will be ignored.",
                        name);
