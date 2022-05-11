@@ -284,62 +284,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLay
     }
 }
 
-VKAPI_ATTR uint32_t VKAPI_CALL DriverLayerThunkFunc(VkPhysicalDevice device, TestLayer& layer, uint32_t function_index,
-                                                    uint32_t input) {
-    return input + 1;
-}
-
-VKAPI_ATTR uint32_t VKAPI_CALL LayerInterceptionFunc(VkPhysicalDevice device, TestLayer& layer, uint32_t function_index,
-                                                     uint32_t input) {
-    if (layer.intercept_custom_physical_device_functions.size() > function_index)
-        input = layer.intercept_custom_physical_device_functions.at(function_index).second(device, layer, function_index, input);
-    return input;
-}
-
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
-    FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver = env.get_test_icd();
-    std::vector<std::string> custom_function_names;
-    for (uint32_t i = 0; i < 100; i++) {
-        custom_function_names.push_back("vkMyCustomName_" + std::to_string(i));
-    }
-
-    driver.physical_devices.emplace_back("physical_device_0");
-    for (uint32_t i = 0; i < 100; i += 2) {
-        driver.add_custom_physical_device_function({custom_function_names.at(i), reinterpret_cast<void*>(DriverLayerThunkFunc)});
-        driver.add_custom_physical_device_function(
-            {custom_function_names.at(i + 1), reinterpret_cast<void*>(custom_physical_device_functions::func_two)});
-    }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_layer_unknown_function_intercept.json");
-    auto& layer = env.get_test_layer();
-    for (uint32_t i = 0; i < 100; i += 2) {
-        layer.add_intercept_custom_physical_device_function(
-            {VulkanFunction{custom_function_names.at(i), reinterpret_cast<void*>(LayerInterceptionFunc)}, nullptr});
-    }
-    InstWrapper inst{env.vulkan_functions};
-    inst.CheckCreate();
-
-    VkPhysicalDevice phys_dev = inst.GetPhysDev();
-    for (uint32_t i = 0; i < 100; i += 2) {
-        PFN_LayerPhysicalDeviceInterceptionFunc func0 = inst.load(custom_function_names.at(i).c_str());
-        ASSERT_NE(func0, nullptr);
-        EXPECT_EQ(func0(phys_dev, layer, i / 2, i), i + 1);
-
-        decltype(custom_physical_device_functions::func_two)* func1 = inst.load(custom_function_names.at(i + 1).c_str());
-        ASSERT_NE(func1, nullptr);
-        EXPECT_NEAR(func1(phys_dev, i, i + 2, 0.123f), i + i + 2.0f + 0.123f, 0.001f);
-    }
-}
-
-TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
@@ -357,7 +302,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
                                                          .set_disable_environment("DISABLE_ME")),
                            "implicit_layer_unknown_function_intercept.json");
     auto& layer = env.get_test_layer();
-    fill_custom_functions(layer.implement_custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
+    fill_custom_functions(layer.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{},
                           function_count);
 
     InstWrapper inst{env.vulkan_functions};
@@ -368,7 +313,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
                            function_count);
 }
 
-TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersImplementation) {
+TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersInterception) {
 #if defined(__APPLE__)
     GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
 #endif
@@ -392,10 +337,10 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersImplementa
                            "implicit_layer_unknown_function_intercept_1.json");
     auto& layer_1 = env.get_test_layer();
     for (uint32_t i = 0; i < 25; i++) {
-        fill_custom_functions(layer_0.implement_custom_physical_device_functions, fake_function_names,
-                              custom_physical_device_functions{}, 5, i * 10);
-        fill_custom_functions(layer_1.implement_custom_physical_device_functions, fake_function_names,
-                              custom_physical_device_functions{}, 5, i * 10 + 5);
+        fill_custom_functions(layer_0.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{}, 5,
+                              i * 10);
+        fill_custom_functions(layer_1.custom_physical_device_functions, fake_function_names, custom_physical_device_functions{}, 5,
+                              i * 10 + 5);
     }
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
