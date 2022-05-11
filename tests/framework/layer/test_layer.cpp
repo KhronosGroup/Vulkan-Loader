@@ -170,10 +170,6 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
 
     if (layer.create_instance_callback) result = layer.create_instance_callback(layer);
 
-    for (auto& func : layer.intercept_custom_physical_device_functions)
-        func.second = reinterpret_cast<PFN_LayerPhysicalDeviceInterceptionFunc>(
-            fpGetInstanceProcAddr(layer.instance_handle, func.first.name.c_str()));
-
     return result;
 }
 
@@ -434,14 +430,9 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
     if (string_eq(pName, "vkEnumeratePhysicalDeviceGroups")) return (PFN_vkVoidFunction)test_vkEnumeratePhysicalDeviceGroups;
     if (string_eq(pName, "vkGetPhysicalDeviceProperties")) return (PFN_vkVoidFunction)test_vkGetPhysicalDeviceProperties;
 
-    for (auto& func : layer.implement_custom_physical_device_functions) {
+    for (auto& func : layer.custom_physical_device_functions) {
         if (func.name == pName) {
             return to_vkVoidFunction(func.function);
-        }
-    }
-    for (auto& func : layer.intercept_custom_physical_device_functions) {
-        if (func.first.name == pName) {
-            return to_vkVoidFunction(func.first.function);
         }
     }
     return nullptr;

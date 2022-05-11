@@ -86,13 +86,7 @@ struct TestLayer;
 // TestLayer* layer - Access to the TestLayer object itself
 // void* data - pointer to test specific thing, used to pass data from the test into the TestLayer
 // Returns VkResult - This value will be used as the return value of the function
-using FP_layer_callback = VKAPI_ATTR VkResult (VKAPI_CALL*)(TestLayer& layer, void* data);
-
-// Custom interception function for testing unknown physical device functions
-using PFN_LayerPhysicalDeviceInterceptionFunc = VKAPI_ATTR uint32_t(VKAPI_CALL*)(VkPhysicalDevice device, TestLayer& layer,
-                                                                                 uint32_t function_index, uint32_t input);
-
-using VulkanPhysicalDeviceInterceptionFunction = std::pair<VulkanFunction, PFN_LayerPhysicalDeviceInterceptionFunc>;
+using FP_layer_callback = VkResult (*)(TestLayer& layer, void* data);
 
 struct TestLayer {
     fs::path manifest_file_path;
@@ -137,10 +131,7 @@ struct TestLayer {
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, removed_physical_device_groups, removed_physical_device_group)
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, added_physical_device_groups, added_physical_device_group)
 
-    BUILDER_VECTOR(TestLayer, VulkanFunction, implement_custom_physical_device_functions,
-                   implement_custom_physical_device_functions)
-    BUILDER_VECTOR(TestLayer, VulkanPhysicalDeviceInterceptionFunction, intercept_custom_physical_device_functions,
-                   intercept_custom_physical_device_function)
+    BUILDER_VECTOR(TestLayer, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
 
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
