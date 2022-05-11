@@ -461,6 +461,8 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
             return os << "VK_PIPELINE_COMPILE_REQUIRED_EXT";
         case (VK_RESULT_MAX_ENUM):
             return os << "VK_RESULT_MAX_ENUM";
+        case (VK_ERROR_COMPRESSION_EXHAUSTED_EXT):
+            return os << "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
     }
     return os << static_cast<int32_t>(result);
 }
