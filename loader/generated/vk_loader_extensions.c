@@ -727,6 +727,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdBlitImage2KHR = (PFN_vkCmdBlitImage2KHR)gdpa(dev, "vkCmdBlitImage2KHR");
     table->CmdResolveImage2KHR = (PFN_vkCmdResolveImage2KHR)gdpa(dev, "vkCmdResolveImage2KHR");
 
+    // ---- VK_KHR_ray_tracing_maintenance1 extension commands
+    table->CmdTraceRaysIndirect2KHR = (PFN_vkCmdTraceRaysIndirect2KHR)gdpa(dev, "vkCmdTraceRaysIndirect2KHR");
+
     // ---- VK_KHR_maintenance4 extension commands
     table->GetDeviceBufferMemoryRequirementsKHR = (PFN_vkGetDeviceBufferMemoryRequirementsKHR)gdpa(dev, "vkGetDeviceBufferMemoryRequirementsKHR");
     table->GetDeviceImageMemoryRequirementsKHR = (PFN_vkGetDeviceImageMemoryRequirementsKHR)gdpa(dev, "vkGetDeviceImageMemoryRequirementsKHR");
@@ -929,6 +932,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)gdpa(dev, "vkCmdSetFragmentShadingRateEnumNV");
 
+    // ---- VK_EXT_image_compression_control extension commands
+    table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT)gdpa(dev, "vkGetImageSubresourceLayout2EXT");
+
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     table->CmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)gdpa(dev, "vkCmdSetVertexInputEXT");
 
@@ -974,6 +980,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_NV_external_memory_rdma extension commands
     table->GetMemoryRemoteAddressNV = (PFN_vkGetMemoryRemoteAddressNV)gdpa(dev, "vkGetMemoryRemoteAddressNV");
+
+    // ---- VK_EXT_pipeline_properties extension commands
+    table->GetPipelinePropertiesEXT = (PFN_vkGetPipelinePropertiesEXT)gdpa(dev, "vkGetPipelinePropertiesEXT");
 
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     table->CmdSetPatchControlPointsEXT = (PFN_vkCmdSetPatchControlPointsEXT)gdpa(dev, "vkCmdSetPatchControlPointsEXT");
@@ -1664,6 +1673,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdBlitImage2KHR")) return (void *)table->CmdBlitImage2KHR;
     if (!strcmp(name, "CmdResolveImage2KHR")) return (void *)table->CmdResolveImage2KHR;
 
+    // ---- VK_KHR_ray_tracing_maintenance1 extension commands
+    if (!strcmp(name, "CmdTraceRaysIndirect2KHR")) return (void *)table->CmdTraceRaysIndirect2KHR;
+
     // ---- VK_KHR_maintenance4 extension commands
     if (!strcmp(name, "GetDeviceBufferMemoryRequirementsKHR")) return (void *)table->GetDeviceBufferMemoryRequirementsKHR;
     if (!strcmp(name, "GetDeviceImageMemoryRequirementsKHR")) return (void *)table->GetDeviceImageMemoryRequirementsKHR;
@@ -1866,6 +1878,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     if (!strcmp(name, "CmdSetFragmentShadingRateEnumNV")) return (void *)table->CmdSetFragmentShadingRateEnumNV;
 
+    // ---- VK_EXT_image_compression_control extension commands
+    if (!strcmp(name, "GetImageSubresourceLayout2EXT")) return (void *)table->GetImageSubresourceLayout2EXT;
+
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     if (!strcmp(name, "CmdSetVertexInputEXT")) return (void *)table->CmdSetVertexInputEXT;
 
@@ -1911,6 +1926,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NV_external_memory_rdma extension commands
     if (!strcmp(name, "GetMemoryRemoteAddressNV")) return (void *)table->GetMemoryRemoteAddressNV;
+
+    // ---- VK_EXT_pipeline_properties extension commands
+    if (!strcmp(name, "GetPipelinePropertiesEXT")) return (void *)table->GetPipelinePropertiesEXT;
 
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     if (!strcmp(name, "CmdSetPatchControlPointsEXT")) return (void *)table->CmdSetPatchControlPointsEXT;
@@ -3656,6 +3674,22 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->CmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
+}
+
+
+// ---- VK_KHR_ray_tracing_maintenance1 extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirect2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             indirectDeviceAddress) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdTraceRaysIndirect2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
 }
 
 
@@ -5864,6 +5898,24 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
 }
 
 
+// ---- VK_EXT_image_compression_control extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetImageSubresourceLayout2EXT: Invalid device "
+                   "[VUID-vkGetImageSubresourceLayout2EXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+}
+
+
 // ---- VK_NV_acquire_winrt_display extension trampoline/terminators
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -6162,6 +6214,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->GetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
+}
+
+
+// ---- VK_EXT_pipeline_properties extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(
+    VkDevice                                    device,
+    const VkPipelineInfoEXT*                    pPipelineInfo,
+    VkBaseOutStructure*                         pPipelineProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPipelinePropertiesEXT: Invalid device "
+                   "[VUID-vkGetPipelinePropertiesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
 }
 
 
@@ -7205,6 +7274,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_KHR_ray_tracing_maintenance1 extension commands
+    if (!strcmp("vkCmdTraceRaysIndirect2KHR", name)) {
+        *addr = (void *)CmdTraceRaysIndirect2KHR;
+        return true;
+    }
+
     // ---- VK_KHR_maintenance4 extension commands
     if (!strcmp("vkGetDeviceBufferMemoryRequirementsKHR", name)) {
         *addr = (void *)GetDeviceBufferMemoryRequirementsKHR;
@@ -7859,6 +7934,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_image_compression_control extension commands
+    if (!strcmp("vkGetImageSubresourceLayout2EXT", name)) {
+        *addr = (void *)GetImageSubresourceLayout2EXT;
+        return true;
+    }
+
     // ---- VK_NV_acquire_winrt_display extension commands
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (!strcmp("vkAcquireWinrtDisplayNV", name)) {
@@ -7958,6 +8039,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_NV_external_memory_rdma extension commands
     if (!strcmp("vkGetMemoryRemoteAddressNV", name)) {
         *addr = (void *)GetMemoryRemoteAddressNV;
+        return true;
+    }
+
+    // ---- VK_EXT_pipeline_properties extension commands
+    if (!strcmp("vkGetPipelinePropertiesEXT", name)) {
+        *addr = (void *)GetPipelinePropertiesEXT;
         return true;
     }
 
