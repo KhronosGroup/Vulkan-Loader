@@ -1343,11 +1343,11 @@ static VkResult loader_scanned_icd_init(const struct loader_instance *inst, stru
 static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                                        const char *filename, uint32_t api_version, enum loader_layer_library_status *lib_status) {
     loader_platform_dl_handle handle = NULL;
-    PFN_vkCreateInstance fp_create_inst;
-    PFN_vkEnumerateInstanceExtensionProperties fp_get_inst_ext_props;
-    PFN_vkGetInstanceProcAddr fp_get_proc_addr;
+    PFN_vkCreateInstance fp_create_inst = NULL;
+    PFN_vkEnumerateInstanceExtensionProperties fp_get_inst_ext_props = NULL;
+    PFN_vkGetInstanceProcAddr fp_get_proc_addr = NULL;
     PFN_GetPhysicalDeviceProcAddr fp_get_phys_dev_proc_addr = NULL;
-    PFN_vkNegotiateLoaderICDInterfaceVersion fp_negotiate_icd_version;
+    PFN_vkNegotiateLoaderICDInterfaceVersion fp_negotiate_icd_version = NULL;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vk_icdEnumerateAdapterPhysicalDevices fp_enum_dxgi_adapter_phys_devs = NULL;
 #endif
@@ -1377,9 +1377,25 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
         goto out;
     }
 
-    // Get and settle on an ICD interface version
+    // Try to load the driver's exported vk_icdNegotiateLoaderICDInterfaceVersion
     fp_negotiate_icd_version = loader_platform_get_proc_address(handle, "vk_icdNegotiateLoaderICDInterfaceVersion");
 
+    // If it isn't exported, we are dealing with either a v0, v1, or a v7 and up driver
+    if (NULL == fp_negotiate_icd_version) {
+        // Try to load the driver's exported vk_icdGetInstanceProcAddr - if this is a v7 or up driver, we can use it to get
+        // the driver's vk_icdNegotiateLoaderICDInterfaceVersion function
+        fp_get_proc_addr = loader_platform_get_proc_address(handle, "vk_icdGetInstanceProcAddr");
+
+        // If we successfully loaded vk_icdGetInstanceProcAddr, try to get vk_icdNegotiateLoaderICDInterfaceVersion
+        if (fp_get_proc_addr) {
+            fp_negotiate_icd_version =
+                (PFN_vk_icdNegotiateLoaderICDInterfaceVersion)fp_get_proc_addr(NULL, "vk_icdNegotiateLoaderICDInterfaceVersion");
+        }
+    }
+
+    // Try to negotiate the Loader and Driver Interface Versions
+    // loader_get_icd_interface_version will check if fp_negotiate_icd_version is NULL, so we don't have to.
+    // If it *is* NULL, that means this driver uses interface version 0 or 1
     if (!loader_get_icd_interface_version(fp_negotiate_icd_version, &interface_vers)) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "loader_scanned_icd_add: ICD %s doesn't support interface version compatible with loader, skip this ICD.",
@@ -1387,13 +1403,19 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
         goto out;
     }
 
-    fp_get_proc_addr = loader_platform_get_proc_address(handle, "vk_icdGetInstanceProcAddr");
+    // If we didn't already query vk_icdGetInstanceProcAddr, try now
     if (NULL == fp_get_proc_addr) {
+        fp_get_proc_addr = loader_platform_get_proc_address(handle, "vk_icdGetInstanceProcAddr");
+    }
+
+    // If vk_icdGetInstanceProcAddr is NULL, this ICD is using version 0 and so we should respond accordingly.
+    if (NULL == fp_get_proc_addr) {
+        // Exporting vk_icdNegotiateLoaderICDInterfaceVersion but not vk_icdGetInstanceProcAddr violates Version 2's requirements,
+        // as for Version 2 to be supported Version 1 must also be supported
         if (interface_vers != 0) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "loader_scanned_icd_add: ICD %s reports an interface version of %d but doesn't export "
-                       "vk_icdGetInstanceProcAddr, skip "
-                       "this ICD.",
+                       "vk_icdGetInstanceProcAddr, skip this ICD.",
                        filename, interface_vers);
             goto out;
         }
@@ -1426,7 +1448,8 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
             goto out;
         }
     } else {
-        // Use newer interface version 1 or later
+        // vk_icdGetInstanceProcAddr was successfully found, we can assume the version is at least one
+        // If vk_icdNegotiateLoaderICDInterfaceVersion was also found, interface_vers must be 2 or greater, so this check is fine
         if (interface_vers == 0) {
             interface_vers = 1;
         }
@@ -1447,9 +1470,23 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
                        filename);
             goto out;
         }
-        fp_get_phys_dev_proc_addr = loader_platform_get_proc_address(handle, "vk_icdGetPhysicalDeviceProcAddr");
+        // Query "vk_icdGetPhysicalDeviceProcAddr" with vk_icdGetInstanceProcAddr if the library reports interface version 7 or
+        // greater, otherwise fallback to loading it from the platform dynamic linker
+        if (interface_vers >= 7) {
+            fp_get_phys_dev_proc_addr =
+                (PFN_vk_icdGetPhysicalDeviceProcAddr)fp_get_proc_addr(NULL, "vk_icdGetPhysicalDeviceProcAddr");
+        }
+        if (NULL == fp_get_phys_dev_proc_addr && interface_vers >= 3) {
+            fp_get_phys_dev_proc_addr = loader_platform_get_proc_address(handle, "vk_icdGetPhysicalDeviceProcAddr");
+        }
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-        if (interface_vers >= 6) {
+        // Query "vk_icdEnumerateAdapterPhysicalDevices" with vk_icdGetInstanceProcAddr if the library reports interface version 7
+        // or greater, otherwise fallback to loading it from the platform dynamic linker
+        if (interface_vers >= 7) {
+            fp_enum_dxgi_adapter_phys_devs =
+                (PFN_vk_icdEnumerateAdapterPhysicalDevices)fp_get_proc_addr(NULL, "vk_icdEnumerateAdapterPhysicalDevices");
+        }
+        if (NULL == fp_enum_dxgi_adapter_phys_devs && interface_vers >= 6) {
             fp_enum_dxgi_adapter_phys_devs = loader_platform_get_proc_address(handle, "vk_icdEnumerateAdapterPhysicalDevices");
         }
 #endif

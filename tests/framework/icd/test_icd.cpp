@@ -47,6 +47,12 @@
 #define TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES 0
 #endif
 
+// expose vk_icdNegotiateLoaderICDInterfaceVersion, vk_icdEnumerateAdapterPhysicalDevices, and vk_icdGetPhysicalDeviceProcAddr
+// through vk_icdGetInstanceProcAddr or vkGetInstanceProcAddr
+#ifndef TEST_ICD_EXPOSE_VERSION_7
+#define TEST_ICD_EXPOSE_VERSION_7 0
+#endif
+
 TestICD icd;
 extern "C" {
 FRAMEWORK_EXPORT TestICD* get_test_icd_func() { return &icd; }
@@ -1033,6 +1039,56 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetCalibratedTimestampsEXT(VkDevice device
     return VK_SUCCESS;
 }
 
+#if defined(WIN32)
+VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
+                                                                          uint32_t* pPhysicalDeviceCount,
+                                                                          VkPhysicalDevice* pPhysicalDevices) {
+    if (adapterLUID.LowPart != icd.adapterLUID.LowPart || adapterLUID.HighPart != icd.adapterLUID.HighPart) {
+        *pPhysicalDeviceCount = 0;
+        return VK_SUCCESS;
+    }
+    icd.called_enumerate_adapter_physical_devices = true;
+    VkResult res = test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+    // For this testing, flip order intentionally
+    if (nullptr != pPhysicalDevices) {
+        std::reverse(pPhysicalDevices, pPhysicalDevices + *pPhysicalDeviceCount);
+    }
+    return res;
+}
+#endif  // defined(WIN32)
+
+VkResult test_vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
+    if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called &&
+        icd.called_negotiate_interface == CalledNegotiateInterface::not_called)
+        icd.called_negotiate_interface = CalledNegotiateInterface::vk_icd_negotiate;
+    else if (icd.called_vk_icd_gipa != CalledICDGIPA::not_called)
+        icd.called_negotiate_interface = CalledNegotiateInterface::vk_icd_gipa_first;
+
+    // loader puts the minimum it supports in pSupportedVersion, if that is lower than our minimum
+    // If the ICD doesn't supports the interface version provided by the loader, report VK_ERROR_INCOMPATIBLE_DRIVER
+    if (icd.min_icd_interface_version > *pSupportedVersion) {
+        icd.interface_version_check = InterfaceVersionCheck::loader_version_too_old;
+        *pSupportedVersion = icd.min_icd_interface_version;
+        return VK_ERROR_INCOMPATIBLE_DRIVER;
+    }
+
+    // the loader-provided interface version is newer than that supported by the ICD
+    if (icd.max_icd_interface_version < *pSupportedVersion) {
+        icd.interface_version_check = InterfaceVersionCheck::loader_version_too_new;
+        *pSupportedVersion = icd.max_icd_interface_version;
+    }
+    // ICD interface version is greater than the loader's,  return the loader's version
+    else if (icd.max_icd_interface_version > *pSupportedVersion) {
+        icd.interface_version_check = InterfaceVersionCheck::icd_version_too_new;
+        // don't change *pSupportedVersion
+    } else {
+        icd.interface_version_check = InterfaceVersionCheck::version_is_supported;
+        *pSupportedVersion = icd.max_icd_interface_version;
+    }
+
+    return VK_SUCCESS;
+}
+
 //// trampolines
 
 PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pName) {
@@ -1093,7 +1149,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
     if (icd.min_icd_interface_version >= 3 && icd.enable_icd_wsi == true) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (string_eq(pName, "vkCreateAndroidSurfaceKHR")) {
-            icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;
+            icd.is_using_icd_wsi = true;
             return to_vkVoidFunction(test_vkCreateAndroidSurfaceKHR);
         }
 #endif
@@ -1175,7 +1231,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
         }
 
         if (string_eq(pName, "vkDestroySurfaceKHR")) {
-            icd.is_using_icd_wsi = UsingICDProvidedWSI::is_using;
+            icd.is_using_icd_wsi = true;
             return to_vkVoidFunction(test_vkDestroySurfaceKHR);
         }
     }
@@ -1410,6 +1466,16 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_vkGetDeviceProcAddr(VkDevice devic
 }
 
 PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* pName) {
+#if TEST_ICD_EXPOSE_VERSION_7
+    if (string_eq(pName, "vk_icdNegotiateLoaderICDInterfaceVersion"))
+        return to_vkVoidFunction(test_vk_icdNegotiateLoaderICDInterfaceVersion);
+    if (string_eq(pName, "vk_icdGetPhysicalDeviceProcAddr")) return to_vkVoidFunction(get_physical_device_func);
+#if defined(WIN32)
+    if (string_eq(pName, "vk_icdEnumerateAdapterPhysicalDevices"))
+        return to_vkVoidFunction(test_vk_icdEnumerateAdapterPhysicalDevices);
+#endif  // defined(WIN32)
+#endif  // TEST_ICD_EXPOSE_VERSION_7
+
     if (pName == nullptr) return nullptr;
     if (instance == NULL) {
         if (string_eq(pName, "vkGetInstanceProcAddr")) return to_vkVoidFunction(test_vkGetInstanceProcAddr);
@@ -1434,35 +1500,7 @@ PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* 
 extern "C" {
 #if TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
 extern FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
-    if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called &&
-        icd.called_negotiate_interface == CalledNegotiateInterface::not_called)
-        icd.called_negotiate_interface = CalledNegotiateInterface::vk_icd_negotiate;
-    else if (icd.called_vk_icd_gipa != CalledICDGIPA::not_called)
-        icd.called_negotiate_interface = CalledNegotiateInterface::vk_icd_gipa_first;
-
-    // loader puts the minimum it supports in pSupportedVersion, if that is lower than our minimum
-    // If the ICD doesn't supports the interface version provided by the loader, report VK_ERROR_INCOMPATIBLE_DRIVER
-    if (icd.min_icd_interface_version > *pSupportedVersion) {
-        icd.interface_version_check = InterfaceVersionCheck::loader_version_too_old;
-        *pSupportedVersion = icd.min_icd_interface_version;
-        return VK_ERROR_INCOMPATIBLE_DRIVER;
-    }
-
-    // the loader-provided interface version is newer than that supported by the ICD
-    if (icd.max_icd_interface_version < *pSupportedVersion) {
-        icd.interface_version_check = InterfaceVersionCheck::loader_version_too_new;
-        *pSupportedVersion = icd.max_icd_interface_version;
-    }
-    // ICD interface version is greater than the loader's,  return the loader's version
-    else if (icd.max_icd_interface_version > *pSupportedVersion) {
-        icd.interface_version_check = InterfaceVersionCheck::icd_version_too_new;
-        // don't change *pSupportedVersion
-    } else {
-        icd.interface_version_check = InterfaceVersionCheck::version_is_supported;
-        *pSupportedVersion = icd.max_icd_interface_version;
-    }
-
-    return VK_SUCCESS;
+    return test_vk_icdNegotiateLoaderICDInterfaceVersion(pSupportedVersion);
 }
 #endif  // TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
 
@@ -1474,16 +1512,11 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDevic
 
 #if TEST_ICD_EXPORT_ICD_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(VkInstance instance, const char* pName) {
-    // std::cout << "icdGetInstanceProcAddr: " << pName << "\n";
-
     if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called) icd.called_vk_icd_gipa = CalledICDGIPA::vk_icd_gipa;
-
     return base_get_instance_proc_addr(instance, pName);
 }
 #else   // !TEST_ICD_EXPORT_ICD_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
-    // std::cout << "icdGetInstanceProcAddr: " << pName << "\n";
-
     if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called) icd.called_vk_icd_gipa = CalledICDGIPA::vk_gipa;
     return base_get_instance_proc_addr(instance, pName);
 }
@@ -1503,17 +1536,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProp
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
                                                                                       uint32_t* pPhysicalDeviceCount,
                                                                                       VkPhysicalDevice* pPhysicalDevices) {
-    if (adapterLUID.LowPart != icd.adapterLUID.LowPart || adapterLUID.HighPart != icd.adapterLUID.HighPart) {
-        *pPhysicalDeviceCount = 0;
-        return VK_SUCCESS;
-    }
-    icd.called_enumerate_adapter_physical_devices = true;
-    VkResult res = test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-    // For this testing, flip order intentionally
-    if (nullptr != pPhysicalDevices) {
-        std::reverse(pPhysicalDevices, pPhysicalDevices + *pPhysicalDeviceCount);
-    }
-    return res;
+    return test_vk_icdEnumerateAdapterPhysicalDevices(instance, adapterLUID, pPhysicalDeviceCount, pPhysicalDevices);
 }
 #endif  // defined(WIN32)
 #endif  // TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES

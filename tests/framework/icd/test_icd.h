@@ -45,9 +45,34 @@ enum class InterfaceVersionCheck {
     version_is_supported
 };
 
-enum class CalledEnumerateAdapterPhysicalDevices { not_called, called };
-
-enum class UsingICDProvidedWSI { not_using, is_using };
+// clang-format off
+inline std::ostream& operator<<(std::ostream& os, const CalledICDGIPA& result) {
+    switch (result) {
+        case (CalledICDGIPA::not_called): return os << "CalledICDGIPA::not_called";
+        case (CalledICDGIPA::vk_icd_gipa): return os << "CalledICDGIPA::vk_icd_gipa";
+        case (CalledICDGIPA::vk_gipa): return os << "CalledICDGIPA::vk_gipa";
+    }
+    return os << static_cast<uint32_t>(result);
+}
+inline std::ostream& operator<<(std::ostream& os, const CalledNegotiateInterface& result) {
+    switch (result) {
+        case (CalledNegotiateInterface::not_called): return os << "CalledNegotiateInterface::not_called";
+        case (CalledNegotiateInterface::vk_icd_negotiate): return os << "CalledNegotiateInterface::vk_icd_negotiate";
+        case (CalledNegotiateInterface::vk_icd_gipa_first): return os << "CalledNegotiateInterface::vk_icd_gipa_first";
+    }
+    return os << static_cast<uint32_t>(result);
+}
+inline std::ostream& operator<<(std::ostream& os, const InterfaceVersionCheck& result) {
+    switch (result) {
+        case (InterfaceVersionCheck::not_called): return os << "InterfaceVersionCheck::not_called";
+        case (InterfaceVersionCheck::loader_version_too_old): return os << "InterfaceVersionCheck::loader_version_too_old";
+        case (InterfaceVersionCheck::loader_version_too_new): return os << "InterfaceVersionCheck::loader_version_too_new";
+        case (InterfaceVersionCheck::icd_version_too_new): return os << "InterfaceVersionCheck::icd_version_too_new";
+        case (InterfaceVersionCheck::version_is_supported): return os << "InterfaceVersionCheck::version_is_supported";
+    }
+    return os << static_cast<uint32_t>(result);
+}
+// clang-format on
 
 struct TestICD {
     fs::path manifest_file_path;
@@ -57,13 +82,13 @@ struct TestICD {
 
     InterfaceVersionCheck interface_version_check = InterfaceVersionCheck::not_called;
     BUILDER_VALUE(TestICD, uint32_t, min_icd_interface_version, 0)
-    BUILDER_VALUE(TestICD, uint32_t, max_icd_interface_version, 6)
+    BUILDER_VALUE(TestICD, uint32_t, max_icd_interface_version, 7)
     uint32_t icd_interface_version_received = 0;
 
     bool called_enumerate_adapter_physical_devices = false;
 
     BUILDER_VALUE(TestICD, bool, enable_icd_wsi, false);
-    UsingICDProvidedWSI is_using_icd_wsi = UsingICDProvidedWSI::not_using;
+    bool is_using_icd_wsi = false;
 
     BUILDER_VALUE(TestICD, uint32_t, icd_api_version, VK_API_VERSION_1_0)
     BUILDER_VECTOR(TestICD, LayerDefinition, instance_layers, instance_layer)
@@ -81,8 +106,9 @@ struct TestICD {
     std::vector<uint64_t> swapchain_handles;
 
     // Unknown instance functions Add a `VulkanFunction` to this list which will be searched in
-    // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for custom_physical_device_functions.
-    // To add unknown device functions, add it to the PhysicalDevice directly (in the known_device_functions member)
+    // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for
+    // custom_physical_device_functions. To add unknown device functions, add it to the PhysicalDevice directly (in the
+    // known_device_functions member)
     BUILDER_VECTOR(TestICD, VulkanFunction, custom_instance_functions, custom_instance_function)
 
     // Must explicitely state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
