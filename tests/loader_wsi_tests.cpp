@@ -68,7 +68,6 @@ TEST(WsiTests, CreateSurfaceWin32NoICDCreateSupport) {
     VkWin32SurfaceCreateInfoKHR surf_create_info{VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateWin32SurfaceKHR(inst, &surf_create_info, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
-    //    ASSERT_EQ(cur_icd.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
     env.vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 }
@@ -92,7 +91,6 @@ TEST(WsiTests, CreateSurfaceWin32ICDSupport) {
     VkWin32SurfaceCreateInfoKHR surf_create_info{VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateWin32SurfaceKHR(inst, &surf_create_info, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
-    //    ASSERT_EQ(cur_icd.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
     env.vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 }
@@ -121,7 +119,6 @@ TEST(WsiTests, CreateSurfaceWin32MixedICDSupport) {
     VkWin32SurfaceCreateInfoKHR surf_create_info{VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateWin32SurfaceKHR(instance.inst, &surf_create_info, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
-    //    ASSERT_EQ(cur_icd.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
     env.vulkan_functions.vkDestroySurfaceKHR(instance.inst, surface, nullptr);
 }
@@ -202,7 +199,6 @@ TEST(WsiTests, Win32GetPhysicalDeviceSurfaceSupportKHR) {
     VkWin32SurfaceCreateInfoKHR surf_create_info{VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateWin32SurfaceKHR(instance.inst, &surf_create_info, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
-    //    ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
     uint32_t device_count = max_device_count;
     std::array<VkPhysicalDevice, max_device_count> phys_devs;
@@ -391,7 +387,6 @@ TEST(WsiTests, XcbGetPhysicalDeviceSurfaceSupportKHR) {
     VkXcbSurfaceCreateInfoKHR xcb_createInfo{VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateXcbSurfaceKHR(instance.inst, &xcb_createInfo, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
-    //    ASSERT_EQ(cur_icd.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
     uint32_t device_count = max_device_count;
     std::array<VkPhysicalDevice, max_device_count> phys_devs;
@@ -580,7 +575,6 @@ TEST(WsiTests, XlibGetPhysicalDeviceSurfaceSupportKHR) {
     VkXlibSurfaceCreateInfoKHR createInfo{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR};
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateXlibSurfaceKHR(instance.inst, &createInfo, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
-    //    ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
     uint32_t device_count = max_device_count;
     std::array<VkPhysicalDevice, max_device_count> phys_devs;
@@ -769,7 +763,6 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
     VkWaylandSurfaceCreateInfoKHR createInfo{VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR};
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateWaylandSurfaceKHR(instance.inst, &createInfo, nullptr, &surface));
     ASSERT_TRUE(surface != VK_NULL_HANDLE);
-    //    ASSERT_EQ(cur_icd.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
 
     uint32_t device_count = max_device_count;
     std::array<VkPhysicalDevice, max_device_count> phys_devs;

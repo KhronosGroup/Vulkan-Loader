@@ -55,6 +55,10 @@
 // All possible defines for v6
 #define TEST_ICD_PATH_VERSION_6 "$<TARGET_FILE:test_icd_version_6>"
 
+// Version 7
+#define TEST_ICD_PATH_VERSION_7 "$<TARGET_FILE:test_icd_version_7>"
+#define TEST_ICD_PATH_VERSION_7_WITH_ADDITIONAL_EXPORTS "$<TARGET_FILE:test_icd_version_7_with_additional_exports>"
+
 // TestLayer binaries
 #define TEST_LAYER_PATH_EXPORT_BASE "$<TARGET_FILE:test_layer_export_base>"
 #define TEST_LAYER_PATH_EXPORT_VERSION_0 "$<TARGET_FILE:test_layer_export_version_0>"

@@ -53,7 +53,7 @@ TEST(ICDInterfaceVersion2Plus, version_3) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
+        ASSERT_FALSE(driver.is_using_icd_wsi);
     }
     {
         driver.min_icd_interface_version = 3;
@@ -61,7 +61,7 @@ TEST(ICDInterfaceVersion2Plus, version_3) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::not_using);
+        ASSERT_FALSE(driver.is_using_icd_wsi);
     }
     {
         driver.min_icd_interface_version = 3;
@@ -69,7 +69,7 @@ TEST(ICDInterfaceVersion2Plus, version_3) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_EQ(driver.is_using_icd_wsi, UsingICDProvidedWSI::is_using);
+        ASSERT_TRUE(driver.is_using_icd_wsi);
     }
 }
 
@@ -310,6 +310,29 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults
 }
 
 #endif  // defined(WIN32)
+TEST(ICDInterfaceVersion7, SingleDriver) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7_WITH_ADDITIONAL_EXPORTS));
+    env.get_test_icd().physical_devices.push_back({});
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_dev = inst.GetPhysDev();
+    DeviceWrapper dev{inst};
+    dev.CheckCreate(phys_dev);
+    ASSERT_EQ(env.get_test_icd().interface_version_check, InterfaceVersionCheck::version_is_supported);
+}
+
+TEST(ICDInterfaceVersion7, SingleDriverWithoutExportedFunctions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7));
+    env.get_test_icd().physical_devices.push_back({});
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_dev = inst.GetPhysDev();
+    DeviceWrapper dev{inst};
+    dev.CheckCreate(phys_dev);
+    ASSERT_EQ(env.get_test_icd().interface_version_check, InterfaceVersionCheck::version_is_supported);
+}
 
 TEST(MultipleICDConfig, Basic) {
     FrameworkEnvironment env{};

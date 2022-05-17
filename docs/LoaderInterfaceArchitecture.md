@@ -47,6 +47,8 @@
   - [Case-Insensitive](#case-insensitive)
   - [Environment Variable Priority](#environment-variable-priority)
 - [Table of Debug Environment Variables](#table-of-debug-environment-variables)
+  - [Active Environment Variables](#active-environment-variables)
+  - [Deprecated Environment Variables](#deprecated-environment-variables)
 - [Glossary of Terms](#glossary-of-terms)
 
 ## Overview
@@ -1188,6 +1190,33 @@ may be removed in a future loader release.
         See
         <a href="LoaderApplicationInterface.md#wsi-extensions">WSI Extensions</a>
         for more information.
+    </td>
+  </tr>
+  <tr>
+    <td>Exported Function</td>
+    <td>A function which is intended to be obtained through the platform specific
+        dynamic linker, specifically from a Driver or a Layer library.
+        Functions that are required to be exported are primarily the very first
+        functions the Loader calls on a Layer or Driver library. <br/>
+    </td>
+  </tr>
+  <tr>
+    <td>Exposed Function</td>
+    <td>A function which is intended to be obtained through a Querying Function, such as
+        `vkGetInstanceProcAddr`.
+        The exact Querying Function required for a specific exposed function varies
+        between Layers and Drivers, as well as between interface versions. <br/>
+    </td>
+  </tr>
+  <tr>
+    <td>Querying Functions</td>
+    <td>These are functions which allow the Loader to query other functions from
+        drivers and layers. These functions may be in the Vulkan API but also may be
+        from the private Loader and Driver Interface or the Loader and Layer Interface. <br/>
+        These functions are:
+        `vkGetInstanceProcAddr`, `vkGetDeviceProcAddr`,
+        `vk_icdGetInstanceProcAddr`, `vk_icdGetPhysicalDeviceProcAddr`, and
+        `vk_layerGetPhysicalDeviceProcAddr`.
     </td>
   </tr>
 </table>
