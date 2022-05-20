@@ -262,7 +262,7 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
 struct FrameworkEnvironment;  // forward declaration
 
 struct PlatformShimWrapper {
-    PlatformShimWrapper(std::vector<fs::FolderManager>* folders) noexcept;
+    PlatformShimWrapper(std::vector<fs::FolderManager>* folders, bool enable_log) noexcept;
     ~PlatformShimWrapper() noexcept;
     PlatformShimWrapper(PlatformShimWrapper const&) = delete;
     PlatformShimWrapper& operator=(PlatformShimWrapper const&) = delete;
@@ -345,7 +345,8 @@ enum class ManifestLocation {
 };
 
 struct FrameworkEnvironment {
-    FrameworkEnvironment() noexcept;
+    FrameworkEnvironment() noexcept;  // default is to enable VK_LOADER_DEBUG=all
+    FrameworkEnvironment(bool enable_log) noexcept;
 
     void add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;

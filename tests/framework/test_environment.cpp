@@ -136,7 +136,7 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
     create_info.instance_info.pNext = wrapper.get();
 }
 
-PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders) noexcept {
+PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders, bool enable_log) noexcept {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
     PFN_get_platform_shim get_platform_shim_func = shim_library.get_symbol(GET_PLATFORM_SHIM_STR);
@@ -147,8 +147,9 @@ PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders
 #endif
     platform_shim->reset();
 
-    // leave it permanently on at full blast
-    set_env_var("VK_LOADER_DEBUG", "all");
+    if (enable_log) {
+        set_env_var("VK_LOADER_DEBUG", "all");
+    }
 }
 PlatformShimWrapper::~PlatformShimWrapper() noexcept { platform_shim->reset(); }
 
@@ -184,7 +185,8 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
 fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
 
-FrameworkEnvironment::FrameworkEnvironment() noexcept : platform_shim(&folders), vulkan_functions() {
+FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(true) {}
+FrameworkEnvironment::FrameworkEnvironment(bool enable_log) noexcept : platform_shim(&folders, enable_log), vulkan_functions() {
     // This order is important, it matches the enum ManifestLocation, used to index the folders vector
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("null_dir"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("icd_manifests"));
@@ -508,3 +510,9 @@ VkSurfaceKHR create_surface(InstWrapper& inst, const char* api_selection) {
 
     return surface;
 }
+
+extern "C" {
+void __ubsan_on_report() { FAIL() << "Encountered an undefined behavior sanitizer error"; }
+void __asan_on_error() { FAIL() << "Encountered an address sanitizer error"; }
+void __tsan_on_report() { FAIL() << "Encountered a thread sanitizer error"; }
+}  // extern "C"

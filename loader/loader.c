@@ -88,6 +88,7 @@ struct activated_layer_info {
 loader_platform_thread_mutex loader_lock;
 loader_platform_thread_mutex loader_json_lock;
 loader_platform_thread_mutex loader_preload_icd_lock;
+loader_platform_thread_mutex loader_global_instance_list_lock;
 
 // A list of ICDs that gets initialized when the loader does its global initialization. This list should never be used by anything
 // other than EnumerateInstanceExtensionProperties(), vkDestroyInstance, and loader_release(). This list does not change
@@ -1161,6 +1162,7 @@ out:
 }
 
 struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index) {
+    loader_platform_thread_lock_mutex(&loader_global_instance_list_lock);
     *found_dev = NULL;
     for (struct loader_instance *inst = loader.instances; inst; inst = inst->next) {
         uint32_t index = 0;
@@ -1174,11 +1176,13 @@ struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loa
                     if (NULL != icd_index) {
                         *icd_index = index;
                     }
+                    loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
                     return icd_term;
                 }
             index++;
         }
     }
+    loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
     return NULL;
 }
 
@@ -1485,6 +1489,8 @@ void loader_initialize(void) {
     loader_platform_thread_create_mutex(&loader_lock);
     loader_platform_thread_create_mutex(&loader_json_lock);
     loader_platform_thread_create_mutex(&loader_preload_icd_lock);
+    loader_platform_thread_create_mutex(&loader_global_instance_list_lock);
+
     // initialize logging
     loader_debug_init();
 #if defined(_WIN32)
@@ -1507,6 +1513,7 @@ void loader_release() {
     loader_platform_thread_delete_mutex(&loader_lock);
     loader_platform_thread_delete_mutex(&loader_json_lock);
     loader_platform_thread_delete_mutex(&loader_preload_icd_lock);
+    loader_platform_thread_delete_mutex(&loader_global_instance_list_lock);
 }
 
 // Preload the ICD libraries that are likely to be needed so we don't repeatedly load/unload them later
@@ -3962,12 +3969,14 @@ struct loader_instance *loader_get_instance(const VkInstance instance) {
         return NULL;
     } else {
         disp = loader_get_instance_layer_dispatch(instance);
+        loader_platform_thread_lock_mutex(&loader_global_instance_list_lock);
         for (struct loader_instance *inst = loader.instances; inst; inst = inst->next) {
             if (&inst->disp->layer_inst_disp == disp) {
                 ptr_instance = inst;
                 break;
             }
         }
+        loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
     }
     return ptr_instance;
 }
@@ -5331,6 +5340,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
 
     // Remove this instance from the list of instances:
     struct loader_instance *prev = NULL;
+    loader_platform_thread_lock_mutex(&loader_global_instance_list_lock);
     struct loader_instance *next = loader.instances;
     while (next != NULL) {
         if (next == ptr_instance) {
@@ -5344,6 +5354,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
         prev = next;
         next = next->next;
     }
+    loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
 
     while (NULL != icd_terms) {
         if (icd_terms->instance) {

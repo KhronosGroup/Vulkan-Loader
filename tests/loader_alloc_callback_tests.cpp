@@ -468,6 +468,7 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
         ASSERT_TRUE(tracker.empty());
         fail_index++;
     }
+    remove_env_var("VK_DRIVER_FILES");
 }
 
 // Test failure during vkCreateDevice to make sure we don't leak memory if
@@ -484,7 +485,7 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
     driver.physical_devices.emplace_back("physical_device_1");
     driver.physical_devices[1].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_VkLayerImplicit0";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)

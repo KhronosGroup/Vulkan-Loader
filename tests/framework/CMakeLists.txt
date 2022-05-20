@@ -41,6 +41,8 @@ if (UNIX)
         target_link_options(testing_framework_util PUBLIC -fsanitize=thread)
         target_compile_options(vulkan PUBLIC -fsanitize=thread)
         target_link_options(vulkan PUBLIC -fsanitize=thread)
+        target_compile_options(gtest PUBLIC -fsanitize=thread)
+        target_link_options(gtest PUBLIC -fsanitize=thread)
     endif()
 endif()
 

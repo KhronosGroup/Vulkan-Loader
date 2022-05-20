@@ -82,6 +82,7 @@ extern struct loader_struct loader;
 extern loader_platform_thread_mutex loader_lock;
 extern loader_platform_thread_mutex loader_json_lock;
 extern loader_platform_thread_mutex loader_preload_icd_lock;
+extern loader_platform_thread_mutex loader_global_instance_list_lock;
 
 bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2);
 
