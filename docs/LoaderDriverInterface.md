@@ -526,7 +526,7 @@ Here is an example driver JSON Manifest file:
   <tr>
     <td>"file_format_version"</td>
     <td>The JSON format major.minor.patch version number of this file.<br/>
-        Currently supported version is 1.0.0.</td>
+        Supported versions are: 1.0.0 and 1.0.1.</td>
   </tr>
   <tr>
     <td>"ICD"</td>

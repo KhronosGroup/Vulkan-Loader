@@ -1611,7 +1611,7 @@ Here's an example of a meta-layer manifest file:
   <tr>
     <td>"file_format_version"</td>
     <td>Manifest format major.minor.patch version number.<br/>
-        Supported versions are: 1.0.0, 1.0.1, 1.1.0, 1.1.1, and 1.1.2.
+        Supported versions are: 1.0.0, 1.0.1, 1.1.0, 1.1.1, 1.1.2 and 1.2.0.
     </td>
     <td>None</td>
     <td>None</td>
