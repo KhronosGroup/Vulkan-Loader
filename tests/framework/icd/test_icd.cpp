@@ -1378,7 +1378,6 @@ extern FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDI
 
 #if TEST_ICD_EXPORT_ICD_GPDPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(VkInstance instance, const char* pName) {
-    // std::cout << "icdGetPhysicalDeviceProcAddr: " << pName << "\n";
     return get_physical_device_func(instance, pName);
 }
 #endif  // TEST_ICD_EXPORT_ICD_GPDPA

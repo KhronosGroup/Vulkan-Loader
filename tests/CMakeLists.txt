@@ -43,6 +43,8 @@ target_link_libraries(test_regression PUBLIC testing_dependencies)
 set_target_properties(test_regression ${LOADER_STANDARD_CXX_PROPERTIES})
 target_compile_definitions(test_regression PUBLIC VK_NO_PROTOTYPES)
 
+# Threading tests live in separate executabe just for threading tests as it'll need support
+# in the test harness to enable in CI, as thread sanitizer doesn't work with address sanitizer enabled.
 add_executable(
     test_threading
         loader_testing_main.cpp
