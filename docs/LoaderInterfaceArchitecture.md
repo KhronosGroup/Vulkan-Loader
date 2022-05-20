@@ -71,7 +71,7 @@ loader.
 At the bottom of the stack sits the drivers.
 A driver can control one or more physical devices capable of rendering Vulkan,
 implement a conversion from Vulkan into a native graphics API (like
-[MoltenVk](https://github.com/KhronosGroup/MoltenVK], or implement a fully
+[MoltenVk](https://github.com/KhronosGroup/MoltenVK), or implement a fully
 software path that can be executed on a CPU to simulate a Vulkan device (like
 [SwiftShader](https://github.com/google/swiftshader) or LavaPipe).
 Remember, Vulkan-capable hardware may be graphics-based, compute-based, or
