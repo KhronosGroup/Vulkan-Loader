@@ -38,48 +38,49 @@
 
 #include "allocation.h"
 
-void *cJSON_malloc(const struct loader_instance *instance, size_t size) {
-    return loader_instance_heap_alloc(instance, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+void *cJSON_malloc(const VkAllocationCallbacks *pAllocator, size_t size) {
+    return loader_alloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
 }
 
-void cJSON_free(const struct loader_instance *instance, void *pMemory) { loader_instance_heap_free(instance, pMemory); }
+void cJSON_Free(const VkAllocationCallbacks *pAllocator, void *pMemory) { loader_free(pAllocator, pMemory); }
 
 static const char *ep;
 
 const char *cJSON_GetErrorPtr(void) { return ep; }
 
-char *cJSON_strdup(const struct loader_instance *instance, const char *str) {
+char *cJSON_strdup(const VkAllocationCallbacks *pAllocator, const char *str) {
     size_t len;
     char *copy;
 
     len = strlen(str) + 1;
-    copy = (char *)cJSON_malloc(instance, len);
+    copy = (char *)cJSON_malloc(pAllocator, len);
     if (!copy) return 0;
     memcpy(copy, str, len);
     return copy;
 }
 
 /* Internal constructor. */
-cJSON *cJSON_New_Item(const struct loader_instance *instance) {
-    cJSON *node = (cJSON *)cJSON_malloc(instance, sizeof(cJSON));
-    if (node) memset(node, 0, sizeof(cJSON));
+cJSON *cJSON_New_Item(const VkAllocationCallbacks *pAllocator) {
+    cJSON *node = (cJSON *)cJSON_malloc(pAllocator, sizeof(cJSON));
+    if (node) {
+        memset(node, 0, sizeof(cJSON));
+        node->pAllocator = (VkAllocationCallbacks *)pAllocator;
+    }
     return node;
 }
 
 /* Delete a cJSON structure. */
-void cJSON_Delete(const struct loader_instance *instance, cJSON *c) {
+void cJSON_Delete(cJSON *c) {
     cJSON *next;
     while (c) {
         next = c->next;
-        if (!(c->type & cJSON_IsReference) && c->child) cJSON_Delete(instance, c->child);
-        if (!(c->type & cJSON_IsReference) && c->valuestring) cJSON_free(instance, c->valuestring);
-        if (!(c->type & cJSON_StringIsConst) && c->string) cJSON_free(instance, c->string);
-        cJSON_free(instance, c);
+        if (!(c->type & cJSON_IsReference) && c->child) cJSON_Delete(c->child);
+        if (!(c->type & cJSON_IsReference) && c->valuestring) cJSON_Free(c->pAllocator, c->valuestring);
+        if (!(c->type & cJSON_StringIsConst) && c->string) cJSON_Free(c->pAllocator, c->string);
+        cJSON_Free(c->pAllocator, c);
         c = next;
     }
 }
-
-void cJSON_Free(const struct loader_instance *instance, void *p) { cJSON_free(instance, p); }
 
 /* Parse the input text to generate a number, and populate the result into item.
  */
@@ -133,7 +134,7 @@ typedef struct {
     size_t offset;
 } printbuffer;
 
-char *ensure(const struct loader_instance *instance, printbuffer *p, size_t needed) {
+char *ensure(const VkAllocationCallbacks *pAllocator, printbuffer *p, size_t needed) {
     char *newbuffer;
     size_t newsize;
     if (!p || !p->buffer) return 0;
@@ -141,14 +142,14 @@ char *ensure(const struct loader_instance *instance, printbuffer *p, size_t need
     if (needed <= p->length) return p->buffer + p->offset;
 
     newsize = pow2gt(needed);
-    newbuffer = (char *)cJSON_malloc(instance, newsize);
+    newbuffer = (char *)cJSON_malloc(pAllocator, newsize);
     if (!newbuffer) {
-        cJSON_free(instance, p->buffer);
+        cJSON_Free(pAllocator, p->buffer);
         p->length = 0, p->buffer = 0;
         return 0;
     }
     if (newbuffer) memcpy(newbuffer, p->buffer, p->length);
-    cJSON_free(instance, p->buffer);
+    cJSON_Free(pAllocator, p->buffer);
     p->length = newsize;
     p->buffer = newbuffer;
     return newbuffer + p->offset;
@@ -162,26 +163,26 @@ size_t cJSON_update(printbuffer *p) {
 }
 
 /* Render the number nicely from the given item into a string. */
-char *print_number(const struct loader_instance *instance, cJSON *item, printbuffer *p) {
+char *print_number(cJSON *item, printbuffer *p) {
     char *str = 0;
     double d = item->valuedouble;
     if (d == 0) {
         if (p)
-            str = ensure(instance, p, 2);
+            str = ensure(item->pAllocator, p, 2);
         else
-            str = (char *)cJSON_malloc(instance, 2); /* special case for 0. */
+            str = (char *)cJSON_malloc(item->pAllocator, 2); /* special case for 0. */
         if (str) strcpy(str, "0");
     } else if (fabs(((double)item->valueint) - d) <= DBL_EPSILON && d <= INT_MAX && d >= INT_MIN) {
         if (p)
-            str = ensure(instance, p, 21);
+            str = ensure(item->pAllocator, p, 21);
         else
-            str = (char *)cJSON_malloc(instance, 21); /* 2^64+1 can be represented in 21 chars. */
+            str = (char *)cJSON_malloc(item->pAllocator, 21); /* 2^64+1 can be represented in 21 chars. */
         if (str) sprintf(str, "%d", item->valueint);
     } else {
         if (p)
-            str = ensure(instance, p, 64);
+            str = ensure(item->pAllocator, p, 64);
         else
-            str = (char *)cJSON_malloc(instance, 64); /* This is a nice tradeoff. */
+            str = (char *)cJSON_malloc(item->pAllocator, 64); /* This is a nice tradeoff. */
         if (str) {
             if (fabs(floor(d) - d) <= DBL_EPSILON && fabs(d) < 1.0e60)
                 sprintf(str, "%.0f", d);
@@ -239,7 +240,7 @@ unsigned parse_hex4(const char *str) {
 
 /* Parse the input text into an unescaped cstring, and populate item. */
 static const unsigned char firstByteMark[7] = {0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
-const char *parse_string(const struct loader_instance *instance, cJSON *item, const char *str) {
+const char *parse_string(cJSON *item, const char *str) {
     const char *ptr = str + 1;
     char *ptr2;
     char *out;
@@ -253,7 +254,7 @@ const char *parse_string(const struct loader_instance *instance, cJSON *item, co
     while (*ptr != '\"' && *ptr && ++len)
         if (*ptr++ == '\\') ptr++; /* Skip escaped quotes. */
 
-    out = (char *)cJSON_malloc(instance, len + 1); /* This is how long we need for the string, roughly. */
+    out = (char *)cJSON_malloc(item->pAllocator, len + 1); /* This is how long we need for the string, roughly. */
     if (!out) return 0;
 
     ptr = str + 1;
@@ -336,7 +337,7 @@ const char *parse_string(const struct loader_instance *instance, cJSON *item, co
 }
 
 /* Render the cstring provided to an escaped version that can be printed. */
-char *print_string_ptr(const struct loader_instance *instance, const char *str, printbuffer *p) {
+char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str, printbuffer *p) {
     const char *ptr;
     char *ptr2;
     char *out;
@@ -347,9 +348,9 @@ char *print_string_ptr(const struct loader_instance *instance, const char *str, 
     if (!flag) {
         len = ptr - str;
         if (p)
-            out = ensure(instance, p, len + 3);
+            out = ensure(pAllocator, p, len + 3);
         else
-            out = (char *)cJSON_malloc(instance, len + 3);
+            out = (char *)cJSON_malloc(pAllocator, len + 3);
         if (!out) return 0;
         ptr2 = out;
         *ptr2++ = '\"';
@@ -361,9 +362,9 @@ char *print_string_ptr(const struct loader_instance *instance, const char *str, 
 
     if (!str) {
         if (p)
-            out = ensure(instance, p, 3);
+            out = ensure(pAllocator, p, 3);
         else
-            out = (char *)cJSON_malloc(instance, 3);
+            out = (char *)cJSON_malloc(pAllocator, 3);
         if (!out) return 0;
         strcpy(out, "\"\"");
         return out;
@@ -380,9 +381,9 @@ char *print_string_ptr(const struct loader_instance *instance, const char *str, 
     }
 
     if (p)
-        out = ensure(instance, p, len + 3);
+        out = ensure(pAllocator, p, len + 3);
     else
-        out = (char *)cJSON_malloc(instance, len + 3);
+        out = (char *)cJSON_malloc(pAllocator, len + 3);
     if (!out) return 0;
 
     ptr2 = out;
@@ -426,17 +427,15 @@ char *print_string_ptr(const struct loader_instance *instance, const char *str, 
     return out;
 }
 /* Invoke print_string_ptr (which is useful) on an item. */
-char *print_string(const struct loader_instance *instance, cJSON *item, printbuffer *p) {
-    return print_string_ptr(instance, item->valuestring, p);
-}
+char *print_string(cJSON *item, printbuffer *p) { return print_string_ptr(item->pAllocator, item->valuestring, p); }
 
 /* Predeclare these prototypes. */
-const char *parse_value(const struct loader_instance *instance, cJSON *item, const char *value);
-char *print_value(const struct loader_instance *instance, cJSON *item, int depth, int fmt, printbuffer *p);
-const char *parse_array(const struct loader_instance *instance, cJSON *item, const char *value);
-char *print_array(const struct loader_instance *instance, cJSON *item, int depth, int fmt, printbuffer *p);
-const char *parse_object(const struct loader_instance *instance, cJSON *item, const char *value);
-char *print_object(const struct loader_instance *instance, cJSON *item, int depth, int fmt, printbuffer *p);
+const char *parse_value(cJSON *item, const char *value);
+char *print_value(cJSON *item, int depth, int fmt, printbuffer *p);
+const char *parse_array(cJSON *item, const char *value);
+char *print_array(cJSON *item, int depth, int fmt, printbuffer *p);
+const char *parse_object(cJSON *item, const char *value);
+char *print_object(cJSON *item, int depth, int fmt, printbuffer *p);
 
 /* Utility to jump whitespace and cr/lf */
 const char *skip(const char *in) {
@@ -445,16 +444,16 @@ const char *skip(const char *in) {
 }
 
 /* Parse an object - create a new root, and populate. */
-cJSON *cJSON_ParseWithOpts(const struct loader_instance *instance, const char *value, const char **return_parse_end,
+cJSON *cJSON_ParseWithOpts(const VkAllocationCallbacks *pAllocator, const char *value, const char **return_parse_end,
                            int require_null_terminated) {
     const char *end = 0;
-    cJSON *c = cJSON_New_Item(instance);
+    cJSON *c = cJSON_New_Item(pAllocator);
     ep = 0;
     if (!c) return 0; /* memory fail */
 
-    end = parse_value(instance, c, skip(value));
+    end = parse_value(c, skip(value));
     if (!end) {
-        cJSON_Delete(instance, c);
+        cJSON_Delete(c);
         return 0;
     } /* parse failure. ep is set. */
 
@@ -463,7 +462,7 @@ cJSON *cJSON_ParseWithOpts(const struct loader_instance *instance, const char *v
     if (require_null_terminated) {
         end = skip(end);
         if (*end) {
-            cJSON_Delete(instance, c);
+            cJSON_Delete(c);
             ep = end;
             return 0;
         }
@@ -472,22 +471,24 @@ cJSON *cJSON_ParseWithOpts(const struct loader_instance *instance, const char *v
     return c;
 }
 /* Default options for cJSON_Parse */
-cJSON *cJSON_Parse(const struct loader_instance *instance, const char *value) { return cJSON_ParseWithOpts(instance, value, 0, 0); }
+cJSON *cJSON_Parse(const VkAllocationCallbacks *pAllocator, const char *value) {
+    return cJSON_ParseWithOpts(pAllocator, value, 0, 0);
+}
 
 /* Render a cJSON item/entity/structure to text. */
-char *cJSON_Print(const struct loader_instance *instance, cJSON *item) { return print_value(instance, item, 0, 1, 0); }
-char *cJSON_PrintUnformatted(const struct loader_instance *instance, cJSON *item) { return print_value(instance, item, 0, 0, 0); }
+char *cJSON_Print(cJSON *item) { return print_value(item, 0, 1, 0); }
+char *cJSON_PrintUnformatted(cJSON *item) { return print_value(item, 0, 0, 0); }
 
-char *cJSON_PrintBuffered(const struct loader_instance *instance, cJSON *item, int prebuffer, int fmt) {
+char *cJSON_PrintBuffered(cJSON *item, int prebuffer, int fmt) {
     printbuffer p;
-    p.buffer = (char *)cJSON_malloc(instance, prebuffer);
+    p.buffer = (char *)cJSON_malloc(item->pAllocator, prebuffer);
     p.length = prebuffer;
     p.offset = 0;
-    return print_value(instance, item, 0, fmt, &p);
+    return print_value(item, 0, fmt, &p);
 }
 
 /* Parser core - when encountering text, process appropriately. */
-const char *parse_value(const struct loader_instance *instance, cJSON *item, const char *value) {
+const char *parse_value(cJSON *item, const char *value) {
     if (!value) return 0; /* Fail on null. */
     if (!strncmp(value, "null", 4)) {
         item->type = cJSON_NULL;
@@ -503,16 +504,16 @@ const char *parse_value(const struct loader_instance *instance, cJSON *item, con
         return value + 4;
     }
     if (*value == '\"') {
-        return parse_string(instance, item, value);
+        return parse_string(item, value);
     }
     if (*value == '-' || (*value >= '0' && *value <= '9')) {
         return parse_number(item, value);
     }
     if (*value == '[') {
-        return parse_array(instance, item, value);
+        return parse_array(item, value);
     }
     if (*value == '{') {
-        return parse_object(instance, item, value);
+        return parse_object(item, value);
     }
 
     ep = value;
@@ -520,61 +521,61 @@ const char *parse_value(const struct loader_instance *instance, cJSON *item, con
 }
 
 /* Render a value to text. */
-char *print_value(const struct loader_instance *instance, cJSON *item, int depth, int fmt, printbuffer *p) {
+char *print_value(cJSON *item, int depth, int fmt, printbuffer *p) {
     char *out = 0;
     if (!item) return 0;
     if (p) {
         switch ((item->type) & 255) {
             case cJSON_NULL: {
-                out = ensure(instance, p, 5);
+                out = ensure(item->pAllocator, p, 5);
                 if (out) strcpy(out, "null");
                 break;
             }
             case cJSON_False: {
-                out = ensure(instance, p, 6);
+                out = ensure(item->pAllocator, p, 6);
                 if (out) strcpy(out, "false");
                 break;
             }
             case cJSON_True: {
-                out = ensure(instance, p, 5);
+                out = ensure(item->pAllocator, p, 5);
                 if (out) strcpy(out, "true");
                 break;
             }
             case cJSON_Number:
-                out = print_number(instance, item, p);
+                out = print_number(item, p);
                 break;
             case cJSON_String:
-                out = print_string(instance, item, p);
+                out = print_string(item, p);
                 break;
             case cJSON_Array:
-                out = print_array(instance, item, depth, fmt, p);
+                out = print_array(item, depth, fmt, p);
                 break;
             case cJSON_Object:
-                out = print_object(instance, item, depth, fmt, p);
+                out = print_object(item, depth, fmt, p);
                 break;
         }
     } else {
         switch ((item->type) & 255) {
             case cJSON_NULL:
-                out = cJSON_strdup(instance, "null");
+                out = cJSON_strdup(item->pAllocator, "null");
                 break;
             case cJSON_False:
-                out = cJSON_strdup(instance, "false");
+                out = cJSON_strdup(item->pAllocator, "false");
                 break;
             case cJSON_True:
-                out = cJSON_strdup(instance, "true");
+                out = cJSON_strdup(item->pAllocator, "true");
                 break;
             case cJSON_Number:
-                out = print_number(instance, item, 0);
+                out = print_number(item, 0);
                 break;
             case cJSON_String:
-                out = print_string(instance, item, 0);
+                out = print_string(item, 0);
                 break;
             case cJSON_Array:
-                out = print_array(instance, item, depth, fmt, 0);
+                out = print_array(item, depth, fmt, 0);
                 break;
             case cJSON_Object:
-                out = print_object(instance, item, depth, fmt, 0);
+                out = print_object(item, depth, fmt, 0);
                 break;
         }
     }
@@ -582,7 +583,7 @@ char *print_value(const struct loader_instance *instance, cJSON *item, int depth
 }
 
 /* Build an array from input text. */
-const char *parse_array(const struct loader_instance *instance, cJSON *item, const char *value) {
+const char *parse_array(cJSON *item, const char *value) {
     cJSON *child;
     if (*value != '[') {
         ep = value;
@@ -593,19 +594,19 @@ const char *parse_array(const struct loader_instance *instance, cJSON *item, con
     value = skip(value + 1);
     if (*value == ']') return value + 1; /* empty array. */
 
-    item->child = child = cJSON_New_Item(instance);
-    if (!item->child) return 0;                              /* memory fail */
-    value = skip(parse_value(instance, child, skip(value))); /* skip any spacing, get the value. */
+    item->child = child = cJSON_New_Item(item->pAllocator);
+    if (!item->child) return 0;                    /* memory fail */
+    value = skip(parse_value(child, skip(value))); /* skip any spacing, get the value. */
     if (!value) return 0;
 
     while (*value == ',') {
         cJSON *new_item;
-        new_item = cJSON_New_Item(instance);
+        new_item = cJSON_New_Item(item->pAllocator);
         if (!new_item) return 0; /* memory fail */
         child->next = new_item;
         new_item->prev = child;
         child = new_item;
-        value = skip(parse_value(instance, child, skip(value + 1)));
+        value = skip(parse_value(child, skip(value + 1)));
         if (!value) return 0; /* memory fail */
     }
 
@@ -615,7 +616,7 @@ const char *parse_array(const struct loader_instance *instance, cJSON *item, con
 }
 
 /* Render an array to text */
-char *print_array(const struct loader_instance *instance, cJSON *item, int depth, int fmt, printbuffer *p) {
+char *print_array(cJSON *item, int depth, int fmt, printbuffer *p) {
     char **entries;
     char *out = 0, *ptr, *ret;
     size_t len = 5;
@@ -628,9 +629,9 @@ char *print_array(const struct loader_instance *instance, cJSON *item, int depth
     /* Explicitly handle numentries==0 */
     if (!numentries) {
         if (p)
-            out = ensure(instance, p, 3);
+            out = ensure(item->pAllocator, p, 3);
         else
-            out = (char *)cJSON_malloc(instance, 3);
+            out = (char *)cJSON_malloc(item->pAllocator, 3);
         if (out) strcpy(out, "[]");
         return out;
     }
@@ -638,17 +639,17 @@ char *print_array(const struct loader_instance *instance, cJSON *item, int depth
     if (p) {
         /* Compose the output array. */
         i = p->offset;
-        ptr = ensure(instance, p, 1);
+        ptr = ensure(item->pAllocator, p, 1);
         if (!ptr) return 0;
         *ptr = '[';
         p->offset++;
         child = item->child;
         while (child && !fail) {
-            print_value(instance, child, depth + 1, fmt, p);
+            print_value(child, depth + 1, fmt, p);
             p->offset = cJSON_update(p);
             if (child->next) {
                 len = fmt ? 2 : 1;
-                ptr = ensure(instance, p, len + 1);
+                ptr = ensure(item->pAllocator, p, len + 1);
                 if (!ptr) return 0;
                 *ptr++ = ',';
                 if (fmt) *ptr++ = ' ';
@@ -657,20 +658,20 @@ char *print_array(const struct loader_instance *instance, cJSON *item, int depth
             }
             child = child->next;
         }
-        ptr = ensure(instance, p, 2);
+        ptr = ensure(item->pAllocator, p, 2);
         if (!ptr) return 0;
         *ptr++ = ']';
         *ptr = 0;
         out = (p->buffer) + i;
     } else {
         /* Allocate an array to hold the values for each */
-        entries = (char **)cJSON_malloc(instance, numentries * sizeof(char *));
+        entries = (char **)cJSON_malloc(item->pAllocator, numentries * sizeof(char *));
         if (!entries) return 0;
         memset(entries, 0, numentries * sizeof(char *));
         /* Retrieve all the results: */
         child = item->child;
         while (child && !fail) {
-            ret = print_value(instance, child, depth + 1, fmt, 0);
+            ret = print_value(child, depth + 1, fmt, 0);
             entries[i++] = ret;
             if (ret)
                 len += strlen(ret) + 2 + (fmt ? 1 : 0);
@@ -680,15 +681,15 @@ char *print_array(const struct loader_instance *instance, cJSON *item, int depth
         }
 
         /* If we didn't fail, try to malloc the output string */
-        if (!fail) out = (char *)cJSON_malloc(instance, len);
+        if (!fail) out = (char *)cJSON_malloc(item->pAllocator, len);
         /* If that fails, we fail. */
         if (!out) fail = 1;
 
         /* Handle failure. */
         if (fail) {
             for (j = 0; j < numentries; j++)
-                if (entries[j]) cJSON_free(instance, entries[j]);
-            cJSON_free(instance, entries);
+                if (entries[j]) cJSON_Free(item->pAllocator, entries[j]);
+            cJSON_Free(item->pAllocator, entries);
             return 0;
         }
 
@@ -705,9 +706,9 @@ char *print_array(const struct loader_instance *instance, cJSON *item, int depth
                 if (fmt) *ptr++ = ' ';
                 *ptr = 0;
             }
-            cJSON_free(instance, entries[j]);
+            cJSON_Free(item->pAllocator, entries[j]);
         }
-        cJSON_free(instance, entries);
+        cJSON_Free(item->pAllocator, entries);
         *ptr++ = ']';
         *ptr++ = 0;
     }
@@ -715,7 +716,7 @@ char *print_array(const struct loader_instance *instance, cJSON *item, int depth
 }
 
 /* Build an object from the text. */
-const char *parse_object(const struct loader_instance *instance, cJSON *item, const char *value) {
+const char *parse_object(cJSON *item, const char *value) {
     cJSON *child;
     if (*value != '{') {
         ep = value;
@@ -726,35 +727,35 @@ const char *parse_object(const struct loader_instance *instance, cJSON *item, co
     value = skip(value + 1);
     if (*value == '}') return value + 1; /* empty array. */
 
-    item->child = child = cJSON_New_Item(instance);
+    item->child = child = cJSON_New_Item(item->pAllocator);
     if (!item->child) return 0;
-    value = skip(parse_string(instance, child, skip(value)));
+    value = skip(parse_string(child, skip(value)));
     if (!value) return 0;
     child->string = child->valuestring;
     child->valuestring = 0;
     if (*value != ':') {
         ep = value;
         return 0;
-    }                                                            /* fail! */
-    value = skip(parse_value(instance, child, skip(value + 1))); /* skip any spacing, get the value. */
+    }                                                  /* fail! */
+    value = skip(parse_value(child, skip(value + 1))); /* skip any spacing, get the value. */
     if (!value) return 0;
 
     while (*value == ',') {
         cJSON *new_item;
-        new_item = cJSON_New_Item(instance);
+        new_item = cJSON_New_Item(item->pAllocator);
         if (!new_item) return 0; /* memory fail */
         child->next = new_item;
         new_item->prev = child;
         child = new_item;
-        value = skip(parse_string(instance, child, skip(value + 1)));
+        value = skip(parse_string(child, skip(value + 1)));
         if (!value) return 0;
         child->string = child->valuestring;
         child->valuestring = 0;
         if (*value != ':') {
             ep = value;
             return 0;
-        }                                                            /* fail! */
-        value = skip(parse_value(instance, child, skip(value + 1))); /* skip any spacing, get the value. */
+        }                                                  /* fail! */
+        value = skip(parse_value(child, skip(value + 1))); /* skip any spacing, get the value. */
         if (!value) return 0;
     }
 
@@ -764,7 +765,7 @@ const char *parse_object(const struct loader_instance *instance, cJSON *item, co
 }
 
 /* Render an object to text. */
-char *print_object(const struct loader_instance *instance, cJSON *item, int depth, int fmt, printbuffer *p) {
+char *print_object(cJSON *item, int depth, int fmt, printbuffer *p) {
     char **entries = 0, **names = 0;
     char *out = 0, *ptr, *ret, *str;
     int j;
@@ -776,9 +777,9 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
     /* Explicitly handle empty object case */
     if (!numentries) {
         if (p)
-            out = ensure(instance, p, fmt ? depth + 4 : 3);
+            out = ensure(item->pAllocator, p, fmt ? depth + 4 : 3);
         else
-            out = (char *)cJSON_malloc(instance, fmt ? depth + 4 : 3);
+            out = (char *)cJSON_malloc(item->pAllocator, fmt ? depth + 4 : 3);
         if (!out) return 0;
         ptr = out;
         *ptr++ = '{';
@@ -794,7 +795,7 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
         /* Compose the output: */
         i = p->offset;
         len = fmt ? 2 : 1;
-        ptr = ensure(instance, p, len + 1);
+        ptr = ensure(item->pAllocator, p, len + 1);
         if (!ptr) return 0;
         *ptr++ = '{';
         if (fmt) *ptr++ = '\n';
@@ -804,26 +805,26 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
         depth++;
         while (child) {
             if (fmt) {
-                ptr = ensure(instance, p, depth);
+                ptr = ensure(item->pAllocator, p, depth);
                 if (!ptr) return 0;
                 for (j = 0; j < depth; j++) *ptr++ = '\t';
                 p->offset += depth;
             }
-            print_string_ptr(instance, child->string, p);
+            print_string_ptr(item->pAllocator, child->string, p);
             p->offset = cJSON_update(p);
 
             len = fmt ? 2 : 1;
-            ptr = ensure(instance, p, len);
+            ptr = ensure(item->pAllocator, p, len);
             if (!ptr) return 0;
             *ptr++ = ':';
             if (fmt) *ptr++ = '\t';
             p->offset += len;
 
-            print_value(instance, child, depth, fmt, p);
+            print_value(child, depth, fmt, p);
             p->offset = cJSON_update(p);
 
             len = (fmt ? 1 : 0) + (child->next ? 1 : 0);
-            ptr = ensure(instance, p, len + 1);
+            ptr = ensure(item->pAllocator, p, len + 1);
             if (!ptr) return 0;
             if (child->next) *ptr++ = ',';
             if (fmt) *ptr++ = '\n';
@@ -831,7 +832,7 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
             p->offset += len;
             child = child->next;
         }
-        ptr = ensure(instance, p, fmt ? (depth + 1) : 2);
+        ptr = ensure(item->pAllocator, p, fmt ? (depth + 1) : 2);
         if (!ptr) return 0;
         if (fmt)
             for (j = 0; j < depth - 1; j++) *ptr++ = '\t';
@@ -840,11 +841,11 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
         out = (p->buffer) + i;
     } else {
         /* Allocate space for the names and the objects */
-        entries = (char **)cJSON_malloc(instance, numentries * sizeof(char *));
+        entries = (char **)cJSON_malloc(item->pAllocator, numentries * sizeof(char *));
         if (!entries) return 0;
-        names = (char **)cJSON_malloc(instance, numentries * sizeof(char *));
+        names = (char **)cJSON_malloc(item->pAllocator, numentries * sizeof(char *));
         if (!names) {
-            cJSON_free(instance, entries);
+            cJSON_Free(item->pAllocator, entries);
             return 0;
         }
         memset(entries, 0, sizeof(char *) * numentries);
@@ -855,8 +856,8 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
         depth++;
         if (fmt) len += depth;
         while (child) {
-            names[i] = str = print_string_ptr(instance, child->string, 0);
-            entries[i++] = ret = print_value(instance, child, depth, fmt, 0);
+            names[i] = str = print_string_ptr(item->pAllocator, child->string, 0);
+            entries[i++] = ret = print_value(child, depth, fmt, 0);
             if (str && ret)
                 len += strlen(ret) + strlen(str) + 2 + (fmt ? 2 + depth : 0);
             else
@@ -865,17 +866,17 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
         }
 
         /* Try to allocate the output string */
-        if (!fail) out = (char *)cJSON_malloc(instance, len);
+        if (!fail) out = (char *)cJSON_malloc(item->pAllocator, len);
         if (!out) fail = 1;
 
         /* Handle failure */
         if (fail) {
             for (j = 0; j < numentries; j++) {
-                if (names[i]) cJSON_free(instance, names[j]);
-                if (entries[j]) cJSON_free(instance, entries[j]);
+                if (names[i]) cJSON_Free(item->pAllocator, names[j]);
+                if (entries[j]) cJSON_Free(item->pAllocator, entries[j]);
             }
-            cJSON_free(instance, names);
-            cJSON_free(instance, entries);
+            cJSON_Free(item->pAllocator, names);
+            cJSON_Free(item->pAllocator, entries);
             return 0;
         }
 
@@ -897,12 +898,12 @@ char *print_object(const struct loader_instance *instance, cJSON *item, int dept
             if (j != numentries - 1) *ptr++ = ',';
             if (fmt) *ptr++ = '\n';
             *ptr = 0;
-            cJSON_free(instance, names[j]);
-            cJSON_free(instance, entries[j]);
+            cJSON_Free(item->pAllocator, names[j]);
+            cJSON_Free(item->pAllocator, entries[j]);
         }
 
-        cJSON_free(instance, names);
-        cJSON_free(instance, entries);
+        cJSON_Free(item->pAllocator, names);
+        cJSON_Free(item->pAllocator, entries);
         if (fmt)
             for (j = 0; j < depth - 1; j++) *ptr++ = '\t';
         *ptr++ = '}';
@@ -935,8 +936,8 @@ void suffix_object(cJSON *prev, cJSON *item) {
     item->prev = prev;
 }
 /* Utility for handling references. */
-cJSON *create_reference(const struct loader_instance *instance, cJSON *item) {
-    cJSON *ref = cJSON_New_Item(instance);
+cJSON *create_reference(cJSON *item) {
+    cJSON *ref = cJSON_New_Item(item->pAllocator);
     if (!ref) return 0;
     memcpy(ref, item, sizeof(cJSON));
     ref->string = 0;
@@ -956,24 +957,22 @@ void cJSON_AddItemToArray(cJSON *array, cJSON *item) {
         suffix_object(c, item);
     }
 }
-void cJSON_AddItemToObject(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *item) {
+void cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item) {
     if (!item) return;
-    if (item->string) cJSON_free(instance, item->string);
-    item->string = cJSON_strdup(instance, string);
+    if (item->string) cJSON_Free(object->pAllocator, item->string);
+    item->string = cJSON_strdup(object->pAllocator, string);
     cJSON_AddItemToArray(object, item);
 }
-void cJSON_AddItemToObjectCS(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *item) {
+void cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item) {
     if (!item) return;
-    if (!(item->type & cJSON_StringIsConst) && item->string) cJSON_free(instance, item->string);
+    if (!(item->type & cJSON_StringIsConst) && item->string) cJSON_Free(object->pAllocator, item->string);
     item->string = (char *)string;
     item->type |= cJSON_StringIsConst;
     cJSON_AddItemToArray(object, item);
 }
-void cJSON_AddItemReferenceToArray(const struct loader_instance *instance, cJSON *array, cJSON *item) {
-    cJSON_AddItemToArray(array, create_reference(instance, item));
-}
-void cJSON_AddItemReferenceToObject(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *item) {
-    cJSON_AddItemToObject(instance, object, string, create_reference(instance, item));
+void cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item) { cJSON_AddItemToArray(array, create_reference(item)); }
+void cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item) {
+    cJSON_AddItemToObject(object, string, create_reference(item));
 }
 
 cJSON *cJSON_DetachItemFromArray(cJSON *array, int which) {
@@ -986,9 +985,7 @@ cJSON *cJSON_DetachItemFromArray(cJSON *array, int which) {
     c->prev = c->next = 0;
     return c;
 }
-void cJSON_DeleteItemFromArray(const struct loader_instance *instance, cJSON *array, int which) {
-    cJSON_Delete(instance, cJSON_DetachItemFromArray(array, which));
-}
+void cJSON_DeleteItemFromArray(cJSON *array, int which) { cJSON_Delete(cJSON_DetachItemFromArray(array, which)); }
 cJSON *cJSON_DetachItemFromObject(cJSON *object, const char *string) {
     int i = 0;
     cJSON *c = object->child;
@@ -996,9 +993,7 @@ cJSON *cJSON_DetachItemFromObject(cJSON *object, const char *string) {
     if (c) return cJSON_DetachItemFromArray(object, i);
     return 0;
 }
-void cJSON_DeleteItemFromObject(const struct loader_instance *instance, cJSON *object, const char *string) {
-    cJSON_Delete(instance, cJSON_DetachItemFromObject(object, string));
-}
+void cJSON_DeleteItemFromObject(cJSON *object, const char *string) { cJSON_Delete(cJSON_DetachItemFromObject(object, string)); }
 
 /* Replace array/object items with new ones. */
 void cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem) {
@@ -1016,7 +1011,7 @@ void cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem) {
     else
         newitem->prev->next = newitem;
 }
-void cJSON_ReplaceItemInArray(const struct loader_instance *instance, cJSON *array, int which, cJSON *newitem) {
+void cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem) {
     cJSON *c = array->child;
     while (c && which > 0) c = c->next, which--;
     if (!c) return;
@@ -1028,41 +1023,41 @@ void cJSON_ReplaceItemInArray(const struct loader_instance *instance, cJSON *arr
     else
         newitem->prev->next = newitem;
     c->next = c->prev = 0;
-    cJSON_Delete(instance, c);
+    cJSON_Delete(c);
 }
-void cJSON_ReplaceItemInObject(const struct loader_instance *instance, cJSON *object, const char *string, cJSON *newitem) {
+void cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem) {
     int i = 0;
     cJSON *c = object->child;
     while (c && strcmp(c->string, string)) i++, c = c->next;
     if (c) {
-        newitem->string = cJSON_strdup(instance, string);
-        cJSON_ReplaceItemInArray(instance, object, i, newitem);
+        newitem->string = cJSON_strdup(object->pAllocator, string);
+        cJSON_ReplaceItemInArray(object, i, newitem);
     }
 }
 
 /* Create basic types: */
-cJSON *cJSON_CreateNull(const struct loader_instance *instance) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateNull(const VkAllocationCallbacks *pAllocator) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) item->type = cJSON_NULL;
     return item;
 }
-cJSON *cJSON_CreateTrue(const struct loader_instance *instance) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateTrue(const VkAllocationCallbacks *pAllocator) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) item->type = cJSON_True;
     return item;
 }
-cJSON *cJSON_CreateFalse(const struct loader_instance *instance) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateFalse(const VkAllocationCallbacks *pAllocator) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) item->type = cJSON_False;
     return item;
 }
-cJSON *cJSON_CreateBool(const struct loader_instance *instance, int b) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateBool(const VkAllocationCallbacks *pAllocator, int b) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) item->type = b ? cJSON_True : cJSON_False;
     return item;
 }
-cJSON *cJSON_CreateNumber(const struct loader_instance *instance, double num) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateNumber(const VkAllocationCallbacks *pAllocator, double num) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) {
         item->type = cJSON_Number;
         item->valuedouble = num;
@@ -1070,31 +1065,31 @@ cJSON *cJSON_CreateNumber(const struct loader_instance *instance, double num) {
     }
     return item;
 }
-cJSON *cJSON_CreateString(const struct loader_instance *instance, const char *string) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateString(const VkAllocationCallbacks *pAllocator, const char *string) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) {
         item->type = cJSON_String;
-        item->valuestring = cJSON_strdup(instance, string);
+        item->valuestring = cJSON_strdup(pAllocator, string);
     }
     return item;
 }
-cJSON *cJSON_CreateArray(const struct loader_instance *instance) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateArray(const VkAllocationCallbacks *pAllocator) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) item->type = cJSON_Array;
     return item;
 }
-cJSON *cJSON_CreateObject(const struct loader_instance *instance) {
-    cJSON *item = cJSON_New_Item(instance);
+cJSON *cJSON_CreateObject(const VkAllocationCallbacks *pAllocator) {
+    cJSON *item = cJSON_New_Item(pAllocator);
     if (item) item->type = cJSON_Object;
     return item;
 }
 
 /* Create Arrays: */
-cJSON *cJSON_CreateIntArray(const struct loader_instance *instance, const int *numbers, int count) {
+cJSON *cJSON_CreateIntArray(const VkAllocationCallbacks *pAllocator, const int *numbers, int count) {
     int i;
-    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(instance);
+    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(pAllocator);
     for (i = 0; a && i < count; i++) {
-        n = cJSON_CreateNumber(instance, numbers[i]);
+        n = cJSON_CreateNumber(pAllocator, numbers[i]);
         if (!i)
             a->child = n;
         else
@@ -1103,11 +1098,11 @@ cJSON *cJSON_CreateIntArray(const struct loader_instance *instance, const int *n
     }
     return a;
 }
-cJSON *cJSON_CreateFloatArray(const struct loader_instance *instance, const float *numbers, int count) {
+cJSON *cJSON_CreateFloatArray(const VkAllocationCallbacks *pAllocator, const float *numbers, int count) {
     int i;
-    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(instance);
+    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(pAllocator);
     for (i = 0; a && i < count; i++) {
-        n = cJSON_CreateNumber(instance, numbers[i]);
+        n = cJSON_CreateNumber(pAllocator, numbers[i]);
         if (!i)
             a->child = n;
         else
@@ -1116,11 +1111,11 @@ cJSON *cJSON_CreateFloatArray(const struct loader_instance *instance, const floa
     }
     return a;
 }
-cJSON *cJSON_CreateDoubleArray(const struct loader_instance *instance, const double *numbers, int count) {
+cJSON *cJSON_CreateDoubleArray(const VkAllocationCallbacks *pAllocator, const double *numbers, int count) {
     int i;
-    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(instance);
+    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(pAllocator);
     for (i = 0; a && i < count; i++) {
-        n = cJSON_CreateNumber(instance, numbers[i]);
+        n = cJSON_CreateNumber(pAllocator, numbers[i]);
         if (!i)
             a->child = n;
         else
@@ -1129,11 +1124,11 @@ cJSON *cJSON_CreateDoubleArray(const struct loader_instance *instance, const dou
     }
     return a;
 }
-cJSON *cJSON_CreateStringArray(const struct loader_instance *instance, const char **strings, int count) {
+cJSON *cJSON_CreateStringArray(const VkAllocationCallbacks *pAllocator, const char **strings, int count) {
     int i;
-    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(instance);
+    cJSON *n = 0, *p = 0, *a = cJSON_CreateArray(pAllocator);
     for (i = 0; a && i < count; i++) {
-        n = cJSON_CreateString(instance, strings[i]);
+        n = cJSON_CreateString(pAllocator, strings[i]);
         if (!i)
             a->child = n;
         else
@@ -1144,26 +1139,26 @@ cJSON *cJSON_CreateStringArray(const struct loader_instance *instance, const cha
 }
 
 /* Duplication */
-cJSON *cJSON_Duplicate(const struct loader_instance *instance, cJSON *item, int recurse) {
+cJSON *cJSON_Duplicate(cJSON *item, int recurse) {
     cJSON *newitem, *cptr, *nptr = 0, *newchild;
     /* Bail on bad ptr */
     if (!item) return 0;
     /* Create new item */
-    newitem = cJSON_New_Item(instance);
+    newitem = cJSON_New_Item(item->pAllocator);
     if (!newitem) return 0;
     /* Copy over all vars */
     newitem->type = item->type & (~cJSON_IsReference), newitem->valueint = item->valueint, newitem->valuedouble = item->valuedouble;
     if (item->valuestring) {
-        newitem->valuestring = cJSON_strdup(instance, item->valuestring);
+        newitem->valuestring = cJSON_strdup(item->pAllocator, item->valuestring);
         if (!newitem->valuestring) {
-            cJSON_Delete(instance, newitem);
+            cJSON_Delete(newitem);
             return 0;
         }
     }
     if (item->string) {
-        newitem->string = cJSON_strdup(instance, item->string);
+        newitem->string = cJSON_strdup(item->pAllocator, item->string);
         if (!newitem->string) {
-            cJSON_Delete(instance, newitem);
+            cJSON_Delete(newitem);
             return 0;
         }
     }
@@ -1172,9 +1167,9 @@ cJSON *cJSON_Duplicate(const struct loader_instance *instance, cJSON *item, int 
     /* Walk the ->next chain for the child. */
     cptr = item->child;
     while (cptr) {
-        newchild = cJSON_Duplicate(instance, cptr, 1); /* Duplicate (with recurse) each item in the ->next chain */
+        newchild = cJSON_Duplicate(cptr, 1); /* Duplicate (with recurse) each item in the ->next chain */
         if (!newchild) {
-            cJSON_Delete(instance, newitem);
+            cJSON_Delete(newitem);
             return 0;
         }
         if (nptr) {
