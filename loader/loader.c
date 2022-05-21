@@ -132,7 +132,7 @@ bool loader_check_version_meets_required(loader_api_version required, loader_api
 DIR *loader_opendir(const struct loader_instance *instance, const char *name) {
 #if defined(_WIN32)
     return opendir(instance ? &instance->alloc_callbacks : NULL, name);
-#else  // _WIN32
+#else   // _WIN32
     return opendir(name);
 #endif  // _WIN32
 }
@@ -1693,7 +1693,7 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
         goto out;
     }
     // Parse text from file
-    *json = cJSON_Parse(inst, json_buf);
+    *json = cJSON_Parse(inst ? &inst->alloc_callbacks : NULL, json_buf);
     if (*json == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "loader_get_json: Failed to parse JSON file %s, this is usually because something ran out of memory.", filename);
@@ -1950,7 +1950,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                        #var);                                                  \
             goto out;                                                          \
         }                                                                      \
-        temp = cJSON_Print(inst, item);                                        \
+        temp = cJSON_Print(item);                                              \
         if (temp == NULL) {                                                    \
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,                        \
                        "Problem accessing layer value %s in manifest JSON "    \
@@ -1962,7 +1962,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         temp[strlen(temp) - 1] = '\0';                                         \
         var = loader_stack_alloc(strlen(temp) + 1);                            \
         strcpy(var, &temp[1]);                                                 \
-        cJSON_Free(inst, temp);                                                \
+        loader_instance_heap_free(inst, temp);                                 \
     }
     GET_JSON_ITEM(inst, layer_node, name)
     GET_JSON_ITEM(inst, layer_node, type)
@@ -2014,7 +2014,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             uint8_t cur_item = 0;
 
             // Get the string for the current item
-            temp = cJSON_Print(inst, expiration);
+            temp = cJSON_Print(expiration);
             if (temp == NULL) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                            "Problem accessing layer value 'expiration_date' in manifest JSON file, skipping this layer");
@@ -2023,7 +2023,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             }
             temp[strlen(temp) - 1] = '\0';
             strcpy(date_copy, &temp[1]);
-            cJSON_Free(inst, temp);
+            loader_instance_heap_free(inst, temp);
 
             if (strlen(date_copy) == 16) {
                 char *cur_start = &date_copy[0];
@@ -2077,7 +2077,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         props->num_component_layers = 0;
         props->component_layer_names = NULL;
 
-        temp = cJSON_Print(inst, library_path);
+        temp = cJSON_Print(library_path);
         if (NULL == temp) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Problem accessing layer value library_path in manifest JSON file, skipping this layer");
@@ -2087,7 +2087,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         temp[strlen(temp) - 1] = '\0';
         library_path_str = loader_stack_alloc(strlen(temp) + 1);
         strcpy(library_path_str, &temp[1]);
-        cJSON_Free(inst, temp);
+        loader_instance_heap_free(inst, temp);
 
         strncpy(props->manifest_file_name, filename, MAX_STRING_SIZE);
         char *fullpath = props->lib_name;
@@ -2128,7 +2128,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         for (i = 0; i < count; i++) {
             cJSON *comp_layer = cJSON_GetArrayItem(component_layers, i);
             if (NULL != comp_layer) {
-                temp = cJSON_Print(inst, comp_layer);
+                temp = cJSON_Print(comp_layer);
                 if (NULL == temp) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
@@ -2136,7 +2136,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 temp[strlen(temp) - 1] = '\0';
                 strncpy(props->component_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
                 props->component_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
-                cJSON_Free(inst, temp);
+                loader_instance_heap_free(inst, temp);
             }
         }
 
@@ -2179,7 +2179,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                     if (black_layer == NULL) {
                         continue;
                     }
-                    temp = cJSON_Print(inst, black_layer);
+                    temp = cJSON_Print(black_layer);
                     if (temp == NULL) {
                         result = VK_ERROR_OUT_OF_HOST_MEMORY;
                         goto out;
@@ -2187,7 +2187,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                     temp[strlen(temp) - 1] = '\0';
                     strncpy(props->blacklist_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
                     props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
-                    cJSON_Free(inst, temp);
+                    loader_instance_heap_free(inst, temp);
                 }
             }
         }
@@ -2214,7 +2214,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             for (i = 0; i < count; i++) {
                 cJSON *override_path = cJSON_GetArrayItem(override_paths, i);
                 if (NULL != override_path) {
-                    temp = cJSON_Print(inst, override_path);
+                    temp = cJSON_Print(override_path);
                     if (NULL == temp) {
                         result = VK_ERROR_OUT_OF_HOST_MEMORY;
                         goto out;
@@ -2222,7 +2222,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                     temp[strlen(temp) - 1] = '\0';
                     strncpy(props->override_paths[i], temp + 1, MAX_STRING_SIZE - 1);
                     props->override_paths[i][MAX_STRING_SIZE - 1] = '\0';
-                    cJSON_Free(inst, temp);
+                    loader_instance_heap_free(inst, temp);
                 }
             }
         }
@@ -2277,12 +2277,12 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     {                                                       \
         item = cJSON_GetObjectItem(node, #var);             \
         if (item != NULL) {                                 \
-            temp = cJSON_Print(inst, item);                 \
+            temp = cJSON_Print(item);                       \
             if (temp != NULL) {                             \
                 temp[strlen(temp) - 1] = '\0';              \
                 var = loader_stack_alloc(strlen(temp) + 1); \
                 strcpy(var, &temp[1]);                      \
-                cJSON_Free(inst, temp);                     \
+                loader_instance_heap_free(inst, temp);      \
             } else {                                        \
                 result = VK_ERROR_OUT_OF_HOST_MEMORY;       \
                 goto out;                                   \
@@ -2404,7 +2404,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
             for (j = 0; j < entry_count; j++) {
                 ext_item = cJSON_GetArrayItem(entrypoints, j);
                 if (ext_item != NULL) {
-                    temp = cJSON_Print(inst, ext_item);
+                    temp = cJSON_Print(ext_item);
                     if (NULL == temp) {
                         entry_array[j] = NULL;
                         result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -2413,7 +2413,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                     temp[strlen(temp) - 1] = '\0';
                     entry_array[j] = loader_stack_alloc(strlen(temp) + 1);
                     strcpy(entry_array[j], &temp[1]);
-                    cJSON_Free(inst, temp);
+                    loader_instance_heap_free(inst, temp);
                 }
             }
             loader_add_to_dev_ext_list(inst, &props->device_extension_list, &ext_prop, entry_count, entry_array);
@@ -2448,7 +2448,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         } else {
             cJSON *inst_ext_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceExtensionProperties");
             if (NULL != inst_ext_json) {
-                char *inst_ext_name = cJSON_Print(inst, inst_ext_json);
+                char *inst_ext_name = cJSON_Print(inst_ext_json);
                 if (NULL == inst_ext_name) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
@@ -2456,12 +2456,12 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 size_t len = strlen(inst_ext_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 3 : strlen(inst_ext_name) - 2;
                 strncpy(props->pre_instance_functions.enumerate_instance_extension_properties, inst_ext_name + 1, len);
                 props->pre_instance_functions.enumerate_instance_extension_properties[len] = '\0';
-                cJSON_Free(inst, inst_ext_name);
+                loader_instance_heap_free(inst, inst_ext_name);
             }
 
             cJSON *inst_layer_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceLayerProperties");
             if (NULL != inst_layer_json) {
-                char *inst_layer_name = cJSON_Print(inst, inst_layer_json);
+                char *inst_layer_name = cJSON_Print(inst_layer_json);
                 if (NULL == inst_layer_name) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
@@ -2469,12 +2469,12 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 size_t len = strlen(inst_layer_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 3 : strlen(inst_layer_name) - 2;
                 strncpy(props->pre_instance_functions.enumerate_instance_layer_properties, inst_layer_name + 1, len);
                 props->pre_instance_functions.enumerate_instance_layer_properties[len] = '\0';
-                cJSON_Free(inst, inst_layer_name);
+                loader_instance_heap_free(inst, inst_layer_name);
             }
 
             cJSON *inst_version_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceVersion");
             if (NULL != inst_version_json) {
-                char *inst_version_name = cJSON_Print(inst, inst_version_json);
+                char *inst_version_name = cJSON_Print(inst_version_json);
                 if (NULL == inst_version_name) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
@@ -2482,7 +2482,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 size_t len = strlen(inst_version_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 3 : strlen(inst_version_name) - 2;
                 strncpy(props->pre_instance_functions.enumerate_instance_version, inst_version_name + 1, len);
                 props->pre_instance_functions.enumerate_instance_version[len] = '\0';
-                cJSON_Free(inst, inst_version_name);
+                loader_instance_heap_free(inst, inst_version_name);
             }
         }
     }
@@ -2513,7 +2513,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 if (app_key_path == NULL) {
                     continue;
                 }
-                temp = cJSON_Print(inst, app_key_path);
+                temp = cJSON_Print(app_key_path);
                 if (temp == NULL) {
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
@@ -2521,7 +2521,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 temp[strlen(temp) - 1] = '\0';
                 strncpy(props->app_key_paths[i], temp + 1, MAX_STRING_SIZE - 1);
                 props->app_key_paths[i][MAX_STRING_SIZE - 1] = '\0';
-                cJSON_Free(inst, temp);
+                loader_instance_heap_free(inst, temp);
             }
         }
     }
@@ -2576,7 +2576,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     if (item == NULL) {
         goto out;
     }
-    char *file_vers = cJSON_PrintUnformatted(inst, item);
+    char *file_vers = cJSON_PrintUnformatted(item);
     if (NULL == file_vers) {
         goto out;
     }
@@ -2589,7 +2589,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
                    "loader_add_layer_properties: %s has unknown layer manifest file version %d.%d.%d.  May cause errors.", filename,
                    json_version.major, json_version.minor, json_version.patch);
     }
-    cJSON_Free(inst, file_vers);
+    loader_instance_heap_free(inst, file_vers);
 
     // If "layers" is present, read in the array of layer objects
     layers_node = cJSON_GetObjectItem(json, "layers");
@@ -3389,7 +3389,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         VkResult temp_res = loader_get_json(inst, file_str, &json);
         if (NULL == json || temp_res != VK_SUCCESS) {
             if (NULL != json) {
-                cJSON_Delete(inst, json);
+                cJSON_Delete(json);
                 json = NULL;
             }
             // If we haven't already found an ICD, copy this result to
@@ -3414,12 +3414,12 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             }
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: ICD JSON %s does not have a \'file_format_version\' field. Skipping ICD JSON.", file_str);
-            cJSON_Delete(inst, json);
+            cJSON_Delete(json);
             json = NULL;
             continue;
         }
 
-        char *file_vers = cJSON_Print(inst, item);
+        char *file_vers = cJSON_Print(item);
         if (NULL == file_vers) {
             // Only reason the print can fail is if there was an allocation issue
             if (num_good_icds == 0) {
@@ -3428,7 +3428,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "loader_icd_scan: Failed retrieving ICD JSON %s \'file_format_version\' field.  Skipping ICD JSON",
                        file_str);
-            cJSON_Delete(inst, json);
+            cJSON_Delete(json);
             json = NULL;
             continue;
         }
@@ -3443,13 +3443,13 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                        "loader_icd_scan: %s has unknown icd manifest file version %d.%d.%d. May cause errors.", file_str,
                        json_file_version.major, json_file_version.minor, json_file_version.patch);
         }
-        cJSON_Free(inst, file_vers);
+        loader_instance_heap_free(inst, file_vers);
 
         itemICD = cJSON_GetObjectItem(json, "ICD");
         if (itemICD != NULL) {
             item = cJSON_GetObjectItem(itemICD, "library_path");
             if (item != NULL) {
-                char *temp = cJSON_Print(inst, item);
+                char *temp = cJSON_Print(item);
                 if (!temp || strlen(temp) == 0) {
                     if (num_good_icds == 0) {
                         res = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -3457,8 +3457,8 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: Failed retrieving ICD JSON %s \'library_path\' field.  Skipping ICD JSON.",
                                file_str);
-                    cJSON_Free(inst, temp);
-                    cJSON_Delete(inst, json);
+                    loader_instance_heap_free(inst, temp);
+                    cJSON_Delete(json);
                     json = NULL;
                     continue;
                 }
@@ -3471,17 +3471,17 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                         "loader_icd_scan: Failed to allocate space for ICD JSON %s \'library_path\' value.  Skipping ICD JSON.",
                         file_str);
                     res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    cJSON_Free(inst, temp);
-                    cJSON_Delete(inst, json);
+                    loader_instance_heap_free(inst, temp);
+                    cJSON_Delete(json);
                     json = NULL;
                     goto out;
                 }
                 strcpy(library_path, &temp[1]);
-                cJSON_Free(inst, temp);
+                loader_instance_heap_free(inst, temp);
                 if (strlen(library_path) == 0) {
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: ICD JSON %s \'library_path\' field is empty.  Skipping ICD JSON.", file_str);
-                    cJSON_Delete(inst, json);
+                    cJSON_Delete(json);
                     json = NULL;
                     continue;
                 }
@@ -3507,7 +3507,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 uint32_t vers = 0;
                 item = cJSON_GetObjectItem(itemICD, "api_version");
                 if (item != NULL) {
-                    temp = cJSON_Print(inst, item);
+                    temp = cJSON_Print(item);
                     if (NULL == temp) {
                         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                    "loader_icd_scan: Failed retrieving ICD JSON %s \'api_version\' field.  Skipping ICD JSON.",
@@ -3519,13 +3519,13 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                             res = VK_ERROR_OUT_OF_HOST_MEMORY;
                         }
 
-                        cJSON_Free(inst, temp);
-                        cJSON_Delete(inst, json);
+                        loader_instance_heap_free(inst, temp);
+                        cJSON_Delete(json);
                         json = NULL;
                         continue;
                     }
                     vers = loader_parse_version_string(temp);
-                    cJSON_Free(inst, temp);
+                    loader_instance_heap_free(inst, temp);
                 } else {
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: ICD JSON %s does not have an \'api_version\' field.", file_str);
@@ -3536,7 +3536,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                         "loader_icd_scan: Driver's ICD JSON %s \'api_version\' field contains a non-zero variant value of %d. "
                         " Skipping ICD JSON.",
                         file_str, VK_API_VERSION_VARIANT(vers));
-                    cJSON_Delete(inst, json);
+                    cJSON_Delete(json);
                     json = NULL;
                     continue;
                 }
@@ -3545,7 +3545,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 item = cJSON_GetObjectItem(itemICD, "is_portability_driver");
                 if (item != NULL && item->type == cJSON_True && !inst->portability_enumeration_enabled) {
                     if (skipped_portability_drivers) *skipped_portability_drivers = true;
-                    cJSON_Delete(inst, json);
+                    cJSON_Delete(json);
                     json = NULL;
                     continue;
                 }
@@ -3577,7 +3577,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                                        fullpath);
                             break;
                     }
-                    cJSON_Delete(inst, json);
+                    cJSON_Delete(json);
                     json = NULL;
                     continue;
                 }
@@ -3592,14 +3592,14 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                        "loader_icd_scan: Can not find \'ICD\' object in ICD JSON file %s.  Skipping ICD JSON", file_str);
         }
 
-        cJSON_Delete(inst, json);
+        cJSON_Delete(json);
         json = NULL;
     }
 
 out:
 
     if (NULL != json) {
-        cJSON_Delete(inst, json);
+        cJSON_Delete(json);
     }
 
     if (NULL != manifest_files.filename_list) {
@@ -3654,7 +3654,7 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
             }
 
             VkResult local_res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
-            cJSON_Delete(inst, json);
+            cJSON_Delete(json);
 
             // If the error is anything other than out of memory we still want to try to load the other layers
             if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
@@ -3716,7 +3716,7 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
             }
 
             VkResult local_res = loader_add_layer_properties(inst, instance_layers, json, false, file_str);
-            cJSON_Delete(inst, json);
+            cJSON_Delete(json);
 
             // If the error is anything other than out of memory we still want to try to load the other layers
             if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
@@ -3794,7 +3794,7 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
 
         loader_instance_heap_free(inst, file_str);
         manifest_files.filename_list[i] = NULL;
-        cJSON_Delete(inst, json);
+        cJSON_Delete(json);
 
         if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
             goto out;
@@ -3862,7 +3862,7 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
 
             loader_instance_heap_free(inst, file_str);
             manifest_files.filename_list[i] = NULL;
-            cJSON_Delete(inst, json);
+            cJSON_Delete(json);
 
             if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
                 goto out;
