@@ -131,15 +131,14 @@ bool loader_check_version_meets_required(loader_api_version required, loader_api
 // while linux opendir & readdir does not
 DIR *loader_opendir(const struct loader_instance *instance, const char *name) {
 #if defined(_WIN32)
-    return opendir(instance, name);
+    return opendir(instance ? &instance->alloc_callbacks : NULL, name);
 #else  // _WIN32
     return opendir(name);
-
 #endif  // _WIN32
 }
 int loader_closedir(const struct loader_instance *instance, DIR *dir) {
 #if defined(_WIN32)
-    return closedir(instance, dir);
+    return closedir(instance ? &instance->alloc_callbacks : NULL, dir);
 #else   // _WIN32
     return closedir(dir);
 #endif  // _WIN32
