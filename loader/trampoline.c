@@ -164,11 +164,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     loader_scan_for_implicit_layers(NULL, &layers);
 
     // We'll need to save the dl handles so we can close them later
-    loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
+    loader_platform_dl_handle *libs =
+        loader_calloc(NULL, sizeof(loader_platform_dl_handle) * layers.count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    memset(libs, 0, sizeof(loader_platform_dl_handle) * layers.count);
     size_t lib_count = 0;
 
     // Prepend layers onto the chain if they implement this entry point
@@ -195,7 +195,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
             continue;
         }
 
-        VkEnumerateInstanceExtensionPropertiesChain *chain_link = malloc(sizeof(VkEnumerateInstanceExtensionPropertiesChain));
+        VkEnumerateInstanceExtensionPropertiesChain *chain_link =
+            loader_alloc(NULL, sizeof(VkEnumerateInstanceExtensionPropertiesChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (chain_link == NULL) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
@@ -222,14 +223,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     while (chain_head != &chain_tail) {
         VkEnumerateInstanceExtensionPropertiesChain *holder = chain_head;
         chain_head = (VkEnumerateInstanceExtensionPropertiesChain *)chain_head->pNextLink;
-        free(holder);
+        loader_free(NULL, holder);
     }
 
     // Close the dl handles
     for (size_t i = 0; i < lib_count; ++i) {
         loader_platform_close_library(libs[i]);
     }
-    free(libs);
+    loader_free(NULL, libs);
 
     return res;
 }
@@ -258,8 +259,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     loader_scan_for_implicit_layers(NULL, &layers);
 
     // We'll need to save the dl handles so we can close them later
-    loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
-    memset(libs, 0, sizeof(loader_platform_dl_handle) * layers.count);
+    loader_platform_dl_handle *libs =
+        loader_calloc(NULL, sizeof(loader_platform_dl_handle) * layers.count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -289,7 +290,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
             continue;
         }
 
-        VkEnumerateInstanceLayerPropertiesChain *chain_link = malloc(sizeof(VkEnumerateInstanceLayerPropertiesChain));
+        VkEnumerateInstanceLayerPropertiesChain *chain_link =
+            loader_alloc(NULL, sizeof(VkEnumerateInstanceLayerPropertiesChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (chain_link == NULL) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
@@ -316,14 +318,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     while (chain_head != &chain_tail) {
         VkEnumerateInstanceLayerPropertiesChain *holder = chain_head;
         chain_head = (VkEnumerateInstanceLayerPropertiesChain *)chain_head->pNextLink;
-        free(holder);
+        loader_free(NULL, holder);
     }
 
     // Close the dl handles
     for (size_t i = 0; i < lib_count; ++i) {
         loader_platform_close_library(libs[i]);
     }
-    free(libs);
+    loader_free(NULL, libs);
 
     return res;
 }
@@ -359,11 +361,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     loader_scan_for_implicit_layers(NULL, &layers);
 
     // We'll need to save the dl handles so we can close them later
-    loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
+    loader_platform_dl_handle *libs =
+        loader_calloc(NULL, sizeof(loader_platform_dl_handle) * layers.count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (libs == NULL && layers.count > 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    memset(libs, 0, sizeof(loader_platform_dl_handle) * layers.count);
     size_t lib_count = 0;
 
     // Prepend layers onto the chain if they implement this entry point
@@ -388,7 +390,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
             continue;
         }
 
-        VkEnumerateInstanceVersionChain *chain_link = malloc(sizeof(VkEnumerateInstanceVersionChain));
+        VkEnumerateInstanceVersionChain *chain_link =
+            loader_alloc(NULL, sizeof(VkEnumerateInstanceVersionChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (chain_link == NULL) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
@@ -415,14 +418,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     while (chain_head != &chain_tail) {
         VkEnumerateInstanceVersionChain *holder = chain_head;
         chain_head = (VkEnumerateInstanceVersionChain *)chain_head->pNextLink;
-        free(holder);
+        loader_free(NULL, holder);
     }
 
     // Close the dl handles
     for (size_t i = 0; i < lib_count; ++i) {
         loader_platform_close_library(libs[i]);
     }
-    free(libs);
+    loader_free(NULL, libs);
 
     return res;
 }

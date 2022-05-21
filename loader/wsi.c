@@ -528,13 +528,11 @@ static VkIcdSurface *AllocateIcdSurfaceStruct(struct loader_instance *instance, 
         pIcdSurface->non_platform_offset = (uint32_t)((uint8_t *)(&pIcdSurface->base_size) - (uint8_t *)pIcdSurface);
         pIcdSurface->entire_size = sizeof(VkIcdSurface);
 
-        pIcdSurface->real_icd_surfaces = loader_instance_heap_alloc(instance, sizeof(VkSurfaceKHR) * instance->total_icd_count,
-                                                                    VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+        pIcdSurface->real_icd_surfaces = loader_instance_heap_calloc(instance, sizeof(VkSurfaceKHR) * instance->total_icd_count,
+                                                                     VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
         if (pIcdSurface->real_icd_surfaces == NULL) {
             loader_instance_heap_free(instance, pIcdSurface);
             pIcdSurface = NULL;
-        } else {
-            memset(pIcdSurface->real_icd_surfaces, 0, sizeof(VkSurfaceKHR) * instance->total_icd_count);
         }
     }
     return pIcdSurface;

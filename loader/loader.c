@@ -338,13 +338,12 @@ static struct loader_layer_properties *loader_get_next_layer_property_slot(const
                                                                            struct loader_layer_list *layer_list) {
     if (layer_list->capacity == 0) {
         layer_list->list =
-            loader_instance_heap_alloc(inst, sizeof(struct loader_layer_properties) * 64, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            loader_instance_heap_calloc(inst, sizeof(struct loader_layer_properties) * 64, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (layer_list->list == NULL) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "loader_get_next_layer_property_slot: Out of memory can not add any layer properties to list");
             return NULL;
         }
-        memset(layer_list->list, 0, sizeof(struct loader_layer_properties) * 64);
         layer_list->capacity = sizeof(struct loader_layer_properties) * 64;
     }
 
@@ -641,12 +640,11 @@ VkResult loader_init_generic_list(const struct loader_instance *inst, struct loa
     size_t capacity = 32 * element_size;
     list_info->count = 0;
     list_info->capacity = 0;
-    list_info->list = loader_instance_heap_alloc(inst, capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    list_info->list = loader_instance_heap_calloc(inst, capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (list_info->list == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_init_generic_list: Failed to allocate space for generic list");
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    memset(list_info->list, 0, capacity);
     list_info->capacity = capacity;
     return VK_SUCCESS;
 }
@@ -780,11 +778,10 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
 // Manage lists of VkLayerProperties
 static bool loader_init_layer_list(const struct loader_instance *inst, struct loader_layer_list *list) {
     list->capacity = 32 * sizeof(struct loader_layer_properties);
-    list->list = loader_instance_heap_alloc(inst, list->capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    list->list = loader_instance_heap_calloc(inst, list->capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (list->list == NULL) {
         return false;
     }
-    memset(list->list, 0, list->capacity);
     list->count = 0;
     return true;
 }
@@ -1271,12 +1268,10 @@ static void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_i
 static struct loader_icd_term *loader_icd_create(const struct loader_instance *inst) {
     struct loader_icd_term *icd_term;
 
-    icd_term = loader_instance_heap_alloc(inst, sizeof(struct loader_icd_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    icd_term = loader_instance_heap_calloc(inst, sizeof(struct loader_icd_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (!icd_term) {
         return NULL;
     }
-
-    memset(icd_term, 0, sizeof(struct loader_icd_term));
 
     return icd_term;
 }
@@ -5712,15 +5707,14 @@ VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phy
         // Something is different, so do the full path of checking every device and creating a new array to use.
         // This can happen if a device was added, or removed, or we hadn't previously queried all the data and we
         // have more to store.
-        new_phys_devs = loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_tramp *) * new_count,
-                                                   VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        new_phys_devs = loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_tramp *) * new_count,
+                                                    VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_phys_devs) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "setup_loader_tramp_phys_devs:  Failed to allocate new physical device array of size %d", new_count);
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
-        memset(new_phys_devs, 0, sizeof(struct loader_physical_device_tramp *) * new_count);
 
         if (new_count > phys_dev_count) {
             found_count = phys_dev_count;
@@ -5981,15 +5975,14 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     }
 
     // Create an allocation large enough to hold both the windows sorting enumeration and non-windows physical device enumeration
-    new_phys_devs = loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_term *) * new_phys_devs_count,
-                                               VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    new_phys_devs = loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_term *) * new_phys_devs_count,
+                                                VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_devs) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "setup_loader_term_phys_devs:  Failed to allocate new physical device array of size %d", new_phys_devs_count);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    memset(new_phys_devs, 0, sizeof(struct loader_physical_device_term *) * new_phys_devs_count);
 
     // Current index into the new_phys_devs array - increment whenever we've written in.
     uint32_t idx = 0;
@@ -6598,7 +6591,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
     if (NULL != pPhysicalDeviceGroupProperties) {
         // Create an array for the new physical device groups, which will be stored
         // in the instance for the Terminator code.
-        new_phys_dev_groups = (VkPhysicalDeviceGroupProperties **)loader_instance_heap_alloc(
+        new_phys_dev_groups = (VkPhysicalDeviceGroupProperties **)loader_instance_heap_calloc(
             inst, total_count * sizeof(VkPhysicalDeviceGroupProperties *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_phys_dev_groups) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
@@ -6607,7 +6600,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
-        memset(new_phys_dev_groups, 0, total_count * sizeof(VkPhysicalDeviceGroupProperties *));
 
         // Create a temporary array (on the stack) to keep track of the
         // returned VkPhysicalDevice values.

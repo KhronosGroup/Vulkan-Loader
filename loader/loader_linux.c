@@ -238,13 +238,12 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     VkResult res = VK_SUCCESS;
     bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
 
-    struct LinuxSortedDeviceInfo *sorted_device_info =
-        loader_instance_heap_alloc(inst, phys_dev_count * sizeof(struct LinuxSortedDeviceInfo), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    struct LinuxSortedDeviceInfo *sorted_device_info = loader_instance_heap_calloc(
+        inst, phys_dev_count * sizeof(struct LinuxSortedDeviceInfo), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == sorted_device_info) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    memset(sorted_device_info, 0, phys_dev_count * sizeof(struct LinuxSortedDeviceInfo));
 
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_read_sorted_physical_devices:");
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     Original order:");

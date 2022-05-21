@@ -804,14 +804,12 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
         goto out;
     }
     sorted_alloc = 16;
-    *sorted_devices =
-        loader_instance_heap_alloc(inst, sorted_alloc * sizeof(struct loader_phys_dev_per_icd), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    *sorted_devices = loader_instance_heap_calloc(inst, sorted_alloc * sizeof(struct loader_phys_dev_per_icd),
+                                                  VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (*sorted_devices == NULL) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-
-    memset(*sorted_devices, 0, sorted_alloc * sizeof(struct loader_phys_dev_per_icd));
 
     for (uint32_t i = 0;; ++i) {
         IDXGIAdapter1 *adapter;
