@@ -85,9 +85,6 @@
 #define LOADER_EXPORT
 #endif
 
-// A debug option to disable allocators at compile time to investigate future issues.
-#define DEBUG_DISABLE_APP_ALLOCATORS 0
-
 #define MAX_STRING_SIZE 1024
 
 // This is defined in vk_layer.h, but if there's problems we need to create the define

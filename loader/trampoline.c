@@ -447,16 +447,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         goto out;
     }
 
-#if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
-    {
-#else
-    if (pAllocator) {
-        ptr_instance = (struct loader_instance *)pAllocator->pfnAllocation(pAllocator->pUserData, sizeof(struct loader_instance),
-                                                                           sizeof(int *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    } else {
-#endif
-        ptr_instance = (struct loader_instance *)malloc(sizeof(struct loader_instance));
-    }
+    ptr_instance =
+        (struct loader_instance *)loader_alloc(pAllocator, sizeof(struct loader_instance), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
 
     VkInstanceCreateInfo ici = *pCreateInfo;
 

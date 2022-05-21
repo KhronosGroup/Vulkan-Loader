@@ -28,6 +28,7 @@
 
 #include "get_environment.h"
 
+#include "allocation.h"
 #include "log.h"
 
 // Environment variables
@@ -114,13 +115,7 @@ char *loader_getenv(const char *name, const struct loader_instance *inst) {
     // will always be at least 1. If it's 0, the variable wasn't set.
     if (valSize == 0) return NULL;
 
-    // Allocate the space necessary for the registry entry
-    if (NULL != inst && NULL != inst->alloc_callbacks.pfnAllocation) {
-        retVal = (char *)inst->alloc_callbacks.pfnAllocation(inst->alloc_callbacks.pUserData, valSize, sizeof(char *),
-                                                             VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    } else {
-        retVal = (char *)malloc(valSize);
-    }
+    retVal = loader_instance_heap_alloc(inst, valSize, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
 
     if (NULL != retVal) {
         GetEnvironmentVariableA(name, retVal, valSize);
@@ -141,13 +136,7 @@ char *loader_secure_getenv(const char *name, const struct loader_instance *inst)
     return loader_getenv(name, inst);
 }
 
-void loader_free_getenv(char *val, const struct loader_instance *inst) {
-    if (NULL != inst && NULL != inst->alloc_callbacks.pfnFree) {
-        inst->alloc_callbacks.pfnFree(inst->alloc_callbacks.pUserData, val);
-    } else {
-        free((void *)val);
-    }
-}
+void loader_free_getenv(char *val, const struct loader_instance *inst) { loader_instance_heap_free(inst, (void *)val); }
 
 #else
 
