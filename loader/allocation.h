@@ -30,14 +30,35 @@
 
 #include "loader_common.h"
 
-void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocationScope);
+void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocation_scope);
+void *loader_instance_heap_calloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocation_scope);
 void loader_instance_heap_free(const struct loader_instance *instance, void *pMemory);
 void *loader_instance_heap_realloc(const struct loader_instance *instance, void *pMemory, size_t orig_size, size_t size,
-                                   VkSystemAllocationScope alloc_scope);
+                                   VkSystemAllocationScope allocation_scope);
+
 void *loader_device_heap_alloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocationScope);
+void *loader_device_heap_calloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocationScope);
 void loader_device_heap_free(const struct loader_device *device, void *pMemory);
 void *loader_device_heap_realloc(const struct loader_device *device, void *pMemory, size_t orig_size, size_t size,
                                  VkSystemAllocationScope alloc_scope);
+
+// Wrappers around various memory functions. The loader will use the VkAllocationCallbacks functions if pAllocator is not NULL,
+// otherwise use the system functions
+void *loader_alloc(const VkAllocationCallbacks *pAllocator, size_t size, VkSystemAllocationScope allocation_scope);
+void *loader_calloc(const VkAllocationCallbacks *pAllocator, size_t size, VkSystemAllocationScope allocation_scope);
+void loader_free(const VkAllocationCallbacks *pAllocator, void *pMemory);
+void *loader_realloc(const VkAllocationCallbacks *pAllocator, void *pMemory, size_t orig_size, size_t size,
+                     VkSystemAllocationScope allocation_scope);
+
+// helper allocation functions that will use pAllocator and if it is NULL, fallback to the allocator of instance
+void *loader_alloc_with_instance_fallback(const VkAllocationCallbacks *pAllocator, const struct loader_instance *instance,
+                                          size_t size, VkSystemAllocationScope allocation_scope);
+void *loader_calloc_with_instance_fallback(const VkAllocationCallbacks *pAllocator, const struct loader_instance *instance,
+                                           size_t size, VkSystemAllocationScope allocation_scope);
+void loader_free_with_instance_fallback(const VkAllocationCallbacks *pAllocator, const struct loader_instance *instance,
+                                        void *pMemory);
+void *loader_realloc_with_instance_fallback(const VkAllocationCallbacks *pAllocator, const struct loader_instance *instance,
+                                            void *pMemory, size_t orig_size, size_t size, VkSystemAllocationScope allocation_scope);
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__)
 #define loader_stack_alloc(size) alloca(size)

@@ -1218,23 +1218,13 @@ void loader_destroy_logical_device(const struct loader_instance *inst, struct lo
 
 struct loader_device *loader_create_logical_device(const struct loader_instance *inst, const VkAllocationCallbacks *pAllocator) {
     struct loader_device *new_dev;
-#if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
-    {
-#else
-    if (pAllocator) {
-        new_dev = (struct loader_device *)pAllocator->pfnAllocation(pAllocator->pUserData, sizeof(struct loader_device),
-                                                                    sizeof(int *), VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-    } else {
-#endif
-        new_dev = (struct loader_device *)malloc(sizeof(struct loader_device));
-    }
+    new_dev = loader_calloc(pAllocator, sizeof(struct loader_device), VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
 
     if (!new_dev) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_create_logical_device: Failed to alloc struct loader_device");
         return NULL;
     }
 
-    memset(new_dev, 0, sizeof(struct loader_device));
     if (pAllocator) {
         new_dev->alloc_callbacks = *pAllocator;
     }
@@ -1881,10 +1871,8 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
                     }
                 }
                 if (!found_active_override_layer) {
-                    loader_log(
-                        inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                        "--Override layer found but not used because app \'%s\' is not in \'app_keys\' list!",
-                        cur_path);
+                    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                               "--Override layer found but not used because app \'%s\' is not in \'app_keys\' list!", cur_path);
 
                     // Remove non-global override layers that don't have an app_key that matches cur_path
                     loader_remove_layer_in_list(inst, instance_layers, i);
