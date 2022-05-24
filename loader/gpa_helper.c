@@ -252,7 +252,7 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
 
     // Instance extensions
     void *addr;
-    if (debug_utils_InstanceGpa(inst, funcName, &addr)) return addr;
+    if (debug_extensions_InstanceGpa(inst, funcName, &addr)) return addr;
 
     if (wsi_swapchain_instance_gpa(inst, funcName, &addr)) return addr;
 
