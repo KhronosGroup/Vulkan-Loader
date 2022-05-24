@@ -1163,7 +1163,7 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
     };
 
     // Traverse loader's extensions, adding non-duplicate extensions to the list
-    debug_utils_AddInstanceExtensions(inst, inst_exts);
+    add_debug_extensions_to_ext_list(inst, inst_exts);
 
     static const VkExtensionProperties portability_enumeration_extension_info[] = {
         {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, VK_KHR_PORTABILITY_ENUMERATION_SPEC_VERSION}};
@@ -5341,7 +5341,7 @@ out:
         // The clearing should actually be handled by the overall memset of the pInstance structure in the
         // trampoline.
         wsi_create_instance(ptr_instance, pCreateInfo);
-        debug_utils_CreateInstance(ptr_instance, pCreateInfo);
+        check_for_enabled_debug_extensions(ptr_instance, pCreateInfo);
         extensions_create_instance(ptr_instance, pCreateInfo);
     }
 

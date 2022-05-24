@@ -179,34 +179,6 @@ TEST_F(CreateDestroyInstanceReport, WarnInCreate) {
     ASSERT_EQ(true, message_found);
 }
 
-// Test report (error/warning) created in vkCreateInstance with info in vkDestroyInstance
-TEST_F(CreateDestroyInstanceReport, InfoInDestroyIgnored) {
-    expected_message = "destroying temporary instance debug report callback";
-    expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
-    expected_flag = VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
-
-    VkInstance inst = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, CreateReportInstance(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, &inst));
-    env->vulkan_functions.vkDestroyInstance(inst, nullptr);
-
-    // Should be not be found
-    ASSERT_EQ(false, message_found);
-}
-
-// Test report (info) created in vkCreateInstance with info in vkDestroyInstance
-TEST_F(CreateDestroyInstanceReport, InfoInDestroy) {
-    expected_message = "destroying temporary instance debug report callback";
-    expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
-    expected_flag = VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
-
-    VkInstance inst = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, CreateReportInstance(VK_DEBUG_REPORT_INFORMATION_BIT_EXT, &inst));
-    env->vulkan_functions.vkDestroyInstance(inst, nullptr);
-
-    // Message should be found
-    ASSERT_EQ(true, message_found);
-}
-
 // Test report (error/warning) created in vkCreateInstance with error in vkEnumeratePhysicalDevices.
 // This should not be logged because we have only defined the debug report logging for vkCreateInstance
 // and vkDestroyInstance.
@@ -549,62 +521,6 @@ TEST_F(CreateDestroyInstanceMessenger, WarnInCreate) {
     VkInstance inst = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, CreateUtilsInstance(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
                                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT, &inst, &app_info));
-    env->vulkan_functions.vkDestroyInstance(inst, nullptr);
-
-    ASSERT_EQ(true, message_found);
-}
-
-// Test debug utils error/warn created in vkCreateInstance with info in vkDestroyInstance
-TEST_F(CreateDestroyInstanceMessenger, DestroyInfoIgnoredSeverity) {
-    expected_message = "destroying temporary instance debug util messenger";
-    expected_object_type = VK_OBJECT_TYPE_INSTANCE;
-    expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-    expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-
-    VkApplicationInfo app_info;
-    app_info.apiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
-
-    VkInstance inst = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS,
-              CreateUtilsInstance(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
-                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
-                                  &inst, &app_info));
-    env->vulkan_functions.vkDestroyInstance(inst, nullptr);
-
-    ASSERT_EQ(false, message_found);
-}
-
-// Test debug utils info/performance created in vkCreateInstance with info/general in vkDestroyInstance
-TEST_F(CreateDestroyInstanceMessenger, DestroyInfoIgnoredType) {
-    expected_message = "destroying temporary instance debug util messenger";
-    expected_object_type = VK_OBJECT_TYPE_INSTANCE;
-    expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-    expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-
-    VkApplicationInfo app_info;
-    app_info.apiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
-
-    VkInstance inst = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, CreateUtilsInstance(VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-                                              VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT, &inst, &app_info));
-    env->vulkan_functions.vkDestroyInstance(inst, nullptr);
-
-    ASSERT_EQ(false, message_found);
-}
-
-// Test debug utils info/general created in vkCreateInstance with info/general in vkDestroyInstance
-TEST_F(CreateDestroyInstanceMessenger, DestroyInfo) {
-    expected_message = "destroying temporary instance debug util messenger";
-    expected_object_type = VK_OBJECT_TYPE_INSTANCE;
-    expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-    expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-
-    VkApplicationInfo app_info;
-    app_info.apiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
-
-    VkInstance inst = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, CreateUtilsInstance(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
-                                              VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT, &inst, &app_info));
     env->vulkan_functions.vkDestroyInstance(inst, nullptr);
 
     ASSERT_EQ(true, message_found);
