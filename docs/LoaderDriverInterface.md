@@ -18,6 +18,7 @@
 - [Overview](#overview)
 - [Driver Discovery](#driver-discovery)
   - [Overriding the Default Driver Discovery](#overriding-the-default-driver-discovery)
+  - [Additional Driver Discovery](#additional-driver-discovery)
     - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
     - [Examples](#examples)
       - [On Windows](#on-windows)
@@ -43,6 +44,7 @@
   - [Filtering Out Instance Extension Names](#filtering-out-instance-extension-names)
   - [Loader Instance Extension Emulation Support](#loader-instance-extension-emulation-support)
 - [Driver Unknown Physical Device Extensions](#driver-unknown-physical-device-extensions)
+  - [Reason for adding `vk_icdGetPhysicalDeviceProcAddr`](#reason-for-adding-vk_icdgetphysicaldeviceprocaddr)
 - [Physical Device Sorting](#physical-device-sorting)
 - [Driver Dispatchable Object Creation](#driver-dispatchable-object-creation)
 - [Handling KHR Surface Objects in WSI Extensions](#handling-khr-surface-objects-in-wsi-extensions)
@@ -59,11 +61,12 @@
     - [Loader Version 0 Interface Requirements](#loader-version-0-interface-requirements)
     - [Additional Interface Notes:](#additional-interface-notes)
   - [Android Driver Negotiation](#android-driver-negotiation)
-- [Loader implementation of VK_KHR_portability_enumeration](#loader-implementation-of-vkkhrportabilityenumeration)
+- [Loader implementation of VK_KHR_portability_enumeration](#loader-implementation-of-vk_khr_portability_enumeration)
 - [Loader and Driver Policy](#loader-and-driver-policy)
   - [Number Format](#number-format)
   - [Android Differences](#android-differences)
   - [Requirements of Well-Behaved Drivers](#requirements-of-well-behaved-drivers)
+    - [Removed Driver Policies](#removed-driver-policies)
   - [Requirements of a Well-Behaved Loader](#requirements-of-a-well-behaved-loader)
 
 
@@ -714,32 +717,12 @@ missing support for this extension.
 
 ## Driver Unknown Physical Device Extensions
 
-Originally, when the loader's `vkGetInstanceProcAddr` was called, it would
-result in the following behavior:
- 1. The loader would check if it was a core function:
-    - If so, it would return the function pointer
- 2. The loader would check if it was a known extension function:
-    - If so, it would return the function pointer
- 3. If the loader knew nothing about it, it would call down using
-`GetInstanceProcAddr`
-    - If it returned `non-NULL`, treat it as an unknown logical device command.
-    - This meant setting up a generic trampoline function that takes in a
-VkDevice as the first parameter and adjusting the dispatch table to call the
-driver/layer's function after getting the dispatch table from the
-`VkDevice`.
- 4. If all the above failed, the loader would return `NULL` to the application.
-
-This caused problems when a driver attempted to expose new physical device
-extensions the loader knew nothing about, but an application was aware of.
-Because the loader knew nothing about it, the loader would get to step 3 in the
-above process and would treat the function as an unknown logical device command.
-The problem is, this would create a generic `VkDevice` trampoline function
-which, on the first call, would attempt to dereference the VkPhysicalDevice as a
-`VkDevice`.
-This would lead to a crash or corruption.
-
-In order to identify the extension entry points specific to physical device
-extensions, the following function can be added to a driver:
+Drivers that implement entrypoints which take a `VkPhysicalDevice` as the first
+parameter *should* support `vk_icdGetPhysicalDeviceProcAddr`. This function
+is added to the Driver Interface Version 4 and allows the loader to distinguish
+between entrypoints which take `VkDevice` and `VkPhysicalDevice` as the first
+parameter. This allows the loader to properly support entrypoints that are
+unknown to it gracefully.
 
 ```cpp
 PFN_vkVoidFunction
@@ -754,7 +737,7 @@ extension entry points.
 In this way, it compares "pName" to every physical device function supported in
 the driver.
 
-The following rules apply:
+Implementations of the function should have the following behavior:
 * If `pName` is the name of a Vulkan API entrypoint that takes a `VkPhysicalDevice`
   as its primary dispatch handle, and the driver supports the entrypoint, then
   the driver **must** return the valid function pointer to the driver's
@@ -765,14 +748,19 @@ The following rules apply:
 * If the driver is unaware of any entrypoint with the name `pName`, it **must**
   return `NULL`.
 
-This support is optional and should not be considered a requirement.
-This is only required if a driver intends to support some functionality not
-directly supported by a significant population of loaders in the public.
+If a driver intends to support functions that take VkPhysicalDevice as the
+dispatchable parameter, then the driver should support
+`vk_icdGetPhysicalDeviceProcAddr`. This is because if these functions aren't
+known to the loader, such as those from unreleased extensions or because
+the loader is an older build thus doesn't know about them _yet_, the loader
+won't be able to distinguish whether this is a device or physical device
+function.
+
 If a driver does implement this support, it must export the function from the
 driver library using the name `vk_icdGetPhysicalDeviceProcAddr` so that the
 symbol can be located through the platform's dynamic linking utilities.
 
-The new behavior of the loader's vkGetInstanceProcAddr with support for the
+The behavior of the loader's `vkGetInstanceProcAddr` with support for the
 `vk_icdGetPhysicalDeviceProcAddr` function is as follows:
  1. Check if core function:
     - If it is, return the function pointer
@@ -799,6 +787,31 @@ However, the driver should continue to support the command query via
 `vk_icdGetPhysicalDeviceProcAddr`, until at least a Vulkan version bump, because
 an older loader may still be attempting to use the commands.
 
+### Reason for adding `vk_icdGetPhysicalDeviceProcAddr`
+
+Originally, when the loader's `vkGetInstanceProcAddr` was called, it would
+result in the following behavior:
+ 1. The loader would check if it was a core function:
+    - If so, it would return the function pointer
+ 2. The loader would check if it was a known extension function:
+    - If so, it would return the function pointer
+ 3. If the loader knew nothing about it, it would call down using
+`GetInstanceProcAddr`
+    - If it returned `non-NULL`, treat it as an unknown logical device command.
+    - This meant setting up a generic trampoline function that takes in a
+VkDevice as the first parameter and adjusting the dispatch table to call the
+driver/layer's function after getting the dispatch table from the
+`VkDevice`.
+ 4. If all the above failed, the loader would return `NULL` to the application.
+
+This caused problems when a driver attempted to expose new physical device
+extensions the loader knew nothing about, but an application was aware of.
+Because the loader knew nothing about it, the loader would get to step 3 in the
+above process and would treat the function as an unknown logical device command.
+The problem is, this would create a generic `VkDevice` trampoline function
+which, on the first call, would attempt to dereference the VkPhysicalDevice as a
+`VkDevice`.
+This would lead to a crash or corruption.
 
 ## Physical Device Sorting
 

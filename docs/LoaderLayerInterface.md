@@ -29,6 +29,7 @@
 - [Layer Version Negotiation](#layer-version-negotiation)
 - [Layer Call Chains and Distributed Dispatch](#layer-call-chains-and-distributed-dispatch)
 - [Layer Unknown Physical Device Extensions](#layer-unknown-physical-device-extensions)
+  - [Reason for adding `vk_layerGetPhysicalDeviceProcAddr`](#reason-for-adding-vk_layergetphysicaldeviceprocaddr)
 - [Layer Intercept Requirements](#layer-intercept-requirements)
 - [Distributed Dispatching Requirements](#distributed-dispatching-requirements)
 - [Layer Conventions and Rules](#layer-conventions-and-rules)
@@ -586,32 +587,12 @@ functions to the first entity in the call chain.
 
 ## Layer Unknown Physical Device Extensions
 
-Originally, if `vkGetInstanceProcAddr` was called in the loader, it would
-result in the following behavior:
- 1. The loader would check if core function:
-    - If it was, it would return the function pointer
- 2. The loader would check if known extension function:
-    - If it was, it would return the function pointer
- 3. If the loader knew nothing about it, it would call down using
-`GetInstanceProcAddr`
-    - If it returned non-NULL, treat it as an unknown logical device command.
-    - This meant setting up a generic trampoline function that takes in a
-VkDevice as the first parameter and adjusting the dispatch table to call the
-Driver/Layer's function after getting the dispatch table from the `VkDevice`.
- 4. If all the above failed, the loader would return NULL to the application.
-
-This caused problems when a layer attempted to expose new physical device
-extensions the loader knew nothing about, but an application did.
-Because the loader knew nothing about it, the loader would get to step 3 in the
-above process and would treat the function as an unknown logical device
-command.
-The problem is, this would create a generic VkDevice trampoline function which,
-on the first call, would attempt to dereference the VkPhysicalDevice as a
-VkDevice.
-This would lead to a crash or corruption.
-
-In order to identify the extension entry-points specific to physical device
-extensions, the following function can be added to a layer:
+Layers that intercept entrypoints which take a `VkPhysicalDevice` as the first
+parameter *should* support `vk_layerGetPhysicalDeviceProcAddr`. This function
+is added to the Layer Interface Version 2 and allows the loader to distinguish
+between entrypoints which take `VkDevice` and `VkPhysicalDevice` as the first
+parameter. This allows the loader to properly support entrypoints that are
+unknown to it gracefully.
 
 ```cpp
 PFN_vkVoidFunction
@@ -626,7 +607,7 @@ extension entry-points.
 In this way, it compares "pName" to every physical device function supported
 in the layer.
 
-The following rules apply:
+Implementations of the function should have the following behavior:
   * If it is the name of a physical device function supported by the layer,
 the pointer to the layer's corresponding function should be returned.
   * If it is the name of a valid function which is **not** a physical device
@@ -648,17 +629,24 @@ chain_info->u.pLayerInfo->pfnNextGetPhysicalDeviceProcAddr
       * Using the next layer’s `GetInstanceProcAddr` function to query for
 `vk_layerGetPhysicalDeviceProcAddr`.
 
-This support is optional and should not be considered a requirement.
-This is only required if a layer intends to support some functionality not
-directly supported by loaders released in the public.
-If a layer does implement this support, it should return the address of its
-`vk_layerGetPhysicalDeviceProcAddr` function in the
+If a layer intends to support functions that take VkPhysicalDevice as the
+dispatchable parameter, then layer should support `vk_layerGetPhysicalDeviceProcAddr`.
+This is because if these functions aren't known to the loader, such as those
+from unreleased extensions or because the loader is an older build thus doesn't
+know about them _yet_, the loader won't be able to distinguish whether this is
+a device or physical device function.
+
+If a layer does implement `vk_layerGetPhysicalDeviceProcAddr`, it should return
+the address of its `vk_layerGetPhysicalDeviceProcAddr` function in the
 "pfnGetPhysicalDeviceProcAddr" member of the `VkNegotiateLayerInterface`
 structure during [Layer Version Negotiation](#layer-version-negotiation).
 Additionally, the layer should also make sure `vkGetInstanceProcAddr` returns a
 valid function pointer to a query of `vk_layerGetPhysicalDeviceProcAddr`.
 
-The new behavior of the loader's `vkGetInstanceProcAddr` with support for the
+Note: If a layer wraps the VkInstance handle, support for
+`vk_layerGetPhysicalDeviceProcAddr` is *NOT* optional and must be implemented.
+
+The behavior of the loader's `vkGetInstanceProcAddr` with support for the
 `vk_layerGetPhysicalDeviceProcAddr` function is as follows:
  1. Check if core function:
     - If it is, return the function pointer
@@ -683,6 +671,32 @@ longer get to step 3, because step 2 will return a valid function pointer.
 However, the layer should continue to support the command query via
 `vk_layerGetPhysicalDeviceProcAddr`, until at least a Vulkan version bump,
 because an older loader may still be attempting to use the commands.
+
+### Reason for adding `vk_layerGetPhysicalDeviceProcAddr`
+
+Originally, if `vkGetInstanceProcAddr` was called in the loader, it would
+result in the following behavior:
+ 1. The loader would check if core function:
+    - If it was, it would return the function pointer
+ 2. The loader would check if known extension function:
+    - If it was, it would return the function pointer
+ 3. If the loader knew nothing about it, it would call down using
+`GetInstanceProcAddr`
+    - If it returned non-NULL, treat it as an unknown logical device command.
+    - This meant setting up a generic trampoline function that takes in a
+VkDevice as the first parameter and adjusting the dispatch table to call the
+Driver/Layer's function after getting the dispatch table from the `VkDevice`.
+ 4. If all the above failed, the loader would return NULL to the application.
+
+This caused problems when a layer attempted to expose new physical device
+extensions the loader knew nothing about, but an application did.
+Because the loader knew nothing about it, the loader would get to step 3 in the
+above process and would treat the function as an unknown logical device
+command.
+The problem is, this would create a generic VkDevice trampoline function which,
+on the first call, would attempt to dereference the VkPhysicalDevice as a
+VkDevice.
+This would lead to a crash or corruption.
 
 
 ## Layer Intercept Requirements
@@ -1219,7 +1233,8 @@ along the saved handle to the layer below it.
 This means that the layer **must intercept every Vulkan function which uses**
 **the object in question**, and wrap or unwrap the object, as appropriate.
 This includes adding support for all extensions with functions using any
-object the layer wraps.
+object the layer wraps as well as any loader-layer interface functions such as
+`vk_layerGetPhysicalDeviceProcAddr`.
 
 Layers above the object wrapping layer will see the wrapped object.
 Layers which wrap dispatchable objects must ensure that the first field in the
@@ -1841,6 +1856,9 @@ Additionally, it introduced the concept of
 [Layer Unknown Physical Device Extensions](#layer-unknown-physical-device-extensions)
 and the associated `vk_layerGetPhysicalDeviceProcAddr` function.
 Finally, it changed the manifest file definition to 1.1.0.
+
+Note: If a layer wraps the VkInstance handle, support for
+`vk_layerGetPhysicalDeviceProcAddr` is *NOT* optional and must be implemented.
 
 ### Layer Interface Version 1
 
