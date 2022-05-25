@@ -3556,7 +3556,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 // Skip over ICD's which contain a true "is_portability_driver" value whenever the application doesn't enable
                 // portability enumeration.
                 item = cJSON_GetObjectItem(itemICD, "is_portability_driver");
-                if (item != NULL && item->type == cJSON_True && !inst->portability_enumeration_enabled) {
+                if (item != NULL && item->type == cJSON_True && inst && !inst->portability_enumeration_enabled) {
                     if (skipped_portability_drivers) *skipped_portability_drivers = true;
                     cJSON_Delete(inst, json);
                     json = NULL;

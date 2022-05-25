@@ -3254,3 +3254,68 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICD) {
         dev_info_0.CheckCreate(phys_dev);
     }
 }
+
+TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)));
+    env.add_icd(
+        TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_is_portability_driver(true)));
+
+    Extension first_ext{"VK_EXT_validation_features"};  // known instance extensions
+    Extension second_ext{"VK_EXT_headless_surface"};
+    env.get_test_icd().add_instance_extensions({first_ext, second_ext});
+
+    auto& driver0 = env.get_test_icd(0);
+    auto& driver1 = env.get_test_icd(1);
+
+    driver0.physical_devices.emplace_back("physical_device_0");
+    driver0.max_icd_interface_version = 1;
+
+    driver1.physical_devices.emplace_back("portability_physical_device_1");
+    driver1.max_icd_interface_version = 1;
+    {
+        // check that enumerating instance extensions work with a portability driver present
+        uint32_t extension_count = 0;
+        std::array<VkExtensionProperties, 5> extensions;
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, 5U);  // return debug report & debug utils + our two extensions
+
+        ASSERT_EQ(VK_SUCCESS,
+                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+        ASSERT_EQ(extension_count, 5U);
+        // loader always adds the debug report & debug utils extensions
+        ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
+        ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
+        ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
+        ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
+        ASSERT_TRUE(string_eq("VK_KHR_portability_enumeration", extensions[4].extensionName));
+    }
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+    {  // LayersMatch
+
+        uint32_t layer_count = 0;
+        ASSERT_EQ(env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, nullptr), VK_SUCCESS);
+        ASSERT_EQ(layer_count, 1U);
+        VkLayerProperties layer_props;
+        ASSERT_EQ(env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props), VK_SUCCESS);
+        ASSERT_EQ(layer_count, 1U);
+        ASSERT_TRUE(string_eq(layer_props.layerName, layer_name));
+    }
+    {  // Property count less than available
+        VkLayerProperties layer_props;
+        uint32_t layer_count = 0;
+        ASSERT_EQ(VK_INCOMPLETE, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props));
+        ASSERT_EQ(layer_count, 0U);
+    }
+}
