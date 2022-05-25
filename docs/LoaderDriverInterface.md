@@ -549,8 +549,14 @@ Here is an example driver JSON Manifest file:
   </tr>
   <tr>
     <td>"api_version" </td>
-    <td>The major.minor.patch version number of the Vulkan API that the shared
-        library files for the driver was built against.<br/>
+    <td>The major.minor.patch version number of the maximum Vulkan API supported
+        by the driver.
+        However, just because the driver supports the specific Vulkan API version,
+        it does not guarantee that the hardware on a user's system can support
+        that version.
+        Information on what the underlying physical device can support must be
+        queried by the user using the <i>vkGetPhysicalDeviceProperties</i> API call.
+        <br/>
         For example: 1.0.33.</td>
   </tr>
   <tr>
