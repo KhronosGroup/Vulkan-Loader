@@ -1510,8 +1510,11 @@ Here's an example of a meta-layer manifest file:
   </tr>
   <tr>
     <td>"api_version"</td>
-    <td>The major.minor.patch version number of the Vulkan API that the shared
-        library file for the library was built against. </br>
+    <td>The major.minor.patch version number of the Vulkan API that the layer
+        supports.
+        It does not require the application to make use of that API version.
+        It simply is an indication that the layer can support Vulkan API
+        instance and device functions up to and including that API version. </br>
         For example: 1.0.33.
     </td>
     <td>None</td>
