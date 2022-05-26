@@ -3051,7 +3051,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     }
 
     // Allocate the required space
-    search_path = loader_instance_heap_alloc(inst, search_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    search_path = loader_instance_heap_calloc(inst, search_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == search_path) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "read_data_files_in_search_paths: Failed to allocate space for search path of length %d",
