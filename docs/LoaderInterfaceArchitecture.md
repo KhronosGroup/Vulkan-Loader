@@ -669,8 +669,6 @@ discovery.
     </small></td>
     <td><small>
         <b>Use Wisely!</b> This may cause the loader or application to crash.
-        <br/> <br/>
-        <b>Linux Only</b>
     </small></td>
     <td><small>
         export<br/>
