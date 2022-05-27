@@ -133,6 +133,15 @@ struct TestLayer {
 
     BUILDER_VECTOR(TestLayer, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
 
+    BUILDER_VALUE(TestLayer, bool, do_spurious_allocations_in_create_instance, false)
+    void* spurious_instance_memory_allocation = nullptr;
+    BUILDER_VALUE(TestLayer, bool, do_spurious_allocations_in_create_device, false)
+    struct DeviceMemAlloc {
+        void* allocation;
+        VkDevice device;
+    };
+    std::vector<DeviceMemAlloc> spurious_device_memory_allocations;
+
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;

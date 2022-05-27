@@ -114,6 +114,8 @@ void loader_delete_layer_list_and_properties(const struct loader_instance *inst,
 VkResult loader_add_layer_name_to_list(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
                                        const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
                                        struct loader_layer_list *expanded_target_list);
+void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
+                        const VkAllocationCallbacks *pAllocator);
 void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                          bool *skipped_portability_drivers);
