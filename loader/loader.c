@@ -806,6 +806,7 @@ void loader_destroy_layer_list(const struct loader_instance *inst, struct loader
     }
     layer_list->count = 0;
     layer_list->capacity = 0;
+    layer_list->list = NULL;
 }
 
 // Append layer properties defined in prop_list to the given layer_info list
@@ -1253,8 +1254,8 @@ void loader_remove_logical_device(const struct loader_instance *inst, struct loa
     loader_destroy_logical_device(inst, found_dev, pAllocator);
 }
 
-static void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
-                               const VkAllocationCallbacks *pAllocator) {
+void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
+                        const VkAllocationCallbacks *pAllocator) {
     ptr_inst->total_icd_count--;
     for (struct loader_device *dev = icd_term->logical_device_list; dev;) {
         struct loader_device *next_dev = dev->next;
@@ -1265,21 +1266,10 @@ static void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_i
     loader_instance_heap_free(ptr_inst, icd_term);
 }
 
-static struct loader_icd_term *loader_icd_create(const struct loader_instance *inst) {
-    struct loader_icd_term *icd_term;
-
-    icd_term = loader_instance_heap_calloc(inst, sizeof(struct loader_icd_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (!icd_term) {
-        return NULL;
-    }
-
-    return icd_term;
-}
-
 static struct loader_icd_term *loader_icd_add(struct loader_instance *ptr_inst, const struct loader_scanned_icd *scanned_icd) {
     struct loader_icd_term *icd_term;
 
-    icd_term = loader_icd_create(ptr_inst);
+    icd_term = loader_instance_heap_calloc(ptr_inst, sizeof(struct loader_icd_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (!icd_term) {
         return NULL;
     }
@@ -4328,6 +4318,32 @@ out:
     // Failure cleanup
     if (VK_SUCCESS != res) {
         if (NULL != dev) {
+            // Find the icd_term this device belongs to then remove it from that icd_term.
+            // Need to iterate the linked lists and remove the device from it. Don't delete
+            // the device here since it may not have been added to the icd_term and there
+            // are other allocations attached to it.
+            struct loader_icd_term *icd_term = inst->icd_terms;
+            bool found = false;
+            while (!found && NULL != icd_term) {
+                struct loader_device *cur_dev = icd_term->logical_device_list;
+                struct loader_device *prev_dev = NULL;
+                while (NULL != cur_dev) {
+                    if (cur_dev == dev) {
+                        if (cur_dev == icd_term->logical_device_list) {
+                            icd_term->logical_device_list = cur_dev->next;
+                        } else if (prev_dev) {
+                            prev_dev->next = cur_dev->next;
+                        }
+
+                        found = true;
+                        break;
+                    }
+                    prev_dev = cur_dev;
+                    cur_dev = cur_dev->next;
+                }
+                icd_term = icd_term->next;
+            }
+            // Now destroy the device and the allocations associated with it.
             loader_destroy_logical_device(inst, dev, pAllocator);
         }
     }

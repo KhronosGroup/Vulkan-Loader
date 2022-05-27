@@ -668,6 +668,16 @@ out:
             loader_scanned_icd_clear(ptr_instance, &ptr_instance->icd_tramp_list);
             loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->ext_list);
 
+            // Free any icd_terms that were created.
+            // If an OOM occurs from a layer, terminator_CreateInstance won't be reached where this kind of
+            // cleanup normally occurs
+            struct loader_icd_term *icd_term = NULL;
+            while (NULL != ptr_instance->icd_terms) {
+                icd_term = ptr_instance->icd_terms;
+                ptr_instance->icd_terms = icd_term->next;
+                loader_icd_destroy(ptr_instance, icd_term, pAllocator);
+            }
+
             loader_instance_heap_free(ptr_instance, ptr_instance);
         } else {
             // Remove temporary VK_EXT_debug_report or VK_EXT_debug_utils items

@@ -355,6 +355,14 @@ TEST(Allocation, DeviceButNotInstance) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+
     MemoryTracker tracker;
     {
         auto& driver = env.get_test_icd();
@@ -403,6 +411,14 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
@@ -432,6 +448,14 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
     driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     driver.physical_devices.emplace_back("physical_device_1");
     driver.physical_devices[1].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -487,6 +511,14 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -556,6 +588,15 @@ TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
@@ -578,6 +619,14 @@ TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
 TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
     size_t fail_index = 0;
     bool reached_the_end = false;
@@ -612,6 +661,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
 
         for (uint32_t i = 0; i < 2; i++) {
             driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(physical_dev_count));
+            driver.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
             physical_dev_count += 1;
         }
 
@@ -639,7 +689,33 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         }
         ASSERT_EQ(physical_dev_count, returned_physical_count);
 
-        std::cout << "fail count " << fail_index << "\n";
+        std::array<VkDevice, 3> devices;
+        for (uint32_t i = 0; i < returned_physical_count; i++) {
+            uint32_t family_count = 1;
+            uint32_t returned_family_count = 0;
+            env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[i], &returned_family_count, nullptr);
+            ASSERT_EQ(returned_family_count, family_count);
+
+            VkQueueFamilyProperties family;
+            env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[i], &returned_family_count, &family);
+            ASSERT_EQ(returned_family_count, family_count);
+            ASSERT_EQ(family.queueFlags, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT));
+            ASSERT_EQ(family.queueCount, family_count);
+            ASSERT_EQ(family.timestampValidBits, 0U);
+
+            DeviceCreateInfo dev_create_info;
+            DeviceQueueCreateInfo queue_info;
+            queue_info.add_priority(0.0f);
+            dev_create_info.add_device_queue(queue_info);
+
+            result = env.vulkan_functions.vkCreateDevice(physical_devices[i], dev_create_info.get(), tracker.get(), &devices[i]);
+        }
+        for (uint32_t i = 0; i < returned_physical_count; i++) {
+            if (result == VK_SUCCESS) {
+                env.vulkan_functions.vkDestroyDevice(devices[i], tracker.get());
+            }
+        }
+
         env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
         ASSERT_TRUE(tracker.empty());
         reached_the_end = true;
@@ -658,6 +734,14 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     }
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
     auto& known_driver = known_driver_list.at(2);  // which drive this test pretends to be
     DXGI_ADAPTER_DESC1 desc1{};
@@ -721,9 +805,12 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
             dev_create_info.add_device_queue(queue_info);
 
             result = env.vulkan_functions.vkCreateDevice(physical_devices[i], dev_create_info.get(), tracker.get(), &devices[i]);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                devices[i] = VK_NULL_HANDLE;
+            }
         }
         for (uint32_t i = 0; i < returned_physical_count; i++) {
-            if (result == VK_SUCCESS) {
+            if (devices[i] != VK_NULL_HANDLE) {
                 env.vulkan_functions.vkDestroyDevice(devices[i], tracker.get());
             }
         }

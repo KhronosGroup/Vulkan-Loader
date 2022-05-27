@@ -170,6 +170,14 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
 
     if (layer.create_instance_callback) result = layer.create_instance_callback(layer);
 
+    if (layer.do_spurious_allocations_in_create_instance && pAllocator && pAllocator->pfnAllocation) {
+        layer.spurious_instance_memory_allocation =
+            pAllocator->pfnAllocation(pAllocator->pUserData, 100, 8, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (layer.spurious_instance_memory_allocation == nullptr) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+    }
+
     return result;
 }
 
@@ -179,6 +187,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_override_vkCreateInstance(const VkInstanceCr
 }
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
+    if (layer.spurious_instance_memory_allocation && pAllocator && pAllocator->pfnFree) {
+        pAllocator->pfnFree(pAllocator->pUserData, layer.spurious_instance_memory_allocation);
+        layer.spurious_instance_memory_allocation = nullptr;
+    }
+
     layer.instance_dispatch_table.DestroyInstance(instance, pAllocator);
 }
 
@@ -214,6 +227,15 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
     // Need to add the created devices to the list so it can be freed
     layer.created_devices.push_back(device);
+
+    if (layer.do_spurious_allocations_in_create_device && pAllocator && pAllocator->pfnAllocation) {
+        void* allocation = pAllocator->pfnAllocation(pAllocator->pUserData, 110, 8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+        if (allocation == nullptr) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        } else {
+            layer.spurious_device_memory_allocations.push_back({allocation, device.device_handle});
+        }
+    }
 
     return result;
 }
@@ -406,6 +428,16 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
 // device functions
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
+    for (uint32_t i = 0; i < layer.spurious_device_memory_allocations.size();) {
+        auto& allocation = layer.spurious_device_memory_allocations[i];
+        if (allocation.device == device && pAllocator && pAllocator->pfnFree) {
+            pAllocator->pfnFree(pAllocator->pUserData, allocation.allocation);
+            layer.spurious_device_memory_allocations.erase(layer.spurious_device_memory_allocations.begin() + i);
+        } else {
+            i++;
+        }
+    }
+
     for (auto& created_device : layer.created_devices) {
         if (created_device.device_handle == device) {
             created_device.dispatch_table.DestroyDevice(device, pAllocator);
