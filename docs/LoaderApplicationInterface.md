@@ -121,7 +121,7 @@ should set up its own dispatch table for every Vulkan API entry-point.
 For every instance-level Vulkan command in the dispatch table, the function pointer
 should be queried and filled in by using the results of `vkGetInstanceProcAddr`.
 Additionally, for every device-level Vulkan command, the function pointer
-should be queried and filled in using the resulsts of `vkGetDeviceProcAddr`.
+should be queried and filled in using the results of `vkGetDeviceProcAddr`.
 
 *Why do this?*
 
