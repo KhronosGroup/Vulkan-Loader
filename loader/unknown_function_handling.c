@@ -183,13 +183,9 @@ bool loader_check_layer_list_for_phys_dev_ext_address(struct loader_instance *in
         // it and see if it returns a valid pointer for this function name.
         if (layer_prop_list[layer].interface_version > 1) {
             const struct loader_layer_functions *const functions = &(layer_prop_list[layer].functions);
-            if (NULL != functions->get_physical_device_proc_addr)
-            {
-                if(NULL != functions->get_physical_device_proc_addr((VkInstance)inst->instance, funcName))
-                {
-                    return true;
-                }
-                break;
+            if (NULL != functions->get_physical_device_proc_addr &&
+                NULL != functions->get_physical_device_proc_addr((VkInstance)inst->instance, funcName)) {
+                return true;
             }
         }
     }
