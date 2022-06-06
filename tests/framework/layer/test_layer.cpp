@@ -413,6 +413,12 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
         }
     }
 }
+// forward declarations needed for trampolines
+#if TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
+extern "C" {
+FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance, const char* pName);
+}
+#endif
 
 // trampolines
 
@@ -435,6 +441,10 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
             return to_vkVoidFunction(func.function);
         }
     }
+
+#if TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
+    if (string_eq(pName, "vk_layerGetPhysicalDeviceProcAddr")) return to_vkVoidFunction(vk_layerGetPhysicalDeviceProcAddr);
+#endif
     return nullptr;
 }
 

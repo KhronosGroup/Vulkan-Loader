@@ -178,18 +178,17 @@ bool loader_check_icds_for_phys_dev_ext_address(struct loader_instance *inst, co
 
 bool loader_check_layer_list_for_phys_dev_ext_address(struct loader_instance *inst, const char *funcName) {
     struct loader_layer_properties *layer_prop_list = inst->expanded_activated_layer_list.list;
-    for (uint32_t layer = 0; layer < inst->expanded_activated_layer_list.count; ++layer) {
-        // If this layer supports the vk_layerGetPhysicalDeviceProcAddr, then call
-        // it and see if it returns a valid pointer for this function name.
+    for (uint32_t layer = 0; layer < inst->expanded_activated_layer_list.count; layer++) {
+        // Find the first layer in the call chain which supports vk_layerGetPhysicalDeviceProcAddr
+        // and call that, returning whether it found a valid pointer for this function name.
+        // We return if the topmost layer supports GPDPA since the layer should call down the chain for us.
         if (layer_prop_list[layer].interface_version > 1) {
             const struct loader_layer_functions *const functions = &(layer_prop_list[layer].functions);
-            if (NULL != functions->get_physical_device_proc_addr &&
-                NULL != functions->get_physical_device_proc_addr((VkInstance)inst->instance, funcName)) {
-                return true;
+            if (NULL != functions->get_physical_device_proc_addr) {
+                return NULL != functions->get_physical_device_proc_addr((VkInstance)inst->instance, funcName);
             }
         }
     }
-
     return false;
 }
 
