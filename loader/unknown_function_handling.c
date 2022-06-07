@@ -218,7 +218,7 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
     if (!loader_check_icds_for_phys_dev_ext_address(inst, funcName)) {
         // If we're not checking layers, or we are and it's not in a layer, just
         // return
-        if (!loader_check_layer_list_for_phys_dev_ext_address(inst, funcName)) {
+        if (!is_tramp || !loader_check_layer_list_for_phys_dev_ext_address(inst, funcName)) {
             return NULL;
         }
     }
