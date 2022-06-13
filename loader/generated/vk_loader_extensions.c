@@ -929,6 +929,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)gdpa(dev, "vkSetPrivateDataEXT");
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)gdpa(dev, "vkGetPrivateDataEXT");
 
+    // ---- VK_EXT_metal_objects extension commands
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gdpa(dev, "vkExportMetalObjectsEXT");
+#endif // VK_USE_PLATFORM_METAL_EXT
+
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)gdpa(dev, "vkCmdSetFragmentShadingRateEnumNV");
 
@@ -1874,6 +1879,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "DestroyPrivateDataSlotEXT")) return (void *)table->DestroyPrivateDataSlotEXT;
     if (!strcmp(name, "SetPrivateDataEXT")) return (void *)table->SetPrivateDataEXT;
     if (!strcmp(name, "GetPrivateDataEXT")) return (void *)table->GetPrivateDataEXT;
+
+    // ---- VK_EXT_metal_objects extension commands
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    if (!strcmp(name, "ExportMetalObjectsEXT")) return (void *)table->ExportMetalObjectsEXT;
+#endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     if (!strcmp(name, "CmdSetFragmentShadingRateEnumNV")) return (void *)table->CmdSetFragmentShadingRateEnumNV;
@@ -5881,6 +5891,24 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 }
 
 
+// ---- VK_EXT_metal_objects extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkExportMetalObjectsEXT: Invalid device "
+                   "[VUID-vkExportMetalObjectsEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->ExportMetalObjectsEXT(device, pMetalObjectsInfo);
+}
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 // ---- VK_NV_fragment_shading_rate_enums extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
@@ -7927,6 +7955,14 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)GetPrivateDataEXT;
         return true;
     }
+
+    // ---- VK_EXT_metal_objects extension commands
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    if (!strcmp("vkExportMetalObjectsEXT", name)) {
+        *addr = (void *)ExportMetalObjectsEXT;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     if (!strcmp("vkCmdSetFragmentShadingRateEnumNV", name)) {
