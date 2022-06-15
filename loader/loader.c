@@ -2631,10 +2631,12 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
         }
     }
     
-    loader_instance_heap_free(inst, file_vers);
+    
 
 out:
-
+    if(NULL != file_vers) {
+        loader_instance_heap_free(inst, file_vers);
+    }
     return result;
 }
 
