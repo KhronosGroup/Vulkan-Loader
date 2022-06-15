@@ -2574,7 +2574,6 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
                    "loader_add_layer_properties: %s has unknown layer manifest file version %d.%d.%d.  May cause errors.", filename,
                    json_version.major, json_version.minor, json_version.patch);
     }
-    loader_instance_heap_free(inst, file_vers);
 
     // If "layers" is present, read in the array of layer objects
     layers_node = cJSON_GetObjectItem(json, "layers");
@@ -2631,6 +2630,8 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
             } while (layer_node != NULL);
         }
     }
+    
+    loader_instance_heap_free(inst, file_vers);
 
 out:
 
