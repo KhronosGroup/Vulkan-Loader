@@ -463,6 +463,18 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
             return os << "VK_RESULT_MAX_ENUM";
         case (VK_ERROR_COMPRESSION_EXHAUSTED_EXT):
             return os << "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
+        case (VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR):
+            return os << "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
+        case (VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR):
+            return os << "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
+        case (VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR):
+            return os << "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
+        case (VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR):
+            return os << "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
+        case (VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR):
+            return os << "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
+        case (VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR):
+            return os << "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
     }
     return os << static_cast<int32_t>(result);
 }
