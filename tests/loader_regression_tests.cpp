@@ -2650,7 +2650,7 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.push_back({"pd0", 4});
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 888, 0xAAA001);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -2668,11 +2668,11 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(2).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(2).physical_devices.push_back({"pd3", 1});
+    env.get_test_icd(2).physical_devices.push_back({"pd3", 7});
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 75, 0xCCCC001);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(2).physical_devices.push_back({"pd4", 4});
+    env.get_test_icd(2).physical_devices.push_back({"pd4", 1});
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 75, 0xCCCC002);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -2704,17 +2704,17 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
 
         switch (dev) {
             case 0:
-                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd3", props.deviceName)) {
-                    sorted = false;
-                }
-                break;
-            case 1:
                 if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd4", props.deviceName)) {
                     sorted = false;
                 }
                 break;
-            case 2:
+            case 1:
                 if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd0", props.deviceName)) {
+                    sorted = false;
+                }
+                break;
+            case 2:
+                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd3", props.deviceName)) {
                     sorted = false;
                 }
                 break;
