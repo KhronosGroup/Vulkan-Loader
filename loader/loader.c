@@ -2634,7 +2634,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     
 
 out:
-    if(NULL != file_vers) {
+    if (NULL != file_vers) {
         loader_instance_heap_free(inst, file_vers);
     }
     return result;
