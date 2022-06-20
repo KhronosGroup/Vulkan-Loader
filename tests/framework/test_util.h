@@ -543,6 +543,7 @@ struct ManifestICD {
     BUILDER_VALUE(ManifestICD, uint32_t, api_version, 0)
     BUILDER_VALUE(ManifestICD, std::string, lib_path, {})
     BUILDER_VALUE(ManifestICD, bool, is_portability_driver, false)
+    BUILDER_VALUE(ManifestICD, std::string, library_arch, "")
     std::string get_manifest_str() const;
 };
 
@@ -589,6 +590,7 @@ struct ManifestLayer {
         BUILDER_VECTOR(LayerDescription, std::string, override_paths, override_path)
         BUILDER_VECTOR(LayerDescription, FunctionOverride, pre_instance_functions, pre_instance_function)
         BUILDER_VECTOR(LayerDescription, std::string, app_keys, app_key)
+        BUILDER_VALUE(LayerDescription, std::string, library_arch, "")
 
         std::string get_manifest_str() const;
         VkLayerProperties get_layer_properties() const;

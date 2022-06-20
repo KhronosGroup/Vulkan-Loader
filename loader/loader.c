@@ -2256,6 +2256,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 // instance_extensions
 // device_extensions
 // enable_environment (implicit layers only)
+// library_arch
 #define GET_JSON_OBJECT(node, var) \
     { var = cJSON_GetObjectItem(node, #var); }
 #define GET_JSON_ITEM(inst, node, var)                      \
@@ -2282,6 +2283,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     char *vkNegotiateLoaderLayerInterfaceVersion = NULL;
     char *spec_version = NULL;
     char **entry_array = NULL;
+    char *library_arch = NULL;
     cJSON *app_keys = NULL;
 
     // Layer interface functions
@@ -2508,6 +2510,16 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 props->app_key_paths[i][MAX_STRING_SIZE - 1] = '\0';
                 loader_instance_heap_free(inst, temp);
             }
+        }
+    }
+
+    GET_JSON_ITEM(inst, layer_node, library_arch)
+    if (library_arch != NULL) {
+        if ((strncmp(library_arch, "32", 2) == 0 && sizeof(void *) != 4) ||
+            (strncmp(library_arch, "64", 2) == 0 && sizeof(void *) != 8)) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "Layer library architecture doesn't match the current running architecture, skipping this layer");
+            goto out;
         }
     }
 
@@ -3533,6 +3545,25 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     cJSON_Delete(json);
                     json = NULL;
                     continue;
+                }
+
+                item = cJSON_GetObjectItem(itemICD, "library_arch");
+                if (item != NULL) {
+                    temp = cJSON_Print(item);
+                    if (NULL != temp) {
+                        // cJSON includes the quotes by default, so we need to look for those here
+                        if ((strncmp(temp, "\"32\"", 4) == 0 && sizeof(void *) != 4) ||
+                            (strncmp(temp, "\"64\"", 4) == 0 && sizeof(void *) != 8)) {
+                            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                                       "loader_icd_scan: Driver library architecture doesn't match the current running "
+                                       "architecture, skipping this driver");
+                            loader_instance_heap_free(inst, temp);
+                            cJSON_Delete(json);
+                            json = NULL;
+                            continue;
+                        }
+                    }
+                    loader_instance_heap_free(inst, temp);
                 }
 
                 VkResult icd_add_res = VK_SUCCESS;

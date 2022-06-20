@@ -516,6 +516,7 @@ Here is an example driver JSON Manifest file:
    "ICD": {
       "library_path": "path to driver library",
       "api_version": "1.2.205",
+      "library_arch" : "64",
       "is_portability_driver": false
    }
 }
@@ -551,6 +552,14 @@ Here is an example driver JSON Manifest file:
         Windows, ".so" on Linux and ".dylib" on macOS).</td>
   </tr>
   <tr>
+    <td>"library_arch"</td>
+    <td>Optional field which specifies the architecture of the binary associated
+        with "library_path". <br />
+        Allows the loader to quickly determine if the architecture of the driver
+        matches that of the running application. <br />
+        The only valid values are "32" and "64".</td>
+  </tr>
+  <tr>
     <td>"api_version" </td>
     <td>The major.minor.patch version number of the maximum Vulkan API supported
         by the driver.
@@ -574,7 +583,7 @@ Here is an example driver JSON Manifest file:
 versions of text manifest file format versions, it must have separate JSON files
 for each (all of which may point to the same shared library).
 
-#### Driver Manifest File Versions
+### Driver Manifest File Versions
 
 The current highest supported Layer Manifest file format supported is 1.0.1.
 Information about each version is detailed in the following sub-sections:
@@ -596,6 +605,9 @@ they contain VkPhysicalDevices which support the VK_KHR_portability_subset
 extension. This is an optional field. Omitting the field has the same effect as
 setting the field to `false`.
 
+Added the "library\_arch" field to the driver manifest to allow the loader to
+quickly determine if the driver matches the architecture of the current running
+application. This field is optional.
 
 ##  Driver Vulkan Entry Point Discovery
 

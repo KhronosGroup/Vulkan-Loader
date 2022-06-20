@@ -1303,6 +1303,42 @@ TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
     ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" failed to load.")));
 }
 
+TEST(TryLoadWrongBinaries, WrongArchDriver) {
+    FrameworkEnvironment env{};
+    // Intentionally set the wrong arch
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.icd_manifest.set_library_arch(sizeof(void*) == 4 ? "64" : "32"));
+
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+    ASSERT_TRUE(log.find(
+        "loader_icd_scan: Driver library architecture doesn't match the current running architecture, skipping this driver"));
+}
+
+TEST(TryLoadWrongBinaries, WrongArchLayer) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2});
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         // Intentionally set the wrong arch
+                                                         .set_library_arch(sizeof(void*) == 4 ? "64" : "32")),
+                           "test_layer.json");
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.create_info.add_layer(layer_name);
+    inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+    ASSERT_TRUE(log.find("Layer library architecture doesn't match the current running architecture, skipping this layer"));
+}
+
 TEST(EnumeratePhysicalDeviceGroups, OneCall) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));

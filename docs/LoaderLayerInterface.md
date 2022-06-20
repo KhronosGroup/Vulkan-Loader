@@ -1437,11 +1437,12 @@ Here is an example layer JSON Manifest file with a single layer:
 
 ```json
 {
-   "file_format_version" : "1.0.0",
+   "file_format_version" : "1.2.1",
    "layer": {
        "name": "VK_LAYER_LUNARG_overlay",
        "type": "INSTANCE",
        "library_path": "vkOverlayLayer.dll",
+       "library_arch" : "64",
        "api_version" : "1.0.5",
        "implementation_version" : "2",
        "description" : "LunarG HUD layer",
@@ -1708,6 +1709,15 @@ Here's an example of a meta-layer manifest file:
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
+  <td>"library_arch"</td>
+    <td>Optional field which specifies the architecture of the binary associated
+        with "library_path". <br />
+        Allows the loader to quickly determine if the architecture of the layer
+        matches that of the running application. <br />       
+        The only valid values are "32" and "64".</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
   <tr>
     <td>"name"</td>
     <td>The string used to uniquely identify this layer to applications.</td>
@@ -1763,6 +1773,12 @@ Here's an example of a meta-layer manifest file:
 
 The current highest supported Layer Manifest file format supported is 1.2.0.
 Information about each version is detailed in the following sub-sections:
+
+### Layer Manifest File Version 1.2.1
+
+Added the "library\_arch" field to the layer manifest to allow the loader to
+quickly determine if the layer matches the architecture of the current running
+application.
 
 #### Layer Manifest File Version 1.2.0
 

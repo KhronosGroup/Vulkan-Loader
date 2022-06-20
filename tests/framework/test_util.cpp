@@ -137,7 +137,12 @@ std::string ManifestICD::get_manifest_str() const {
     out += "    \"ICD\": {\n";
     out += "        \"library_path\": \"" + fs::fixup_backslashes_in_path(lib_path) + "\",\n";
     out += "        \"api_version\": \"" + version_to_string(api_version) + "\",\n";
-    out += "        \"is_portability_driver\": " + to_text(is_portability_driver) + "\n";
+    out += "        \"is_portability_driver\": " + to_text(is_portability_driver);
+    if (!library_arch.empty()) {
+        out += ",\n       \"library_arch\": \"" + library_arch + "\"\n";
+    } else {
+        out += "\n";
+    }
     out += "    }\n";
     out += "}\n";
     return out;
@@ -176,7 +181,9 @@ std::string ManifestLayer::LayerDescription::get_manifest_str() const {
     print_vector_of_strings(out, "override_paths", override_paths);
     print_vector_of_strings(out, "app_keys", app_keys);
     print_list_of_t(out, "pre_instance_functions", pre_instance_functions);
-
+    if (!library_arch.empty()) {
+        out += ",\n\t\t\"library_arch\": \"" + library_arch + "\"";
+    }
     out += "\n\t}";
 
     return out;
