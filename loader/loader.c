@@ -2553,6 +2553,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     cJSON *item, *layers_node, *layer_node;
     loader_api_version json_version = {0, 0, 0};
+    char *file_vers = NULL;
     // Make sure sure the top level json value is an object
     if (!json || json->type != 6) {
         goto out;
@@ -2561,7 +2562,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     if (item == NULL) {
         goto out;
     }
-    char *file_vers = cJSON_PrintUnformatted(item);
+    file_vers = cJSON_PrintUnformatted(item);
     if (NULL == file_vers) {
         goto out;
     }
@@ -2574,7 +2575,6 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
                    "loader_add_layer_properties: %s has unknown layer manifest file version %d.%d.%d.  May cause errors.", filename,
                    json_version.major, json_version.minor, json_version.patch);
     }
-    loader_instance_heap_free(inst, file_vers);
 
     // If "layers" is present, read in the array of layer objects
     layers_node = cJSON_GetObjectItem(json, "layers");
@@ -2633,6 +2633,9 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     }
 
 out:
+    if (NULL != file_vers) {
+        loader_instance_heap_free(inst, file_vers);
+    }
 
     return result;
 }
