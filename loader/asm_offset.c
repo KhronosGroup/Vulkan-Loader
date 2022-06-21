@@ -23,7 +23,7 @@
 // This code generates an assembly file which provides offsets to get struct members from assembly code.
 
 #include <stdio.h>
-#include "loader.h"
+#include "loader_common.h"
 #include "log.h"
 
 #if !defined(_MSC_VER) || (_MSC_VER >= 1900)

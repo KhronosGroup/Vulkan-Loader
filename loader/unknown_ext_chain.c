@@ -28,7 +28,6 @@
 
 #include "loader.h"
 #include "log.h"
-#include "vk_loader_platform.h"
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC optimize(3)  // force gcc to use tail-calls

@@ -51,14 +51,11 @@
 #include <dirent.h>
 #endif  // _WIN32
 
-#include "vulkan/vk_icd.h"
-
 #include "allocation.h"
 #include "cJSON.h"
 #include "debug_utils.h"
 #include "get_environment.h"
 #include "gpa_helper.h"
-#include "loader.h"
 #include "log.h"
 #include "unknown_function_handling.h"
 #include "vk_loader_platform.h"
@@ -2096,12 +2093,8 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                 rel_base = loader_platform_dirname(name_copy);
                 loader_expand_path(library_path_str, rel_base, MAX_STRING_SIZE, fullpath);
             } else {
-// A filename which is assumed in a system directory
-#if defined(DEFAULT_VK_LAYERS_PATH)
-                loader_get_fullpath(library_path_str, DEFAULT_VK_LAYERS_PATH, MAX_STRING_SIZE, fullpath);
-#else
+                // A filename which is assumed in a system directory
                 loader_get_fullpath(library_path_str, "", MAX_STRING_SIZE, fullpath);
-#endif
             }
         }
     } else if (NULL != component_layers) {
