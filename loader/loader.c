@@ -5449,6 +5449,13 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->ext_list);
     if (NULL != ptr_instance->phys_devs_term) {
         for (uint32_t i = 0; i < ptr_instance->phys_dev_count_term; i++) {
+            for (uint32_t j = i+1; j < ptr_instance->phys_dev_count_term; j++) {
+                if (ptr_instance->phys_devs_term[i] == ptr_instance->phys_devs_term[j]) {
+                    ptr_instance->phys_devs_term[j] = NULL;
+                }
+            }
+        }
+        for (uint32_t i = 0; i < ptr_instance->phys_dev_count_term; i++) {
             loader_instance_heap_free(ptr_instance, ptr_instance->phys_devs_term[i]);
         }
         loader_instance_heap_free(ptr_instance, ptr_instance->phys_devs_term);
