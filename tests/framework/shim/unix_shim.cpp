@@ -30,20 +30,22 @@
 static PlatformShim platform_shim;
 extern "C" {
 #if defined(__linux__) || defined(__FreeBSD__)
-PlatformShim* get_platform_shim() {
-    platform_shim = PlatformShim();
+PlatformShim* get_platform_shim(std::vector<fs::FolderManager>* folders) {
+    platform_shim = PlatformShim(folders);
     return &platform_shim;
 }
 #elif defined(__APPLE__)
-FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
-    platform_shim = PlatformShim();
+FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>* folders) {
+    platform_shim = PlatformShim(folders);
     return &platform_shim;
 }
 #endif
 
-// Necessary for MacOS function himming
+// Necessary for MacOS function shimming
 #if defined(__linux__) || defined(__FreeBSD__)
 #define OPENDIR_FUNC_NAME opendir
+#define READDIR_FUNC_NAME readdir
+#define CLOSEDIR_FUNC_NAME closedir
 #define ACCESS_FUNC_NAME access
 #define FOPEN_FUNC_NAME fopen
 #define GETEUID_FUNC_NAME geteuid
@@ -56,6 +58,8 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
 #endif
 #elif defined(__APPLE__)
 #define OPENDIR_FUNC_NAME my_opendir
+#define READDIR_FUNC_NAME my_readdir
+#define CLOSEDIR_FUNC_NAME my_closedir
 #define ACCESS_FUNC_NAME my_access
 #define FOPEN_FUNC_NAME my_fopen
 #define GETEUID_FUNC_NAME my_geteuid
@@ -69,6 +73,8 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
 #endif
 
 using PFN_OPENDIR = DIR* (*)(const char* path_name);
+using PFN_READDIR = struct dirent* (*)(DIR* dir_stream);
+using PFN_CLOSEDIR = int (*)(DIR* dir_stream);
 using PFN_ACCESS = int (*)(const char* pathname, int mode);
 using PFN_FOPEN = FILE* (*)(const char* filename, const char* mode);
 using PFN_GETEUID = uid_t (*)(void);
@@ -78,6 +84,8 @@ using PFN_SEC_GETENV = char* (*)(const char* name);
 #endif
 
 static PFN_OPENDIR real_opendir = nullptr;
+static PFN_READDIR real_readdir = nullptr;
+static PFN_CLOSEDIR real_closedir = nullptr;
 static PFN_ACCESS real_access = nullptr;
 static PFN_FOPEN real_fopen = nullptr;
 static PFN_GETEUID real_geteuid = nullptr;
@@ -96,11 +104,63 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
     if (platform_shim.is_fake_path(path_name)) {
         auto fake_path_name = platform_shim.get_fake_path(fs::path(path_name));
         dir = real_opendir(fake_path_name.c_str());
+        platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, false});
     } else {
         dir = real_opendir(path_name);
     }
 
     return dir;
+}
+
+FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
+    if (!real_readdir) real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
+    auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
+                           [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
+
+    if (it == platform_shim.dir_entries.end()) {
+        return real_readdir(dir_stream);
+    }
+    // Folder was found but this is the first file to be read from it
+    if (it->current_index == 0) {
+        std::vector<struct dirent*> folder_contents;
+        std::vector<std::string> dirent_filenames;
+        while (true) {
+            struct dirent* dir_entry = real_readdir(dir_stream);
+            if (NULL == dir_entry) {
+                break;
+            }
+            folder_contents.push_back(dir_entry);
+            dirent_filenames.push_back(&dir_entry->d_name[0]);
+        }
+        auto real_path = platform_shim.redirection_map.at(it->folder_path);
+        auto filenames = get_folder_contents(platform_shim.folders, real_path.str());
+
+        // Add the dirent structures in the order they appear in the FolderManager
+        // Ignore anything which wasn't in the FolderManager
+        for (auto const& file : filenames) {
+            for (size_t i = 0; i < dirent_filenames.size(); i++) {
+                if (file == dirent_filenames.at(i)) {
+                    it->contents.push_back(folder_contents.at(i));
+                    break;
+                }
+            }
+        }
+    }
+    if (it->current_index >= it->contents.size()) return nullptr;
+    return it->contents.at(it->current_index++);
+}
+
+FRAMEWORK_EXPORT int CLOSEDIR_FUNC_NAME(DIR* dir_stream) {
+    if (!real_closedir) real_closedir = (PFN_CLOSEDIR)dlsym(RTLD_NEXT, "closedir");
+
+    auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
+                           [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
+
+    if (it != platform_shim.dir_entries.end()) {
+        platform_shim.dir_entries.erase(it);
+    }
+
+    return real_closedir(dir_stream);
 }
 
 FRAMEWORK_EXPORT int ACCESS_FUNC_NAME(const char* in_pathname, int mode) {
@@ -197,6 +257,9 @@ struct Interposer {
 };
 
 __attribute__((used)) static Interposer _interpose_opendir MACOS_ATTRIB = {VOIDP_CAST(my_opendir), VOIDP_CAST(opendir)};
+// don't intercept readdir as it crashes when using ASAN with macOS
+// __attribute__((used)) static Interposer _interpose_readdir MACOS_ATTRIB = {VOIDP_CAST(my_readdir), VOIDP_CAST(readdir)};
+__attribute__((used)) static Interposer _interpose_closedir MACOS_ATTRIB = {VOIDP_CAST(my_closedir), VOIDP_CAST(closedir)};
 __attribute__((used)) static Interposer _interpose_access MACOS_ATTRIB = {VOIDP_CAST(my_access), VOIDP_CAST(access)};
 __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_CAST(my_fopen), VOIDP_CAST(fopen)};
 __attribute__((used)) static Interposer _interpose_euid MACOS_ATTRIB = {VOIDP_CAST(my_geteuid), VOIDP_CAST(geteuid)};

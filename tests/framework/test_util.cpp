@@ -429,11 +429,12 @@ std::wstring native_path(const std::string& utf8) { return widen(utf8); }
 const std::string& native_path(const std::string& utf8) { return utf8; }
 #endif
 
-FolderManager::FolderManager(path root_path, std::string name) : folder(root_path / name) {
+FolderManager::FolderManager(path root_path, std::string name) noexcept : folder(root_path / name) {
     delete_folder_contents(folder);
     create_folder(folder);
 }
-FolderManager::~FolderManager() {
+FolderManager::~FolderManager() noexcept {
+    if (folder.str().empty()) return;
     auto list_of_files_to_delete = files;
     // remove(file) modifies the files variable, copy the list before deleting it
     // Note: the allocation tests currently leak the loaded driver handles because in an OOM scenario the loader doesn't bother
@@ -444,6 +445,16 @@ FolderManager::~FolderManager() {
     }
     delete_folder(folder);
 }
+FolderManager::FolderManager(FolderManager&& other) noexcept : folder(other.folder), files(other.files) {
+    other.folder.str().clear();
+}
+FolderManager& FolderManager::operator=(FolderManager&& other) noexcept {
+    folder = other.folder;
+    files = other.files;
+    other.folder.str().clear();
+    return *this;
+}
+
 path FolderManager::write_manifest(std::string const& name, std::string const& contents) {
     path out_path = folder / name;
     auto found = std::find(files.begin(), files.end(), name);

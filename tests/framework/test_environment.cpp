@@ -136,14 +136,14 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
     create_info.instance_info.pNext = wrapper.get();
 }
 
-PlatformShimWrapper::PlatformShimWrapper() noexcept {
+PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders) noexcept {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
     PFN_get_platform_shim get_platform_shim_func = shim_library.get_symbol(GET_PLATFORM_SHIM_STR);
     assert(get_platform_shim_func != NULL && "Must be able to get \"platform_shim\"");
-    platform_shim = get_platform_shim_func();
+    platform_shim = get_platform_shim_func(folders);
 #elif defined(__linux__) || defined(__FreeBSD__)
-    platform_shim = get_platform_shim();
+    platform_shim = get_platform_shim(folders);
 #endif
     platform_shim->reset();
 
@@ -184,29 +184,29 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
 fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
 
-FrameworkEnvironment::FrameworkEnvironment() noexcept
-    : platform_shim(),
-      null_folder(FRAMEWORK_BUILD_DIRECTORY, "null_dir"),
-      icd_folder(FRAMEWORK_BUILD_DIRECTORY, "icd_manifests"),
-      icd_env_vars_folder(FRAMEWORK_BUILD_DIRECTORY, "icd_env_vars_manifests"),
-      explicit_layer_folder(FRAMEWORK_BUILD_DIRECTORY, "explicit_layer_manifests"),
-      explicit_env_var_layer_folder(FRAMEWORK_BUILD_DIRECTORY, "explicit_env_var_layer_folder"),
-      explicit_add_env_var_layer_folder(FRAMEWORK_BUILD_DIRECTORY, "explicit_add_env_var_layer_folder"),
-      implicit_layer_folder(FRAMEWORK_BUILD_DIRECTORY, "implicit_layer_manifests"),
-      override_layer_folder(FRAMEWORK_BUILD_DIRECTORY, "override_layer_manifests"),
-      vulkan_functions() {
-    platform_shim->redirect_all_paths(null_folder.location());
-    platform_shim->set_path(ManifestCategory::icd, icd_folder.location());
-    platform_shim->set_path(ManifestCategory::explicit_layer, explicit_layer_folder.location());
-    platform_shim->set_path(ManifestCategory::implicit_layer, implicit_layer_folder.location());
+FrameworkEnvironment::FrameworkEnvironment() noexcept : platform_shim(&folders), vulkan_functions() {
+    // This order is important, it matches the enum ManifestLocation, used to index the folders vector
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("null_dir"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("icd_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("icd_env_vars_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("explicit_layer_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("explicit_env_var_layer_folder"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("explicit_add_env_var_layer_folder"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("implicit_layer_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("override_layer_manifests"));
+
+    platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
+    platform_shim->set_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
+    platform_shim->set_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
+    platform_shim->set_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
 }
 
 void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     size_t cur_icd_index = icds.size();
-    fs::FolderManager* folder = &icd_folder;
+    fs::FolderManager* folder = &get_folder(ManifestLocation::driver);
     if (icd_details.discovery_type == ManifestDiscoveryType::env_var ||
         icd_details.discovery_type == ManifestDiscoveryType::add_env_var) {
-        folder = &icd_env_vars_folder;
+        folder = &get_folder(ManifestLocation::driver_env_var);
     }
     if (!icd_details.is_fake) {
         fs::path new_driver_name = fs::path(icd_details.icd_manifest.lib_path).stem() + "_" + std::to_string(cur_icd_index) +
@@ -265,30 +265,30 @@ void FrameworkEnvironment::add_explicit_layer(TestLayerDetails layer_details) no
 }
 
 void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, ManifestCategory category) {
-    fs::FolderManager* fs_ptr = &explicit_layer_folder;
+    fs::FolderManager* fs_ptr = &get_folder(ManifestLocation::explicit_layer);
     switch (layer_details.discovery_type) {
         default:
         case (ManifestDiscoveryType::generic):
-            if (category == ManifestCategory::implicit_layer) fs_ptr = &implicit_layer_folder;
+            if (category == ManifestCategory::implicit_layer) fs_ptr = &get_folder(ManifestLocation::implicit_layer);
             break;
         case (ManifestDiscoveryType::env_var):
-            fs_ptr = &explicit_env_var_layer_folder;
+            fs_ptr = &get_folder(ManifestLocation::explicit_layer_env_var);
             if (!env_var_vk_layer_paths.empty()) {
                 env_var_vk_layer_paths += OS_ENV_VAR_LIST_SEPARATOR;
             }
-            env_var_vk_layer_paths += explicit_env_var_layer_folder.location().str();
+            env_var_vk_layer_paths += fs_ptr->location().str();
             set_env_var("VK_LAYER_PATH", env_var_vk_layer_paths);
             break;
         case (ManifestDiscoveryType::add_env_var):
-            fs_ptr = &explicit_add_env_var_layer_folder;
+            fs_ptr = &get_folder(ManifestLocation::explicit_layer_add_env_var);
             if (!add_env_var_vk_layer_paths.empty()) {
                 add_env_var_vk_layer_paths += OS_ENV_VAR_LIST_SEPARATOR;
             }
-            add_env_var_vk_layer_paths += explicit_add_env_var_layer_folder.location().str();
+            add_env_var_vk_layer_paths += fs_ptr->location().str();
             set_env_var("VK_ADD_LAYER_PATH", add_env_var_vk_layer_paths);
             break;
         case (ManifestDiscoveryType::override_folder):
-            fs_ptr = &override_layer_folder;
+            fs_ptr = &get_folder(ManifestLocation::override_layer);
             break;
         case (ManifestDiscoveryType::none):
             break;
@@ -331,6 +331,10 @@ TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return lay
 fs::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept { return layers[index].get_layer_full_path(); }
 fs::path FrameworkEnvironment::get_layer_manifest_path(size_t index) noexcept { return layers[index].get_layer_manifest_path(); }
 
+fs::FolderManager& FrameworkEnvironment::get_folder(ManifestLocation location) noexcept {
+    // index it directly using the enum location since they will always be in that order
+    return folders.at(static_cast<size_t>(location));
+}
 void setup_WSI_in_ICD(TestICD& icd) {
     icd.enable_icd_wsi = true;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
