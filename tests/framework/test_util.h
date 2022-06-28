@@ -203,10 +203,12 @@ int delete_folder(path const& folder);
 
 class FolderManager {
    public:
-    explicit FolderManager(path root_path, std::string name);
-    ~FolderManager();
+    explicit FolderManager(path root_path, std::string name) noexcept;
+    ~FolderManager() noexcept;
     FolderManager(FolderManager const&) = delete;
     FolderManager& operator=(FolderManager const&) = delete;
+    FolderManager(FolderManager&& other) noexcept;
+    FolderManager& operator=(FolderManager&& other) noexcept;
 
     path write_manifest(std::string const& name, std::string const& contents);
 
@@ -218,6 +220,8 @@ class FolderManager {
 
     // location of the managed folder
     path location() const { return folder; }
+
+    std::vector<std::string> get_files() const { return files; }
 
    private:
     path folder;

@@ -60,6 +60,15 @@ std::vector<std::string> parse_env_var_list(std::string const& var) {
     return items;
 }
 
+std::vector<std::string> get_folder_contents(std::vector<fs::FolderManager>* folders, std::string folder_name) noexcept {
+    for (auto& folder : *folders) {
+        if (folder.location() == folder_name) {
+            return folder.get_files();
+        }
+    }
+    return {};
+}
+
 #if defined(WIN32)
 
 D3DKMT_Adapter& D3DKMT_Adapter::add_driver_manifest_path(fs::path const& src) { return add_path(src, driver_paths); }

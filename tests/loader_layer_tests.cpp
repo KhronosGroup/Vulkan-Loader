@@ -1046,15 +1046,16 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
                                             "regular_test_layer.json"}
                                .set_discovery_type(ManifestDiscoveryType::override_folder));
 
-    env.add_implicit_layer(ManifestLayer{}
-                               .set_file_format_version(ManifestVersion(1, 2, 0))
-                               .add_layer(ManifestLayer::LayerDescription{}
-                                              .set_name(lunarg_meta_layer_name)
-                                              .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                              .add_component_layer(regular_layer_name)
-                                              .set_disable_environment("DisableMeIfYouCan")
-                                              .add_override_path(env.override_layer_folder.location().str())),
-                           "meta_test_layer.json");
+    env.add_implicit_layer(
+        ManifestLayer{}
+            .set_file_format_version(ManifestVersion(1, 2, 0))
+            .add_layer(ManifestLayer::LayerDescription{}
+                           .set_name(lunarg_meta_layer_name)
+                           .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                           .add_component_layer(regular_layer_name)
+                           .set_disable_environment("DisableMeIfYouCan")
+                           .add_override_path(env.get_folder(ManifestLocation::override_layer).location().str())),
+        "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);

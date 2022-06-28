@@ -261,7 +261,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().physical_devices.push_back({});
-    env.platform_shim->redirect_path("/tmp/carol", env.explicit_env_var_layer_folder.location());
+    env.platform_shim->redirect_path("/tmp/carol", env.get_folder(ManifestLocation::explicit_layer_env_var).location());
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -310,7 +310,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().physical_devices.push_back({});
-    env.platform_shim->redirect_path("/tmp/carol", env.explicit_add_env_var_layer_folder.location());
+    env.platform_shim->redirect_path("/tmp/carol", env.get_folder(ManifestLocation::explicit_layer_add_env_var).location());
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(

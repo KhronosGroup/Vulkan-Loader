@@ -224,7 +224,7 @@ HRESULT __stdcall ShimEnumAdapters1_1(IDXGIFactory1 *This,
         return DXGI_ERROR_INVALID_CALL;
     }
     if (ppAdapter != nullptr) {
-        auto* pAdapter = create_IDXGIAdapter1();
+        auto *pAdapter = create_IDXGIAdapter1();
         *ppAdapter = pAdapter;
         platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
     }
@@ -239,7 +239,7 @@ HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
         return DXGI_ERROR_INVALID_CALL;
     }
     if (ppAdapter != nullptr) {
-        auto* pAdapter = create_IDXGIAdapter1();
+        auto *pAdapter = create_IDXGIAdapter1();
         *ppAdapter = pAdapter;
         platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
     }
@@ -256,7 +256,7 @@ HRESULT __stdcall ShimEnumAdapterByGpuPreference(IDXGIFactory6 *This, _In_ UINT 
     assert(GpuPreference == DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_UNSPECIFIED &&
            "Test shim assumes the GpuPreference is unspecified.");
     if (ppvAdapter != nullptr) {
-        auto* pAdapter = create_IDXGIAdapter1();
+        auto *pAdapter = create_IDXGIAdapter1();
         *ppvAdapter = pAdapter;
         platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
     }
@@ -351,10 +351,12 @@ LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName,
                                     LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData) {
     const std::string *path = get_path_of_created_key(hKey);
     if (path == nullptr) return ERROR_NO_MORE_ITEMS;
+
     const auto *location_ptr = get_registry_vector(*path);
     if (location_ptr == nullptr) return ERROR_NO_MORE_ITEMS;
     const auto &location = *location_ptr;
     if (dwIndex >= location.size()) return ERROR_NO_MORE_ITEMS;
+
     if (*lpcchValueName < location[dwIndex].name.size()) return ERROR_NO_MORE_ITEMS;
     for (size_t i = 0; i < location[dwIndex].name.size(); i++) {
         lpValueName[i] = location[dwIndex].name[i];
@@ -466,8 +468,8 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
     }
     return TRUE;
 }
-FRAMEWORK_EXPORT PlatformShim *get_platform_shim() {
-    platform_shim = PlatformShim();
+FRAMEWORK_EXPORT PlatformShim *get_platform_shim(std::vector<fs::FolderManager> *folders) {
+    platform_shim = PlatformShim(folders);
     return &platform_shim;
 }
 }
