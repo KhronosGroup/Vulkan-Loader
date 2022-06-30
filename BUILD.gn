@@ -125,6 +125,7 @@ if (!is_android) {
       "loader/log.c",
       "loader/log.h",
       "loader/phys_dev_ext.c",
+      "loader/stack_allocation.h",
       "loader/terminator.c",
       "loader/trampoline.c",
       "loader/unknown_function_handling.h",
