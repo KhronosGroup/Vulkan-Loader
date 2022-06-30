@@ -194,6 +194,7 @@ FrameworkEnvironment::FrameworkEnvironment() noexcept : platform_shim(&folders),
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("explicit_add_env_var_layer_folder"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("implicit_layer_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("override_layer_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("app_package_manifests"));
 
     platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
     platform_shim->set_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
@@ -207,6 +208,9 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     if (icd_details.discovery_type == ManifestDiscoveryType::env_var ||
         icd_details.discovery_type == ManifestDiscoveryType::add_env_var) {
         folder = &get_folder(ManifestLocation::driver_env_var);
+    }
+    if (icd_details.discovery_type == ManifestDiscoveryType::windows_app_package) {
+        folder = &get_folder(ManifestLocation::windows_app_package);
     }
     if (!icd_details.is_fake) {
         fs::path new_driver_name = fs::path(icd_details.icd_manifest.lib_path).stem() + "_" + std::to_string(cur_icd_index) +
@@ -242,6 +246,11 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
             break;
         case (ManifestDiscoveryType::none):
             break;
+#ifdef _WIN32
+        case (ManifestDiscoveryType::windows_app_package):
+            platform_shim->set_app_package_path(folder->location());
+            break;
+#endif
     }
 }
 

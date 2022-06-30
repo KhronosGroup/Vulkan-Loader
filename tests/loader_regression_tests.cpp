@@ -3355,3 +3355,14 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) 
         ASSERT_EQ(layer_count, 0U);
     }
 }
+
+#ifdef _WIN32
+TEST(AppPackageDriverDiscovery, AppPackageTest) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::windows_app_package));
+    env.get_test_icd().physical_devices.push_back({});
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+}
+#endif

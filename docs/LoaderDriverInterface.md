@@ -291,6 +291,12 @@ In this case, the loader will open the first and last listings, but not the
 middle.
 This is because the value of 1 for vendor_b_vk.json disables the driver.
 
+Additionally, the Vulkan loader will scan the system for well-known Windows
+AppX/MSIX packages. If a package is found, the loader will scan the root directory
+of this installed package for JSON manifest files. At this time, the only package
+that is known is Microsoft's
+[OpenCL™ and OpenGL® Compatibility Pack](https://apps.microsoft.com/store/detail/9NQPSL29BFFF?hl=en-us&gl=US).
+
 The Vulkan loader will open each enabled manifest file found to obtain the name
 or pathname of a driver's shared library (".DLL") file.
 
