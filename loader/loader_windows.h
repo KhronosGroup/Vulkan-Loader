@@ -111,4 +111,8 @@ VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const
 // Creates a DXGI factory
 // Returns VkLoaderFeatureFlags containing VK_LOADER_FEATURE_PHYSICAL_DEVICE_SORTING if successful, otherwise 0
 VkLoaderFeatureFlags windows_initialize_dxgi(void);
+
+// Retrieve a path to an installed app package that contains Vulkan manifests.
+// When done using the returned string, the caller should free the pointer.
+char *windows_get_app_package_manifest_path(const struct loader_instance *inst);
 #endif  // WIN32

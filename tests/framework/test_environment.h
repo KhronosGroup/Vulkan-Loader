@@ -303,11 +303,12 @@ struct TestLayerHandle {
 };
 
 enum class ManifestDiscoveryType {
-    generic,          // put the manifest in the regular locations
-    none,             // don't add to regular locations - eg D3DKMT
-    env_var,          // use the corresponding env-var for it
-    add_env_var,      // use the corresponding add-env-var for it
-    override_folder,  // add to a special folder for the override layer to use
+    generic,             // put the manifest in the regular locations
+    none,                // don't add to regular locations - eg D3DKMT
+    env_var,             // use the corresponding env-var for it
+    add_env_var,         // use the corresponding add-env-var for it
+    override_folder,     // add to a special folder for the override layer to use
+    windows_app_package, // let the app package search find it
 };
 
 struct TestICDDetails {
@@ -338,7 +339,8 @@ enum class ManifestLocation {
     explicit_layer_env_var = 4,
     explicit_layer_add_env_var = 5,
     implicit_layer = 6,
-    override_layer = 7
+    override_layer = 7,
+    windows_app_package = 8,
 };
 
 struct FrameworkEnvironment {

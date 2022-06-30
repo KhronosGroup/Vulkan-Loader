@@ -37,6 +37,7 @@
 #include <initguid.h>
 #include <devpkey.h>
 #include <winternl.h>
+#include <appmodel.h>
 
 #define CINTERFACE
 #include <dxgi1_6.h>
@@ -151,6 +152,7 @@ struct PlatformShim {
 
     void add_dxgi_adapter(GpuType gpu_preference, DXGI_ADAPTER_DESC1 desc1);
     void add_d3dkmt_adapter(D3DKMT_Adapter const& adapter);
+    void set_app_package_path(fs::path const& path);
 
     uint32_t next_adapter_handle = 1;  // increment everytime add_dxgi_adapter is called
     std::vector<DXGIAdapter> dxgi_adapters;
@@ -172,6 +174,8 @@ struct PlatformShim {
     std::vector<RegistryEntry> hkey_local_machine_explicit_layers;
     std::vector<RegistryEntry> hkey_local_machine_implicit_layers;
     std::vector<RegistryEntry> hkey_local_machine_drivers;
+
+    std::wstring app_package_path;
 
     // When a key is created, return the index of the
     size_t created_key_count = 0;

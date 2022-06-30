@@ -2917,7 +2917,9 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     bool xdg_data_dirs_secenv_alloc = true;
 #endif
 
-#ifndef _WIN32
+#ifdef _WIN32
+    char *package_path = NULL;
+#else
     // Determine how much space is needed to generate the full search path
     // for the current manifest files.
     char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
@@ -3004,6 +3006,9 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             }
             additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
             relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
+#ifdef _WIN32
+            package_path = windows_get_app_package_manifest_path(inst);
+#endif
             break;
         case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
             relative_location = VK_ILAYERS_INFO_RELATIVE_DIR;
@@ -3036,7 +3041,11 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
         if (NULL != additional_env) {
             search_path_size += determine_data_file_path_size(additional_env, 0) + 2;
 #ifdef _WIN32
-        } else {
+        } 
+        if (NULL != package_path) {
+            search_path_size += determine_data_file_path_size(package_path, 0) + 2;
+        }
+        if (search_path_size == 2) {
             goto out;
         }
 #else  // !_WIN32
@@ -3088,7 +3097,11 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
         }
 
-#ifndef _WIN32
+#ifdef _WIN32
+        if (NULL != package_path) {
+            copy_data_file_info(package_path, NULL, 0, &cur_path_ptr);
+        }
+#else
         if (rel_size > 0) {
 #if defined(__APPLE__)
             // Add the bundle's Resources dir to the beginning of the search path.
@@ -3223,7 +3236,11 @@ out:
     if (NULL != override_env) {
         loader_free_getenv(override_env, inst);
     }
-#ifndef _WIN32
+#ifdef _WIN32
+    if (NULL != package_path) {
+        loader_instance_heap_free(inst, package_path);
+    }
+#else
     if (xdg_config_home_secenv_alloc) {
         loader_free_getenv(xdg_config_home, inst);
     }
