@@ -4722,6 +4722,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
     VkLayerDeviceLink *layer_device_link_info;
     VkLayerDeviceCreateInfo chain_info;
     VkDeviceCreateInfo loader_create_info;
+    VkDeviceGroupDeviceCreateInfoKHR *original_device_group_create_info_struct = NULL;
     VkResult res;
 
     PFN_vkGetDeviceProcAddr fpGDPA = NULL, nextGDPA = loader_gpa_device_internal;
@@ -4759,6 +4760,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                         phys_dev_array[phys_dev] = cur_tramp->phys_dev;
                     }
                     temp_struct->pPhysicalDevices = phys_dev_array;
+
+                    original_device_group_create_info_struct = (VkDeviceGroupDeviceCreateInfoKHR *)pPrev->pNext;
 
                     // Replace the old struct in the pNext chain with this one.
                     pPrev->pNext = (VkBaseOutStructure *)temp_struct;
@@ -4911,6 +4914,24 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             return res;
         }
         dev->chain_device = created_device;
+
+        // Because we changed the pNext chain to use our own VkDeviceGroupDeviceCreateInfoKHR, we need to fixup the chain to point
+        // back at the original VkDeviceGroupDeviceCreateInfoKHR.
+        VkBaseOutStructure *pNext = (VkBaseOutStructure *)loader_create_info.pNext;
+        VkBaseOutStructure *pPrev = (VkBaseOutStructure *)&loader_create_info;
+        while (NULL != pNext) {
+            if (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO == pNext->sType) {
+                VkDeviceGroupDeviceCreateInfoKHR *cur_struct = (VkDeviceGroupDeviceCreateInfoKHR *)pNext;
+                if (0 < cur_struct->physicalDeviceCount && NULL != cur_struct->pPhysicalDevices) {
+                    pPrev->pNext = (VkBaseOutStructure *)original_device_group_create_info_struct;
+                }
+                break;
+            }
+
+            pPrev = pNext;
+            pNext = pNext->pNext;
+        }
+
     } else {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "loader_create_device_chain: Failed to find \'vkCreateDevice\' in layers or ICD");
@@ -5449,7 +5470,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->ext_list);
     if (NULL != ptr_instance->phys_devs_term) {
         for (uint32_t i = 0; i < ptr_instance->phys_dev_count_term; i++) {
-            for (uint32_t j = i+1; j < ptr_instance->phys_dev_count_term; j++) {
+            for (uint32_t j = i + 1; j < ptr_instance->phys_dev_count_term; j++) {
                 if (ptr_instance->phys_devs_term[i] == ptr_instance->phys_devs_term[j]) {
                     ptr_instance->phys_devs_term[j] = NULL;
                 }
