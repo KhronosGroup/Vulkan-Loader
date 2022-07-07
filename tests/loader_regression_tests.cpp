@@ -1389,6 +1389,35 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
         for (uint32_t dev = 0; dev < max_physical_device_count; ++dev) {
             ASSERT_EQ(true, found[dev]);
         }
+        for (auto& group : group_props) {
+            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+            group_info.physicalDeviceCount = group.physicalDeviceCount;
+            group_info.pPhysicalDevices = &group.physicalDevices[0];
+            VkBaseInStructure spacer_structure{};
+            spacer_structure.sType = static_cast<VkStructureType>(100000);
+            spacer_structure.pNext = reinterpret_cast<const VkBaseInStructure*>(&group_info);
+            DeviceWrapper dev{inst};
+            dev.create_info.dev.pNext = &spacer_structure;
+            dev.CheckCreate(group.physicalDevices[0]);
+
+            // This convoluted logic makes sure that the pNext chain is unmolested after being passed into vkCreateDevice
+            // While not expected for applications to iterate over this chain, since it is const it is important to make sure
+            // that the chain didn't change somehow, and especially so that iterating it doesn't crash.
+            int count = 0;
+            const VkBaseInStructure* pNext = reinterpret_cast<const VkBaseInStructure*>(dev.create_info.dev.pNext);
+            while (pNext != nullptr) {
+                if (pNext->sType == VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO) {
+                    ASSERT_EQ(&group_info, reinterpret_cast<const VkDeviceGroupDeviceCreateInfoKHR*>(pNext));
+                }
+                if (pNext->sType == 100000) {
+                    ASSERT_EQ(&spacer_structure, pNext);
+                }
+                pNext = pNext->pNext;
+                count++;
+            }
+            ASSERT_EQ(count, 2);
+        }
     }
     driver.add_instance_extension({VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME});
     // Extension
@@ -1427,6 +1456,18 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
         }
         for (uint32_t dev = 0; dev < max_physical_device_count; ++dev) {
             ASSERT_EQ(true, found[dev]);
+        }
+        for (auto& group : group_props) {
+            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+            group_info.physicalDeviceCount = group.physicalDeviceCount;
+            group_info.pPhysicalDevices = &group.physicalDevices[0];
+            VkBaseInStructure spacer_structure{};
+            spacer_structure.sType = static_cast<VkStructureType>(100000);
+            spacer_structure.pNext = reinterpret_cast<const VkBaseInStructure*>(&group_info);
+            DeviceWrapper dev{inst};
+            dev.create_info.dev.pNext = &spacer_structure;
+            dev.CheckCreate(group.physicalDevices[0]);
         }
     }
 }
@@ -1484,6 +1525,15 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
         for (uint32_t dev = 0; dev < max_physical_device_count; ++dev) {
             ASSERT_EQ(true, found[dev]);
         }
+        for (auto& group : group_props) {
+            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+            group_info.physicalDeviceCount = group.physicalDeviceCount;
+            group_info.pPhysicalDevices = &group.physicalDevices[0];
+            DeviceWrapper dev{inst};
+            dev.create_info.dev.pNext = &group_info;
+            dev.CheckCreate(group.physicalDevices[0]);
+        }
     }
     driver.add_instance_extension({VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME});
     // Extension
@@ -1525,6 +1575,15 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
         }
         for (uint32_t dev = 0; dev < max_physical_device_count; ++dev) {
             ASSERT_EQ(true, found[dev]);
+        }
+        for (auto& group : group_props) {
+            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+            group_info.physicalDeviceCount = group.physicalDeviceCount;
+            group_info.pPhysicalDevices = &group.physicalDevices[0];
+            DeviceWrapper dev{inst};
+            dev.create_info.dev.pNext = &group_info;
+            dev.CheckCreate(group.physicalDevices[0]);
         }
     }
 }
@@ -1581,6 +1640,15 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
             }
             ASSERT_EQ(true, found);
         }
+        for (auto& group : group_props) {
+            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+            group_info.physicalDeviceCount = group.physicalDeviceCount;
+            group_info.pPhysicalDevices = &group.physicalDevices[0];
+            DeviceWrapper dev{inst};
+            dev.create_info.dev.pNext = &group_info;
+            dev.CheckCreate(group.physicalDevices[0]);
+        }
     }
     driver.add_instance_extension({VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME});
     // Extension
@@ -1622,6 +1690,15 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
                 }
             }
             ASSERT_EQ(true, found);
+        }
+        for (auto& group : group_props) {
+            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+            group_info.physicalDeviceCount = group.physicalDeviceCount;
+            group_info.pPhysicalDevices = &group.physicalDevices[0];
+            DeviceWrapper dev{inst};
+            dev.create_info.dev.pNext = &group_info;
+            dev.CheckCreate(group.physicalDevices[0]);
         }
     }
 }
@@ -1703,6 +1780,15 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
                 }
             }
         }
+    }
+    for (auto& group : core_group_props) {
+        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+        group_info.physicalDeviceCount = group.physicalDeviceCount;
+        group_info.pPhysicalDevices = &group.physicalDevices[0];
+        DeviceWrapper dev{inst};
+        dev.create_info.dev.pNext = &group_info;
+        dev.CheckCreate(group.physicalDevices[0]);
     }
 }
 
@@ -1788,6 +1874,15 @@ TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
             }
         }
     }
+    for (auto& group : group_props_after) {
+        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+        group_info.physicalDeviceCount = group.physicalDeviceCount;
+        group_info.pPhysicalDevices = &group.physicalDevices[0];
+        DeviceWrapper dev{inst};
+        dev.create_info.dev.pNext = &group_info;
+        dev.CheckCreate(group.physicalDevices[0]);
+    }
 }
 
 // Start with 7 devices in 4 different groups, and then remove a group,
@@ -1864,6 +1959,15 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
             }
         }
     }
+    for (auto& group : group_props_after) {
+        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+        group_info.physicalDeviceCount = group.physicalDeviceCount;
+        group_info.pPhysicalDevices = &group.physicalDevices[0];
+        DeviceWrapper dev{inst};
+        dev.create_info.dev.pNext = &group_info;
+        dev.CheckCreate(group.physicalDevices[0]);
+    }
 }
 
 // Start with 6 devices in 3 different groups, and then add a device to the middle group,
@@ -1938,6 +2042,15 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceAddDeviceInBetween) {
                 break;
             }
         }
+    }
+    for (auto& group : group_props_after) {
+        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+        group_info.physicalDeviceCount = group.physicalDeviceCount;
+        group_info.pPhysicalDevices = &group.physicalDevices[0];
+        DeviceWrapper dev{inst};
+        dev.create_info.dev.pNext = &group_info;
+        dev.CheckCreate(group.physicalDevices[0]);
     }
 }
 
@@ -2024,6 +2137,15 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveDeviceInBetween) {
                 break;
             }
         }
+    }
+    for (auto& group : group_props_after) {
+        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+        group_info.physicalDeviceCount = group.physicalDeviceCount;
+        group_info.pPhysicalDevices = &group.physicalDevices[0];
+        DeviceWrapper dev{inst};
+        dev.create_info.dev.pNext = &group_info;
+        dev.CheckCreate(group.physicalDevices[0]);
     }
 }
 
@@ -2131,6 +2253,15 @@ TEST(EnumeratePhysicalDeviceGroups, MultipleAddRemoves) {
     ASSERT_EQ(before_group_count, returned_group_count);
     for (uint32_t group = 0; group < before_group_count; ++group) {
         ASSERT_EQ(group_props_after_add_device[group].physicalDeviceCount, after_add_dev_expected_counts[group]);
+    }
+    for (auto& group : group_props_after_add_device) {
+        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+        group_info.physicalDeviceCount = group.physicalDeviceCount;
+        group_info.pPhysicalDevices = &group.physicalDevices[0];
+        DeviceWrapper dev{inst};
+        dev.create_info.dev.pNext = &group_info;
+        dev.CheckCreate(group.physicalDevices[0]);
     }
 }
 
