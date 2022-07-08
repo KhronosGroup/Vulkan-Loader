@@ -51,7 +51,9 @@
 #include <dxgi1_6.h>
 #include "adapters.h"
 
+#if WINVER >= _WIN32_WINNT_WINBLUE
 #include <appmodel.h>
+#endif
 
 #if !defined(NDEBUG)
 #include <crtdbg.h>
@@ -998,17 +1000,15 @@ VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const
     return VK_SUCCESS;
 }
 
-char *windows_get_app_package_manifest_path(const struct loader_instance *inst)
-{
+#if WINVER >= _WIN32_WINNT_WINBLUE
+char *windows_get_app_package_manifest_path(const struct loader_instance *inst) {
     UINT32 numPackages = 0, bufferLength = 0;
     /* This literal string identifies the Microsoft-published OpenCL and OpenGL Compatibility Pack
      * (so named at the time this is being added), which contains OpenGLOn12 and OpenCLOn12 mapping
      * layers, and will contain VulkanOn12 (aka Dozen) going forward.
      */
     PCWSTR familyName = L"Microsoft.D3DMappingLayers_8wekyb3d8bbwe";
-    if (ERROR_INSUFFICIENT_BUFFER != GetPackagesByPackageFamily(familyName,
-                                                                &numPackages, NULL,
-                                                                &bufferLength, NULL) ||
+    if (ERROR_INSUFFICIENT_BUFFER != GetPackagesByPackageFamily(familyName, &numPackages, NULL, &bufferLength, NULL) ||
         numPackages == 0 || bufferLength == 0) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                    "windows_get_app_package_manifest_path: Failed to find mapping layers packages by family name\n");
@@ -1024,9 +1024,7 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst)
         goto cleanup;
     }
 
-    if (ERROR_SUCCESS != GetPackagesByPackageFamily(familyName,
-                                                    &numPackages, packages,
-                                                    &bufferLength, buffer)) {
+    if (ERROR_SUCCESS != GetPackagesByPackageFamily(familyName, &numPackages, packages, &bufferLength, buffer)) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "windows_get_app_package_manifest_path: Failed to mapping layers package full names\n");
         goto cleanup;
@@ -1035,8 +1033,7 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst)
     UINT32 pathLength = 0;
     WCHAR path[MAX_PATH];
     memset(path, 0, sizeof(path));
-    if (ERROR_INSUFFICIENT_BUFFER != GetPackagePathByFullName(packages[0], &pathLength, NULL) ||
-        pathLength > MAX_PATH ||
+    if (ERROR_INSUFFICIENT_BUFFER != GetPackagePathByFullName(packages[0], &pathLength, NULL) || pathLength > MAX_PATH ||
         ERROR_SUCCESS != GetPackagePathByFullName(packages[0], &pathLength, path)) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "windows_get_app_package_manifest_path: Failed to get mapping layers package path\n");
@@ -1052,8 +1049,7 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst)
 
     ret = loader_instance_heap_alloc(inst, narrowPathLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!ret) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "windows_get_app_package_manifest_path: Failed to allocate path\n");
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_app_package_manifest_path: Failed to allocate path\n");
         goto cleanup;
     }
 
@@ -1065,5 +1061,5 @@ cleanup:
     loader_instance_heap_free(inst, packages);
     return ret;
 }
-
+#endif
 #endif  // _WIN32
