@@ -2911,9 +2911,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
 #endif
 
 #if defined(_WIN32)
-#if WINVER >= _WIN32_WINNT_WINBLUE
     char *package_path = NULL;
-#endif
 #else
     // Determine how much space is needed to generate the full search path
     // for the current manifest files.
@@ -3001,7 +2999,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             }
             additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
             relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
-#if defined(_WIN32) && WINVER >= _WIN32_WINNT_WINBLUE
+#if defined(_WIN32)
             package_path = windows_get_app_package_manifest_path(inst);
 #endif
             break;
@@ -3035,7 +3033,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
         // Add the size of any additional search paths defined in the additive environment variable
         if (NULL != additional_env) {
             search_path_size += determine_data_file_path_size(additional_env, 0) + 2;
-#if defined(_WIN32) && WINVER >= _WIN32_WINNT_WINBLUE
+#if defined(_WIN32)
         }
         if (NULL != package_path) {
             search_path_size += determine_data_file_path_size(package_path, 0) + 2;
@@ -3092,7 +3090,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
         }
 
-#if defined(_WIN32) && WINVER >= _WIN32_WINNT_WINBLUE
+#if defined(_WIN32)
         if (NULL != package_path) {
             copy_data_file_info(package_path, NULL, 0, &cur_path_ptr);
         }
@@ -3231,7 +3229,7 @@ out:
     if (NULL != override_env) {
         loader_free_getenv(override_env, inst);
     }
-#if defined(_WIN32) && WINVER >= _WIN32_WINNT_WINBLUE
+#if defined(_WIN32)
     if (NULL != package_path) {
         loader_instance_heap_free(inst, package_path);
     }
