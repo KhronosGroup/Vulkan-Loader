@@ -3950,30 +3950,6 @@ out:
     }
 }
 
-static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_internal(VkInstance inst, const char *pName) {
-    // inst is not wrapped
-    if (inst == VK_NULL_HANDLE) {
-        return NULL;
-    }
-    VkLayerInstanceDispatchTable *disp_table = *(VkLayerInstanceDispatchTable **)inst;
-    void *addr;
-
-    if (disp_table == NULL) return NULL;
-
-    bool found_name;
-    addr = loader_lookup_instance_dispatch_table(disp_table, pName, &found_name);
-    if (found_name) {
-        return addr;
-    }
-
-    addr = loader_phys_dev_ext_gpa_term(loader_get_instance(inst), pName);
-    if (NULL != addr) return addr;
-
-    // Don't call down the chain, this would be an infinite loop
-    loader_log(NULL, VULKAN_LOADER_DEBUG_BIT, 0, "loader_gpdpa_instance_internal() unrecognized name %s", pName);
-    return NULL;
-}
-
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator(VkInstance inst, const char *pName) {
     // inst is not wrapped
     if (inst == VK_NULL_HANDLE) {
@@ -4000,9 +3976,9 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator
     return NULL;
 }
 
-static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_internal(VkInstance inst, const char *pName) {
+static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstance inst, const char *pName) {
     if (!strcmp(pName, "vkGetInstanceProcAddr")) {
-        return (PFN_vkVoidFunction)loader_gpa_instance_internal;
+        return (PFN_vkVoidFunction)loader_gpa_instance_terminator;
     }
     if (!strcmp(pName, "vk_layerGetPhysicalDeviceProcAddr")) {
         return (PFN_vkVoidFunction)loader_gpdpa_instance_terminator;
@@ -4056,18 +4032,18 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_internal(VkI
     }
 
     // Don't call down the chain, this would be an infinite loop
-    loader_log(NULL, VULKAN_LOADER_DEBUG_BIT, 0, "loader_gpa_instance_internal() unrecognized name %s", pName);
+    loader_log(NULL, VULKAN_LOADER_DEBUG_BIT, 0, "loader_gpa_instance_terminator() unrecognized name %s", pName);
     return NULL;
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_device_internal(VkDevice device, const char *pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_device_terminator(VkDevice device, const char *pName) {
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, NULL);
 
     // Return this function if a layer above here is asking for the vkGetDeviceProcAddr.
     // This is so we can properly intercept any device commands needing a terminator.
     if (!strcmp(pName, "vkGetDeviceProcAddr")) {
-        return (PFN_vkVoidFunction)loader_gpa_device_internal;
+        return (PFN_vkVoidFunction)loader_gpa_device_terminator;
     }
 
     // NOTE: Device Funcs needing Trampoline/Terminator.
@@ -4461,11 +4437,11 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     VkInstanceCreateInfo loader_create_info;
     VkResult res;
 
-    PFN_vkGetInstanceProcAddr next_gipa = loader_gpa_instance_internal;
-    PFN_vkGetInstanceProcAddr cur_gipa = loader_gpa_instance_internal;
-    PFN_vkGetDeviceProcAddr cur_gdpa = loader_gpa_device_internal;
-    PFN_GetPhysicalDeviceProcAddr next_gpdpa = loader_gpdpa_instance_internal;
-    PFN_GetPhysicalDeviceProcAddr cur_gpdpa = loader_gpdpa_instance_internal;
+    PFN_vkGetInstanceProcAddr next_gipa = loader_gpa_instance_terminator;
+    PFN_vkGetInstanceProcAddr cur_gipa = loader_gpa_instance_terminator;
+    PFN_vkGetDeviceProcAddr cur_gdpa = loader_gpa_device_terminator;
+    PFN_GetPhysicalDeviceProcAddr next_gpdpa = loader_gpdpa_instance_terminator;
+    PFN_GetPhysicalDeviceProcAddr cur_gpdpa = loader_gpdpa_instance_terminator;
 
     memcpy(&loader_create_info, pCreateInfo, sizeof(VkInstanceCreateInfo));
 
@@ -4745,8 +4721,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
     VkDeviceGroupDeviceCreateInfoKHR *original_device_group_create_info_struct = NULL;
     VkResult res;
 
-    PFN_vkGetDeviceProcAddr fpGDPA = NULL, nextGDPA = loader_gpa_device_internal;
-    PFN_vkGetInstanceProcAddr fpGIPA = NULL, nextGIPA = loader_gpa_instance_internal;
+    PFN_vkGetDeviceProcAddr fpGDPA = NULL, nextGDPA = loader_gpa_device_terminator;
+    PFN_vkGetInstanceProcAddr fpGIPA = NULL, nextGIPA = loader_gpa_instance_terminator;
 
     memcpy(&loader_create_info, pCreateInfo, sizeof(VkDeviceCreateInfo));
 
