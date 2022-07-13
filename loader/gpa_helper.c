@@ -263,7 +263,7 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (NULL != addr) return addr;
 
     // Unknown device extensions
-    addr = loader_dev_ext_gpa(inst, funcName);
+    addr = loader_dev_ext_gpa_tramp(inst, funcName);
     return addr;
 }
 
