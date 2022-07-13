@@ -3966,9 +3966,8 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator
         return addr;
     }
 
-    // Get the terminator, but don't perform checking since it should already
-    // have been setup if we get here.
-    addr = loader_phys_dev_ext_gpa_term_no_check(loader_get_instance(inst), pName);
+    // Check if any drivers support the function, and if so, add it to the unknown function list
+    addr = loader_phys_dev_ext_gpa_term(loader_get_instance(inst), pName);
     if (NULL != addr) return addr;
 
     // Don't call down the chain, this would be an infinite loop
@@ -4028,6 +4027,18 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(V
     bool found_name;
     addr = loader_lookup_instance_dispatch_table(disp_table, pName, &found_name);
     if (found_name) {
+        return addr;
+    }
+
+    // Check if it is an unknown physical device function, to see if any drivers support it.
+    addr = loader_phys_dev_ext_gpa_term(loader_get_instance(inst), pName);
+    if (addr) {
+        return addr;
+    }
+
+    // Assume it is an unknown device function, check to see if any drivers support it.
+    addr = loader_dev_ext_gpa_term(loader_get_instance(inst), pName);
+    if (addr) {
         return addr;
     }
 
