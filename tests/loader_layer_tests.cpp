@@ -1865,6 +1865,157 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
     }
 }
 
+// Makes sure explicit layers can't override pre-instance functions even if enabled by the override layer
+TEST(ExplicitLayers, OverridePreInstanceFunctions) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    const char* explicit_layer_name = "VK_LAYER_enabled_by_override";
+    const char* disable_env_var = "DISABLE_ME";
+
+    env.add_explicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(explicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceVersion")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
+        "explicit_test_layer.json");
+
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_layer_props(34);
+    layer.set_reported_extension_props(22);
+    layer.set_reported_instance_version(VK_MAKE_API_VERSION(1, 0, 0, 1));
+
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .add_component_layers({explicit_layer_name})
+                                                                         .set_disable_environment(disable_env_var)),
+        "override_meta_layer.json");
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 2U);
+    count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+    ASSERT_EQ(count, 4U);
+
+    uint32_t version = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceVersion(&version));
+    ASSERT_EQ(version, VK_HEADER_VERSION_COMPLETE);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
+    ASSERT_TRUE(string_eq(layers.at(1).layerName, lunarg_meta_layer_name));
+}
+
+TEST(ExplicitLayers, LayerSettingsPreInstanceFunctions) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    const char* explicit_layer_name = "VK_LAYER_enabled_by_override";
+
+    env.add_explicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(explicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceVersion")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
+        "explicit_test_layer.json");
+
+    env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+        LoaderSettingsLayerConfiguration{}
+            .set_name(explicit_layer_name)
+            .set_control("on")
+            .set_path(env.get_shimmed_layer_manifest_path(0).str())
+            .set_treat_as_implicit_manifest(false)));
+    env.update_loader_settings(env.loader_settings);
+
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_layer_props(34);
+    layer.set_reported_extension_props(22);
+    layer.set_reported_instance_version(VK_MAKE_API_VERSION(1, 0, 0, 1));
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1U);
+    count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+    ASSERT_EQ(count, 4U);
+
+    uint32_t version = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceVersion(&version));
+    ASSERT_EQ(version, VK_HEADER_VERSION_COMPLETE);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
+}
+
+TEST(ExplicitLayers, ContainsPreInstanceFunctions) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    const char* explicit_layer_name = "VK_LAYER_enabled_by_override";
+
+    env.add_explicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(explicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceVersion")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
+        "explicit_test_layer.json");
+
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_layer_props(34);
+    layer.set_reported_extension_props(22);
+    layer.set_reported_instance_version(VK_MAKE_API_VERSION(1, 0, 0, 1));
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1U);
+    count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+    ASSERT_EQ(count, 4U);
+
+    uint32_t version = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceVersion(&version));
+    ASSERT_EQ(version, VK_HEADER_VERSION_COMPLETE);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_name);
+    inst.CheckCreate();
+
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
+}
+
 // This test makes sure that any layer calling GetPhysicalDeviceProperties2 inside of CreateInstance
 // succeeds and doesn't crash.
 TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {
