@@ -82,11 +82,15 @@ bool loader_check_icds_for_dev_ext_address(struct loader_instance *inst, const c
     return false;
 }
 
-bool loader_check_layer_list_for_dev_ext_address(const struct loader_layer_list *const layers, const char *funcName) {
+// Look in the layers list of device extensions, which contain names of entry points. If funcName is present, return true
+// If not, call down the first layer's vkGetInstanceProcAddr to determine if any layers support the function
+bool loader_check_layer_list_for_dev_ext_address(struct loader_instance *inst, const char *funcName) {
+    struct loader_layer_properties *layer_prop_list = inst->expanded_activated_layer_list.list;
+
     // Iterate over the layers.
-    for (uint32_t layer = 0; layer < layers->count; ++layer) {
+    for (uint32_t layer = 0; layer < inst->expanded_activated_layer_list.count; ++layer) {
         // Iterate over the extensions.
-        const struct loader_device_extension_list *const extensions = &(layers->list[layer].device_extension_list);
+        const struct loader_device_extension_list *const extensions = &(layer_prop_list[layer].device_extension_list);
         for (uint32_t extension = 0; extension < extensions->count; ++extension) {
             // Iterate over the entry points.
             const struct loader_dev_ext_props *const property = &(extensions->list[extension]);
@@ -95,6 +99,14 @@ bool loader_check_layer_list_for_dev_ext_address(const struct loader_layer_list 
                     return true;
                 }
             }
+        }
+    }
+    // If the function pointer doesn't appear in the layer manifest for intercepted device functions, look down the
+    // vkGetInstanceProcAddr chain
+    if (inst->expanded_activated_layer_list.count > 0) {
+        const struct loader_layer_functions *const functions = &(layer_prop_list[0].functions);
+        if (NULL != functions->get_instance_proc_addr) {
+            return NULL != functions->get_instance_proc_addr((VkInstance)inst->instance, funcName);
         }
     }
 
@@ -118,13 +130,14 @@ void loader_free_dev_ext_table(struct loader_instance *inst) {
  * For a given entry point string (funcName), if an existing mapping is found the
  * trampoline address for that mapping is returned.
  * Otherwise, this unknown entry point has not been seen yet.
- * Next check if a layer or ICD supports it.
+ * Next check if an ICD supports it, and if is_tramp is true, check if any layer
+ * supports it by calling down the chain.
  * If so then a new entry in the function name array is added and that trampoline
  * address for the new entry is returned.
  * NULL is returned if the function name array is full or if no discovered layer or
  * ICD returns a non-NULL GetProcAddr for it.
  */
-void *loader_dev_ext_gpa(struct loader_instance *inst, const char *funcName) {
+void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName, bool is_tramp) {
     // Linearly look through already added functions to make sure we haven't seen it before
     // if we have, return the function at the index found
     for (uint32_t i = 0; i < inst->dev_ext_disp_function_count; i++) {
@@ -133,12 +146,12 @@ void *loader_dev_ext_gpa(struct loader_instance *inst, const char *funcName) {
     }
 
     // Check if funcName is supported in either ICDs or a layer library
-    if (!loader_check_icds_for_dev_ext_address(inst, funcName) &&
-        !loader_check_layer_list_for_dev_ext_address(&inst->app_activated_layer_list, funcName)) {
-        // if support found in layers continue on
-        return NULL;
+    if (!loader_check_icds_for_dev_ext_address(inst, funcName)) {
+        if (!is_tramp || !loader_check_layer_list_for_dev_ext_address(inst, funcName)) {
+            // if support found in layers continue on
+            return NULL;
+        }
     }
-
     if (inst->dev_ext_disp_function_count >= MAX_NUM_UNKNOWN_EXTS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_dev_ext_gpa: Exhausted the unknown device function array!");
         return NULL;
@@ -158,6 +171,14 @@ void *loader_dev_ext_gpa(struct loader_instance *inst, const char *funcName) {
     void *out_function = loader_get_dev_ext_trampoline(inst->dev_ext_disp_function_count);
     inst->dev_ext_disp_function_count++;
     return out_function;
+}
+
+void *loader_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
+    return loader_dev_ext_gpa_impl(inst, funcName, true);
+}
+
+void *loader_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
+    return loader_dev_ext_gpa_impl(inst, funcName, false);
 }
 
 // Physical Device function handling
@@ -223,39 +244,45 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
         }
     }
 
+    bool has_found = false;
+    uint32_t new_function_index = 0;
     // Linearly look through already added functions to make sure we haven't seen it before
     // if we have, return the function at the index found
     for (uint32_t i = 0; i < inst->phys_dev_ext_disp_function_count; i++) {
         if (inst->phys_dev_ext_disp_functions[i] && !strcmp(inst->phys_dev_ext_disp_functions[i], funcName)) {
-            if (is_tramp) {
-                return loader_get_phys_dev_ext_tramp(i);
-            } else {
-                return loader_get_phys_dev_ext_termin(i);
-            }
+            has_found = true;
+            new_function_index = i;
+            break;
         }
     }
 
-    if (inst->phys_dev_ext_disp_function_count >= MAX_NUM_UNKNOWN_EXTS) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_dev_ext_gpa: Exhausted the unknown physical device function array!");
-        return NULL;
-    }
-    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-               "loader_phys_dev_ext_gpa: Adding unknown physical function %s to internal store at index %u", funcName,
-               inst->phys_dev_ext_disp_function_count);
+    // A never before seen function name, store it in the array
+    if (!has_found) {
+        if (inst->phys_dev_ext_disp_function_count >= MAX_NUM_UNKNOWN_EXTS) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "loader_dev_ext_gpa: Exhausted the unknown physical device function array!");
+            return NULL;
+        }
 
-    // add found function to phys_dev_ext_disp_functions;
-    size_t funcName_len = strlen(funcName) + 1;
-    inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count] =
-        (char *)loader_instance_heap_alloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (NULL == inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count]) {
-        // failed to allocate memory, return NULL
-        return NULL;
-    }
-    strncpy(inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count], funcName, funcName_len);
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                   "loader_phys_dev_ext_gpa: Adding unknown physical function %s to internal store at index %u", funcName,
+                   inst->phys_dev_ext_disp_function_count);
 
-    uint32_t new_function_index = inst->phys_dev_ext_disp_function_count;
-    // increment the count so that the subsequent logic includes the newly added entry point when searching for functions
-    inst->phys_dev_ext_disp_function_count++;
+        // add found function to phys_dev_ext_disp_functions;
+        size_t funcName_len = strlen(funcName) + 1;
+        inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count] =
+            (char *)loader_instance_heap_alloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count]) {
+            // failed to allocate memory, return NULL
+            return NULL;
+        }
+        strncpy(inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count], funcName, funcName_len);
+
+        new_function_index = inst->phys_dev_ext_disp_function_count;
+        // increment the count so that the subsequent logic includes the newly added entry point when searching for functions
+        inst->phys_dev_ext_disp_function_count++;
+        has_found = true;
+    }
 
     // Setup the ICD function pointers
     struct loader_icd_term *icd_term = inst->icd_terms;
@@ -265,8 +292,8 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
             icd_term->phys_dev_ext[new_function_index] =
                 (PFN_PhysDevExt)icd_term->scanned_icd->GetPhysicalDeviceProcAddr(icd_term->instance, funcName);
             if (NULL != icd_term->phys_dev_ext[new_function_index]) {
-                // Make sure we set the instance dispatch to point to the loader's terminator now since we can at least handle it in
-                // one ICD.
+                // Make sure we set the instance dispatch to point to the loader's terminator now since we can at least handle
+                // it in one ICD.
                 inst->disp->phys_dev_ext[new_function_index] = loader_get_phys_dev_ext_termin(new_function_index);
 
                 loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "loader_phys_dev_ext_gpa: Driver %s returned ptr %p for %s",
@@ -279,18 +306,20 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
         icd_term = icd_term->next;
     }
 
-    // Now, search for the first layer attached and query using it to get the first entry point.
-    // Only set the instance dispatch table to it if it isn't NULL.
-    for (uint32_t i = 0; i < inst->expanded_activated_layer_list.count; i++) {
-        struct loader_layer_properties *layer_prop = &inst->expanded_activated_layer_list.list[i];
-        if (layer_prop->interface_version > 1 && NULL != layer_prop->functions.get_physical_device_proc_addr) {
-            void *layer_ret_function =
-                (PFN_PhysDevExt)layer_prop->functions.get_physical_device_proc_addr(inst->instance, funcName);
-            if (NULL != layer_ret_function) {
-                inst->disp->phys_dev_ext[new_function_index] = layer_ret_function;
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "loader_phys_dev_ext_gpa: Layer %s returned ptr %p for %s",
-                           layer_prop->info.layerName, inst->disp->phys_dev_ext[new_function_index], funcName);
-                break;
+    // Now if this is being run in the trampoline, search for the first layer attached and query using it to get the first entry
+    // point. Only set the instance dispatch table to it if it isn't NULL.
+    if (is_tramp) {
+        for (uint32_t i = 0; i < inst->expanded_activated_layer_list.count; i++) {
+            struct loader_layer_properties *layer_prop = &inst->expanded_activated_layer_list.list[i];
+            if (layer_prop->interface_version > 1 && NULL != layer_prop->functions.get_physical_device_proc_addr) {
+                void *layer_ret_function =
+                    (PFN_PhysDevExt)layer_prop->functions.get_physical_device_proc_addr(inst->instance, funcName);
+                if (NULL != layer_ret_function) {
+                    inst->disp->phys_dev_ext[new_function_index] = layer_ret_function;
+                    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "loader_phys_dev_ext_gpa: Layer %s returned ptr %p for %s",
+                               layer_prop->info.layerName, inst->disp->phys_dev_ext[new_function_index], funcName);
+                    break;
+                }
             }
         }
     }
@@ -307,23 +336,4 @@ void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *fu
 }
 void *loader_phys_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
     return loader_phys_dev_ext_gpa_impl(inst, funcName, false);
-}
-// Returns the terminator if the function is supported in an ICD and if there is an entry for it in
-// the function name array. Otherwise return NULL.
-void *loader_phys_dev_ext_gpa_term_no_check(struct loader_instance *inst, const char *funcName) {
-    assert(NULL != inst);
-
-    // We should always check to see if any ICD supports it.
-    if (!loader_check_icds_for_phys_dev_ext_address(inst, funcName)) {
-        return NULL;
-    }
-
-    // Linearly look through already added functions to make sure we haven't seen it before
-    // if we have, return the function at the index found
-    for (uint32_t i = 0; i < inst->phys_dev_ext_disp_function_count; i++) {
-        if (inst->phys_dev_ext_disp_functions[i] && !strcmp(inst->phys_dev_ext_disp_functions[i], funcName))
-            return loader_get_phys_dev_ext_termin(i);
-    }
-
-    return NULL;
 }

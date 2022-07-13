@@ -27,11 +27,11 @@
 #include "loader_common.h"
 
 void loader_init_dispatch_dev_ext(struct loader_instance *inst, struct loader_device *dev);
-void *loader_dev_ext_gpa(struct loader_instance *inst, const char *funcName);
+void *loader_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName);
+void *loader_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName);
 
 void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName);
 void *loader_phys_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName);
-void *loader_phys_dev_ext_gpa_term_no_check(struct loader_instance *inst, const char *funcName);
 
 void loader_free_dev_ext_table(struct loader_instance *inst);
 void loader_free_phys_dev_ext_table(struct loader_instance *inst);
