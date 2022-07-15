@@ -543,7 +543,7 @@ discovery.
     <td><small>
         export<br/>
         &nbsp;&nbsp;VK_ADD_LAYER_PATH=<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;<br/><br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;:&lt;path_b&gt;<br/><br/>
         set<br/>
         &nbsp;&nbsp;VK_ADD_LAYER_PATH=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;</small>
@@ -597,7 +597,7 @@ discovery.
     <td><small>
         export<br/>
         &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;<br/><br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;:&lt;layer_b&gt;<br/><br/>
         set<br/>
         &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;
@@ -618,7 +618,7 @@ discovery.
     <td><small>
         export<br/>
         &nbsp;&nbsp;VK_LAYER_PATH=<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;<br/><br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;:&lt;path_b&gt;<br/><br/>
         set<br/>
         &nbsp;&nbsp;VK_LAYER_PATH=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;
