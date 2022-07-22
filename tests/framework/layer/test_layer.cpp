@@ -146,6 +146,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     VkLayerInstanceCreateInfo* chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
 
     PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
+    PFN_vk_icdGetPhysicalDeviceProcAddr fpGetPhysicalDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetPhysicalDeviceProcAddr;
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
     if (fpCreateInstance == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -161,14 +162,27 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         return result;
     }
     layer.instance_handle = *pInstance;
-    layer.next_GetPhysicalDeviceProcAddr =
-        reinterpret_cast<PFN_GetPhysicalDeviceProcAddr>(fpGetInstanceProcAddr(*pInstance, "vk_layerGetPhysicalDeviceProcAddr"));
-
+    if (layer.use_gipa_GetPhysicalDeviceProcAddr) {
+        layer.next_GetPhysicalDeviceProcAddr =
+            reinterpret_cast<PFN_GetPhysicalDeviceProcAddr>(fpGetInstanceProcAddr(*pInstance, "vk_layerGetPhysicalDeviceProcAddr"));
+    } else {
+        layer.next_GetPhysicalDeviceProcAddr = fpGetPhysicalDeviceProcAddr;
+    }
     // Init layer's dispatch table using GetInstanceProcAddr of
     // next layer in the chain.
     layer_init_instance_dispatch_table(layer.instance_handle, &layer.instance_dispatch_table, fpGetInstanceProcAddr);
 
     if (layer.create_instance_callback) result = layer.create_instance_callback(layer);
+
+    for (auto& func : layer.custom_physical_device_interception_functions) {
+        auto next_func = layer.next_GetPhysicalDeviceProcAddr(*pInstance, func.name.c_str());
+        layer.custom_dispatch_functions.at(func.name.c_str()) = next_func;
+    }
+
+    for (auto& func : layer.custom_device_interception_functions) {
+        auto next_func = layer.next_vkGetInstanceProcAddr(*pInstance, func.name.c_str());
+        layer.custom_dispatch_functions.at(func.name.c_str()) = next_func;
+    }
 
     if (layer.do_spurious_allocations_in_create_instance && pAllocator && pAllocator->pfnAllocation) {
         layer.spurious_instance_memory_allocation =
@@ -220,6 +234,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
     // initialize layer's dispatch table
     layer_init_device_dispatch_table(device.device_handle, &device.dispatch_table, fpGetDeviceProcAddr);
+
+    for (auto& func : layer.custom_device_interception_functions) {
+        auto next_func = layer.next_vkGetDeviceProcAddr(*pDevice, func.name.c_str());
+        layer.custom_dispatch_functions.at(func.name.c_str()) = next_func;
+    }
 
     if (layer.create_device_callback) {
         result = layer.create_device_callback(layer);
@@ -453,9 +472,29 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDev
 #endif
 
 // trampolines
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName);
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl(VkDevice device, const char* pName) {
+    if (string_eq(pName, "vkGetDeviceProcAddr")) return to_vkVoidFunction(get_device_func);
+    if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
+
+    for (auto& func : layer.custom_device_interception_functions) {
+        if (func.name == pName) {
+            return to_vkVoidFunction(func.function);
+        }
+    }
+
+    for (auto& func : layer.custom_device_implementation_functions) {
+        if (func.name == pName) {
+            return to_vkVoidFunction(func.function);
+        }
+    }
+
+    return nullptr;
+}
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName) {
-    if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
+    PFN_vkVoidFunction ret_dev = get_device_func_impl(device, pName);
+    if (ret_dev != nullptr) return ret_dev;
 
     return layer.next_vkGetDeviceProcAddr(device, pName);
 }
@@ -468,7 +507,13 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
     if (string_eq(pName, "vkEnumeratePhysicalDeviceGroups")) return (PFN_vkVoidFunction)test_vkEnumeratePhysicalDeviceGroups;
     if (string_eq(pName, "vkGetPhysicalDeviceProperties")) return (PFN_vkVoidFunction)test_vkGetPhysicalDeviceProperties;
 
-    for (auto& func : layer.custom_physical_device_functions) {
+    for (auto& func : layer.custom_physical_device_interception_functions) {
+        if (func.name == pName) {
+            return to_vkVoidFunction(func.function);
+        }
+    }
+
+    for (auto& func : layer.custom_physical_device_implementation_functions) {
         if (func.name == pName) {
             return to_vkVoidFunction(func.function);
         }
@@ -479,8 +524,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
 #endif
     return nullptr;
 }
-
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName);
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func_impl(VkInstance instance, const char* pName) {
     if (pName == nullptr) return nullptr;
     if (string_eq(pName, "vkGetInstanceProcAddr")) return to_vkVoidFunction(get_instance_func);
     if (string_eq(pName, "vkEnumerateInstanceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateInstanceLayerProperties);
@@ -494,6 +539,16 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, 
 
     PFN_vkVoidFunction ret_phys_dev = get_physical_device_func(instance, pName);
     if (ret_phys_dev != nullptr) return ret_phys_dev;
+
+    PFN_vkVoidFunction ret_dev = get_device_func_impl(nullptr, pName);
+    if (ret_dev != nullptr) return ret_dev;
+
+    return nullptr;
+}
+
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName) {
+    PFN_vkVoidFunction ret_dev = get_instance_func_impl(instance, pName);
+    if (ret_dev != nullptr) return ret_dev;
 
     return layer.next_vkGetInstanceProcAddr(instance, pName);
 }

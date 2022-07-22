@@ -131,7 +131,31 @@ struct TestLayer {
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, removed_physical_device_groups, removed_physical_device_group)
     BUILDER_VECTOR(TestLayer, VkPhysicalDeviceGroupProperties, added_physical_device_groups, added_physical_device_group)
 
-    BUILDER_VECTOR(TestLayer, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
+    BUILDER_VECTOR(TestLayer, VulkanFunction, custom_physical_device_implementation_functions,
+                   custom_physical_device_implementation_function)
+    BUILDER_VECTOR(TestLayer, VulkanFunction, custom_device_implementation_functions, custom_device_implementation_function)
+
+    // Only need a single map for all 'custom' function - assumes that all function names are distinct, IE there cannot be a
+    // physical device and device level function with the same name
+    std::unordered_map<std::string, PFN_vkVoidFunction> custom_dispatch_functions;
+    std::vector<VulkanFunction> custom_physical_device_interception_functions;
+    TestLayer& add_custom_physical_device_intercept_function(std::string func_name, PFN_vkVoidFunction function) {
+        custom_physical_device_interception_functions.push_back({func_name, function});
+        custom_dispatch_functions[func_name] = nullptr;
+        return *this;
+    }
+    std::vector<VulkanFunction> custom_device_interception_functions;
+    TestLayer& add_custom_device_interception_function(std::string func_name, PFN_vkVoidFunction function) {
+        custom_device_interception_functions.push_back({func_name, function});
+        custom_dispatch_functions[func_name] = nullptr;
+        return *this;
+    }
+    PFN_vkVoidFunction get_custom_intercept_function(const char* name) {
+        if (custom_dispatch_functions.count(name) > 0) {
+            return custom_dispatch_functions.at(name);
+        }
+        return nullptr;
+    }
 
     BUILDER_VALUE(TestLayer, bool, do_spurious_allocations_in_create_instance, false)
     void* spurious_instance_memory_allocation = nullptr;
@@ -141,6 +165,9 @@ struct TestLayer {
         VkDevice device;
     };
     std::vector<DeviceMemAlloc> spurious_device_memory_allocations;
+
+    // By default query GPDPA from GIPA, don't use value given from pNext
+    BUILDER_VALUE(TestLayer, bool, use_gipa_GetPhysicalDeviceProcAddr, true)
 
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;

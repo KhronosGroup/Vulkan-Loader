@@ -80,11 +80,10 @@ struct TestICD {
     std::vector<uint64_t> messenger_handles;
     std::vector<uint64_t> swapchain_handles;
 
-    // Unknown instance and physical device functions. Add a `VulkanFunction` to this list which will be searched in
+    // Unknown instance functions Add a `VulkanFunction` to this list which will be searched in
     // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for custom_physical_device_functions.
     // To add unknown device functions, add it to the PhysicalDevice directly (in the known_device_functions member)
     BUILDER_VECTOR(TestICD, VulkanFunction, custom_instance_functions, custom_instance_function)
-    BUILDER_VECTOR(TestICD, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
 
     // Must explicitely state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
     // function pointer for vkGetPhysicalDeviceToolPropertiesEXT or vkGetPhysicalDeviceToolProperties (core version)

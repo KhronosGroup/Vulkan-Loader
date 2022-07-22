@@ -169,6 +169,7 @@ struct DeviceWrapper {
 
     // Convenience
     operator VkDevice() { return dev; }
+    operator VkDevice() const { return dev; }
     VulkanFunctions* operator->() { return functions; }
 
     FromVoidStarFunc load(const char* func_name) { return FromVoidStarFunc(functions->vkGetDeviceProcAddr(dev, func_name)); }
@@ -303,12 +304,12 @@ struct TestLayerHandle {
 };
 
 enum class ManifestDiscoveryType {
-    generic,             // put the manifest in the regular locations
-    none,                // don't add to regular locations - eg D3DKMT
-    env_var,             // use the corresponding env-var for it
-    add_env_var,         // use the corresponding add-env-var for it
-    override_folder,     // add to a special folder for the override layer to use
-    windows_app_package, // let the app package search find it
+    generic,              // put the manifest in the regular locations
+    none,                 // don't add to regular locations - eg D3DKMT
+    env_var,              // use the corresponding env-var for it
+    add_env_var,          // use the corresponding add-env-var for it
+    override_folder,      // add to a special folder for the override layer to use
+    windows_app_package,  // let the app package search find it
 };
 
 struct TestICDDetails {
