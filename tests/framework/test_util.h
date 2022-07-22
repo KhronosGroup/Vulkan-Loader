@@ -247,9 +247,9 @@ inline void copy_string_to_char_array(std::string const& src, char* dst, size_t 
 
 #if defined(WIN32)
 // Convert an UTF-16 wstring to an UTF-8 string
-std::string narrow(const std::wstring &utf16);
+std::string narrow(const std::wstring& utf16);
 // Convert an UTF-8 string to an UTF-16 wstring
-std::wstring widen(const std::string &utf8);
+std::wstring widen(const std::string& utf8);
 #endif
 
 #if defined(WIN32)
@@ -752,11 +752,11 @@ struct VulkanFunctions {
 
     VulkanFunctions();
 
-    FromVoidStarFunc load(VkInstance inst, const char* func_name) {
+    FromVoidStarFunc load(VkInstance inst, const char* func_name) const {
         return FromVoidStarFunc(vkGetInstanceProcAddr(inst, func_name));
     }
 
-    FromVoidStarFunc load(VkDevice device, const char* func_name) {
+    FromVoidStarFunc load(VkDevice device, const char* func_name) const {
         return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
     }
 };
@@ -844,8 +844,9 @@ inline bool operator!=(const VkExtensionProperties& a, const VkExtensionProperti
 
 struct VulkanFunction {
     std::string name;
-    void* function;
+    PFN_vkVoidFunction function;
 };
+
 template <typename T, size_t U>
 bool check_permutation(std::initializer_list<const char*> expected, std::array<T, U> const& returned) {
     if (expected.size() != returned.size()) return false;

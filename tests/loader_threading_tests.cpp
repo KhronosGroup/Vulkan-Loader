@@ -77,14 +77,14 @@ TEST(ThreadingTests, ConcurentGetDeviceProcAddr) {
 
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindPipeline", reinterpret_cast<void*>(test_vkCmdBindPipeline)});
+        {"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)});
     driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindDescriptorSets", reinterpret_cast<void*>(test_vkCmdBindDescriptorSets)});
+        {"vkCmdBindDescriptorSets", to_vkVoidFunction(test_vkCmdBindDescriptorSets)});
     driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindVertexBuffers", reinterpret_cast<void*>(test_vkCmdBindVertexBuffers)});
+        {"vkCmdBindVertexBuffers", to_vkVoidFunction(test_vkCmdBindVertexBuffers)});
     driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindIndexBuffer", reinterpret_cast<void*>(test_vkCmdBindIndexBuffer)});
-    driver.physical_devices.back().known_device_functions.push_back({"vkCmdDraw", reinterpret_cast<void*>(test_vkCmdDraw)});
+        {"vkCmdBindIndexBuffer", to_vkVoidFunction(test_vkCmdBindIndexBuffer)});
+    driver.physical_devices.back().known_device_functions.push_back({"vkCmdDraw", to_vkVoidFunction(test_vkCmdDraw)});
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();

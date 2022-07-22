@@ -1239,9 +1239,11 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
             return to_vkVoidFunction(test_vkGetPhysicalDeviceToolPropertiesEXT);
     }
 
-    for (auto& func : icd.custom_physical_device_functions) {
-        if (func.name == pName) {
-            return to_vkVoidFunction(func.function);
+    for (auto& phys_dev : icd.physical_devices) {
+        for (auto& func : phys_dev.custom_physical_device_functions) {
+            if (func.name == pName) {
+                return to_vkVoidFunction(func.function);
+            }
         }
     }
     return nullptr;

@@ -69,6 +69,11 @@ struct PhysicalDevice {
 
     std::vector<DispatchableHandle<VkQueue>> queue_handles;
 
+    // Unknown physical device functions. Add a `VulkanFunction` to this list which will be searched in
+    // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for custom_physical_device_functions.
+    // To add unknown device functions, add it to the PhysicalDevice directly (in the known_device_functions member)
+    BUILDER_VECTOR(PhysicalDevice, VulkanFunction, custom_physical_device_functions, custom_physical_device_function)
+
     // List of function names which are 'known' to the physical device but have test defined implementations
     // The purpose of this list is so that vkGetDeviceProcAddr returns 'a real function pointer' in tests
     // without actually implementing any of the logic inside of it.
