@@ -32,7 +32,7 @@
 #include <stdarg.h>
 
 #include "debug_utils.h"
-#include "get_environment.h"
+#include "loader_environment.h"
 
 uint32_t g_loader_debug = 0;
 

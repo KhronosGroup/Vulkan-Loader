@@ -7,7 +7,7 @@
 # Architecture of the Vulkan Loader Interfaces
 [![Creative Commons][3]][4]
 
-<!-- Copyright &copy; 2015-2021 LunarG, Inc. -->
+<!-- Copyright &copy; 2015-2022 LunarG, Inc. -->
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
@@ -38,6 +38,7 @@
 - [Application Interface to the Loader](#application-interface-to-the-loader)
 - [Layer Interface with the Loader](#layer-interface-with-the-loader)
 - [Driver Interface With the Loader](#driver-interface-with-the-loader)
+- [Debugging Issues](#debugging-issues)
 - [Loader Policies](#loader-policies)
 - [Table of Debug Environment Variables](#table-of-debug-environment-variables)
 - [Glossary of Terms](#glossary-of-terms)
@@ -458,6 +459,17 @@ directory as this file.
 <br/>
 
 
+## Debugging Issues
+
+
+If your application is crashing or behaving weirdly, the loader provides
+several mechanisms for you to debug the issues.
+These are detailed in the [LoaderDebugging.md](LoaderDebugging.md) document
+found in the same directory as this file.
+<br/>
+<br/>
+
+
 ## Loader Policies
 
 Loader policies with regards to the loader interaction with drivers and layers
@@ -582,29 +594,6 @@ discovery.
   </tr>
   <tr>
     <td><small>
-        <i>VK_INSTANCE_LAYERS</i>
-    </small></td>
-    <td><small>
-        Force the loader to add the given layers to the list of Enabled layers
-        normally passed into <b>vkCreateInstance</b>.
-        These layers are added first, and the loader will remove any duplicate
-        layers that appear in both this list as well as that passed into
-        <i>ppEnabledLayerNames</i>.
-    </small></td>
-    <td><small>
-        None
-    </small></td>
-    <td><small>
-        export<br/>
-        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;:&lt;layer_b&gt;<br/><br/>
-        set<br/>
-        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;
-    </small></td>
-  </tr>
-  <tr>
-    <td><small>
         <i>VK_LAYER_PATH</i></small></td>
     <td><small>
         Override the loader's standard Layer library search folders and use the
@@ -622,6 +611,34 @@ discovery.
         set<br/>
         &nbsp;&nbsp;VK_LAYER_PATH=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
+        <i>VK_LOADER_DEBUG</i>
+    </small></td>
+    <td><small>
+        Enable loader debug messages using a comma-delimited list of level
+        options.  These options are:<br/>
+        &nbsp;&nbsp;* error (only errors)<br/>
+        &nbsp;&nbsp;* warn (only warnings)<br/>
+        &nbsp;&nbsp;* info (only info)<br/>
+        &nbsp;&nbsp;* debug (only debug)<br/>
+        &nbsp;&nbsp;* layer (layer-specific output)<br/>
+        &nbsp;&nbsp;* driver (driver-specific output)<br/>
+        &nbsp;&nbsp;* all (report out all messages)<br/><br/>
+        To enable multiple options (outside of "all") like info, warning and
+        error messages, set the value to "error,warn,info".
+    </small></td>
+    <td><small>
+        None
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_DEBUG=all<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_DEBUG=warn
     </small></td>
   </tr>
   <tr>
@@ -679,30 +696,124 @@ discovery.
   </tr>
   <tr>
     <td><small>
-        <i>VK_LOADER_DEBUG</i>
+        <i>VK_LOADER_DRIVERS_SELECT</i>
     </small></td>
     <td><small>
-        Enable loader debug messages using a comma-delimited list of level
-        options.  These options are:<br/>
-        &nbsp;&nbsp;* error (only errors)<br/>
-        &nbsp;&nbsp;* warn (only warnings)<br/>
-        &nbsp;&nbsp;* info (only info)<br/>
-        &nbsp;&nbsp;* debug (only debug)<br/>
-        &nbsp;&nbsp;* layer (layer-specific output)<br/>
-        &nbsp;&nbsp;* driver (driver-specific output)<br/>
-        &nbsp;&nbsp;* all (report out all messages)<br/><br/>
-        To enable multiple options (outside of "all") like info, warning and
-        error messages, set the value to "error,warn,info".
+        A comma-delimited list of globs to search for in known drivers and
+        used to select only the drivers whose manifest file names match one or
+        more of the provided globs.<br/>
+        Since drivers don’t have a name like layers, this glob is used to
+        compare against the manifest filename.
+        Known driver manifests being those files that are already found by the
+        loader taking into account default search paths and other environment
+        variables (like <i>VK_ICD_FILENAMES</i> or <i>VK_ADD_DRIVER_FILES</i>).
+    </small></td>
+    <td><small>
+        If no drivers are found with a manifest filename that matches any of the
+        provided globs, then no driver is enabled and it <b>may</b> result
+        in Vulkan applications failing to run properly.
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_DRIVERS_SELECT=nvidia<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_DRIVERS_SELECT=nvidia<br/><br/>
+        The above would select only the Nvidia driver if it was present on the
+        system and already visible to the loader.
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
+        <i>VK_LOADER_DRIVERS_DISABLE</i>
+    </small></td>
+    <td><small>
+        A comma-delimited list of globs to search for in known drivers and
+        used to disable only the drivers whose manifest file names match one or
+        more of the provided globs.<br/>
+        Since drivers don’t have a name like layers, this glob is used to
+        compare against the manifest filename.
+        Known driver manifests being those files that are already found by the
+        loader taking into account default search paths and other environment
+        variables (like <i>VK_ICD_FILENAMES</i> or <i>VK_ADD_DRIVER_FILES</i>).
+    </small></td>
+    <td><small>
+        If all available drivers are disabled using this environment variable,
+        then no drivers will be found by the loader and <b>will</b> result
+        in Vulkan applications failing to run properly.<br/>
+        This is also checked before other driver environment variables (such as
+        <i>VK_LOADER_DRIVERS_SELECT</i>) so that a user may easily disable all
+        drivers and then selectively re-enable individual drivers using the
+        enable environment variable.
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_DRIVERS_DISABLE=*amd*,*intel*<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_DRIVERS_DISABLE=*amd*,*intel*<br/><br/>
+        The above would disable both Intel and AMD drivers if both were present
+        on the system and already visible to the loader.
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
+        <i>VK_LOADER_LAYERS_ENABLE</i>
+    </small></td>
+    <td><small>
+        A comma-delimited list of globs to search for in known layers and
+        used to select only the layers whose layer name matches one or more of
+        the provided globs.<br/>
+        Known layers are those which are found by the loader taking into account
+        default search paths and other environment variables
+        (like <i>VK_LAYER_PATH</i>).
+        <br/>
+        This has replaced the older deprecated environment variable
+        <i>VK_INSTANCE_LAYERS</i>
     </small></td>
     <td><small>
         None
     </small></td>
     <td><small>
         export<br/>
-        &nbsp;&nbsp;VK_LOADER_DEBUG=all<br/>
+        &nbsp;&nbsp;VK_LOADER_LAYERS_ENABLE=*validation,*recon*<br/>
         <br/>
         set<br/>
-        &nbsp;&nbsp;VK_LOADER_DEBUG=warn
+        &nbsp;&nbsp;VK_LOADER_LAYERS_ENABLE=*validation,*recon*<br/><br/>
+        The above would enable the Khronos validation layer and the
+        GfxReconstruct layer, if both were present on the system and already
+        visible to the loader.
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
+        <i>VK_LOADER_LAYERS_DISABLE</i>
+    </small></td>
+    <td><small>
+        A comma-delimited list of globs to search for in known layers and
+        used to disable only the layers whose layer name matches one or more of
+        the provided globs.<br/>
+        Known layers are those which are found by the loader taking into account
+        default search paths and other environment variables
+        (like <i>VK_LAYER_PATH</i>).
+    </small></td>
+    <td><small>
+        Disabling a layer that an application intentionally enables as an
+        explicit layer <b>may</b> cause the application to not function
+        properly.<br/>
+        This is also checked before other layer environment variables (such as
+        <i>VK_LOADER_LAYERS_ENABLE</i>) so that a user may easily disable all
+        layers and then selectively re-enable individual layers using the
+        enable environment variable.
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_LAYERS_DISABLE=*MESA*,~implicit~<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_LAYERS_DISABLE=*MESA*,~implicit~<br/><br/>
+        The above would disable any Mesa layer and all other implicit layers
+        that would normally be enabled on the system.
     </small></td>
   </tr>
 </table>
@@ -748,6 +859,34 @@ may be removed in a future loader release.
         set<br/>
         &nbsp;&nbsp;VK_ICD_FILENAMES=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<folder_a>\nvidia.json;<folder_b>\mesa.json
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
+        <i>VK_INSTANCE_LAYERS</i>
+    </small></td>
+    <td><small>
+        Force the loader to add the given layers to the list of Enabled layers
+        normally passed into <b>vkCreateInstance</b>.
+        These layers are added first, and the loader will remove any duplicate
+        layers that appear in both this list as well as that passed into
+        <i>ppEnabledLayerNames</i>.
+    </small></td>
+    <td><small>
+        This has been deprecated by <i>VK_LOADER_LAYERS_ENABLE</i>.
+        It also overrides any layers disabled with
+        <i>VK_LOADER_LAYERS_DISABLE</i>.
+    </small></td>
+    <td><small>
+        None
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;<br/><br/>
+        set<br/>
+        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;
     </small></td>
   </tr>
 </table>
@@ -814,8 +953,8 @@ may be removed in a future loader release.
     <td>Discovery</td>
     <td>The process of the loader searching for driver and layer files to set up
         the internal list of Vulkan objects available.<br/>
-        On <i>Windows/Linux/macOS</i>, the discovery process typically focuses on
-        searching for Manifest files.<br/>
+        On <i>Windows/Linux/macOS</i>, the discovery process typically focuses
+        on searching for Manifest files.<br/>
         On <i>Android</i>, the process focuses on searching for library files.
     </td>
   </tr>

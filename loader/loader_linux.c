@@ -30,7 +30,7 @@
 #include "loader_linux.h"
 
 #include "allocation.h"
-#include "get_environment.h"
+#include "loader_environment.h"
 #include "loader.h"
 #include "log.h"
 
@@ -209,7 +209,7 @@ static void linux_env_var_default_device(struct loader_instance *inst, uint32_t 
     char *selection = loader_getenv("VK_LOADER_DEVICE_SELECT", inst);
     if (NULL != selection) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                   "linux_env_var_default_device:  Found VK_LOADER_DEVICE_SELECT set to %s", selection);
+                   "linux_env_var_default_device:  Found \'VK_LOADER_DEVICE_SELECT\' set to %s", selection);
 
         // The environment variable exists, so grab the vendor ID and device ID of the
         // selected default device

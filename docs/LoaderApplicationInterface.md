@@ -7,7 +7,7 @@
 # Application Interface to Loader
 [![Creative Commons][3]][4]
 
-<!-- Copyright &copy; 2015-2021 LunarG, Inc. -->
+<!-- Copyright &copy; 2015-2022 LunarG, Inc. -->
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
@@ -36,9 +36,6 @@
   - [Forcing Layers to be Enabled on Windows, Linux and macOS](#forcing-layers-to-be-enabled-on-windows-linux-and-macos)
   - [Overall Layer Ordering](#overall-layer-ordering)
   - [Debugging Possible Layer Issues](#debugging-possible-layer-issues)
-    - [Enable Loader Debug Layer Output](#enable-loader-debug-layer-output)
-    - [Disable All Layers](#disable-all-layers)
-    - [Enable More Loader Debug Output](#enable-more-loader-debug-output)
 - [Application Usage of Extensions](#application-usage-of-extensions)
   - [Instance and Device Extensions](#instance-and-device-extensions)
   - [WSI Extensions](#wsi-extensions)
@@ -572,140 +569,10 @@ make to function.
 ### Debugging Possible Layer Issues
 
 If it is possible that a layer is causing issues, there are several things that
-can be tried.
-
-
-#### Enable Loader Debug Layer Output
-
-First, enable the "layer" debug output option (`VK_LOADER_DEBUG`) in the loader,
-See the
-[Table of Debug Environment Variables](LoaderInterfaceArchitecture.md##table-of-debug-environment-variables)
-for more info.
-
-When enabled, the loader will output information on:
- * Where it looks for implicit layers
- * Where it looks for explicit layers
- * What manifest files it finds
- * Which layer manifest files are loaded
- * What libraries are associated with a layer
- * What the layer callstack looks like for both the instance and device chain
-
-For example, the layer output for searching for implicit layers on Linux may
-look like:
-
-```
-LAYER: Searching for layer manifest files
-LAYER:    In following folders:
-LAYER:       /home/linust/.config/vulkan/implicit_layer.d
-LAYER:       /etc/xdg/vulkan/implicit_layer.d
-LAYER:       /usr/local/etc/vulkan/implicit_layer.d
-LAYER:       /etc/vulkan/implicit_layer.d
-LAYER:       /home/linust/.local/share/vulkan/implicit_layer.d
-LAYER:       /home/linust/.local/share/flatpak/exports/share/vulkan/implicit_layer.d
-LAYER:       /var/lib/flatpak/exports/share/vulkan/implicit_layer.d
-LAYER:       /usr/local/share/vulkan/implicit_layer.d
-LAYER:       /usr/share/vulkan/implicit_layer.d
-LAYER:    Found the following files:
-LAYER:       /home/linust/.local/share/vulkan/implicit_layer.d/renderdoc_capture.json
-LAYER:       /home/linust/.local/share/vulkan/implicit_layer.d/steamfossilize_i386.json
-LAYER:       /home/linust/.local/share/vulkan/implicit_layer.d/steamfossilize_x86_64.json
-LAYER:       /home/linust/.local/share/vulkan/implicit_layer.d/steamoverlay_i386.json
-LAYER:       /home/linust/.local/share/vulkan/implicit_layer.d/steamoverlay_x86_64.json
-LAYER:       /usr/share/vulkan/implicit_layer.d/nvidia_layers.json
-LAYER:       /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
-```
-
-In the above scenario, seven implicit layers were discovered in two different
-folders.
-Just because they were found does not mean that they will be loaded, but this
-information can be used to make sure a layer JSON file was properly discovered.
-
-When the loader actually loads a layer, the messages may look like the
-following:
-
-```
-LAYER | DEBUG: Loading layer library libVkLayer_khronos_validation.so
-LAYER | INFO: Insert instance layer VK_LAYER_KHRONOS_validation (libVkLayer_khronos_validation.so)
-LAYER | DEBUG: Loading layer library libVkLayer_MESA_device_select.so
-LAYER | INFO: Insert instance layer VK_LAYER_MESA_device_select (libVkLayer_MESA_device_select.so)
-```
-
-This information does not indicate the order the layers are used in.
-That information is displayed later showing all the callstack during both
-`vkCreateInstance` and `vkCreateDevice`.
-In the same sample above, the callstack for `vkCreateInstance` looks like the
-following:
-
-```
-LAYER: vkCreateInstance layer callstack setup to:
-LAYER:    <Application>
-LAYER:      ||
-LAYER:    <Loader>
-LAYER:      ||
-LAYER:    VK_LAYER_MESA_device_select
-LAYER:            Type: Implicit
-LAYER:                Disable Env Var:  NODEVICE_SELECT
-LAYER:            Manifest: /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
-LAYER:            Library:  libVkLayer_MESA_device_select.so
-LAYER:      ||
-LAYER:    VK_LAYER_KHRONOS_validation
-LAYER:            Type: Explicit
-LAYER:            Manifest: /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
-LAYER:            Library:  libVkLayer_khronos_validation.so
-LAYER:      ||
-LAYER:    <Drivers>
-```
-
-In this scenario, two layers were used (the same two that were loaded earlier):
-* `VK_LAYER_MESA_device_select`
-* `VK_LAYER_KHRONOS_validation`
-
-This information now shows us that the `VK_LAYER_MESA_device_select` is loaded
-first, followed by `VK_LAYER_KHRONOS_validation` which will then continue into
-any available drivers.
-It also shows that `VK_LAYER_MESA_device_select` is an implicit layer which
-implies that it wasn't directly enabled by the application.
-On the other hand, `VK_LAYER_KHRONOS_validation` is shown as an explicit layer
-which indicates that it was likely enabled by the application.
-
-Sometimes, implicit layers can cause issues with an application.
-Because of this, the next step is to try to disable one or more of the listed
-implicit layers.
-This can be done by defining the disable environment variable for that layer.
-Each layer has it's own disable environment variable as mentioned in the
-[Layer Manifest File Format](LoaderLayerInterface.md#layer-manifest-file-format).
-However, it can be difficult to find this variable in the manifest files, so
-the loader now outputs it as part of the callstack information.
-Looking at the above `vkCreateInstance` callstack output, under the
-section for `VK_LAYER_MESA_device_select` exists a section listed as
-"Disable Env Var:".
-This is the disable environment variable that can be used to disable the
-`VK_LAYER_MESA_device_select` layer from being loaded by the loader.
-In the above output, the disable environment variable is listed as
-"NODEVICE_SELECT" which can be defined to a non-zero value to cause the loader
-to ignore this layer.
-
-
-#### Disable All Layers
-
-Because implicit layers are virtually unknown to the application, it is best to
-next try to disable each one of them.
-Using the above debug output, define each environment variable to disable the
-corresponding implicit layer that was used.
-
-Once all are disabled, re-run the application again.
-
-If the failure still occurs, try disabling all explicit layers loaded by the
-application by modifying the application or using a tool such as
-[VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md).
-
-
-#### Enable More Loader Debug Output
-
-If the failure continues after disabling all layers, then enable all loader
-debug warnings and errors by setting `VK_LOADER_DEBUG` to "error,warn" or
-even "all".
-This will output any other issues that the loader has encountered.
+can be tried which are documented in the
+[Debugging Possible Layer Issues](LoaderDebugging.md#debugging-possible-layer-issues)
+section of the [LoaderDebugging.mg](LoaderDebugging.md) document in the docs
+folder.
 
 
 ## Application Usage of Extensions

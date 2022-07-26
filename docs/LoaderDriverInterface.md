@@ -7,7 +7,7 @@
 # Driver interface to the Vulkan Loader
 [![Creative Commons][3]][4]
 
-<!-- Copyright &copy; 2015-2021 LunarG, Inc. -->
+<!-- Copyright &copy; 2015-2022 LunarG, Inc. -->
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
@@ -19,7 +19,12 @@
 - [Driver Discovery](#driver-discovery)
   - [Overriding the Default Driver Discovery](#overriding-the-default-driver-discovery)
   - [Additional Driver Discovery](#additional-driver-discovery)
-    - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
+  - [Driver Filtering](#driver-filtering)
+    - [Comma-delimited lists](#comma-delimited-lists)
+    - [Globs](#globs)
+    - [Case-insensitive](#case-insensitive)
+    - [Environment Variable Priority](#environment-variable-priority)
+  - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
     - [Examples](#examples)
       - [On Windows](#on-windows)
       - [On Linux](#on-linux)
@@ -126,7 +131,8 @@ There may be times that a developer wishes to force the loader to use a specific
 Driver in addition to the standard drivers (without replacing the standard
 search paths.
 The `VK_ADD_DRIVER_FILES` environment variable can be used to add a list of
-Driver Manifest files, containing the full path to the driver JSON Manifest file.
+Driver Manifest files, containing the full path to the driver JSON Manifest
+file.
 This list is colon-separated on Linux and macOS, and semicolon-separated on
 Windows.
 It will be added prior to the standard driver search files.
@@ -134,11 +140,94 @@ If `VK_DRIVER_FILES` or `VK_ICD_FILENAMES` is present, then
 `VK_ADD_DRIVER_FILES` will not be used by the loader and any values will be
 ignored.
 
-#### Exception for Elevated Privileges
+### Driver Filtering
 
-For security reasons, `VK_ICD_FILENAMES`, `VK_DRIVER_FILES` and
-`VK_ADD_DRIVER_FILES` are all ignored if running the Vulkan application with
-elevated privileges.
+The driver select environment variable `VK_LOADER_DRIVERS_SELECT` is a
+comma-delimited list of globs to search for in known drivers.
+Since drivers don’t have a name like layers, this substring is used to compare
+against the manifest filename.
+Known driver manifests are those files that are already found by the loader
+taking into account default search paths and other environment variables (like
+`VK_ICD_FILENAMES` or `VK_ADD_DRIVER_FILES`).
+
+When a driver is disabled using the `VK_LOADER_DRIVERS_SELECT` filter, and
+loader logging is set to emit either warnings or driver messages, then a message
+will show for each driver that has been ignored.
+This message will look like the following:
+
+```
+WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
+```
+
+If no drivers are found with a manifest filename that matches any of the
+provided globs, then no driver is enabled and it can result in Vulkan
+applications failing to run properly.
+
+The driver disable environment variable `VK_LOADER_DRIVERS_DISABLE` is a
+comma-delimited list of globs to search for in known drivers.
+Since drivers don’t have a name like layers, this substring is used to compare
+against the manifest filename.
+Known driver manifests are those files that are already found by the loader
+taking into account default search paths and other environment variables
+(like `VK_ICD_FILENAMES` or `VK_ADD_DRIVER_FILES`).
+
+When a driver is disabled using the `VK_LOADER_DRIVERS_DISABLE` filter, and
+loader logging is set to emit either warnings or driver messages, then a message
+will show for each driver that has been forcibly disabled.
+This message will look like the following:
+
+```
+WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
+```
+
+If no drivers are found with a manifest filename that matches any of the
+provided globs, then no driver is disabled.
+
+#### Comma-delimited lists
+
+All of the filter environment variables accept comma-delimited input.
+Therefore, you can chain multiple strings together and it will use the strings
+to individually enable or disable the appropriate item in the current list of
+available items.
+
+#### Globs
+
+To provide enough flexibility to limit driver name searches to only those
+desired by the developer, the loader uses a limited glob format for strings.
+Acceptable globs are:
+ - Prefixes:   `"string*"`
+ - Suffixes:   `"*string"`
+ - Substrings:  `"*string*"`
+ - Whole strings: `"string"`
+
+This is especially important because it is difficult sometimes to determine the
+full name of a driver manifest file.
+So, instead of having to type in `intel_icd.x86_64.json` to select only the
+Intel driver on Linux, the substring `*intel*` can be used in the
+`VK_LOADER_DRIVER_SELECT` environment variable.
+
+#### Case-insensitive
+
+All of the filter environment variables assume the strings inside of the glob
+are not case-sensitive.
+Therefore, “Bob”, “bob”, and “BOB” all amount to the same thing.
+
+#### Environment Variable Priority
+
+The values from the disable environment variable will be considered
+<b>before</b> the select environment variable.
+Because of this, it is possible to disable a driver using the disable
+environment variable, only to have it be re-enabled by the enable environment
+variable.
+
+
+### Exception for Elevated Privileges
+
+For security reasons, `VK_ICD_FILENAMES`, `VK_DRIVER_FILES`, and
+`VK_ADD_DRIVER_FILES` are all ignored if running the Vulkan application
+with elevated privileges.
+This is because they may insert new libraries into the executable process that
+are not normally found by the loader.
 Because of this, these environment variables can only be used for applications
 that do not use elevated privileges.
 
@@ -292,9 +381,10 @@ middle.
 This is because the value of 1 for vendor_b_vk.json disables the driver.
 
 Additionally, the Vulkan loader will scan the system for well-known Windows
-AppX/MSIX packages. If a package is found, the loader will scan the root directory
-of this installed package for JSON manifest files. At this time, the only package
-that is known is Microsoft's
+AppX/MSIX packages.
+If a package is found, the loader will scan the root directory of this installed
+package for JSON manifest files. At this time, the only package that is known is
+Microsoft's
 [OpenCL™ and OpenGL® Compatibility Pack](https://apps.microsoft.com/store/detail/9NQPSL29BFFF?hl=en-us&gl=US).
 
 The Vulkan loader will open each enabled manifest file found to obtain the name
@@ -510,7 +600,8 @@ The loader will load the driver via `hw_get_module` with the ID of "vulkan".
 
 ## Driver Manifest File Format
 
-The following section discusses the details of the Driver Manifest JSON file format.
+The following section discusses the details of the Driver Manifest JSON file
+format.
 The JSON file itself does not have any requirements for naming.
 The only requirement is that the extension suffix of the file is ".json".
 
@@ -569,18 +660,18 @@ Here is an example driver JSON Manifest file:
     <td>"api_version" </td>
     <td>The major.minor.patch version number of the maximum Vulkan API supported
         by the driver.
-        However, just because the driver supports the specific Vulkan API version,
-        it does not guarantee that the hardware on a user's system can support
-        that version.
+        However, just because the driver supports the specific Vulkan API
+        version, it does not guarantee that the hardware on a user's system can
+        support that version.
         Information on what the underlying physical device can support must be
-        queried by the user using the <i>vkGetPhysicalDeviceProperties</i> API call.
-        <br/>
+        queried by the user using the <i>vkGetPhysicalDeviceProperties</i> API
+        call.<br/>
         For example: 1.0.33.</td>
   </tr>
   <tr>
     <td>"is_portability_driver" </td>
-    <td>Defines whether the driver contains any VkPhysicalDevices which implement
-        the VK_KHR_portability_subset extension.<br/>
+    <td>Defines whether the driver contains any VkPhysicalDevices which
+        implement the VK_KHR_portability_subset extension.<br/>
     </td>
   </tr>
 </table>
@@ -762,13 +853,13 @@ In this way, it compares "pName" to every physical device function supported in
 the driver.
 
 Implementations of the function should have the following behavior:
-* If `pName` is the name of a Vulkan API entrypoint that takes a `VkPhysicalDevice`
-  as its primary dispatch handle, and the driver supports the entrypoint, then
-  the driver **must** return the valid function pointer to the driver's
-  implementation of that entrypoint.
-* If `pName` is the name of a Vulkan API entrypoint that takes something other than
-  a `VkPhysicalDevice` as its primary dispatch handle, then the driver **must**
-  return `NULL`.
+* If `pName` is the name of a Vulkan API entrypoint that takes a
+  `VkPhysicalDevice` as its primary dispatch handle, and the driver supports the
+  entrypoint, then the driver **must** return the valid function pointer to the
+  driver's implementation of that entrypoint.
+* If `pName` is the name of a Vulkan API entrypoint that takes something other
+  than a `VkPhysicalDevice` as its primary dispatch handle, then the driver
+  **must** return `NULL`.
 * If the driver is unaware of any entrypoint with the name `pName`, it **must**
   return `NULL`.
 
@@ -1257,12 +1348,13 @@ manifest files used by the Windows, Linux and macOS loaders.
 The loader implements the `VK_KHR_portability_enumeration` instance extension,
 which filters out any drivers that report support for the portability subset
 device extension. Unless the application explicitly requests enumeration of
-portability devices by setting the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
-bit in the VkInstanceCreateInfo::flags, the loader does not load any drivers
-that declare themselves to be portability drivers.
+portability devices by setting the
+`VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR` bit in the
+VkInstanceCreateInfo::flags, the loader does not load any drivers that declare
+themselves to be portability drivers.
 
-Drivers declare whether they are portability drivers or not in the Driver Manifest
-Json file, with the `is_portability_driver` boolean field.
+Drivers declare whether they are portability drivers or not in the Driver
+Manifest Json file, with the `is_portability_driver` boolean field.
 [More information here](#driver-manifest-file-version-101)
 
 The initial support for this extension only reported errors when an application
@@ -1404,7 +1496,8 @@ Android Vulkan documentation</a>.
   </tr>
   <tr>
     <td><small><b>LDP_DRIVER_6</b></small></td>
-    <td>Removed - See <a href="#removed-driver-policies">Removed Driver Policies</a>
+    <td>Removed - See
+        <a href="#removed-driver-policies">Removed Driver Policies</a>
     </td>
     <td>-</td>
     <td>-</td>
@@ -1515,7 +1608,8 @@ Android Vulkan documentation</a>.
 
 #### Removed Driver Policies
 
-These policies were in the loader source at some point but later removed. They are documented here for reference.
+These policies were in the loader source at some point but later removed.
+They are documented here for reference.
 
 <table>
   <tr>

@@ -1069,10 +1069,10 @@ TEST(TryLoadWrongBinaries, WrongExplicit) {
 
     // Should get an error message for the explicit layer
 #ifndef __APPLE__
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" was wrong bit-type!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" was wrong bit-type!")));
 #else   // __APPLE__
     // Apple only throws a wrong library type of error
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" failed to load!")));
 #endif  // __APPLE__
 }
 
@@ -1106,10 +1106,10 @@ TEST(TryLoadWrongBinaries, WrongImplicit) {
 
 #ifndef __APPLE__
     // Should get an info message for the bad implicit layer
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" was wrong bit-type.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" was wrong bit-type.")));
 #else   // __APPLE__
     // Apple only throws a wrong library type of error
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" failed to load.")));
 #endif  // __APPLE__
 }
 
@@ -1149,12 +1149,12 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
 #ifndef __APPLE__
     // Should get error messages for both (the explicit is second and we don't want the implicit to return before the explicit
     // triggers a failure during vkCreateInstance)
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" was wrong bit-type!")));
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" was wrong bit-type.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_0) + std::string("\" was wrong bit-type!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_1) + std::string("\" was wrong bit-type.")));
 #else   // __APPLE__
     // Apple only throws a wrong library type of error
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" failed to load!")));
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" failed to load.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_0) + std::string("\" failed to load!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_1) + std::string("\" failed to load.")));
 #endif  // __APPLE__
 }
 
@@ -1193,12 +1193,12 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
 
 #ifndef __APPLE__
     // Should not get an error messages for either
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" was wrong bit-type!")));
-    ASSERT_FALSE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" was wrong bit-type.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_0) + std::string("\" was wrong bit-type!")));
+    ASSERT_FALSE(log.find(std::string("Requested layer \"") + std::string(layer_name_1) + std::string("\" was wrong bit-type.")));
 #else   // __APPLE__
     // Apple only throws a wrong library type of error
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" failed to load!")));
-    ASSERT_FALSE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" failed to load.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_0) + std::string("\" failed to load!")));
+    ASSERT_FALSE(log.find(std::string("Requested layer \"") + std::string(layer_name_1) + std::string("\" failed to load.")));
 #endif  // __APPLE__
 }
 
@@ -1230,7 +1230,7 @@ TEST(TryLoadWrongBinaries, BadExplicit) {
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
 
     // Should get an error message for the bad explicit
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" failed to load!")));
 }
 
 TEST(TryLoadWrongBinaries, BadImplicit) {
@@ -1262,7 +1262,7 @@ TEST(TryLoadWrongBinaries, BadImplicit) {
     inst.CheckCreate(VK_SUCCESS);
 
     // Should get an info message for the bad implicit
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name) + std::string(" failed to load.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" failed to load.")));
 }
 
 TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
@@ -1299,8 +1299,8 @@ TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
 
     // Apple only throws a wrong library type of error
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_0) + std::string(" failed to load!")));
-    ASSERT_TRUE(log.find(std::string("Requested layer ") + std::string(layer_name_1) + std::string(" failed to load.")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_0) + std::string("\" failed to load!")));
+    ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_1) + std::string("\" failed to load.")));
 }
 
 TEST(TryLoadWrongBinaries, WrongArchDriver) {

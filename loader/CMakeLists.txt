@@ -106,7 +106,7 @@ set(NORMAL_LOADER_SRCS
     cJSON.c
     debug_utils.c
     extension_manual.c
-    get_environment.c
+    loader_environment.c
     gpa_helper.c
     loader.c
     log.c
