@@ -33,9 +33,9 @@ void CheckLogForLayerString(FrameworkEnvironment& env, const char* implicit_laye
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate(VK_SUCCESS);
         if (check_for_enable) {
-            ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+            ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + implicit_layer_name));
         } else {
-            ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+            ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + implicit_layer_name));
         }
     }
     env.debug_log.clear();
@@ -123,7 +123,7 @@ TEST(ImplicitLayers, OnlyDisableEnvVar) {
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.add_layer(implicit_layer_name);
         inst.CheckCreate(VK_SUCCESS);
-        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + implicit_layer_name));
     }
     remove_env_var(disable_env_var);
 }
@@ -279,6 +279,656 @@ TEST(ImplicitLayers, OverrideGetInstanceProcAddr) {
     }
 
     remove_env_var(disable_env_var);
+}
+
+// Force enable with filter env var
+TEST(ImplicitLayers, EnableWithFilter) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* implicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* implicit_json_name_1 = "First_layer.json";
+    const char* disable_layer_name_1 = "DISABLE_FIRST";
+    const char* enable_layer_name_1 = "ENABLE_FIRST";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_enable_environment(enable_layer_name_1)
+                                                         .set_disable_environment(disable_layer_name_1)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_1);
+
+    const char* implicit_layer_name_2 = "VK_LAYER_LUNARG_Second_layer";
+    const char* implicit_json_name_2 = "Second_layer.json";
+    const char* disable_layer_name_2 = "DISABLE_SECOND";
+    const char* enable_layer_name_2 = "ENABLE_SECOND";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_2)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_enable_environment(enable_layer_name_2)
+                                                         .set_disable_environment(disable_layer_name_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_2);
+
+    const char* implicit_layer_name_3 = "VK_LAYER_LUNARG_Second_test_layer";
+    const char* implicit_json_name_3 = "Second_test_layer.json";
+    const char* disable_layer_name_3 = "DISABLE_THIRD";
+    const char* enable_layer_name_3 = "ENABLE_THIRD";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_3)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_enable_environment(enable_layer_name_3)
+                                                         .set_disable_environment(disable_layer_name_3)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_3);
+
+    // First, test an instance/device without the layer forced on.
+    InstWrapper inst1{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Now force on one layer with its full name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", implicit_layer_name_1);
+
+    InstWrapper inst2{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match prefix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "VK_LAYER_LUNARG_*");
+
+    InstWrapper inst3{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match suffix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second_layer");
+
+    InstWrapper inst4{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
+    inst4.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match substring
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst5{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
+    inst5.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with star '*'
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+
+    InstWrapper inst6{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
+    inst6.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with special name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "~all~");
+
+    InstWrapper inst7{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
+    inst7.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match substring, but enable the other layer manually
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var(enable_layer_name_1, "1");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst8{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst8.create_info, env.debug_log);
+    inst8.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    remove_env_var("VK_LOADER_LAYERS_ENABLE");
+    remove_env_var(enable_layer_name_1);
+}
+
+// Force disabled with new filter env var
+TEST(ImplicitLayers, DisableWithFilter) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* implicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* implicit_json_name_1 = "First_layer.json";
+    const char* disable_layer_name_1 = "DISABLE_FIRST";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment(disable_layer_name_1)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_1);
+
+    const char* implicit_layer_name_2 = "VK_LAYER_LUNARG_Second_layer";
+    const char* implicit_json_name_2 = "Second_layer.json";
+    const char* disable_layer_name_2 = "DISABLE_SECOND";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_2)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment(disable_layer_name_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_2);
+
+    const char* implicit_layer_name_3 = "VK_LAYER_LUNARG_Second_test_layer";
+    const char* implicit_json_name_3 = "Second_test_layer.json";
+    const char* disable_layer_name_3 = "DISABLE_THIRD";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_3)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment(disable_layer_name_3)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_3);
+
+    // First, test an instance/device
+    InstWrapper inst1{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Now force off one layer with its full name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", implicit_layer_name_1);
+
+    InstWrapper inst2{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match prefix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "VK_LAYER_LUNARG_*");
+
+    InstWrapper inst3{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match suffix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second_layer");
+
+    InstWrapper inst4{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
+    inst4.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match substring
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
+
+    InstWrapper inst5{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
+    inst5.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with star '*'
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+
+    InstWrapper inst6{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
+    inst6.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with special name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
+
+    InstWrapper inst7{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
+    inst7.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    remove_env_var("VK_LOADER_LAYERS_DISABLE");
+}
+
+// Test interaction between both the enable and disable filter environment variables.  The enable should always
+// override the disable.
+TEST(ImplicitLayers, EnableAndDisableWithFilter) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* implicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* implicit_json_name_1 = "First_layer.json";
+    const char* disable_layer_name_1 = "DISABLE_FIRST";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment(disable_layer_name_1)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_1);
+
+    const char* implicit_layer_name_2 = "VK_LAYER_LUNARG_Second_layer";
+    const char* implicit_json_name_2 = "Second_layer.json";
+    const char* disable_layer_name_2 = "DISABLE_SECOND";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_2)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment(disable_layer_name_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_2);
+
+    const char* implicit_layer_name_3 = "VK_LAYER_LUNARG_Second_test_layer";
+    const char* implicit_json_name_3 = "Second_test_layer.json";
+    const char* disable_layer_name_3 = "DISABLE_THIRD";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name_3)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment(disable_layer_name_3)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           implicit_json_name_3);
+
+    // Disable 2 but enable 1
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*test_layer");
+
+    InstWrapper inst1{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable all but enable 2
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst2{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable all but enable 2
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst3{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable implicit but enable 2
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst4{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
+    inst4.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable explicit but enable 2 (should still be everything)
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst5{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
+    inst5.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable implicit but enable all
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+
+    InstWrapper inst6{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
+    inst6.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", implicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", implicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, implicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    remove_env_var("VK_LOADER_LAYERS_ENABLE");
+    remove_env_var("VK_LOADER_LAYERS_DISABLE");
 }
 
 // Meta layer which contains component layers that do not exist.
@@ -580,6 +1230,7 @@ TEST(MetaLayers, DeviceExtensionInComponentLayer) {
         EXPECT_TRUE(string_eq(extensions[0].extensionName, device_ext_name));
     }
 }
+
 // Override meta layer missing disable environment variable still enables the layer
 TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
     FrameworkEnvironment env;
@@ -599,9 +1250,9 @@ TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
                                               .set_name(lunarg_meta_layer_name)
                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                               .add_component_layers({regular_layer_name})),
-                           "meta_test_layer.json");
+                            "meta_test_layer.json");
 
-    uint32_t layer_count = 0;
+     uint32_t layer_count = 0;
     EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
     EXPECT_EQ(layer_count, 1U);
 
@@ -612,7 +1263,7 @@ TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
-}
+ }
 
 // Override meta layer whose version is less than the api version of the instance
 TEST(OverrideMetaLayer, OlderVersionThanInstance) {
@@ -790,7 +1441,7 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
         // Newer component is allowed now
-        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -810,7 +1461,7 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
         // Newer component is allowed now
-        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -979,7 +1630,7 @@ TEST(OverrideMetaLayer, BasicOverridePaths) {
     inst.create_info.set_api_version(1, 1, 0);
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+    ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
     env.layers.clear();
 }
 
@@ -1022,7 +1673,7 @@ TEST(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
     inst.create_info.add_layer(regular_layer_name);
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
-    ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+    ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
     env.layers.clear();
 }
 
@@ -1067,7 +1718,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
     inst.create_info.add_layer(env_var_layer_name);
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
-    ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer ") + env_var_layer_name));
+    ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + env_var_layer_name));
 
     env.layers.clear();
     remove_env_var("VK_LAYER_PATH");
@@ -1112,7 +1763,7 @@ TEST(OverrideMetaLayer, OverridePathsEnableImplicitLayerInDefaultPaths) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.create_info.set_api_version(1, 1, 0);
     inst.CheckCreate();
-    ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer ") + implicit_layer_name));
+    ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + implicit_layer_name));
     ASSERT_TRUE(
         env.debug_log.find("Removing meta-layer VK_LAYER_LUNARG_override from instance layer list since it appears invalid."));
     env.layers.clear();
@@ -1147,7 +1798,7 @@ TEST(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
     inst.create_info.set_api_version(1, 1, 0);
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+    ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
     ASSERT_TRUE(env.debug_log.find("Indicating meta-layer-specific override paths, but using older JSON file version."));
     env.layers.clear();
 }
@@ -2558,7 +3209,7 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
         inst.create_info.set_api_version(1, 1, 0);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
@@ -2575,7 +3226,7 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
         inst.create_info.set_api_version(1, 2, 0);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
 
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
@@ -2622,7 +3273,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         inst.create_info.set_api_version(1, 0, 0);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
-        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         uint32_t count = 0;
@@ -2639,7 +3290,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         inst.create_info.set_api_version(1, 1, 0);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
-        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -2656,7 +3307,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
         EXPECT_EQ(1U, count);
@@ -2671,7 +3322,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         inst.create_info.set_fill_in_application_info(false);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
-        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
+        EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         uint32_t count = 0;
@@ -2686,7 +3337,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
 
 // Verify that VK_INSTANCE_LAYERS work.  To test this, make sure that an explicit layer does not affect an instance until
 // it is set with VK_INSTANCE_LAYERS
-TEST(TestLayers, EnvironEnableExplicitLayer) {
+TEST(TestLayers, InstEnvironEnableExplicitLayer) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
@@ -2773,6 +3424,780 @@ TEST(TestLayers, EnvironEnableExplicitLayer) {
     ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, pfn_GetSwapchainStatusAfter(dev2.dev, VK_NULL_HANDLE));
 
     remove_env_var("VK_INSTANCE_LAYERS");
+}
+
+// Verify that VK_LOADER_LAYERS_ENABLE work.  To test this, make sure that an explicit layer does not affect an instance until
+// it is set with VK_LOADER_LAYERS_ENABLE
+TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* explicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* explicit_json_name_1 = "First_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_1);
+
+    const char* explicit_layer_name_2 = "VK_LAYER_LUNARG_Second_layer";
+    const char* explicit_json_name_2 = "Second_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_2)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_2);
+
+    const char* explicit_layer_name_3 = "VK_LAYER_LUNARG_Second_test_layer";
+    const char* explicit_json_name_3 = "Second_test_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_3)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_3);
+
+    // First, test an instance/device without the layer forced on.
+    InstWrapper inst1{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Now force on one layer with its full name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", explicit_layer_name_1);
+
+    InstWrapper inst2{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match prefix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "VK_LAYER_LUNARG_*");
+
+    InstWrapper inst3{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match suffix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second_layer");
+
+    InstWrapper inst4{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
+    inst4.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match substring
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst5{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
+    inst5.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with star '*'
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+
+    InstWrapper inst6{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
+    inst6.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with special name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "~all~");
+
+    InstWrapper inst7{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
+    inst7.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    remove_env_var("VK_LOADER_LAYERS_ENABLE");
+}
+
+// Verify that VK_LOADER_LAYERS_DISABLE work.  To test this, make sure that an explicit layer does not affect an instance until
+// it is set with VK_LOADER_LAYERS_DISABLE
+TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* explicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* explicit_json_name_1 = "First_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_1);
+
+    const char* explicit_layer_name_2 = "VK_LAYER_LUNARG_Second_layer";
+    const char* explicit_json_name_2 = "Second_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_2)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_2);
+
+    const char* explicit_layer_name_3 = "VK_LAYER_LUNARG_Second_test_layer";
+    const char* explicit_json_name_3 = "Second_test_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_3)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_3);
+
+    // First, test an instance/device without the layer forced on.
+    InstWrapper inst1{env.vulkan_functions};
+    inst1.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Now force on one layer with its full name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1);
+
+    InstWrapper inst2{env.vulkan_functions};
+    inst2.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match prefix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "VK_LAYER_LUNARG_*");
+
+    InstWrapper inst3{env.vulkan_functions};
+    inst3.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match suffix
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second_layer");
+
+    InstWrapper inst4{env.vulkan_functions};
+    inst4.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
+    inst4.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match substring
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
+
+    InstWrapper inst5{env.vulkan_functions};
+    inst5.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
+    inst5.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with star '*'
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+
+    InstWrapper inst6{env.vulkan_functions};
+    inst6.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
+    inst6.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match all with special name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
+
+    InstWrapper inst7{env.vulkan_functions};
+    inst7.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
+    inst7.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Match explicit special name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
+
+    InstWrapper inst8{env.vulkan_functions};
+    inst8.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst8.create_info, env.debug_log);
+    inst8.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // No match implicit special name
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
+
+    InstWrapper inst9{env.vulkan_functions};
+    inst9.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst9.create_info, env.debug_log);
+    inst9.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    remove_env_var("VK_LOADER_LAYERS_DISABLE");
+}
+
+// Verify that VK_LOADER_LAYERS_ENABLE + VK_LOADER_LAYERS_DISABLE work.(results in the layer still being
+// enabled)
+TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* explicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* explicit_json_name_1 = "First_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_1);
+
+    const char* explicit_layer_name_2 = "VK_LAYER_LUNARG_Second_layer";
+    const char* explicit_json_name_2 = "Second_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_2)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_2);
+
+    const char* explicit_layer_name_3 = "VK_LAYER_LUNARG_Second_test_layer";
+    const char* explicit_json_name_3 = "Second_test_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_3)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_3);
+
+    // First, test an instance/device without the layer forced on.
+    InstWrapper inst1{env.vulkan_functions};
+    inst1.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable 2 but enable 1
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*test_layer");
+
+    InstWrapper inst2{env.vulkan_functions};
+    inst2.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable all but enable 2
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst3{env.vulkan_functions};
+    inst3.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable all but enable 2
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst4{env.vulkan_functions};
+    inst4.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
+    inst4.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable explicit but enable 2
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst5{env.vulkan_functions};
+    inst5.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
+    inst5.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable implicit but enable 2 (should still be everything)
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+
+    InstWrapper inst6{env.vulkan_functions};
+    inst6.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
+    inst6.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    // Disable explicit but enable all
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
+    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+
+    InstWrapper inst7{env.vulkan_functions};
+    inst7.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
+    FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
+    inst7.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_3));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_3, "disabled because name matches filter of env var"));
+
+    remove_env_var("VK_LOADER_LAYERS_ENABLE");
+    remove_env_var("VK_LOADER_LAYERS_DISABLE");
+}
+
+// Verify that VK_INSTANCE_LAYERS + VK_LOADER_LAYERS_DISABLE work.(results in the layer still being
+// enabled)
+TEST(TestLayers, EnvironVkInstancdAndDisableFilters) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* explicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* explicit_json_name_1 = "First_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_1);
+
+    const char* explicit_layer_name_2 = "VK_LAYER_LUNARG_Second_layer";
+    const char* explicit_json_name_2 = "Second_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_2)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_2);
+
+    // First, test an instance/device without the layer forced on.
+    InstWrapper inst1{env.vulkan_functions};
+    inst1.create_info.add_layer(explicit_layer_name_1);
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+
+    // Enable the non-default enabled layer with VK_INSTANCE_LAYERS
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_INSTANCE_LAYERS", explicit_layer_name_2);
+
+    InstWrapper inst2{env.vulkan_functions};
+    inst2.create_info.add_layer(explicit_layer_name_1);
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+
+    // Try to disable all
+    // ------------------------------------------
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+
+    InstWrapper inst3{env.vulkan_functions};
+    inst3.create_info.add_layer(explicit_layer_name_1);
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "forced enabled due to env var"));
+    ASSERT_TRUE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_1, "disabled because name matches filter of env var"));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_2));
+    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_2));
+    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "forced enabled due to env var"));
+    ASSERT_FALSE(
+        FindPrefixPostfixStringOnLine(env.debug_log, explicit_layer_name_2, "disabled because name matches filter of env var"));
+
+    remove_env_var("VK_INSTANCE_LAYERS");
+    remove_env_var("VK_LOADER_LAYERS_DISABLE");
 }
 
 // Add a device layer, should not work

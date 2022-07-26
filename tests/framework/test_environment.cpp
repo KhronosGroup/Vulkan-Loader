@@ -136,6 +136,24 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
     create_info.instance_info.pNext = wrapper.get();
 }
 
+// Look through the event log. If you find a line containing the prefix we're interested in, look for the end of
+// line character, and then see if the postfix occurs in it as well.
+bool FindPrefixPostfixStringOnLine(DebugUtilsLogger& env_log, const char* prefix, const char* postfix) {
+    size_t new_start = 0;
+    size_t postfix_index = 0;
+    size_t next_eol = 0;
+    while ((new_start = env_log.returned_output.find(prefix, new_start)) != std::string::npos) {
+        next_eol = env_log.returned_output.find("\n", new_start);
+        if ((postfix_index = env_log.returned_output.find(postfix, new_start)) != std::string::npos) {
+            if (postfix_index < next_eol) {
+                return true;
+            }
+        }
+        new_start = next_eol + 1;
+    }
+    return false;
+}
+
 PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders, bool enable_log) noexcept {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
@@ -151,6 +169,7 @@ PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders
         set_env_var("VK_LOADER_DEBUG", "all");
     }
 }
+
 PlatformShimWrapper::~PlatformShimWrapper() noexcept { platform_shim->reset(); }
 
 TestICDHandle::TestICDHandle() noexcept {}
@@ -224,7 +243,11 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         icds.back().reset_icd();
         icd_details.icd_manifest.lib_path = new_driver_location.str();
     }
-    std::string full_json_name = icd_details.json_name + "_" + std::to_string(cur_icd_index) + ".json";
+    std::string full_json_name = icd_details.json_name;
+    if (!icd_details.disable_icd_inc) {
+        full_json_name += "_" + std::to_string(cur_icd_index);
+    }
+    full_json_name += ".json";
 
     icds.back().manifest_path = folder->write_manifest(full_json_name, icd_details.icd_manifest.get_manifest_str());
     switch (icd_details.discovery_type) {

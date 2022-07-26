@@ -259,6 +259,10 @@ VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
 
+// Look through the event log. If you find a line containing the prefix we're interested in, look for the end of
+// line character, and then see if the postfix occurs in it as well.
+bool FindPrefixPostfixStringOnLine(DebugUtilsLogger& env_log, const char* prefix, const char* postfix);
+
 struct FrameworkEnvironment;  // forward declaration
 
 struct PlatformShimWrapper {
@@ -319,6 +323,7 @@ struct TestICDDetails {
     }
     BUILDER_VALUE(TestICDDetails, ManifestICD, icd_manifest, {});
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
+    BUILDER_VALUE(TestICDDetails, bool, disable_icd_inc, false);
     BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
 };

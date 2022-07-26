@@ -36,7 +36,7 @@
 #include "loader_windows.h"
 
 #include "allocation.h"
-#include "get_environment.h"
+#include "loader_environment.h"
 #include "loader.h"
 #include "log.h"
 

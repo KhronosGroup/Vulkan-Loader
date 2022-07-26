@@ -101,7 +101,13 @@ bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, c
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
 
+VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_layer_list *list,
+                                             uint32_t prop_list_count, const struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
+bool loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
+                           const struct loader_envvar_disable_layers_filter *disable_filter,
+                           const struct loader_layer_properties *prop, struct loader_layer_list *target_list,
+                           struct loader_layer_list *expanded_target_list, const struct loader_layer_list *source_list);
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props);
 VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct loader_device_extension_list *ext_list,
@@ -115,17 +121,14 @@ void loader_destroy_generic_list(const struct loader_instance *inst, struct load
 void loader_destroy_layer_list(const struct loader_instance *inst, struct loader_device *device,
                                struct loader_layer_list *layer_list);
 void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list);
-VkResult loader_add_layer_name_to_list(const struct loader_instance *inst, const char *name, const enum layer_type_flags type_flags,
-                                       const struct loader_layer_list *source_list, struct loader_layer_list *target_list,
-                                       struct loader_layer_list *expanded_target_list);
-void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
-                        const VkAllocationCallbacks *pAllocator);
 void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                          bool *skipped_portability_drivers);
-void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);
-void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);
-bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_layer_properties *prop);
+void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
+                        const VkAllocationCallbacks *pAllocator);
+VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);
+VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
+                                         loader_platform_dl_handle **libs);
 VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                                                    struct loader_extension_list *inst_exts);
 struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index);

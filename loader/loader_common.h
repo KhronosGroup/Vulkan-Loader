@@ -452,3 +452,29 @@ struct loader_msg_callback_map_entry {
     VkDebugReportCallbackEXT icd_obj;
     VkDebugReportCallbackEXT loader_obj;
 };
+
+typedef enum loader_filter_string_type {
+    FILTER_STRING_FULLNAME = 0,
+    FILTER_STRING_SUBSTRING,
+    FILTER_STRING_PREFIX,
+    FILTER_STRING_SUFFIX,
+    FILTER_STRING_SPECIAL,
+} loader_filter_string_type;
+
+struct loader_envvar_filter_value {
+    char value[VK_MAX_EXTENSION_NAME_SIZE];
+    size_t length;
+    loader_filter_string_type type;
+};
+
+#define MAX_ADDITIONAL_FILTERS 16
+struct loader_envvar_filter {
+    uint32_t count;
+    struct loader_envvar_filter_value filters[MAX_ADDITIONAL_FILTERS];
+};
+struct loader_envvar_disable_layers_filter {
+    struct loader_envvar_filter additional_filters;
+    bool disable_all;
+    bool disable_all_implicit;
+    bool disable_all_explicit;
+};

@@ -35,10 +35,23 @@
 char *loader_getenv(const char *name, const struct loader_instance *inst);
 void loader_free_getenv(char *val, const struct loader_instance *inst);
 
-#if defined(WIN32) || defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(WIN32) || defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || \
+    defined(__FreeBSD__) || defined(__OpenBSD__)
 
 bool is_high_integrity();
 
 char *loader_secure_getenv(const char *name, const struct loader_instance *inst);
 
 #endif
+
+VkResult parse_generic_filter_environment_var(const struct loader_instance *inst, const char *env_var_name,
+                                              struct loader_envvar_filter *filter_struct);
+VkResult parse_layers_disable_filter_environment_var(const struct loader_instance *inst,
+                                                     struct loader_envvar_disable_layers_filter *disable_struct);
+bool check_name_matches_filter_environment_var(const struct loader_instance *inst, const char *name,
+                                               const struct loader_envvar_filter *filter_struct);
+VkResult loader_add_environment_layers(struct loader_instance *inst, const enum layer_type_flags type_flags, const char *env_name,
+                                       const struct loader_envvar_filter *enable_filter,
+                                       const struct loader_envvar_disable_layers_filter *disable_filter,
+                                       struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
+                                       const struct loader_layer_list *source_list);
