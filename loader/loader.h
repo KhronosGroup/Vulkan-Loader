@@ -49,7 +49,7 @@ static inline VkLayerDispatchTable *loader_get_dispatch(const void *obj) {
         return NULL;
     }
     VkLayerDispatchTable *disp = *((VkLayerDispatchTable **)obj);
-    if (VK_NULL_HANDLE == disp || DEVICE_DISP_TABLE_MAGIC_NUMBER != disp->magic) {
+    if (VK_NULL_HANDLE == disp || disp == (void *)ICD_LOADER_MAGIC || DEVICE_DISP_TABLE_MAGIC_NUMBER != disp->magic) {
         return NULL;
     }
     return disp;
