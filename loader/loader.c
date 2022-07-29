@@ -5323,7 +5323,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             if (icd_create_info.pApplicationInfo == NULL) {
                 memset(&icd_app_info, 0, sizeof(icd_app_info));
             } else {
-                memcpy(&icd_app_info, icd_create_info.pApplicationInfo, sizeof(icd_app_info));
+                memmove(&icd_app_info, icd_create_info.pApplicationInfo, sizeof(icd_app_info));
             }
             icd_app_info.apiVersion = icd_version;
             icd_create_info.pApplicationInfo = &icd_app_info;
