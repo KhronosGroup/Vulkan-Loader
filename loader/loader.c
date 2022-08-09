@@ -98,7 +98,17 @@ static struct loader_icd_tramp_list scanned_icds;
 
 LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
+// Creates loader_api_version struct that contains the major and minor fields, setting patch to 0
 loader_api_version loader_make_version(uint32_t version) {
+    loader_api_version out_version;
+    out_version.major = VK_API_VERSION_MAJOR(version);
+    out_version.minor = VK_API_VERSION_MINOR(version);
+    out_version.patch = 0;
+    return out_version;
+}
+
+// Creates loader_api_version struct containing the major, minor, and patch fields
+loader_api_version loader_make_full_version(uint32_t version) {
     loader_api_version out_version;
     out_version.major = VK_API_VERSION_MAJOR(version);
     out_version.minor = VK_API_VERSION_MINOR(version);
@@ -963,8 +973,8 @@ static void loader_add_implicit_layer(const struct loader_instance *inst, const 
         loader_api_version prop_version = loader_make_version(prop->info.specVersion);
         if (!loader_check_version_meets_required(inst->app_api_version, prop_version)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                       "loader_add_implicit_layer: Disabling implicit layer %s for using an old API version %d.%d versus "
-                       "application requested %d.%d",
+                       "loader_add_implicit_layer: Disabling implicit layer %s for using an old API version %u.%u versus "
+                       "application requested %u.%u",
                        prop->info.layerName, prop_version.major, prop_version.minor, inst->app_api_version.major,
                        inst->app_api_version.minor);
             enable = false;
@@ -1509,7 +1519,7 @@ void loader_initialize(void) {
     windows_initialization();
 #endif
 
-    loader_api_version version = loader_make_version(VK_HEADER_VERSION_COMPLETE);
+    loader_api_version version = loader_make_full_version(VK_HEADER_VERSION_COMPLETE);
     loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Vulkan Loader Version %d.%d.%d", version.major, version.minor, version.patch);
 
 #if defined(GIT_BRANCH_NAME) && defined(GIT_TAG_INFO)
@@ -2584,7 +2594,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     }
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Found manifest file %s (file version %s)", filename, file_vers);
     // Get the major/minor/and patch as integers for easier comparison
-    json_version = loader_make_version(loader_parse_version_string(file_vers));
+    json_version = loader_make_full_version(loader_parse_version_string(file_vers));
 
     if (!is_valid_layer_json_version(&json_version)) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -3456,7 +3466,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Found ICD manifest file %s, version %s", file_str, file_vers);
 
         // Get the version of the driver manifest
-        json_file_version = loader_make_version(loader_parse_version_string(file_vers));
+        json_file_version = loader_make_full_version(loader_parse_version_string(file_vers));
 
         // Loader only knows versions 1.0.0 and 1.0.1, anything above it is unknown
         if (loader_check_version_meets_required(loader_combine_version(1, 0, 2), json_file_version)) {
@@ -4216,11 +4226,11 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
         struct loader_layer_properties *prop = inst->expanded_activated_layer_list.list + i;
         loader_api_version prop_spec_version = loader_make_version(prop->info.specVersion);
         if (!loader_check_version_meets_required(inst->app_api_version, prop_spec_version)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "loader_add_to_layer_list: Explicit layer %s is using an old API version %" PRIu16 ".%" PRIu16
-                       " versus application requested %" PRIu16 ".%" PRIu16,
-                       prop->info.layerName, prop_spec_version.major, prop_spec_version.minor, inst->app_api_version.major,
-                       inst->app_api_version.minor);
+            loader_log(
+                inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                "loader_add_to_layer_list: Explicit layer %s is using an old API version %u.%u versus application requested %u.%u",
+                prop->info.layerName, prop_spec_version.major, prop_spec_version.minor, inst->app_api_version.major,
+                inst->app_api_version.minor);
         }
     }
 
