@@ -435,6 +435,41 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
     }
 }
 
+// Test failure during vkCreateInstance to make sure we don't leak memory if
+// one of the out-of-memory conditions trigger.
+TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::env_var));
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+
+    auto driver_files = get_env_var("VK_DRIVER_FILES");
+    driver_files += OS_ENV_VAR_LIST_SEPARATOR;
+    driver_files += (fs::path("totally_made_up") / "path_to_fake" / "jason_file.json").str();
+    set_env_var("VK_DRIVER_FILES", driver_files);
+
+    size_t fail_index = 66;  // 0
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+
+        VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
+        result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        if (result == VK_SUCCESS) {
+            env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+        }
+        ASSERT_TRUE(tracker.empty());
+        fail_index++;
+    }
+}
+
 // Test failure during vkCreateDevice to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 // Use 2 physical devices so that anything which copies a list of devices item by item

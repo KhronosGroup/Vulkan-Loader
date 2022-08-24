@@ -831,7 +831,7 @@ TEST(DriverManifest, NonVulkanVariant) {
     inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
     FillDebugUtilsCreateDetails(inst.create_info, log);
     inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
-    ASSERT_TRUE(log.find("loader_icd_scan: Driver's ICD JSON "));
+    ASSERT_TRUE(log.find("loader_parse_icd_manifest: Driver's ICD JSON "));
     // log prints the path to the file, don't look for it since it is hard to determine inside the test what the path should be.
     ASSERT_TRUE(log.find("\'api_version\' field contains a non-zero variant value of 1.  Skipping ICD JSON."));
 }
@@ -890,7 +890,7 @@ TEST(DriverManifest, UnknownManifestVersion) {
     inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
     FillDebugUtilsCreateDetails(inst.create_info, log);
     inst.CheckCreate();
-    ASSERT_TRUE(log.find("loader_icd_scan: "));
+    ASSERT_TRUE(log.find("loader_parse_icd_manifest: "));
     // log prints the path to the file, don't look for it since it is hard to determine inside the test what the path should be.
     ASSERT_TRUE(log.find("has unknown icd manifest file version 3.2.1. May cause errors."));
 }

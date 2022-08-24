@@ -1314,8 +1314,9 @@ TEST(TryLoadWrongBinaries, WrongArchDriver) {
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, log);
     inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
-    ASSERT_TRUE(log.find(
-        "loader_icd_scan: Driver library architecture doesn't match the current running architecture, skipping this driver"));
+    ASSERT_TRUE(
+        log.find("loader_parse_icd_manifest: Driver library architecture doesn't match the current running architecture, skipping "
+                 "this driver"));
 }
 
 TEST(TryLoadWrongBinaries, WrongArchLayer) {
