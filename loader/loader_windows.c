@@ -220,9 +220,7 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
     found = windows_add_json_entry(inst, reg_data, total_size, value_name, data_type, manifest_path, requiredSize, result);
 
 out:
-    if (manifest_path != NULL) {
-        loader_instance_heap_free(inst, manifest_path);
-    }
+    loader_instance_heap_free(inst, manifest_path);
     RegCloseKey(hkrKey);
     return found;
 }
@@ -255,9 +253,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
     do {
         CM_Get_Device_ID_List_SizeW(&deviceNamesSize, displayGUID, flags);
 
-        if (pDeviceNames != NULL) {
-            loader_instance_heap_free(inst, pDeviceNames);
-        }
+        loader_instance_heap_free(inst, pDeviceNames);
 
         pDeviceNames = loader_instance_heap_alloc(inst, deviceNamesSize * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (pDeviceNames == NULL) {
@@ -692,15 +688,9 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
     }
 
 out:
-    if (json_path != NULL) {
-        loader_instance_heap_free(inst, json_path);
-    }
-    if (full_info != NULL) {
-        loader_instance_heap_free(inst, full_info);
-    }
-    if (adapters.adapters != NULL) {
-        loader_instance_heap_free(inst, adapters.adapters);
-    }
+    loader_instance_heap_free(inst, json_path);
+    loader_instance_heap_free(inst, full_info);
+    loader_instance_heap_free(inst, adapters.adapters);
 
     return result;
 }
@@ -788,9 +778,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
 
 out:
 
-    if (NULL != search_path) {
-        loader_instance_heap_free(inst, search_path);
-    }
+    loader_instance_heap_free(inst, search_path);
 
     return vk_result;
 }

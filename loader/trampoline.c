@@ -615,9 +615,7 @@ out:
             if (loader.instances == ptr_instance) {
                 loader.instances = ptr_instance->next;
             }
-            if (NULL != ptr_instance->disp) {
-                loader_instance_heap_free(ptr_instance, ptr_instance->disp);
-            }
+            loader_instance_heap_free(ptr_instance, ptr_instance->disp);
             // Remove any created VK_EXT_debug_report or VK_EXT_debug_utils items
             destroy_debug_callbacks_chain(ptr_instance, pAllocator);
 

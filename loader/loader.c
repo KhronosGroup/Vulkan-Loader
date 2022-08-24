@@ -199,18 +199,10 @@ VKAPI_ATTR VkResult VKAPI_CALL vkSetDeviceDispatch(VkDevice device, void *object
 }
 
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties) {
-    if (layer_properties->component_layer_names) {
-        loader_instance_heap_free(inst, layer_properties->component_layer_names);
-    }
-    if (layer_properties->override_paths) {
-        loader_instance_heap_free(inst, layer_properties->override_paths);
-    }
-    if (layer_properties->blacklist_layer_names) {
-        loader_instance_heap_free(inst, layer_properties->blacklist_layer_names);
-    }
-    if (layer_properties->app_key_paths) {
-        loader_instance_heap_free(inst, layer_properties->app_key_paths);
-    }
+    loader_instance_heap_free(inst, layer_properties->component_layer_names);
+    loader_instance_heap_free(inst, layer_properties->override_paths);
+    loader_instance_heap_free(inst, layer_properties->blacklist_layer_names);
+    loader_instance_heap_free(inst, layer_properties->app_key_paths);
 
     loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_properties->instance_extension_list);
 
@@ -1643,11 +1635,7 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
     size_t len;
     VkResult res = VK_SUCCESS;
 
-    if (NULL == json) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Received invalid JSON file");
-        res = VK_ERROR_INITIALIZATION_FAILED;
-        goto out;
-    }
+    assert(json != NULL);
 
     *json = NULL;
 
@@ -1705,9 +1693,7 @@ static VkResult loader_get_json(const struct loader_instance *inst, const char *
     }
 
 out:
-    if (NULL != json_buf) {
-        loader_instance_heap_free(inst, json_buf);
-    }
+    loader_instance_heap_free(inst, json_buf);
     if (NULL != file) {
         fclose(file);
     }
@@ -2659,9 +2645,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     }
 
 out:
-    if (NULL != file_vers) {
-        loader_instance_heap_free(inst, file_vers);
-    }
+    loader_instance_heap_free(inst, file_vers);
 
     return result;
 }
@@ -2914,10 +2898,6 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     bool use_first_found_manifest = false;
 #ifndef _WIN32
     size_t rel_size = 0;  // unused in windows, dont declare so no compiler warnings are generated
-    bool xdg_config_home_secenv_alloc = true;
-    bool xdg_config_dirs_secenv_alloc = true;
-    bool xdg_data_home_secenv_alloc = true;
-    bool xdg_data_dirs_secenv_alloc = true;
 #endif
 
 #if defined(_WIN32)
@@ -2926,14 +2906,8 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     // Determine how much space is needed to generate the full search path
     // for the current manifest files.
     char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
-    if (NULL == xdg_config_home) {
-        xdg_config_home_secenv_alloc = false;
-    }
-
     char *xdg_config_dirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
-    if (NULL == xdg_config_dirs) {
-        xdg_config_dirs_secenv_alloc = false;
-    }
+
 #if !defined(__Fuchsia__) && !defined(__QNXNTO__)
     if (NULL == xdg_config_dirs || '\0' == xdg_config_dirs[0]) {
         xdg_config_dirs = FALLBACK_CONFIG_DIRS;
@@ -2941,14 +2915,8 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
 #endif
 
     char *xdg_data_home = loader_secure_getenv("XDG_DATA_HOME", inst);
-    if (NULL == xdg_data_home) {
-        xdg_data_home_secenv_alloc = false;
-    }
-
     char *xdg_data_dirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
-    if (NULL == xdg_data_dirs) {
-        xdg_data_dirs_secenv_alloc = false;
-    }
+
 #if !defined(__Fuchsia__) && !defined(__QNXNTO__)
     if (NULL == xdg_data_dirs || '\0' == xdg_data_dirs[0]) {
         xdg_data_dirs = FALLBACK_DATA_DIRS;
@@ -3233,46 +3201,22 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
 
 out:
 
-    if (NULL != additional_env) {
-        loader_free_getenv(additional_env, inst);
-    }
-    if (NULL != override_env) {
-        loader_free_getenv(override_env, inst);
-    }
+    loader_free_getenv(additional_env, inst);
+    loader_free_getenv(override_env, inst);
 #if defined(_WIN32)
-    if (NULL != package_path) {
-        loader_instance_heap_free(inst, package_path);
-    }
+    loader_instance_heap_free(inst, package_path);
 #else
-    if (xdg_config_home_secenv_alloc) {
-        loader_free_getenv(xdg_config_home, inst);
-    }
-    if (xdg_config_dirs_secenv_alloc) {
-        loader_free_getenv(xdg_config_dirs, inst);
-    }
-    if (xdg_data_home_secenv_alloc) {
-        loader_free_getenv(xdg_data_home, inst);
-    }
-    if (xdg_data_dirs_secenv_alloc) {
-        loader_free_getenv(xdg_data_dirs, inst);
-    }
-    if (NULL != xdg_data_home) {
-        loader_free_getenv(xdg_data_home, inst);
-    }
-    if (NULL != home) {
-        loader_free_getenv(home, inst);
-    }
-    if (NULL != default_data_home) {
-        loader_instance_heap_free(inst, default_data_home);
-    }
-    if (NULL != default_config_home) {
-        loader_instance_heap_free(inst, default_config_home);
-    }
+    loader_free_getenv(xdg_config_home, inst);
+    loader_free_getenv(xdg_config_dirs, inst);
+    loader_free_getenv(xdg_data_home, inst);
+    loader_free_getenv(xdg_data_dirs, inst);
+    loader_free_getenv(xdg_data_home, inst);
+    loader_free_getenv(home, inst);
+    loader_instance_heap_free(inst, default_data_home);
+    loader_instance_heap_free(inst, default_config_home);
 #endif
 
-    if (NULL != search_path) {
-        loader_instance_heap_free(inst, search_path);
-    }
+    loader_instance_heap_free(inst, search_path);
 
     return vk_result;
 }
@@ -3654,9 +3598,7 @@ out:
 
     if (NULL != manifest_files.filename_list) {
         for (uint32_t i = 0; i < manifest_files.count; i++) {
-            if (NULL != manifest_files.filename_list[i]) {
-                loader_instance_heap_free(inst, manifest_files.filename_list[i]);
-            }
+            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
         }
         loader_instance_heap_free(inst, manifest_files.filename_list);
     }
@@ -3788,14 +3730,10 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
 
 out:
 
-    if (NULL != override_paths) {
-        loader_instance_heap_free(inst, override_paths);
-    }
+    loader_instance_heap_free(inst, override_paths);
     if (NULL != manifest_files.filename_list) {
         for (uint32_t i = 0; i < manifest_files.count; i++) {
-            if (NULL != manifest_files.filename_list[i]) {
-                loader_instance_heap_free(inst, manifest_files.filename_list[i]);
-            }
+            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
         }
         loader_instance_heap_free(inst, manifest_files.filename_list);
     }
@@ -3933,17 +3871,11 @@ void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader
 
 out:
 
-    if (NULL != override_paths) {
-        loader_instance_heap_free(inst, override_paths);
-    }
+    loader_instance_heap_free(inst, override_paths);
     for (uint32_t i = 0; i < manifest_files.count; i++) {
-        if (NULL != manifest_files.filename_list[i]) {
-            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
-        }
+        loader_instance_heap_free(inst, manifest_files.filename_list[i]);
     }
-    if (NULL != manifest_files.filename_list) {
-        loader_instance_heap_free(inst, manifest_files.filename_list);
-    }
+    loader_instance_heap_free(inst, manifest_files.filename_list);
 
     if (have_json_lock) {
         loader_platform_thread_unlock_mutex(&loader_json_lock);
