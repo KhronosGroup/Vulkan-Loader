@@ -338,9 +338,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     }
 
 out:
-    if (NULL != sorted_device_info) {
-        loader_instance_heap_free(inst, sorted_device_info);
-    }
+    loader_instance_heap_free(inst, sorted_device_info);
 
     return res;
 }
