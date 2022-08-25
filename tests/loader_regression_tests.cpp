@@ -3422,6 +3422,36 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICD) {
     }
 }
 
+// Check that the portability enumeration flag bit doesn't get passed down
+TEST(PortabilityICDConfiguration, PortabilityAndRegularICDCheckFlagsPassedIntoICD) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2)));
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2).set_is_portability_driver(true)));
+
+    auto& driver0 = env.get_test_icd(0);
+    auto& driver1 = env.get_test_icd(1);
+
+    driver0.physical_devices.emplace_back("physical_device_0");
+    driver0.max_icd_interface_version = 1;
+
+    driver1.physical_devices.emplace_back("portability_physical_device_1");
+    driver1.add_instance_extension("VK_KHR_portability_enumeration");
+    driver1.max_icd_interface_version = 1;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    inst.create_info.add_extension("VK_KHR_portability_enumeration");
+    inst.create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR | 4;
+
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    ASSERT_FALSE(env.debug_log.find(portability_driver_warning));
+
+    ASSERT_EQ(static_cast<VkInstanceCreateFlags>(4), driver0.passed_in_instance_create_flags);
+    ASSERT_EQ(VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR | static_cast<VkInstanceCreateFlags>(4),
+              driver1.passed_in_instance_create_flags);
+}
+
 TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)));

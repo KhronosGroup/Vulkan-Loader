@@ -194,6 +194,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     // VK_SUCCESS
     *pInstance = icd.instance_handle.handle;
 
+    icd.passed_in_instance_create_flags = pCreateInfo->flags;
+
     return VK_SUCCESS;
 }
 
