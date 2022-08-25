@@ -93,7 +93,7 @@ TEST(CreateInstance, LayerNotPresent) {
 
 TEST(CreateInstance, LayerPresent) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}).add_physical_device({});
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -104,6 +104,25 @@ TEST(CreateInstance, LayerPresent) {
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);
     inst.CheckCreate();
+}
+
+TEST(CreateInstance, RelativePaths) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_library_path_type(LibraryPathType::relative)).add_physical_device({});
+
+    const char* layer_name = "VK_LAYER_TestLayer";
+    env.add_explicit_layer(
+        TestLayerDetails{ManifestLayer{}.add_layer(
+                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                         "test_layer.json"}
+            .set_library_path_type(LibraryPathType::relative));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    inst.CheckCreate();
+
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
 }
 
 TEST(CreateInstance, ConsecutiveCreate) {
@@ -3827,7 +3846,7 @@ TEST(LibraryLoading, SystemLocations) {
     EnvVarWrapper ld_library_path("LD_LIBRARY_PATH", env.get_folder(ManifestLocation::driver).location().str());
     ld_library_path.add_to_list(env.get_folder(ManifestLocation::explicit_layer).location().str());
 
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_use_dynamic_library_default_search_paths(true))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_library_path_type(LibraryPathType::default_search_paths))
                        .add_physical_device({});
     const char* fake_ext_name = "VK_FAKE_extension";
     driver.physical_devices.back().add_extension(fake_ext_name);
@@ -3837,7 +3856,7 @@ TEST(LibraryLoading, SystemLocations) {
         TestLayerDetails{ManifestLayer{}.add_layer(
                              ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
                          "test_layer.json"}
-            .set_use_dynamic_library_default_search_paths(true));
+            .set_library_path_type(LibraryPathType::default_search_paths));
 
     auto props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(props.at(0).layerName, layer_name));

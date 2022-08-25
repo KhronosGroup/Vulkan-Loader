@@ -467,20 +467,28 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         auto new_driver_location = folder->copy_file(icd_details.icd_manifest.lib_path, new_driver_name.str());
 
 #if COMMON_UNIX_PLATFORMS
-        if (icd_details.use_dynamic_library_default_search_paths) {
+        if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
             platform_shim->redirect_dlopen_name(new_driver_name, new_driver_location);
+        } else if (icd_details.library_path_type == LibraryPathType::relative) {
+            platform_shim->redirect_dlopen_name(fs::path(SYSCONFDIR) / "vulkan" / "icd.d" / "." / new_driver_name,
+                                                new_driver_location);
         }
 #endif
 #if defined(WIN32)
-        if (icd_details.use_dynamic_library_default_search_paths) {
+        if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
             SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
             AddDllDirectory(conver_str_to_wstr(new_driver_location.parent_path().str()).c_str());
         }
 #endif
         icds.push_back(TestICDHandle(new_driver_location));
         icds.back().reset_icd();
-        icd_details.icd_manifest.lib_path =
-            icd_details.use_dynamic_library_default_search_paths ? new_driver_name.str() : new_driver_location.str();
+        if (icd_details.library_path_type == LibraryPathType::relative) {
+            icd_details.icd_manifest.lib_path = fs::path(".") / new_driver_name;
+        } else if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
+            icd_details.icd_manifest.lib_path = new_driver_name.str();
+        } else {
+            icd_details.icd_manifest.lib_path = new_driver_location.str();
+        }
     }
     if (icd_details.discovery_type != ManifestDiscoveryType::none) {
         std::string full_json_name = icd_details.json_name;
@@ -593,12 +601,16 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             auto new_layer_location = folder.copy_file(layer.lib_path, layer_binary_name.str());
 
 #if COMMON_UNIX_PLATFORMS
-            if (layer_details.use_dynamic_library_default_search_paths) {
+            if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
                 platform_shim->redirect_dlopen_name(layer_binary_name, new_layer_location);
+            }
+            if (layer_details.library_path_type == LibraryPathType::relative) {
+                platform_shim->redirect_dlopen_name(
+                    fs::path(SYSCONFDIR) / "vulkan" / category_path_name(category) / "." / layer_binary_name, new_layer_location);
             }
 #endif
 #if defined(WIN32)
-            if (layer_details.use_dynamic_library_default_search_paths) {
+            if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
                 SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
                 AddDllDirectory(conver_str_to_wstr(new_layer_location.parent_path().str()).c_str());
             }
@@ -611,7 +623,13 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset_layer();
             }
-            layer.lib_path = layer_details.use_dynamic_library_default_search_paths ? layer_binary_name : new_layer_location;
+            if (layer_details.library_path_type == LibraryPathType::relative) {
+                layer.lib_path = fs::path(".") / layer_binary_name;
+            } else if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
+                layer.lib_path = layer_binary_name;
+            } else {
+                layer.lib_path = new_layer_location;
+            }
         }
     }
     if (layer_details.discovery_type != ManifestDiscoveryType::none) {
