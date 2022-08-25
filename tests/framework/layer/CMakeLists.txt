@@ -43,7 +43,7 @@ set(WRAP_LAYER_VERSION_3_EXPORTS
         TEST_LAYER_EXPORT_PRESENT_IMAGE=1
     )
 
-AddSharedLibrary(test_layer_wrap_objects DEF_FILE test_layer_wrap_objects SOURCES wrap_objects.cpp DEFINITIONS "")
-AddSharedLibrary(test_layer_wrap_objects_1 DEF_FILE test_layer_wrap_objects SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_1_EXPORTS})
-AddSharedLibrary(test_layer_wrap_objects_2 DEF_FILE test_layer_wrap_objects SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_2_EXPORTS})
-AddSharedLibrary(test_layer_wrap_objects_3 DEF_FILE test_layer_wrap_objects SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_3_EXPORTS})
+AddSharedLibrary(test_layer_wrap_objects DEF_FILE wrap_objects SOURCES wrap_objects.cpp DEFINITIONS "")
+AddSharedLibrary(test_layer_wrap_objects_1 DEF_FILE wrap_objects_1 SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_1_EXPORTS})
+AddSharedLibrary(test_layer_wrap_objects_2 DEF_FILE wrap_objects_2 SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_2_EXPORTS})
+AddSharedLibrary(test_layer_wrap_objects_3 DEF_FILE wrap_objects_3 SOURCES wrap_objects.cpp DEFINITIONS ${WRAP_LAYER_VERSION_3_EXPORTS})
