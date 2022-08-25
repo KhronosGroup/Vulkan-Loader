@@ -94,6 +94,8 @@ struct TestICD {
     std::vector<VkPhysicalDeviceToolPropertiesEXT> tooling_properties;
     std::vector<DispatchableHandle<VkCommandBuffer>> allocated_command_buffers;
 
+    VkInstanceCreateFlags passed_in_instance_create_flags{};
+
     PhysicalDevice& GetPhysDevice(VkPhysicalDevice physicalDevice) {
         for (auto& phys_dev : physical_devices) {
             if (phys_dev.vk_physical_device.handle == physicalDevice) return phys_dev;

@@ -5322,6 +5322,21 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             }
         }
 
+        // Remove the portability enumeration flag bit if the ICD doesn't support the extension
+        if ((pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR) == 1) {
+            bool supports_portability_enumeration = false;
+            for (uint32_t j = 0; j < icd_create_info.enabledExtensionCount; j++) {
+                if (strcmp(filtered_extension_names[j], VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0) {
+                    supports_portability_enumeration = true;
+                    break;
+                }
+            }
+            // If the icd supports the extension, use the flags as given, otherwise remove the portability bit
+            icd_create_info.flags = supports_portability_enumeration
+                                        ? pCreateInfo->flags
+                                        : pCreateInfo->flags & (~VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR);
+        }
+
         // Create an instance, substituting the version to 1.0 if necessary
         VkApplicationInfo icd_app_info;
         uint32_t icd_version_nopatch =
