@@ -519,6 +519,12 @@ enum class ManifestDiscoveryType {
     macos_bundle,         // place it in a location only accessible to macos bundles
 };
 
+enum class LibraryPathType {
+    absolute,              // default for testing - the exact path of the binary
+    relative,              // Relative to the manifest file
+    default_search_paths,  // Dont add any path information to the library_path - force the use of the default search paths
+};
+
 struct TestICDDetails {
     TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
     TestICDDetails(fs::path icd_binary_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
@@ -531,7 +537,7 @@ struct TestICDDetails {
     BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
     // Dont add any path information to the library_path - force the use of the default search paths
-    BUILDER_VALUE(TestICDDetails, bool, use_dynamic_library_default_search_paths, false);
+    BUILDER_VALUE(TestICDDetails, LibraryPathType, library_path_type, LibraryPathType::absolute);
 };
 
 struct TestLayerDetails {
@@ -543,8 +549,7 @@ struct TestLayerDetails {
     BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
     // If discovery type is env-var, is_dir controls whether the env-var has the full name to the manifest or just the folder
     BUILDER_VALUE(TestLayerDetails, bool, is_dir, true);
-    // Dont add any path information to the library_path - force the use of the default search paths
-    BUILDER_VALUE(TestLayerDetails, bool, use_dynamic_library_default_search_paths, false);
+    BUILDER_VALUE(TestLayerDetails, LibraryPathType, library_path_type, LibraryPathType::absolute);
 };
 
 // Locations manifests can go in the test framework

@@ -126,7 +126,7 @@ std::string ManifestICD::get_manifest_str() const {
     writer.StartObject();
     writer.AddKeyedString("file_format_version", file_format_version.get_version_str());
     writer.StartKeyedObject("ICD");
-    writer.AddKeyedString("library_path", fs::fixup_backslashes_in_path(lib_path));
+    writer.AddKeyedString("library_path", fs::fixup_backslashes_in_path(lib_path).str());
     writer.AddKeyedString("api_version", version_to_string(api_version));
     writer.AddKeyedBool("is_portability_driver", is_portability_driver);
     if (!library_arch.empty()) writer.AddKeyedString("library_arch", library_arch);

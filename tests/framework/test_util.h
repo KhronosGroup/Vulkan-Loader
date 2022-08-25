@@ -216,11 +216,11 @@ struct path {
     path operator/(const char* in) const;
 
     // accessors
-    path parent_path() const;
-    bool has_parent_path() const;
-    path filename() const;
-    path extension() const;
-    path stem() const;
+    path parent_path() const;      // Everything before the last path separator, if there is one.
+    bool has_parent_path() const;  // True if the path contains more than just a filename.
+    path filename() const;         // Everything after the last path separator.
+    path extension() const;        // The file extension, if it has one.
+    path stem() const;             // The filename minus the extension.
 
     // modifiers
     path& replace_filename(path const& replacement);
@@ -595,7 +595,7 @@ struct ManifestVersion {
 struct ManifestICD {
     BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, {})
     BUILDER_VALUE(ManifestICD, uint32_t, api_version, 0)
-    BUILDER_VALUE(ManifestICD, std::string, lib_path, {})
+    BUILDER_VALUE(ManifestICD, fs::path, lib_path, {})
     BUILDER_VALUE(ManifestICD, bool, is_portability_driver, false)
     BUILDER_VALUE(ManifestICD, std::string, library_arch, "")
     std::string get_manifest_str() const;
