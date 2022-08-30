@@ -235,11 +235,17 @@ if(WIN32)
     endif()
 
     # when adding the suffix the import and runtime library names must be consistent
-    # mingw: libvulkan-1.dll.a / libvulkan-1.dll
+    # mingw: libvulkan-1.dll.a / vulkan-1.dll
     # msvc: vulkan-1.lib / vulkan-1.dll
     set_target_properties(vulkan
                           PROPERTIES
                           OUTPUT_NAME vulkan-1)
+    if(MINGW)
+        # generate the same DLL with mingw
+        set_target_properties(vulkan
+                              PROPERTIES
+                              PREFIX "")
+    endif()
 
     if(MSVC AND ENABLE_WIN10_ONECORE)
         target_link_libraries(vulkan PRIVATE OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
