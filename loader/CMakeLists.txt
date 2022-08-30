@@ -334,7 +334,11 @@ if(PKG_CONFIG_FOUND)
         set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
     endforeach()
     if(WIN32)
-        set(VULKAN_LIB_SUFFIX "-1")
+        if(MINGW)
+            set(VULKAN_LIB_SUFFIX "-1.dll")
+        else()
+            set(VULKAN_LIB_SUFFIX "-1")
+        endif()
         # Set libdir path as in cmake's FindVulkan.cmake
         # https://github.com/KhronosGroup/Vulkan-Loader/issues/668
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
