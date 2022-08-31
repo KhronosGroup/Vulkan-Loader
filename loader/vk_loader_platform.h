@@ -280,7 +280,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 
     return buffer;
 }
-#elif defined(__Fuchsia__)
+#elif defined(__Fuchsia__) || defined(__OpenBSD__)
 static inline char *loader_platform_executable_path(char *buffer, size_t size) { return NULL; }
 #elif defined(__QNXNTO__)
 

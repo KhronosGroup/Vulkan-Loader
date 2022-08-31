@@ -936,7 +936,7 @@ static inline std::string test_platform_executable_path() {
 
     return buffer;
 }
-#elif defined(__Fuchsia__)
+#elif defined(__Fuchsia__) || defined(__OpenBSD__)
 static inline std::string test_platform_executable_path() { return {}; }
 #elif defined(__QNXNTO__)
 
