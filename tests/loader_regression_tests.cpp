@@ -1027,7 +1027,7 @@ TEST(TryLoadWrongBinaries, WrongICD) {
 #if _WIN32 || _WIN64
     ASSERT_TRUE(log.find("Failed to open dynamic library"));
 #endif
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #if defined(__x86_64__)
     ASSERT_TRUE(log.find("wrong ELF class: ELFCLASS32"));
 #else

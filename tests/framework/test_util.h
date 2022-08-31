@@ -66,7 +66,7 @@
 #include <direct.h>
 #include <windows.h>
 #include <strsafe.h>
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -109,7 +109,7 @@ void set_env_var(std::string const& name, std::string const& value);
 void remove_env_var(std::string const& name);
 std::string get_env_var(std::string const& name, bool report_failure = true);
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 void set_env_var(std::string const& name, std::string const& value);
 void remove_env_var(std::string const& name);
 std::string get_env_var(std::string const& name, bool report_failure = true);
@@ -141,7 +141,7 @@ struct path {
    private:
 #if defined(WIN32)
     static const char path_separator = '\\';
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
     static const char path_separator = '/';
 #endif
 
@@ -282,7 +282,7 @@ inline char* loader_platform_get_proc_address_error(const char* name) {
     return errorMsg;
 }
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 
 typedef void* loader_platform_dl_handle;
 inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
