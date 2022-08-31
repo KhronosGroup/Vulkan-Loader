@@ -151,7 +151,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     remove_env_var("VK_DRIVER_FILES");
 }
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 // Make sure the loader reports the correct message based on if USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {
     FrameworkEnvironment env{};
@@ -255,7 +255,7 @@ TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
     remove_env_var("VK_ADD_DRIVER_FILES");
 }
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 // Test VK_LAYER_PATH environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     FrameworkEnvironment env{};

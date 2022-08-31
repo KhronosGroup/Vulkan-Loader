@@ -58,13 +58,13 @@ int main(int argc, char** argv) {
     remove_env_var("VK_LOADER_DEBUG");
     remove_env_var("VK_LOADER_DISABLE_INST_EXT_FILTER");
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
     set_env_var("XDG_CONFIG_HOME", "/etc");
     set_env_var("XDG_CONFIG_DIRS", "/etc");
     set_env_var("XDG_DATA_HOME", "/etc");
     set_env_var("XDG_DATA_DIRS", "/etc");
 #endif
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
     set_env_var("HOME", "/home/fake_home");
 #endif
 

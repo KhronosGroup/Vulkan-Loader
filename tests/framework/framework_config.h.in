@@ -72,7 +72,7 @@
 #define BAD_DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.dll"
 #define BAD_DUMMY_BINARY_WINDOWS_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_32.dll"
 #endif
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #define DUMMY_BINARY_LINUX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.so"
 #define DUMMY_BINARY_LINUX_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_32.so"
 #define BAD_DUMMY_BINARY_LINUX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.so"

@@ -110,7 +110,7 @@ struct D3DKMT_Adapter {
     D3DKMT_Adapter& add_path(fs::path src, std::vector<std::wstring>& dest);
 };
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 
 struct DirEntry {
     DIR* directory;
@@ -181,7 +181,7 @@ struct PlatformShim {
     size_t created_key_count = 0;
     std::vector<HKeyHandle> created_keys;
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
     bool is_fake_path(fs::path const& path);
     fs::path const& get_fake_path(fs::path const& path);
 
