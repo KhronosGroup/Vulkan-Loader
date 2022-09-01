@@ -99,7 +99,7 @@
 #endif
 #endif
 // Apple doesn't have 32 bit but this should allow tests to run as if it was supported
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #define CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE DUMMY_BINARY_LINUX_32
 #define CURRENT_PLATFORM_DUMMY_BINARY_BAD BAD_DUMMY_BINARY_LINUX_64
 #endif

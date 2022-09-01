@@ -2468,7 +2468,7 @@ TEST(CreateInstance, InstanceNullExtensionPtr) {
     ASSERT_EQ(env.vulkan_functions.vkCreateInstance(&info, VK_NULL_HANDLE, &inst), VK_ERROR_EXTENSION_NOT_PRESENT);
 }
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 // NOTE: Sort order only affects Linux
 TEST(SortedPhysicalDevices, DevicesSortEnabled10NoAppExt) {
     FrameworkEnvironment env{};
@@ -3280,7 +3280,7 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     remove_env_var("VK_LOADER_DISABLE_SELECT");
 }
 
-#endif  // __linux__ || __FreeBSD__
+#endif  // __linux__ || __FreeBSD__ || __OpenBSD__
 
 const char* portability_driver_warning =
     "vkCreateInstance: Found drivers that contain devices which support the portability subset, but the "
