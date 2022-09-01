@@ -51,7 +51,10 @@
 #include <dxgi1_6.h>
 #include "adapters.h"
 
+#ifndef __MINGW32__
+// not yet available with MinGW-w64 stable
 #include <appmodel.h>
+#endif
 
 #if !defined(NDEBUG)
 #include <crtdbg.h>
