@@ -95,6 +95,10 @@ else()
     if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
         target_compile_definitions(loader_specific_options INTERFACE __BSD_VISIBLE=1)
     endif()
+    check_include_file("alloca.h" HAVE_ALLOCA_H)
+    if(HAVE_ALLOCA_H)
+        target_compile_definitions(loader_specific_options INTERFACE HAVE_ALLOCA_H)
+    endif()
 endif()
 
 set(NORMAL_LOADER_SRCS

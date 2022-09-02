@@ -30,8 +30,10 @@
 
 #if defined(_WIN32)
 #include <malloc.h>
-#else
+#elif defined(HAVE_ALLOCA_H)
 #include <alloca.h>
+#else
+#include <stdlib.h>
 #endif
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || defined(__OpenBSD__)
