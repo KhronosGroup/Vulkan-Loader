@@ -165,6 +165,9 @@ which indicates that it was likely enabled by the application.
 
 ### Disable Layers
 
+**NOTE:** This functionality is only available with Loaders built with version
+1.3.yyyy of the Vulkan headers and later.
+
 Sometimes, implicit layers can cause issues with an application.
 Because of this, the next step is to try to disable one or more of the listed
 implicit layers.
@@ -188,6 +191,9 @@ WARNING | LAYER:  Implicit layer "VK_LAYER_Twitch_Overlay" forced disabled becau
 ```
 
 ### Selectively Re-enable Layers
+
+**NOTE:** This functionality is only available with Loaders built with version
+1.3.yyyy of the Vulkan headers and later.
 
 When trying to diagnose problems caused by layers, it is useful to first disable
 all layers and re-enable each layer individually.
@@ -224,6 +230,9 @@ For more info on how to use the filtering environment variables, refer to the
 ## Debugging Possible Driver Issues
 
 ### Enable Driver Logging
+
+**NOTE:** This functionality is only available with Loaders built with version
+1.3.yyyy of the Vulkan headers and later.
 
 If you suspect a driver issue, set the loader logging to specifically output
 driver messages:
@@ -290,6 +299,9 @@ DRIVER:        Using "Intel(R) UHD Graphics 630 (CFL GT2)" with driver: "/usr/li
 
 
 ### Selectively Enable Specific Drivers
+
+**NOTE:** This functionality is only available with Loaders built with version
+1.3.yyyy of the Vulkan headers and later.
 
 You can now use the filtering environment variables
 (`VK_LOADER_DRIVERS_SELECT` and `VK_LOADER_DRIVERS_DISABLE`) to selectively
