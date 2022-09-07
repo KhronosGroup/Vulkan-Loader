@@ -709,6 +709,8 @@ discovery.
         variables (like <i>VK_ICD_FILENAMES</i> or <i>VK_ADD_DRIVER_FILES</i>).
     </small></td>
     <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.yyyy of the Vulkan headers and later.<br/>
         If no drivers are found with a manifest filename that matches any of the
         provided globs, then no driver is enabled and it <b>may</b> result
         in Vulkan applications failing to run properly.
@@ -738,6 +740,8 @@ discovery.
         variables (like <i>VK_ICD_FILENAMES</i> or <i>VK_ADD_DRIVER_FILES</i>).
     </small></td>
     <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.yyyy of the Vulkan headers and later.<br/>
         If all available drivers are disabled using this environment variable,
         then no drivers will be found by the loader and <b>will</b> result
         in Vulkan applications failing to run properly.<br/>
@@ -772,7 +776,8 @@ discovery.
         <i>VK_INSTANCE_LAYERS</i>
     </small></td>
     <td><small>
-        None
+        This functionality is only available with Loaders built with version
+        1.3.yyyy of the Vulkan headers and later.
     </small></td>
     <td><small>
         export<br/>
@@ -798,6 +803,8 @@ discovery.
         (like <i>VK_LAYER_PATH</i>).
     </small></td>
     <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.yyyy of the Vulkan headers and later.<br/>
         Disabling a layer that an application intentionally enables as an
         explicit layer <b>may</b> cause the application to not function
         properly.<br/>

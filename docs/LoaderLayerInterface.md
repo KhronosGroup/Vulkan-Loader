@@ -421,6 +421,9 @@ following:
 
 ### Layer Filtering
 
+**NOTE:** This functionality is only available with Loaders built with version
+1.3.yyyy of the Vulkan headers and later.
+
 The layer enable environment variable `VK_LOADER_LAYERS_ENABLE` is a
 comma-delimited list of globs to search for in known layers.
 Known layers are those that are already found by the loader taking into account

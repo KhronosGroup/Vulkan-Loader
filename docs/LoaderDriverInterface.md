@@ -142,6 +142,9 @@ ignored.
 
 ### Driver Filtering
 
+**NOTE:** This functionality is only available with Loaders built with version
+1.3.yyyy of the Vulkan headers and later.
+
 The driver select environment variable `VK_LOADER_DRIVERS_SELECT` is a
 comma-delimited list of globs to search for in known drivers.
 Since drivers don’t have a name like layers, this substring is used to compare
