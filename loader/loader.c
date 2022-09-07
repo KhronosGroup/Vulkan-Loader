@@ -845,6 +845,30 @@ VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst,
     return VK_SUCCESS;
 }
 
+// Determine if the provided explicit layer should be available by querying the appropriate environmental variables.
+bool loader_layer_is_available(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
+                               const struct loader_envvar_disable_layers_filter *disable_filter,
+                               const struct loader_layer_properties *prop) {
+    bool available = true;
+    if (NULL != disable_filter) {
+        bool is_implicit = (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
+        bool disabled_by_type = (is_implicit) ? (disable_filter->disable_all_implicit) : (disable_filter->disable_all_explicit);
+        if (disable_filter->disable_all || disabled_by_type ||
+            check_name_matches_filter_environment_var(inst, prop->info.layerName, &disable_filter->additional_filters)) {
+            available = false;
+        }
+    }
+    if (NULL != enable_filter && check_name_matches_filter_environment_var(inst, prop->info.layerName, enable_filter)) {
+        available = true;
+    } else if (!available) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                   "Layer \"%s\" forced disabled because name matches filter of env var \'%s\'.", prop->info.layerName,
+                   VK_LAYERS_DISABLE_ENV_VAR);
+    }
+
+    return available;
+}
+
 // Search the given search_list for any layers in the props list.  Add these to the
 // output layer_list.
 static VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
@@ -866,25 +890,12 @@ static VkResult loader_add_layer_names_to_list(const struct loader_instance *ins
             continue;
         }
 
-        bool disabled = false;
-        bool is_implicit = (0 == (layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
-        if (NULL != disable_filter) {
-            if (disable_filter->disable_all || (is_implicit && disable_filter->disable_all_implicit) ||
-                (!is_implicit && disable_filter->disable_all_explicit) ||
-                check_name_matches_filter_environment_var(inst, source_name, &disable_filter->additional_filters)) {
-                disabled = true;
-            }
-        }
-
-        if (disabled && (NULL == enable_filter || !check_name_matches_filter_environment_var(inst, source_name, enable_filter))) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Layer \"%s\" disabled because name matches filter of env var \'%s\'", source_name,
-                       VK_LAYERS_DISABLE_ENV_VAR);
+        // Make sure the layer isn't already in the output_list, skip adding it if it is.
+        if (loader_find_layer_name_in_list(source_name, output_list)) {
             continue;
         }
 
-        // Make sure the layer isn't already in the output_list, skip adding it if it is.
-        if (loader_find_layer_name_in_list(source_name, output_list)) {
+        if (!loader_layer_is_available(inst, enable_filter, disable_filter, layer_prop)) {
             continue;
         }
 
@@ -1021,18 +1032,9 @@ bool loader_add_meta_layer(const struct loader_instance *inst, const struct load
                            search_prop->info.layerName, search_prop_version.major, search_prop_version.minor);
             }
 
-            bool is_implicit = (0 == (search_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
-            bool disabled_by_type = (is_implicit) ? (NULL != disable_filter && disable_filter->disable_all_implicit)
-                                                  : (NULL != disable_filter && disable_filter->disable_all_explicit);
-
-            if ((NULL != disable_filter && (disable_filter->disable_all || disabled_by_type ||
-                                            check_name_matches_filter_environment_var(inst, search_prop->info.layerName,
-                                                                                      &disable_filter->additional_filters))) &&
-                (NULL == enable_filter ||
-                 !check_name_matches_filter_environment_var(inst, search_prop->info.layerName, enable_filter))) {
+            if (!loader_layer_is_available(inst, enable_filter, disable_filter, search_prop)) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                           "Meta Layer \"%s\" component layer \"%s\" disabled because it matches filter in env var \'%s\'.",
-                           prop->info.layerName, search_prop->info.layerName, VK_LAYERS_DISABLE_ENV_VAR);
+                           "Meta Layer \"%s\" component layer \"%s\" disabled.", prop->info.layerName, search_prop->info.layerName);
                 continue;
             }
 
@@ -3647,6 +3649,14 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
             *cur_write_ptr = '\0';
             loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override paths set to %s",
                        override_paths);
+        }
+    }
+
+    // Remove disabled layers
+    for (uint32_t i = 0; i < instance_layers->count; ++i) {
+        if (!loader_layer_is_available(inst, &enable_filter, &disable_filter, &instance_layers->list[i])) {
+            loader_remove_layer_in_list(inst, instance_layers, i);
+            i--;
         }
     }
 
