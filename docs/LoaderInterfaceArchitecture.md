@@ -40,6 +40,12 @@
 - [Driver Interface With the Loader](#driver-interface-with-the-loader)
 - [Debugging Issues](#debugging-issues)
 - [Loader Policies](#loader-policies)
+- [Filter Environment Variable Behaviors](#filter-environment-variable-behaviors)
+  - [Comparison Strings](#comparison-strings)
+  - [Comma-Delimited Lists](#comma-delimited-lists)
+  - [Globs](#globs)
+  - [Case-Insensitive](#case-insensitive)
+  - [Environment Variable Priority](#environment-variable-priority)
 - [Table of Debug Environment Variables](#table-of-debug-environment-variables)
 - [Glossary of Terms](#glossary-of-terms)
 
@@ -490,6 +496,62 @@ sections listed below:
 <br/>
 <br/>
 
+## Filter Environment Variable Behaviors
+
+The filter environment variables provided in certain areas have some common
+restrictions and behaviors that should be listed.
+
+### Comparison Strings
+
+The filter variables will be compared against the appropriate strings for either
+drivers or layers.
+The appropriate string for layers is the layer name provided in the layer's
+manifest file.
+Since drivers don’t have a name like layers, this substring is used to compare
+against the driver manifest's filename.
+
+### Comma-Delimited Lists
+
+All of the filter environment variables accept comma-delimited input.
+Therefore, you can chain multiple strings together and it will use the strings
+to individually enable or disable the appropriate item in the current list of
+available items.
+
+### Globs
+
+To provide enough flexibility to limit name searches to only those wanted by the
+developer, the loader uses a limited glob format for strings.
+Acceptable globs are:
+ - Prefixes:   `"string*"`
+ - Suffixes:   `"*string"`
+ - Substrings:  `"*string*"`
+ - Whole strings: `"string"`
+   - In the case of whole strings, the string will be compared against each
+     layer or driver file name in its entirety.
+   - Because of this, it will only match the specific target such as:
+     `VK_LAYER_KHRONOS_validation` will match the layer name
+     `VK_LAYER_KHRONOS_validation`, but **not** a layer named
+     `VK_LAYER_KHRONOS_validation2` (not that there is such a layer).
+
+This is especially useful because it is difficult sometimes to determine the
+full name of a driver manifest file or even some commonly used layers
+such as `VK_LAYER_KHRONOS_validation`.
+
+### Case-Insensitive
+
+All of the filter environment variables assume the strings inside of the glob
+are not case-sensitive.
+Therefore, “Bob”, “bob”, and “BOB” all amount to the same thing.
+
+### Environment Variable Priority
+
+The values from the *disable* environment variable will be considered
+**before** the *enable* or *select* environment variable.
+Because of this, it is possible to disable a layer/driver using the *disable*
+environment variable, only to have it be re-enabled by the *enable*/*select*
+environment variable.
+This is useful if you disable all layers/drivers with the intent of only
+enabling a smaller subset of specific layers/drivers for issue triaging.
 
 ## Table of Debug Environment Variables
 
