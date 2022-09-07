@@ -26,12 +26,10 @@
   - [macOS Layer Discovery](#macos-layer-discovery)
     - [Example macOS Implicit Layer Search Path](#example-macos-implicit-layer-search-path)
   - [Layer Filtering](#layer-filtering)
+    - [Layer Enable Filtering](#layer-enable-filtering)
+    - [Layer Disable Filtering](#layer-disable-filtering)
     - [Layer Special Case Disable](#layer-special-case-disable)
     - [Layer Disable Warning](#layer-disable-warning)
-    - [Comma-delimited lists](#comma-delimited-lists)
-    - [Globs](#globs)
-    - [Case-insensitive](#case-insensitive)
-    - [Environment Variable Priority](#environment-variable-priority)
   - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
 - [Layer Version Negotiation](#layer-version-negotiation)
 - [Layer Call Chains and Distributed Dispatch](#layer-call-chains-and-distributed-dispatch)
@@ -424,11 +422,23 @@ following:
 **NOTE:** This functionality is only available with Loaders built with version
 1.3.yyyy of the Vulkan headers and later.
 
+The loader supports filter environment variables which can forcibly enable and
+disable known layers.
+Known layers are those that are already found by the loader taking into account
+default search paths and other environment variables
+(like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`).
+
+The filter variables will be compared against the layer name provided in the
+layer's manifest file.
+
+The filters must also follow the behaviors define in the
+[Filter Environment Variable Behaviors](LoaderInterfaceArchitecture.md#filter-environment-variable-behaviors)
+section of the [LoaderLayerInterface](LoaderLayerInterface.md) document.
+
+#### Layer Enable Filtering
+
 The layer enable environment variable `VK_LOADER_LAYERS_ENABLE` is a
 comma-delimited list of globs to search for in known layers.
-Known layers are those that are already found by the loader taking into account
-default search paths and other environment variables (like
-`VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`).
 The layer names are compared against the globs listed in the environment
 variable, and if they match, they will automatically be added to the enabled
 layer list in the loader for each application.
@@ -443,11 +453,10 @@ This message will look like the following:
 WARNING | LAYER:  Layer "VK_LAYER_LUNARG_wrap_objects" force enabled due to env var 'VK_LOADER_LAYERS_ENABLE'
 ```
 
+#### Layer Disable Filtering
+
 The layer disable environment variable `VK_LOADER_LAYERS_DISABLE` is a
 comma-delimited list of globs to search for in known layers.
-Known layers are those that are already found by the loader taking into account
-default search paths and other environment variables
-(like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`).
 The layer names are compared against the globs listed in the environment
 variable, and if they match, they will automatically be disabled (whether or not
 the layer is Implicit or Explicit).
@@ -491,44 +500,6 @@ Disabling layers, whether just through normal usage of
 `VK_LOADER_LAYERS_DISABLE` or by evoking one of the special disable options like
 `~all~` or `~explicit~` could cause application breakage if the application is
 relying on features provided by one or more explicit layers.
-
-#### Comma-delimited lists
-
-All of the filter environment variables accept comma-delimited input.
-Therefore, you can chain multiple strings together and it will use the strings
-to individually enable or disable the appropriate item in the current list of
-available items.
-
-#### Globs
-
-To provide enough flexibility to limit layer name searches to only those
-desired by the developer, the loader uses a limited glob format for strings.
-Acceptable globs are:
- - Prefixes:   `"string*"`
- - Suffixes:   `"*string"`
- - Substrings:  `"*string*"`
- - Whole strings: `"string"`
-
-This is especially important because it is difficult sometimes to determine the
-full name of a driver manifest file.
-So, instead of having to type in `VK_LAYER_KHRONOS_validation` into the older
-`VK_INSTANCE_LAYERS` environment variable to force on validation, the substring
-`*validation` can be used in the `VK_LOADER_LAYER_ENABLE` environment variable.
-
-#### Case-insensitive
-
-All of the filter environment variables assume the strings inside of the glob
-are not case-sensitive.
-Therefore, “Bob”, “bob”, and “BOB” all amount to the same thing.
-
-#### Environment Variable Priority
-
-The values from the disable environment variable will be considered
-<b>before</b> the enable environment variable.
-Because of this, it is possible to disable a layer using the disable environment
-variable, only to have it be re-enabled by the enable environment variable.
-This is useful if you disable all layers with the intent of only enabling a
-smaller subset of specific layers for issue triaging.
 
 ##### VK_INSTANCE_LAYERS
 

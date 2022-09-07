@@ -20,10 +20,8 @@
   - [Overriding the Default Driver Discovery](#overriding-the-default-driver-discovery)
   - [Additional Driver Discovery](#additional-driver-discovery)
   - [Driver Filtering](#driver-filtering)
-    - [Comma-delimited lists](#comma-delimited-lists)
-    - [Globs](#globs)
-    - [Case-insensitive](#case-insensitive)
-    - [Environment Variable Priority](#environment-variable-priority)
+    - [Driver Select Filtering](#driver-select-filtering)
+    - [Driver Disable Filtering](#driver-disable-filtering)
   - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
     - [Examples](#examples)
       - [On Windows](#on-windows)
@@ -145,17 +143,26 @@ ignored.
 **NOTE:** This functionality is only available with Loaders built with version
 1.3.yyyy of the Vulkan headers and later.
 
-The driver select environment variable `VK_LOADER_DRIVERS_SELECT` is a
-comma-delimited list of globs to search for in known drivers.
-Since drivers don’t have a name like layers, this substring is used to compare
-against the manifest filename.
+The loader supports filter environment variables which can forcibly select and
+disable known drivers.
 Known driver manifests are those files that are already found by the loader
 taking into account default search paths and other environment variables (like
 `VK_ICD_FILENAMES` or `VK_ADD_DRIVER_FILES`).
 
-When a driver is disabled using the `VK_LOADER_DRIVERS_SELECT` filter, and
-loader logging is set to emit either warnings or driver messages, then a message
-will show for each driver that has been ignored.
+The filter variables will be compared against the driver's manifest filename.
+
+The filters must also follow the behaviors define in the
+[Filter Environment Variable Behaviors](LoaderInterfaceArchitecture.md#filter-environment-variable-behaviors)
+section of the [LoaderLayerInterface](LoaderLayerInterface.md) document.
+
+#### Driver Select Filtering
+
+The driver select environment variable `VK_LOADER_DRIVERS_SELECT` is a
+comma-delimited list of globs to search for in known drivers.
+
+If a driver is not selected when using the `VK_LOADER_DRIVERS_SELECT` filter,
+and loader logging is set to emit either warnings or driver messages, then a
+message will show for each driver that has been ignored.
 This message will look like the following:
 
 ```
@@ -163,16 +170,13 @@ WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by
 ```
 
 If no drivers are found with a manifest filename that matches any of the
-provided globs, then no driver is enabled and it can result in Vulkan
-applications failing to run properly.
+provided globs, then no driver is enabled and may result in failures for
+any Vulkan application that is run.
+
+#### Driver Disable Filtering
 
 The driver disable environment variable `VK_LOADER_DRIVERS_DISABLE` is a
 comma-delimited list of globs to search for in known drivers.
-Since drivers don’t have a name like layers, this substring is used to compare
-against the manifest filename.
-Known driver manifests are those files that are already found by the loader
-taking into account default search paths and other environment variables
-(like `VK_ICD_FILENAMES` or `VK_ADD_DRIVER_FILES`).
 
 When a driver is disabled using the `VK_LOADER_DRIVERS_DISABLE` filter, and
 loader logging is set to emit either warnings or driver messages, then a message
@@ -185,44 +189,6 @@ WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disable
 
 If no drivers are found with a manifest filename that matches any of the
 provided globs, then no driver is disabled.
-
-#### Comma-delimited lists
-
-All of the filter environment variables accept comma-delimited input.
-Therefore, you can chain multiple strings together and it will use the strings
-to individually enable or disable the appropriate item in the current list of
-available items.
-
-#### Globs
-
-To provide enough flexibility to limit driver name searches to only those
-desired by the developer, the loader uses a limited glob format for strings.
-Acceptable globs are:
- - Prefixes:   `"string*"`
- - Suffixes:   `"*string"`
- - Substrings:  `"*string*"`
- - Whole strings: `"string"`
-
-This is especially important because it is difficult sometimes to determine the
-full name of a driver manifest file.
-So, instead of having to type in `intel_icd.x86_64.json` to select only the
-Intel driver on Linux, the substring `*intel*` can be used in the
-`VK_LOADER_DRIVER_SELECT` environment variable.
-
-#### Case-insensitive
-
-All of the filter environment variables assume the strings inside of the glob
-are not case-sensitive.
-Therefore, “Bob”, “bob”, and “BOB” all amount to the same thing.
-
-#### Environment Variable Priority
-
-The values from the disable environment variable will be considered
-<b>before</b> the select environment variable.
-Because of this, it is possible to disable a driver using the disable
-environment variable, only to have it be re-enabled by the enable environment
-variable.
-
 
 ### Exception for Elevated Privileges
 

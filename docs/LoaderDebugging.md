@@ -304,13 +304,13 @@ DRIVER:        Using "Intel(R) UHD Graphics 630 (CFL GT2)" with driver: "/usr/li
 1.3.yyyy of the Vulkan headers and later.
 
 You can now use the filtering environment variables
-(`VK_LOADER_DRIVERS_SELECT` and `VK_LOADER_DRIVERS_DISABLE`) to selectively
-select or disable various drivers.
-Remember, that to disable drivers, you must use the name of the Driver JSON to
-disable since the drivers do not reveal a name until much later in the Vulkan
-initialization process.
+(`VK_LOADER_DRIVERS_SELECT` and `VK_LOADER_DRIVERS_DISABLE`) to control what
+drivers the loader will attempt to load.
+For drivers, the string globs passed into the above environment variables will
+be compared against the driver JSON file name since there is no driver name
+known to the loader until much later in the Vulkan initialization process.
 
-So to disable all drivers except Nvidia you could do the following:
+For example, to disable all drivers except Nvidia you could do the following:
 
 ```
 set VK_LOADER_DRIVERS_DISABLE=*
@@ -324,9 +324,6 @@ are used:
 WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
 WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
 ```
-
-These can be used to make sure that the appropriate drivers are enabled/disabled
-properly.
 
 For more info on how to use the filtering environment variables, refer to the
 [Driver Filtering](LoaderDriverInterface.md#driver-filtering) section of the
