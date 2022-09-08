@@ -1374,14 +1374,23 @@ non-obvious results.
 This not an exhaustive list but should better clarify the behavior of the
 loader in complex situations.
 
-* The API version specified by an implicit layer is used to determine whether
-the layer should be enabled.
-If the layer's API version is less than the version given by the application in `VkApplicationInfo`, the implicit layer is not enabled.
-Thus, any implicit layers must have an API version that is the same or higher
-than the application.
-This applies to implicit meta layers and the override layer.
-Therefore, an application which supports an API version that is newer than any
-implicit meta layers will prevent the meta layer from activating.
+* The Vulkan Loader in versions 1.3.228 and above will enable implicit layers
+regardless of the API version specified by the application in
+`VkApplicationInfo::apiVersion`.
+Previous loader versions (1.3.227 and below) used to have a requirement where
+implicit layer's API version must be equal to or greater than the API version
+of the application for the layer to be enabled.
+The change relaxed the implicit layer loading requirements because it was
+determined that the perceived protection of preventing older layers running
+with newer applications wasn't enough to justify the friction it caused.
+This was due to older layers no longer working with newer applications
+for no apparent reason, as well as older layers having to update the manifest
+to work with newer applications.
+The layer didn't need to do anything else to get their layer working again,
+which meant that a layer didn't need to prove that their layer worked with
+newer API versions.
+Thus, the disabling caused confusion for users but didn't protect them from
+potentially badly behaving layers.
 
 * An implicit layer will ignore its disable environment variable being set if
 it is a component in an active meta layer.
@@ -1713,7 +1722,7 @@ Here's an example of a meta-layer manifest file:
     <td>Optional field which specifies the architecture of the binary associated
         with "library_path". <br />
         Allows the loader to quickly determine if the architecture of the layer
-        matches that of the running application. <br />       
+        matches that of the running application. <br />
         The only valid values are "32" and "64".</td>
     <td><small>N/A</small></td>
   </tr>
