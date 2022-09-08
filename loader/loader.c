@@ -957,23 +957,7 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
 static void loader_add_implicit_layer(const struct loader_instance *inst, const struct loader_layer_properties *prop,
                                       struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
                                       const struct loader_layer_list *source_list) {
-    bool enable = loader_implicit_layer_is_enabled(inst, prop);
-
-    // If the implicit layer is supposed to be enable, make sure the layer supports at least the same API version
-    // that the application is asking (i.e. layer's API >= app's API).  If it's not, disable this layer.
-    if (enable) {
-        loader_api_version prop_version = loader_make_version(prop->info.specVersion);
-        if (!loader_check_version_meets_required(inst->app_api_version, prop_version)) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                       "loader_add_implicit_layer: Disabling implicit layer %s for using an old API version %u.%u versus "
-                       "application requested %u.%u",
-                       prop->info.layerName, prop_version.major, prop_version.minor, inst->app_api_version.major,
-                       inst->app_api_version.minor);
-            enable = false;
-        }
-    }
-
-    if (enable) {
+    if (loader_implicit_layer_is_enabled(inst, prop)) {
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
             loader_add_layer_properties_to_list(inst, target_list, 1, prop);
             if (NULL != expanded_target_list) {

@@ -661,16 +661,22 @@ TEST(OverrideMetaLayer, OlderVersionThanInstance) {
         ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
         ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
-    {  // 1.2 instance
+    {  // 1.3 instance
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-
-        inst.create_info.api_version = VK_API_VERSION_1_2;
+        inst.create_info.api_version = VK_API_VERSION_1_3;
         inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") +
-                                       lunarg_meta_layer_name +
-                                       " for using an old API version 1.1 versus application requested 1.2"));
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(2U, count);
+        std::array<VkLayerProperties, 2> layer_props;
+
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        ASSERT_EQ(2U, count);
+        ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+        ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
 }
 
@@ -725,21 +731,21 @@ TEST(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
     }
 
     {
-        // 1.2 instance
+        // 1.3 instance
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.create_info.set_api_version(1, 2, 0);
+        inst.create_info.set_api_version(1, 3, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        ASSERT_TRUE(
-            env.debug_log.find("loader_add_implicit_layer: Disabling implicit layer VK_LAYER_LUNARG_override for using an old API "
-                               "version 1.1 versus application requested 1.2"));
+
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
+        ASSERT_EQ(2U, count);
         std::array<VkLayerProperties, 2> layer_props;
+
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(0U, count);
+        ASSERT_EQ(2U, count);
+        ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
+        ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
 }
 
@@ -797,24 +803,23 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
     }
 
     {
-        // 1.2 instance
+        // 1.3 instance
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.create_info.set_api_version(1, 2, 0);
+        inst.create_info.set_api_version(1, 3, 0);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        // Meta layer should be disabled since its less than the apiVersion of the instance
-        EXPECT_TRUE(
-            env.debug_log.find("loader_add_implicit_layer: Disabling implicit layer VK_LAYER_LUNARG_override for using an old API "
-                               "version 1.1 versus application requested 1.2"));
+        // Newer component is allowed now
+        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
         env.debug_log.clear();
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(0U, count);
+        EXPECT_EQ(2U, count);
         std::array<VkLayerProperties, 2> layer_props;
-        count = 2;
+
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        EXPECT_EQ(0U, count);
+        EXPECT_EQ(2U, count);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
 }
 
@@ -2551,7 +2556,10 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
     {  // 1.1 instance - should find the implicit layer
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
+        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+        env.debug_log.clear();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         uint32_t count = 0;
@@ -2562,23 +2570,22 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
         EXPECT_EQ(1U, count);
         ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
     }
-    {  // 1.2 instance -- instance layer shouldn't be found
-        DebugUtilsLogger log;
+    {  // 1.2 instance -- instance layer should be found
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 2, 0);
-        FillDebugUtilsCreateDetails(inst.create_info, log);
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
+        EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer ") + regular_layer_name));
+        env.debug_log.clear();
+
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        ASSERT_TRUE(log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") + regular_layer_name +
-                             " for using an old API version 1.1 versus application requested 1.2"));
-
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
         VkLayerProperties layer_props{};
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
     }
 }
 
@@ -2609,55 +2616,54 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         EXPECT_EQ(layer_count, 1U);
         EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
     }
-    {  // 1.0 instance -- instance layer should be found
+    {  // 1.0 instance
         DebugUtilsLogger log;
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 0, 0);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
-        ASSERT_TRUE(log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") + regular_layer_name +
-                             " for using an old API version 0.1 versus application requested 1.0"));
+        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
         VkLayerProperties layer_props{};
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
     }
-    {  // 1.1 instance -- instance layer should be found
+    {  // 1.1 instance
         DebugUtilsLogger log;
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
-        ASSERT_TRUE(log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") + regular_layer_name +
-                             " for using an old API version 0.1 versus application requested 1.1"));
+        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
         VkLayerProperties layer_props{};
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
     }
-    {  // 1.2 instance -- instance layer shouldn't be found
+    {  // 1.2 instance
         DebugUtilsLogger log;
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 2, 0);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        ASSERT_TRUE(log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") + regular_layer_name +
-                             " for using an old API version 0.1 versus application requested 1.2"));
-
+        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
         VkLayerProperties layer_props{};
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
     }
     {  // application doesn't state its API version
         DebugUtilsLogger log;
@@ -2665,16 +2671,16 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         inst.create_info.set_fill_in_application_info(false);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
-        EXPECT_TRUE(log.find(std::string("loader_add_implicit_layer: Disabling implicit layer ") + regular_layer_name +
-                             " for using an old API version 0.1 versus application requested 1.0"));
+        EXPECT_TRUE(log.find(std::string("Insert instance layer ") + regular_layer_name));
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
         VkLayerProperties layer_props{};
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        ASSERT_EQ(0U, count);
+        EXPECT_EQ(1U, count);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
     }
 }
 
