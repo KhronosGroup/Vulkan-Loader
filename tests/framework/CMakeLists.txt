@@ -83,12 +83,12 @@ add_custom_command(
     PRE_BUILD
     COMMAND ${CMAKE_COMMAND} "-E" "copy_if_different" "${CMAKE_CURRENT_BINARY_DIR}/framework_config_$<CONFIG>.h" "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h"
     VERBATIM
-    PRE_BUILD
     DEPENDS  "${CMAKE_CURRENT_BINARY_DIR}/framework_config_$<CONFIG>.h"
     OUTPUT   "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h"
     COMMENT  "creating framework_config.h file ({event: PRE_BUILD}, {filename: framework_config.h })"
     )
 add_custom_target (generate_framework_config DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h")
+add_dependencies (generate_framework_config vulkan)
 add_dependencies (testing_framework_util generate_framework_config)
 
 add_library(testing_dependencies STATIC test_environment.cpp test_environment.h)
