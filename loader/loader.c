@@ -4096,11 +4096,11 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
         struct loader_layer_properties *prop = inst->expanded_activated_layer_list.list + i;
         loader_api_version prop_spec_version = loader_make_version(prop->info.specVersion);
         if (!loader_check_version_meets_required(inst->app_api_version, prop_spec_version)) {
-            loader_log(
-                inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                "loader_add_to_layer_list: Explicit layer %s is using an old API version %u.%u versus application requested %u.%u",
-                prop->info.layerName, prop_spec_version.major, prop_spec_version.minor, inst->app_api_version.major,
-                inst->app_api_version.minor);
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "Layer %s uses API version %u.%u which is older than the application specified "
+                       "API version of %u.%u. May cause issues.",
+                       prop->info.layerName, prop_spec_version.major, prop_spec_version.minor, inst->app_api_version.major,
+                       inst->app_api_version.minor);
         }
     }
 
