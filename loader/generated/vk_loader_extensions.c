@@ -2507,7 +2507,7 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) {
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -2515,7 +2515,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
                    "[VUID-vkCmdDecodeVideoKHR-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->CmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+    disp->CmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
