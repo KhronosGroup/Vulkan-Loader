@@ -3285,8 +3285,8 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
 
 const char* portability_driver_warning =
     "vkCreateInstance: Found drivers that contain devices which support the portability subset, but the "
-    "portability enumeration bit was not set!. Applications that wish to enumerate portability drivers must set the "
-    "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags and"
+    "portability enumeration bit was not set! Applications that wish to enumerate portability drivers must set the "
+    "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags and "
     "enable the VK_KHR_portability_enumeration instance extension.";
 
 TEST(PortabilityICDConfiguration, PortabilityICDOnly) {

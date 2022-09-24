@@ -543,8 +543,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
             loader_log(
                 ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                 "vkCreateInstance: Found drivers that contain devices which support the portability subset, but the "
-                "portability enumeration bit was not set!. Applications that wish to enumerate portability drivers must set the "
-                "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags and"
+                "portability enumeration bit was not set! Applications that wish to enumerate portability drivers must set the "
+                "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags and "
                 "enable the VK_KHR_portability_enumeration instance extension.");
         }
         loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "vkCreateInstance: Found no drivers!");
