@@ -320,6 +320,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     LOOKUP_GIPA(GetPhysicalDeviceScreenPresentationSupportQNX, false);
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+    // ---- VK_NV_optical_flow extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceOpticalFlowImageFormatsNV, false);
+
 #undef LOOKUP_GIPA
 
     return true;
@@ -940,6 +943,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_EXT_image_compression_control extension commands
     table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT)gdpa(dev, "vkGetImageSubresourceLayout2EXT");
 
+    // ---- VK_EXT_device_fault extension commands
+    table->GetDeviceFaultInfoEXT = (PFN_vkGetDeviceFaultInfoEXT)gdpa(dev, "vkGetDeviceFaultInfoEXT");
+
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     table->CmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)gdpa(dev, "vkCmdSetVertexInputEXT");
 
@@ -1003,6 +1009,22 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)gdpa(dev, "vkCmdDrawMultiEXT");
     table->CmdDrawMultiIndexedEXT = (PFN_vkCmdDrawMultiIndexedEXT)gdpa(dev, "vkCmdDrawMultiIndexedEXT");
 
+    // ---- VK_EXT_opacity_micromap extension commands
+    table->CreateMicromapEXT = (PFN_vkCreateMicromapEXT)gdpa(dev, "vkCreateMicromapEXT");
+    table->DestroyMicromapEXT = (PFN_vkDestroyMicromapEXT)gdpa(dev, "vkDestroyMicromapEXT");
+    table->CmdBuildMicromapsEXT = (PFN_vkCmdBuildMicromapsEXT)gdpa(dev, "vkCmdBuildMicromapsEXT");
+    table->BuildMicromapsEXT = (PFN_vkBuildMicromapsEXT)gdpa(dev, "vkBuildMicromapsEXT");
+    table->CopyMicromapEXT = (PFN_vkCopyMicromapEXT)gdpa(dev, "vkCopyMicromapEXT");
+    table->CopyMicromapToMemoryEXT = (PFN_vkCopyMicromapToMemoryEXT)gdpa(dev, "vkCopyMicromapToMemoryEXT");
+    table->CopyMemoryToMicromapEXT = (PFN_vkCopyMemoryToMicromapEXT)gdpa(dev, "vkCopyMemoryToMicromapEXT");
+    table->WriteMicromapsPropertiesEXT = (PFN_vkWriteMicromapsPropertiesEXT)gdpa(dev, "vkWriteMicromapsPropertiesEXT");
+    table->CmdCopyMicromapEXT = (PFN_vkCmdCopyMicromapEXT)gdpa(dev, "vkCmdCopyMicromapEXT");
+    table->CmdCopyMicromapToMemoryEXT = (PFN_vkCmdCopyMicromapToMemoryEXT)gdpa(dev, "vkCmdCopyMicromapToMemoryEXT");
+    table->CmdCopyMemoryToMicromapEXT = (PFN_vkCmdCopyMemoryToMicromapEXT)gdpa(dev, "vkCmdCopyMemoryToMicromapEXT");
+    table->CmdWriteMicromapsPropertiesEXT = (PFN_vkCmdWriteMicromapsPropertiesEXT)gdpa(dev, "vkCmdWriteMicromapsPropertiesEXT");
+    table->GetDeviceMicromapCompatibilityEXT = (PFN_vkGetDeviceMicromapCompatibilityEXT)gdpa(dev, "vkGetDeviceMicromapCompatibilityEXT");
+    table->GetMicromapBuildSizesEXT = (PFN_vkGetMicromapBuildSizesEXT)gdpa(dev, "vkGetMicromapBuildSizesEXT");
+
     // ---- VK_EXT_pageable_device_local_memory extension commands
     table->SetDeviceMemoryPriorityEXT = (PFN_vkSetDeviceMemoryPriorityEXT)gdpa(dev, "vkSetDeviceMemoryPriorityEXT");
 
@@ -1010,9 +1032,48 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetDescriptorSetLayoutHostMappingInfoVALVE = (PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE)gdpa(dev, "vkGetDescriptorSetLayoutHostMappingInfoVALVE");
     table->GetDescriptorSetHostMappingVALVE = (PFN_vkGetDescriptorSetHostMappingVALVE)gdpa(dev, "vkGetDescriptorSetHostMappingVALVE");
 
+    // ---- VK_EXT_extended_dynamic_state3 extension commands
+    table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)gdpa(dev, "vkCmdSetTessellationDomainOriginEXT");
+    table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)gdpa(dev, "vkCmdSetDepthClampEnableEXT");
+    table->CmdSetPolygonModeEXT = (PFN_vkCmdSetPolygonModeEXT)gdpa(dev, "vkCmdSetPolygonModeEXT");
+    table->CmdSetRasterizationSamplesEXT = (PFN_vkCmdSetRasterizationSamplesEXT)gdpa(dev, "vkCmdSetRasterizationSamplesEXT");
+    table->CmdSetSampleMaskEXT = (PFN_vkCmdSetSampleMaskEXT)gdpa(dev, "vkCmdSetSampleMaskEXT");
+    table->CmdSetAlphaToCoverageEnableEXT = (PFN_vkCmdSetAlphaToCoverageEnableEXT)gdpa(dev, "vkCmdSetAlphaToCoverageEnableEXT");
+    table->CmdSetAlphaToOneEnableEXT = (PFN_vkCmdSetAlphaToOneEnableEXT)gdpa(dev, "vkCmdSetAlphaToOneEnableEXT");
+    table->CmdSetLogicOpEnableEXT = (PFN_vkCmdSetLogicOpEnableEXT)gdpa(dev, "vkCmdSetLogicOpEnableEXT");
+    table->CmdSetColorBlendEnableEXT = (PFN_vkCmdSetColorBlendEnableEXT)gdpa(dev, "vkCmdSetColorBlendEnableEXT");
+    table->CmdSetColorBlendEquationEXT = (PFN_vkCmdSetColorBlendEquationEXT)gdpa(dev, "vkCmdSetColorBlendEquationEXT");
+    table->CmdSetColorWriteMaskEXT = (PFN_vkCmdSetColorWriteMaskEXT)gdpa(dev, "vkCmdSetColorWriteMaskEXT");
+    table->CmdSetRasterizationStreamEXT = (PFN_vkCmdSetRasterizationStreamEXT)gdpa(dev, "vkCmdSetRasterizationStreamEXT");
+    table->CmdSetConservativeRasterizationModeEXT = (PFN_vkCmdSetConservativeRasterizationModeEXT)gdpa(dev, "vkCmdSetConservativeRasterizationModeEXT");
+    table->CmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)gdpa(dev, "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
+    table->CmdSetDepthClipEnableEXT = (PFN_vkCmdSetDepthClipEnableEXT)gdpa(dev, "vkCmdSetDepthClipEnableEXT");
+    table->CmdSetSampleLocationsEnableEXT = (PFN_vkCmdSetSampleLocationsEnableEXT)gdpa(dev, "vkCmdSetSampleLocationsEnableEXT");
+    table->CmdSetColorBlendAdvancedEXT = (PFN_vkCmdSetColorBlendAdvancedEXT)gdpa(dev, "vkCmdSetColorBlendAdvancedEXT");
+    table->CmdSetProvokingVertexModeEXT = (PFN_vkCmdSetProvokingVertexModeEXT)gdpa(dev, "vkCmdSetProvokingVertexModeEXT");
+    table->CmdSetLineRasterizationModeEXT = (PFN_vkCmdSetLineRasterizationModeEXT)gdpa(dev, "vkCmdSetLineRasterizationModeEXT");
+    table->CmdSetLineStippleEnableEXT = (PFN_vkCmdSetLineStippleEnableEXT)gdpa(dev, "vkCmdSetLineStippleEnableEXT");
+    table->CmdSetDepthClipNegativeOneToOneEXT = (PFN_vkCmdSetDepthClipNegativeOneToOneEXT)gdpa(dev, "vkCmdSetDepthClipNegativeOneToOneEXT");
+    table->CmdSetViewportWScalingEnableNV = (PFN_vkCmdSetViewportWScalingEnableNV)gdpa(dev, "vkCmdSetViewportWScalingEnableNV");
+    table->CmdSetViewportSwizzleNV = (PFN_vkCmdSetViewportSwizzleNV)gdpa(dev, "vkCmdSetViewportSwizzleNV");
+    table->CmdSetCoverageToColorEnableNV = (PFN_vkCmdSetCoverageToColorEnableNV)gdpa(dev, "vkCmdSetCoverageToColorEnableNV");
+    table->CmdSetCoverageToColorLocationNV = (PFN_vkCmdSetCoverageToColorLocationNV)gdpa(dev, "vkCmdSetCoverageToColorLocationNV");
+    table->CmdSetCoverageModulationModeNV = (PFN_vkCmdSetCoverageModulationModeNV)gdpa(dev, "vkCmdSetCoverageModulationModeNV");
+    table->CmdSetCoverageModulationTableEnableNV = (PFN_vkCmdSetCoverageModulationTableEnableNV)gdpa(dev, "vkCmdSetCoverageModulationTableEnableNV");
+    table->CmdSetCoverageModulationTableNV = (PFN_vkCmdSetCoverageModulationTableNV)gdpa(dev, "vkCmdSetCoverageModulationTableNV");
+    table->CmdSetShadingRateImageEnableNV = (PFN_vkCmdSetShadingRateImageEnableNV)gdpa(dev, "vkCmdSetShadingRateImageEnableNV");
+    table->CmdSetRepresentativeFragmentTestEnableNV = (PFN_vkCmdSetRepresentativeFragmentTestEnableNV)gdpa(dev, "vkCmdSetRepresentativeFragmentTestEnableNV");
+    table->CmdSetCoverageReductionModeNV = (PFN_vkCmdSetCoverageReductionModeNV)gdpa(dev, "vkCmdSetCoverageReductionModeNV");
+
     // ---- VK_EXT_shader_module_identifier extension commands
     table->GetShaderModuleIdentifierEXT = (PFN_vkGetShaderModuleIdentifierEXT)gdpa(dev, "vkGetShaderModuleIdentifierEXT");
     table->GetShaderModuleCreateInfoIdentifierEXT = (PFN_vkGetShaderModuleCreateInfoIdentifierEXT)gdpa(dev, "vkGetShaderModuleCreateInfoIdentifierEXT");
+
+    // ---- VK_NV_optical_flow extension commands
+    table->CreateOpticalFlowSessionNV = (PFN_vkCreateOpticalFlowSessionNV)gdpa(dev, "vkCreateOpticalFlowSessionNV");
+    table->DestroyOpticalFlowSessionNV = (PFN_vkDestroyOpticalFlowSessionNV)gdpa(dev, "vkDestroyOpticalFlowSessionNV");
+    table->BindOpticalFlowSessionImageNV = (PFN_vkBindOpticalFlowSessionImageNV)gdpa(dev, "vkBindOpticalFlowSessionImageNV");
+    table->CmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)gdpa(dev, "vkCmdOpticalFlowExecuteNV");
 
     // ---- VK_QCOM_tile_properties extension commands
     table->GetFramebufferTilePropertiesQCOM = (PFN_vkGetFramebufferTilePropertiesQCOM)gdpa(dev, "vkGetFramebufferTilePropertiesQCOM");
@@ -1298,6 +1359,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     table->GetPhysicalDeviceScreenPresentationSupportQNX = (PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX)gpa(inst, "vkGetPhysicalDeviceScreenPresentationSupportQNX");
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_optical_flow extension commands
+    table->GetPhysicalDeviceOpticalFlowImageFormatsNV = (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV)gpa(inst, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV");
 }
 
 // Device command lookup function
@@ -1904,6 +1968,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_EXT_image_compression_control extension commands
     if (!strcmp(name, "GetImageSubresourceLayout2EXT")) return (void *)table->GetImageSubresourceLayout2EXT;
 
+    // ---- VK_EXT_device_fault extension commands
+    if (!strcmp(name, "GetDeviceFaultInfoEXT")) return (void *)table->GetDeviceFaultInfoEXT;
+
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     if (!strcmp(name, "CmdSetVertexInputEXT")) return (void *)table->CmdSetVertexInputEXT;
 
@@ -1967,6 +2034,22 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdDrawMultiEXT")) return (void *)table->CmdDrawMultiEXT;
     if (!strcmp(name, "CmdDrawMultiIndexedEXT")) return (void *)table->CmdDrawMultiIndexedEXT;
 
+    // ---- VK_EXT_opacity_micromap extension commands
+    if (!strcmp(name, "CreateMicromapEXT")) return (void *)table->CreateMicromapEXT;
+    if (!strcmp(name, "DestroyMicromapEXT")) return (void *)table->DestroyMicromapEXT;
+    if (!strcmp(name, "CmdBuildMicromapsEXT")) return (void *)table->CmdBuildMicromapsEXT;
+    if (!strcmp(name, "BuildMicromapsEXT")) return (void *)table->BuildMicromapsEXT;
+    if (!strcmp(name, "CopyMicromapEXT")) return (void *)table->CopyMicromapEXT;
+    if (!strcmp(name, "CopyMicromapToMemoryEXT")) return (void *)table->CopyMicromapToMemoryEXT;
+    if (!strcmp(name, "CopyMemoryToMicromapEXT")) return (void *)table->CopyMemoryToMicromapEXT;
+    if (!strcmp(name, "WriteMicromapsPropertiesEXT")) return (void *)table->WriteMicromapsPropertiesEXT;
+    if (!strcmp(name, "CmdCopyMicromapEXT")) return (void *)table->CmdCopyMicromapEXT;
+    if (!strcmp(name, "CmdCopyMicromapToMemoryEXT")) return (void *)table->CmdCopyMicromapToMemoryEXT;
+    if (!strcmp(name, "CmdCopyMemoryToMicromapEXT")) return (void *)table->CmdCopyMemoryToMicromapEXT;
+    if (!strcmp(name, "CmdWriteMicromapsPropertiesEXT")) return (void *)table->CmdWriteMicromapsPropertiesEXT;
+    if (!strcmp(name, "GetDeviceMicromapCompatibilityEXT")) return (void *)table->GetDeviceMicromapCompatibilityEXT;
+    if (!strcmp(name, "GetMicromapBuildSizesEXT")) return (void *)table->GetMicromapBuildSizesEXT;
+
     // ---- VK_EXT_pageable_device_local_memory extension commands
     if (!strcmp(name, "SetDeviceMemoryPriorityEXT")) return (void *)table->SetDeviceMemoryPriorityEXT;
 
@@ -1974,9 +2057,48 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetDescriptorSetLayoutHostMappingInfoVALVE")) return (void *)table->GetDescriptorSetLayoutHostMappingInfoVALVE;
     if (!strcmp(name, "GetDescriptorSetHostMappingVALVE")) return (void *)table->GetDescriptorSetHostMappingVALVE;
 
+    // ---- VK_EXT_extended_dynamic_state3 extension commands
+    if (!strcmp(name, "CmdSetTessellationDomainOriginEXT")) return (void *)table->CmdSetTessellationDomainOriginEXT;
+    if (!strcmp(name, "CmdSetDepthClampEnableEXT")) return (void *)table->CmdSetDepthClampEnableEXT;
+    if (!strcmp(name, "CmdSetPolygonModeEXT")) return (void *)table->CmdSetPolygonModeEXT;
+    if (!strcmp(name, "CmdSetRasterizationSamplesEXT")) return (void *)table->CmdSetRasterizationSamplesEXT;
+    if (!strcmp(name, "CmdSetSampleMaskEXT")) return (void *)table->CmdSetSampleMaskEXT;
+    if (!strcmp(name, "CmdSetAlphaToCoverageEnableEXT")) return (void *)table->CmdSetAlphaToCoverageEnableEXT;
+    if (!strcmp(name, "CmdSetAlphaToOneEnableEXT")) return (void *)table->CmdSetAlphaToOneEnableEXT;
+    if (!strcmp(name, "CmdSetLogicOpEnableEXT")) return (void *)table->CmdSetLogicOpEnableEXT;
+    if (!strcmp(name, "CmdSetColorBlendEnableEXT")) return (void *)table->CmdSetColorBlendEnableEXT;
+    if (!strcmp(name, "CmdSetColorBlendEquationEXT")) return (void *)table->CmdSetColorBlendEquationEXT;
+    if (!strcmp(name, "CmdSetColorWriteMaskEXT")) return (void *)table->CmdSetColorWriteMaskEXT;
+    if (!strcmp(name, "CmdSetRasterizationStreamEXT")) return (void *)table->CmdSetRasterizationStreamEXT;
+    if (!strcmp(name, "CmdSetConservativeRasterizationModeEXT")) return (void *)table->CmdSetConservativeRasterizationModeEXT;
+    if (!strcmp(name, "CmdSetExtraPrimitiveOverestimationSizeEXT")) return (void *)table->CmdSetExtraPrimitiveOverestimationSizeEXT;
+    if (!strcmp(name, "CmdSetDepthClipEnableEXT")) return (void *)table->CmdSetDepthClipEnableEXT;
+    if (!strcmp(name, "CmdSetSampleLocationsEnableEXT")) return (void *)table->CmdSetSampleLocationsEnableEXT;
+    if (!strcmp(name, "CmdSetColorBlendAdvancedEXT")) return (void *)table->CmdSetColorBlendAdvancedEXT;
+    if (!strcmp(name, "CmdSetProvokingVertexModeEXT")) return (void *)table->CmdSetProvokingVertexModeEXT;
+    if (!strcmp(name, "CmdSetLineRasterizationModeEXT")) return (void *)table->CmdSetLineRasterizationModeEXT;
+    if (!strcmp(name, "CmdSetLineStippleEnableEXT")) return (void *)table->CmdSetLineStippleEnableEXT;
+    if (!strcmp(name, "CmdSetDepthClipNegativeOneToOneEXT")) return (void *)table->CmdSetDepthClipNegativeOneToOneEXT;
+    if (!strcmp(name, "CmdSetViewportWScalingEnableNV")) return (void *)table->CmdSetViewportWScalingEnableNV;
+    if (!strcmp(name, "CmdSetViewportSwizzleNV")) return (void *)table->CmdSetViewportSwizzleNV;
+    if (!strcmp(name, "CmdSetCoverageToColorEnableNV")) return (void *)table->CmdSetCoverageToColorEnableNV;
+    if (!strcmp(name, "CmdSetCoverageToColorLocationNV")) return (void *)table->CmdSetCoverageToColorLocationNV;
+    if (!strcmp(name, "CmdSetCoverageModulationModeNV")) return (void *)table->CmdSetCoverageModulationModeNV;
+    if (!strcmp(name, "CmdSetCoverageModulationTableEnableNV")) return (void *)table->CmdSetCoverageModulationTableEnableNV;
+    if (!strcmp(name, "CmdSetCoverageModulationTableNV")) return (void *)table->CmdSetCoverageModulationTableNV;
+    if (!strcmp(name, "CmdSetShadingRateImageEnableNV")) return (void *)table->CmdSetShadingRateImageEnableNV;
+    if (!strcmp(name, "CmdSetRepresentativeFragmentTestEnableNV")) return (void *)table->CmdSetRepresentativeFragmentTestEnableNV;
+    if (!strcmp(name, "CmdSetCoverageReductionModeNV")) return (void *)table->CmdSetCoverageReductionModeNV;
+
     // ---- VK_EXT_shader_module_identifier extension commands
     if (!strcmp(name, "GetShaderModuleIdentifierEXT")) return (void *)table->GetShaderModuleIdentifierEXT;
     if (!strcmp(name, "GetShaderModuleCreateInfoIdentifierEXT")) return (void *)table->GetShaderModuleCreateInfoIdentifierEXT;
+
+    // ---- VK_NV_optical_flow extension commands
+    if (!strcmp(name, "CreateOpticalFlowSessionNV")) return (void *)table->CreateOpticalFlowSessionNV;
+    if (!strcmp(name, "DestroyOpticalFlowSessionNV")) return (void *)table->DestroyOpticalFlowSessionNV;
+    if (!strcmp(name, "BindOpticalFlowSessionImageNV")) return (void *)table->BindOpticalFlowSessionImageNV;
+    if (!strcmp(name, "CmdOpticalFlowExecuteNV")) return (void *)table->CmdOpticalFlowExecuteNV;
 
     // ---- VK_QCOM_tile_properties extension commands
     if (!strcmp(name, "GetFramebufferTilePropertiesQCOM")) return (void *)table->GetFramebufferTilePropertiesQCOM;
@@ -2266,6 +2388,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     if (!strcmp(name, "GetPhysicalDeviceScreenPresentationSupportQNX")) return (void *)table->GetPhysicalDeviceScreenPresentationSupportQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_optical_flow extension commands
+    if (!strcmp(name, "GetPhysicalDeviceOpticalFlowImageFormatsNV")) return (void *)table->GetPhysicalDeviceOpticalFlowImageFormatsNV;
 
     *found_name = false;
     return NULL;
@@ -5970,6 +6095,23 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
 }
 
 
+// ---- VK_EXT_device_fault extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultInfoEXT(
+    VkDevice                                    device,
+    VkDeviceFaultCountsEXT*                     pFaultCounts,
+    VkDeviceFaultInfoEXT*                       pFaultInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceFaultInfoEXT: Invalid device "
+                   "[VUID-vkGetDeviceFaultInfoEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo);
+}
+
+
 // ---- VK_NV_acquire_winrt_display extension trampoline/terminators
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -6411,6 +6553,212 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
 }
 
 
+// ---- VK_EXT_opacity_micromap extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(
+    VkDevice                                    device,
+    const VkMicromapCreateInfoEXT*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkMicromapEXT*                              pMicromap) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateMicromapEXT: Invalid device "
+                   "[VUID-vkCreateMicromapEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyMicromapEXT(
+    VkDevice                                    device,
+    VkMicromapEXT                               micromap,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkDestroyMicromapEXT: Invalid device "
+                   "[VUID-vkDestroyMicromapEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->DestroyMicromapEXT(device, micromap, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBuildMicromapsEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    infoCount,
+    const VkMicromapBuildInfoEXT*               pInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBuildMicromapsEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBuildMicromapsEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BuildMicromapsEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    uint32_t                                    infoCount,
+    const VkMicromapBuildInfoEXT*               pInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkBuildMicromapsEXT: Invalid device "
+                   "[VUID-vkBuildMicromapsEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->BuildMicromapsEXT(device, deferredOperation, infoCount, pInfos);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMicromapInfoEXT*                pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCopyMicromapEXT: Invalid device "
+                   "[VUID-vkCopyMicromapEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CopyMicromapEXT(device, deferredOperation, pInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapToMemoryEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMicromapToMemoryInfoEXT*        pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCopyMicromapToMemoryEXT: Invalid device "
+                   "[VUID-vkCopyMicromapToMemoryEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CopyMicromapToMemoryEXT(device, deferredOperation, pInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToMicromapEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMemoryToMicromapInfoEXT*        pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCopyMemoryToMicromapEXT: Invalid device "
+                   "[VUID-vkCopyMemoryToMicromapEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CopyMemoryToMicromapEXT(device, deferredOperation, pInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL WriteMicromapsPropertiesEXT(
+    VkDevice                                    device,
+    uint32_t                                    micromapCount,
+    const VkMicromapEXT*                        pMicromaps,
+    VkQueryType                                 queryType,
+    size_t                                      dataSize,
+    void*                                       pData,
+    size_t                                      stride) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkWriteMicromapsPropertiesEXT: Invalid device "
+                   "[VUID-vkWriteMicromapsPropertiesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->WriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyMicromapInfoEXT*                pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyMicromapEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMicromapEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyMicromapEXT(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapToMemoryEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyMicromapToMemoryInfoEXT*        pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyMicromapToMemoryEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMicromapToMemoryEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyMicromapToMemoryEXT(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToMicromapEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyMemoryToMicromapInfoEXT*        pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyMemoryToMicromapEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMemoryToMicromapEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyMemoryToMicromapEXT(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdWriteMicromapsPropertiesEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    micromapCount,
+    const VkMicromapEXT*                        pMicromaps,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdWriteMicromapsPropertiesEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteMicromapsPropertiesEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool, firstQuery);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceMicromapCompatibilityEXT(
+    VkDevice                                    device,
+    const VkMicromapVersionInfoEXT*             pVersionInfo,
+    VkAccelerationStructureCompatibilityKHR*    pCompatibility) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceMicromapCompatibilityEXT: Invalid device "
+                   "[VUID-vkGetDeviceMicromapCompatibilityEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkMicromapBuildInfoEXT*               pBuildInfo,
+    VkMicromapBuildSizesInfoEXT*                pSizeInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetMicromapBuildSizesEXT: Invalid device "
+                   "[VUID-vkGetMicromapBuildSizesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo);
+}
+
+
 // ---- VK_EXT_pageable_device_local_memory extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
@@ -6459,6 +6807,424 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
 }
 
 
+// ---- VK_EXT_extended_dynamic_state3 extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkTessellationDomainOrigin                  domainOrigin) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetTessellationDomainOriginEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetTessellationDomainOriginEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthClampEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthClampEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthClampEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPolygonMode                               polygonMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetPolygonModeEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPolygonModeEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetPolygonModeEXT(commandBuffer, polygonMode);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationSamplesEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkSampleCountFlagBits                       rasterizationSamples) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetRasterizationSamplesEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRasterizationSamplesEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetSampleMaskEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkSampleCountFlagBits                       samples,
+    const VkSampleMask*                         pSampleMask) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetSampleMaskEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetSampleMaskEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToCoverageEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    alphaToCoverageEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetAlphaToCoverageEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetAlphaToCoverageEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToOneEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    alphaToOneEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetAlphaToOneEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetAlphaToOneEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    logicOpEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetLogicOpEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetLogicOpEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstAttachment,
+    uint32_t                                    attachmentCount,
+    const VkBool32*                             pColorBlendEnables) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetColorBlendEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetColorBlendEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEquationEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstAttachment,
+    uint32_t                                    attachmentCount,
+    const VkColorBlendEquationEXT*              pColorBlendEquations) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetColorBlendEquationEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetColorBlendEquationEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstAttachment,
+    uint32_t                                    attachmentCount,
+    const VkColorComponentFlags*                pColorWriteMasks) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetColorWriteMaskEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetColorWriteMaskEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    rasterizationStream) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetRasterizationStreamEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRasterizationStreamEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetConservativeRasterizationModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkConservativeRasterizationModeEXT          conservativeRasterizationMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetConservativeRasterizationModeEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetConservativeRasterizationModeEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetExtraPrimitiveOverestimationSizeEXT(
+    VkCommandBuffer                             commandBuffer,
+    float                                       extraPrimitiveOverestimationSize) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetExtraPrimitiveOverestimationSizeEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthClipEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthClipEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthClipEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    sampleLocationsEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetSampleLocationsEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetSampleLocationsEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendAdvancedEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstAttachment,
+    uint32_t                                    attachmentCount,
+    const VkColorBlendAdvancedEXT*              pColorBlendAdvanced) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetColorBlendAdvancedEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetColorBlendAdvancedEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetProvokingVertexModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkProvokingVertexModeEXT                    provokingVertexMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetProvokingVertexModeEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetProvokingVertexModeEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetLineRasterizationModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkLineRasterizationModeEXT                  lineRasterizationMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetLineRasterizationModeEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetLineRasterizationModeEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    stippledLineEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetLineStippleEnableEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetLineStippleEnableEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipNegativeOneToOneEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    negativeOneToOne) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthClipNegativeOneToOneEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthClipNegativeOneToOneEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    viewportWScalingEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetViewportWScalingEnableNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetViewportWScalingEnableNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetViewportSwizzleNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstViewport,
+    uint32_t                                    viewportCount,
+    const VkViewportSwizzleNV*                  pViewportSwizzles) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetViewportSwizzleNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetViewportSwizzleNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    coverageToColorEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetCoverageToColorEnableNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCoverageToColorEnableNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorLocationNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    coverageToColorLocation) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetCoverageToColorLocationNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCoverageToColorLocationNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationModeNV(
+    VkCommandBuffer                             commandBuffer,
+    VkCoverageModulationModeNV                  coverageModulationMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetCoverageModulationModeNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCoverageModulationModeNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    coverageModulationTableEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetCoverageModulationTableEnableNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCoverageModulationTableEnableNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    coverageModulationTableCount,
+    const float*                                pCoverageModulationTable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetCoverageModulationTableNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCoverageModulationTableNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount, pCoverageModulationTable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetShadingRateImageEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    shadingRateImageEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetShadingRateImageEnableNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetShadingRateImageEnableNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    representativeFragmentTestEnable) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetRepresentativeFragmentTestEnableNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRepresentativeFragmentTestEnableNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(
+    VkCommandBuffer                             commandBuffer,
+    VkCoverageReductionModeNV                   coverageReductionMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetCoverageReductionModeNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCoverageReductionModeNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode);
+}
+
+
 // ---- VK_EXT_shader_module_identifier extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(
@@ -6487,6 +7253,100 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->GetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
+}
+
+
+// ---- VK_NV_optical_flow extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkOpticalFlowImageFormatInfoNV*       pOpticalFlowImageFormatInfo,
+    uint32_t*                                   pFormatCount,
+    VkOpticalFlowImageFormatPropertiesNV*       pImageFormatProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceOpticalFlowImageFormatsNV: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceOpticalFlowImageFormatsNV-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceOpticalFlowImageFormatsNV(unwrapped_phys_dev, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceOpticalFlowImageFormatsNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkOpticalFlowImageFormatInfoNV*       pOpticalFlowImageFormatInfo,
+    uint32_t*                                   pFormatCount,
+    VkOpticalFlowImageFormatPropertiesNV*       pImageFormatProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceOpticalFlowImageFormatsNV) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceOpticalFlowImageFormatsNV");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.GetPhysicalDeviceOpticalFlowImageFormatsNV(phys_dev_term->phys_dev, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateOpticalFlowSessionNV(
+    VkDevice                                    device,
+    const VkOpticalFlowSessionCreateInfoNV*     pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkOpticalFlowSessionNV*                     pSession) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateOpticalFlowSessionNV: Invalid device "
+                   "[VUID-vkCreateOpticalFlowSessionNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyOpticalFlowSessionNV(
+    VkDevice                                    device,
+    VkOpticalFlowSessionNV                      session,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkDestroyOpticalFlowSessionNV: Invalid device "
+                   "[VUID-vkDestroyOpticalFlowSessionNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->DestroyOpticalFlowSessionNV(device, session, pAllocator);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BindOpticalFlowSessionImageNV(
+    VkDevice                                    device,
+    VkOpticalFlowSessionNV                      session,
+    VkOpticalFlowSessionBindingPointNV          bindingPoint,
+    VkImageView                                 view,
+    VkImageLayout                               layout) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkBindOpticalFlowSessionImageNV: Invalid device "
+                   "[VUID-vkBindOpticalFlowSessionImageNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->BindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(
+    VkCommandBuffer                             commandBuffer,
+    VkOpticalFlowSessionNV                      session,
+    const VkOpticalFlowExecuteInfoNV*           pExecuteInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdOpticalFlowExecuteNV: Invalid commandBuffer "
+                   "[VUID-vkCmdOpticalFlowExecuteNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
 }
 
 
@@ -8117,6 +8977,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_device_fault extension commands
+    if (!strcmp("vkGetDeviceFaultInfoEXT", name)) {
+        *addr = (void *)GetDeviceFaultInfoEXT;
+        return true;
+    }
+
     // ---- VK_NV_acquire_winrt_display extension commands
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (!strcmp("vkAcquireWinrtDisplayNV", name)) {
@@ -8263,6 +9129,64 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_opacity_micromap extension commands
+    if (!strcmp("vkCreateMicromapEXT", name)) {
+        *addr = (void *)CreateMicromapEXT;
+        return true;
+    }
+    if (!strcmp("vkDestroyMicromapEXT", name)) {
+        *addr = (void *)DestroyMicromapEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdBuildMicromapsEXT", name)) {
+        *addr = (void *)CmdBuildMicromapsEXT;
+        return true;
+    }
+    if (!strcmp("vkBuildMicromapsEXT", name)) {
+        *addr = (void *)BuildMicromapsEXT;
+        return true;
+    }
+    if (!strcmp("vkCopyMicromapEXT", name)) {
+        *addr = (void *)CopyMicromapEXT;
+        return true;
+    }
+    if (!strcmp("vkCopyMicromapToMemoryEXT", name)) {
+        *addr = (void *)CopyMicromapToMemoryEXT;
+        return true;
+    }
+    if (!strcmp("vkCopyMemoryToMicromapEXT", name)) {
+        *addr = (void *)CopyMemoryToMicromapEXT;
+        return true;
+    }
+    if (!strcmp("vkWriteMicromapsPropertiesEXT", name)) {
+        *addr = (void *)WriteMicromapsPropertiesEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyMicromapEXT", name)) {
+        *addr = (void *)CmdCopyMicromapEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyMicromapToMemoryEXT", name)) {
+        *addr = (void *)CmdCopyMicromapToMemoryEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyMemoryToMicromapEXT", name)) {
+        *addr = (void *)CmdCopyMemoryToMicromapEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdWriteMicromapsPropertiesEXT", name)) {
+        *addr = (void *)CmdWriteMicromapsPropertiesEXT;
+        return true;
+    }
+    if (!strcmp("vkGetDeviceMicromapCompatibilityEXT", name)) {
+        *addr = (void *)GetDeviceMicromapCompatibilityEXT;
+        return true;
+    }
+    if (!strcmp("vkGetMicromapBuildSizesEXT", name)) {
+        *addr = (void *)GetMicromapBuildSizesEXT;
+        return true;
+    }
+
     // ---- VK_EXT_pageable_device_local_memory extension commands
     if (!strcmp("vkSetDeviceMemoryPriorityEXT", name)) {
         *addr = (void *)SetDeviceMemoryPriorityEXT;
@@ -8279,6 +9203,132 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_extended_dynamic_state3 extension commands
+    if (!strcmp("vkCmdSetTessellationDomainOriginEXT", name)) {
+        *addr = (void *)CmdSetTessellationDomainOriginEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetDepthClampEnableEXT", name)) {
+        *addr = (void *)CmdSetDepthClampEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetPolygonModeEXT", name)) {
+        *addr = (void *)CmdSetPolygonModeEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetRasterizationSamplesEXT", name)) {
+        *addr = (void *)CmdSetRasterizationSamplesEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetSampleMaskEXT", name)) {
+        *addr = (void *)CmdSetSampleMaskEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetAlphaToCoverageEnableEXT", name)) {
+        *addr = (void *)CmdSetAlphaToCoverageEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetAlphaToOneEnableEXT", name)) {
+        *addr = (void *)CmdSetAlphaToOneEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetLogicOpEnableEXT", name)) {
+        *addr = (void *)CmdSetLogicOpEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetColorBlendEnableEXT", name)) {
+        *addr = (void *)CmdSetColorBlendEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetColorBlendEquationEXT", name)) {
+        *addr = (void *)CmdSetColorBlendEquationEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetColorWriteMaskEXT", name)) {
+        *addr = (void *)CmdSetColorWriteMaskEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetRasterizationStreamEXT", name)) {
+        *addr = (void *)CmdSetRasterizationStreamEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetConservativeRasterizationModeEXT", name)) {
+        *addr = (void *)CmdSetConservativeRasterizationModeEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetExtraPrimitiveOverestimationSizeEXT", name)) {
+        *addr = (void *)CmdSetExtraPrimitiveOverestimationSizeEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetDepthClipEnableEXT", name)) {
+        *addr = (void *)CmdSetDepthClipEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetSampleLocationsEnableEXT", name)) {
+        *addr = (void *)CmdSetSampleLocationsEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetColorBlendAdvancedEXT", name)) {
+        *addr = (void *)CmdSetColorBlendAdvancedEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetProvokingVertexModeEXT", name)) {
+        *addr = (void *)CmdSetProvokingVertexModeEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetLineRasterizationModeEXT", name)) {
+        *addr = (void *)CmdSetLineRasterizationModeEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetLineStippleEnableEXT", name)) {
+        *addr = (void *)CmdSetLineStippleEnableEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetDepthClipNegativeOneToOneEXT", name)) {
+        *addr = (void *)CmdSetDepthClipNegativeOneToOneEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetViewportWScalingEnableNV", name)) {
+        *addr = (void *)CmdSetViewportWScalingEnableNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetViewportSwizzleNV", name)) {
+        *addr = (void *)CmdSetViewportSwizzleNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetCoverageToColorEnableNV", name)) {
+        *addr = (void *)CmdSetCoverageToColorEnableNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetCoverageToColorLocationNV", name)) {
+        *addr = (void *)CmdSetCoverageToColorLocationNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetCoverageModulationModeNV", name)) {
+        *addr = (void *)CmdSetCoverageModulationModeNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetCoverageModulationTableEnableNV", name)) {
+        *addr = (void *)CmdSetCoverageModulationTableEnableNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetCoverageModulationTableNV", name)) {
+        *addr = (void *)CmdSetCoverageModulationTableNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetShadingRateImageEnableNV", name)) {
+        *addr = (void *)CmdSetShadingRateImageEnableNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetRepresentativeFragmentTestEnableNV", name)) {
+        *addr = (void *)CmdSetRepresentativeFragmentTestEnableNV;
+        return true;
+    }
+    if (!strcmp("vkCmdSetCoverageReductionModeNV", name)) {
+        *addr = (void *)CmdSetCoverageReductionModeNV;
+        return true;
+    }
+
     // ---- VK_EXT_shader_module_identifier extension commands
     if (!strcmp("vkGetShaderModuleIdentifierEXT", name)) {
         *addr = (void *)GetShaderModuleIdentifierEXT;
@@ -8286,6 +9336,28 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetShaderModuleCreateInfoIdentifierEXT", name)) {
         *addr = (void *)GetShaderModuleCreateInfoIdentifierEXT;
+        return true;
+    }
+
+    // ---- VK_NV_optical_flow extension commands
+    if (!strcmp("vkGetPhysicalDeviceOpticalFlowImageFormatsNV", name)) {
+        *addr = (void *)GetPhysicalDeviceOpticalFlowImageFormatsNV;
+        return true;
+    }
+    if (!strcmp("vkCreateOpticalFlowSessionNV", name)) {
+        *addr = (void *)CreateOpticalFlowSessionNV;
+        return true;
+    }
+    if (!strcmp("vkDestroyOpticalFlowSessionNV", name)) {
+        *addr = (void *)DestroyOpticalFlowSessionNV;
+        return true;
+    }
+    if (!strcmp("vkBindOpticalFlowSessionImageNV", name)) {
+        *addr = (void *)BindOpticalFlowSessionImageNV;
+        return true;
+    }
+    if (!strcmp("vkCmdOpticalFlowExecuteNV", name)) {
+        *addr = (void *)CmdOpticalFlowExecuteNV;
         return true;
     }
 
@@ -8767,6 +9839,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     .GetPhysicalDeviceScreenPresentationSupportQNX = terminator_GetPhysicalDeviceScreenPresentationSupportQNX,
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_optical_flow extension commands
+    .GetPhysicalDeviceOpticalFlowImageFormatsNV = terminator_GetPhysicalDeviceOpticalFlowImageFormatsNV,
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
