@@ -471,6 +471,9 @@ struct loader_icd_term_dispatch {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScreenPresentationSupportQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_optical_flow extension commands
+    PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
 };
 
 struct loader_instance_extension_enables {
