@@ -33,7 +33,9 @@ if (UPDATE_DEPS)
     if (CMAKE_GENERATOR_PLATFORM)
         set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
     else()
-        message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
+        if (MSVC_IDE)
+            message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
+        endif()
         set(_target_arch x64)
     endif()
 
@@ -213,11 +215,6 @@ if(UNIX AND NOT APPLE) # i.e.: Linux
 
     if(BUILD_WSI_XLIB_SUPPORT)
         find_package(X11 REQUIRED)
-    endif()
-
-    if(BUILD_WSI_WAYLAND_SUPPORT)
-        find_package(Wayland REQUIRED)
-        include_directories(SYSTEM ${WAYLAND_CLIENT_INCLUDE_DIR})
     endif()
 
     if(BUILD_WSI_DIRECTFB_SUPPORT)
