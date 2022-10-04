@@ -576,27 +576,6 @@ out:
     return res;
 }
 
-// Initialize ext_list with the physical device extensions.
-// The extension properties are passed as inputs in count and ext_props.
-static VkResult loader_init_device_extensions(const struct loader_instance *inst, struct loader_physical_device_term *phys_dev_term,
-                                              uint32_t count, VkExtensionProperties *ext_props,
-                                              struct loader_extension_list *ext_list) {
-    VkResult res;
-    uint32_t i;
-
-    res = loader_init_generic_list(inst, (struct loader_generic_list *)ext_list, sizeof(VkExtensionProperties));
-    if (VK_SUCCESS != res) {
-        return res;
-    }
-
-    for (i = 0; i < count; i++) {
-        res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
-        if (res != VK_SUCCESS) return res;
-    }
-
-    return VK_SUCCESS;
-}
-
 VkResult loader_add_device_extensions(const struct loader_instance *inst,
                                       PFN_vkEnumerateDeviceExtensionProperties fpEnumerateDeviceExtensionProperties,
                                       VkPhysicalDevice physical_device, const char *lib_name,
@@ -6276,12 +6255,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
                                                                              const char *pLayerName, uint32_t *pPropertyCount,
                                                                              VkExtensionProperties *pProperties) {
     struct loader_physical_device_term *phys_dev_term;
-    struct loader_envvar_filter layers_enable_filter;
-    struct loader_envvar_disable_layers_filter layers_disable_filter;
-
-    struct loader_layer_list implicit_layer_list = {0};
-    struct loader_extension_list all_exts = {0};
-    struct loader_extension_list icd_exts = {0};
 
     // Any layer or trampoline wrapping should be removed at this point in time can just cast to the expected
     // type for VkPhysicalDevice.
@@ -6334,6 +6307,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     uint32_t icd_ext_count = *pPropertyCount;
     VkExtensionProperties *icd_props_list = pProperties;
+    const struct loader_instance *inst = icd_term->this_instance;
+    struct loader_extension_list all_exts = {0};
     VkResult res;
 
     if (NULL == icd_props_list) {
@@ -6359,50 +6334,27 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
         goto out;
     }
 
-    if (!loader_init_layer_list(icd_term->this_instance, &implicit_layer_list)) {
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-
-    // Parse the filter environment variables to determine if we have any special behavior
-    res = parse_generic_filter_environment_var(icd_term->this_instance, VK_LAYERS_ENABLE_ENV_VAR, &layers_enable_filter);
+    // Init a list with enough capacity for the device extensions and the implicit layer device extensions
+    res = loader_init_generic_list(inst, (struct loader_generic_list *)&all_exts,
+                                   sizeof(VkExtensionProperties) * (icd_ext_count + 20));
     if (VK_SUCCESS != res) {
-        goto out;
-    }
-    res = parse_layers_disable_filter_environment_var(icd_term->this_instance, &layers_disable_filter);
-    if (VK_SUCCESS != res) {
-        goto out;
+        return res;
     }
 
-    if (!(layers_disable_filter.disable_all || layers_disable_filter.disable_all_implicit)) {
-        loader_add_implicit_layers(icd_term->this_instance, &layers_enable_filter, &layers_disable_filter, &implicit_layer_list,
-                                   NULL, &icd_term->this_instance->instance_layer_list);
-    }
+    // Copy over the device extensions into all_exts & deduplicate
+    res = loader_add_to_ext_list(inst, &all_exts, icd_ext_count, icd_props_list);
+    if (res != VK_SUCCESS) return res;
 
-    // Initialize dev_extension list within the physicalDevice object
-    res = loader_init_device_extensions(icd_term->this_instance, phys_dev_term, icd_ext_count, icd_props_list, &icd_exts);
-    if (res != VK_SUCCESS) {
-        goto out;
-    }
-
-    // We need to determine which implicit layers are active, and then add their extensions. This can't be cached as
-    // it depends on results of environment variables (which can change).
-    res = loader_add_to_ext_list(icd_term->this_instance, &all_exts, icd_exts.count, icd_exts.list);
-    if (res != VK_SUCCESS) {
-        goto out;
-    }
-
-    if (!(layers_disable_filter.disable_all || layers_disable_filter.disable_all_implicit)) {
-        loader_add_implicit_layers(icd_term->this_instance, &layers_enable_filter, &layers_disable_filter, &implicit_layer_list,
-                                   NULL, &icd_term->this_instance->instance_layer_list);
-    }
-
-    for (uint32_t i = 0; i < implicit_layer_list.count; i++) {
-        for (uint32_t j = 0; j < implicit_layer_list.list[i].device_extension_list.count; j++) {
-            res = loader_add_to_ext_list(icd_term->this_instance, &all_exts, 1,
-                                         &implicit_layer_list.list[i].device_extension_list.list[j].props);
-            if (res != VK_SUCCESS) {
-                goto out;
+    // Iterate over active layers, if they are an implicit layer, add their device extensions
+    for (uint32_t i = 0; i < icd_term->this_instance->expanded_activated_layer_list.count; i++) {
+        struct loader_layer_properties *layer_props = &icd_term->this_instance->expanded_activated_layer_list.list[i];
+        if (0 == (layer_props->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
+            for (uint32_t j = 0; j < layer_props->device_extension_list.count; j++) {
+                res = loader_add_to_ext_list(icd_term->this_instance, &all_exts, 1,
+                                             &layer_props->device_extension_list.list[j].props);
+                if (res != VK_SUCCESS) {
+                    goto out;
+                }
             }
         }
     }
@@ -6427,15 +6379,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
 
 out:
 
-    if (NULL != implicit_layer_list.list) {
-        loader_destroy_generic_list(icd_term->this_instance, (struct loader_generic_list *)&implicit_layer_list);
-    }
-    if (NULL != all_exts.list) {
-        loader_destroy_generic_list(icd_term->this_instance, (struct loader_generic_list *)&all_exts);
-    }
-    if (NULL != icd_exts.list) {
-        loader_destroy_generic_list(icd_term->this_instance, (struct loader_generic_list *)&icd_exts);
-    }
+    loader_destroy_generic_list(icd_term->this_instance, (struct loader_generic_list *)&all_exts);
     if (NULL == pProperties && NULL != icd_props_list) {
         loader_instance_heap_free(icd_term->this_instance, icd_props_list);
     }
