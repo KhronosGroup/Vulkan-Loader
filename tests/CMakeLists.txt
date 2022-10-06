@@ -74,4 +74,8 @@ if(WIN32)
 endif()
 
 # must happen after the dll's get copied over
-gtest_discover_tests(test_regression PROPERTIES DISCOVERY_TIMEOUT 100)
+if(NOT CMAKE_CROSSCOMPILING)
+    gtest_discover_tests(test_regression PROPERTIES DISCOVERY_TIMEOUT 100)
+else()
+    gtest_add_tests(TARGET test_regression)
+endif()
