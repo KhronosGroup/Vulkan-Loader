@@ -251,9 +251,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceSupportKHR(VkP
     *pSupported = false;
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceSupportKHR) {
+        // set pSupported to false as this driver doesn't support WSI functionality
+        *pSupported = false;
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceSupportKHR!\n");
-        abort();
+        return VK_SUCCESS;
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
@@ -303,9 +305,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilitiesKH
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR) {
+        // Zero out the capabilities as this driver doesn't support WSI functionality
+        memset(pSurfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
-        abort();
+        return VK_SUCCESS;
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
@@ -357,9 +361,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormatsKHR(VkP
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR) {
+        // Zero out the format count as this driver doesn't support WSI functionality
+        *pSurfaceFormatCount = 0;
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
-        abort();
+        return VK_SUCCESS;
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
@@ -413,9 +419,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfacePresentModesKHR) {
+        // Zero out the present mode count as this driver doesn't support WSI functionality
+        *pPresentModeCount = 0;
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceSurfacePresentModesKHR!\n");
-        abort();
+        return VK_SUCCESS;
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
@@ -646,13 +654,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupp
     if (!loader_inst->wsi_win32_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_win32_surface extension not enabled. vkGetPhysicalDeviceWin32PresentationSupportKHR not executed!\n");
-        return VK_SUCCESS;
+        return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWin32PresentationSupportKHR) {
+        // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!\n");
-        abort();
+        return VK_FALSE;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceWin32PresentationSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex);
@@ -767,13 +776,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWaylandPresentationSu
         loader_log(
             loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
             "VK_KHR_wayland_surface extension not enabled. vkGetPhysicalDeviceWaylandPresentationSupportKHR not executed!\n");
-        return VK_SUCCESS;
+        return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWaylandPresentationSupportKHR) {
+        // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceWaylandPresentationSupportKHR!\n");
-        abort();
+        return VK_FALSE;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceWaylandPresentationSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex, display);
@@ -890,13 +900,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXcbPresentationSuppor
     if (!loader_inst->wsi_xcb_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_xcb_surface extension not enabled. vkGetPhysicalDeviceXcbPresentationSupportKHR not executed!\n");
-        return VK_SUCCESS;
+        return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXcbPresentationSupportKHR) {
+        // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceXcbPresentationSupportKHR!\n");
-        abort();
+        return VK_FALSE;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceXcbPresentationSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex, connection,
@@ -1012,13 +1023,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSuppo
     if (!loader_inst->wsi_xlib_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_xlib_surface extension not enabled. vkGetPhysicalDeviceXlibPresentationSupportKHR not executed!\n");
-        return VK_SUCCESS;
+        return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXlibPresentationSupportKHR) {
+        // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceXlibPresentationSupportKHR!\n");
-        abort();
+        return VK_FALSE;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceXlibPresentationSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex, dpy, visualID);
@@ -1137,13 +1149,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
         loader_log(
             loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
             "VK_EXT_directfb_surface extension not enabled. vkGetPhysicalDeviceDirectFBPresentationSupportKHR not executed!\n");
-        return VK_SUCCESS;
+        return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDirectFBPresentationSupportEXT) {
+        // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceDirectFBPresentationSupportEXT!\n");
-        abort();
+        return VK_FALSE;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceDirectFBPresentationSupportEXT(phys_dev_term->phys_dev, queueFamilyIndex, dfb);
@@ -1656,13 +1669,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
     if (!loader_inst->wsi_screen_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_QNX_screen_surface extension not enabled. vkGetPhysicalDeviceScreenPresentationSupportQNX not executed!\n");
-        return VK_SUCCESS;
+        return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX) {
+        // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceScreenPresentationSupportQNX!\n");
-        abort();
+        return VK_FALSE;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX(phys_dev_term->phys_dev, queueFamilyIndex, window);
@@ -1780,7 +1794,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPropertiesKHR!\n");
-        *pPropertyCount = 0;
+        // return 0 for property count as this driver doesn't support WSI functionality
+        if (pPropertyCount) {
+            *pPropertyCount = 0;
+        }
         return VK_SUCCESS;
     }
 
@@ -1818,7 +1835,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
                    "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPlanePropertiesKHR!\n");
-        *pPropertyCount = 0;
+        // return 0 for property count as this driver doesn't support WSI functionality
+        if (pPropertyCount) {
+            *pPropertyCount = 0;
+        }
         return VK_SUCCESS;
     }
 
@@ -1856,7 +1876,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneSupportedDisplaysKHR(Vk
     if (NULL == icd_term->dispatch.GetDisplayPlaneSupportedDisplaysKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
                    "ICD for selected physical device does not export vkGetDisplayPlaneSupportedDisplaysKHR!\n");
-        *pDisplayCount = 0;
+        // return 0 for property count as this driver doesn't support WSI functionality
+        if (pDisplayCount) {
+            *pDisplayCount = 0;
+        }
         return VK_SUCCESS;
     }
 
@@ -1895,7 +1918,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModePropertiesKHR(VkPhysical
     if (NULL == icd_term->dispatch.GetDisplayModePropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
                    "ICD for selected physical device does not export vkGetDisplayModePropertiesKHR!\n");
-        *pPropertyCount = 0;
+        // return 0 for property count as this driver doesn't support WSI functionality
+        if (pPropertyCount) {
+            *pPropertyCount = 0;
+        }
         return VK_SUCCESS;
     }
 
@@ -2172,7 +2198,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDevicePresentRectanglesKHR(
     if (NULL == icd_term->dispatch.GetPhysicalDevicePresentRectanglesKHR) {
         loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD associated with VkPhysicalDevice does not support GetPhysicalDevicePresentRectanglesKHX");
-        abort();
+        // return as this driver doesn't support WSI functionality
+        if (pRectCount) {
+            *pRectCount = 0;
+        }
+        return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
     uint8_t icd_index = phys_dev_term->icd_index;
@@ -2394,8 +2424,15 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhys
     loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
                "vkGetDisplayPlaneCapabilities2KHR: Emulating call in ICD \"%s\"", icd_term->scanned_icd->lib_name);
 
+    // If the icd doesn't support VK_KHR_display, then there are no capabilities
+    if (NULL == icd_term->dispatch.GetDisplayPlaneCapabilitiesKHR) {
+        if (pCapabilities) {
+            memset(&pCapabilities->capabilities, 0, sizeof(VkDisplayPlaneCapabilitiesKHR));
+        }
+        return VK_SUCCESS;
+    }
+
     // Just call into the old version of the function.
-    // If the icd doesn't support VK_KHR_display, there are zero planes and this call is invalid (and will crash)
     return icd_term->dispatch.GetDisplayPlaneCapabilitiesKHR(phys_dev_term->phys_dev, pDisplayPlaneInfo->mode,
                                                              pDisplayPlaneInfo->planeIndex, &pCapabilities->capabilities);
 }
@@ -2554,6 +2591,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
         if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
             surface = icd_surface->real_icd_surfaces[icd_index];
         }
+
+        // If the icd doesn't support VK_KHR_surface, then there are no capabilities
+        if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR) {
+            if (pSurfaceCapabilities) {
+                memset(&pSurfaceCapabilities->surfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
+            }
+            return VK_SUCCESS;
+        }
         VkResult res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface,
                                                                                   &pSurfaceCapabilities->surfaceCapabilities);
 
@@ -2624,6 +2669,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
         VkSurfaceKHR surface = pSurfaceInfo->surface;
         if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
             surface = icd_surface->real_icd_surfaces[icd_index];
+        }
+
+        // If the icd doesn't support VK_KHR_surface, then there are no formats
+        if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR) {
+            if (pSurfaceFormatCount) {
+                *pSurfaceFormatCount = 0;
+            }
+            return VK_SUCCESS;
         }
 
         if (*pSurfaceFormatCount == 0 || pSurfaceFormats == NULL) {

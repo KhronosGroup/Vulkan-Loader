@@ -138,7 +138,8 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
-    inst.create_info.add_extensions({VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
+    inst.create_info.add_extensions(
+        {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME});
     inst.CheckCreate();
 
     uint32_t driver_count = 1;
@@ -146,8 +147,11 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1U);
 
-    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceWin32PresentationSupportKHR(physical_device, 0),
-                 "ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!");
+    DebugUtilsWrapper log{inst};
+    CreateDebugUtilsMessenger(log);
+    auto res = env.vulkan_functions.vkGetPhysicalDeviceWin32PresentationSupportKHR(physical_device, 0);
+    ASSERT_EQ(res, VK_SUCCESS);
+    ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!"));
 }
 
 TEST(WsiTests, GetPhysicalDeviceWin32PresentICDSupport) {
@@ -323,7 +327,8 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
-    inst.create_info.add_extensions({VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XCB_SURFACE_EXTENSION_NAME});
+    inst.create_info.add_extensions(
+        {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XCB_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME});
     inst.CheckCreate();
 
     uint32_t driver_count = 1;
@@ -331,8 +336,11 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1U);
 
-    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceXcbPresentationSupportKHR(physical_device, 0, nullptr, 0),
-                 "ICD for selected physical device does not export vkGetPhysicalDeviceXcbPresentationSupportKHR!");
+    DebugUtilsWrapper log{inst};
+    CreateDebugUtilsMessenger(log);
+    auto res = env.vulkan_functions.vkGetPhysicalDeviceXcbPresentationSupportKHR(physical_device, 0, nullptr, 0);
+    ASSERT_EQ(res, VK_SUCCESS);
+    ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceXcbPresentationSupportKHR!"));
 }
 
 TEST(WsiTests, GetPhysicalDeviceXcbPresentICDSupport) {
@@ -508,7 +516,8 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
-    inst.create_info.add_extensions({VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
+    inst.create_info.add_extensions(
+        {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME});
     inst.CheckCreate();
 
     uint32_t driver_count = 1;
@@ -516,8 +525,11 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1U);
 
-    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceXlibPresentationSupportKHR(physical_device, 0, nullptr, 0),
-                 "ICD for selected physical device does not export vkGetPhysicalDeviceXlibPresentationSupportKHR!");
+    DebugUtilsWrapper log{inst};
+    CreateDebugUtilsMessenger(log);
+    auto res = env.vulkan_functions.vkGetPhysicalDeviceXlibPresentationSupportKHR(physical_device, 0, nullptr, 0);
+    ASSERT_EQ(res, VK_SUCCESS);
+    ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceXlibPresentationSupportKHR!"));
 }
 
 TEST(WsiTests, GetPhysicalDeviceXlibPresentICDSupport) {
@@ -693,7 +705,8 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
-    inst.create_info.add_extensions({VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
+    inst.create_info.add_extensions(
+        {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME});
     inst.CheckCreate();
 
     uint32_t driver_count = 1;
@@ -701,8 +714,11 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &driver_count, &physical_device));
     ASSERT_EQ(driver_count, 1U);
 
-    ASSERT_DEATH(env.vulkan_functions.vkGetPhysicalDeviceWaylandPresentationSupportKHR(physical_device, 0, nullptr),
-                 "ICD for selected physical device does not export vkGetPhysicalDeviceWaylandPresentationSupportKHR!");
+    DebugUtilsWrapper log{inst};
+    CreateDebugUtilsMessenger(log);
+    auto res = env.vulkan_functions.vkGetPhysicalDeviceWaylandPresentationSupportKHR(physical_device, 0, nullptr);
+    ASSERT_EQ(res, false);
+    ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceWaylandPresentationSupportKHR!"));
 }
 
 TEST(WsiTests, GetPhysicalDeviceWaylandPresentICDSupport) {
