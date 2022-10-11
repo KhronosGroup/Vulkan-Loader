@@ -150,7 +150,7 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     DebugUtilsWrapper log{inst};
     CreateDebugUtilsMessenger(log);
     auto res = env.vulkan_functions.vkGetPhysicalDeviceWin32PresentationSupportKHR(physical_device, 0);
-    ASSERT_EQ(res, VK_SUCCESS);
+    ASSERT_EQ(res, VK_FALSE);
     ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!"));
 }
 
@@ -339,7 +339,7 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     DebugUtilsWrapper log{inst};
     CreateDebugUtilsMessenger(log);
     auto res = env.vulkan_functions.vkGetPhysicalDeviceXcbPresentationSupportKHR(physical_device, 0, nullptr, 0);
-    ASSERT_EQ(res, VK_SUCCESS);
+    ASSERT_EQ(res, VK_FALSE);
     ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceXcbPresentationSupportKHR!"));
 }
 
@@ -528,7 +528,7 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     DebugUtilsWrapper log{inst};
     CreateDebugUtilsMessenger(log);
     auto res = env.vulkan_functions.vkGetPhysicalDeviceXlibPresentationSupportKHR(physical_device, 0, nullptr, 0);
-    ASSERT_EQ(res, VK_SUCCESS);
+    ASSERT_EQ(res, VK_FALSE);
     ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceXlibPresentationSupportKHR!"));
 }
 
@@ -717,7 +717,7 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     DebugUtilsWrapper log{inst};
     CreateDebugUtilsMessenger(log);
     auto res = env.vulkan_functions.vkGetPhysicalDeviceWaylandPresentationSupportKHR(physical_device, 0, nullptr);
-    ASSERT_EQ(res, false);
+    ASSERT_EQ(res, VK_FALSE);
     ASSERT_TRUE(log.find("ICD for selected physical device does not export vkGetPhysicalDeviceWaylandPresentationSupportKHR!"));
 }
 
