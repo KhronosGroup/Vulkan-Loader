@@ -3876,6 +3876,8 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(V
     }
 
     // The VK_EXT_debug_utils functions need a special case here so the terminators can still be found from vkGetInstanceProcAddr
+    // This is because VK_EXT_debug_utils is an instance level extension with device level functions, and is 'supported' by the
+    // loader. There needs to be a terminator in case a driver doesn't support VK_EXT_debug_utils.
     if (!strcmp(pName, "vkSetDebugUtilsObjectNameEXT")) {
         return (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectNameEXT;
     }
@@ -3951,9 +3953,13 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_device_terminator(VkDevice d
     // object before passing the appropriate info along to the ICD.
     // This is why we also have to override the direct ICD call to
     // vkGetDeviceProcAddr to intercept those calls.
-    if(NULL != dev) {
-        PFN_vkVoidFunction addr = get_extension_device_proc_terminator(dev, pName);
-        if (NULL != addr) {
+    // If the pName is for a 'known' function but isn't available, due to
+    // the corresponding extension/feature not being enabled, we need to
+    // return NULL and not call down to the driver's GetDeviceProcAddr.
+    if (NULL != dev) {
+        bool found_name = false;
+        PFN_vkVoidFunction addr = get_extension_device_proc_terminator(dev, pName, &found_name);
+        if (found_name) {
             return addr;
         }
     }
@@ -4702,8 +4708,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                 continue;
             }
 
-            // Skip the layer if the handle is NULL - this is likely because the library failed to load but wasn't removed from the
-            // list.
+            // Skip the layer if the handle is NULL - this is likely because the library failed to load but wasn't removed from
+            // the list.
             if (!lib_handle) {
                 continue;
             }
@@ -4729,8 +4735,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                 if (layerNextGDPA != NULL) {
                     *layerNextGDPA = nextGDPA;
                 }
-                // Break here because if fpGIPA is the same as callingLayer, that means a layer is trying to create a device, and
-                // once we don't want to continue any further as the next layer will be the calling layer
+                // Break here because if fpGIPA is the same as callingLayer, that means a layer is trying to create a device,
+                // and once we don't want to continue any further as the next layer will be the calling layer
                 break;
             }
 
@@ -4813,8 +4819,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         }
         dev->chain_device = created_device;
 
-        // Because we changed the pNext chain to use our own VkDeviceGroupDeviceCreateInfoKHR, we need to fixup the chain to point
-        // back at the original VkDeviceGroupDeviceCreateInfoKHR.
+        // Because we changed the pNext chain to use our own VkDeviceGroupDeviceCreateInfoKHR, we need to fixup the chain to
+        // point back at the original VkDeviceGroupDeviceCreateInfoKHR.
         VkBaseOutStructure *pNext = (VkBaseOutStructure *)loader_create_info.pNext;
         VkBaseOutStructure *pPrev = (VkBaseOutStructure *)&loader_create_info;
         while (NULL != pNext) {
@@ -4839,6 +4845,9 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
 
     // Initialize device dispatch table
     loader_init_device_dispatch_table(&dev->loader_dispatch, nextGDPA, dev->chain_device);
+    // Initialize the dispatch table to functions which need terminators
+    // These functions point directly to the driver, not the terminator functions
+    init_extension_device_proc_terminator_dispatch(dev);
 
     return res;
 }
@@ -5978,7 +5987,8 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
         goto out;
     }
 
-    // Create an allocation large enough to hold both the windows sorting enumeration and non-windows physical device enumeration
+    // Create an allocation large enough to hold both the windows sorting enumeration and non-windows physical device
+    // enumeration
     new_phys_devs = loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_term *) * new_phys_devs_count,
                                                 VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_devs) {
@@ -6822,10 +6832,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                 new_phys_dev_groups[idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
                     inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                 if (NULL == new_phys_dev_groups[idx]) {
-                    loader_log(
-                        inst, VULKAN_LOADER_ERROR_BIT, 0,
-                        "terminator_EnumeratePhysicalDeviceGroups:  Failed to allocate physical device group Terminator object %d",
-                        idx);
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                               "terminator_EnumeratePhysicalDeviceGroups:  Failed to allocate physical device group Terminator "
+                               "object %d",
+                               idx);
                     total_count = idx;
                     res = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
@@ -6844,10 +6854,10 @@ out:
             if (NULL != new_phys_dev_groups) {
                 // We've encountered an error, so we should free the new buffers.
                 for (uint32_t i = 0; i < total_count; i++) {
-                    // If an OOM occurred inside the copying of the new physical device groups into the existing array will leave
-                    // some of the old physical device groups in the array which may have been copied into the new array, leading to
-                    // them being freed twice. To avoid this we just make sure to not delete physical device groups which were
-                    // copied.
+                    // If an OOM occurred inside the copying of the new physical device groups into the existing array will
+                    // leave some of the old physical device groups in the array which may have been copied into the new array,
+                    // leading to them being freed twice. To avoid this we just make sure to not delete physical device groups
+                    // which were copied.
                     bool found = false;
                     if (NULL != inst->phys_devs_term) {
                         for (uint32_t old_idx = 0; old_idx < inst->phys_dev_group_count_term; old_idx++) {

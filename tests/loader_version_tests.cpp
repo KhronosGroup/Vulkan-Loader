@@ -516,7 +516,8 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
               env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, physical_device_handles.data()));
     ASSERT_EQ(physical_count, returned_physical_count);
 
-    VkSurfaceKHR surface = create_surface(inst);
+    VkSurfaceKHR surface{};
+    create_surface(inst, surface);
     for (const auto& handle : physical_device_handles) {
         handle_assert_has_value(handle);
 

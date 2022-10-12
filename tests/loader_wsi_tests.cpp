@@ -784,3 +784,90 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
     env.vulkan_functions.vkDestroySurfaceKHR(instance.inst, surface, nullptr);
 }
 #endif
+
+TEST(WsiTests, ForgetEnableSurfaceExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.get_test_icd();
+    setup_WSI_in_ICD(driver);
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+    driver.physical_devices.back().add_extension("VK_KHR_swapchain");
+
+    InstWrapper inst{env.vulkan_functions};
+    setup_WSI_in_create_instance(inst);
+    inst.create_info.enabled_extensions.clear();  // setup_WSI() adds extensions to Instance CreateInfo, we don't want that
+    inst.CheckCreate();
+
+    VkSurfaceKHR surface{};
+    ASSERT_DEATH(create_surface(inst, surface), "");
+}
+
+TEST(WsiTests, SwapchainFunctional) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.get_test_icd();
+    setup_WSI_in_ICD(driver);
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+    driver.physical_devices.back().add_extension("VK_KHR_swapchain");
+
+    InstWrapper inst{env.vulkan_functions};
+    setup_WSI_in_create_instance(inst);
+    inst.CheckCreate();
+    VkSurfaceKHR surface{};
+    create_surface(inst, surface);
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t familyCount = 0;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, nullptr);
+    ASSERT_EQ(familyCount, 1U);
+
+    VkQueueFamilyProperties families;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, &families);
+    ASSERT_EQ(familyCount, 1U);
+    ASSERT_EQ(families, family_props.properties);
+    {
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension("VK_KHR_swapchain");
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+        dev.CheckCreate(phys_dev);
+
+        VkSwapchainKHR swapchain{};
+        VkSwapchainCreateInfoKHR swap_create_info{};
+        swap_create_info.surface = surface;
+        DeviceFunctions funcs{*inst.functions, dev};
+        ASSERT_EQ(VK_SUCCESS, funcs.vkCreateSwapchainKHR(dev, &swap_create_info, nullptr, &swapchain));
+        uint32_t count = 0;
+        ASSERT_EQ(VK_SUCCESS, funcs.vkGetSwapchainImagesKHR(dev, swapchain, &count, nullptr));
+        ASSERT_GT(count, 0U);
+        std::array<VkImage, 16> images;
+        ASSERT_EQ(VK_SUCCESS, funcs.vkGetSwapchainImagesKHR(dev, swapchain, &count, images.data()));
+        funcs.vkDestroySwapchainKHR(dev, swapchain, nullptr);
+    }
+    {  // forget to enable the extension
+        DeviceWrapper dev{inst};
+        dev.CheckCreate(phys_dev);
+
+        DeviceFunctions funcs{*inst.functions, dev};
+        ASSERT_EQ(funcs.vkCreateSwapchainKHR, nullptr);
+    }
+    {  // forget to set the surface
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension("VK_KHR_swapchain");
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+        dev.CheckCreate(phys_dev);
+
+        VkSwapchainKHR swapchain{};
+        VkSwapchainCreateInfoKHR swap_create_info{};
+        DeviceFunctions funcs{*inst.functions, dev};
+        ASSERT_DEATH(funcs.vkCreateSwapchainKHR(dev, &swap_create_info, nullptr, &swapchain), "");
+    }
+    env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
+}

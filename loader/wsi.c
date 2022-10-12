@@ -457,25 +457,35 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSwapchainKHR(VkDevice device, co
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfo->surface;
-        if (NULL != icd_surface->real_icd_surfaces) {
-            if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-                // We found the ICD, and there is an ICD KHR surface
-                // associated with it, so copy the CreateInfo struct
-                // and point it at the ICD's surface.
-                VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR));
-                if (NULL == pCreateCopy) {
-                    return VK_ERROR_OUT_OF_HOST_MEMORY;
-                }
-                memcpy(pCreateCopy, pCreateInfo, sizeof(VkSwapchainCreateInfoKHR));
-                pCreateCopy->surface = icd_surface->real_icd_surfaces[icd_index];
-                return icd_term->dispatch.CreateSwapchainKHR(device, pCreateCopy, pAllocator, pSwapchain);
-            }
-        }
-        return icd_term->dispatch.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR Terminator: device handle. This is likely the result of a "
+                   "layer wrapping device handles and failing to unwrap them in all functions. "
+                   "[VUID-vkCreateSwapchainKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
     }
-    return VK_SUCCESS;
+    if (NULL == pCreateInfo) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR: Invalid pCreateInfo pointer [VUID-vkCreateSwapchainKHR-pCreateInfo-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfo->surface;
+    if (NULL != icd_surface->real_icd_surfaces) {
+        if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+            // We found the ICD, and there is an ICD KHR surface
+            // associated with it, so copy the CreateInfo struct
+            // and point it at the ICD's surface.
+            VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR));
+            if (NULL == pCreateCopy) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+            memcpy(pCreateCopy, pCreateInfo, sizeof(VkSwapchainCreateInfoKHR));
+            pCreateCopy->surface = icd_surface->real_icd_surfaces[icd_index];
+            return dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR(device, pCreateCopy, pAllocator,
+                                                                                         pSwapchain);
+        }
+    }
+    return dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
 }
 
 // This is the trampoline entrypoint for DestroySwapchainKHR
@@ -2112,27 +2122,37 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL != icd_term && NULL != icd_term->dispatch.CreateSharedSwapchainsKHR) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
-        if (NULL != icd_surface->real_icd_surfaces) {
-            if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-                // We found the ICD, and there is an ICD KHR surface
-                // associated with it, so copy the CreateInfo struct
-                // and point it at the ICD's surface.
-                VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
-                if (NULL == pCreateCopy) {
-                    return VK_ERROR_OUT_OF_HOST_MEMORY;
-                }
-                memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
-                for (uint32_t sc = 0; sc < swapchainCount; sc++) {
-                    pCreateCopy[sc].surface = icd_surface->real_icd_surfaces[icd_index];
-                }
-                return icd_term->dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy, pAllocator, pSwapchains);
-            }
-        }
-        return icd_term->dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
+    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSharedSwapchainsKHR Terminator: Invalid device handle. This is likely the result of a "
+                   "layer wrapping device handles and failing to unwrap them in all functions. "
+                   "[VUID-vkCreateSharedSwapchainsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
     }
-    return VK_SUCCESS;
+    if (NULL == pCreateInfos) {
+        loader_log(
+            NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            "vkCreateSharedSwapchainsKHR: Invalid pCreateInfos pointer [VUID-vkCreateSharedSwapchainsKHR-pCreateInfos-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
+    if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+        // We found the ICD, and there is an ICD KHR surface
+        // associated with it, so copy the CreateInfo struct
+        // and point it at the ICD's surface.
+        VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
+        if (NULL == pCreateCopy) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
+        for (uint32_t sc = 0; sc < swapchainCount; sc++) {
+            pCreateCopy[sc].surface = icd_surface->real_icd_surfaces[icd_index];
+        }
+        return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy,
+                                                                                            pAllocator, pSwapchains);
+    }
+    return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos,
+                                                                                        pAllocator, pSwapchains);
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
@@ -2164,15 +2184,19 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(V
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL != icd_term && NULL != icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-            return icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR(device, icd_surface->real_icd_surfaces[icd_index],
-                                                                           pModes);
-        }
-        return icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
+    if (NULL == icd_term || NULL == dev ||
+        NULL == dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceGroupSurfacePresentModesKHR: Invalid device "
+                   "[VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
     }
-    return VK_SUCCESS;
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
+    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+        return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR(
+            device, icd_surface->real_icd_surfaces[icd_index], pModes);
+    }
+    return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice,
