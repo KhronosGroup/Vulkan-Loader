@@ -1588,8 +1588,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkAndroidSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
@@ -1622,8 +1622,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkDirectFBSurfaceCreateInfoEXT surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT;
@@ -1656,8 +1656,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkImagePipeSurfaceCreateInfoFUCHSIA surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA;
@@ -1690,8 +1690,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkStreamDescriptorSurfaceCreateInfoGGP surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP;
@@ -1724,8 +1724,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkIOSSurfaceCreateInfoMVK surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK;
@@ -1745,7 +1745,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_MACOS_MVK");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1757,9 +1757,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
+    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_MACOS_MVK");
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkMacOSSurfaceCreateInfoMVK surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
@@ -1779,7 +1779,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_METAL_EXT");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1791,9 +1791,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
+    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_METAL_EXT");
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkMetalSurfaceCreateInfoEXT surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
@@ -1826,8 +1826,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkScreenSurfaceCreateInfoQNX surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX;
@@ -1860,8 +1860,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkViSurfaceCreateInfoNN surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN;
@@ -1881,7 +1881,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_WAYLAND_KHR");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1893,9 +1893,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
+    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_WAYLAND_KHR");
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkWaylandSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
@@ -1928,8 +1928,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkWin32SurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -1962,8 +1962,8 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
 
     InstWrapper instance(env.vulkan_functions);
     setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkXcbSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
@@ -1983,8 +1983,10 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
-
+    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_XLIB_KHR");
+    for (auto& ext : driver.instance_extensions) {
+        std::cout << ext.extensionName << "\n";
+    }
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
                                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
@@ -1995,9 +1997,13 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
-    instance.CheckCreate();
+    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_XLIB_KHR");
+    //
+    for (auto& ext : instance.create_info.enabled_extensions) {
+        std::cout << ext << "\n";
+    }
     instance.create_info.add_layer(wrap_objects_name);
+    instance.CheckCreate();
 
     VkXlibSurfaceCreateInfoKHR surf_create_info = {};
     surf_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;

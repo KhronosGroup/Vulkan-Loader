@@ -241,11 +241,13 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             file_data += self.OutputLoaderTerminators()
             file_data += self.OutputIcdDispatchTable()
             file_data += self.OutputIcdExtensionEnableUnion()
+            file_data += self.OutputDeviceFunctionTerminatorDispatchTable()
 
         elif self.genOpts.filename == 'vk_loader_extensions.c':
             file_data += self.OutputUtilitiesInSource()
             file_data += self.OutputIcdDispatchTableInit()
             file_data += self.OutputLoaderDispatchTables()
+            file_data += self.InitDeviceFunctionTerminatorDispatchTable()
             file_data += self.OutputLoaderLookupFunc()
             file_data += self.CreateTrampTermFuncs()
             file_data += self.InstExtensionGPA()
@@ -444,7 +446,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos += '// Extension interception for vkGetDeviceProcAddr function, so we can return\n'
         protos += '// an appropriate terminator if this is one of those few device commands requiring\n'
         protos += '// a terminator.\n'
-        protos += 'PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName);\n'
+        protos += 'PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *name, bool* found_name);\n'
         protos += '\n'
         protos += '// Dispatch table properly filled in with appropriate terminators for the\n'
         protos += '// supported extensions.\n'
@@ -590,11 +592,21 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         return table
 
     #
+    # Common code between the dispatch table struct and the function filling out said struct
+    def ShouldPrintInIcdDispatchTable(self, cur_cmd, skip_list):
+        return cur_cmd.name == 'vkGetDeviceProcAddr' or \
+            (cur_cmd.handle_type not in ['VkDevice', 'VkCommandBuffer', 'VkQueue'] and cur_cmd.name not in skip_list)
+
+    #
     # Create a dispatch table from the appropriate list and return it as a string
     def OutputIcdDispatchTable(self):
         commands = []
         table = ''
         cur_extension_name = ''
+
+        skip_commands = ['vkGetInstanceProcAddr',
+                         'vkEnumerateDeviceLayerProperties',
+                        ]
 
         table += '// ICD function pointer dispatch table\n'
         table += 'struct loader_icd_term_dispatch {\n'
@@ -606,10 +618,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 commands = self.ext_commands
 
             for cur_cmd in commands:
-                is_inst_handle_type = cur_cmd.name in ADD_INST_CMDS or cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
-                if ((is_inst_handle_type or cur_cmd.name in DEVICE_CMDS_NEED_TERM) and
-                    (cur_cmd.name != 'vkGetInstanceProcAddr' and cur_cmd.name != 'vkEnumerateDeviceLayerProperties')):
-
+                if (self.ShouldPrintInIcdDispatchTable(cur_cmd, skip_commands)):
                     if cur_cmd.ext_name != cur_extension_name:
                         if 'VK_VERSION_' in cur_cmd.ext_name:
                             table += '\n    // ---- Core %s commands\n' % cur_cmd.ext_name[11:]
@@ -668,8 +677,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
             required = False
             for cur_cmd in commands:
-                is_inst_handle_type = cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
-                if ((is_inst_handle_type or cur_cmd.name in DEVICE_CMDS_NEED_TERM) and (cur_cmd.name not in skip_gipa_commands)):
+                if (self.ShouldPrintInIcdDispatchTable(cur_cmd, skip_gipa_commands)):
 
                     if cur_cmd.ext_name != cur_extension_name:
                         if 'VK_VERSION_' in cur_cmd.ext_name:
@@ -918,7 +926,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         return tables
 
     #
-    # Create the appropriate trampoline (and possibly terminator) functinos
+    # Create the appropriate trampoline (and possibly terminator) functions
     def CreateTrampTermFuncs(self):
         entries = []
         funcs = ''
@@ -1194,40 +1202,6 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         count += 1
                     funcs += ');\n'
 
-                elif has_surface == 1 and not (ext_cmd.handle_type == 'VkPhysicalDevice' or ext_cmd.handle_type == 'VkInstance'):
-                    funcs += '    uint32_t icd_index = 0;\n'
-                    funcs += '    struct loader_device *dev;\n'
-                    funcs += '    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);\n'
-                    funcs += '    if (NULL != icd_term && NULL != icd_term->dispatch.%s) {\n' % base_name
-                    funcs += '        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)%s;\n' % (surface_var_name)
-                    funcs += '        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {\n'
-                    funcs += '        %sicd_term->dispatch.%s(' % (return_prefix, base_name)
-                    count = 0
-                    for param in ext_cmd.params:
-                        if count != 0:
-                            funcs += ', '
-
-                        if param.type == 'VkSurfaceKHR':
-                            funcs += 'icd_surface->real_icd_surfaces[icd_index]'
-                        else:
-                            funcs += param.name
-
-                        count += 1
-                    funcs += ');\n'
-                    if not has_return_type:
-                        funcs += '                return;\n'
-                    funcs += '        }\n'
-                    funcs += '    %sicd_term->dispatch.%s(' % (return_prefix, base_name)
-                    count = 0
-                    for param in ext_cmd.params:
-                        if count != 0:
-                            funcs += ', '
-                        funcs += param.name
-                        count += 1
-                    funcs += ');\n'
-                    funcs += '    }\n'
-                    if has_return_type:
-                        funcs += '    return VK_SUCCESS;\n'
 
                 elif ext_cmd.handle_type == 'VkInstance':
                     funcs += '    struct loader_instance *inst = loader_get_instance(%s);\n' % (instance_var_name)
@@ -1238,83 +1212,51 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                     funcs += '    }\n'
                     funcs += '#error("Not implemented. Likely needs to be manually generated!");\n'
-                elif 'DebugMarkerSetObject' in ext_cmd.name or 'SetDebugUtilsObject' in ext_cmd.name or 'DebugUtilsLabel' in ext_cmd.name:
-                    funcs += '    uint32_t icd_index = 0;\n'
-                    funcs += '    struct loader_device *dev;\n'
-                    funcs += '    struct loader_icd_term *icd_term = loader_get_icd_and_device(%s, &dev, &icd_index);\n' % (ext_cmd.params[0].name)
-                    funcs += '    if (NULL != icd_term && NULL != icd_term->dispatch.'
-                    funcs += base_name
-                    funcs += ') {\n'
-                    if 'DebugMarkerSetObjectName' in ext_cmd.name:
-                        funcs += '        VkDebugMarkerObjectNameInfoEXT local_name_info;\n'
-                        funcs += '        memcpy(&local_name_info, pNameInfo, sizeof(VkDebugMarkerObjectNameInfoEXT));\n'
-                        funcs += '        // If this is a physical device, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {\n'
-                        funcs += '            struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)(uintptr_t)pNameInfo->object;\n'
-                        funcs += '            local_name_info.object = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
-                        funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        } else if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {\n'
-                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
-                        funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->object;\n'
-                        funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
-                        funcs += '                    local_name_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
-                        funcs += '                }\n'
+                elif ext_cmd.ext_name in ['VK_EXT_debug_utils', 'VK_EXT_debug_marker']:
+                    if ext_cmd.name in ['vkDebugMarkerSetObjectNameEXT', 'vkDebugMarkerSetObjectTagEXT', 'vkSetDebugUtilsObjectNameEXT' , 'vkSetDebugUtilsObjectTagEXT']:
+
+                        is_debug_utils = ext_cmd.ext_name == "VK_EXT_debug_utils"
+                        debug_struct_name = ext_cmd.params[1].name
+                        local_struct = 'local_name_info' if 'ObjectName' in ext_cmd.name else 'local_tag_info'
+                        member_name = 'objectHandle' if is_debug_utils else 'object'
+                        phys_dev_check = 'VK_OBJECT_TYPE_PHYSICAL_DEVICE' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT'
+                        surf_check = 'VK_OBJECT_TYPE_SURFACE_KHR' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT'
+                        funcs += '    uint32_t icd_index = 0;\n'
+                        funcs += '    struct loader_device *dev;\n'
+                        funcs += f'    struct loader_icd_term *icd_term = loader_get_icd_and_device({ ext_cmd.params[0].name}, &dev, &icd_index);\n'
+                        funcs += f'    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.{ext_cmd.name[2:]}) {{\n'
+                        funcs += f'        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.name[2:]}: Invalid device handle");\n'
+                        funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
+                        funcs += '    }\n'
+                        funcs += f'    { ext_cmd.params[1].type} {local_struct};\n'
+                        funcs += f'    memcpy(&{local_struct}, {debug_struct_name}, sizeof({ ext_cmd.params[1].type}));\n'
+                        funcs += '    // If this is a physical device, we have to replace it with the proper one for the next call.\n'
+                        funcs += f'    if ({debug_struct_name}->objectType == {phys_dev_check}) {{\n'
+                        funcs += f'        struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)(uintptr_t){debug_struct_name}->{member_name};\n'
+                        funcs += f'        {local_struct}.{member_name} = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
+                        funcs += '    // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
+                        funcs += f'    }} else if ({debug_struct_name}->objectType == {surf_check}) {{\n'
+                        funcs += '        if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {\n'
+                        funcs += f'            VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t){debug_struct_name}->{member_name};\n'
+                        funcs += '            if (NULL != icd_surface->real_icd_surfaces) {\n'
+                        funcs += f'                {local_struct}.{member_name} = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
                         funcs += '            }\n'
                         funcs += '        }\n'
-                    elif 'DebugMarkerSetObjectTag' in ext_cmd.name:
-                        funcs += '        VkDebugMarkerObjectTagInfoEXT local_tag_info;\n'
-                        funcs += '        memcpy(&local_tag_info, pTagInfo, sizeof(VkDebugMarkerObjectTagInfoEXT));\n'
-                        funcs += '        // If this is a physical device, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {\n'
-                        funcs += '            struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)(uintptr_t)pTagInfo->object;\n'
-                        funcs += '            local_tag_info.object = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
-                        funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        } else if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {\n'
-                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
-                        funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->object;\n'
-                        funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
-                        funcs += '                    local_tag_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
-                        funcs += '                }\n'
-                        funcs += '            }\n'
-                        funcs += '        }\n'
-                    elif 'SetDebugUtilsObjectName' in ext_cmd.name:
-                        funcs += '        VkDebugUtilsObjectNameInfoEXT local_name_info;\n'
-                        funcs += '        memcpy(&local_name_info, pNameInfo, sizeof(VkDebugUtilsObjectNameInfoEXT));\n'
-                        funcs += '        // If this is a physical device, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        if (pNameInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {\n'
-                        funcs += '            struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)(uintptr_t)pNameInfo->objectHandle;\n'
-                        funcs += '            local_name_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
-                        funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        } else if (pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {\n'
-                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
-                        funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->objectHandle;\n'
-                        funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
-                        funcs += '                    local_name_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
-                        funcs += '                }\n'
-                        funcs += '            }\n'
-                        funcs += '        }\n'
-                    elif 'SetDebugUtilsObjectTag' in ext_cmd.name:
-                        funcs += '        VkDebugUtilsObjectTagInfoEXT local_tag_info;\n'
-                        funcs += '        memcpy(&local_tag_info, pTagInfo, sizeof(VkDebugUtilsObjectTagInfoEXT));\n'
-                        funcs += '        // If this is a physical device, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        if (pTagInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {\n'
-                        funcs += '            struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)(uintptr_t)pTagInfo->objectHandle;\n'
-                        funcs += '            local_tag_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
-                        funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
-                        funcs += '        } else if (pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {\n'
-                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
-                        funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->objectHandle;\n'
-                        funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
-                        funcs += '                    local_tag_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
-                        funcs += '                }\n'
-                        funcs += '            }\n'
-                        funcs += '        }\n'
-                    funcs += '        '
+                        funcs += '    }\n'
+                        dispatch = 'dev->loader_dispatch.'
+                    else:
+                        funcs += f'    struct loader_dev_dispatch_table *dispatch_table = loader_get_dev_dispatch({ext_cmd.params[0].name});\n'
+                        funcs += f'    if (NULL == dispatch_table) {{\n'
+                        funcs += f'        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.ext_name}: Invalid device handle");\n'
+                        funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
+                        funcs += '    }\n'
+                        funcs += '    // Only call down if the device supports the function\n'
+                        funcs += f'    if (NULL != dispatch_table->extension_terminator_dispatch.{base_name})\n    '
+                        dispatch = 'dispatch_table->'
+                    funcs += '    '
                     if has_return_type:
                         funcs += 'return '
-                    funcs += 'icd_term->dispatch.'
-                    funcs += base_name
-                    funcs += '('
+                    funcs += f'{dispatch}extension_terminator_dispatch.{base_name}('
                     count = 0
                     for param in ext_cmd.params:
                         if count != 0:
@@ -1333,10 +1275,6 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         count += 1
 
                     funcs += ');\n'
-                    if has_return_type:
-                        funcs += '    } else {\n'
-                        funcs += '        return VK_SUCCESS;\n'
-                    funcs += '    }\n'
 
                 else:
                     funcs += '#error("Unknown error path!");\n'
@@ -1357,6 +1295,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                 if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
                     funcs += '    if (disp->' + base_name + ' != NULL) {\n'
+                    funcs += '    '
                 funcs += return_prefix
                 funcs += 'disp->'
                 funcs += base_name
@@ -1480,60 +1419,115 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
     # extension entrypoints and return it as a string
     def DeviceExtensionGetTerminator(self):
         term_func = ''
-        cur_extension_name = ''
 
         term_func += '// Some device commands still need a terminator because the loader needs to unwrap something about them.\n'
         term_func += '// In many cases, the item needing unwrapping is a VkPhysicalDevice or VkSurfaceKHR object.  But there may be other items\n'
         term_func += '// in the future.\n'
-        term_func += 'PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName) {\n'
-        term_func += '    PFN_vkVoidFunction addr = NULL;\n'
-
-        count = 0
-        is_extension = False
+        term_func += 'PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *name, bool* found_name) {\n'
+        term_func += '''    *found_name = false;
+    if (!name || name[0] != 'v' || name[1] != 'k') {
+        return NULL;
+    }
+    name += 2;
+'''
         last_protect = None
+        last_ext = None
         for ext_cmd in self.ext_commands:
             if ext_cmd.name in DEVICE_CMDS_NEED_TERM:
-                if ext_cmd.ext_name != cur_extension_name:
-                    if count > 0:
-                        count = 0;
-                        term_func += '        }\n'
-                    if is_extension:
-                        term_func += '    }\n'
-                        is_extension = False
-
-                    if 'VK_VERSION_' in ext_cmd.ext_name:
-                        term_func += '\n    // ---- Core %s commands\n' % ext_cmd.ext_name[11:]
-                    else:
-                        last_protect = ext_cmd.protect
-                        if ext_cmd.protect is not None:
-                            term_func += '#ifdef %s\n' % ext_cmd.protect
-                        term_func += '\n    // ---- %s extension commands\n' % ext_cmd.ext_name
-                        if ext_cmd.require:
-                            term_func += '    if (dev->extensions.%s_enabled && dev->extensions.%s_enabled) {\n' % (ext_cmd.ext_name[3:].lower(), ext_cmd.require[3:].lower())
-                        else:
-                            term_func += '    if (dev->extensions.%s_enabled) {\n' % ext_cmd.ext_name[3:].lower()
-                        is_extension = True
-                    cur_extension_name = ext_cmd.ext_name
-
-                if count == 0:
-                    term_func += '        if'
+                if 'VK_VERSION_' in ext_cmd.ext_name:
+                    term_func += f'    // ---- Core {ext_cmd.ext_name[11:]} commands\n'
                 else:
-                    term_func += '        } else if'
+                    last_protect = ext_cmd.protect
+                    if ext_cmd.protect is not None:
+                        term_func += f'#ifdef {ext_cmd.protect}\n'
+                    if (last_ext != ext_cmd.ext_name):
+                        term_func += f'    // ---- {ext_cmd.ext_name} extension commands\n'
+                        last_ext = ext_cmd.ext_name
 
-                term_func += '(!strcmp(pName, "%s")) {\n' % (ext_cmd.name)
-                term_func += '            addr = (PFN_vkVoidFunction)terminator_%s;\n' % (ext_cmd.name[2:])
+                term_func += f'    if (!strcmp(name, "{ext_cmd.name[2:]}")) {{\n'
+                term_func += f'        *found_name = true;\n'
+                if ext_cmd.require:
+                    term_func += f'        return dev->extensions.{ext_cmd.ext_name[3:].lower()}_enabled && dev->extensions.{ext_cmd.require[3:].lower()}_enabled ?\n'
+                else:
+                    term_func += f'        return dev->extensions.{ext_cmd.ext_name[3:].lower()}_enabled ?\n'
+                term_func += f'            (PFN_vkVoidFunction)terminator_{(ext_cmd.name[2:])} : NULL;\n'
+                term_func += f'    }}\n'
+
+        if last_protect is not None:
+            term_func += '#endif // %s\n' % ext_cmd.protect
+
+        term_func += '    return NULL;\n'
+        term_func += '}\n\n'
+
+        return term_func
+
+    #
+    # Create a dispatch table solely for device functions which have custom terminators
+    def OutputDeviceFunctionTerminatorDispatchTable(self):
+        term_func = ''
+        term_func += '// Functions that required a terminator need to have a separate dispatch table which contains their corresponding\n'
+        term_func += '// device function. This is used in the terminators themselves.\n'
+        term_func += 'struct loader_device_terminator_dispatch {\n'
+
+        last_protect = None
+        last_ext = None
+        for ext_cmd in self.ext_commands:
+            if ext_cmd.name in DEVICE_CMDS_NEED_TERM:
+                if 'VK_VERSION_' in ext_cmd.ext_name:
+                    term_func += f'    // ---- Core {ext_cmd.ext_name[11:]} commands\n'
+                else:
+                    last_protect = ext_cmd.protect
+                    if ext_cmd.protect is not None:
+                        term_func += f'#ifdef {ext_cmd.protect}\n'
+                    if (last_ext != ext_cmd.ext_name):
+                        term_func += f'    // ---- {ext_cmd.ext_name} extension commands\n'
+                        last_ext = ext_cmd.ext_name
+
+                term_func += f'    PFN_{ext_cmd.name} {ext_cmd.name[2:]};\n'
+
+        if last_protect is not None:
+            term_func += '#endif // %s\n' % ext_cmd.protect
+
+        term_func += '}; \n\n'
+
+        return term_func
+
+    #
+    # Create code to initialize a dispatch table from the appropriate list of
+    # extension entrypoints and return it as a string
+    def InitDeviceFunctionTerminatorDispatchTable(self):
+        term_func = ''
+
+        term_func += '// Functions that required a terminator need to have a separate dispatch table which contains their corresponding\n'
+        term_func += '// device function. This is used in the terminators themselves.\n'
+        term_func += 'void init_extension_device_proc_terminator_dispatch(struct loader_device *dev) {\n'
+        term_func += '    struct loader_device_terminator_dispatch* dispatch = &dev->loader_dispatch.extension_terminator_dispatch;\n'
+        term_func += '    PFN_vkGetDeviceProcAddr gpda = (PFN_vkGetDeviceProcAddr)dev->phys_dev_term->this_icd_term->dispatch.GetDeviceProcAddr;\n'
+        last_protect = None
+        last_ext = None
+        for ext_cmd in self.ext_commands:
+            if ext_cmd.name in DEVICE_CMDS_NEED_TERM:
+                if 'VK_VERSION_' in ext_cmd.ext_name:
+                    term_func += f'    // ---- Core {ext_cmd.ext_name[11:]} commands\n'
+                else:
+                    last_protect = ext_cmd.protect
+                    if ext_cmd.protect is not None:
+                        term_func += f'#ifdef {ext_cmd.protect}\n'
+                    if (last_ext != ext_cmd.ext_name):
+                        term_func += f'    // ---- {ext_cmd.ext_name} extension commands\n'
+                        last_ext = ext_cmd.ext_name
 
 
-                count += 1
+                if ext_cmd.require:
+                    term_func += f'    if (dev->extensions.{ext_cmd.ext_name[3:].lower()}_enabled && dev->extensions.{ext_cmd.require[3:].lower()}_enabled)\n'
+                    term_func += f'       dispatch->{ext_cmd.name[2:]} = (PFN_{(ext_cmd.name)})gpda(dev->icd_device, "{(ext_cmd.name)}");\n'
+                else:
+                    term_func += f'    if (dev->extensions.{ext_cmd.ext_name[3:].lower()}_enabled) \n'
+                    term_func += f'       dispatch->{ext_cmd.name[2:]} = (PFN_{(ext_cmd.name)})gpda(dev->icd_device, "{(ext_cmd.name)}");\n'
 
-        if count > 0:
-            term_func += '        }\n'
-        if is_extension:
-            term_func += '    }\n'
-            if last_protect is not None:
-                term_func += '#endif // %s\n' % ext_cmd.protect
+        if last_protect is not None:
+            term_func += '#endif // %s\n' % ext_cmd.protect
 
-        term_func += '    return addr;\n'
         term_func += '}\n\n'
 
         return term_func

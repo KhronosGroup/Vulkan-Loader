@@ -514,8 +514,8 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
 }
 }  // namespace fs
 
-bool string_eq(const char* a, const char* b) noexcept { return strcmp(a, b) == 0; }
-bool string_eq(const char* a, const char* b, size_t len) noexcept { return strncmp(a, b, len) == 0; }
+bool string_eq(const char* a, const char* b) noexcept { return a && b && strcmp(a, b) == 0; }
+bool string_eq(const char* a, const char* b, size_t len) noexcept { return a && b && strncmp(a, b, len) == 0; }
 
 fs::path get_loader_path() {
     auto loader_path = fs::path(FRAMEWORK_VULKAN_LIBRARY_PATH);
@@ -637,6 +637,7 @@ DeviceFunctions::DeviceFunctions(const VulkanFunctions& vulkan_functions, VkDevi
     vkAllocateCommandBuffers = load(device, "vkAllocateCommandBuffers");
     vkDestroyCommandPool = load(device, "vkDestroyCommandPool");
     vkCreateSwapchainKHR = load(device, "vkCreateSwapchainKHR");
+    vkGetSwapchainImagesKHR = load(device, "vkGetSwapchainImagesKHR");
     vkDestroySwapchainKHR = load(device, "vkDestroySwapchainKHR");
 }
 

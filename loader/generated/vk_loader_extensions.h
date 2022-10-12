@@ -45,7 +45,7 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
 // Extension interception for vkGetDeviceProcAddr function, so we can return
 // an appropriate terminator if this is one of those few device commands requiring
 // a terminator.
-PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName);
+PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *name, bool* found_name);
 
 // Dispatch table properly filled in with appropriate terminators for the
 // supported extensions.
@@ -250,8 +250,6 @@ struct loader_icd_term_dispatch {
     PFN_vkGetPhysicalDeviceSurfacePresentModesKHR GetPhysicalDeviceSurfacePresentModesKHR;
 
     // ---- VK_KHR_swapchain extension commands
-    PFN_vkCreateSwapchainKHR CreateSwapchainKHR;
-    PFN_vkGetDeviceGroupSurfacePresentModesKHR GetDeviceGroupSurfacePresentModesKHR;
     PFN_vkGetPhysicalDevicePresentRectanglesKHR GetPhysicalDevicePresentRectanglesKHR;
 
     // ---- VK_KHR_display extension commands
@@ -262,9 +260,6 @@ struct loader_icd_term_dispatch {
     PFN_vkCreateDisplayModeKHR CreateDisplayModeKHR;
     PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR;
     PFN_vkCreateDisplayPlaneSurfaceKHR CreateDisplayPlaneSurfaceKHR;
-
-    // ---- VK_KHR_display_swapchain extension commands
-    PFN_vkCreateSharedSwapchainsKHR CreateSharedSwapchainsKHR;
 
     // ---- VK_KHR_xlib_surface extension commands
 #ifdef VK_USE_PLATFORM_XLIB_KHR
@@ -354,10 +349,6 @@ struct loader_icd_term_dispatch {
     PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
     PFN_vkDebugReportMessageEXT DebugReportMessageEXT;
 
-    // ---- VK_EXT_debug_marker extension commands
-    PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
-    PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
-
     // ---- VK_GGP_stream_descriptor_surface extension commands
 #ifdef VK_USE_PLATFORM_GGP
     PFN_vkCreateStreamDescriptorSurfaceGGP CreateStreamDescriptorSurfaceGGP;
@@ -396,14 +387,6 @@ struct loader_icd_term_dispatch {
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
     // ---- VK_EXT_debug_utils extension commands
-    PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
-    PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT;
-    PFN_vkQueueBeginDebugUtilsLabelEXT QueueBeginDebugUtilsLabelEXT;
-    PFN_vkQueueEndDebugUtilsLabelEXT QueueEndDebugUtilsLabelEXT;
-    PFN_vkQueueInsertDebugUtilsLabelEXT QueueInsertDebugUtilsLabelEXT;
-    PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT;
-    PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT;
-    PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
     PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT;
     PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
     PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
@@ -436,9 +419,6 @@ struct loader_icd_term_dispatch {
     // ---- VK_EXT_full_screen_exclusive extension commands
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT GetPhysicalDeviceSurfacePresentModes2EXT;
-#endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    PFN_vkGetDeviceGroupSurfacePresentModes2EXT GetDeviceGroupSurfacePresentModes2EXT;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_EXT_headless_surface extension commands
@@ -490,5 +470,31 @@ struct loader_instance_extension_enables {
     uint8_t ext_debug_utils;
     uint8_t ext_acquire_drm_display;
 };
+
+// Functions that required a terminator need to have a separate dispatch table which contains their corresponding
+// device function. This is used in the terminators themselves.
+struct loader_device_terminator_dispatch {
+    // ---- VK_KHR_swapchain extension commands
+    PFN_vkCreateSwapchainKHR CreateSwapchainKHR;
+    PFN_vkGetDeviceGroupSurfacePresentModesKHR GetDeviceGroupSurfacePresentModesKHR;
+    // ---- VK_KHR_display_swapchain extension commands
+    PFN_vkCreateSharedSwapchainsKHR CreateSharedSwapchainsKHR;
+    // ---- VK_EXT_debug_marker extension commands
+    PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
+    PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
+    // ---- VK_EXT_debug_utils extension commands
+    PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
+    PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT;
+    PFN_vkQueueBeginDebugUtilsLabelEXT QueueBeginDebugUtilsLabelEXT;
+    PFN_vkQueueEndDebugUtilsLabelEXT QueueEndDebugUtilsLabelEXT;
+    PFN_vkQueueInsertDebugUtilsLabelEXT QueueInsertDebugUtilsLabelEXT;
+    PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT;
+    PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT;
+    PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    // ---- VK_EXT_full_screen_exclusive extension commands
+    PFN_vkGetDeviceGroupSurfacePresentModes2EXT GetDeviceGroupSurfacePresentModes2EXT;
+#endif // None
+}; 
 
 

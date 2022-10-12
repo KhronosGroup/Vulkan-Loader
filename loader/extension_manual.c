@@ -307,18 +307,30 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL != icd_term && NULL != icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pSurfaceInfo->surface;
-        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-            VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
-            surface_info_copy.sType = pSurfaceInfo->sType;
-            surface_info_copy.pNext = pSurfaceInfo->pNext;
-            surface_info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
-            return icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, &surface_info_copy, pModes);
-        }
-        return icd_term->dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
+    if (NULL == icd_term || NULL == dev ||
+        NULL == dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceGroupSurfacePresentModes2EXT Terminator: Invalid device handle. This is likely the result of a "
+                   "layer wrapping device handles and failing to unwrap them in all functions. "
+                   "[VUID-vkGetDeviceGroupSurfacePresentModes2EXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
     }
-    return VK_SUCCESS;
+    if (NULL == pSurfaceInfo) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceGroupSurfacePresentModes2EXT: Invalid pSurfaceInfo pointer "
+                   "[VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pSurfaceInfo->surface;
+    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
+        surface_info_copy.sType = pSurfaceInfo->sType;
+        surface_info_copy.pNext = pSurfaceInfo->pNext;
+        surface_info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
+        return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, &surface_info_copy,
+                                                                                                        pModes);
+    }
+    return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
 }
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR

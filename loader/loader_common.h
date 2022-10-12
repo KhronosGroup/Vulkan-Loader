@@ -173,6 +173,7 @@ typedef VkResult(VKAPI_PTR *PFN_vkDevExt)(VkDevice device);
 struct loader_dev_dispatch_table {
     VkLayerDispatchTable core_dispatch;
     PFN_vkDevExt ext_dispatch[MAX_NUM_UNKNOWN_EXTS];
+    struct loader_device_terminator_dispatch extension_terminator_dispatch;
 };
 
 // per CreateDevice structure
