@@ -98,8 +98,6 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     LOOKUP_GIPA(GetPhysicalDeviceSurfacePresentModesKHR, false);
 
     // ---- VK_KHR_swapchain extension commands
-    LOOKUP_GIPA(CreateSwapchainKHR, false);
-    LOOKUP_GIPA(GetDeviceGroupSurfacePresentModesKHR, false);
     LOOKUP_GIPA(GetPhysicalDevicePresentRectanglesKHR, false);
 
     // ---- VK_KHR_display extension commands
