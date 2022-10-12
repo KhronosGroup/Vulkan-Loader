@@ -1191,12 +1191,8 @@ void loader_destroy_logical_device(const struct loader_instance *inst, struct lo
     if (pAllocator) {
         dev->alloc_callbacks = *pAllocator;
     }
-    if (NULL != dev->expanded_activated_layer_list.list) {
-        loader_deactivate_layers(inst, dev, &dev->expanded_activated_layer_list);
-    }
-    if (NULL != dev->app_activated_layer_list.list) {
-        loader_destroy_layer_list(inst, dev, &dev->app_activated_layer_list);
-    }
+    loader_destroy_layer_list(inst, dev, &dev->expanded_activated_layer_list);
+    loader_destroy_layer_list(inst, dev, &dev->app_activated_layer_list);
     loader_device_heap_free(dev, dev);
 }
 
@@ -3985,8 +3981,7 @@ struct loader_instance *loader_get_instance(const VkInstance instance) {
     return ptr_instance;
 }
 
-static loader_platform_dl_handle loader_open_layer_file(const struct loader_instance *inst, const char *chain_type,
-                                                        struct loader_layer_properties *prop) {
+static loader_platform_dl_handle loader_open_layer_file(const struct loader_instance *inst, struct loader_layer_properties *prop) {
     if ((prop->lib_handle = loader_platform_open_library(prop->lib_name)) == NULL) {
         loader_handle_load_library_error(inst, prop->lib_name, &prop->lib_status);
     } else {
@@ -4379,7 +4374,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 continue;
             }
 
-            lib_handle = loader_open_layer_file(inst, "instance", layer_prop);
+            lib_handle = loader_open_layer_file(inst, layer_prop);
             if (!lib_handle) {
                 continue;
             }
@@ -4693,20 +4688,19 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         chain_info.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &chain_info;
 
-        bool done = false;
-
         // Create instance chain of enabled layers
         for (int32_t i = dev->expanded_activated_layer_list.count - 1; i >= 0; i--) {
             struct loader_layer_properties *layer_prop = &dev->expanded_activated_layer_list.list[i];
-            loader_platform_dl_handle lib_handle;
+            loader_platform_dl_handle lib_handle = layer_prop->lib_handle;
 
             // Skip it if a Layer with the same name has been already successfully activated
             if (loader_names_array_has_layer_property(&layer_prop->info, num_activated_layers, activated_layers)) {
                 continue;
             }
 
-            lib_handle = loader_open_layer_file(inst, "device", layer_prop);
-            if (!lib_handle || done) {
+            // Skip the layer if the handle is NULL - this is likely because the library failed to load but wasn't removed from the
+            // list.
+            if (!lib_handle) {
                 continue;
             }
 
@@ -4731,8 +4725,9 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                 if (layerNextGDPA != NULL) {
                     *layerNextGDPA = nextGDPA;
                 }
-                done = true;
-                continue;
+                // Break here because if fpGIPA is the same as callingLayer, that means a layer is trying to create a device, and
+                // once we don't want to continue any further as the next layer will be the calling layer
+                break;
             }
 
             if ((fpGDPA = layer_prop->functions.get_device_proc_addr) == NULL) {
