@@ -1013,6 +1013,47 @@ TEST(CreateDevice, ConsecutiveCreateWithoutDestruction) {
     }
 }
 
+TEST(CreateDevice, SwapchainFunctional) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.get_test_icd();
+
+    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
+
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.back().queue_family_properties.push_back(family_props);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    uint32_t familyCount = 0;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, nullptr);
+    ASSERT_EQ(familyCount, 1U);
+
+    VkQueueFamilyProperties families;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, &families);
+    ASSERT_EQ(familyCount, 1U);
+    ASSERT_EQ(families, family_props.properties);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+    dev.CheckCreate(phys_dev);
+
+    VkSwapchainKHR swapchain{};
+    VkSwapchainCreateInfoKHR swap_create_info{};
+    DeviceFunctions funcs{*inst.functions, dev};
+    ASSERT_EQ(VK_SUCCESS, funcs.vkCreateSwapchainKHR(dev, &swap_create_info, nullptr, &swapchain));
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, funcs.vkGetSwapchainImagesKHR(dev, swapchain, &count, nullptr));
+    ASSERT_GT(count, 0U);
+    std::array<VkImage, 16> images;
+    ASSERT_EQ(VK_SUCCESS, funcs.vkGetSwapchainImagesKHR(dev, swapchain, &count, images.data()));
+    funcs.vkDestroySwapchainKHR(dev, swapchain, nullptr);
+}
+
 TEST(TryLoadWrongBinaries, WrongICD) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
