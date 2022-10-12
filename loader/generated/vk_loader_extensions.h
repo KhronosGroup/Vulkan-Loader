@@ -250,8 +250,6 @@ struct loader_icd_term_dispatch {
     PFN_vkGetPhysicalDeviceSurfacePresentModesKHR GetPhysicalDeviceSurfacePresentModesKHR;
 
     // ---- VK_KHR_swapchain extension commands
-    PFN_vkCreateSwapchainKHR CreateSwapchainKHR;
-    PFN_vkGetDeviceGroupSurfacePresentModesKHR GetDeviceGroupSurfacePresentModesKHR;
     PFN_vkGetPhysicalDevicePresentRectanglesKHR GetPhysicalDevicePresentRectanglesKHR;
 
     // ---- VK_KHR_display extension commands
