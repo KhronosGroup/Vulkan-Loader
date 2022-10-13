@@ -6,7 +6,7 @@
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "v1.3.230"
+            "commit": "v1.3.231"
         },
         {
             "name": "googletest",
