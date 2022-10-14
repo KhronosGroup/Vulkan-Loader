@@ -5884,36 +5884,59 @@ bool is_linux_sort_enabled(struct loader_instance *inst) {
 }
 #endif  // LOADER_ENABLE_LINUX_SORT
 
-// Check if this physical device is already in the old buffer
-void check_if_phys_dev_already_present(struct loader_instance *inst, VkPhysicalDevice physical_device, uint32_t idx,
-                                       struct loader_physical_device_term **new_phys_devs) {
-    if (NULL != inst->phys_devs_term) {
-        for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
-            if (physical_device == inst->phys_devs_term[old_idx]->phys_dev) {
-                new_phys_devs[idx] = inst->phys_devs_term[old_idx];
-                break;
-            }
+// Look for physical_device in the provided phys_devs list, return true if found and put the index into out_idx, otherwise return
+// false
+bool find_phys_dev(VkPhysicalDevice physical_device, uint32_t phys_devs_count, struct loader_physical_device_term **phys_devs,
+                   uint32_t *out_idx) {
+    if (NULL == phys_devs) return false;
+    for (uint32_t idx = 0; idx < phys_devs_count; idx++) {
+        if (NULL != phys_devs[idx] && physical_device == phys_devs[idx]->phys_dev) {
+            *out_idx = idx;
+            return true;
         }
     }
+    return false;
 }
 
-VkResult allocate_new_phys_dev_at_idx(struct loader_instance *inst, VkPhysicalDevice physical_device,
-                                      struct loader_phys_dev_per_icd *dev_array, uint32_t idx,
-                                      struct loader_physical_device_term **new_phys_devs) {
-    if (NULL == new_phys_devs[idx]) {
-        new_phys_devs[idx] =
-            loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == new_phys_devs[idx]) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "allocate_new_phys_dev_at_idx:  Failed to allocate physical device terminator object %d", idx);
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
-
-        loader_set_dispatch((void *)new_phys_devs[idx], inst->disp);
-        new_phys_devs[idx]->this_icd_term = dev_array->icd_term;
-        new_phys_devs[idx]->icd_index = (uint8_t)(dev_array->icd_index);
-        new_phys_devs[idx]->phys_dev = physical_device;
+// Add physical_device to new_phys_devs
+VkResult check_and_add_to_new_phys_devs(struct loader_instance *inst, VkPhysicalDevice physical_device,
+                                        struct loader_phys_dev_per_icd *dev_array, uint32_t *cur_new_phys_dev_count,
+                                        struct loader_physical_device_term **new_phys_devs) {
+    uint32_t out_idx = 0;
+    uint32_t idx = *cur_new_phys_dev_count;
+    // Check if the physical_device already exists in the new_phys_devs buffer, that means it was found from both
+    // EnumerateAdapterPhysicalDevices and EnumeratePhysicalDevices and we need to skip it.
+    if (find_phys_dev(physical_device, idx, new_phys_devs, &out_idx)) {
+        return VK_SUCCESS;
     }
+    // Check if it was found in a previous call to vkEnumeratePhysicalDevices, we can just copy over the old data.
+    if (find_phys_dev(physical_device, inst->phys_dev_count_term, inst->phys_devs_term, &out_idx)) {
+        new_phys_devs[idx] = inst->phys_devs_term[out_idx];
+        (*cur_new_phys_dev_count)++;
+        return VK_SUCCESS;
+    }
+
+    // Exit in case something is already present - this shouldn't happen but better to be safe than overwrite existing data since
+    // this code has been refactored a half dozen times.
+    if (NULL != new_phys_devs[idx]) {
+        return VK_SUCCESS;
+    }
+    // If this physical device is new, we need to allocate space for it.
+    new_phys_devs[idx] =
+        loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == new_phys_devs[idx]) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "check_and_add_to_new_phys_devs:  Failed to allocate physical device terminator object %d", idx);
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    loader_set_dispatch((void *)new_phys_devs[idx], inst->disp);
+    new_phys_devs[idx]->this_icd_term = dev_array->icd_term;
+    new_phys_devs[idx]->icd_index = (uint8_t)(dev_array->icd_index);
+    new_phys_devs[idx]->phys_dev = physical_device;
+
+    // Increment the count of new physical devices
+    (*cur_new_phys_dev_count)++;
     return VK_SUCCESS;
 }
 
@@ -5936,6 +5959,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     struct loader_phys_dev_per_icd *windows_sorted_devices_array = NULL;
     uint32_t icd_count = 0;
     struct loader_phys_dev_per_icd *icd_phys_dev_array = NULL;
+    uint32_t new_phys_devs_capacity = 0;
     uint32_t new_phys_devs_count = 0;
     struct loader_physical_device_term **new_phys_devs = NULL;
 
@@ -5964,16 +5988,6 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     // internal value for those physical devices.
     icd_term = inst->icd_terms;
     while (NULL != icd_term) {
-        // This is the legacy behavior which should be skipped if EnumerateAdapterPhysicalDevices is available
-        // and we successfully enumerated sorted adapters using windows_read_sorted_physical_devices.
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-        if (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices != NULL) {
-            icd_term = icd_term->next;
-            ++icd_idx;
-            continue;
-        }
-#endif
-
         res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &icd_phys_dev_array[icd_idx].device_count, NULL);
         if (VK_SUCCESS != res) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
@@ -6005,14 +6019,14 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
 
     // Add up both the windows sorted and non windows found physical device counts
     for (uint32_t i = 0; i < windows_sorted_devices_count; ++i) {
-        new_phys_devs_count += windows_sorted_devices_array[i].device_count;
+        new_phys_devs_capacity += windows_sorted_devices_array[i].device_count;
     }
     for (uint32_t i = 0; i < icd_count; ++i) {
-        new_phys_devs_count += icd_phys_dev_array[i].device_count;
+        new_phys_devs_capacity += icd_phys_dev_array[i].device_count;
     }
 
     // Bail out if there are no physical devices reported
-    if (0 == new_phys_devs_count) {
+    if (0 == new_phys_devs_capacity) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "setup_loader_term_phys_devs:  Failed to detect any valid GPUs in the current config");
         res = VK_ERROR_INITIALIZATION_FAILED;
@@ -6021,37 +6035,31 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
 
     // Create an allocation large enough to hold both the windows sorting enumeration and non-windows physical device
     // enumeration
-    new_phys_devs = loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_term *) * new_phys_devs_count,
+    new_phys_devs = loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_term *) * new_phys_devs_capacity,
                                                 VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_devs) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "setup_loader_term_phys_devs:  Failed to allocate new physical device array of size %d", new_phys_devs_count);
+                   "setup_loader_term_phys_devs:  Failed to allocate new physical device array of size %d", new_phys_devs_capacity);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
 
-    // Current index into the new_phys_devs array - increment whenever we've written in.
-    uint32_t idx = 0;
-
     // Copy over everything found through sorted enumeration
     for (uint32_t i = 0; i < windows_sorted_devices_count; ++i) {
         for (uint32_t j = 0; j < windows_sorted_devices_array[i].device_count; ++j) {
-            check_if_phys_dev_already_present(inst, windows_sorted_devices_array[i].physical_devices[j], idx, new_phys_devs);
-
-            res = allocate_new_phys_dev_at_idx(inst, windows_sorted_devices_array[i].physical_devices[j],
-                                               &windows_sorted_devices_array[i], idx, new_phys_devs);
+            res = check_and_add_to_new_phys_devs(inst, windows_sorted_devices_array[i].physical_devices[j],
+                                                 &windows_sorted_devices_array[i], &new_phys_devs_count, new_phys_devs);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
                 goto out;
             }
-            // Increment the count of new physical devices
-            idx++;
         }
     }
 
     // Now go through the rest of the physical devices and add them to new_phys_devs
 #ifdef LOADER_ENABLE_LINUX_SORT
+
     if (is_linux_sort_enabled(inst)) {
-        for (uint32_t dev = idx; dev < new_phys_devs_count; ++dev) {
+        for (uint32_t dev = new_phys_devs_count; dev < new_phys_devs_capacity; ++dev) {
             new_phys_devs[dev] =
                 loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_phys_devs[dev]) {
@@ -6065,13 +6073,13 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
         // Get the physical devices supported by platform sorting mechanism into a separate list
         // Pass in a sublist to the function so it only operates on the correct elements. This means passing in a pointer to the
         // current next element in new_phys_devs and passing in a `count` of currently unwritten elements
-        res =
-            linux_read_sorted_physical_devices(inst, icd_count, icd_phys_dev_array, new_phys_devs_count - idx, &new_phys_devs[idx]);
+        res = linux_read_sorted_physical_devices(inst, icd_count, icd_phys_dev_array, new_phys_devs_capacity - new_phys_devs_count,
+                                                 &new_phys_devs[new_phys_devs_count]);
         if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
             goto out;
         }
         // Keep previously allocated physical device info since apps may already be using that!
-        for (uint32_t new_idx = idx; new_idx < new_phys_devs_count; new_idx++) {
+        for (uint32_t new_idx = new_phys_devs_count; new_idx < new_phys_devs_capacity; new_idx++) {
             for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
                 if (new_phys_devs[new_idx]->phys_dev == inst->phys_devs_term[old_idx]->phys_dev) {
                     loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
@@ -6083,6 +6091,8 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                 }
             }
         }
+        // now set the count to the capacity, as now the list is filled in
+        new_phys_devs_count = new_phys_devs_capacity;
         // We want the following code to run if either linux sorting is disabled at compile time or runtime
     } else {
 #endif  // LOADER_ENABLE_LINUX_SORT
@@ -6090,16 +6100,11 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
         // Copy over everything found through the non-sorted means.
         for (uint32_t i = 0; i < icd_count; ++i) {
             for (uint32_t j = 0; j < icd_phys_dev_array[i].device_count; ++j) {
-                check_if_phys_dev_already_present(inst, icd_phys_dev_array[i].physical_devices[j], idx, new_phys_devs);
-
-                // If this physical device isn't in the old buffer, then we need to create it.
-                res = allocate_new_phys_dev_at_idx(inst, icd_phys_dev_array[i].physical_devices[j], &icd_phys_dev_array[i], idx,
-                                                   new_phys_devs);
+                res = check_and_add_to_new_phys_devs(inst, icd_phys_dev_array[i].physical_devices[j], &icd_phys_dev_array[i],
+                                                     &new_phys_devs_count, new_phys_devs);
                 if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
                     goto out;
                 }
-                // Increment the count of new physical devices
-                idx++;
             }
         }
 #ifdef LOADER_ENABLE_LINUX_SORT

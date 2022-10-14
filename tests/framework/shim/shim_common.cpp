@@ -106,8 +106,9 @@ void PlatformShim::reset() {
 void PlatformShim::set_path(ManifestCategory category, fs::path const& path) {}
 
 void PlatformShim::add_manifest(ManifestCategory category, fs::path const& path) {
-    if (category == ManifestCategory::implicit_layer) hkey_local_machine_implicit_layers.emplace_back(path.str());
-    if (category == ManifestCategory::explicit_layer)
+    if (category == ManifestCategory::implicit_layer)
+        hkey_local_machine_implicit_layers.emplace_back(path.str());
+    else if (category == ManifestCategory::explicit_layer)
         hkey_local_machine_explicit_layers.emplace_back(path.str());
     else
         hkey_local_machine_drivers.emplace_back(path.str());

@@ -946,6 +946,14 @@ of Windows 10 that support GPU selection through the OS.
 Other platforms may be included in the future, but they will require separate
 platform-specific interfaces.
 
+A requirement of `vk_icdEnumerateAdapterPhysicalDevices` is that it *must*
+return the same `VkPhysicalDevice` handle values for the same physical
+devices that are returned by `vkEnumeratePhysicalDevices`.
+This is because the loader calls both functions on the driver then
+de-duplicates the physical devices using the `VkPhysicalDevice` handles.
+Since not all physical devices in a driver will have a LUID, such as for
+software implementations, this step is necessary to allow drivers to
+enumerate all available physical devices.
 
 ## Driver Dispatchable Object Creation
 

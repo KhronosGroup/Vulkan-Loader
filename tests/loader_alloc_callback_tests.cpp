@@ -724,7 +724,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         }
         ASSERT_EQ(physical_dev_count, returned_physical_count);
 
-        std::array<VkDevice, 3> devices;
+        std::array<VkDevice, 5> devices;
         for (uint32_t i = 0; i < returned_physical_count; i++) {
             uint32_t family_count = 1;
             uint32_t returned_family_count = 0;
