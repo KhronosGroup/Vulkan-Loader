@@ -1089,8 +1089,6 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
     char *env_value;
     bool filter_extensions = true;
 
-    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Build ICD instance extension list");
-
     // Check if a user wants to disable the instance extension filtering behavior
     env_value = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", inst);
     if (NULL != env_value && atoi(env_value) != 0) {
@@ -5155,7 +5153,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         icd_create_info.enabledExtensionCount = 0;
         struct loader_extension_list icd_exts;
 
-        loader_log(ptr_instance, VULKAN_LOADER_DEBUG_BIT, 0, "Build ICD instance extension list");
         // traverse scanned icd list adding non-duplicate extensions to the list
         res = loader_init_generic_list(ptr_instance, (struct loader_generic_list *)&icd_exts, sizeof(VkExtensionProperties));
         if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
