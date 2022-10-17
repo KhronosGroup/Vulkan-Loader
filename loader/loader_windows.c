@@ -525,8 +525,8 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                                 foundDuplicate = true;
                             }
                         }
-
-                        if (foundDuplicate == false) {
+                        // Only skip if we are adding a driver and a duplicate was found
+                        if (!is_driver || (is_driver && foundDuplicate == false)) {
                             // Add the new entry to the list.
                             (void)snprintf(*reg_data + strlen(*reg_data), name_size + 2, "%c%s", PATH_SEPARATOR, name);
                             found = true;

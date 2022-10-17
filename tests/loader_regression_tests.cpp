@@ -3527,4 +3527,47 @@ TEST(AppPackageDriverDiscovery, AppPackageTest) {
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 }
+
+// Make sure that stale layer manifests (path to nonexistant file) which have the same name as real manifests don't cause the real
+// manifests to be skipped. Stale registry entries happen when a registry is written on layer/driver installation but not cleaned up
+// when the corresponding manifest is removed from the file system.
+TEST(DuplicateRegistryEntries, Layers) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2)));
+
+    auto null_path = env.get_folder(ManifestLocation::null).location() / "test_layer.json";
+
+    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, null_path.str());
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    inst.CheckCreate();
+}
+
+// Check that the de-duplication of drivers found in both PnP and generic Khronos/Vulkan/Drivers doesn't result in the same thing
+// being added twice
+TEST(DuplicateRegistryEntries, Drivers) {
+    FrameworkEnvironment env{};
+    auto null_path = env.get_folder(ManifestLocation::null).location() / "test_icd_0.json";
+    env.platform_shim->add_manifest(ManifestCategory::icd, null_path.str());
+
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::none));
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.adapterLUID = _LUID{10, 1000};
+    env.platform_shim->add_d3dkmt_adapter(D3DKMT_Adapter{0, _LUID{10, 1000}}.add_driver_manifest_path(env.get_icd_manifest_path()));
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    ASSERT_TRUE(env.debug_log.find(
+        std::string("Skipping adding of json file \"") + null_path.str() +
+        "\" from registry \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\Drivers\" to the list due to duplication"));
+}
 #endif
