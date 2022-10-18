@@ -112,6 +112,10 @@ jobs:
 
             - name: Generate build files
               run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON
+              env:
+                # Specify the minimum version of macOS on which the target binaries are to be deployed.
+                # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
+                MACOSX_DEPLOYMENT_TARGET: 10.12
 
             - name: Build the loader
               run: make -C build

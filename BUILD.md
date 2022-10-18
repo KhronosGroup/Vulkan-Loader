@@ -228,7 +228,6 @@ The following is a table of all string options currently supported by this repos
 
 | Option                      | Platform    | Default                       | Description                                                                                                                                          |
 | --------------------------- | ----------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CMAKE_OSX_DEPLOYMENT_TARGET | MacOS       | `10.12`                       | The minimum version of MacOS for loader deployment.                                                                                                  |
 | FALLBACK_CONFIG_DIRS        | Linux/MacOS | `/etc/xdg`                    | Configuration path(s) to use instead of `XDG_CONFIG_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
 | FALLBACK_DATA_DIRS          | Linux/MacOS | `/usr/local/share:/usr/share` | Configuration path(s) to use instead of `XDG_DATA_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant.   |
 | BUILD_DLL_VERSIONINFO       | Windows     | `""` (empty string)           | Allows setting the Windows specific version information for the Loader DLL. Format is "major.minor.patch.build".                                     |
@@ -634,7 +633,9 @@ Finally, rebuild the repository using `cmake` and `make`, as explained above.
 
 ### MacOS Development Environment Requirements
 
-Tested on OSX version 10.12.6
+Tested on OSX version 10.12
+
+NOTE: To force the OSX version set the environment variable [MACOSX_DEPLOYMENT_TARGET](https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html) when building VVL and it's dependencies.
 
 Setup Homebrew and components
 
