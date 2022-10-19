@@ -45,7 +45,8 @@ jobs:
               with:
                 python-version: '3.7'
             - run: sudo apt update
-            - run: sudo apt install libwayland-dev libxrandr-dev
+            - name: Install Dependencies
+              run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
 
             - name: Generate build files
               run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON
@@ -68,6 +69,46 @@ jobs:
 
             - name: Verify commit message formatting
               run: ./scripts/check_commit_message_format.sh
+
+    linux-32:
+        runs-on: ${{matrix.os}}
+
+        strategy:
+            matrix:
+                cc: [ gcc, clang ]
+                cxx: [ g++, clang++ ]
+                config: [ Debug, Release ]
+                os: [ ubuntu-18.04, ubuntu-20.04 ]
+                exclude:
+                    - cc: gcc
+                      cxx: clang++
+                    - cc: clang
+                      cxx: g++
+
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-python@v2
+              with:
+                python-version: '3.7'
+            - name: Install Dependencies
+              run: |-
+                sudo dpkg --add-architecture i386
+                sudo apt-get update
+                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6-dev-i386 pkg-config-i686-linux-gnu libwayland-dev:i386 libxrandr-dev:i386
+            - name: Generate build files
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON -DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32
+              env:
+                LDFLAGS: -m32
+                ASFLAGS: --32
+                PKG_CONFIG: i686-pc-linux-gnu-pkg-config
+
+
+            - name: Build the loader
+              run: make -C build
+
+            - name: Run regression tests
+              working-directory: ./build
+              run: ctest --output-on-failure
 
     windows:
         runs-on: ${{matrix.os}}
