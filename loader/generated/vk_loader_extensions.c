@@ -9538,6 +9538,11 @@ void extensions_create_instance(struct loader_instance *ptr_instance, const VkIn
 PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName) {
     PFN_vkVoidFunction addr = NULL;
 
+    if (dev == NULL)
+    {
+        return addr;
+    }
+    
     // ---- VK_KHR_swapchain extension commands
     if (dev->extensions.khr_swapchain_enabled) {
         if(!strcmp(pName, "vkCreateSwapchainKHR")) {
