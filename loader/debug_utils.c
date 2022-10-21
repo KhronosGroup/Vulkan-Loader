@@ -237,8 +237,8 @@ out:
             }
             storage_idx++;
         }
-        loader_free(pAllocator, pNewDbgFuncNode);
-        loader_free(pAllocator, icd_info);
+        loader_free_with_instance_fallback(pAllocator, inst, pNewDbgFuncNode);
+        loader_free_with_instance_fallback(pAllocator, inst, icd_info);
     }
 
     return res;
@@ -267,7 +267,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
 
     util_DestroyDebugUtilsMessenger(inst, messenger, pAllocator);
 
-    loader_free(pAllocator, icd_info);
+    loader_free_with_instance_fallback(pAllocator, inst, icd_info);
 }
 
 // This is the instance chain terminator function for SubmitDebugUtilsMessageEXT
@@ -432,8 +432,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugReportCallbackEXT(VkInstanc
     uint32_t storage_idx;
     VkLayerDbgFunctionNode *pNewDbgFuncNode = NULL;
 
-    icd_info = ((VkDebugReportCallbackEXT *)loader_calloc(pAllocator, inst->total_icd_count * sizeof(VkDebugReportCallbackEXT),
-                                                          VK_SYSTEM_ALLOCATION_SCOPE_OBJECT));
+    icd_info = ((VkDebugReportCallbackEXT *)loader_calloc_with_instance_fallback(
+        pAllocator, inst, inst->total_icd_count * sizeof(VkDebugReportCallbackEXT), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT));
     if (!icd_info) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
@@ -489,8 +489,8 @@ out:
             }
             storage_idx++;
         }
-        loader_free(pAllocator, pNewDbgFuncNode);
-        loader_free(pAllocator, icd_info);
+        loader_free_with_instance_fallback(pAllocator, inst, pNewDbgFuncNode);
+        loader_free_with_instance_fallback(pAllocator, inst, icd_info);
     }
 
     return res;
@@ -519,7 +519,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugReportCallbackEXT(VkInstance i
 
     util_DestroyDebugReportCallback(inst, callback, pAllocator);
 
-    loader_free(pAllocator, icd_info);
+    loader_free_with_instance_fallback(pAllocator, inst, icd_info);
 }
 
 // This is the instance chain terminator function for DebugReportMessage
