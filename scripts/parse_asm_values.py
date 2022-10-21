@@ -35,7 +35,8 @@ source_asm_file = sys.argv[2]
 assembler_type = sys.argv[3]
 # Whether we are using gcc, clang, or msvc
 compiler = sys.argv[4]
-# taken from CMAKE_SYSTEM_PROCESSOR - x86_64 or aarch64
+# taken from CMAKE_SYSTEM_PROCESSOR - x86_64, aarch64, or x86
+# Only used with GAS - MASM doesn't need this, as it has its own way to determine x86 vs x64
 arch = sys.argv[5]
 
 if destination_file is None or source_asm_file is None or assembler_type is None or compiler is None or arch is None:
@@ -71,6 +72,7 @@ with open(destination_file, "w", encoding="utf-8") as dest:
             dest.write(".set X86_64, 1\n")
         elif arch == "aarch64":
             dest.write(".set AARCH_64, 1\n")
+        # Nothing to write in the x86 case
 
     for d in defines:
         match = None

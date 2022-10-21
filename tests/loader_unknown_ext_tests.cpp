@@ -445,7 +445,7 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
     decltype(custom_physical_device_functions::func_zero)* returned_func_i =
         env.vulkan_functions.load(inst.inst, function_names.at(0).c_str());
     ASSERT_NE(returned_func_i, nullptr);
-    ASSERT_DEATH(returned_func_i(phys_dev_to_use, 0), "Extension vkNotIntRealFuncTEST_0 not supported for this physical device");
+    ASSERT_DEATH(returned_func_i(phys_dev_to_use, 0), "Function vkNotIntRealFuncTEST_0 not supported for this physical device");
 }
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {

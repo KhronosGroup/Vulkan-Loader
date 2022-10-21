@@ -100,12 +100,11 @@ vkPhysDevExtTermin\num:
     jmp     [eax + (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num))]              # Jump to the next function in the chain
 terminError\num:
     mov     eax, dword ptr [eax + INSTANCE_OFFSET_ICD_TERM]                       # Load the loader_instance into eax
-    push    dword ptr [eax + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))] # Push the func name (fifth arg)
-    push    offset termin_error_string@GOT                                        # Push the error string (fourth arg)
+    push    dword ptr [eax + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))] # Push the func name (fourth arg)
     push    0                                                                     # Push zero (third arg)
     push    VULKAN_LOADER_ERROR_BIT                                               # Push the error logging bit (second arg)
     push    eax                                                                   # Push the loader_instance (first arg)
-    call    loader_log                                                            # Log the error message before we crash
+    call    loader_log_asm_function_not_supported                                 # Log the error message before we crash
     add     esp, 20                                                               # Clean up the args
     mov     eax, 0
     jmp     eax                                                         # Crash intentionally by jumping to address zero
@@ -129,7 +128,7 @@ vkdev_ext\num:
 .data
 
 termin_error_string:
-.string "Extension %s not supported for this physical device"
+.string "Function %s not supported for this physical device"
 
 .text
 

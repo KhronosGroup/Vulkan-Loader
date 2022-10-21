@@ -76,7 +76,7 @@ vkdev_ext\num:
 .data
 
 termin_error_string:
-.string "Extension %s not supported for this physical device"
+.string "Function %s not supported for this physical device"
 
 .text
 

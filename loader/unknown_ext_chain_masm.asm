@@ -119,7 +119,7 @@ endm
 ENDIF
 
 .const
-    termin_error_string db 'Extension %s not supported for this physical device', 0
+    termin_error_string db 'Function %s not supported for this physical device', 0
 
 .code
 
