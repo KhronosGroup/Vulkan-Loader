@@ -49,3 +49,8 @@ uint32_t loader_get_debug_level(void);
 // Logs a message to stderr
 // May output to DebugUtils if the instance isn't null and the extension is enabled.
 void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...);
+
+// Used for the assembly code to emit an specific error message
+// This is a work around for linux 32 bit error handling not passing relocatable strings correctly
+void loader_log_asm_function_not_supported(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code,
+                                           const char *func_name);

@@ -222,6 +222,15 @@ else() # i.e.: Linux
         endif()
     endif()
 
+    # When compiling for x86 on x64, we can't use CMAKE_SYSTEM_PROCESSOR to determine which architecture to use,
+    # Instead, check the size of void* and if its 4, set ASM_OFFSET_SYSTEM_PROCESSOR to x86
+    # Note - there is no 32 bit arm assembly code, so this only applies to x86 currently.
+    if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+        set(ASM_OFFSET_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}) # x86_64 or aarch64
+    else()
+        set(ASM_OFFSET_SYSTEM_PROCESSOR "x86")
+    endif()
+
     if(ASSEMBLER_WORKS)
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset loader_specific_options)
@@ -243,14 +252,14 @@ else() # i.e.: Linux
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
             add_custom_command(TARGET asm_offset POST_BUILD
                 COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/parse_asm_values.py "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm"
-                    "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_CXX_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
+                    "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_CXX_COMPILER_ID}" "${ASM_OFFSET_SYSTEM_PROCESSOR}"
                 BYPRODUCTS gen_defines.asm
                 )
         endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
         if(USE_GAS)
-            message(WARNING "Could not find working ${CMAKE_SYSTEM_PROCESSOR} GAS assembler\n${ASM_FAILURE_MSG}")
+            message(WARNING "Could not find working ${ASM_OFFSET_SYSTEM_PROCESSOR} GAS assembler\n${ASM_FAILURE_MSG}")
         else()
             message(WARNING "Assembly sources have been disabled\n${ASM_FAILURE_MSG}")
         endif()
