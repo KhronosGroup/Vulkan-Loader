@@ -158,18 +158,25 @@ if(WIN32)
 
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset PRIVATE loader_specific_options)
-        # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
-        target_compile_options(asm_offset PRIVATE "/Fa$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" /FA)
-        # Force off optimization so that the output assembly includes all the necessary info - optimizer would get rid of it otherwise.
-        target_compile_options(asm_offset PRIVATE /Od)
+        # If not cross compiling, run asm_offset to generage gen_defines.asm
+        if (NOT CMAKE_CROSSCOMPILING)
+            add_custom_command(TARGET asm_offset POST_BUILD
+                COMMAND asm_offset MASM
+                BYPRODUCTS gen_defines.asm)
+        else()
+            # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
+            target_compile_options(asm_offset PRIVATE "/Fa$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" /FA)
+            # Force off optimization so that the output assembly includes all the necessary info - optimizer would get rid of it otherwise.
+            target_compile_options(asm_offset PRIVATE /Od)
 
-        find_package(PythonInterp REQUIRED)
-        # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
-        add_custom_command(TARGET asm_offset POST_BUILD
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
-                "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "MASM" "${CMAKE_CXX_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
-            BYPRODUCTS gen_defines.asm
-            )
+            find_package(PythonInterp REQUIRED)
+            # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
+            add_custom_command(TARGET asm_offset POST_BUILD
+                COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
+                    "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "MASM" "${CMAKE_CXX_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
+                BYPRODUCTS gen_defines.asm
+                )
+        endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
@@ -216,23 +223,30 @@ else() # i.e.: Linux
     endif()
 
     if(ASSEMBLER_WORKS)
-        add_library(asm_offset STATIC asm_offset.c)
+        add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset loader_specific_options)
-        # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
-        target_compile_options(asm_offset PRIVATE -save-temps=obj)
-        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-            set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.c.s")
-        elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-            set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.s")
-        endif()
+        # If not cross compiling, run asm_offset to generage gen_defines.asm
+        if (NOT CMAKE_CROSSCOMPILING)
+            add_custom_command(TARGET asm_offset POST_BUILD
+                COMMAND asm_offset GAS
+                BYPRODUCTS gen_defines.asm)
+        else()
+            # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
+            target_compile_options(asm_offset PRIVATE -save-temps=obj)
+            if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+                set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.c.s")
+            elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+                set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.s")
+            endif()
 
-        find_package(PythonInterp REQUIRED)
-        # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
-        add_custom_command(TARGET asm_offset POST_BUILD
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/parse_asm_values.py "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm"
-                "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_CXX_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
-            BYPRODUCTS gen_defines.asm
-            )
+            find_package(PythonInterp REQUIRED)
+            # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
+            add_custom_command(TARGET asm_offset POST_BUILD
+                COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/parse_asm_values.py "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm"
+                    "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_CXX_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
+                BYPRODUCTS gen_defines.asm
+                )
+        endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()
         if(USE_GAS)

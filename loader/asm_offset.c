@@ -68,6 +68,71 @@ struct ValueInfo {
     const char *comment;
 };
 
-// This file is not intended to be executed, as the generated asm contains all the relevant data which
-// the parse_asm_values.py script needs to write gen_defines.asm
-int main(int argc, char **argv) { return 0; }
+// This file can both be executed to produce gen_defines.asm and contains all the relevant data which
+// the parse_asm_values.py script needs to write gen_defines.asm, necessary for cross compilation
+int main(int argc, char **argv) {
+    const char *assembler = NULL;
+    for (int i = 0; i < argc; ++i) {
+        if (!strcmp(argv[i], "MASM")) {
+            assembler = "MASM";
+        } else if (!strcmp(argv[i], "GAS")) {
+            assembler = "GAS";
+        }
+    }
+    if (assembler == NULL) {
+        return 1;
+    }
+
+    struct ValueInfo values[] = {
+        // clang-format off
+        { .name = "VULKAN_LOADER_ERROR_BIT", .value = (size_t) VULKAN_LOADER_ERROR_BIT,
+            .comment = "The numerical value of the enum value 'VULKAN_LOADER_ERROR_BIT'" },
+        { .name = "PTR_SIZE", .value = sizeof(void*),
+            .comment = "The size of a pointer" },
+        { .name = "CHAR_PTR_SIZE", .value = sizeof(char *),
+            .comment = "The size of a 'const char *' struct" },
+        { .name = "FUNCTION_OFFSET_INSTANCE", .value = offsetof(struct loader_instance, phys_dev_ext_disp_functions),
+            .comment = "The offset of 'phys_dev_ext_disp_functions' within a 'loader_instance' struct" },
+        { .name = "PHYS_DEV_OFFSET_INST_DISPATCH", .value = offsetof(struct loader_instance_dispatch_table, phys_dev_ext),
+            .comment = "The offset of 'phys_dev_ext' within in 'loader_instance_dispatch_table' struct" },
+        { .name = "PHYS_DEV_OFFSET_PHYS_DEV_TRAMP", .value = offsetof(struct loader_physical_device_tramp, phys_dev),
+            .comment = "The offset of 'phys_dev' within a 'loader_physical_device_tramp' struct" },
+        { .name = "ICD_TERM_OFFSET_PHYS_DEV_TERM", .value = offsetof(struct loader_physical_device_term, this_icd_term),
+            .comment = "The offset of 'this_icd_term' within a 'loader_physical_device_term' struct" },
+        { .name = "PHYS_DEV_OFFSET_PHYS_DEV_TERM", .value = offsetof(struct loader_physical_device_term, phys_dev),
+            .comment = "The offset of 'phys_dev' within a 'loader_physical_device_term' struct" },
+        { .name = "INSTANCE_OFFSET_ICD_TERM", .value = offsetof(struct loader_icd_term, this_instance),
+            .comment = "The offset of 'this_instance' within a 'loader_icd_term' struct" },
+        { .name = "DISPATCH_OFFSET_ICD_TERM", .value = offsetof(struct loader_icd_term, phys_dev_ext),
+            .comment = "The offset of 'phys_dev_ext' within a 'loader_icd_term' struct" },
+        { .name = "EXT_OFFSET_DEVICE_DISPATCH", .value = offsetof(struct loader_dev_dispatch_table, ext_dispatch),
+            .comment = "The offset of 'ext_dispatch' within a 'loader_dev_dispatch_table' struct" },
+        // clang-format on
+    };
+
+    FILE *file = fopen("gen_defines.asm", "w");
+    fprintf(file, "\n");
+    if (!strcmp(assembler, "MASM")) {
+        for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
+            fprintf(file, "%-32s equ " SIZE_T_FMT "; %s\n", values[i].name, values[i].value, values[i].comment);
+        }
+    } else if (!strcmp(assembler, "GAS")) {
+#if defined(__x86_64__) || defined(__i386__)
+        const char *comment_delimiter = "#";
+#if defined(__x86_64__)
+        fprintf(file, ".set X86_64, 1\n");
+#endif  // defined(__x86_64__)
+#elif defined(__aarch64__)
+        const char *comment_delimiter = "//";
+        fprintf(file, ".set AARCH_64, 1\n");
+#else
+        // Default comment delimiter
+        const char *comment_delimiter = "#";
+#endif
+        for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
+            fprintf(file, ".set %-32s, " SIZE_T_FMT "%s %s\n", values[i].name, values[i].value, comment_delimiter,
+                    values[i].comment);
+        }
+    }
+    return fclose(file);
+}
