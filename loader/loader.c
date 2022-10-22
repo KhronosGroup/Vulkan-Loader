@@ -192,7 +192,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkSetDeviceDispatch(VkDevice device, void *object
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, NULL);
 
-    if (NULL == icd_term) {
+    if (NULL == icd_term || NULL == dev) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
     loader_set_dispatch(object, &dev->loader_dispatch);
@@ -3951,9 +3951,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_device_terminator(VkDevice d
     // object before passing the appropriate info along to the ICD.
     // This is why we also have to override the direct ICD call to
     // vkGetDeviceProcAddr to intercept those calls.
-    PFN_vkVoidFunction addr = get_extension_device_proc_terminator(dev, pName);
-    if (NULL != addr) {
-        return addr;
+    if(NULL != dev) {
+        PFN_vkVoidFunction addr = get_extension_device_proc_terminator(dev, pName);
+        if (NULL != addr) {
+            return addr;
+        }
     }
 
     return icd_term->dispatch.GetDeviceProcAddr(device, pName);
