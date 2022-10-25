@@ -35,7 +35,7 @@
   - [Using Pre-Production ICDs or Software Drivers](#using-pre-production-icds-or-software-drivers)
   - [Driver Discovery on Android](#driver-discovery-on-android)
 - [Driver Manifest File Format](#driver-manifest-file-format)
-  - [Driver Manifest File Versions](#driver-manifest-file-versions)
+    - [Driver Manifest File Versions](#driver-manifest-file-versions)
     - [Driver Manifest File Version 1.0.0](#driver-manifest-file-version-100)
     - [Driver Manifest File Version 1.0.1](#driver-manifest-file-version-101)
 - [Driver Vulkan Entry Point Discovery](#driver-vulkan-entry-point-discovery)
@@ -619,12 +619,8 @@ application. This field is optional.
 
 The Vulkan symbols exported by a driver must not clash with the loader's
 exported Vulkan symbols.
-Therefore, `vk_icdGetInstanceProcAddr` was introduced to allow the loader
-to perform the the same behavior as `vkGetInstanceProcAddr` but on a driver
-basis.
-As such, it behaves the same as `vkGetInstanceProcAddr`.
-All drivers must export this function which is used for discovery of driver
-Vulkan entry-points.
+Because of this, all drivers must export the following function that is
+used for discovery of driver Vulkan entry-points.
 This entry-point is not a part of the Vulkan API itself, only a private
 interface between the loader and drivers for version 1 and higher
 interfaces.
@@ -636,11 +632,15 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
       const char* pName);
 ```
 
-The driver must support querying global-level entry points by calling
-`vk_icdGetInstanceProcAddr` with a NULL `VkInstance` parameter.
+This function has very similar semantics to `vkGetInstanceProcAddr`.
+`vk_icdGetInstanceProcAddr` returns valid function pointers for all the
+global-level and instance-level Vulkan functions, and also for
+`vkGetDeviceProcAddr`.
 Global-level functions are those which contain no dispatchable object as the
 first parameter, such as `vkCreateInstance` and
 `vkEnumerateInstanceExtensionProperties`.
+The driver must support querying global-level entry points by calling
+`vk_icdGetInstanceProcAddr` with a NULL `VkInstance` parameter.
 Instance-level functions are those that have either `VkInstance`, or
 `VkPhysicalDevice` as the first parameter dispatchable object.
 Both core entry points and any instance extension entry points the
