@@ -658,8 +658,6 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                               'vkEnumerateInstanceExtensionProperties',
                               'vkEnumerateInstanceLayerProperties',
                               'vkEnumerateInstanceVersion',
-                              'vkCreateSwapchainKHR',
-                              'vkGetDeviceGroupSurfacePresentModesKHR',
                              ]
 
         for x in range(0, 2):
@@ -920,7 +918,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         return tables
 
     #
-    # Create the appropriate trampoline (and possibly terminator) functions
+    # Create the appropriate trampoline (and possibly terminator) functinos
     def CreateTrampTermFuncs(self):
         entries = []
         funcs = ''
