@@ -4307,8 +4307,7 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
     const struct loader_instance *inst = icd_term->this_instance;
 
     destroyFunction(device, pAllocator);
-    if (NULL != dev)
-    {
+    if (NULL != dev) {
         dev->chain_device = NULL;
         dev->icd_device = NULL;
         loader_remove_logical_device(inst, icd_term, dev, pAllocator);
