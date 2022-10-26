@@ -83,6 +83,21 @@ using PFN_GETEGID = gid_t (*)(void);
 using PFN_SEC_GETENV = char* (*)(const char* name);
 #endif
 
+#if defined(__APPLE__)
+#define real_opendir opendir
+#define real_readdir readdir
+#define real_closedir closedir
+#define real_access access
+#define real_fopen fopen
+#define real_geteuid geteuid
+#define real_getegid getegid
+#if defined(HAVE_SECURE_GETENV)
+#define real_secure_getenv _secure_getenv
+#endif
+#if defined(HAVE___SECURE_GETENV)
+#define real__secure_getenv __secure_getenv
+#endif
+#else
 static PFN_OPENDIR real_opendir = nullptr;
 static PFN_READDIR real_readdir = nullptr;
 static PFN_CLOSEDIR real_closedir = nullptr;
@@ -96,10 +111,12 @@ static PFN_SEC_GETENV real_secure_getenv = nullptr;
 #if defined(HAVE___SECURE_GETENV)
 static PFN_SEC_GETENV real__secure_getenv = nullptr;
 #endif
+#endif
 
 FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
+#if !defined(__APPLE__)
     if (!real_opendir) real_opendir = (PFN_OPENDIR)dlsym(RTLD_NEXT, "opendir");
-
+#endif
     DIR* dir;
     if (platform_shim.is_fake_path(path_name)) {
         auto fake_path_name = platform_shim.get_fake_path(fs::path(path_name));
@@ -113,7 +130,9 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
 }
 
 FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
+#if !defined(__APPLE__)
     if (!real_readdir) real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
+#endif
     auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
                            [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
 
@@ -151,8 +170,9 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
 }
 
 FRAMEWORK_EXPORT int CLOSEDIR_FUNC_NAME(DIR* dir_stream) {
+#if !defined(__APPLE__)
     if (!real_closedir) real_closedir = (PFN_CLOSEDIR)dlsym(RTLD_NEXT, "closedir");
-
+#endif
     auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
                            [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
 
@@ -164,8 +184,9 @@ FRAMEWORK_EXPORT int CLOSEDIR_FUNC_NAME(DIR* dir_stream) {
 }
 
 FRAMEWORK_EXPORT int ACCESS_FUNC_NAME(const char* in_pathname, int mode) {
+#if !defined(__APPLE__)
     if (!real_access) real_access = (PFN_ACCESS)dlsym(RTLD_NEXT, "access");
-
+#endif
     fs::path path{in_pathname};
     if (!path.has_parent_path()) {
         return real_access(in_pathname, mode);
@@ -180,8 +201,9 @@ FRAMEWORK_EXPORT int ACCESS_FUNC_NAME(const char* in_pathname, int mode) {
 }
 
 FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode) {
+#if !defined(__APPLE__)
     if (!real_fopen) real_fopen = (PFN_FOPEN)dlsym(RTLD_NEXT, "fopen");
-
+#endif
     fs::path path{in_filename};
     if (!path.has_parent_path()) {
         return real_fopen(in_filename, mode);
@@ -199,8 +221,9 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
 }
 
 FRAMEWORK_EXPORT uid_t GETEUID_FUNC_NAME(void) {
+#if !defined(__APPLE__)
     if (!real_geteuid) real_geteuid = (PFN_GETEUID)dlsym(RTLD_NEXT, "geteuid");
-
+#endif
     if (platform_shim.use_fake_elevation) {
         // Root on linux is 0, so force pretending like we're root
         return 0;
@@ -210,8 +233,9 @@ FRAMEWORK_EXPORT uid_t GETEUID_FUNC_NAME(void) {
 }
 
 FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
+#if !defined(__APPLE__)
     if (!real_getegid) real_getegid = (PFN_GETEGID)dlsym(RTLD_NEXT, "getegid");
-
+#endif
     if (platform_shim.use_fake_elevation) {
         // Root on linux is 0, so force pretending like we're root
         return 0;
@@ -222,8 +246,9 @@ FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
 
 #if defined(HAVE_SECURE_GETENV)
 FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char* name) {
+#if !defined(__APPLE__)
     if (!real_secure_getenv) real_secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "secure_getenv");
-
+#endif
     if (platform_shim.use_fake_elevation) {
         return NULL;
     } else {
@@ -233,7 +258,9 @@ FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char* name) {
 #endif
 #if defined(HAVE___SECURE_GETENV)
 FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char* name) {
+#if !defined(__APPLE__)
     if (!real__secure_getenv) real__secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "__secure_getenv");
+#endif
 
     if (platform_shim.use_fake_elevation) {
         return NULL;

@@ -99,3 +99,7 @@ target_link_libraries(testing_dependencies
 target_include_directories(testing_dependencies PUBLIC ${CMAKE_BINARY_DIR}/tests/framework)
 target_compile_definitions(testing_dependencies PUBLIC "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 set_target_properties(testing_dependencies ${LOADER_STANDARD_CXX_PROPERTIES})
+if (APPLE AND BUILD_STATIC_LOADER)
+    target_compile_definitions(testing_dependencies PUBLIC "BUILD_STATIC_LOADER=1")
+    target_link_libraries(testing_dependencies PUBLIC vulkan)
+endif()
