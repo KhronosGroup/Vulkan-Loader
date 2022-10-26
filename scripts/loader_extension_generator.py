@@ -596,10 +596,6 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         table = ''
         cur_extension_name = ''
 
-        skip_commands = ['vkCreateSwapchainKHR',
-                         'vkGetDeviceGroupSurfacePresentModesKHR'
-                        ]
-
         table += '// ICD function pointer dispatch table\n'
         table += 'struct loader_icd_term_dispatch {\n'
 
@@ -612,7 +608,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             for cur_cmd in commands:
                 is_inst_handle_type = cur_cmd.name in ADD_INST_CMDS or cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
                 if ((is_inst_handle_type or cur_cmd.name in DEVICE_CMDS_NEED_TERM) and
-                    (cur_cmd.name != 'vkGetInstanceProcAddr' and cur_cmd.name != 'vkEnumerateDeviceLayerProperties') and cur_cmd.name not in skip_commands):
+                    (cur_cmd.name != 'vkGetInstanceProcAddr' and cur_cmd.name != 'vkEnumerateDeviceLayerProperties')):
 
                     if cur_cmd.ext_name != cur_extension_name:
                         if 'VK_VERSION_' in cur_cmd.ext_name:
@@ -662,8 +658,6 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                               'vkEnumerateInstanceExtensionProperties',
                               'vkEnumerateInstanceLayerProperties',
                               'vkEnumerateInstanceVersion',
-                              'vkCreateSwapchainKHR',
-                              'vkGetDeviceGroupSurfacePresentModesKHR',
                              ]
 
         for x in range(0, 2):
@@ -924,7 +918,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         return tables
 
     #
-    # Create the appropriate trampoline (and possibly terminator) functions
+    # Create the appropriate trampoline (and possibly terminator) functinos
     def CreateTrampTermFuncs(self):
         entries = []
         funcs = ''
@@ -1260,7 +1254,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '            local_name_info.object = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
                         funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
                         funcs += '        } else if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {\n'
-                        funcs += '            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {\n'
+                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
                         funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->object;\n'
                         funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
                         funcs += '                    local_name_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
@@ -1276,7 +1270,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '            local_tag_info.object = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
                         funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
                         funcs += '        } else if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {\n'
-                        funcs += '            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {\n'
+                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
                         funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->object;\n'
                         funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
                         funcs += '                    local_tag_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
@@ -1292,7 +1286,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '            local_name_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
                         funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
                         funcs += '        } else if (pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {\n'
-                        funcs += '            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {\n'
+                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
                         funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->objectHandle;\n'
                         funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
                         funcs += '                    local_name_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
@@ -1308,7 +1302,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '            local_tag_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;\n'
                         funcs += '        // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
                         funcs += '        } else if (pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {\n'
-                        funcs += '            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {\n'
+                        funcs += '            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {\n'
                         funcs += '                VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->objectHandle;\n'
                         funcs += '                if (NULL != icd_surface->real_icd_surfaces) {\n'
                         funcs += '                    local_tag_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'

@@ -769,7 +769,6 @@ struct DeviceFunctions {
     PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers = nullptr;
     PFN_vkDestroyCommandPool vkDestroyCommandPool = nullptr;
     PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
-    PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR = nullptr;
     PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR = nullptr;
 
     DeviceFunctions() = default;
