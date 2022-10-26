@@ -7,6 +7,6 @@ Name: @CMAKE_PROJECT_NAME@
 Description: Vulkan Loader
 Version: @VK_API_VERSION@
 Libs: -L${libdir} -lvulkan@VULKAN_LIB_SUFFIX@
-Libs.private: @PRIVATE_LIBS@
+@PRIVATE_LIBS@
 Cflags: -I${includedir}
 

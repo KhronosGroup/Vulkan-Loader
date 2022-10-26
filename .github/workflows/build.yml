@@ -139,11 +139,17 @@ jobs:
               run: python scripts/generate_source.py --verify external/Vulkan-Headers/registry
 
     mac:
-        runs-on: macos-11
+        runs-on: ${{matrix.os}}
 
         strategy:
             matrix:
                 config: [ Debug, Release ]
+                os: [ macos-11 ]
+                static_build: [ ON, OFF ]
+                exclude:
+                  - config: Debug
+                    os: macos-11
+                    static_build: ON
 
         steps:
             - uses: actions/checkout@v2
@@ -152,7 +158,7 @@ jobs:
                 python-version: '3.7'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_STATIC_LOADER=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
               env:
                 # Specify the minimum version of macOS on which the target binaries are to be deployed.
                 # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
