@@ -637,7 +637,6 @@ DeviceFunctions::DeviceFunctions(const VulkanFunctions& vulkan_functions, VkDevi
     vkAllocateCommandBuffers = load(device, "vkAllocateCommandBuffers");
     vkDestroyCommandPool = load(device, "vkDestroyCommandPool");
     vkCreateSwapchainKHR = load(device, "vkCreateSwapchainKHR");
-    vkGetSwapchainImagesKHR = load(device, "vkGetSwapchainImagesKHR");
     vkDestroySwapchainKHR = load(device, "vkDestroySwapchainKHR");
 }
 

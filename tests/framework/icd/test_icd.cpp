@@ -593,20 +593,6 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSwapchainKHR(VkDevice device, const 
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                            uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
-    std::vector<uint64_t> handles{123, 234, 345, 345, 456};
-    if (pSwapchainImages == nullptr) {
-        if (pSwapchainImageCount) *pSwapchainImageCount = static_cast<uint32_t>(handles.size());
-    } else if (pSwapchainImageCount) {
-        for (uint32_t i = 0; i < *pSwapchainImageCount && i < handles.size(); i++) {
-            pSwapchainImages[i] = to_nondispatch_handle<VkImage>(handles.back());
-        }
-        if (*pSwapchainImageCount < handles.size()) return VK_INCOMPLETE;
-    }
-    return VK_SUCCESS;
-}
-
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                       const VkAllocationCallbacks* pAllocator) {
     if (swapchain != VK_NULL_HANDLE) {
@@ -614,7 +600,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapcha
         auto found_iter = icd.swapchain_handles.erase(
             std::remove(icd.swapchain_handles.begin(), icd.swapchain_handles.end(), fake_swapchain_handle),
             icd.swapchain_handles.end());
-        if (!icd.swapchain_handles.empty() && found_iter == icd.swapchain_handles.end()) {
+        if (found_iter == icd.swapchain_handles.end()) {
             assert(false && "Swapchain not found during destroy!");
         }
     }
@@ -1309,7 +1295,6 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
     }
     if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
     if (string_eq(pName, "vkCreateSwapchainKHR")) return to_vkVoidFunction(test_vkCreateSwapchainKHR);
-    if (string_eq(pName, "vkGetSwapchainImagesKHR")) return to_vkVoidFunction(test_vkGetSwapchainImagesKHR);
     if (string_eq(pName, "vkDestroySwapchainKHR")) return to_vkVoidFunction(test_vkDestroySwapchainKHR);
     if (string_eq(pName, "vkCreateCommandPool")) return to_vkVoidFunction(test_vkCreateCommandPool);
     if (string_eq(pName, "vkAllocateCommandBuffers")) return to_vkVoidFunction(test_vkAllocateCommandBuffers);

@@ -98,6 +98,8 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     LOOKUP_GIPA(GetPhysicalDeviceSurfacePresentModesKHR, false);
 
     // ---- VK_KHR_swapchain extension commands
+    LOOKUP_GIPA(CreateSwapchainKHR, false);
+    LOOKUP_GIPA(GetDeviceGroupSurfacePresentModesKHR, false);
     LOOKUP_GIPA(GetPhysicalDevicePresentRectanglesKHR, false);
 
     // ---- VK_KHR_display extension commands
@@ -3935,7 +3937,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
             local_tag_info.object = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;
         // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
         } else if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
-            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
+            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {
                 VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->object;
                 if (NULL != icd_surface->real_icd_surfaces) {
                     local_tag_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
@@ -3983,7 +3985,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
             local_name_info.object = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;
         // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
         } else if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
-            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
+            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {
                 VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->object;
                 if (NULL != icd_surface->real_icd_surfaces) {
                     local_name_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
@@ -4537,7 +4539,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
             local_name_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;
         // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
         } else if (pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
-            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
+            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {
                 VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->objectHandle;
                 if (NULL != icd_surface->real_icd_surfaces) {
                     local_name_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
@@ -4589,7 +4591,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
             local_tag_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_term->phys_dev;
         // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
         } else if (pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
-            if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
+            if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {
                 VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->objectHandle;
                 if (NULL != icd_surface->real_icd_surfaces) {
                     local_tag_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
