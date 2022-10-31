@@ -139,7 +139,7 @@ jobs:
               run: python scripts/generate_source.py --verify external/Vulkan-Headers/registry
 
     mac:
-        runs-on: macos-latest
+        runs-on: macos-11
 
         strategy:
             matrix:
