@@ -420,7 +420,7 @@ following:
 ### Layer Filtering
 
 **NOTE:** This functionality is only available with Loaders built with version
-1.3.yyyy of the Vulkan headers and later.
+1.3.234 of the Vulkan headers and later.
 
 The loader supports filter environment variables which can forcibly enable and
 disable known layers.
