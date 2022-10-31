@@ -188,6 +188,7 @@ bool loader_check_icds_for_phys_dev_ext_address(struct loader_instance *inst, co
     icd_term = inst->icd_terms;
     while (NULL != icd_term) {
         if (icd_term->scanned_icd->interface_version >= MIN_PHYS_DEV_EXTENSION_ICD_INTERFACE_VERSION &&
+            icd_term->scanned_icd->GetPhysicalDeviceProcAddr &&
             icd_term->scanned_icd->GetPhysicalDeviceProcAddr(icd_term->instance, funcName))
             // this icd supports funcName
             return true;
