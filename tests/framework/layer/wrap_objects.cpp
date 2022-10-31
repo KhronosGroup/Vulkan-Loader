@@ -670,7 +670,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL wrap_vkGetInstanceProcAddr(VkInstance i
     VkLayerInstanceDispatchTable *pTable = &inst->layer_disp;
 
     if (pTable->GetInstanceProcAddr == NULL) return NULL;
-    return pTable->GetInstanceProcAddr(instance, funcName);
+    return pTable->GetInstanceProcAddr(inst->obj, funcName);
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
@@ -681,7 +681,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
     VkLayerInstanceDispatchTable *pTable = &inst->layer_disp;
 
     if (pTable->GetPhysicalDeviceProcAddr == NULL) return NULL;
-    return pTable->GetPhysicalDeviceProcAddr(instance, funcName);
+    return pTable->GetPhysicalDeviceProcAddr(inst->obj, funcName);
 }
 
 }  // namespace wrap_objects
