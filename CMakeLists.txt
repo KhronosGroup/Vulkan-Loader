@@ -295,13 +295,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
         target_compile_options(loader_common_options INTERFACE -fno-strict-aliasing -fno-builtin-memcmp)
     endif()
 
-    # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
-    # all compilers until they all accept the C++17 standard
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(loader_common_options INTERFACE -Wno-stringop-truncation -Wno-stringop-overflow)
-        if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 7.1)
-            target_compile_options(loader_common_options INTERFACE -Wimplicit-fallthrough=0)
-        endif()
     endif()
 
     if(UNIX)

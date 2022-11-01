@@ -31,7 +31,7 @@ include $(MKFILES_ROOT)/qtargets.mk
 CCFLAGS += -DVK_USE_PLATFORM_SCREEN_QNX=1 -Dvulkan_EXPORTS
 CCFLAGS += -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 CCFLAGS += -fno-strict-aliasing -fno-builtin-memcmp -Wno-stringop-truncation
-CCFLAGS += -Wno-stringop-overflow -Wimplicit-fallthrough=0 -fvisibility=hidden
+CCFLAGS += -Wno-stringop-overflow -fvisibility=hidden
 CCFLAGS += -Wpointer-arith -fPIC
 
 # Enable this if required
