@@ -99,14 +99,6 @@ struct loader_layer_functions {
     PFN_GetPhysicalDeviceProcAddr get_physical_device_proc_addr;
 };
 
-struct loader_override_expiration {
-    uint16_t year;
-    uint8_t month;
-    uint8_t day;
-    uint8_t hour;
-    uint8_t minute;
-};
-
 // This structure is used to store the json file version in a more manageable way.
 typedef struct {
     uint16_t major;
@@ -153,8 +145,6 @@ struct loader_layer_properties {
     uint32_t num_override_paths;
     char (*override_paths)[MAX_STRING_SIZE];
     bool is_override;
-    bool has_expiration;
-    struct loader_override_expiration expiration;
     bool keep;
     uint32_t num_blacklist_layers;
     char (*blacklist_layer_names)[MAX_STRING_SIZE];
