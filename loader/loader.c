@@ -41,9 +41,6 @@
 #include <sys/param.h>
 #endif
 
-// Time related functions
-#include <time.h>
-
 #include <sys/types.h>
 #if defined(_WIN32)
 #include "dirent_on_windows.h"
@@ -882,24 +879,6 @@ static VkResult loader_add_layer_names_to_list(const struct loader_instance *ins
     return err;
 }
 
-static bool check_expiration(const struct loader_instance *inst, const struct loader_layer_properties *prop) {
-    time_t current = time(NULL);
-    struct tm tm_current = *localtime(&current);
-
-    struct tm tm_expiration;
-    tm_expiration.tm_sec = 0;
-    tm_expiration.tm_min = prop->expiration.minute;
-    tm_expiration.tm_hour = prop->expiration.hour;
-    tm_expiration.tm_mday = prop->expiration.day;
-    tm_expiration.tm_mon = prop->expiration.month - 1;
-    tm_expiration.tm_year = prop->expiration.year - 1900;
-    tm_expiration.tm_isdst = tm_current.tm_isdst;
-    // wday and yday are ignored by mktime
-    time_t expiration = mktime(&tm_expiration);
-
-    return current < expiration;
-}
-
 // Determine if the provided implicit layer should be enabled by querying the appropriate environmental variables.
 // For an implicit layer, at least a disable environment variable is required.
 bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_layer_properties *prop) {
@@ -925,11 +904,6 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
         enable = false;
     }
     loader_free_getenv(env_value, inst);
-
-    // If this layer has an expiration, check it to determine if this layer has expired.
-    if (prop->has_expiration) {
-        enable = check_expiration(inst, prop);
-    }
 
     // Enable this layer if it is included in the override layer
     if (inst != NULL && inst->override_layer_present) {
@@ -1973,71 +1947,9 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
         goto out;
     }
 
-    // Expiration date for override layer.  Field starte with JSON file 1.1.2 and
-    // is completely optional.  So, no check put in place.
+    // Check if this layer's name matches the override layer name, set is_override to true if so.
     if (!strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
-        cJSON *expiration;
-        if (!loader_check_version_meets_required(loader_combine_version(1, 1, 2), version)) {
-            loader_log(
-                inst, VULKAN_LOADER_WARN_BIT, 0,
-                "Override layer expiration date not added until version 1.1.2.  Please update JSON file version appropriately.");
-        }
-
         props->is_override = true;
-        expiration = cJSON_GetObjectItem(layer_node, "expiration_date");
-        if (NULL != expiration) {
-            char date_copy[32];
-            uint8_t cur_item = 0;
-
-            // Get the string for the current item
-            temp = cJSON_Print(expiration);
-            if (temp == NULL) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "Problem accessing layer value 'expiration_date' in manifest JSON file, skipping this layer");
-                result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-            temp[strlen(temp) - 1] = '\0';
-            strcpy(date_copy, &temp[1]);
-            loader_instance_heap_free(inst, temp);
-
-            if (strlen(date_copy) == 16) {
-                char *cur_start = &date_copy[0];
-                char *next_dash = strchr(date_copy, '-');
-                if (NULL != next_dash) {
-                    while (cur_item < 5 && strlen(cur_start)) {
-                        if (next_dash != NULL) {
-                            *next_dash = '\0';
-                        }
-                        switch (cur_item) {
-                            case 0:  // Year
-                                props->expiration.year = (uint16_t)atoi(cur_start);
-                                break;
-                            case 1:  // Month
-                                props->expiration.month = (uint8_t)atoi(cur_start);
-                                break;
-                            case 2:  // Day
-                                props->expiration.day = (uint8_t)atoi(cur_start);
-                                break;
-                            case 3:  // Hour
-                                props->expiration.hour = (uint8_t)atoi(cur_start);
-                                break;
-                            case 4:  // Minute
-                                props->expiration.minute = (uint8_t)atoi(cur_start);
-                                props->has_expiration = true;
-                                break;
-                            default:  // Ignore
-                                break;
-                        }
-                        if (next_dash != NULL) {
-                            cur_start = next_dash + 1;
-                            next_dash = strchr(cur_start, '-');
-                        }
-                        cur_item++;
-                    }
-                }
-            }
-        }
     }
 
     // Library path no longer required unless component_layers is also not defined
