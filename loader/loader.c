@@ -3631,14 +3631,6 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         }
     }
 
-    // Remove disabled layers
-    for (uint32_t i = 0; i < instance_layers->count; ++i) {
-        if (!loader_layer_is_available(inst, &enable_filter, &disable_filter, &instance_layers->list[i])) {
-            loader_remove_layer_in_list(inst, instance_layers, i);
-            i--;
-        }
-    }
-
     // Get a list of manifest files for explicit layers
     res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, &manifest_files);
     if (VK_SUCCESS != res) {
@@ -3682,6 +3674,14 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         loader_remove_layers_in_blacklist(inst, instance_layers);
         if (NULL != inst) {
             inst->override_layer_present = true;
+        }
+    }
+
+    // Remove disabled layers
+    for (uint32_t i = 0; i < instance_layers->count; ++i) {
+        if (!loader_layer_is_available(inst, &enable_filter, &disable_filter, &instance_layers->list[i])) {
+            loader_remove_layer_in_list(inst, instance_layers, i);
+            i--;
         }
     }
 

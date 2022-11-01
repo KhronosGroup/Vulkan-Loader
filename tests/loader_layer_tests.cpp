@@ -1250,9 +1250,9 @@ TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
                                               .set_name(lunarg_meta_layer_name)
                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                               .add_component_layers({regular_layer_name})),
-                            "meta_test_layer.json");
+                           "meta_test_layer.json");
 
-     uint32_t layer_count = 0;
+    uint32_t layer_count = 0;
     EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
     EXPECT_EQ(layer_count, 1U);
 
@@ -1263,7 +1263,7 @@ TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
- }
+}
 
 // Override meta layer whose version is less than the api version of the instance
 TEST(OverrideMetaLayer, OlderVersionThanInstance) {
@@ -1571,8 +1571,17 @@ TEST(OverrideMetaLayer, ApplicationEnabledLayerInBlacklist) {
                                               .add_blacklisted_layer(manual_regular_layer_name)
                                               .set_disable_environment("DisableMeIfYouCan")),
                            "meta_test_layer.json");
-
-    {  // enable the layer in the blacklist
+    {  // Check that enumerating the layers returns only the non-blacklisted layers + override layer
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
+        ASSERT_EQ(count, 2U);
+        std::vector<VkLayerProperties> layer_props{2, VkLayerProperties{}};
+        env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data());
+        ASSERT_EQ(count, 2U);
+        ASSERT_TRUE(check_permutation({automatic_regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    }
+    {
+        // enable the layer in the blacklist
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.add_layer(manual_regular_layer_name);
@@ -4183,7 +4192,7 @@ TEST(TestLayers, EnvironVkInstancdAndDisableFilters) {
     InstWrapper inst3{env.vulkan_functions};
     inst3.create_info.add_layer(explicit_layer_name_1);
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
-    inst2.CheckCreate();
+    inst3.CheckCreate();
 
     ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found manifest file", explicit_json_name_1));
     ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "Insert instance layer", explicit_layer_name_1));
@@ -4200,6 +4209,37 @@ TEST(TestLayers, EnvironVkInstancdAndDisableFilters) {
     remove_env_var("VK_LOADER_LAYERS_DISABLE");
 }
 
+TEST(TestLayers, AppEnabledExplicitLayerFails) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));
+    env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+    const char* explicit_layer_name_1 = "VK_LAYER_LUNARG_First_layer";
+    const char* explicit_json_name_1 = "First_layer.json";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                           explicit_json_name_1);
+
+    env.debug_log.clear();
+    set_env_var("VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1);
+
+    uint32_t count = 0;
+    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
+    EXPECT_EQ(count, 0);
+    std::vector<VkLayerProperties> layers;
+    layers.resize(1);
+    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layers.data());
+    EXPECT_EQ(count, 0);
+
+    InstWrapper inst3{env.vulkan_functions};
+    inst3.create_info.add_layer(explicit_layer_name_1);
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+
+    remove_env_var("VK_LOADER_LAYERS_DISABLE");
+}
 // Add a device layer, should not work
 TEST(TestLayers, DoNotUseDeviceLayer) {
     FrameworkEnvironment env;
