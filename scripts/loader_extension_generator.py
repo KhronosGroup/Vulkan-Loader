@@ -1224,7 +1224,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '    uint32_t icd_index = 0;\n'
                         funcs += '    struct loader_device *dev;\n'
                         funcs += f'    struct loader_icd_term *icd_term = loader_get_icd_and_device({ ext_cmd.params[0].name}, &dev, &icd_index);\n'
-                        funcs += f'    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.{ext_cmd.name[2:]}) {{\n'
+                        funcs += f'    if (NULL == icd_term || NULL == dev) {{\n'
                         funcs += f'        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.name[2:]}: Invalid device handle");\n'
                         funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                         funcs += '    }\n'
@@ -1243,6 +1243,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '            }\n'
                         funcs += '        }\n'
                         funcs += '    }\n'
+                        funcs += '    // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports\n'
+                        funcs += '    // debug utils but the driver does not.\n'
+                        funcs += f'    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.{ext_cmd.name[2:]})\n        return VK_SUCCESS;\n'
                         dispatch = 'dev->loader_dispatch.'
                     else:
                         funcs += f'    struct loader_dev_dispatch_table *dispatch_table = loader_get_dev_dispatch({ext_cmd.params[0].name});\n'

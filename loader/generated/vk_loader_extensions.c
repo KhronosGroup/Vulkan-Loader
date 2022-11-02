@@ -3950,7 +3950,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.DebugMarkerSetObjectTagEXT) {
+    if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "DebugMarkerSetObjectTagEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -3969,6 +3969,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
             }
         }
     }
+    // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
+    // debug utils but the driver does not.
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.DebugMarkerSetObjectTagEXT)
+        return VK_SUCCESS;
     return dev->loader_dispatch.extension_terminator_dispatch.DebugMarkerSetObjectTagEXT(device, &local_tag_info);
 }
 
@@ -3998,7 +4002,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.DebugMarkerSetObjectNameEXT) {
+    if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "DebugMarkerSetObjectNameEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -4017,6 +4021,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
             }
         }
     }
+    // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
+    // debug utils but the driver does not.
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.DebugMarkerSetObjectNameEXT)
+        return VK_SUCCESS;
     return dev->loader_dispatch.extension_terminator_dispatch.DebugMarkerSetObjectNameEXT(device, &local_name_info);
 }
 
@@ -4552,7 +4560,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.SetDebugUtilsObjectNameEXT) {
+    if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "SetDebugUtilsObjectNameEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -4571,6 +4579,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
             }
         }
     }
+    // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
+    // debug utils but the driver does not.
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.SetDebugUtilsObjectNameEXT)
+        return VK_SUCCESS;
     return dev->loader_dispatch.extension_terminator_dispatch.SetDebugUtilsObjectNameEXT(device, &local_name_info);
 }
 
@@ -4604,7 +4616,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.SetDebugUtilsObjectTagEXT) {
+    if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "SetDebugUtilsObjectTagEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -4623,6 +4635,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
             }
         }
     }
+    // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
+    // debug utils but the driver does not.
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.SetDebugUtilsObjectTagEXT)
+        return VK_SUCCESS;
     return dev->loader_dispatch.extension_terminator_dispatch.SetDebugUtilsObjectTagEXT(device, &local_tag_info);
 }
 
