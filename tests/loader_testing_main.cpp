@@ -71,7 +71,6 @@ int main(int argc, char** argv) {
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
     set_env_var("HOME", "/home/fake_home");
 #endif
-
     ::testing::InitGoogleTest(&argc, argv);
     int result = RUN_ALL_TESTS();
 

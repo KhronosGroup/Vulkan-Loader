@@ -2815,6 +2815,7 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
     FrameworkEnvironment env{};
 
     set_env_var("VK_LOADER_DISABLE_SELECT", "1");
+    EnvVarCleaner disable_select_cleaner("VK_LOADER_DISABLE_SELECT");
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
@@ -2917,8 +2918,6 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
     for (uint32_t dev = 0; dev < device_count; ++dev) {
         ASSERT_EQ(physical_devices[dev], physical_devices_again[dev]);
     }
-
-    remove_env_var("VK_LOADER_DISABLE_SELECT");
 }
 
 TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
@@ -3109,6 +3108,7 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     FrameworkEnvironment env{};
 
     set_env_var("VK_LOADER_DISABLE_SELECT", "1");
+    EnvVarCleaner disable_select_cleaner("VK_LOADER_DISABLE_SELECT");
 
     // ICD 0: Vulkan 1.1
     //   PhysDev 0: pd0, Discrete, Vulkan 1.1, Bus 7
@@ -3277,8 +3277,6 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
             ASSERT_EQ(physical_device_groups[group].physicalDevices[dev], physical_device_groups_again[group].physicalDevices[dev]);
         }
     }
-
-    remove_env_var("VK_LOADER_DISABLE_SELECT");
 }
 
 #endif  // __linux__ || __FreeBSD__ || __OpenBSD__

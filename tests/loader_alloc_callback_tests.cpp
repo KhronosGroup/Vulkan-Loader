@@ -453,7 +453,7 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
     driver_files += OS_ENV_VAR_LIST_SEPARATOR;
     driver_files += (fs::path("totally_made_up") / "path_to_fake" / "jason_file.json").str();
     set_env_var("VK_DRIVER_FILES", driver_files);
-
+    EnvVarCleaner cleaner("VK_DRIVER_FILES");
     size_t fail_index = 66;  // 0
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
@@ -468,7 +468,6 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
         ASSERT_TRUE(tracker.empty());
         fail_index++;
     }
-    remove_env_var("VK_DRIVER_FILES");
 }
 
 // Test failure during vkCreateDevice to make sure we don't leak memory if

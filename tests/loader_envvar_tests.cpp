@@ -147,8 +147,6 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     EXPECT_TRUE(env.debug_log.find("vkCreateInstance: Found no drivers!"));
 
     env.platform_shim->set_elevated_privilege(false);
-
-    remove_env_var("VK_DRIVER_FILES");
 }
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -226,8 +224,6 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVar) {
     EXPECT_TRUE(env.debug_log.find("vkCreateInstance: Found no drivers!"));
 
     env.platform_shim->set_elevated_privilege(false);
-
-    remove_env_var("VK_ADD_DRIVER_FILES");
 }
 
 // Test Both VK_DRIVER_FILES and VK_ADD_DRIVER_FILES environment variable
@@ -250,9 +246,6 @@ TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
     uint32_t phys_dev_count = 3;
     ASSERT_EQ(inst->vkEnumeratePhysicalDevices(inst.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
     ASSERT_EQ(phys_dev_count, 3U);
-
-    remove_env_var("VK_DRIVER_FILES");
-    remove_env_var("VK_ADD_DRIVER_FILES");
 }
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -278,7 +271,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     std::string vk_layer_path = ":/tmp/carol::::/:";
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
     set_env_var("VK_LAYER_PATH", vk_layer_path);
-
+    EnvVarCleaner layer_path_cleaner("VK_LAYER_PATH");
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_layer(layer_name);
     FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
@@ -301,8 +294,6 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     EXPECT_FALSE(env.debug_log.find("/tmp/carol"));
 
     env.platform_shim->set_elevated_privilege(false);
-
-    remove_env_var("VK_LAYER_PATH");
 }
 
 // Test VK_ADD_LAYER_PATH environment variable
@@ -327,6 +318,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     std::string vk_layer_path = ":/tmp/carol::::/:";
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
     set_env_var("VK_ADD_LAYER_PATH", vk_layer_path);
+    EnvVarCleaner add_layer_path_cleaner("VK_ADD_LAYER_PATH");
 
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_layer(layer_name);
@@ -350,8 +342,6 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     EXPECT_FALSE(env.debug_log.find("/tmp/carol"));
 
     env.platform_shim->set_elevated_privilege(false);
-
-    remove_env_var("VK_ADD_LAYER_PATH");
 }
 
 #endif
@@ -369,15 +359,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
     inst1.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match full-name
     env.debug_log.clear();
@@ -387,15 +377,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
     inst2.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match prefix
     env.debug_log.clear();
@@ -405,15 +395,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
     inst3.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match suffix
     env.debug_log.clear();
@@ -423,15 +413,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
     inst4.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match sub-string
     env.debug_log.clear();
@@ -441,15 +431,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
     inst5.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match all with star '*'
     env.debug_log.clear();
@@ -459,15 +449,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
     inst6.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match all with special name
     env.debug_log.clear();
@@ -477,23 +467,22 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
     inst7.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
-
-    remove_env_var(filter_select_env_var);
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 }
 
 // Test that the driver filter disable disables driver manifest files that match the filter
 TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FrameworkEnvironment env{};
     const char* filter_disable_env_var = "VK_LOADER_DRIVERS_DISABLE";
+    EnvVarCleaner filter_disable_cleaner(filter_disable_env_var);
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_disable_icd_inc(true).set_json_name("ABC_ICD"));
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_2}.set_disable_icd_inc(true).set_json_name("BCD_ICD"));
@@ -503,15 +492,15 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
     inst1.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match full-name
     env.debug_log.clear();
@@ -521,15 +510,15 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
     inst2.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match prefix
     env.debug_log.clear();
@@ -539,15 +528,15 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
     inst3.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match suffix
     env.debug_log.clear();
@@ -557,15 +546,15 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
     inst4.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match substring
     env.debug_log.clear();
@@ -575,15 +564,15 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
     inst5.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match all with star '*'
     env.debug_log.clear();
@@ -593,15 +582,15 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
     inst6.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Match all with special name
     env.debug_log.clear();
@@ -611,17 +600,15 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
     inst7.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
-
-    remove_env_var(filter_disable_env_var);
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 }
 
 // Test that the when both driver filter select and disable environment variables are present, that the
@@ -630,6 +617,8 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     FrameworkEnvironment env{};
     const char* filter_select_env_var = "VK_LOADER_DRIVERS_SELECT";
     const char* filter_disable_env_var = "VK_LOADER_DRIVERS_DISABLE";
+    EnvVarCleaner filter_select_cleaner(filter_select_env_var);
+    EnvVarCleaner filter_disable_cleaner(filter_disable_env_var);
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_disable_icd_inc(true).set_json_name("ABC_ICD"));
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_2}.set_disable_icd_inc(true).set_json_name("BCD_ICD"));
@@ -639,15 +628,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
     inst1.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Disable two, but enable one
     env.debug_log.clear();
@@ -658,15 +647,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
     inst2.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Disable all, but enable two
     env.debug_log.clear();
@@ -677,15 +666,15 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
     inst3.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 
     // Disable all, but enable all
     env.debug_log.clear();
@@ -696,16 +685,13 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
     inst4.CheckCreate();
 
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "ABC_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "ABC_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "BCD_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "BCD_ICD.json", "ignored because it was disabled by env var"));
-    ASSERT_TRUE(FindPrefixPostfixStringOnLine(env.debug_log, "Found ICD manifest file", "CDE_ICD.json"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because not selected by env var"));
-    ASSERT_FALSE(FindPrefixPostfixStringOnLine(env.debug_log, "CDE_ICD.json", "ignored because it was disabled by env var"));
-
-    remove_env_var(filter_select_env_var);
-    remove_env_var(filter_disable_env_var);
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 }
