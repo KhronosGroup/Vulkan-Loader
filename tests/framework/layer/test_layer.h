@@ -102,6 +102,9 @@ struct TestLayer {
     BUILDER_VALUE(TestLayer, uint32_t, min_implementation_version, 0)
     BUILDER_VALUE(TestLayer, std::string, description, {})
 
+    // Some layers may try to change the API version during instance creation - we should allow testing of such behavior
+    BUILDER_VALUE(TestLayer, uint32_t, alter_api_version, VK_API_VERSION_1_0)
+
     BUILDER_VECTOR(TestLayer, std::string, alternative_function_names, alternative_function_name)
 
     BUILDER_VECTOR(TestLayer, Extension, instance_extensions, instance_extension)

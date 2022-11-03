@@ -122,6 +122,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceProperties2 where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -130,32 +131,100 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_API_VERSION_1_1, 5, 123);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+        ASSERT_NE(GetPhysDevProps2, nullptr);
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
-    ASSERT_NE(GetPhysDevProps2, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkPhysicalDeviceProperties props{};
+        instance->vkGetPhysicalDeviceProperties(physical_device, &props);
+        VkPhysicalDeviceProperties2KHR props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR};
+        GetPhysDevProps2(physical_device, &props2);
 
-    VkPhysicalDeviceProperties props{};
-    instance->vkGetPhysicalDeviceProperties(physical_device, &props);
-    VkPhysicalDeviceProperties2KHR props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR};
-    GetPhysDevProps2(physical_device, &props2);
+        // Both properties should match
+        ASSERT_EQ(props.apiVersion, props2.properties.apiVersion);
+        ASSERT_EQ(props.driverVersion, props2.properties.driverVersion);
+        ASSERT_EQ(props.vendorID, props2.properties.vendorID);
+        ASSERT_EQ(props.deviceID, props2.properties.deviceID);
+        ASSERT_EQ(props.deviceType, props2.properties.deviceType);
+        ASSERT_EQ(0, memcmp(props.pipelineCacheUUID, props2.properties.pipelineCacheUUID, VK_UUID_SIZE));
+    }
 
-    // Both properties should match
-    ASSERT_EQ(props.apiVersion, props2.properties.apiVersion);
-    ASSERT_EQ(props.driverVersion, props2.properties.driverVersion);
-    ASSERT_EQ(props.vendorID, props2.properties.vendorID);
-    ASSERT_EQ(props.deviceID, props2.properties.deviceID);
-    ASSERT_EQ(props.deviceType, props2.properties.deviceType);
-    ASSERT_EQ(0, memcmp(props.pipelineCacheUUID, props2.properties.pipelineCacheUUID, VK_UUID_SIZE));
+    {  // Do the same logic but have the application forget to use 1.1 and doesn't enable the extension - should emulate the call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+        ASSERT_NE(GetPhysDevProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceProperties props{};
+        instance->vkGetPhysicalDeviceProperties(physical_device, &props);
+        VkPhysicalDeviceProperties2KHR props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR};
+        GetPhysDevProps2(physical_device, &props2);
+
+        // Both properties should match
+        ASSERT_EQ(props.apiVersion, props2.properties.apiVersion);
+        ASSERT_EQ(props.driverVersion, props2.properties.driverVersion);
+        ASSERT_EQ(props.vendorID, props2.properties.vendorID);
+        ASSERT_EQ(props.deviceID, props2.properties.deviceID);
+        ASSERT_EQ(props.deviceType, props2.properties.deviceType);
+        ASSERT_EQ(0, memcmp(props.pipelineCacheUUID, props2.properties.pipelineCacheUUID, VK_UUID_SIZE));
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+        ASSERT_NE(GetPhysDevProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceProperties props{};
+        instance->vkGetPhysicalDeviceProperties(physical_device, &props);
+        VkPhysicalDeviceProperties2KHR props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR};
+        GetPhysDevProps2(physical_device, &props2);
+
+        // Both properties should match
+        ASSERT_EQ(props.apiVersion, props2.properties.apiVersion);
+        ASSERT_EQ(props.driverVersion, props2.properties.driverVersion);
+        ASSERT_EQ(props.vendorID, props2.properties.vendorID);
+        ASSERT_EQ(props.deviceID, props2.properties.deviceID);
+        ASSERT_EQ(props.deviceType, props2.properties.deviceType);
+        ASSERT_EQ(0, memcmp(props.pipelineCacheUUID, props2.properties.pipelineCacheUUID, VK_UUID_SIZE));
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceProperties2 and vkGetPhysicalDeviceProperties2KHR where ICD is 1.0 and supports
@@ -463,6 +532,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceFeatures2 where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -471,25 +541,80 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
     FillInRandomFeatures(env.get_test_icd(0).physical_devices.back().features);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+        ASSERT_NE(GetPhysDevFeats2, nullptr);
 
-    auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
-    ASSERT_NE(GetPhysDevFeats2, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkPhysicalDeviceFeatures feats{};
+        instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
+        VkPhysicalDeviceFeatures2 feats2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+        GetPhysDevFeats2(physical_device, &feats2);
+        ASSERT_TRUE(CompareFeatures(feats, feats2));
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    VkPhysicalDeviceFeatures feats{};
-    instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
-    VkPhysicalDeviceFeatures2 feats2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
-    GetPhysDevFeats2(physical_device, &feats2);
-    ASSERT_TRUE(CompareFeatures(feats, feats2));
+        auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+        ASSERT_NE(GetPhysDevFeats2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceFeatures feats{};
+        instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
+        VkPhysicalDeviceFeatures2 feats2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+        GetPhysDevFeats2(physical_device, &feats2);
+        ASSERT_TRUE(CompareFeatures(feats, feats2));
+
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+        ASSERT_NE(GetPhysDevFeats2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceFeatures feats{};
+        instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
+        VkPhysicalDeviceFeatures2 feats2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+        GetPhysDevFeats2(physical_device, &feats2);
+        ASSERT_TRUE(CompareFeatures(feats, feats2));
+
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceFeatures2 and vkGetPhysicalDeviceFeatures2KHR where ICD is 1.0 and supports
@@ -686,6 +811,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceFormatProperties2 where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -694,30 +820,88 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
     FillInRandomFormatProperties(env.get_test_icd(0).physical_devices.back().format_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+        ASSERT_NE(GetPhysDevFormatProps2, nullptr);
 
-    auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
-    ASSERT_NE(GetPhysDevFormatProps2, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkFormatProperties props{};
+        instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
+        VkFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        GetPhysDevFormatProps2(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props2);
 
-    VkFormatProperties props{};
-    instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
-    VkFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
-    GetPhysDevFormatProps2(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props2);
+        ASSERT_EQ(props.bufferFeatures, props2.formatProperties.bufferFeatures);
+        ASSERT_EQ(props.linearTilingFeatures, props2.formatProperties.linearTilingFeatures);
+        ASSERT_EQ(props.optimalTilingFeatures, props2.formatProperties.optimalTilingFeatures);
+    }
+    {  // Do the same logic but have the application forget to enable 1.1 and doesn't enable the extension
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    ASSERT_EQ(props.bufferFeatures, props2.formatProperties.bufferFeatures);
-    ASSERT_EQ(props.linearTilingFeatures, props2.formatProperties.linearTilingFeatures);
-    ASSERT_EQ(props.optimalTilingFeatures, props2.formatProperties.optimalTilingFeatures);
+        auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+        ASSERT_NE(GetPhysDevFormatProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkFormatProperties props{};
+        instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
+        VkFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        GetPhysDevFormatProps2(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props2);
+
+        ASSERT_EQ(props.bufferFeatures, props2.formatProperties.bufferFeatures);
+        ASSERT_EQ(props.linearTilingFeatures, props2.formatProperties.linearTilingFeatures);
+        ASSERT_EQ(props.optimalTilingFeatures, props2.formatProperties.optimalTilingFeatures);
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+        ASSERT_NE(GetPhysDevFormatProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkFormatProperties props{};
+        instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
+        VkFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        GetPhysDevFormatProps2(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props2);
+
+        ASSERT_EQ(props.bufferFeatures, props2.formatProperties.bufferFeatures);
+        ASSERT_EQ(props.linearTilingFeatures, props2.formatProperties.linearTilingFeatures);
+        ASSERT_EQ(props.optimalTilingFeatures, props2.formatProperties.optimalTilingFeatures);
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
-
 // Test vkGetPhysicalDeviceFormatProperties2 and vkGetPhysicalDeviceFormatProperties2KHR where ICD is 1.0 and supports
 // extension but the instance supports 1.1 and the extension
 TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceSupports11) {
@@ -934,6 +1118,7 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceImageFormatProperties2 where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -942,45 +1127,138 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
     FillInRandomImageFormatData(env.get_test_icd(0).physical_devices.back().image_format_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+        ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
 
-    auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
-    ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkImageFormatProperties props{};
+        ASSERT_EQ(VK_SUCCESS,
+                  instance->vkGetPhysicalDeviceImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                     VK_IMAGE_TILING_OPTIMAL, 0, 0, &props));
 
-    VkImageFormatProperties props{};
-    ASSERT_EQ(VK_SUCCESS,
-              instance->vkGetPhysicalDeviceImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
-                                                                 VK_IMAGE_TILING_OPTIMAL, 0, 0, &props));
+        VkPhysicalDeviceImageFormatInfo2 info2{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,  // sType
+            nullptr,                                                // pNext
+            VK_FORMAT_R4G4_UNORM_PACK8,                             // format
+            VK_IMAGE_TYPE_2D,                                       // type
+            VK_IMAGE_TILING_OPTIMAL,                                // tiling
+            0,                                                      // usage
+            0,                                                      // flags
+        };
 
-    VkPhysicalDeviceImageFormatInfo2 info2{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,  // sType
-        nullptr,                                                // pNext
-        VK_FORMAT_R4G4_UNORM_PACK8,                             // format
-        VK_IMAGE_TYPE_2D,                                       // type
-        VK_IMAGE_TILING_OPTIMAL,                                // tiling
-        0,                                                      // usage
-        0,                                                      // flags
-    };
+        VkImageFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        ASSERT_EQ(VK_SUCCESS, GetPhysDevImageFormatProps2(physical_device, &info2, &props2));
 
-    VkImageFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
-    ASSERT_EQ(VK_SUCCESS, GetPhysDevImageFormatProps2(physical_device, &info2, &props2));
+        ASSERT_EQ(props.maxExtent.width, props2.imageFormatProperties.maxExtent.width);
+        ASSERT_EQ(props.maxExtent.height, props2.imageFormatProperties.maxExtent.height);
+        ASSERT_EQ(props.maxExtent.depth, props2.imageFormatProperties.maxExtent.depth);
+        ASSERT_EQ(props.maxMipLevels, props2.imageFormatProperties.maxMipLevels);
+        ASSERT_EQ(props.maxArrayLayers, props2.imageFormatProperties.maxArrayLayers);
+        ASSERT_EQ(props.sampleCounts, props2.imageFormatProperties.sampleCounts);
+        ASSERT_EQ(props.maxResourceSize, props2.imageFormatProperties.maxResourceSize);
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    ASSERT_EQ(props.maxExtent.width, props2.imageFormatProperties.maxExtent.width);
-    ASSERT_EQ(props.maxExtent.height, props2.imageFormatProperties.maxExtent.height);
-    ASSERT_EQ(props.maxExtent.depth, props2.imageFormatProperties.maxExtent.depth);
-    ASSERT_EQ(props.maxMipLevels, props2.imageFormatProperties.maxMipLevels);
-    ASSERT_EQ(props.maxArrayLayers, props2.imageFormatProperties.maxArrayLayers);
-    ASSERT_EQ(props.sampleCounts, props2.imageFormatProperties.sampleCounts);
-    ASSERT_EQ(props.maxResourceSize, props2.imageFormatProperties.maxResourceSize);
+        auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+        ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkImageFormatProperties props{};
+        ASSERT_EQ(VK_SUCCESS,
+                  instance->vkGetPhysicalDeviceImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                     VK_IMAGE_TILING_OPTIMAL, 0, 0, &props));
+
+        VkPhysicalDeviceImageFormatInfo2 info2{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,  // sType
+            nullptr,                                                // pNext
+            VK_FORMAT_R4G4_UNORM_PACK8,                             // format
+            VK_IMAGE_TYPE_2D,                                       // type
+            VK_IMAGE_TILING_OPTIMAL,                                // tiling
+            0,                                                      // usage
+            0,                                                      // flags
+        };
+
+        VkImageFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        ASSERT_EQ(VK_SUCCESS, GetPhysDevImageFormatProps2(physical_device, &info2, &props2));
+
+        ASSERT_EQ(props.maxExtent.width, props2.imageFormatProperties.maxExtent.width);
+        ASSERT_EQ(props.maxExtent.height, props2.imageFormatProperties.maxExtent.height);
+        ASSERT_EQ(props.maxExtent.depth, props2.imageFormatProperties.maxExtent.depth);
+        ASSERT_EQ(props.maxMipLevels, props2.imageFormatProperties.maxMipLevels);
+        ASSERT_EQ(props.maxArrayLayers, props2.imageFormatProperties.maxArrayLayers);
+        ASSERT_EQ(props.sampleCounts, props2.imageFormatProperties.sampleCounts);
+        ASSERT_EQ(props.maxResourceSize, props2.imageFormatProperties.maxResourceSize);
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+        ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkImageFormatProperties props{};
+        ASSERT_EQ(VK_SUCCESS,
+                  instance->vkGetPhysicalDeviceImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                     VK_IMAGE_TILING_OPTIMAL, 0, 0, &props));
+
+        VkPhysicalDeviceImageFormatInfo2 info2{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,  // sType
+            nullptr,                                                // pNext
+            VK_FORMAT_R4G4_UNORM_PACK8,                             // format
+            VK_IMAGE_TYPE_2D,                                       // type
+            VK_IMAGE_TILING_OPTIMAL,                                // tiling
+            0,                                                      // usage
+            0,                                                      // flags
+        };
+
+        VkImageFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        ASSERT_EQ(VK_SUCCESS, GetPhysDevImageFormatProps2(physical_device, &info2, &props2));
+
+        ASSERT_EQ(props.maxExtent.width, props2.imageFormatProperties.maxExtent.width);
+        ASSERT_EQ(props.maxExtent.height, props2.imageFormatProperties.maxExtent.height);
+        ASSERT_EQ(props.maxExtent.depth, props2.imageFormatProperties.maxExtent.depth);
+        ASSERT_EQ(props.maxMipLevels, props2.imageFormatProperties.maxMipLevels);
+        ASSERT_EQ(props.maxArrayLayers, props2.imageFormatProperties.maxArrayLayers);
+        ASSERT_EQ(props.sampleCounts, props2.imageFormatProperties.sampleCounts);
+        ASSERT_EQ(props.maxResourceSize, props2.imageFormatProperties.maxResourceSize);
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceImageFormatProperties2 and vkGetPhysicalDeviceImageFormatProperties2KHR where instance supports, an ICD,
@@ -1237,6 +1515,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceMemoryProperties2 where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -1245,26 +1524,81 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
     FillInRandomMemoryData(env.get_test_icd(0).physical_devices.back().memory_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+        ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
 
-    auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
-    ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkPhysicalDeviceMemoryProperties props{};
+        instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
 
-    VkPhysicalDeviceMemoryProperties props{};
-    instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
+        VkPhysicalDeviceMemoryProperties2 props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
+        GetPhysDevMemoryProps2(physical_device, &props2);
+        ASSERT_TRUE(CompareMemoryData(props, props2));
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    VkPhysicalDeviceMemoryProperties2 props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
-    GetPhysDevMemoryProps2(physical_device, &props2);
-    ASSERT_TRUE(CompareMemoryData(props, props2));
+        auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+        ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceMemoryProperties props{};
+        instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
+
+        VkPhysicalDeviceMemoryProperties2 props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
+        GetPhysDevMemoryProps2(physical_device, &props2);
+        ASSERT_TRUE(CompareMemoryData(props, props2));
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+        ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceMemoryProperties props{};
+        instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
+
+        VkPhysicalDeviceMemoryProperties2 props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
+        GetPhysDevMemoryProps2(physical_device, &props2);
+        ASSERT_TRUE(CompareMemoryData(props, props2));
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceMemoryProperties2 and vkGetPhysicalDeviceMemoryProperties2KHR where ICD is 1.0 and supports
@@ -1489,6 +1823,7 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceQueueFamilyProperties2 where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -1497,35 +1832,108 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
     uint32_t num_fam = FillInRandomQueueFamilyData(env.get_test_icd(0).physical_devices.back().queue_family_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+        ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
 
-    auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
-    ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        uint32_t ret_fam_1 = 0;
+        std::vector<VkQueueFamilyProperties> props{};
+        instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, nullptr);
+        ASSERT_EQ(num_fam, ret_fam_1);
+        props.resize(ret_fam_1);
 
-    uint32_t ret_fam_1 = 0;
-    std::vector<VkQueueFamilyProperties> props{};
-    instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, nullptr);
-    ASSERT_EQ(num_fam, ret_fam_1);
-    props.resize(ret_fam_1);
+        instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, props.data());
 
-    instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, props.data());
+        std::vector<VkQueueFamilyProperties2> props2{};
+        uint32_t ret_fam_2 = 0;
+        GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, nullptr);
+        ASSERT_EQ(ret_fam_1, ret_fam_2);
+        props2.resize(ret_fam_2, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
+        GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, props2.data());
+        ASSERT_TRUE(CompareQueueFamilyData(props, props2));
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    std::vector<VkQueueFamilyProperties2> props2{};
-    uint32_t ret_fam_2 = 0;
-    GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, nullptr);
-    ASSERT_EQ(ret_fam_1, ret_fam_2);
-    props2.resize(ret_fam_2, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
-    GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, props2.data());
-    ASSERT_TRUE(CompareQueueFamilyData(props, props2));
+        auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+        ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        uint32_t ret_fam_1 = 0;
+        std::vector<VkQueueFamilyProperties> props{};
+        instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, nullptr);
+        ASSERT_EQ(num_fam, ret_fam_1);
+        props.resize(ret_fam_1);
+
+        instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, props.data());
+
+        std::vector<VkQueueFamilyProperties2> props2{};
+        uint32_t ret_fam_2 = 0;
+        GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, nullptr);
+        ASSERT_EQ(ret_fam_1, ret_fam_2);
+        props2.resize(ret_fam_2, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
+        GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, props2.data());
+        ASSERT_TRUE(CompareQueueFamilyData(props, props2));
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+        ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        uint32_t ret_fam_1 = 0;
+        std::vector<VkQueueFamilyProperties> props{};
+        instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, nullptr);
+        ASSERT_EQ(num_fam, ret_fam_1);
+        props.resize(ret_fam_1);
+
+        instance->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &ret_fam_1, props.data());
+
+        std::vector<VkQueueFamilyProperties2> props2{};
+        uint32_t ret_fam_2 = 0;
+        GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, nullptr);
+        ASSERT_EQ(ret_fam_1, ret_fam_2);
+        props2.resize(ret_fam_2, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
+        GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, props2.data());
+        ASSERT_TRUE(CompareQueueFamilyData(props, props2));
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceQueueFamilyProperties2 and vkGetPhysicalDeviceQueueFamilyProperties2KHR where ICD is 1.0 and supports
@@ -1777,6 +2185,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRInstanceAndICDSuppo
 
 // Test vkGetPhysicalDeviceSparseImageFormatProperties2 where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -1785,49 +2194,150 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
     FillInRandomSparseImageFormatData(env.get_test_icd(0).physical_devices.back().sparse_image_format_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+        ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
 
-    auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
-    ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        std::vector<VkSparseImageFormatProperties> props{};
+        uint32_t sparse_count_1 = 0;
+        instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                 VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
+                                                                 VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
+        ASSERT_NE(sparse_count_1, 0U);
+        props.resize(sparse_count_1);
+        instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                 VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
+                                                                 VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
+        ASSERT_NE(sparse_count_1, 0U);
 
-    std::vector<VkSparseImageFormatProperties> props{};
-    uint32_t sparse_count_1 = 0;
-    instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
-                                                             VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
-                                                             VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
-    ASSERT_NE(sparse_count_1, 0U);
-    props.resize(sparse_count_1);
-    instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
-                                                             VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
-                                                             VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
-    ASSERT_NE(sparse_count_1, 0U);
+        VkPhysicalDeviceSparseImageFormatInfo2 info2{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
+            nullptr,                                                       // pNext
+            VK_FORMAT_R4G4_UNORM_PACK8,                                    // format
+            VK_IMAGE_TYPE_2D,                                              // type
+            VK_SAMPLE_COUNT_4_BIT,                                         // samples
+            VK_IMAGE_USAGE_STORAGE_BIT,                                    // usage
+            VK_IMAGE_TILING_OPTIMAL,                                       // tiling
+        };
+        std::vector<VkSparseImageFormatProperties2> props2{};
+        uint32_t sparse_count_2 = 0;
+        GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, nullptr);
+        ASSERT_EQ(sparse_count_1, sparse_count_2);
+        props2.resize(sparse_count_2, VkSparseImageFormatProperties2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2});
+        GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, props2.data());
+        ASSERT_EQ(sparse_count_1, sparse_count_2);
+        ASSERT_TRUE(CompareSparseImageFormatData(props, props2));
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    VkPhysicalDeviceSparseImageFormatInfo2 info2{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
-        nullptr,                                                       // pNext
-        VK_FORMAT_R4G4_UNORM_PACK8,                                    // format
-        VK_IMAGE_TYPE_2D,                                              // type
-        VK_SAMPLE_COUNT_4_BIT,                                         // samples
-        VK_IMAGE_USAGE_STORAGE_BIT,                                    // usage
-        VK_IMAGE_TILING_OPTIMAL,                                       // tiling
-    };
-    std::vector<VkSparseImageFormatProperties2> props2{};
-    uint32_t sparse_count_2 = 0;
-    GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, nullptr);
-    ASSERT_EQ(sparse_count_1, sparse_count_2);
-    props2.resize(sparse_count_2, VkSparseImageFormatProperties2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2});
-    GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, props2.data());
-    ASSERT_EQ(sparse_count_1, sparse_count_2);
-    ASSERT_TRUE(CompareSparseImageFormatData(props, props2));
+        auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+        ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        std::vector<VkSparseImageFormatProperties> props{};
+        uint32_t sparse_count_1 = 0;
+        instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                 VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
+                                                                 VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
+        ASSERT_NE(sparse_count_1, 0U);
+        props.resize(sparse_count_1);
+        instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                 VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
+                                                                 VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
+        ASSERT_NE(sparse_count_1, 0U);
+
+        VkPhysicalDeviceSparseImageFormatInfo2 info2{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
+            nullptr,                                                       // pNext
+            VK_FORMAT_R4G4_UNORM_PACK8,                                    // format
+            VK_IMAGE_TYPE_2D,                                              // type
+            VK_SAMPLE_COUNT_4_BIT,                                         // samples
+            VK_IMAGE_USAGE_STORAGE_BIT,                                    // usage
+            VK_IMAGE_TILING_OPTIMAL,                                       // tiling
+        };
+        std::vector<VkSparseImageFormatProperties2> props2{};
+        uint32_t sparse_count_2 = 0;
+        GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, nullptr);
+        ASSERT_EQ(sparse_count_1, sparse_count_2);
+        props2.resize(sparse_count_2, VkSparseImageFormatProperties2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2});
+        GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, props2.data());
+        ASSERT_EQ(sparse_count_1, sparse_count_2);
+        ASSERT_TRUE(CompareSparseImageFormatData(props, props2));
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+        ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        std::vector<VkSparseImageFormatProperties> props{};
+        uint32_t sparse_count_1 = 0;
+        instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                 VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
+                                                                 VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, nullptr);
+        ASSERT_NE(sparse_count_1, 0U);
+        props.resize(sparse_count_1);
+        instance->vkGetPhysicalDeviceSparseImageFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, VK_IMAGE_TYPE_2D,
+                                                                 VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
+                                                                 VK_IMAGE_TILING_OPTIMAL, &sparse_count_1, props.data());
+        ASSERT_NE(sparse_count_1, 0U);
+
+        VkPhysicalDeviceSparseImageFormatInfo2 info2{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2,  // sType
+            nullptr,                                                       // pNext
+            VK_FORMAT_R4G4_UNORM_PACK8,                                    // format
+            VK_IMAGE_TYPE_2D,                                              // type
+            VK_SAMPLE_COUNT_4_BIT,                                         // samples
+            VK_IMAGE_USAGE_STORAGE_BIT,                                    // usage
+            VK_IMAGE_TILING_OPTIMAL,                                       // tiling
+        };
+        std::vector<VkSparseImageFormatProperties2> props2{};
+        uint32_t sparse_count_2 = 0;
+        GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, nullptr);
+        ASSERT_EQ(sparse_count_1, sparse_count_2);
+        props2.resize(sparse_count_2, VkSparseImageFormatProperties2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2});
+        GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, props2.data());
+        ASSERT_EQ(sparse_count_1, sparse_count_2);
+        ASSERT_TRUE(CompareSparseImageFormatData(props, props2));
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceSparseImageFormatProperties2 and vkGetPhysicalDeviceSparseImageFormatProperties2KHR where ICD is 1.0 and
@@ -2087,6 +2597,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceExternalBufferProperties where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -2095,25 +2606,78 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME, 0});
     FillInRandomExtMemoryData(env.get_test_icd(0).physical_devices.back().external_memory_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
 
-    auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
-    ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkPhysicalDeviceExternalBufferInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO};
+        VkExternalBufferProperties props{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES};
+        GetPhysicalDeviceExternalBufferProperties(physical_device, &info, &props);
+        ASSERT_TRUE(CompareExtMemoryData(env.get_test_icd(0).physical_devices.back().external_memory_properties,
+                                         props.externalMemoryProperties));
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    VkPhysicalDeviceExternalBufferInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO};
-    VkExternalBufferProperties props{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES};
-    GetPhysicalDeviceExternalBufferProperties(physical_device, &info, &props);
-    ASSERT_TRUE(CompareExtMemoryData(env.get_test_icd(0).physical_devices.back().external_memory_properties,
-                                     props.externalMemoryProperties));
+        auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceExternalBufferInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO};
+        VkExternalBufferProperties props{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES};
+        GetPhysicalDeviceExternalBufferProperties(physical_device, &info, &props);
+        // Compare against 'zeroed' out VkExternalMemoryProperties
+        ASSERT_TRUE(CompareExtMemoryData(VkExternalMemoryProperties{}, props.externalMemoryProperties));
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+
+        auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceExternalBufferInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO};
+        VkExternalBufferProperties props{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES};
+        GetPhysicalDeviceExternalBufferProperties(physical_device, &info, &props);
+        ASSERT_TRUE(CompareExtMemoryData(env.get_test_icd(0).physical_devices.back().external_memory_properties,
+                                         props.externalMemoryProperties));
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceExternalBufferProperties where instance supports it with some ICDs that both support
@@ -2299,6 +2863,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceExternalSemaphoreProperties where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -2307,24 +2872,74 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME, 0});
     FillInRandomExtSemData(env.get_test_icd(0).physical_devices.back().external_semaphore_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
 
-    auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
-    ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkPhysicalDeviceExternalSemaphoreInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO};
+        VkExternalSemaphoreProperties props{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES};
+        GetPhysicalDeviceExternalSemaphoreProperties(physical_device, &info, &props);
+        ASSERT_TRUE(CompareExtSemaphoreData(env.get_test_icd(0).physical_devices.back().external_semaphore_properties, props));
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+        auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
 
-    VkPhysicalDeviceExternalSemaphoreInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO};
-    VkExternalSemaphoreProperties props{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES};
-    GetPhysicalDeviceExternalSemaphoreProperties(physical_device, &info, &props);
-    ASSERT_TRUE(CompareExtSemaphoreData(env.get_test_icd(0).physical_devices.back().external_semaphore_properties, props));
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceExternalSemaphoreInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO};
+        VkExternalSemaphoreProperties props{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES};
+        GetPhysicalDeviceExternalSemaphoreProperties(physical_device, &info, &props);
+        // Compare against 'zeroed' out VkExternalSemaphoreProperties
+        ASSERT_TRUE(CompareExtSemaphoreData(VkExternalSemaphoreProperties{}, props));
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+        auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceExternalSemaphoreInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO};
+        VkExternalSemaphoreProperties props{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES};
+        GetPhysicalDeviceExternalSemaphoreProperties(physical_device, &info, &props);
+        ASSERT_TRUE(CompareExtSemaphoreData(env.get_test_icd(0).physical_devices.back().external_semaphore_properties, props));
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
 
 // Test vkGetPhysicalDeviceExternalSemaphoreProperties where instance supports it with some ICDs that both support
@@ -2510,6 +3125,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2KHRInstanceAndICDSupport) {
 
 // Test vkGetPhysicalDeviceExternalFenceProperties where instance supports, an ICD, and a device under that ICD
 // also support, so everything should work and return properly.
+// Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2Simple) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -2518,26 +3134,76 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2Simple) {
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME, 0});
     FillInRandomExtFenceData(env.get_test_icd(0).physical_devices.back().external_fence_properties);
+    {
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.set_api_version(VK_API_VERSION_1_1);
+        instance.CheckCreate();
 
-    InstWrapper instance(env.vulkan_functions);
-    instance.create_info.set_api_version(VK_API_VERSION_1_1);
-    instance.CheckCreate();
+        auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
 
-    auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
-    ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
 
-    uint32_t driver_count = 1;
-    VkPhysicalDevice physical_device;
-    ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
-    ASSERT_EQ(driver_count, 1U);
+        VkPhysicalDeviceExternalFenceInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO};
+        VkExternalFenceProperties props{VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES};
+        GetPhysicalDeviceExternalFenceProperties(physical_device, &info, &props);
+        ASSERT_TRUE(CompareExtFenceData(env.get_test_icd(0).physical_devices.back().external_fence_properties, props));
+    }
+    {  // Now do the same logic but the application didn't enable 1.0 or the extension so they get the emulated call
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
 
-    VkPhysicalDeviceExternalFenceInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO};
-    VkExternalFenceProperties props{VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES};
-    GetPhysicalDeviceExternalFenceProperties(physical_device, &info, &props);
-    ASSERT_TRUE(CompareExtFenceData(env.get_test_icd(0).physical_devices.back().external_fence_properties, props));
+        auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceExternalFenceInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO};
+        VkExternalFenceProperties props{VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES};
+        GetPhysicalDeviceExternalFenceProperties(physical_device, &info, &props);
+        // Compare against 'zeroed' out VkExternalFenceProperties
+        ASSERT_TRUE(CompareExtFenceData(VkExternalFenceProperties{}, props));
+        ASSERT_TRUE(log.find("Emulating call in ICD"));
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("modify_api_version_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DisableEnvVar")),
+                           "modify_api_version_layer.json");
+    env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
+    {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
+        InstWrapper instance(env.vulkan_functions);
+        instance.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        instance.CheckCreate();
+        DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+        CreateDebugUtilsMessenger(log);
+        auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
+            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
+        ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
+
+        uint32_t driver_count = 1;
+        VkPhysicalDevice physical_device;
+        ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &driver_count, &physical_device));
+        ASSERT_EQ(driver_count, 1U);
+
+        VkPhysicalDeviceExternalFenceInfo info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO};
+        VkExternalFenceProperties props{VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES};
+        GetPhysicalDeviceExternalFenceProperties(physical_device, &info, &props);
+        ASSERT_TRUE(CompareExtFenceData(env.get_test_icd(0).physical_devices.back().external_fence_properties, props));
+        ASSERT_FALSE(log.find("Emulating call in ICD"));
+    }
 }
-
 // Test vkGetPhysicalDeviceExternalFenceProperties where instance supports it with some ICDs that both support
 // and don't support it:
 //    ICD 0 supports
