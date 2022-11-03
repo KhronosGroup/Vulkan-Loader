@@ -4981,6 +4981,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
                    ptr_instance->magic);
     }
 
+    // Save the application version if it has been modified - layers sometimes needs features in newer API versions than
+    // what the application requested, and thus will increase the instance version to a level that suites their needs.
+    if (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion) {
+        loader_api_version altered_version = loader_make_version(pCreateInfo->pApplicationInfo->apiVersion);
+        if (altered_version.major != ptr_instance->app_api_version.major ||
+            altered_version.minor != ptr_instance->app_api_version.minor) {
+            ptr_instance->app_api_version = altered_version;
+        }
+    }
+
     memcpy(&icd_create_info, pCreateInfo, sizeof(icd_create_info));
 
     icd_create_info.enabledLayerCount = 0;

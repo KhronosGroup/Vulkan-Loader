@@ -156,8 +156,26 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
     layer.next_vkGetInstanceProcAddr = fpGetInstanceProcAddr;
 
+    bool use_modified_create_info = false;
+    VkInstanceCreateInfo instance_create_info{};
+    VkApplicationInfo application_info{};
+    if (pCreateInfo) {
+        instance_create_info = *pCreateInfo;
+        if (pCreateInfo->pApplicationInfo) {
+            application_info = *pCreateInfo->pApplicationInfo;
+        }
+    }
+
+    // If the test needs to modify the api version, do it before we call down the chain
+    if (layer.alter_api_version != VK_API_VERSION_1_0 && pCreateInfo && pCreateInfo->pApplicationInfo) {
+        application_info.apiVersion = layer.alter_api_version;
+        instance_create_info.pApplicationInfo = &application_info;
+        use_modified_create_info = true;
+    }
+    const VkInstanceCreateInfo* create_info_pointer = use_modified_create_info ? &instance_create_info : pCreateInfo;
+
     // Continue call down the chain
-    VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
+    VkResult result = fpCreateInstance(create_info_pointer, pAllocator, pInstance);
     if (result != VK_SUCCESS) {
         return result;
     }
