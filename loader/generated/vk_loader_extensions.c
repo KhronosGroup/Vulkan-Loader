@@ -1012,6 +1012,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetDescriptorSetLayoutHostMappingInfoVALVE = (PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE)gdpa(dev, "vkGetDescriptorSetLayoutHostMappingInfoVALVE");
     table->GetDescriptorSetHostMappingVALVE = (PFN_vkGetDescriptorSetHostMappingVALVE)gdpa(dev, "vkGetDescriptorSetHostMappingVALVE");
 
+    // ---- VK_NV_copy_memory_indirect extension commands
+    table->CmdCopyMemoryIndirectNV = (PFN_vkCmdCopyMemoryIndirectNV)gdpa(dev, "vkCmdCopyMemoryIndirectNV");
+    table->CmdCopyMemoryToImageIndirectNV = (PFN_vkCmdCopyMemoryToImageIndirectNV)gdpa(dev, "vkCmdCopyMemoryToImageIndirectNV");
+
+    // ---- VK_NV_memory_decompression extension commands
+    table->CmdDecompressMemoryNV = (PFN_vkCmdDecompressMemoryNV)gdpa(dev, "vkCmdDecompressMemoryNV");
+    table->CmdDecompressMemoryIndirectCountNV = (PFN_vkCmdDecompressMemoryIndirectCountNV)gdpa(dev, "vkCmdDecompressMemoryIndirectCountNV");
+
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)gdpa(dev, "vkCmdSetTessellationDomainOriginEXT");
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)gdpa(dev, "vkCmdSetDepthClampEnableEXT");
@@ -2078,6 +2086,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_VALVE_descriptor_set_host_mapping extension commands
     if (!strcmp(name, "GetDescriptorSetLayoutHostMappingInfoVALVE")) return (void *)table->GetDescriptorSetLayoutHostMappingInfoVALVE;
     if (!strcmp(name, "GetDescriptorSetHostMappingVALVE")) return (void *)table->GetDescriptorSetHostMappingVALVE;
+
+    // ---- VK_NV_copy_memory_indirect extension commands
+    if (!strcmp(name, "CmdCopyMemoryIndirectNV")) return (void *)table->CmdCopyMemoryIndirectNV;
+    if (!strcmp(name, "CmdCopyMemoryToImageIndirectNV")) return (void *)table->CmdCopyMemoryToImageIndirectNV;
+
+    // ---- VK_NV_memory_decompression extension commands
+    if (!strcmp(name, "CmdDecompressMemoryNV")) return (void *)table->CmdDecompressMemoryNV;
+    if (!strcmp(name, "CmdDecompressMemoryIndirectCountNV")) return (void *)table->CmdDecompressMemoryIndirectCountNV;
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     if (!strcmp(name, "CmdSetTessellationDomainOriginEXT")) return (void *)table->CmdSetTessellationDomainOriginEXT;
@@ -6857,6 +6873,74 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
 }
 
 
+// ---- VK_NV_copy_memory_indirect extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             copyBufferAddress,
+    uint32_t                                    copyCount,
+    uint32_t                                    stride) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyMemoryIndirectNV: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMemoryIndirectNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             copyBufferAddress,
+    uint32_t                                    copyCount,
+    uint32_t                                    stride,
+    VkImage                                     dstImage,
+    VkImageLayout                               dstImageLayout,
+    const VkImageSubresourceLayers*             pImageSubresources) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyMemoryToImageIndirectNV: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMemoryToImageIndirectNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout, pImageSubresources);
+}
+
+
+// ---- VK_NV_memory_decompression extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    decompressRegionCount,
+    const VkDecompressMemoryRegionNV*           pDecompressMemoryRegions) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDecompressMemoryNV: Invalid commandBuffer "
+                   "[VUID-vkCmdDecompressMemoryNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             indirectCommandsAddress,
+    VkDeviceAddress                             indirectCommandsCountAddress,
+    uint32_t                                    stride) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDecompressMemoryIndirectCountNV: Invalid commandBuffer "
+                   "[VUID-vkCmdDecompressMemoryIndirectCountNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress, indirectCommandsCountAddress, stride);
+}
+
+
 // ---- VK_EXT_extended_dynamic_state3 extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
@@ -9250,6 +9334,26 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetDescriptorSetHostMappingVALVE", name)) {
         *addr = (void *)GetDescriptorSetHostMappingVALVE;
+        return true;
+    }
+
+    // ---- VK_NV_copy_memory_indirect extension commands
+    if (!strcmp("vkCmdCopyMemoryIndirectNV", name)) {
+        *addr = (void *)CmdCopyMemoryIndirectNV;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyMemoryToImageIndirectNV", name)) {
+        *addr = (void *)CmdCopyMemoryToImageIndirectNV;
+        return true;
+    }
+
+    // ---- VK_NV_memory_decompression extension commands
+    if (!strcmp("vkCmdDecompressMemoryNV", name)) {
+        *addr = (void *)CmdDecompressMemoryNV;
+        return true;
+    }
+    if (!strcmp("vkCmdDecompressMemoryIndirectCountNV", name)) {
+        *addr = (void *)CmdDecompressMemoryIndirectCountNV;
         return true;
     }
 
