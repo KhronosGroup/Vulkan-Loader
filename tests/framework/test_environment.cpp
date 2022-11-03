@@ -138,13 +138,13 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
 
 // Look through the event log. If you find a line containing the prefix we're interested in, look for the end of
 // line character, and then see if the postfix occurs in it as well.
-bool FindPrefixPostfixStringOnLine(DebugUtilsLogger& env_log, const char* prefix, const char* postfix) {
+bool DebugUtilsLogger::find_prefix_then_postfix(const char* prefix, const char* postfix) const {
     size_t new_start = 0;
     size_t postfix_index = 0;
     size_t next_eol = 0;
-    while ((new_start = env_log.returned_output.find(prefix, new_start)) != std::string::npos) {
-        next_eol = env_log.returned_output.find("\n", new_start);
-        if ((postfix_index = env_log.returned_output.find(postfix, new_start)) != std::string::npos) {
+    while ((new_start = returned_output.find(prefix, new_start)) != std::string::npos) {
+        next_eol = returned_output.find("\n", new_start);
+        if ((postfix_index = returned_output.find(postfix, new_start)) != std::string::npos) {
             if (postfix_index < next_eol) {
                 return true;
             }
@@ -152,6 +152,10 @@ bool FindPrefixPostfixStringOnLine(DebugUtilsLogger& env_log, const char* prefix
         new_start = next_eol + 1;
     }
     return false;
+}
+
+bool FindPrefixPostfixStringOnLine(DebugUtilsLogger const& env_log, const char* prefix, const char* postfix) {
+    return env_log.find_prefix_then_postfix(prefix, postfix);
 }
 
 PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders, bool enable_log) noexcept {

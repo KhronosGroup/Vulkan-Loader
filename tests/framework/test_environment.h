@@ -211,6 +211,11 @@ struct DebugUtilsLogger {
     DebugUtilsLogger& operator=(DebugUtilsLogger&&) = delete;
     // Find a string in the log output
     bool find(std::string const& search_text) const { return returned_output.find(search_text) != std::string::npos; }
+
+    // Look through the event log. If you find a line containing the prefix we're interested in, look for the end of
+    // line character, and then see if the postfix occurs in it as well.
+    bool find_prefix_then_postfix(const char* prefix, const char* postfix) const;
+
     // Clear the log
     void clear() { returned_output.clear(); }
     VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return &create_info; }
@@ -258,10 +263,6 @@ VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils);
 // NOTE: Ignores existing pNext chains
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
-
-// Look through the event log. If you find a line containing the prefix we're interested in, look for the end of
-// line character, and then see if the postfix occurs in it as well.
-bool FindPrefixPostfixStringOnLine(DebugUtilsLogger& env_log, const char* prefix, const char* postfix);
 
 struct FrameworkEnvironment;  // forward declaration
 
@@ -405,3 +406,13 @@ void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection =
 // api_selection: optionally provide a VK_USE_PLATFORM_XXX string to select which API to create a surface with.
 //    defaults to Metal on macOS and XCB on linux if not provided
 void create_surface(InstWrapper& inst, VkSurfaceKHR& out_surface, const char* api_selection = nullptr);
+
+struct EnvVarCleaner {
+    std::string env_var;
+    EnvVarCleaner(std::string env_var) noexcept : env_var(env_var) {}
+    ~EnvVarCleaner() noexcept { remove_env_var(env_var); }
+
+    // delete copy operators
+    EnvVarCleaner(const EnvVarCleaner&) = delete;
+    EnvVarCleaner& operator=(const EnvVarCleaner&) = delete;
+};
