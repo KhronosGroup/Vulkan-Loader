@@ -546,7 +546,8 @@ void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection =
 // Create a surface using a platform specific API
 // api_selection: optionally provide a VK_USE_PLATFORM_XXX string to select which API to create a surface with.
 //    defaults to Metal on macOS and XCB on linux if not provided
-void create_surface(InstWrapper& inst, VkSurfaceKHR& out_surface, const char* api_selection = nullptr);
+// Returns an assertion failure if the surface failed to be created
+testing::AssertionResult create_surface(InstWrapper& inst, VkSurfaceKHR& out_surface, const char* api_selection = nullptr);
 
 struct EnvVarCleaner {
     std::string env_var;

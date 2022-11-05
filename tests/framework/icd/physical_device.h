@@ -64,9 +64,9 @@ struct PhysicalDevice {
     BUILDER_VALUE(PhysicalDevice, VkDisplayModeKHR, display_mode, {})
     BUILDER_VALUE(PhysicalDevice, VkDisplayPlaneCapabilitiesKHR, display_plane_capabilities, {})
 
-    // VkDevice handles created from this physical device
+    // Objects created from this physical device
     std::vector<VkDevice> device_handles;
-
+    std::vector<DeviceCreateInfo> device_create_infos;
     std::vector<DispatchableHandle<VkQueue>> queue_handles;
 
     // Unknown physical device functions. Add a `VulkanFunction` to this list which will be searched in
