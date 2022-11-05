@@ -449,6 +449,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSwapchainKHR(VkDevice devic
                    "vkCreateSwapchainKHR: Invalid device [VUID-vkCreateSwapchainKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
+    if (NULL == disp->CreateSwapchainKHR) {
+        struct loader_device *dev = *((struct loader_device **)device);
+        loader_log(NULL != dev ? dev->phys_dev_term->this_icd_term->this_instance : NULL,
+                   VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                   "extension enabled?");
+        abort();
+    }
     return disp->CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
 }
 
@@ -457,7 +465,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSwapchainKHR(VkDevice device, co
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR) {
+    if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSwapchainKHR Terminator: device handle. This is likely the result of a "
                    "layer wrapping device handles and failing to unwrap them in all functions. "
@@ -468,6 +476,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSwapchainKHR(VkDevice device, co
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSwapchainKHR: Invalid pCreateInfo pointer [VUID-vkCreateSwapchainKHR-pCreateInfo-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
+    }
+    // Need to gracefully handle the function pointer not being found.
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                   "extension enabled?");
+        return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfo->surface;
     if (NULL != icd_surface->real_icd_surfaces) {
@@ -2122,18 +2137,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL == icd_term || NULL == dev || NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR) {
+    if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSharedSwapchainsKHR Terminator: Invalid device handle. This is likely the result of a "
                    "layer wrapping device handles and failing to unwrap them in all functions. "
                    "[VUID-vkCreateSharedSwapchainsKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    if (NULL == pCreateInfos) {
-        loader_log(
-            NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-            "vkCreateSharedSwapchainsKHR: Invalid pCreateInfos pointer [VUID-vkCreateSharedSwapchainsKHR-pCreateInfos-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
+                   "vkCreateSharedSwapchainsKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the "
+                   "VK_KHR_display_swapchain extension enabled?");
+        return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
     if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
@@ -2184,12 +2199,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(V
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL == icd_term || NULL == dev ||
-        NULL == dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR) {
+    if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDeviceGroupSurfacePresentModesKHR: Invalid device "
                    "[VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
+    }
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
+                   "vkGetDeviceGroupSurfacePresentModesKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was either "
+                   "Vulkan 1.1 and VK_KHR_swapchain enabled or both the VK_KHR_device_group and VK_KHR_surface "
+                   "extensions enabled when using Vulkan 1.0?");
+        return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
     if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {

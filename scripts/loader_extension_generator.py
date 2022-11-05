@@ -1525,7 +1525,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     term_func += f'    if (dev->extensions.{ext_cmd.ext_name[3:].lower()}_enabled && dev->extensions.{ext_cmd.require[3:].lower()}_enabled)\n'
                     term_func += f'       dispatch->{ext_cmd.name[2:]} = (PFN_{(ext_cmd.name)})gpda(dev->icd_device, "{(ext_cmd.name)}");\n'
                 else:
-                    term_func += f'    if (dev->extensions.{ext_cmd.ext_name[3:].lower()}_enabled) \n'
+                    term_func += f'    if (dev->extensions.{ext_cmd.ext_name[3:].lower()}_enabled)\n'
                     term_func += f'       dispatch->{ext_cmd.name[2:]} = (PFN_{(ext_cmd.name)})gpda(dev->icd_device, "{(ext_cmd.name)}");\n'
 
         if last_protect is not None:

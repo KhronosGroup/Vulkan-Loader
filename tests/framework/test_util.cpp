@@ -544,13 +544,35 @@ InstanceCreateInfo& InstanceCreateInfo::set_api_version(uint32_t major, uint32_t
 }
 
 DeviceQueueCreateInfo::DeviceQueueCreateInfo() { queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; }
+DeviceQueueCreateInfo::DeviceQueueCreateInfo(const VkDeviceQueueCreateInfo* create_info) {
+    queue_create_info = *create_info;
+    for (uint32_t i = 0; i < create_info->queueCount; i++) {
+        priorities.push_back(create_info->pQueuePriorities[i]);
+    }
+}
 
 VkDeviceQueueCreateInfo DeviceQueueCreateInfo::get() noexcept {
     queue_create_info.pQueuePriorities = priorities.data();
+    queue_create_info.queueCount = 1;
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     return queue_create_info;
 }
 
+DeviceCreateInfo::DeviceCreateInfo(const VkDeviceCreateInfo* create_info) {
+    dev = *create_info;
+    for (uint32_t i = 0; i < create_info->enabledExtensionCount; i++) {
+        enabled_extensions.push_back(create_info->ppEnabledExtensionNames[i]);
+    }
+    for (uint32_t i = 0; i < create_info->enabledLayerCount; i++) {
+        enabled_layers.push_back(create_info->ppEnabledLayerNames[i]);
+    }
+    for (uint32_t i = 0; i < create_info->queueCreateInfoCount; i++) {
+        device_queue_infos.push_back(create_info->pQueueCreateInfos[i]);
+    }
+}
+
 VkDeviceCreateInfo* DeviceCreateInfo::get() noexcept {
+    dev.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     dev.enabledLayerCount = static_cast<uint32_t>(enabled_layers.size());
     dev.ppEnabledLayerNames = enabled_layers.data();
     dev.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
@@ -558,6 +580,7 @@ VkDeviceCreateInfo* DeviceCreateInfo::get() noexcept {
     uint32_t index = 0;
     for (auto& queue : queue_info_details) {
         queue.queue_create_info.queueFamilyIndex = index++;
+        queue.queue_create_info.queueCount = 1;
         device_queue_infos.push_back(queue.get());
     }
 

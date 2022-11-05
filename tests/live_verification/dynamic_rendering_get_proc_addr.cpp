@@ -69,7 +69,9 @@ int main() {
             VkCommandBufferBeginInfo begin_info{};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             VkResult res = vkBeginCommandBuffer(command_buffer, &begin_info);
-            assert(res == VK_SUCCESS);
+            if (res != VK_SUCCESS) {
+                std::cout << "Failed to begin command buffer\n";
+            }
 
             // call the dynamic rendering function -- should not go into the physical device function trampoline.
             PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR =

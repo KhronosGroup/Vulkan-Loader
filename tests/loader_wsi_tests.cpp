@@ -797,12 +797,11 @@ TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     driver.physical_devices.back().add_extension("VK_KHR_swapchain");
 
     InstWrapper inst{env.vulkan_functions};
-    setup_WSI_in_create_instance(inst);
-    inst.create_info.enabled_extensions.clear();  // setup_WSI() adds extensions to Instance CreateInfo, we don't want that
-    inst.CheckCreate();
+    inst.create_info.add_extension("VK_KHR_surface");
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
     VkSurfaceKHR surface{};
-    ASSERT_DEATH(create_surface(inst, surface), "");
+    ASSERT_FALSE(create_surface(inst, surface));
 }
 
 TEST(WsiTests, SwapchainFunctional) {
@@ -823,20 +822,12 @@ TEST(WsiTests, SwapchainFunctional) {
     create_surface(inst, surface);
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-    uint32_t familyCount = 0;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, nullptr);
-    ASSERT_EQ(familyCount, 1U);
-
-    VkQueueFamilyProperties families;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, &families);
-    ASSERT_EQ(familyCount, 1U);
-    ASSERT_EQ(families, family_props.properties);
-    {
+    {  // Use GDPA to get functions
         DeviceWrapper dev{inst};
         dev.create_info.add_extension("VK_KHR_swapchain");
         dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
-        dev.CheckCreate(phys_dev);
+        ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
 
         VkSwapchainKHR swapchain{};
         VkSwapchainCreateInfoKHR swap_create_info{};
@@ -850,12 +841,40 @@ TEST(WsiTests, SwapchainFunctional) {
         ASSERT_EQ(VK_SUCCESS, funcs.vkGetSwapchainImagesKHR(dev, swapchain, &count, images.data()));
         funcs.vkDestroySwapchainKHR(dev, swapchain, nullptr);
     }
+    {  // Use GIPA gotten functions
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension("VK_KHR_swapchain");
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+        ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
+
+        PFN_vkCreateSwapchainKHR inst_CreateSwapchainKHR = inst.load("vkCreateSwapchainKHR");
+        PFN_vkGetSwapchainImagesKHR inst_GetSwapchainImagesKHR = inst.load("vkGetSwapchainImagesKHR");
+        PFN_vkDestroySwapchainKHR inst_DestroySwapchainKHR = inst.load("vkDestroySwapchainKHR");
+        ASSERT_TRUE(nullptr != inst_CreateSwapchainKHR);
+        ASSERT_TRUE(nullptr != inst_GetSwapchainImagesKHR);
+        ASSERT_TRUE(nullptr != inst_DestroySwapchainKHR);
+
+        VkSwapchainKHR swapchain{};
+        VkSwapchainCreateInfoKHR swap_create_info{};
+        swap_create_info.surface = surface;
+
+        ASSERT_EQ(VK_SUCCESS, inst_CreateSwapchainKHR(dev, &swap_create_info, nullptr, &swapchain));
+        uint32_t count = 0;
+        ASSERT_EQ(VK_SUCCESS, inst_GetSwapchainImagesKHR(dev, swapchain, &count, nullptr));
+        ASSERT_GT(count, 0U);
+        std::array<VkImage, 16> images;
+        ASSERT_EQ(VK_SUCCESS, inst_GetSwapchainImagesKHR(dev, swapchain, &count, images.data()));
+        inst_DestroySwapchainKHR(dev, swapchain, nullptr);
+    }
     {  // forget to enable the extension
         DeviceWrapper dev{inst};
-        dev.CheckCreate(phys_dev);
+        ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
 
         DeviceFunctions funcs{*inst.functions, dev};
         ASSERT_EQ(funcs.vkCreateSwapchainKHR, nullptr);
+        ASSERT_EQ(funcs.vkGetSwapchainImagesKHR, nullptr);
+        ASSERT_EQ(funcs.vkDestroySwapchainKHR, nullptr);
     }
     {  // forget to set the surface
         DeviceWrapper dev{inst};

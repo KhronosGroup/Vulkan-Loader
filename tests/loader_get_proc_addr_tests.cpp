@@ -185,3 +185,110 @@ TEST(GetProcAddr, GlobalFunctions) {
         handle_assert_null(EnumeratePhysicalDevices);
     }
 }
+
+// Swapchain functions which require a terminator in all cases have situations where the driver may have a
+// NULL function pointer but the loader shouldn't abort() if that is the case. Rather, it should log a message
+// and return VK_SUCCESS to maintain previous behavior.
+TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    setup_WSI_in_ICD(env.get_test_icd());
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst(env.vulkan_functions);
+    inst.create_info.add_extension("VK_EXT_debug_utils");
+    setup_WSI_in_create_instance(inst);
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+
+    VkSurfaceKHR surface{};
+    ASSERT_NO_FATAL_FAILURE(create_surface(inst, surface));
+
+    DebugUtilsWrapper log{inst};
+    ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));
+    auto phys_dev = inst.GetPhysDev();
+    {
+        DeviceWrapper dev{inst};
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
+        DeviceFunctions dev_funcs{env.vulkan_functions, dev};
+
+        PFN_vkCreateSwapchainKHR CreateSwapchainKHR = dev.load("vkCreateSwapchainKHR");
+        PFN_vkCreateSwapchainKHR inst_CreateSwapchainKHR = inst.load("vkCreateSwapchainKHR");
+        PFN_vkGetDeviceGroupSurfacePresentModesKHR GetDeviceGroupSurfacePresentModesKHR =
+            dev.load("vkGetDeviceGroupSurfacePresentModesKHR");
+        PFN_vkCreateSharedSwapchainsKHR CreateSharedSwapchainsKHR = dev.load("vkCreateSharedSwapchainsKHR");
+        ASSERT_FALSE(CreateSwapchainKHR);
+        ASSERT_TRUE(inst_CreateSwapchainKHR);
+        ASSERT_FALSE(GetDeviceGroupSurfacePresentModesKHR);
+        ASSERT_FALSE(CreateSharedSwapchainsKHR);
+
+        VkSwapchainCreateInfoKHR info{};
+        info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        info.surface = surface;
+
+        VkSwapchainKHR swapchain{};
+        if (CreateSwapchainKHR) CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
+        ASSERT_FALSE(
+            log.find("vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                     "extension enabled?"));
+        log.logger.clear();
+        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+        // try to call the vkCreateSwapchainKHR acquired from the instance - this *should* abort due to not enabling the extension
+        if (inst_CreateSwapchainKHR) {
+            ASSERT_DEATH(inst_CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain),
+                         "vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                         "extension enabled?");
+        }
+        log.logger.clear();
+        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+
+        VkDeviceGroupPresentModeFlagsKHR modes{};
+        if (GetDeviceGroupSurfacePresentModesKHR) GetDeviceGroupSurfacePresentModesKHR(dev.dev, surface, &modes);
+
+        if (CreateSharedSwapchainsKHR) CreateSharedSwapchainsKHR(dev.dev, 1, &info, nullptr, &swapchain);
+    }
+    {
+        env.get_test_icd().physical_devices.at(0).add_extensions(
+            {"VK_KHR_swapchain", "VK_KHR_display_swapchain", "VK_EXT_debug_marker"});
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extensions({"VK_KHR_swapchain", "VK_KHR_display_swapchain", "VK_EXT_debug_marker"});
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
+        DeviceFunctions dev_funcs{env.vulkan_functions, dev};
+
+        PFN_vkCreateSwapchainKHR CreateSwapchainKHR = dev.load("vkCreateSwapchainKHR");
+        PFN_vkCreateSwapchainKHR inst_CreateSwapchainKHR = inst.load("vkCreateSwapchainKHR");
+        PFN_vkGetDeviceGroupSurfacePresentModesKHR GetDeviceGroupSurfacePresentModesKHR =
+            dev.load("vkGetDeviceGroupSurfacePresentModesKHR");
+        PFN_vkCreateSharedSwapchainsKHR CreateSharedSwapchainsKHR = dev.load("vkCreateSharedSwapchainsKHR");
+        ASSERT_TRUE(CreateSwapchainKHR);
+        ASSERT_TRUE(inst_CreateSwapchainKHR);
+        ASSERT_TRUE(GetDeviceGroupSurfacePresentModesKHR);
+        ASSERT_TRUE(CreateSharedSwapchainsKHR);
+
+        VkSwapchainCreateInfoKHR info{};
+        info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        info.surface = surface;
+
+        VkSwapchainKHR swapchain{};
+        if (CreateSwapchainKHR) CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
+        ASSERT_FALSE(
+            log.find("vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                     "extension enabled?"));
+        log.logger.clear();
+        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+        if (inst_CreateSwapchainKHR) inst_CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
+        ASSERT_FALSE(
+            log.find("vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                     "extension enabled?"));
+        log.logger.clear();
+        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+
+        VkDeviceGroupPresentModeFlagsKHR modes{};
+        if (GetDeviceGroupSurfacePresentModesKHR) GetDeviceGroupSurfacePresentModesKHR(dev.dev, surface, &modes);
+
+        if (CreateSharedSwapchainsKHR) CreateSharedSwapchainsKHR(dev.dev, 1, &info, nullptr, &swapchain);
+    }
+    env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
+}

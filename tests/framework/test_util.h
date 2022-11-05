@@ -663,14 +663,19 @@ struct InstanceCreateInfo {
 };
 
 struct DeviceQueueCreateInfo {
+    DeviceQueueCreateInfo();
+    DeviceQueueCreateInfo(const VkDeviceQueueCreateInfo* create_info);
+
     BUILDER_VALUE(DeviceQueueCreateInfo, VkDeviceQueueCreateInfo, queue_create_info, {})
     BUILDER_VECTOR(DeviceQueueCreateInfo, float, priorities, priority)
 
-    DeviceQueueCreateInfo();
     VkDeviceQueueCreateInfo get() noexcept;
 };
 
 struct DeviceCreateInfo {
+    DeviceCreateInfo() = default;
+    DeviceCreateInfo(const VkDeviceCreateInfo* create_info);
+
     BUILDER_VALUE(DeviceCreateInfo, VkDeviceCreateInfo, dev, {})
     BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_extensions, extension)
     BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_layers, layer)

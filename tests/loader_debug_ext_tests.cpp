@@ -849,3 +849,163 @@ TEST_F(ManualMessage, InfoMessage) {
     // Message should be found
     ASSERT_EQ(true, message_found);
 }
+
+void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_debug_extensions) {
+    InstWrapper inst(env.vulkan_functions);
+    if (enable_debug_extensions) {
+        inst.create_info.add_extension("VK_EXT_debug_utils");
+    }
+    setup_WSI_in_create_instance(inst);
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+
+    auto phys_dev = inst.GetPhysDev();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_extension("VK_KHR_swapchain");
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    if (enable_debug_extensions) {
+        dev.create_info.add_extension("VK_EXT_debug_marker");
+    }
+    // if the hardware doesn't support VK_EXT_debug_marker and we are trying to enable it, then we should exit since that will fail
+    // to create a device
+    if (enable_debug_extensions &&
+        env.get_test_icd().physical_devices.at(0).extensions.size() == 1 /*only swapchain should be available*/) {
+        dev.CheckCreate(phys_dev, VK_ERROR_EXTENSION_NOT_PRESENT);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
+    DeviceFunctions dev_funcs{env.vulkan_functions, dev};
+
+    VkSurfaceKHR surface{};
+    ASSERT_NO_FATAL_FAILURE(create_surface(inst, surface));
+
+    VkSwapchainCreateInfoKHR info{};
+    info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    info.surface = surface;
+
+    VkSwapchainKHR swapchain{};
+    ASSERT_EQ(VK_SUCCESS, dev_funcs.vkCreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain));
+
+    PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
+    DebugMarkerSetObjectTagEXT = use_GIPA ? inst.load("vkDebugMarkerSetObjectTagEXT") : dev.load("vkDebugMarkerSetObjectTagEXT");
+    PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
+    DebugMarkerSetObjectNameEXT = use_GIPA ? inst.load("vkDebugMarkerSetObjectNameEXT") : dev.load("vkDebugMarkerSetObjectNameEXT");
+    PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
+    SetDebugUtilsObjectNameEXT = use_GIPA ? inst.load("vkSetDebugUtilsObjectNameEXT") : dev.load("vkSetDebugUtilsObjectNameEXT");
+    PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT;
+    SetDebugUtilsObjectTagEXT = use_GIPA ? inst.load("vkSetDebugUtilsObjectTagEXT") : dev.load("vkSetDebugUtilsObjectTagEXT");
+    PFN_vkQueueBeginDebugUtilsLabelEXT QueueBeginDebugUtilsLabelEXT;
+    QueueBeginDebugUtilsLabelEXT =
+        use_GIPA ? inst.load("vkQueueBeginDebugUtilsLabelEXT") : dev.load("vkQueueBeginDebugUtilsLabelEXT");
+    PFN_vkQueueEndDebugUtilsLabelEXT QueueEndDebugUtilsLabelEXT;
+    QueueEndDebugUtilsLabelEXT = use_GIPA ? inst.load("vkQueueEndDebugUtilsLabelEXT") : dev.load("vkQueueEndDebugUtilsLabelEXT");
+    PFN_vkQueueInsertDebugUtilsLabelEXT QueueInsertDebugUtilsLabelEXT;
+    QueueInsertDebugUtilsLabelEXT =
+        use_GIPA ? inst.load("vkQueueInsertDebugUtilsLabelEXT") : dev.load("vkQueueInsertDebugUtilsLabelEXT");
+    PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT;
+    CmdBeginDebugUtilsLabelEXT = use_GIPA ? inst.load("vkCmdBeginDebugUtilsLabelEXT") : dev.load("vkCmdBeginDebugUtilsLabelEXT");
+    PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT;
+    CmdEndDebugUtilsLabelEXT = use_GIPA ? inst.load("vkCmdEndDebugUtilsLabelEXT") : dev.load("vkCmdEndDebugUtilsLabelEXT");
+    PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
+    CmdInsertDebugUtilsLabelEXT = use_GIPA ? inst.load("vkCmdInsertDebugUtilsLabelEXT") : dev.load("vkCmdInsertDebugUtilsLabelEXT");
+
+    if (use_GIPA) {
+        // When querying from GIPA, these functions should always be found
+        ASSERT_TRUE(nullptr != DebugMarkerSetObjectTagEXT);
+        ASSERT_TRUE(nullptr != DebugMarkerSetObjectNameEXT);
+        // When querying from GIPA, these functions are found only if the extensions were enabled
+        ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectNameEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectTagEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != QueueBeginDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != QueueEndDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != QueueInsertDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != CmdBeginDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != CmdEndDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != CmdInsertDebugUtilsLabelEXT);
+    } else {
+        // When querying from GDPA, these functions are found only if the extensions were enabled
+        ASSERT_EQ(enable_debug_extensions, nullptr != DebugMarkerSetObjectTagEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != DebugMarkerSetObjectNameEXT);
+        // When querying from GDPA, these functions should always be found
+        ASSERT_TRUE(nullptr != SetDebugUtilsObjectNameEXT);
+        ASSERT_TRUE(nullptr != SetDebugUtilsObjectTagEXT);
+        ASSERT_TRUE(nullptr != QueueBeginDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != QueueEndDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != QueueInsertDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != CmdBeginDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != CmdEndDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != CmdInsertDebugUtilsLabelEXT);
+    }
+    VkDebugUtilsObjectNameInfoEXT obj_name_info{};
+    obj_name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    obj_name_info.objectHandle = (uint64_t)swapchain;
+    obj_name_info.objectType = VK_OBJECT_TYPE_SWAPCHAIN_KHR;
+    obj_name_info.pObjectName = " Your mom!";
+    if (SetDebugUtilsObjectNameEXT) SetDebugUtilsObjectNameEXT(dev.dev, &obj_name_info);
+
+    VkDebugMarkerObjectTagInfoEXT marker_object_tag{};
+    VkDebugMarkerObjectNameInfoEXT marker_object_name{};
+    if (use_GIPA && !enable_debug_extensions) {
+        // These functions crash when the extension isn't enabled and the function was acquired with GIPA.
+        ASSERT_DEATH(DebugMarkerSetObjectTagEXT(dev.dev, &marker_object_tag), "");
+        ASSERT_DEATH(DebugMarkerSetObjectNameEXT(dev.dev, &marker_object_name), "");
+    } else {
+        if (DebugMarkerSetObjectTagEXT) DebugMarkerSetObjectTagEXT(dev.dev, &marker_object_tag);
+        if (DebugMarkerSetObjectNameEXT) DebugMarkerSetObjectNameEXT(dev.dev, &marker_object_name);
+    }
+    if (SetDebugUtilsObjectNameEXT) SetDebugUtilsObjectNameEXT(dev.dev, &obj_name_info);
+    VkDebugUtilsObjectTagInfoEXT utils_object_tag{};
+    if (SetDebugUtilsObjectTagEXT) SetDebugUtilsObjectTagEXT(dev.dev, &utils_object_tag);
+    VkQueue queue{};
+    dev.functions->vkGetDeviceQueue(dev.dev, 0, 0, &queue);
+    VkDebugUtilsLabelEXT utils_label{};
+    utils_label.pLabelName = "Testing testing 123";
+    if (QueueBeginDebugUtilsLabelEXT) QueueBeginDebugUtilsLabelEXT(queue, &utils_label);
+    if (QueueEndDebugUtilsLabelEXT) QueueEndDebugUtilsLabelEXT(queue);
+    if (QueueInsertDebugUtilsLabelEXT) QueueInsertDebugUtilsLabelEXT(queue, &utils_label);
+    VkCommandBuffer cmd_buf{};
+    VkCommandPool cmd_pool;
+    VkCommandPoolCreateInfo cmd_pool_info{};
+    cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    ASSERT_EQ(VK_SUCCESS, dev_funcs.vkCreateCommandPool(dev.dev, &cmd_pool_info, nullptr, &cmd_pool));
+    VkCommandBufferAllocateInfo cmd_buf_alloc_info{};
+    cmd_buf_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmd_buf_alloc_info.commandBufferCount = 1;
+    cmd_buf_alloc_info.commandPool = cmd_pool;
+    ASSERT_EQ(VK_SUCCESS, dev_funcs.vkAllocateCommandBuffers(dev.dev, &cmd_buf_alloc_info, &cmd_buf));
+    if (CmdBeginDebugUtilsLabelEXT) CmdBeginDebugUtilsLabelEXT(cmd_buf, &utils_label);
+    if (CmdEndDebugUtilsLabelEXT) CmdEndDebugUtilsLabelEXT(cmd_buf);
+    if (CmdInsertDebugUtilsLabelEXT) CmdInsertDebugUtilsLabelEXT(cmd_buf, &utils_label);
+
+    dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+    env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
+}
+
+TEST(GetDeviceProcAddr, DebugFuncsWithTerminator) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    setup_WSI_in_ICD(env.get_test_icd());
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.get_test_icd().physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
+    // Hardware doesn't support the debug extensions
+
+    // Use getDeviceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true));
+
+    // Use getInstanceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true));
+
+    // Now set the hardware to support the extensions and run the situations again
+    env.get_test_icd().physical_devices.at(0).add_extensions({"VK_EXT_debug_marker"});
+    env.get_test_icd().add_instance_extension("VK_EXT_debug_utils");
+
+    // Use getDeviceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true));
+
+    // Use getInstanceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true));
+}

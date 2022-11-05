@@ -110,6 +110,28 @@ struct TestICD {
         return info;
     }
 
+    struct FindDevice {
+        bool found = false;
+        uint32_t phys_dev_index = 0;
+        uint32_t dev_index = 0;
+    };
+
+    FindDevice lookup_device(VkDevice device) {
+        FindDevice fd{};
+        for (uint32_t p = 0; p < physical_devices.size(); p++) {
+            auto const& phys_dev = physical_devices.at(p);
+            for (uint32_t d = 0; d < phys_dev.device_handles.size(); d++) {
+                if (phys_dev.device_handles.at(d) == device) {
+                    fd.found = true;
+                    fd.phys_dev_index = p;
+                    fd.dev_index = d;
+                    return fd;
+                }
+            }
+        }
+        return fd;
+    }
+
 #if defined(WIN32)
     BUILDER_VALUE(TestICD, LUID, adapterLUID, {})
 #endif  // defined(WIN32)

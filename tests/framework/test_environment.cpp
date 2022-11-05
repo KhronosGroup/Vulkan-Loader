@@ -563,59 +563,68 @@ void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection) 
 }
 
 template <typename CreationFunc, typename CreateInfo>
-void create_surface_helper(InstWrapper& inst, VkSurfaceKHR& surface, const char* load_func_name) {
+testing::AssertionResult create_surface_helper(InstWrapper& inst, VkSurfaceKHR& surface, const char* load_func_name) {
     CreationFunc pfn_CreateSurface = inst.load(load_func_name);
+    if (!pfn_CreateSurface) return testing::AssertionFailure();
     CreateInfo surf_create_info{};
-    ASSERT_EQ(VK_SUCCESS, pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface));
+    VkResult res = pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface);
+    return res == VK_SUCCESS ? testing::AssertionSuccess() : testing::AssertionFailure();
 }
-void create_surface(InstWrapper& inst, VkSurfaceKHR& surface, const char* api_selection) {
+testing::AssertionResult create_surface(InstWrapper& inst, VkSurfaceKHR& surface, const char* api_selection) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    create_surface_helper<PFN_vkCreateAndroidSurfaceKHR, VkAndroidSurfaceCreateInfoKHR>(inst, surface, "vkCreateAndroidSurfaceKHR");
+    return create_surface_helper<PFN_vkCreateAndroidSurfaceKHR, VkAndroidSurfaceCreateInfoKHR>(inst, surface,
+                                                                                               "vkCreateAndroidSurfaceKHR");
 #elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-    create_surface_helper<PFN_vkCreateDirectFBSurfaceEXT, VkDirectFBSurfaceCreateInfoEXT>(inst, surface,
-                                                                                          "vkCreateDirectFBSurfaceEXT");
+    return create_surface_helper<PFN_vkCreateDirectFBSurfaceEXT, VkDirectFBSurfaceCreateInfoEXT>(inst, surface,
+                                                                                                 "vkCreateDirectFBSurfaceEXT")
 #elif defined(VK_USE_PLATFORM_FUCHSIA)
-    create_surface_helper<PFN_vkCreateImagePipeSurfaceFUCHSIA, VkImagePipeSurfaceCreateInfoFUCHSIA>(
+    return create_surface_helper<PFN_vkCreateImagePipeSurfaceFUCHSIA, VkImagePipeSurfaceCreateInfoFUCHSIA>(
         inst, surface, "vkCreateImagePipeSurfaceFUCHSIA");
 #elif defined(VK_USE_PLATFORM_GGP)
-    create_surface_helper<PFN__vkCreateStreamDescriptorSurfaceGGP, VkStreamDescriptorSurfaceCreateInfoGGP>(
+    return create_surface_helper<PFN__vkCreateStreamDescriptorSurfaceGGP, VkStreamDescriptorSurfaceCreateInfoGGP>(
         inst, surface, "vkCreateStreamDescriptorSurfaceGGP");
 #elif defined(VK_USE_PLATFORM_IOS_MVK)
-    create_surface_helper<PFN_vkCreateIOSSurfaceMVK, VkIOSSurfaceCreateInfoMVK>(inst, surface, "vkCreateIOSSurfaceMVK");
+    return create_surface_helper<PFN_vkCreateIOSSurfaceMVK, VkIOSSurfaceCreateInfoMVK>(inst, surface, "vkCreateIOSSurfaceMVK");
 #elif defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
     if (api_selection != nullptr && string_eq(api_selection, "VK_USE_PLATFORM_MACOS_MVK"))
-        create_surface_helper<PFN_vkCreateMacOSSurfaceMVK, VkMacOSSurfaceCreateInfoMVK>(inst, surface, "vkCreateMacOSSurfaceMVK");
+        return create_surface_helper<PFN_vkCreateMacOSSurfaceMVK, VkMacOSSurfaceCreateInfoMVK>(inst, surface,
+                                                                                               "vkCreateMacOSSurfaceMVK");
 #endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     if (api_selection == nullptr || (api_selection != nullptr && string_eq(api_selection, "VK_USE_PLATFORM_METAL_EXT")))
-        create_surface_helper<PFN_vkCreateMetalSurfaceEXT, VkMetalSurfaceCreateInfoEXT>(inst, surface, "vkCreateMetalSurfaceEXT");
+        return create_surface_helper<PFN_vkCreateMetalSurfaceEXT, VkMetalSurfaceCreateInfoEXT>(inst, surface,
+                                                                                               "vkCreateMetalSurfaceEXT");
 #endif
+    return testing::AssertionFailure();
 #elif defined(VK_USE_PLATFORM_SCREEN_QNX)
-    create_surface_helper<PFN_vkCreateScreenSurfaceQNX, VkScreenSurfaceCreateInfoQNX>(inst, surface, "vkCreateScreenSurfaceQNX");
+    return create_surface_helper<PFN_vkCreateScreenSurfaceQNX, VkScreenSurfaceCreateInfoQNX>(inst, surface,
+                                                                                             "vkCreateScreenSurfaceQNX");
 #elif defined(VK_USE_PLATFORM_VI_NN)
-    create_surface_helper<PFN_vkCreateViSurfaceNN, VkViSurfaceCreateInfoNN>(inst, surface, "vkCreateViSurfaceNN");
+    return create_surface_helper<PFN_vkCreateViSurfaceNN, VkViSurfaceCreateInfoNN>(inst, surface, "vkCreateViSurfaceNN");
 #elif defined(VK_USE_PLATFORM_WIN32_KHR)
-    create_surface_helper<PFN_vkCreateWin32SurfaceKHR, VkWin32SurfaceCreateInfoKHR>(inst, surface, "vkCreateWin32SurfaceKHR");
+    return create_surface_helper<PFN_vkCreateWin32SurfaceKHR, VkWin32SurfaceCreateInfoKHR>(inst, surface,
+                                                                                           "vkCreateWin32SurfaceKHR");
 #elif defined(VK_USE_PLATFORM_XCB_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_WAYLAND_KHR)
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     if (string_eq(api_selection, "VK_USE_PLATFORM_XLIB_KHR"))
-        create_surface_helper<PFN_vkCreateXlibSurfaceKHR, VkXlibSurfaceCreateInfoKHR>(inst, surface, "vkCreateXlibSurfaceKHR");
+        return create_surface_helper<PFN_vkCreateXlibSurfaceKHR, VkXlibSurfaceCreateInfoKHR>(inst, surface,
+                                                                                             "vkCreateXlibSurfaceKHR");
 #endif
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     if (string_eq(api_selection, "VK_USE_PLATFORM_WAYLAND_KHR"))
-        create_surface_helper<PFN_vkCreateWaylandSurfaceKHR, VkWaylandSurfaceCreateInfoKHR>(inst, surface,
-                                                                                            "vkCreateWaylandSurfaceKHR");
+        return create_surface_helper<PFN_vkCreateWaylandSurfaceKHR, VkWaylandSurfaceCreateInfoKHR>(inst, surface,
+                                                                                                   "vkCreateWaylandSurfaceKHR");
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (api_selection == nullptr || string_eq(api_selection, "VK_USE_PLATFORM_XCB_KHR"))
-        create_surface_helper<PFN_vkCreateXcbSurfaceKHR, VkXcbSurfaceCreateInfoKHR>(inst, surface, "vkCreateXcbSurfaceKHR");
+        return create_surface_helper<PFN_vkCreateXcbSurfaceKHR, VkXcbSurfaceCreateInfoKHR>(inst, surface, "vkCreateXcbSurfaceKHR");
 #endif
+    return testing::AssertionFailure();
 #else
-    create_surface_helper<PFN_vkCreateDisplayPlaneSurfaceKHR, VkDisplaySurfaceCreateInfoKHR>(inst, surface,
-                                                                                             "vkCreateDisplayPlaneSurfaceKHR");
+    return create_surface_helper<PFN_vkCreateDisplayPlaneSurfaceKHR, VkDisplaySurfaceCreateInfoKHR>(
+        inst, surface, "vkCreateDisplayPlaneSurfaceKHR");
 #endif
-    assert(surface != VK_NULL_HANDLE);
 }
 
 extern "C" {
