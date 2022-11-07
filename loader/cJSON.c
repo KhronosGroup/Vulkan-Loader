@@ -165,31 +165,35 @@ size_t cJSON_update(printbuffer *p) {
 /* Render the number nicely from the given item into a string. */
 char *print_number(cJSON *item, printbuffer *p) {
     char *str = 0;
+    size_t str_buf_size;
     double d = item->valuedouble;
     if (d == 0) {
+        str_buf_size = 2; /* special case for 0. */
         if (p)
-            str = ensure(item->pAllocator, p, 2);
+            str = ensure(item->pAllocator, p, str_buf_size);
         else
-            str = (char *)cJSON_malloc(item->pAllocator, 2); /* special case for 0. */
+            str = (char *)cJSON_malloc(item->pAllocator, str_buf_size);
         if (str) strcpy(str, "0");
     } else if (fabs(((double)item->valueint) - d) <= DBL_EPSILON && d <= INT_MAX && d >= INT_MIN) {
+        str_buf_size = 21; /* 2^64+1 can be represented in 21 chars. */
         if (p)
-            str = ensure(item->pAllocator, p, 21);
+            str = ensure(item->pAllocator, p, str_buf_size);
         else
-            str = (char *)cJSON_malloc(item->pAllocator, 21); /* 2^64+1 can be represented in 21 chars. */
-        if (str) sprintf(str, "%d", item->valueint);
+            str = (char *)cJSON_malloc(item->pAllocator, str_buf_size);
+        if (str) snprintf(str, str_buf_size, "%d", item->valueint);
     } else {
+        str_buf_size = 64; /* This is a nice tradeoff. */
         if (p)
-            str = ensure(item->pAllocator, p, 64);
+            str = ensure(item->pAllocator, p, str_buf_size);
         else
-            str = (char *)cJSON_malloc(item->pAllocator, 64); /* This is a nice tradeoff. */
+            str = (char *)cJSON_malloc(item->pAllocator, str_buf_size);
         if (str) {
             if (fabs(floor(d) - d) <= DBL_EPSILON && fabs(d) < 1.0e60)
-                sprintf(str, "%.0f", d);
+                snprintf(str, str_buf_size, "%.0f", d);
             else if (fabs(d) < 1.0e-6 || fabs(d) > 1.0e9)
-                sprintf(str, "%e", d);
+                snprintf(str, str_buf_size, "%e", d);
             else
-                sprintf(str, "%f", d);
+                snprintf(str, str_buf_size, "%f", d);
         }
     }
     return str;
@@ -333,16 +337,17 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
     const char *ptr;
     char *ptr2;
     char *out;
-    size_t len = 0, flag = 0;
+    size_t out_buf_size, len = 0, flag = 0;
     unsigned char token;
 
     for (ptr = str; *ptr; ptr++) flag |= ((*ptr > 0 && *ptr < 32) || (*ptr == '\"') || (*ptr == '\\')) ? 1 : 0;
     if (!flag) {
         len = ptr - str;
+        out_buf_size = len + 3;
         if (p)
-            out = ensure(pAllocator, p, len + 3);
+            out = ensure(pAllocator, p, out_buf_size);
         else
-            out = (char *)cJSON_malloc(pAllocator, len + 3);
+            out = (char *)cJSON_malloc(pAllocator, out_buf_size);
         if (!out) return 0;
         ptr2 = out;
         *ptr2++ = '\"';
@@ -353,10 +358,11 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
     }
 
     if (!str) {
+        out_buf_size = 3;
         if (p)
-            out = ensure(pAllocator, p, 3);
+            out = ensure(pAllocator, p, out_buf_size);
         else
-            out = (char *)cJSON_malloc(pAllocator, 3);
+            out = (char *)cJSON_malloc(pAllocator, out_buf_size);
         if (!out) return 0;
         strcpy(out, "\"\"");
         return out;
@@ -372,10 +378,11 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         token = *ptr;
     }
 
+    out_buf_size = len + 3;
     if (p)
-        out = ensure(pAllocator, p, len + 3);
+        out = ensure(pAllocator, p, out_buf_size);
     else
-        out = (char *)cJSON_malloc(pAllocator, len + 3);
+        out = (char *)cJSON_malloc(pAllocator, out_buf_size);
     if (!out) return 0;
 
     ptr2 = out;
@@ -408,7 +415,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
                     *ptr2++ = '\t';
                     break;
                 default:
-                    sprintf(ptr2, "u%04x", token);
+                    snprintf(ptr2, out_buf_size - (ptr2 - out), "u%04x", token);
                     ptr2 += 5;
                     break; /* escape and print */
             }
