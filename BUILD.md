@@ -251,7 +251,6 @@ on/off options currently supported by this repository:
 | BUILD_WSI_DIRECTFB_SUPPORT   | Linux    | `OFF`   | Build the loader with the DirectFB entry points enabled. Without this, the DirectFB headers should not be needed, but the extension `VK_EXT_directfb_surface` won't be available. |
 | BUILD_WSI_SCREEN_QNX_SUPPORT | QNX      | `OFF`   | Build the loader with the QNX Screen entry points enabled. Without this the extension `VK_QNX_screen_surface` won't be available.                                                 |
 | ENABLE_WIN10_ONECORE         | Windows  | `OFF`   | Link the loader to the [OneCore](https://msdn.microsoft.com/en-us/library/windows/desktop/mt654039.aspx) umbrella library, instead of the standard Win32 ones.                    |
-| USE_CCACHE                   | Linux    | `OFF`   | Enable caching with the CCache program.                                                                                                                                           |
 | USE_GAS                      | Linux    | `ON`    | Controls whether to build assembly files with the GNU assembler, else fallback to C code.                                                                                         |
 | USE_MASM                     | Windows  | `ON`    | Controls whether to build assembly files with MS assembler, else fallback to C code                                                                                               |
 | BUILD_STATIC_LOADER          | macOS    | `OFF`   | This allows the loader to be built as a static library on macOS. Not tested, use at your own risk.                                                                                |
@@ -264,6 +263,26 @@ The following is a table of all string options currently supported by this repos
 | BUILD_DLL_VERSIONINFO | Windows     | `""` (empty string)           | Allows setting the Windows specific version information for the Loader DLL. Format is "major.minor.patch.build".                                     |
 
 These variables should be set using the `-D` option when invoking CMake to generate the native platform files.
+
+### CCACHE
+
+There are 2 methods to enable CCACHE:
+
+1.) Set environment variables
+
+```bash
+# Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html)
+export CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache
+export CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
+```
+
+2.) Pass in cache variables
+
+```
+cmake ... -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
+```
+
+
 
 ## Building On Windows
 
@@ -480,9 +499,6 @@ to specify the number of cores to use for the build. For example:
 You can also use
 
     cmake --build .
-
-If your build system supports ccache, you can enable that via CMake option
-`-DUSE_CCACHE=On`
 
 ### Linux Notes
 
