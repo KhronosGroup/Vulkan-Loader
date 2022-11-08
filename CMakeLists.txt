@@ -79,6 +79,9 @@ else()
     message("********************************************************************************")
     find_package(PythonInterp 3 QUIET)
 endif()
+if (VULKAN_HEADERS_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${VULKAN_HEADERS_INSTALL_DIR})
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 QUIET)
@@ -107,26 +110,7 @@ if(BUILD_STATIC_LOADER)
         "or tested as part of the loader. Use it at your own risk.")
 endif()
 
-if (TARGET Vulkan::Headers)
-    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
-    get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
-    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
-else()
-    find_package(VulkanHeaders)
-    if(NOT ${VulkanHeaders_FOUND})
-        message(FATAL_ERROR "Could not find Vulkan headers path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                            "installation of the Vulkan-Headers repository.")
-    endif()
-    if(NOT ${VulkanRegistry_FOUND})
-        message(FATAL_ERROR "Could not find Vulkan registry path. This can be fixed by setting VULKAN_HEADERS_INSTALL_DIR to an "
-                            "installation of the Vulkan-Headers repository.")
-    endif()
-
-    # set up the Vulkan::Headers target for consistency
-    add_library(vulkan-headers INTERFACE)
-    target_include_directories(vulkan-headers SYSTEM INTERFACE "${VulkanHeaders_INCLUDE_DIRS}")
-    add_library(Vulkan::Headers ALIAS vulkan-headers)
-endif()
+find_package(VulkanHeaders REQUIRED CONFIG QUIET)
 
 include(GNUInstallDirs)
 

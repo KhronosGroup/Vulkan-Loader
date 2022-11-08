@@ -334,6 +334,7 @@ else()
         # Use GLOB_RECURSE to find all the header files and populate the vulkan.framework headers with them
         # Use CONFIGURE_DEPENDS to ensure that if the header files are updated, this list is also updated
         # Note: CONFIGURE_DEPENDS is a 3.12 feature - gate it for now and remove when CMake minimum version is higher
+        get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
         if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
             file(GLOB_RECURSE CONFIGURE_DEPENDS FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS})
         else()
