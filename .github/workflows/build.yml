@@ -146,12 +146,14 @@ jobs:
         strategy:
             matrix:
                 config: [ Debug, Release ]
-                os: [ macos-11 ]
-                static_build: [ ON, OFF ]
+                os: [ macos-11, macos-latest ]
+                static_build: [ BUILD_STATIC_LOADER=ON, BUILD_STATIC_LOADER=OFF ]
                 exclude:
+                  - os: macos-latest
+                    static_build: BUILD_STATIC_LOADER=ON
                   - config: Debug
                     os: macos-11
-                    static_build: ON
+                    static_build: BUILD_STATIC_LOADER=ON
 
         steps:
             - uses: actions/checkout@v2
@@ -160,7 +162,7 @@ jobs:
                 python-version: '3.7'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_STATIC_LOADER=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -D${{matrix.static_build}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON
               env:
                 # Specify the minimum version of macOS on which the target binaries are to be deployed.
                 # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
