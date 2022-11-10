@@ -390,8 +390,8 @@ the primary build artifacts to a specific location using a "bin, include, lib"
 style directory structure. This may be useful for collecting the artifacts and
 providing them to another project that is dependent on them.
 
-The default location is `$CMAKE_BINARY_DIR\install`, but can be changed with
-the `CMAKE_INSTALL_PREFIX` variable when first generating the project build
+The default location is `$CMAKE_CURRENT_BINARY_DIR\install`, but can be changed
+with the `CMAKE_INSTALL_PREFIX` variable when first generating the project build
 files with CMake.
 
 You can build the install target from the command line with:

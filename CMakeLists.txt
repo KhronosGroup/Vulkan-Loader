@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-
 cmake_minimum_required(VERSION 3.10.2)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # If we are building in Visual Studio 2015 and with a CMake version 3.19 or greater, we need to set this variable
 # so that CMake will choose a Windows SDK version higher than 10.0.14393.0, as dxgi1_6.h is only found in Windows SDK
@@ -49,7 +49,7 @@ if (UPDATE_DEPS)
     endif()
 
     message("********************************************************************************")
-    message("* NOTE: Adding target vl_update_deps to run as needed for updating            *")
+    message("* NOTE: Adding target vl_update_deps to run as needed for updating             *")
     message("*       dependencies.                                                          *")
     message("********************************************************************************")
 
@@ -83,7 +83,6 @@ if (VULKAN_HEADERS_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${VULKAN_HEADERS_INSTALL_DIR})
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonInterp 3 QUIET)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -115,12 +114,7 @@ find_package(VulkanHeaders REQUIRED CONFIG QUIET)
 include(GNUInstallDirs)
 
 if(UNIX AND NOT APPLE) # i.e.: Linux
-    include(FindPkgConfig)
-endif()
-
-if(APPLE)
-    # CMake versions 3 or later need CMAKE_MACOSX_RPATH defined. This avoids the CMP0042 policy message.
-    set(CMAKE_MACOSX_RPATH 1)
+    find_package(PkgConfig)
 endif()
 
 set(GIT_BRANCH_NAME "--unknown--")
@@ -147,7 +141,7 @@ endif()
 
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
 # Enable IDE GUI folders.  "Helper targets" that don't have interesting source code should set their FOLDER property to this
@@ -464,7 +458,7 @@ if(BUILD_TESTS)
     endif()
 
     if (BUILD_TESTS)
-        add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
+        add_subdirectory(tests)
     endif()
 
 endif()
