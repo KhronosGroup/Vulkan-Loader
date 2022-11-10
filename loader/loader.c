@@ -538,6 +538,15 @@ static VkResult loader_add_instance_extensions(const struct loader_instance *ins
         goto out;
     }
 
+    // Make sure we never call ourself by accident, this should never happen outside of error paths
+    if (fp_get_props == vkEnumerateInstanceExtensionProperties) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "loader_add_instance_extensions: %s's vkEnumerateInstanceExtensionProperties points to the loader, this would "
+                   "lead to infinite recursion.",
+                   lib_name);
+        goto out;
+    }
+
     res = fp_get_props(NULL, &count, NULL);
     if (res != VK_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
@@ -1342,6 +1351,15 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
     struct loader_scanned_icd *new_scanned_icd;
     uint32_t interface_vers;
     VkResult res = VK_SUCCESS;
+
+    // This shouldn't happen, but the check is necessary because dlopen returns a handle to the main program when
+    // filename is NULL
+    if (filename == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_scanned_icd_add: A NULL filename was used, skipping this ICD",
+                   filename);
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
+        goto out;
+    }
 
     // TODO implement smarter opening/closing of libraries. For now this
     // function leaves libraries open and the scanned_icd_clear closes them
@@ -3303,6 +3321,8 @@ struct ICDManifestInfo {
     uint32_t version;
 };
 
+// Takes a json file, opens, reads, and parses an ICD Manifest out of it.
+// Should only return VK_SUCCESS, VK_ERROR_INCOMPATIBLE_DRIVER, or VK_ERROR_OUT_OF_HOST_MEMORY
 VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *file_str, struct ICDManifestInfo *icd,
                                    bool *skipped_portability_drivers) {
     VkResult res = VK_SUCCESS;
@@ -3319,7 +3339,11 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
     }
 
     res = loader_get_json(inst, file_str, &json);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
     if (res != VK_SUCCESS || NULL == json) {
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
@@ -3560,7 +3584,8 @@ out:
     return res;
 }
 
-void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
+VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
+    VkResult res = VK_SUCCESS;
     char *file_str;
     struct loader_data_files manifest_files;
     cJSON *json;
@@ -3589,18 +3614,20 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
             }
 
             // Parse file into JSON struct
-            VkResult res = loader_get_json(inst, file_str, &json);
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+            VkResult local_res = loader_get_json(inst, file_str, &json);
+            if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
-            } else if (VK_SUCCESS != res || NULL == json) {
+            } else if (VK_SUCCESS != local_res || NULL == json) {
                 continue;
             }
 
-            VkResult local_res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
+            local_res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
             cJSON_Delete(json);
 
             // If the error is anything other than out of memory we still want to try to load the other layers
             if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+                res = local_res;
                 goto out;
             }
         }
@@ -3651,18 +3678,20 @@ void loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_li
             }
 
             // Parse file into JSON struct
-            VkResult res = loader_get_json(inst, file_str, &json);
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+            VkResult local_res = loader_get_json(inst, file_str, &json);
+            if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
-            } else if (VK_SUCCESS != res || NULL == json) {
+            } else if (VK_SUCCESS != local_res || NULL == json) {
                 continue;
             }
 
-            VkResult local_res = loader_add_layer_properties(inst, instance_layers, json, false, file_str);
+            local_res = loader_add_layer_properties(inst, instance_layers, json, false, file_str);
             cJSON_Delete(json);
 
             // If the error is anything other than out of memory we still want to try to load the other layers
             if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+                res = local_res;
                 goto out;
             }
         }
@@ -3689,6 +3718,7 @@ out:
         loader_instance_heap_free(inst, manifest_files.filename_list);
     }
     loader_platform_thread_unlock_mutex(&loader_json_lock);
+    return res;
 }
 
 void loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
@@ -6419,7 +6449,10 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
             goto out;
         }
 
-        loader_scan_for_layers(NULL, &instance_layers);
+        res = loader_scan_for_layers(NULL, &instance_layers);
+        if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            goto out;
+        }
         for (uint32_t i = 0; i < instance_layers.count; i++) {
             struct loader_layer_properties *props = &instance_layers.list[i];
             if (strcmp(props->info.layerName, pLayerName) == 0) {
@@ -6497,8 +6530,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(const
 
     // Get layer libraries
     memset(&instance_layer_list, 0, sizeof(instance_layer_list));
-    loader_scan_for_layers(NULL, &instance_layer_list);
-
+    result = loader_scan_for_layers(NULL, &instance_layer_list);
+    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
     if (pProperties == NULL) {
         *pPropertyCount = instance_layer_list.count;
         goto out;

@@ -210,7 +210,11 @@ class FolderManager {
     FolderManager(FolderManager&& other) noexcept;
     FolderManager& operator=(FolderManager&& other) noexcept;
 
+    // Add a manifest to the folder
     path write_manifest(std::string const& name, std::string const& contents);
+
+    // Add an already existing file to the manager, so it will be cleaned up automatically
+    void add_existing_file(std::string const& file_name);
 
     // close file handle, delete file, remove `name` from managed file list.
     void remove(std::string const& name);

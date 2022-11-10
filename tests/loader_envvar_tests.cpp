@@ -200,6 +200,21 @@ TEST(EnvVarICDOverrideSetup, XDG) {
     check_paths(env.debug_log, ManifestCategory::implicit_layer, HOME);
     check_paths(env.debug_log, ManifestCategory::explicit_layer, HOME);
 }
+// Check that a json file in the paths don't cause the loader to crash
+TEST(EnvVarICDOverrideSetup, XDGContainsJsonFile) {
+    // Set up a layer path that includes default and user-specified locations,
+    // so that the test app can find them.  Include some badly specified elements as well.
+    // Need to redirect the 'home' directory
+    set_env_var("XDG_CONFIG_DIRS", "bad_file.json");
+
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().physical_devices.push_back({});
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate(VK_SUCCESS);
+}
 #endif
 
 // Test VK_ADD_DRIVER_FILES environment variable

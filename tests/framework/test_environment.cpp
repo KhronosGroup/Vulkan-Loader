@@ -184,7 +184,10 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
 fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
 
-FrameworkEnvironment::FrameworkEnvironment() noexcept : platform_shim(&folders), vulkan_functions() {
+FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(true, true) {}
+FrameworkEnvironment::FrameworkEnvironment(bool enable_log) noexcept : FrameworkEnvironment(enable_log, true) {}
+FrameworkEnvironment::FrameworkEnvironment(bool enable_log, bool set_default_search_paths) noexcept
+    : platform_shim(&folders), vulkan_functions() {
     // This order is important, it matches the enum ManifestLocation, used to index the folders vector
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("null_dir"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("icd_manifests"));
@@ -197,9 +200,11 @@ FrameworkEnvironment::FrameworkEnvironment() noexcept : platform_shim(&folders),
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("app_package_manifests"));
 
     platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
-    platform_shim->set_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
-    platform_shim->set_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
-    platform_shim->set_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
+    if (set_default_search_paths) {
+        platform_shim->set_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
+        platform_shim->set_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
+        platform_shim->set_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
+    }
 }
 
 void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {

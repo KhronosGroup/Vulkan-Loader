@@ -3528,3 +3528,77 @@ TEST(AppPackageDriverDiscovery, AppPackageTest) {
     inst.CheckCreate();
 }
 #endif
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+// Check that valid symlinks do not cause the loader to crash when directly in an XDG env-var
+TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
+    FrameworkEnvironment env{true, false};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::none));
+    env.get_test_icd().physical_devices.push_back({});
+    auto driver_path = env.get_icd_manifest_path(0);
+    std::string symlink_name = "symlink_to_driver.json";
+    fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
+    env.get_folder(ManifestLocation::driver_env_var).add_existing_file(symlink_name);
+    int res = symlink(driver_path.c_str(), symlink_path.c_str());
+    ASSERT_EQ(res, 0);
+    set_env_var("XDG_CONFIG_DIRS", symlink_path.str());
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+}
+
+// Check that valid symlinks do not cause the loader to crash
+TEST(ManifestDiscovery, ValidSymlink) {
+    FrameworkEnvironment env{true, false};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::none));
+    env.get_test_icd().physical_devices.push_back({});
+
+    auto driver_path = env.get_icd_manifest_path(0);
+    std::string symlink_name = "symlink_to_driver.json";
+    fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
+    env.get_folder(ManifestLocation::driver_env_var).add_existing_file(symlink_name);
+    int res = symlink(driver_path.c_str(), symlink_path.c_str());
+    ASSERT_EQ(res, 0);
+
+    env.platform_shim->set_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+}
+
+// Check that invalid symlinks do not cause the loader to crash when directly in an XDG env-var
+TEST(ManifestDiscovery, InvalidSymlinkXDGEnvVar) {
+    FrameworkEnvironment env{true, false};
+    std::string symlink_name = "symlink_to_nothing.json";
+    fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
+    fs::path invalid_driver_path = env.get_folder(ManifestLocation::driver).location() / "nothing_here.json";
+    int res = symlink(invalid_driver_path.c_str(), symlink_path.c_str());
+    ASSERT_EQ(res, 0);
+    env.get_folder(ManifestLocation::driver_env_var).add_existing_file(symlink_name);
+
+    set_env_var("XDG_CONFIG_DIRS", symlink_path.str());
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+}
+
+// Check that invalid symlinks do not cause the loader to crash
+TEST(ManifestDiscovery, InvalidSymlink) {
+    FrameworkEnvironment env{true, false};
+    std::string symlink_name = "symlink_to_nothing.json";
+    fs::path symlink_path = env.get_folder(ManifestLocation::driver).location() / symlink_name;
+    fs::path invalid_driver_path = env.get_folder(ManifestLocation::driver_env_var).location() / "nothing_here.json";
+    int res = symlink(invalid_driver_path.c_str(), symlink_path.c_str());
+    ASSERT_EQ(res, 0);
+    env.get_folder(ManifestLocation::driver).add_existing_file(symlink_name);
+
+    env.platform_shim->set_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+}
+#endif

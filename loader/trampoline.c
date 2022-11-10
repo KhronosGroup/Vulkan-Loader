@@ -520,8 +520,10 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     // enabledLayerCount == 0 and VK_INSTANCE_LAYERS is unset. For now always
     // get layer list via loader_scan_for_layers().
     memset(&ptr_instance->instance_layer_list, 0, sizeof(ptr_instance->instance_layer_list));
-    loader_scan_for_layers(ptr_instance, &ptr_instance->instance_layer_list);
-
+    res = loader_scan_for_layers(ptr_instance, &ptr_instance->instance_layer_list);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
     // Validate the app requested layers to be enabled
     if (pCreateInfo->enabledLayerCount > 0) {
         res = loader_validate_layers(ptr_instance, pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames,
