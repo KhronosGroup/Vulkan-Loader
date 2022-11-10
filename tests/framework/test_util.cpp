@@ -471,6 +471,8 @@ path FolderManager::write_manifest(std::string const& name, std::string const& c
     file << contents << std::endl;
     return out_path;
 }
+void FolderManager::add_existing_file(std::string const& file_name) { files.emplace_back(file_name); }
+
 // close file handle, delete file, remove `name` from managed file list.
 void FolderManager::remove(std::string const& name) {
     path out_path = folder / name;
