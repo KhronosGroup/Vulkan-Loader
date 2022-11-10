@@ -381,7 +381,7 @@ if (TARGET asm_offset)
 endif()
 
 # Generate pkg-config file.
-include(FindPkgConfig QUIET)
+find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
     set(VK_API_VERSION "${LOADER_GENERATED_HEADER_VERSION}")
     set(PRIVATE_LIBS "")
