@@ -459,8 +459,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         ptr_instance->app_api_version = LOADER_VERSION_1_0_0;
     } else {
         ptr_instance->app_api_version = loader_make_version(pCreateInfo->pApplicationInfo->apiVersion);
-        // zero out the patch version since we don't actually want to compare with it
-        ptr_instance->app_api_version.patch = 0;
     }
 
     // Look for one or more VK_EXT_debug_report or VK_EXT_debug_utils create info structures
