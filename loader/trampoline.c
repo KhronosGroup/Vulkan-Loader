@@ -511,6 +511,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     if (VK_SUCCESS != res) {
         goto out;
     }
+    // Just in case override_layer_present is required somewhere
+    for (int32_t i = 0; i < (int32_t)ptr_instance->instance_layer_list.count; i++) {
+        if (ptr_instance->instance_layer_list.list[i].is_override) {
+            ptr_instance->override_layer_present = true;
+        }
+    }
 
     // Validate the app requested layers to be enabled
     if (pCreateInfo->enabledLayerCount > 0) {

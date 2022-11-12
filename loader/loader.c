@@ -3561,7 +3561,7 @@ out:
     return res;
 }
 
-VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
+VkResult loader_scan_for_layers(const struct loader_instance *inst, struct loader_layer_list *instance_layers) {
     VkResult res = VK_SUCCESS;
     char *file_str;
     struct loader_data_files manifest_files;
@@ -3697,9 +3697,6 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
 
     if (override_layer_valid) {
         loader_remove_layers_in_blacklist(inst, instance_layers);
-        if (NULL != inst) {
-            inst->override_layer_present = true;
-        }
     }
 
     // Remove disabled layers
