@@ -1800,16 +1800,17 @@ static void verify_all_meta_layers(const struct loader_instance *inst, const str
         struct loader_layer_properties *prop = &instance_layers->list[i];
 
         // If this is a meta-layer, make sure it is valid
-        if ((prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
-            !verify_meta_layer_component_layers(inst, prop, instance_layers)) {
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                       "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
+        if (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            if (!verify_meta_layer_component_layers(inst, prop, instance_layers)) {
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                        "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
 
-            loader_remove_layer_in_list(inst, instance_layers, i);
-            i--;
+                loader_remove_layer_in_list(inst, instance_layers, i);
+                i--;
 
-        } else if (prop->is_override && loader_implicit_layer_is_enabled(inst, enable_filter, disable_filter, prop)) {
-            *override_layer_present = true;
+            } else if (prop->is_override && loader_implicit_layer_is_enabled(inst, enable_filter, disable_filter, prop)) {
+                *override_layer_present = true;
+            }
         }
     }
 }
