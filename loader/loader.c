@@ -1816,7 +1816,7 @@ static void verify_all_meta_layers(const struct loader_instance *inst, const str
 
 // If the current working directory matches any app_key_path of the layers, remove all other override layers.
 // Otherwise if no matching app_key was found, remove all but the global override layer, which has no app_key_path.
-static void remove_all_non_valid_override_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
+static void remove_all_non_valid_override_layers(const struct loader_instance *inst, struct loader_layer_list *instance_layers) {
     if (instance_layers == NULL) {
         return;
     }
