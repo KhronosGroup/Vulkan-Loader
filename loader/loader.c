@@ -1792,7 +1792,7 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
 }
 
 // Verify that all meta-layers in a layer list are valid.
-static void verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
+static void verify_all_meta_layers(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
                                    const struct loader_envvar_disable_layers_filter *disable_filter,
                                    struct loader_layer_list *instance_layers, bool *override_layer_present) {
     *override_layer_present = false;
