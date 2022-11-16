@@ -76,8 +76,10 @@ class MemoryTracker {
     }
 
     void* allocate(size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
-        if (settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) return nullptr;
-        if (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls) return nullptr;
+        if ((settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) ||
+            (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)) {
+            return nullptr;
+        }
         call_count++;
         AllocationDetails detail{size, size + (alignment - 1), alloc_scope};
         auto alloc = std::unique_ptr<char[]>(new char[detail.actual_size_bytes]);
@@ -207,7 +209,7 @@ TEST(Allocation, Instance) {
     MemoryTracker tracker;
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
     }
     ASSERT_TRUE(tracker.empty());
 }
@@ -221,7 +223,7 @@ TEST(Allocation, GetInstanceProcAddr) {
     MemoryTracker tracker;
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         auto* pfnCreateDevice = inst->vkGetInstanceProcAddr(inst, "vkCreateDevice");
         auto* pfnDestroyDevice = inst->vkGetInstanceProcAddr(inst, "vkDestroyDevice");
@@ -241,7 +243,7 @@ TEST(Allocation, EnumeratePhysicalDevices) {
     driver.physical_devices.emplace_back("physical_device_0");
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
@@ -267,7 +269,7 @@ TEST(Allocation, InstanceAndDevice) {
     driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -315,7 +317,7 @@ TEST(Allocation, InstanceButNotDevice) {
         driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -372,7 +374,7 @@ TEST(Allocation, DeviceButNotInstance) {
         driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
         InstWrapper inst{env.vulkan_functions};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -495,7 +497,7 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
     env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
     InstWrapper inst{env.vulkan_functions};
-    inst.CheckCreate();
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
     uint32_t physical_count = 2;
     uint32_t returned_physical_count = 0;
@@ -566,6 +568,15 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
                                                              .set_disable_environment("DISABLE_ENV")),
                                "test_layer_" + std::to_string(i) + ".json");
     }
+    std::fstream custom_json_file{COMPLEX_JSON_FILE, std::ios_base::in};
+    ASSERT_TRUE(custom_json_file.is_open());
+    std::stringstream custom_json_file_contents;
+    custom_json_file_contents << custom_json_file.rdbuf();
+
+    fs::path new_path = env.get_folder(ManifestLocation::explicit_layer)
+                            .write_manifest("VkLayer_complex_file.json", custom_json_file_contents.str());
+    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, new_path);
+
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
