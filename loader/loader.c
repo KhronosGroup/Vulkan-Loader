@@ -3564,7 +3564,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     VkResult res = VK_SUCCESS;
     char *file_str;
     struct loader_data_files manifest_files;
-    cJSON *json;
+    cJSON *json = NULL;
     bool override_layer_valid = false;
     char *override_paths = NULL;
     uint32_t total_count = 0;
@@ -3618,6 +3618,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
 
             // If the error is anything other than out of memory we still want to try to load the other layers
             if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
         }
@@ -3728,7 +3729,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     struct loader_envvar_disable_layers_filter disable_filter;
     char *file_str;
     struct loader_data_files manifest_files;
-    cJSON *json;
+    cJSON *json = NULL;
     bool override_layer_valid = false;
     char *override_paths = NULL;
     bool implicit_metalayer_present = false;
