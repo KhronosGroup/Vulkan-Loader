@@ -6376,12 +6376,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
     res = loader_init_generic_list(inst, (struct loader_generic_list *)&all_exts,
                                    sizeof(VkExtensionProperties) * (icd_ext_count + 20));
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
     }
 
     // Copy over the device extensions into all_exts & deduplicate
     res = loader_add_to_ext_list(inst, &all_exts, icd_ext_count, icd_props_list);
-    if (res != VK_SUCCESS) return res;
+    if (res != VK_SUCCESS) {
+        goto out;
+    }
 
     // Iterate over active layers, if they are an implicit layer, add their device extensions
     for (uint32_t i = 0; i < icd_term->this_instance->expanded_activated_layer_list.count; i++) {

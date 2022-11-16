@@ -111,6 +111,8 @@ class MemoryTracker {
         } else {
             void* new_alloc = allocate(size, alignment, alloc_scope);
             if (new_alloc == nullptr) return nullptr;
+            allocation_count--;  // allocate() increments this, we we don't want that
+            call_count--;        // allocate() also increments this, we don't want that
             memcpy(new_alloc, pOriginal, original_size);
             erase_index(index);
             return new_alloc;
@@ -541,20 +543,29 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
 // leak memory if one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
-
-    const char* layer_name = "VkLayerImplicit0";
+    uint32_t num_physical_devices = 4;
+    uint32_t num_implicit_layers = 3;
+    for (uint32_t i = 0; i < num_physical_devices; i++) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        auto& driver = env.get_test_icd(i);
+        driver.physical_devices.emplace_back("physical_device_0");
+        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+        driver.physical_devices[0].add_extensions({"VK_EXT_one", "VK_EXT_two", "VK_EXT_three", "VK_EXT_four", "VK_EXT_five"});
+    }
+    const char* layer_name = "VK_LAYER_ImplicitAllocFail";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_disable_environment("DISABLE_ENV")),
                            "test_layer.json");
     env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
-
+    for (uint32_t i = 1; i < num_implicit_layers + 1; i++) {
+        env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("VK_LAYER_Implicit1" + std::to_string(i))
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ENV")),
+                               "test_layer_" + std::to_string(i) + ".json");
+    }
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
@@ -568,8 +579,8 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
             ASSERT_TRUE(tracker.empty());
             continue;
         }
+        ASSERT_EQ(result, VK_SUCCESS);
 
-        uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
         result = env.vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, nullptr);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
@@ -577,37 +588,44 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
             ASSERT_TRUE(tracker.empty());
             continue;
         }
-        ASSERT_EQ(physical_count, returned_physical_count);
+        ASSERT_EQ(result, VK_SUCCESS);
+        ASSERT_EQ(num_physical_devices, returned_physical_count);
 
-        VkPhysicalDevice physical_device;
-        result = env.vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, &physical_device);
+        std::vector<VkPhysicalDevice> physical_devices;
+        physical_devices.resize(returned_physical_count);
+        result = env.vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, physical_devices.data());
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
             ASSERT_TRUE(tracker.empty());
             continue;
         }
-        ASSERT_EQ(physical_count, returned_physical_count);
+        ASSERT_EQ(result, VK_SUCCESS);
+        ASSERT_EQ(num_physical_devices, returned_physical_count);
+        for (uint32_t i = 0; i < returned_physical_count; i++) {
+            uint32_t family_count = 1;
+            uint32_t returned_family_count = 0;
+            env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices.at(i), &returned_family_count, nullptr);
+            ASSERT_EQ(returned_family_count, family_count);
 
-        uint32_t family_count = 1;
-        uint32_t returned_family_count = 0;
-        env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
-        ASSERT_EQ(returned_family_count, family_count);
+            VkQueueFamilyProperties family;
+            env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices.at(i), &returned_family_count, &family);
+            ASSERT_EQ(returned_family_count, family_count);
+            ASSERT_EQ(family.queueFlags, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT));
+            ASSERT_EQ(family.queueCount, family_count);
+            ASSERT_EQ(family.timestampValidBits, 0U);
 
-        VkQueueFamilyProperties family;
-        env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
-        ASSERT_EQ(returned_family_count, family_count);
-        ASSERT_EQ(family.queueFlags, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT));
-        ASSERT_EQ(family.queueCount, family_count);
-        ASSERT_EQ(family.timestampValidBits, 0U);
+            DeviceCreateInfo dev_create_info;
+            DeviceQueueCreateInfo queue_info;
+            queue_info.add_priority(0.0f);
+            dev_create_info.add_device_queue(queue_info);
 
-        DeviceCreateInfo dev_create_info;
-        DeviceQueueCreateInfo queue_info;
-        queue_info.add_priority(0.0f);
-        dev_create_info.add_device_queue(queue_info);
+            VkDevice device;
+            result = env.vulkan_functions.vkCreateDevice(physical_devices.at(i), dev_create_info.get(), tracker.get(), &device);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                break;
+            }
+            ASSERT_EQ(result, VK_SUCCESS);
 
-        VkDevice device;
-        result = env.vulkan_functions.vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device);
-        if (result == VK_SUCCESS) {
             env.vulkan_functions.vkDestroyDevice(device, tracker.get());
         }
         env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
