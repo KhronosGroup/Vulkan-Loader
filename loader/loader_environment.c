@@ -522,10 +522,14 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
 
         // If not a meta-layer, simply add it.
         if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            loader_add_layer_properties_to_list(inst, target_list, 1, source_prop);
-            loader_add_layer_properties_to_list(inst, expanded_target_list, 1, source_prop);
+            res = loader_add_layer_properties_to_list(inst, target_list, 1, source_prop);
+            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+            res = loader_add_layer_properties_to_list(inst, expanded_target_list, 1, source_prop);
+            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         } else {
-            loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list, expanded_target_list, source_list);
+            res = loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list, expanded_target_list,
+                                        source_list, NULL);
+            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
     }
 

@@ -104,10 +104,11 @@ bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const s
 VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_layer_list *list,
                                              uint32_t prop_list_count, const struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
-bool loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                           const struct loader_envvar_disable_layers_filter *disable_filter,
-                           const struct loader_layer_properties *prop, struct loader_layer_list *target_list,
-                           struct loader_layer_list *expanded_target_list, const struct loader_layer_list *source_list);
+VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
+                               const struct loader_envvar_disable_layers_filter *disable_filter,
+                               const struct loader_layer_properties *prop, struct loader_layer_list *target_list,
+                               struct loader_layer_list *expanded_target_list, const struct loader_layer_list *source_list,
+                               bool *out_found_all_component_layers);
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props);
 VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct loader_device_extension_list *ext_list,
