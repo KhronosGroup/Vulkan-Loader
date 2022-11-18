@@ -285,6 +285,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     set_env_var("HOME", HOME.str());
     std::string vk_layer_path = ":/tmp/carol::::/:";
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
+    vk_layer_path += "/tmp/evan/1.json:/tmp/evan/2.json";
     set_env_var("VK_LAYER_PATH", vk_layer_path);
     EnvVarCleaner layer_path_cleaner("VK_LAYER_PATH");
     InstWrapper inst1{env.vulkan_functions};
@@ -296,6 +297,8 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
     EXPECT_TRUE(env.debug_log.find("/tandy"));
     EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/").str()));
+    EXPECT_TRUE(env.debug_log.find("/tmp/evan/1.json"));
+    EXPECT_TRUE(env.debug_log.find("/tmp/evan/2.json"));
 
     env.debug_log.clear();
 
