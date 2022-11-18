@@ -471,7 +471,7 @@ This can be accomplished in one of two ways:
  1. Selecting specific layer paths using the
 [VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
 tool shipped with the Vulkan SDK.
- 2. Directing the loader to look for layers in specific folders by using the
+ 2. Directing the loader to look for layers in specific files and/or folders by using the
 `VK_LAYER_PATH` environment variable.
 
 The `VK_LAYER_PATH` environment variable can contain multiple paths separated by
@@ -479,7 +479,7 @@ the operating-system specific path separator.
 On Windows, this is a semicolon (`;`), while on Linux and macOS it is a colon
 (`:`).
 
-If `VK_LAYER_PATH` exists, the folders listed in it will be scanned for explicit
+If `VK_LAYER_PATH` exists, the files and/or folders listed will be scanned for explicit
 layer manifest files.
 Implicit layer discovery is unaffected by this environment variable.
 Each directory listed should be the full pathname of a folder containing layer
