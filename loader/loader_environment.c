@@ -100,7 +100,7 @@ bool is_high_integrity() {
             const DWORD integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
 
             CloseHandle(process_token);
-            return integrity_level > SECURITY_MANDATORY_MEDIUM_RID;
+            return integrity_level >= SECURITY_MANDATORY_HIGH_RID;
         }
 
         CloseHandle(process_token);
