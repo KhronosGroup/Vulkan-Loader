@@ -1035,6 +1035,7 @@ TEST(MetaLayers, ExplicitMetaLayer) {
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_test_layer.json");
+
     {  // global functions
         // should find 1, the 'regular' layer
         uint32_t layer_count = 0;
@@ -1075,6 +1076,23 @@ TEST(MetaLayers, ExplicitMetaLayer) {
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
         ASSERT_EQ(count, 2U);
         EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
+    }
+    { 
+        const char* env_var_layer_name = "meta_test_layer.json:regular_test_layer.json";
+        env.add_explicit_layer(TestLayerDetails{ManifestLayer{}
+                                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                                .add_layer(ManifestLayer::LayerDescription{}
+                                                               .set_name(env_var_layer_name)
+                                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
+                                            env_var_layer_name}
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
+        InstWrapper inst(env.vulkan_functions);
+        inst.CheckCreate(VK_SUCCESS);
+        inst.create_info.add_layer(env_var_layer_name);
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
+        ASSERT_EQ(count, 1U);
     }
 }
 
