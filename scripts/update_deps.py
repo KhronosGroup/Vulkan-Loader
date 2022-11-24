@@ -454,8 +454,8 @@ class GoodRepo(object):
                     install_dir=dep_commit[0].install_dir))
 
         # Add any CMake options
-        for option in self.cmake_options:
-            cmake_cmd.append(escape(option.format(**self.__dict__)))
+        if self.cmake_options:
+            cmake_cmd.append(escape(self.cmake_options.format(**self.__dict__)))
 
         # Set build config for single-configuration generators
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
