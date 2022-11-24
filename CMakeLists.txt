@@ -29,6 +29,9 @@ project(Vulkan-Loader)
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS API_NAME="Vulkan")
 
+#Added support for VulkanSC Mode from the command line
+set(VulkanSC FALSE CACHE BOOL "User defined variable for VulkanSC Mode to be passed in through cmake command line e.g. -DVulkanSC=TRUE")
+
 # Enable beta Vulkan extensions
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 
