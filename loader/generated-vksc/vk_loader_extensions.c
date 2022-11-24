@@ -2288,5 +2288,6 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
                                                   VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME,
                                                   VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
+                                                  VK_EXT_APPLICATION_PARAMETERS_EXTENSION_NAME,
                                                   NULL };
 

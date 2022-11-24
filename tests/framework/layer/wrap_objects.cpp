@@ -25,7 +25,11 @@
 #include <memory>
 
 #include "vulkan/vk_layer.h"
+#if defined(VULKANSC)
+#include "loader/generated-vksc/vk_dispatch_table_helper.h"
+#else
 #include "loader/generated/vk_dispatch_table_helper.h"
+#endif
 #include "loader/vk_loader_layer.h"
 
 #if !defined(VK_LAYER_EXPORT)

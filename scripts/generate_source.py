@@ -41,6 +41,7 @@ def main(argv):
 
     vksc_filenames =['vk_loader_extensions.h',
                      'vk_loader_extensions.c',
+                     'vk_dispatch_table_helper.h',
                      'vk_layer_dispatch_table.h',
                      'loader_generated_header_version.cmake']
 

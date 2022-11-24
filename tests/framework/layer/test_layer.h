@@ -31,7 +31,11 @@
 
 #include "layer/layer_util.h"
 
+#if defined(VULKANSC)
+#include "loader/generated-vksc/vk_layer_dispatch_table.h"
+#else
 #include "loader/generated/vk_layer_dispatch_table.h"
+#endif
 
 /*
 Interface Version 0
@@ -90,12 +94,12 @@ using FP_layer_callback = VkResult (*)(TestLayer& layer, void* data);
 
 struct TestLayer {
     fs::path manifest_file_path;
-    uint32_t manifest_version = VK_MAKE_VERSION(1, 1, 2);
+    uint32_t manifest_version = VK_MAKE_API_VERSION(0, 1, 1, 2);
 
     bool is_meta_layer = false;
 
     std::string unique_name;
-    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
+    uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
     uint32_t implementation_version = 2;
     uint32_t min_implementation_version = 0;
     std::string description;

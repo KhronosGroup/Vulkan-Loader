@@ -150,7 +150,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceLayerProperties(uint32_t*
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
     if (pApiVersion != nullptr) {
-        *pApiVersion = VK_MAKE_VERSION(1, 0, 0);
+        *pApiVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
     }
     return VK_SUCCESS;
 }
@@ -161,8 +161,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    if (icd.icd_api_version < VK_MAKE_VERSION(1, 1, 0)) {
-        if (pCreateInfo->pApplicationInfo->apiVersion > VK_MAKE_VERSION(1, 0, 0)) {
+    if (icd.icd_api_version < VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        if (pCreateInfo->pApplicationInfo->apiVersion > VK_MAKE_API_VERSION(0, 1, 0, 0)) {
             return VK_ERROR_INCOMPATIBLE_DRIVER;
         }
     }
@@ -382,11 +382,13 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice p
                                                               VkPhysicalDeviceProperties* pProperties) {}
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                                     VkPhysicalDeviceMemoryProperties* pMemoryProperties) {}
+#if !defined(VULKANSC)
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                                VkImageType type, VkSampleCountFlagBits samples,
                                                                                VkImageUsageFlags usage, VkImageTiling tiling,
                                                                                uint32_t* pPropertyCount,
                                                                                VkSparseImageFormatProperties* pProperties) {}
+#endif
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                     VkFormatProperties* pFormatProperties) {}
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
@@ -405,9 +407,11 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties2(VkPhysicalD
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) {}
+#if !defined(VULKANSC)
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
     VkSparseImageFormatProperties2* pProperties) {}
+#endif
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                      VkFormatProperties2* pFormatProperties) {}
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties2(
@@ -421,7 +425,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties2(
 #define TO_VOID_PFN(func) reinterpret_cast<PFN_vkVoidFunction>(func)
 
 PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pName) {
-    if (icd.icd_api_version >= VK_MAKE_VERSION(1, 1, 0)) {
+    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
         if (string_eq(pName, "test_vkEnumerateInstanceVersion")) {
             return TO_VOID_PFN(test_vkEnumerateInstanceVersion);
         }
@@ -429,7 +433,7 @@ PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pN
     return nullptr;
 }
 PFN_vkVoidFunction get_instance_func_ver_1_2(VkInstance instance, const char* pName) {
-    if (icd.icd_api_version >= VK_MAKE_VERSION(1, 2, 0)) {
+    if (icd.icd_api_version >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
         return nullptr;
     }
     return nullptr;
@@ -498,8 +502,10 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
     if (string_eq(pName, "vkGetPhysicalDeviceFeatures")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFeatures);
     if (string_eq(pName, "vkGetPhysicalDeviceProperties")) return TO_VOID_PFN(test_vkGetPhysicalDeviceProperties);
     if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties")) return TO_VOID_PFN(test_vkGetPhysicalDeviceMemoryProperties);
+#if !defined(VULKANSC)
     if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties"))
         return TO_VOID_PFN(test_vkGetPhysicalDeviceSparseImageFormatProperties);
+#endif
     if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties")) return TO_VOID_PFN(test_vkGetPhysicalDeviceFormatProperties);
     if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties"))
         return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties);
@@ -514,8 +520,10 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
         if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyProperties2"))
             return TO_VOID_PFN(test_vkGetPhysicalDeviceQueueFamilyProperties2);
 
+#if !defined(VULKANSC)
         if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties2"))
             return TO_VOID_PFN(test_vkGetPhysicalDeviceSparseImageFormatProperties2);
+#endif
 
         if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties2")) {
             return TO_VOID_PFN(test_vkGetPhysicalDeviceImageFormatProperties2);

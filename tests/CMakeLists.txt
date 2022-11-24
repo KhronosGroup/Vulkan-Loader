@@ -68,4 +68,6 @@ if(WIN32)
 endif()
 
 # must happen after the dll's get copied over
-gtest_discover_tests(test_regression)
+if(NOT CMAKE_CROSSCOMPILING)
+    gtest_discover_tests(test_regression)
+endif()

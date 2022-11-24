@@ -33,7 +33,7 @@
 class ThreadingTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
-        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_VERSION(1, 0, 0))));
+        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 0, 0))));
     }
 
     virtual void TearDown() { env.reset(); }

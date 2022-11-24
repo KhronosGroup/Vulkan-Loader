@@ -290,16 +290,16 @@ struct TestLayerHandle {
 };
 
 struct TestICDDetails {
-    TestICDDetails(const char* icd_path, uint32_t api_version = VK_MAKE_VERSION(1, 0, 0)) noexcept
+    TestICDDetails(const char* icd_path, uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0)) noexcept
         : icd_path(icd_path), api_version(api_version) {}
     const char* icd_path = nullptr;
-    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
+    uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
 };
 struct TestLayerDetails {
-    TestLayerDetails(const char* layer_path, uint32_t api_version = VK_MAKE_VERSION(1, 0, 0)) noexcept
+    TestLayerDetails(const char* layer_path, uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0)) noexcept
         : layer_path(layer_path), api_version(api_version) {}
     const char* layer_path = nullptr;
-    uint32_t api_version = VK_MAKE_VERSION(1, 0, 0);
+    uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
 };
 
 struct FrameworkEnvironment {

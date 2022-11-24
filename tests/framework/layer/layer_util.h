@@ -31,13 +31,13 @@
 
 struct LayerDefinition {
     std::string layerName;
-    uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0);
-    uint32_t implementationVersion = VK_MAKE_VERSION(1, 0, 0);
+    uint32_t specVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+    uint32_t implementationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
     std::string description;
     std::vector<Extension> extensions;
 
-    LayerDefinition(std::string layerName, uint32_t specVersion = VK_MAKE_VERSION(1, 0, 0),
-                    uint32_t implementationVersion = VK_MAKE_VERSION(1, 0, 0), std::string description = "",
+    LayerDefinition(std::string layerName, uint32_t specVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
+                    uint32_t implementationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0), std::string description = "",
                     std::vector<Extension> extensions = {})
         : layerName(layerName),
           specVersion(specVersion),

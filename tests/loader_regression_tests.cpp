@@ -37,7 +37,7 @@
 class RegressionTests : public ::testing::Test {
    protected:
     virtual void SetUp() {
-        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_VERSION(1, 0, 0))));
+        env = std::unique_ptr<SingleICDShim>(new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_MAKE_API_VERSION(0, 1, 0, 0))));
     }
 
     virtual void TearDown() { env.reset(); }
@@ -582,6 +582,7 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     inst.CheckCreate();
 }
 
+#if !defined(VULKANSC)
 TEST_F(EnumeratePhysicalDeviceGroups, OneCall) {
     auto& driver = env->get_test_icd().SetMinICDInterfaceVersion(5);
     // ICD contains 2 devices
@@ -756,6 +757,7 @@ TEST_F(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         handle_assert_no_values(returned_group_count, group_props.physicalDevices);
     }
 }
+#endif
 
 #if defined(__linux__) || defined(__FreeBSD__)
 // Make sure the loader reports the correct message based on if USE_UNSAFE_FILE_SEARCH is set or not
