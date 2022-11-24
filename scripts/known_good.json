@@ -14,8 +14,10 @@
             "sub_dir" : "VulkanSC-Headers",
             "build_dir" : "VulkanSC-Headers/build",
             "install_dir" : "VulkanSC-Headers/build/install",
-            "commit" : "sc_main",
-            "cmake_options" : "-DVulkanSC=TRUE"
+            "cmake_options" : [
+              "-DVulkanSC=TRUE"
+            ],
+            "commit" : "sc_main"
         },
         {
             "name": "googletest",
