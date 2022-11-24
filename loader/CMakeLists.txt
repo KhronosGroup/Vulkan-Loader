@@ -21,10 +21,12 @@ if(VulkanSC)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated-vksc ${CMAKE_CURRENT_BINARY_DIR})
     # Get version of the API the generated code used and put it into a cmake variable LOADER_GENERATED_HEADER_VERSION
     include(generated-vksc/loader_generated_header_version.cmake)
+    set(SONAME "vulkansc")
 else()
     include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
     # Get version of the API the generated code used and put it into a cmake variable LOADER_GENERATED_HEADER_VERSION
     include(generated/loader_generated_header_version.cmake)
+    set(SONAME "vulkan")
 endif()
 
 
@@ -276,45 +278,35 @@ if(WIN32)
     target_compile_options(loader-opt PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
     target_include_directories(loader-opt PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
 
-    if(VulkanSC)
-    add_library(vulkan
+    add_library(${SONAME}
                 SHARED
                 $<TARGET_OBJECTS:loader-opt>
                 $<TARGET_OBJECTS:loader-norm>
                 $<TARGET_OBJECTS:loader-unknown-chain>
-                ${CMAKE_CURRENT_SOURCE_DIR}/vulkansc-1.def
+                ${CMAKE_CURRENT_SOURCE_DIR}/${SONAME}-1.def
                 ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
-    else()
-    add_library(vulkan
-                SHARED
-                $<TARGET_OBJECTS:loader-opt>
-                $<TARGET_OBJECTS:loader-norm>
-                $<TARGET_OBJECTS:loader-unknown-chain>
-                ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
-                ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
-    endif()
 
     if (UPDATE_DEPS)
-        add_dependencies(vulkan vl_update_deps)
+        add_dependencies(SONAME vl_update_deps)
     endif()
 
     # when adding the suffix the import and runtime library names must be consistent
     # mingw: libvulkan-1.dll.a / libvulkan-1.dll
     # msvc: vulkan-1.lib / vulkan-1.dll
-    set_target_properties(vulkan
+    set_target_properties(${SONAME}
                           PROPERTIES
-                          OUTPUT_NAME vulkan-1)
+                          OUTPUT_NAME ${SONAME}-1)
 
-    target_link_libraries(vulkan Vulkan::Headers)
+    target_link_libraries(${SONAME} Vulkan::Headers)
 
     if(MSVC AND ENABLE_WIN10_ONECORE)
-        target_link_libraries(vulkan OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
-        set_target_properties(vulkan PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
+        target_link_libraries(${SONAME} OneCoreUAP.lib LIBCMT.LIB LIBCMTD.LIB LIBVCRUNTIME.LIB LIBUCRT.LIB)
+        set_target_properties(${SONAME} PROPERTIES LINK_FLAGS "/NODEFAULTLIB")
     else()
-        target_link_libraries(vulkan cfgmgr32)
+        target_link_libraries(${SONAME} cfgmgr32)
     endif()
 
-    add_dependencies(vulkan loader_asm_gen_files)
+    add_dependencies(${SONAME} loader_asm_gen_files)
 
 else()
     # Linux and MacOS
@@ -327,34 +319,34 @@ else()
     endif()
 
     if(APPLE AND BUILD_STATIC_LOADER)
-        add_library(vulkan STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+        add_library(${SONAME} STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     else()
-        add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+        add_library(${SONAME} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     endif()
-    add_dependencies(vulkan loader_asm_gen_files)
+    add_dependencies(${SONAME} loader_asm_gen_files)
     # set version based on LOADER_GENERATED_HEADER_VERSION used to generate the code
-    set_target_properties(vulkan
+    set_target_properties(${SONAME}
                           PROPERTIES SOVERSION "1"
                           VERSION ${LOADER_GENERATED_HEADER_VERSION})
-    target_link_libraries(vulkan ${CMAKE_DL_LIBS} m)
+    target_link_libraries(${SONAME} ${CMAKE_DL_LIBS} m)
     if(NOT ANDROID)
       # On QNX pthread is part of libc only and there is no separate lib for pthread
       if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "QNX"))
-        target_link_libraries(vulkan pthread)
+        target_link_libraries(${SONAME} pthread)
       else()
-        target_link_libraries(vulkan)
+        target_link_libraries(${SONAME})
       endif()
     endif()
-    target_link_libraries(vulkan Vulkan::Headers)
+    target_link_libraries(${SONAME} Vulkan::Headers)
     # Used to make alloca() and secure_getenv() available
-    target_compile_definitions(vulkan PRIVATE _GNU_SOURCE)
+    target_compile_definitions(${SONAME} PRIVATE _GNU_SOURCE)
     if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-        target_compile_definitions(vulkan PRIVATE __BSD_VISIBLE=1)
+        target_compile_definitions(${SONAME} PRIVATE __BSD_VISIBLE=1)
         target_compile_definitions(asm_offset PRIVATE __BSD_VISIBLE=1)
     endif()
     if(APPLE)
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
-        target_link_libraries(vulkan "-framework CoreFoundation")
+        target_link_libraries(${SONAME} "-framework CoreFoundation")
 
         # Build vulkan.framework
         set(FRAMEWORK_HEADERS
@@ -391,7 +383,7 @@ else()
 
 # cmake-format: off
         set_target_properties(vulkan-framework PROPERTIES
-            OUTPUT_NAME vulkan
+            OUTPUT_NAME ${SONAME}
             FRAMEWORK TRUE
             FRAMEWORK_VERSION A
             VERSION "${LOADER_GENERATED_HEADER_VERSION}" # "current version"
@@ -407,7 +399,7 @@ else()
     endif()
 
     if(NOT APPLE)
-        target_compile_definitions(vulkan PRIVATE _XOPEN_SOURCE=500) # hush compiler warnings for readlink
+        target_compile_definitions(${SONAME} PRIVATE _XOPEN_SOURCE=500) # hush compiler warnings for readlink
     endif()
 endif()
 
@@ -431,13 +423,13 @@ if(PKG_CONFIG_FOUND)
         set(CMAKE_INSTALL_FULL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
     endif ()
     configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/" RENAME "${SONAME}.pc")
 endif()
 
-target_link_libraries(vulkan Vulkan::Headers)
-add_library(Vulkan::Vulkan ALIAS vulkan)
+target_link_libraries(${SONAME} Vulkan::Headers)
+add_library(Vulkan::Vulkan ALIAS ${SONAME})
 
-install(TARGETS vulkan
+install(TARGETS ${SONAME}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

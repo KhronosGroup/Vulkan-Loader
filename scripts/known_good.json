@@ -10,11 +10,11 @@
         },
         {
             "name" : "VulkanSC-Headers",
-            "url" : "https://gitlab.khronos.org/vulkan/Vulkan-Headers.git",
+            "url" : "https://github.com/KhronosGroup/Vulkan-Headers.git",
             "sub_dir" : "VulkanSC-Headers",
             "build_dir" : "VulkanSC-Headers/build",
             "install_dir" : "VulkanSC-Headers/build/install",
-            "commit" : "sc_main_1.2.198"
+            "commit" : "sc_main"
         },
         {
             "name": "googletest",
