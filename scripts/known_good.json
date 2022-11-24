@@ -17,7 +17,7 @@
             "cmake_options" : [
               "-DVulkanSC=TRUE"
             ],
-            "commit" : "sc_main"
+            "commit" : "vksc1.0.10"
         },
         {
             "name": "googletest",

@@ -290,6 +290,19 @@ struct loader_icd_term_dispatch {
 
     // ---- VK_EXT_headless_surface extension commands
     PFN_vkCreateHeadlessSurfaceEXT CreateHeadlessSurfaceEXT;
+
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetPhysicalDeviceSciSyncAttributesNV GetPhysicalDeviceSciSyncAttributesNV;
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV GetPhysicalDeviceExternalMemorySciBufPropertiesNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetPhysicalDeviceSciBufAttributesNV GetPhysicalDeviceSciBufAttributesNV;
+#endif // VK_USE_PLATFORM_SCI
 };
 
 union loader_instance_extension_enables {

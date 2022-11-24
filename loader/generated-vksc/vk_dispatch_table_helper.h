@@ -86,6 +86,27 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBoundsTestEnableEXT(VkCommandBu
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {  };
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetFenceSciSyncFenceNV(VkDevice device, const VkFenceGetSciSyncInfoNV* pGetSciSyncHandleInfo, void* pHandle) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetFenceSciSyncObjNV(VkDevice device, const VkFenceGetSciSyncInfoNV* pGetSciSyncHandleInfo, void* pHandle) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubImportFenceSciSyncFenceNV(VkDevice device, const VkImportFenceSciSyncInfoNV* pImportFenceSciSyncInfo) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubImportFenceSciSyncObjNV(VkDevice device, const VkImportFenceSciSyncInfoNV* pImportFenceSciSyncInfo) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetSemaphoreSciSyncObjNV(VkDevice device, const VkSemaphoreGetSciSyncInfoNV* pGetSciSyncInfo, void* pHandle) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubImportSemaphoreSciSyncObjNV(VkDevice device, const VkImportSemaphoreSciSyncInfoNV* pImportSemaphoreSciSyncInfo) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemorySciBufNV(VkDevice device, const VkMemoryGetSciBufInfoNV* pGetSciBufInfo, NvSciBufObj* pHandle) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {  };
@@ -357,6 +378,34 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CmdSetStencilOpEXT == nullptr) { table->CmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)StubCmdSetStencilOpEXT; }
     table->CmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT) gpa(device, "vkCmdSetVertexInputEXT");
     if (table->CmdSetVertexInputEXT == nullptr) { table->CmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)StubCmdSetVertexInputEXT; }
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetFenceSciSyncFenceNV = (PFN_vkGetFenceSciSyncFenceNV) gpa(device, "vkGetFenceSciSyncFenceNV");
+    if (table->GetFenceSciSyncFenceNV == nullptr) { table->GetFenceSciSyncFenceNV = (PFN_vkGetFenceSciSyncFenceNV)StubGetFenceSciSyncFenceNV; }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetFenceSciSyncObjNV = (PFN_vkGetFenceSciSyncObjNV) gpa(device, "vkGetFenceSciSyncObjNV");
+    if (table->GetFenceSciSyncObjNV == nullptr) { table->GetFenceSciSyncObjNV = (PFN_vkGetFenceSciSyncObjNV)StubGetFenceSciSyncObjNV; }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->ImportFenceSciSyncFenceNV = (PFN_vkImportFenceSciSyncFenceNV) gpa(device, "vkImportFenceSciSyncFenceNV");
+    if (table->ImportFenceSciSyncFenceNV == nullptr) { table->ImportFenceSciSyncFenceNV = (PFN_vkImportFenceSciSyncFenceNV)StubImportFenceSciSyncFenceNV; }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->ImportFenceSciSyncObjNV = (PFN_vkImportFenceSciSyncObjNV) gpa(device, "vkImportFenceSciSyncObjNV");
+    if (table->ImportFenceSciSyncObjNV == nullptr) { table->ImportFenceSciSyncObjNV = (PFN_vkImportFenceSciSyncObjNV)StubImportFenceSciSyncObjNV; }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetSemaphoreSciSyncObjNV = (PFN_vkGetSemaphoreSciSyncObjNV) gpa(device, "vkGetSemaphoreSciSyncObjNV");
+    if (table->GetSemaphoreSciSyncObjNV == nullptr) { table->GetSemaphoreSciSyncObjNV = (PFN_vkGetSemaphoreSciSyncObjNV)StubGetSemaphoreSciSyncObjNV; }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->ImportSemaphoreSciSyncObjNV = (PFN_vkImportSemaphoreSciSyncObjNV) gpa(device, "vkImportSemaphoreSciSyncObjNV");
+    if (table->ImportSemaphoreSciSyncObjNV == nullptr) { table->ImportSemaphoreSciSyncObjNV = (PFN_vkImportSemaphoreSciSyncObjNV)StubImportSemaphoreSciSyncObjNV; }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetMemorySciBufNV = (PFN_vkGetMemorySciBufNV) gpa(device, "vkGetMemorySciBufNV");
+    if (table->GetMemorySciBufNV == nullptr) { table->GetMemorySciBufNV = (PFN_vkGetMemorySciBufNV)StubGetMemorySciBufNV; }
+#endif // VK_USE_PLATFORM_SCI
     table->CmdSetPatchControlPointsEXT = (PFN_vkCmdSetPatchControlPointsEXT) gpa(device, "vkCmdSetPatchControlPointsEXT");
     if (table->CmdSetPatchControlPointsEXT == nullptr) { table->CmdSetPatchControlPointsEXT = (PFN_vkCmdSetPatchControlPointsEXT)StubCmdSetPatchControlPointsEXT; }
     table->CmdSetRasterizerDiscardEnableEXT = (PFN_vkCmdSetRasterizerDiscardEnableEXT) gpa(device, "vkCmdSetRasterizerDiscardEnableEXT");
@@ -427,4 +476,13 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     table->GetPhysicalDeviceMultisamplePropertiesEXT = (PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT) gpa(instance, "vkGetPhysicalDeviceMultisamplePropertiesEXT");
     table->GetPhysicalDeviceCalibrateableTimeDomainsEXT = (PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT) gpa(instance, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT");
     table->CreateHeadlessSurfaceEXT = (PFN_vkCreateHeadlessSurfaceEXT) gpa(instance, "vkCreateHeadlessSurfaceEXT");
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetPhysicalDeviceSciSyncAttributesNV = (PFN_vkGetPhysicalDeviceSciSyncAttributesNV) gpa(instance, "vkGetPhysicalDeviceSciSyncAttributesNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetPhysicalDeviceExternalMemorySciBufPropertiesNV = (PFN_vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV) gpa(instance, "vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetPhysicalDeviceSciBufAttributesNV = (PFN_vkGetPhysicalDeviceSciBufAttributesNV) gpa(instance, "vkGetPhysicalDeviceSciBufAttributesNV");
+#endif // VK_USE_PLATFORM_SCI
 }

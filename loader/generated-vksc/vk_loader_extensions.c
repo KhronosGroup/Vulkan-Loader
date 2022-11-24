@@ -157,6 +157,19 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     // ---- VK_EXT_headless_surface extension commands
     LOOKUP_GIPA(CreateHeadlessSurfaceEXT, false);
 
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    LOOKUP_GIPA(GetPhysicalDeviceSciSyncAttributesNV, false);
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    LOOKUP_GIPA(GetPhysicalDeviceExternalMemorySciBufPropertiesNV, false);
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    LOOKUP_GIPA(GetPhysicalDeviceSciBufAttributesNV, false);
+#endif // VK_USE_PLATFORM_SCI
+
 #undef LOOKUP_GIPA
 
     return true;
@@ -431,6 +444,31 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     table->CmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)gdpa(dev, "vkCmdSetVertexInputEXT");
 
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetFenceSciSyncFenceNV = (PFN_vkGetFenceSciSyncFenceNV)gdpa(dev, "vkGetFenceSciSyncFenceNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetFenceSciSyncObjNV = (PFN_vkGetFenceSciSyncObjNV)gdpa(dev, "vkGetFenceSciSyncObjNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->ImportFenceSciSyncFenceNV = (PFN_vkImportFenceSciSyncFenceNV)gdpa(dev, "vkImportFenceSciSyncFenceNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->ImportFenceSciSyncObjNV = (PFN_vkImportFenceSciSyncObjNV)gdpa(dev, "vkImportFenceSciSyncObjNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetSemaphoreSciSyncObjNV = (PFN_vkGetSemaphoreSciSyncObjNV)gdpa(dev, "vkGetSemaphoreSciSyncObjNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->ImportSemaphoreSciSyncObjNV = (PFN_vkImportSemaphoreSciSyncObjNV)gdpa(dev, "vkImportSemaphoreSciSyncObjNV");
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetMemorySciBufNV = (PFN_vkGetMemorySciBufNV)gdpa(dev, "vkGetMemorySciBufNV");
+#endif // VK_USE_PLATFORM_SCI
+
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     table->CmdSetPatchControlPointsEXT = (PFN_vkCmdSetPatchControlPointsEXT)gdpa(dev, "vkCmdSetPatchControlPointsEXT");
     table->CmdSetRasterizerDiscardEnableEXT = (PFN_vkCmdSetRasterizerDiscardEnableEXT)gdpa(dev, "vkCmdSetRasterizerDiscardEnableEXT");
@@ -534,6 +572,19 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_EXT_headless_surface extension commands
     table->CreateHeadlessSurfaceEXT = (PFN_vkCreateHeadlessSurfaceEXT)gpa(inst, "vkCreateHeadlessSurfaceEXT");
+
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetPhysicalDeviceSciSyncAttributesNV = (PFN_vkGetPhysicalDeviceSciSyncAttributesNV)gpa(inst, "vkGetPhysicalDeviceSciSyncAttributesNV");
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetPhysicalDeviceExternalMemorySciBufPropertiesNV = (PFN_vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV)gpa(inst, "vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->GetPhysicalDeviceSciBufAttributesNV = (PFN_vkGetPhysicalDeviceSciBufAttributesNV)gpa(inst, "vkGetPhysicalDeviceSciBufAttributesNV");
+#endif // VK_USE_PLATFORM_SCI
 }
 
 // Device command lookup function
@@ -796,6 +847,31 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     if (!strcmp(name, "CmdSetVertexInputEXT")) return (void *)table->CmdSetVertexInputEXT;
 
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "GetFenceSciSyncFenceNV")) return (void *)table->GetFenceSciSyncFenceNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "GetFenceSciSyncObjNV")) return (void *)table->GetFenceSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "ImportFenceSciSyncFenceNV")) return (void *)table->ImportFenceSciSyncFenceNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "ImportFenceSciSyncObjNV")) return (void *)table->ImportFenceSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "GetSemaphoreSciSyncObjNV")) return (void *)table->GetSemaphoreSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "ImportSemaphoreSciSyncObjNV")) return (void *)table->ImportSemaphoreSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "GetMemorySciBufNV")) return (void *)table->GetMemorySciBufNV;
+#endif // VK_USE_PLATFORM_SCI
+
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     if (!strcmp(name, "CmdSetPatchControlPointsEXT")) return (void *)table->CmdSetPatchControlPointsEXT;
     if (!strcmp(name, "CmdSetRasterizerDiscardEnableEXT")) return (void *)table->CmdSetRasterizerDiscardEnableEXT;
@@ -903,6 +979,19 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_EXT_headless_surface extension commands
     if (!strcmp(name, "CreateHeadlessSurfaceEXT")) return (void *)table->CreateHeadlessSurfaceEXT;
+
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "GetPhysicalDeviceSciSyncAttributesNV")) return (void *)table->GetPhysicalDeviceSciSyncAttributesNV;
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "GetPhysicalDeviceExternalMemorySciBufPropertiesNV")) return (void *)table->GetPhysicalDeviceExternalMemorySciBufPropertiesNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "GetPhysicalDeviceSciBufAttributesNV")) return (void *)table->GetPhysicalDeviceSciBufAttributesNV;
+#endif // VK_USE_PLATFORM_SCI
 
     *found_name = false;
     return NULL;
@@ -1712,6 +1801,154 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(
 }
 
 
+// ---- VK_NV_external_sci_sync extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL GetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetFenceSciSyncFenceNV(device, pGetSciSyncHandleInfo, pHandle);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL GetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetFenceSciSyncObjNV(device, pGetSciSyncHandleInfo, pHandle);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL ImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->ImportFenceSciSyncFenceNV(device, pImportFenceSciSyncInfo);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL ImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->ImportFenceSciSyncObjNV(device, pImportFenceSciSyncInfo);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSciSyncAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkSciSyncAttributesInfoNV*            pSciSyncAttributesInfo,
+    NvSciSyncAttrList                           pAttributes) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceSciSyncAttributesNV(unwrapped_phys_dev, pSciSyncAttributesInfo, pAttributes);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSciSyncAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkSciSyncAttributesInfoNV*            pSciSyncAttributesInfo,
+    NvSciSyncAttrList                           pAttributes) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceSciSyncAttributesNV) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSciSyncAttributesNV");
+    }
+    return icd_term->dispatch.GetPhysicalDeviceSciSyncAttributesNV(phys_dev_term->phys_dev, pSciSyncAttributesInfo, pAttributes);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetSemaphoreSciSyncObjNV(device, pGetSciSyncInfo, pHandle);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->ImportSemaphoreSciSyncObjNV(device, pImportSemaphoreSciSyncInfo);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+
+// ---- VK_NV_external_memory_sci_buf extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL GetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetMemorySciBufNV(device, pGetSciBufInfo, pHandle);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalMemorySciBufPropertiesNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    NvSciBufObj                                 handle,
+    VkMemorySciBufPropertiesNV*                 pMemorySciBufProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceExternalMemorySciBufPropertiesNV(unwrapped_phys_dev, handleType, handle, pMemorySciBufProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceExternalMemorySciBufPropertiesNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    NvSciBufObj                                 handle,
+    VkMemorySciBufPropertiesNV*                 pMemorySciBufProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceExternalMemorySciBufPropertiesNV) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceExternalMemorySciBufPropertiesNV");
+    }
+    return icd_term->dispatch.GetPhysicalDeviceExternalMemorySciBufPropertiesNV(phys_dev_term->phys_dev, handleType, handle, pMemorySciBufProperties);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSciBufAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    NvSciBufAttrList                            pAttributes) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceSciBufAttributesNV(unwrapped_phys_dev, pAttributes);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSciBufAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    NvSciBufAttrList                            pAttributes) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceSciBufAttributesNV) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSciBufAttributesNV");
+    }
+    return icd_term->dispatch.GetPhysicalDeviceSciBufAttributesNV(phys_dev_term->phys_dev, pAttributes);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+
 // ---- VK_EXT_extended_dynamic_state2 extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(
@@ -2089,6 +2326,70 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkGetFenceSciSyncFenceNV", name)) {
+        *addr = (void *)GetFenceSciSyncFenceNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkGetFenceSciSyncObjNV", name)) {
+        *addr = (void *)GetFenceSciSyncObjNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkImportFenceSciSyncFenceNV", name)) {
+        *addr = (void *)ImportFenceSciSyncFenceNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkImportFenceSciSyncObjNV", name)) {
+        *addr = (void *)ImportFenceSciSyncObjNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkGetPhysicalDeviceSciSyncAttributesNV", name)) {
+        *addr = (void *)GetPhysicalDeviceSciSyncAttributesNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkGetSemaphoreSciSyncObjNV", name)) {
+        *addr = (void *)GetSemaphoreSciSyncObjNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkImportSemaphoreSciSyncObjNV", name)) {
+        *addr = (void *)ImportSemaphoreSciSyncObjNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkGetMemorySciBufNV", name)) {
+        *addr = (void *)GetMemorySciBufNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV", name)) {
+        *addr = (void *)GetPhysicalDeviceExternalMemorySciBufPropertiesNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkGetPhysicalDeviceSciBufAttributesNV", name)) {
+        *addr = (void *)GetPhysicalDeviceSciBufAttributesNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     if (!strcmp("vkCmdSetPatchControlPointsEXT", name)) {
         *addr = (void *)CmdSetPatchControlPointsEXT;
@@ -2271,6 +2572,19 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_EXT_headless_surface extension commands
     .CreateHeadlessSurfaceEXT = terminator_CreateHeadlessSurfaceEXT,
+
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    .GetPhysicalDeviceSciSyncAttributesNV = terminator_GetPhysicalDeviceSciSyncAttributesNV,
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    .GetPhysicalDeviceExternalMemorySciBufPropertiesNV = terminator_GetPhysicalDeviceExternalMemorySciBufPropertiesNV,
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    .GetPhysicalDeviceSciBufAttributesNV = terminator_GetPhysicalDeviceSciBufAttributesNV,
+#endif // VK_USE_PLATFORM_SCI
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
