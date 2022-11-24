@@ -94,12 +94,20 @@ using FP_layer_callback = VkResult (*)(TestLayer& layer, void* data);
 
 struct TestLayer {
     fs::path manifest_file_path;
+#if !defined(VULKANSC)
     uint32_t manifest_version = VK_MAKE_API_VERSION(0, 1, 1, 2);
+#else
+    uint32_t manifest_version = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
 
     bool is_meta_layer = false;
 
     std::string unique_name;
+#if !defined(VULKANSC)
     uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+    uint32_t api_version = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
     uint32_t implementation_version = 2;
     uint32_t min_implementation_version = 0;
     std::string description;

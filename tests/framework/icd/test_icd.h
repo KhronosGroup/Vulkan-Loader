@@ -66,7 +66,11 @@ struct TestICD {
     bool enable_icd_wsi = false;
     UsingICDProvidedWSI is_using_icd_wsi = UsingICDProvidedWSI::not_using;
 
+#if !defined(VULKANSC)
     uint32_t icd_api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+    uint32_t icd_api_version = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
     std::vector<LayerDefinition> instance_layers;
     std::vector<Extension> instance_extensions;
     std::vector<PhysicalDevice> physical_devices;

@@ -134,7 +134,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysi
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
     if (pApiVersion != nullptr) {
+#if !defined(VULKANSC)
         *pApiVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+        *pApiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
     }
     return VK_SUCCESS;
 }

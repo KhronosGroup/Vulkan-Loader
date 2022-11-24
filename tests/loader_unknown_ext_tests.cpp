@@ -30,8 +30,14 @@
 class UnknownExtension : public ::testing::Test {
    protected:
     virtual void SetUp() {
+#if !defined(VULKANSC)
         env = std::unique_ptr<SingleICDShim>(
             new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 0, 0))));
+#else
+        env = std::unique_ptr<SingleICDShim>(
+            new SingleICDShim(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(1, 1, 0, 0))));
+
+#endif
     }
 
     virtual void TearDown() { env.reset(); }

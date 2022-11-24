@@ -456,7 +456,9 @@ bool string_eq(const char* a, const char* b) noexcept;
 bool string_eq(const char* a, const char* b, size_t len) noexcept;
 
 inline std::string version_to_string(uint32_t version) {
-    return std::to_string(VK_API_VERSION_MAJOR(version)) + "." + std::to_string(VK_API_VERSION_MINOR(version)) + "." +
+    return std::to_string(VK_API_VERSION_VARIANT(version)) + "." +
+           std::to_string(VK_API_VERSION_MAJOR(version)) + "." +
+           std::to_string(VK_API_VERSION_MINOR(version)) + "." +
            std::to_string(VK_API_VERSION_PATCH(version));
 }
 
@@ -475,7 +477,11 @@ struct ManifestVersion {
 
 struct ManifestICD {
     ManifestVersion file_format_version = ManifestVersion();
+#if !defined(VULKANSC)
     uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+    uint32_t api_version = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
     std::string lib_path;
 
     std::string get_manifest_str() const;
@@ -509,7 +515,11 @@ struct ManifestLayer {
         std::string name;
         Type type = Type::INSTANCE;
         fs::path lib_path;
+#if !defined(VULKANSC)
         uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+        uint32_t api_version = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
         uint32_t implementation_version = 0;
         std::string description;
         std::vector<FunctionOverride> functions;
@@ -531,9 +541,17 @@ struct ManifestLayer {
 
 struct Extension {
     std::string extensionName;
+#if !defined(VULKANSC)
     uint32_t specVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+    uint32_t specVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
 
+#if !defined(VULKANSC)
     Extension(std::string extensionName, uint32_t specVersion = VK_MAKE_API_VERSION(0, 1, 0, 0))
+#else
+    Extension(std::string extensionName, uint32_t specVersion = VK_MAKE_API_VERSION(1, 1, 0, 0))
+#endif
         : extensionName(extensionName), specVersion(specVersion) {}
 
     VkExtensionProperties get() const noexcept {
@@ -622,7 +640,11 @@ struct InstanceCreateInfo {
     std::string engine_name;
     uint32_t app_version = 0;
     uint32_t engine_version = 0;
+#if !defined(VULKANSC)
     uint32_t api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+    uint32_t api_version = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
     std::vector<const char*> enabled_layers;
     std::vector<const char*> enabled_extensions;
 

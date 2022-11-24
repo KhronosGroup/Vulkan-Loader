@@ -221,7 +221,11 @@ EnvVarICDOverrideShim::EnvVarICDOverrideShim(DebugMode debug_mode) noexcept : Fr
 void EnvVarICDOverrideShim::SetEnvOverrideICD(const char* icd_path, const char* manifest_name) noexcept {
     ManifestICD icd_manifest;
     icd_manifest.lib_path = icd_path;
+#if !defined(VULKANSC)
     icd_manifest.api_version = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+    icd_manifest.api_version = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
 
     icd_folder.write(manifest_name, icd_manifest);
     set_env_var("VK_ICD_FILENAMES", (icd_folder.location() / manifest_name).str());

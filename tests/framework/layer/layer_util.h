@@ -31,14 +31,25 @@
 
 struct LayerDefinition {
     std::string layerName;
+#if !defined(VULKANSC)
     uint32_t specVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
     uint32_t implementationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+#else
+    uint32_t specVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
+    uint32_t implementationVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
+#endif
     std::string description;
     std::vector<Extension> extensions;
 
+#if !defined(VULKANSC)
     LayerDefinition(std::string layerName, uint32_t specVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
                     uint32_t implementationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0), std::string description = "",
                     std::vector<Extension> extensions = {})
+#else
+    LayerDefinition(std::string layerName, uint32_t specVersion = VK_MAKE_API_VERSION(1, 1, 0, 0),
+                    uint32_t implementationVersion = VK_MAKE_API_VERSION(1, 1, 0, 0), std::string description = "",
+                    std::vector<Extension> extensions = {})
+#endif
         : layerName(layerName),
           specVersion(specVersion),
           implementationVersion(implementationVersion),
