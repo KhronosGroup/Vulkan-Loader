@@ -45,8 +45,8 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
             ptr_instance->wsi_surface_enabled = true;
             continue;
         }
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 #ifndef VULKANSC
+#ifdef VK_USE_PLATFORM_WIN32_KHR
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_WIN32_SURFACE_EXTENSION_NAME) == 0) {
             ptr_instance->wsi_win32_surface_enabled = true;
             continue;
@@ -489,8 +489,8 @@ static VkIcdSurface *AllocateIcdSurfaceStruct(struct loader_instance *instance, 
     return pIcdSurface;
 }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 #ifndef VULKANSC
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 // Functions for the VK_KHR_win32_surface extension:
 
 // This is the trampoline entrypoint for CreateWin32SurfaceKHR
@@ -2436,8 +2436,8 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
         return true;
     }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 #ifndef VULKANSC
+#ifdef VK_USE_PLATFORM_WIN32_KHR
     // Functions for the VK_KHR_win32_surface extension:
     if (!strcmp("vkCreateWin32SurfaceKHR", name)) {
         *addr = ptr_instance->wsi_win32_surface_enabled ? (void *)vkCreateWin32SurfaceKHR : NULL;

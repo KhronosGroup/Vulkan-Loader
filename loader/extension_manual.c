@@ -194,7 +194,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireXlibDisplayEXT(VkPhysicalDevice
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 }
-#endif // VULKANSC
+
 VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display *dpy, RROutput rrOutput,
                                                         VkDisplayKHR *pDisplay) {
     const VkLayerInstanceDispatchTable *disp;
@@ -224,6 +224,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetRandROutputDisplayEXT(VkPhysicalDev
 }
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#endif // VULKANSC
 
 #ifndef VULKANSC
 #ifdef VK_USE_PLATFORM_WIN32_KHR
