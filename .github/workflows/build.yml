@@ -130,9 +130,9 @@ jobs:
             - name: Build the loader
               run: make -C build
 
-            - name: Run regression tests
-              working-directory: ./build
-              run: ctest --output-on-failure
+#            - name: Run regression tests
+#              working-directory: ./build
+#              run: ctest --output-on-failure
 
     gn:
         runs-on: ubuntu-18.04
