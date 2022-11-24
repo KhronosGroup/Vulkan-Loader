@@ -63,10 +63,17 @@ if(DEFINED VULKAN_HEADERS_INSTALL_DIR)
   # Use HINTS instead of PATH to search these locations before
   # searching system environment variables like $PATH that may
   # contain SDK directories.
-  find_path(VulkanHeaders_INCLUDE_DIR
-      NAMES vulkan/vulkan.h
-      HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
-      NO_CMAKE_FIND_ROOT_PATH)
+  if(VulkanSC)
+      find_path(VulkanHeaders_INCLUDE_DIR
+          NAMES vulkan/vulkan_sc.h
+          HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
+          NO_CMAKE_FIND_ROOT_PATH)
+  else()
+      find_path(VulkanHeaders_INCLUDE_DIR
+          NAMES vulkan/vulkan.h
+          HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
+          NO_CMAKE_FIND_ROOT_PATH)
+  endif()
   find_path(VulkanRegistry_DIR
       NAMES vk.xml
       HINTS ${VULKAN_HEADERS_INSTALL_DIR}/share/vulkan/registry

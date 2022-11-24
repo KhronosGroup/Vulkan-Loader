@@ -596,6 +596,11 @@ def CreateHelper(args, repos, filename):
     install_names = GetInstallNames(args)
     with open(filename, 'w') as helper_file:
         for repo in repos:
+            # Only process the required Vulkan or VulkanSC Headers Repo
+            if repo.name.lower().find('vulkan') !=-1:
+                repoName=repo.name.split('-')
+                if repoName[0].lower() != args.api:
+                    continue
             if install_names and repo.name in install_names and repo.on_build_platform:
                 helper_file.write('set({var} "{dir}" CACHE STRING "" FORCE)\n'
                                   .format(
@@ -676,6 +681,13 @@ def main():
         type=lambda a: set(a.lower().split(',')),
         help="Comma-separated list of 'optional' resources that may be skipped. Only 'tests' is currently supported as 'optional'",
         default=set())
+    parser.add_argument(
+        '--api',
+        dest='api',
+        choices=['vulkan','vulkansc'],
+        type=str.lower,
+        help="Set the api for cloning Vulkan or VulkanSC Headers repo",
+        default='vulkan')
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
@@ -689,6 +701,11 @@ def main():
 
     print('Starting builds in {d}'.format(d=abs_top_dir))
     for repo in repos:
+        # Only process the required Vulkan or VulkanSC Headers Repo
+        if repo.name.lower().find('vulkan') !=-1:
+            repoName=repo.name.split('-')
+            if repoName[0].lower() != args.api:
+                continue
         # If the repo has a platform whitelist, skip the repo
         # unless we are building on a whitelisted platform.
         if not repo.on_build_platform:
