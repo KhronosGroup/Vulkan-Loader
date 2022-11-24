@@ -35,7 +35,11 @@ set(VulkanSC FALSE CACHE BOOL "User defined variable for VulkanSC Mode to be pas
 #Add preprocessor definition for the VulkanSC projects. This "VulkanSC" definition can be used to deactivate the loader code that is not required for the VulkanSC builds.
 if(VulkanSC)
 add_definitions(-DVULKANSC)
+set(API_TYPE vulkansc)
+else()
+set(API_TYPE vulkan)
 endif()
+message("API_TYPE set to ${API_TYPE}")
 
 # Enable beta Vulkan extensions
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
@@ -70,7 +74,7 @@ if (UPDATE_DEPS)
     # Add a target so that update_deps.py will run when necessary
     # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
     add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
-                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
+                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --api ${API_TYPE} --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
                        DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
 
     add_custom_target(vl_update_deps DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
@@ -78,7 +82,7 @@ if (UPDATE_DEPS)
     # Check if update_deps.py needs to be run on first cmake run
     if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
         execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
+            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --api ${API_TYPE} --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             RESULT_VARIABLE _update_deps_result
         )
@@ -310,17 +314,10 @@ endif()
 
 # Optional codegen target
 if(PYTHONINTERP_FOUND)
-if(VulkanSC)
     add_custom_target(VulkanLoader_generated_source
                       COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} --incremental --api vulkansc
+                              ${VulkanRegistry_DIR} --incremental --api ${API_TYPE}
                       )
-else()
-    add_custom_target(VulkanLoader_generated_source
-                      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} --incremental --api vulkan
-                      )
-endif()
 else()
     message("WARNING: VulkanLoader_generated_source target requires python 3")
 endif()
