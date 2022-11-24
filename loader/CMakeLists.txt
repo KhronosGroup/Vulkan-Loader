@@ -74,6 +74,13 @@ elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_SCREEN_QNX_SUPPORT)
         set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_SCREEN_QNX)
     endif()
+
+    if(VulkanSC)
+        if(BUILD_WSI_SCI_SUPPORT)
+            set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_SCI)
+        endif()
+    endif()
+
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()

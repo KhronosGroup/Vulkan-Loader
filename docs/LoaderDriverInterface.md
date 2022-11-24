@@ -367,6 +367,18 @@ like the following:
   /usr/share/vulkan/icd.d
 ```
 
+And when the loader is built for Vulkan SC:
+
+```
+  /home/me/.config/vulkansc/icd.d
+  /etc/xdg/vulkansc/icd.d
+  /usr/local/etc/vulkansc/icd.d
+  /etc/vulkansc/icd.d
+  /home/me/.local/share/vulkansc/icd.d
+  /usr/local/share/vulkansc/icd.d
+  /usr/share/vulkansc/icd.d
+```
+
 
 ### Driver Discovery on Fuchsia
 
