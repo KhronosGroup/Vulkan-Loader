@@ -8,6 +8,7 @@
 [![Creative Commons][3]][4]
 
 <!-- Copyright &copy; 2015-2021 LunarG, Inc. -->
+<!-- Copyright &copy; 2021-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
