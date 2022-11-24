@@ -478,6 +478,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_EXT_color_write_enable extension commands
     table->CmdSetColorWriteEnableEXT = (PFN_vkCmdSetColorWriteEnableEXT)gdpa(dev, "vkCmdSetColorWriteEnableEXT");
+
+    // ---- VK_NV_external_sci_sync2 extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    table->CreateSemaphoreSciSyncPoolNV = (PFN_vkCreateSemaphoreSciSyncPoolNV)gdpa(dev, "vkCreateSemaphoreSciSyncPoolNV");
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->DestroySemaphoreSciSyncPoolNV = (PFN_vkDestroySemaphoreSciSyncPoolNV)gdpa(dev, "vkDestroySemaphoreSciSyncPoolNV");
+#endif // VK_USE_PLATFORM_SCI
 }
 
 // Init Instance function pointer dispatch table with core commands
@@ -881,6 +889,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_EXT_color_write_enable extension commands
     if (!strcmp(name, "CmdSetColorWriteEnableEXT")) return (void *)table->CmdSetColorWriteEnableEXT;
+
+    // ---- VK_NV_external_sci_sync2 extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "CreateSemaphoreSciSyncPoolNV")) return (void *)table->CreateSemaphoreSciSyncPoolNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp(name, "DestroySemaphoreSciSyncPoolNV")) return (void *)table->DestroySemaphoreSciSyncPoolNV;
+#endif // VK_USE_PLATFORM_SCI
 
     return NULL;
 }
@@ -1997,6 +2013,30 @@ VKAPI_ATTR void                                    VKAPI_CALL CmdSetColorWriteEn
     disp->CmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
 }
 
+
+// ---- VK_NV_external_sci_sync2 extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->CreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+VKAPI_ATTR void VKAPI_CALL DestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->DestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+}
+
+#endif // VK_USE_PLATFORM_SCI
 // GPA helpers for extensions
 bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr) {
     *addr = NULL;
@@ -2417,6 +2457,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)CmdSetColorWriteEnableEXT;
         return true;
     }
+
+    // ---- VK_NV_external_sci_sync2 extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkCreateSemaphoreSciSyncPoolNV", name)) {
+        *addr = (void *)CreateSemaphoreSciSyncPoolNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    if (!strcmp("vkDestroySemaphoreSciSyncPoolNV", name)) {
+        *addr = (void *)DestroySemaphoreSciSyncPoolNV;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCI
     return false;
 }
 

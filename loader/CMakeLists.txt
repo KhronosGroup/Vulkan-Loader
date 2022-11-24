@@ -335,7 +335,12 @@ else()
     set_target_properties(${SONAME}
                           PROPERTIES SOVERSION "1"
                           VERSION ${LOADER_GENERATED_HEADER_VERSION})
-    target_link_libraries(${SONAME} ${CMAKE_DL_LIBS} m)
+    # On QNX libdl is part of libc and there is no separate library.
+    if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "QNX"))
+      target_link_libraries(${SONAME} ${CMAKE_DL_LIBS} m)
+    else()
+      target_link_libraries(${SONAME} m)
+    endif()
     if(NOT ANDROID)
       # On QNX pthread is part of libc only and there is no separate lib for pthread
       if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "QNX"))
