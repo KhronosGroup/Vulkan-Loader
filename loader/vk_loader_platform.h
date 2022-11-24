@@ -49,6 +49,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <libgen.h>
+#include <alloca.h>
 
 #elif defined(_WIN32)  // defined(__linux__)
 /* Windows-specific common code: */

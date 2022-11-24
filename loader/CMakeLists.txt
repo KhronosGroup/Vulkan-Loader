@@ -337,8 +337,13 @@ else()
                           PROPERTIES SOVERSION "1"
                           VERSION ${LOADER_GENERATED_HEADER_VERSION})
     target_link_libraries(vulkan ${CMAKE_DL_LIBS} m)
-    if (NOT ANDROID)
+    if(NOT ANDROID)
+      # On QNX pthread is part of libc only and there is no separate lib for pthread
+      if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "QNX"))
         target_link_libraries(vulkan pthread)
+      else()
+        target_link_libraries(vulkan)
+      endif()
     endif()
     target_link_libraries(vulkan Vulkan::Headers)
     # Used to make alloca() and secure_getenv() available
