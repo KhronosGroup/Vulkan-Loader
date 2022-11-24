@@ -33,6 +33,7 @@ jobs:
                 cxx: [ g++, clang++ ]
                 config: [ Debug, Release ]
                 os: [ ubuntu-18.04, ubuntu-20.04 ]
+                vulkansc: [ TRUE, FALSE ]
                 exclude:
                     - cc: gcc
                       cxx: clang++
@@ -47,13 +48,13 @@ jobs:
             - run: sudo apt install libwayland-dev libxrandr-dev
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DVulkanSC=${{matrix.vulkansc}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
               env:
                 CC: ${{matrix.cc}}
                 CXX: ${{matrix.cxx}}
 
             - name: Build the loader
-              run: make -C build
+              run: make -C -DVulkanSC=${{matrix.vulkansc}} build
 
             - name: Run regression tests
               working-directory: ./build
@@ -76,6 +77,7 @@ jobs:
                 arch: [ Win32, x64 ]
                 config: [ Debug, Release ]
                 os: [ windows-2016, windows-2019 ]
+                vulkansc: [ TRUE, FALSE ]
 
         steps:
             - uses: actions/checkout@v2
@@ -91,11 +93,11 @@ jobs:
               run: git clone --branch v4.0.1 https://github.com/microsoft/Detours.git external/detours
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
+              run: cmake -S. -Bbuild -A${{matrix.arch}} -DVulkanSC=${{matrix.vulkansc}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
               if: matrix.os != 'windows-2016'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}}  -DBUILD_TESTS=On "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" -DUPDATE_DEPS=ON
+              run: cmake -S. -Bbuild -A${{matrix.arch}} -DVulkanSC=${{matrix.vulkansc}} -DBUILD_TESTS=On "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" -DUPDATE_DEPS=ON
               if: matrix.os == 'windows-2016'
 
             - name: Build the loader
@@ -114,6 +116,7 @@ jobs:
         strategy:
             matrix:
                 config: [ Debug, Release ]
+                vulkansc: [ TRUE, FALSE ]
 
         steps:
             - uses: actions/checkout@v2
@@ -122,7 +125,7 @@ jobs:
                 python-version: '3.7'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
+              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DVulkanSC=${{matrix.vulkansc}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
 
             - name: Build the loader
               run: make -C build
