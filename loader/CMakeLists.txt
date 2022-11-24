@@ -53,7 +53,9 @@ if(WIN32)
 elseif(ANDROID)
     set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_ANDROID_KHR)
 elseif(APPLE)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
+    if(NOT VulkanSC)
+        set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
+    endif()
 elseif(UNIX AND NOT APPLE) # i.e.: Linux
     if(BUILD_WSI_XCB_SUPPORT)
     set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS VK_USE_PLATFORM_XCB_KHR)
@@ -360,33 +362,56 @@ else()
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
         target_link_libraries(${SONAME} "-framework CoreFoundation")
 
-        # Build vulkan.framework
-        set(FRAMEWORK_HEADERS
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_icd.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_layer.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_platform.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_sdk_platform.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_android.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_ios.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_macos.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_vi.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_wayland.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_win32.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xcb.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib_xrandr.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_screen.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
-            ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
-        if(BUILD_STATIC_LOADER)
-            add_library(vulkan-framework STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        if(VulkanSC)
+            # Build vulkansc.framework
+            set(FRAMEWORK_HEADERS
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_icd.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_layer.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_platform.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_sdk_platform.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_android.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_sc_core.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_sc_core.hpp
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_ios.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_macos.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_sci.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_vi.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_wayland.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_win32.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xcb.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib_xrandr.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_screen.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_sc.h)
         else()
-            add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+            # Build vulkan.framework
+            set(FRAMEWORK_HEADERS
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_icd.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_layer.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_platform.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vk_sdk_platform.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_android.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_ios.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_macos.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_vi.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_wayland.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_win32.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xcb.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_xlib_xrandr.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_screen.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.h
+                ${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan.hpp)
         endif()
-        add_dependencies(vulkan-framework loader_asm_gen_files)
-        target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
-        target_link_libraries(vulkan-framework Vulkan::Headers)
+        if(BUILD_STATIC_LOADER)
+            add_library(${SONAME}-framework STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        else()
+            add_library(${SONAME}-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        endif()
+        add_dependencies(${SONAME}-framework loader_asm_gen_files)
+        target_link_libraries(${SONAME}-framework -ldl -lpthread -lm "-framework CoreFoundation")
+        target_link_libraries(${SONAME}-framework Vulkan::Headers)
 
         # The FRAMEWORK_VERSION needs to be "A" here so that Xcode code-signing works when a user adds their framework to an Xcode
         # project and does "Sign on Copy". It would have been nicer to use "1" to denote Vulkan 1. Although Apple docs say that a
@@ -394,7 +419,7 @@ else()
         # https://forums.developer.apple.com/thread/65963
 
 # cmake-format: off
-        set_target_properties(vulkan-framework PROPERTIES
+        set_target_properties(${SONAME}-framework PROPERTIES
             OUTPUT_NAME ${SONAME}
             FRAMEWORK TRUE
             FRAMEWORK_VERSION A
@@ -403,7 +428,7 @@ else()
             MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
             PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
         )
-        install(TARGETS vulkan-framework
+        install(TARGETS ${SONAME}-framework
             PUBLIC_HEADER DESTINATION vulkan
             FRAMEWORK DESTINATION loader
         )
