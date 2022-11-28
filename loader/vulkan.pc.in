@@ -1,7 +1,7 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
-libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
-includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=${exec_prefix}/@CMAKE_INSTALL_REL_LIBDIR_PC@
+includedir=${prefix}/@CMAKE_INSTALL_REL_INCLUDEDIR_PC@
 
 Name: @CMAKE_PROJECT_NAME@
 Description: Vulkan Loader
