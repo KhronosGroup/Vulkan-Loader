@@ -1914,6 +1914,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
     cJSON *override_paths;
     cJSON *blacklisted_layers;
     cJSON *disable_environment = NULL;
+    cJSON *required_instance_extensions;
     VkExtensionProperties ext_prop;
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
     struct loader_layer_properties *props = NULL;
@@ -2155,6 +2156,44 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
                     temp[strlen(temp) - 1] = '\0';
                     strncpy(props->override_paths[i], temp + 1, MAX_STRING_SIZE - 1);
                     props->override_paths[i][MAX_STRING_SIZE - 1] = '\0';
+                    loader_instance_heap_free(inst, temp);
+                }
+            }
+        }
+    }
+
+    required_instance_extensions = cJSON_GetObjectItem(layer_node, "required_instance_extensions");
+    if (NULL != required_instance_extensions) {
+        if (!loader_check_version_meets_required(loader_combine_version(1, 3, 0), version)) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "Indicating required instance extensions, but using older JSON file version.");
+        }
+        int count = cJSON_GetArraySize(required_instance_extensions);
+        props->num_required_instance_extensions = count;
+        if (count > 0) {
+            // Allocate buffer for instance extension names
+            props->required_instance_extensions =
+                loader_instance_heap_alloc(inst, sizeof(char[VK_MAX_EXTENSION_NAME_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (NULL == props->required_instance_extensions && count > 0) {
+                result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+
+            // Copy the instance extension names into the array
+            for (i = 0; i < count; i++) {
+                cJSON *required_instance_extension = cJSON_GetArrayItem(required_instance_extensions, i);
+                if (NULL != required_instance_extension) {
+                    temp = cJSON_Print(required_instance_extension);
+                    if (NULL == temp) {
+                        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                        goto out;
+                    }
+                    // This logic looks weird but it is inherited from override_paths,
+                    // it exists as the string from cJSON comes back as eg.
+                    // "VK_EXT_swapchain_colorspace" with the quotes.
+                    temp[strlen(temp) - 1] = '\0';
+                    strncpy(props->required_instance_extensions[i], temp + 1, VK_MAX_EXTENSION_NAME_SIZE - 1);
+                    props->required_instance_extensions[i][VK_MAX_EXTENSION_NAME_SIZE - 1] = '\0';
                     loader_instance_heap_free(inst, temp);
                 }
             }
@@ -5133,6 +5172,39 @@ VkResult loader_validate_device_extensions(struct loader_instance *this_instance
     return VK_SUCCESS;
 }
 
+static VkResult loader_get_layer_required_instance_extensions(uint32_t *pRequiredExtraInstanceExtensionCount, char **pRequiredExtraInstanceExtensions) {
+    struct loader_layer_list instance_layers;
+    uint32_t required_inst_ext_count = 0;
+    VkResult res = VK_SUCCESS;
+
+    memset(&instance_layers, 0, sizeof(instance_layers));
+
+    res = loader_scan_for_layers(NULL, &instance_layers);
+    if (res != VK_SUCCESS) {
+        goto out;
+    }
+
+    if (!pRequiredExtraInstanceExtensions) {
+        for (uint32_t i = 0; i < instance_layers.count; i++) {
+            struct loader_layer_properties *props = &instance_layers.list[i];
+            required_inst_ext_count += props->num_required_instance_extensions;
+        }
+
+        *pRequiredExtraInstanceExtensionCount = required_inst_ext_count;
+    } else {
+        for (uint32_t i = 0; i < instance_layers.count; i++) {
+            struct loader_layer_properties *props = &instance_layers.list[i];
+            for (uint32_t j = 0; j < props->num_required_instance_extensions && required_inst_ext_count < *pRequiredExtraInstanceExtensionCount; j++, required_inst_ext_count++) {
+                pRequiredExtraInstanceExtensions[required_inst_ext_count] = props->required_instance_extensions[j];
+            }
+        }
+    }
+
+out:
+    loader_delete_layer_list_and_properties(NULL, &instance_layers);
+    return res;
+}
+
 // Terminator functions for the Instance chain
 // All named terminator_<Vulkan API name>
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
@@ -5171,6 +5243,21 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     icd_create_info.enabledLayerCount = 0;
     icd_create_info.ppEnabledLayerNames = NULL;
 
+    uint32_t required_extra_instance_ext_count = 0;
+    res = loader_get_layer_required_instance_extensions(&required_extra_instance_ext_count, NULL);
+    if (res != VK_SUCCESS) {
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "terminator_CreateInstance: Failed to get required extra instance extension count from layers");
+        goto out;
+    }
+    char **required_extra_instance_exts = loader_stack_alloc(required_extra_instance_ext_count * sizeof(char *));
+    res = loader_get_layer_required_instance_extensions(&required_extra_instance_ext_count, required_extra_instance_exts);
+    if (res != VK_SUCCESS) {
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "terminator_CreateInstance: Failed to get extra instance extensions from layers");
+        goto out;
+    }
+
     // NOTE: Need to filter the extensions to only those supported by the ICD.
     //       No ICD will advertise support for layers. An ICD library could
     //       support a layer, but it would be independent of the actual ICD,
@@ -5179,6 +5266,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 #ifdef LOADER_ENABLE_LINUX_SORT
     extension_count += 1;
 #endif  // LOADER_ENABLE_LINUX_SORT
+    extension_count += required_extra_instance_ext_count;
     filtered_extension_names = loader_stack_alloc(extension_count * sizeof(char *));
     if (!filtered_extension_names) {
         loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
@@ -5194,6 +5282,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     } else {
         for (uint32_t j = 0; j < pCreateInfo->enabledExtensionCount; j++) {
             if (!strcmp(pCreateInfo->ppEnabledExtensionNames[j], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+                ptr_instance->supports_get_dev_prop_2 = true;
+                break;
+            }
+        }
+        for (uint32_t j = 0; j < required_extra_instance_ext_count; j++) {
+            if (!strcmp(required_extra_instance_exts[j], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
                 ptr_instance->supports_get_dev_prop_2 = true;
                 break;
             }
@@ -5251,6 +5345,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             prop = get_extension_property(pCreateInfo->ppEnabledExtensionNames[j], &icd_exts);
             if (prop) {
                 filtered_extension_names[icd_create_info.enabledExtensionCount] = (char *)pCreateInfo->ppEnabledExtensionNames[j];
+                icd_create_info.enabledExtensionCount++;
+            }
+        }
+        // Add any instance extensions to enable required by active layers.
+        for (uint32_t j = 0; j < required_extra_instance_ext_count; j++) {
+            prop = get_extension_property(pCreateInfo->ppEnabledExtensionNames[j], &icd_exts);
+            if (prop) {
+                filtered_extension_names[icd_create_info.enabledExtensionCount] = required_extra_instance_exts[i];
                 icd_create_info.enabledExtensionCount++;
             }
         }

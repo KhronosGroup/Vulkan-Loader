@@ -1721,6 +1721,16 @@ Here's an example of a meta-layer manifest file:
     <td><small>N/A</small></td>
   </tr>
   <tr>
+    <td>"required_instance_extensions"</td>
+    <td><b>OPTIONAL:</b> Contains the list of instance extension names required
+        by this layer. Extension names in this list will function as if they
+        were appended to VkInstanceCreateInfo::ppEnabledExtensionNames.
+    </td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td><small>N/A</small></td>
+  </tr>
+  <tr>
     <td>"enable_environment"</td>
     <td><b>OPTIONAL:</b> Indicates an environment variable used to enable the
         Implicit Layer (when defined to any non-empty string value).<br/>

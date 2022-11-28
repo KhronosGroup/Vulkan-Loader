@@ -149,6 +149,8 @@ struct loader_layer_properties {
     char (*blacklist_layer_names)[MAX_STRING_SIZE];
     uint32_t num_app_key_paths;
     char (*app_key_paths)[MAX_STRING_SIZE];
+    uint32_t num_required_instance_extensions;
+    char (*required_instance_extensions)[VK_MAX_EXTENSION_NAME_SIZE];
 };
 
 struct loader_layer_list {
