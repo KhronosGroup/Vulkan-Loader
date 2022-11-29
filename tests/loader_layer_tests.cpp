@@ -1077,23 +1077,6 @@ TEST(MetaLayers, ExplicitMetaLayer) {
         ASSERT_EQ(count, 2U);
         EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
     }
-    { 
-        const char* env_var_layer_name = "meta_test_layer.json:regular_test_layer.json";
-        env.add_explicit_layer(TestLayerDetails{ManifestLayer{}
-                                                .set_file_format_version(ManifestVersion(1, 2, 0))
-                                                .add_layer(ManifestLayer::LayerDescription{}
-                                                               .set_name(env_var_layer_name)
-                                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
-                                            env_var_layer_name}
-                               .set_discovery_type(ManifestDiscoveryType::env_var));
-        InstWrapper inst(env.vulkan_functions);
-        inst.CheckCreate(VK_SUCCESS);
-        inst.create_info.add_layer(env_var_layer_name);
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
-        ASSERT_EQ(count, 1U);
-    }
 }
 
 // Meta layer which adds itself in its list of component layers
@@ -2105,6 +2088,73 @@ TEST(ExplicitLayers, WrapObjects) {
         DeviceWrapper dev{inst};
         dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_dev);
+    }
+}
+
+TEST(ExplicitLayers, VkLayerPathEnvVar) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    const char* regular_layer_name_1 = "RegularLayer1";
+    env.add_explicit_layer(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_1.json");
+
+
+
+    { 
+        // when overriding the search path to a non-existent file, instance should fail to create
+        InstWrapper inst(env.vulkan_functions);
+        inst.create_info.add_layer(regular_layer_name_1);
+        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_2.json");
+        inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+    }
+    { 
+        // when overriding the search path to an existing file, count should be 1
+        InstWrapper inst(env.vulkan_functions);
+        inst.create_info.add_layer(regular_layer_name_1);
+        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_1.json");
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 1U);
+    }
+    { 
+        // when overriding the search path to two existing files, count should be 2
+        const char* regular_layer_name_2 = "RegularLayer2";
+        env.add_explicit_layer(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_2.json");
+        InstWrapper inst(env.vulkan_functions);
+        inst.create_info.add_layer(regular_layer_name_1);
+        inst.create_info.add_layer(regular_layer_name_2);
+        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_1.json:/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_2.json");
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 2U);
+    }
+    { 
+        // when overriding the search path to an existing directory with two files, count should be 2
+        const char* regular_layer_name_2 = "RegularLayer2";
+        env.add_explicit_layer(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_2.json");
+        InstWrapper inst(env.vulkan_functions);
+        inst.create_info.add_layer(regular_layer_name_1);
+        inst.create_info.add_layer(regular_layer_name_2);
+        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d");
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 2U);
     }
 }
 
