@@ -456,6 +456,11 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             if (!env_var_vk_layer_paths.empty()) {
                 env_var_vk_layer_paths += OS_ENV_VAR_LIST_SEPARATOR;
             }
+            if(layer_details.is_dir) {
+                env_var_vk_layer_paths += fs_ptr->location().str();
+            } else {
+                env_var_vk_layer_paths += fs_ptr->location().str() + OS_ENV_VAR_LIST_SEPARATOR + layer_details.json_name;
+            }
             env_var_vk_layer_paths += fs_ptr->location().str();
             set_env_var("VK_LAYER_PATH", env_var_vk_layer_paths);
             break;

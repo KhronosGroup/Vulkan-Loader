@@ -2096,26 +2096,17 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.get_test_icd().add_physical_device({});
 
-    const char* regular_layer_name_1 = "RegularLayer1";
-    env.add_explicit_layer(
+    { 
+        // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
+        const char* regular_layer_name_1 = "RegularLayer1";
+        env.add_explicit_layer(
+        TestLayerDetails(
             ManifestLayer{}.add_layer(
                 ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-            "regular_layer_1.json");
+            "regular_layer_1.json").set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
 
-
-
-    { 
-        // when overriding the search path to a non-existent file, instance should fail to create
         InstWrapper inst(env.vulkan_functions);
         inst.create_info.add_layer(regular_layer_name_1);
-        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_2.json");
-        inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
-    }
-    { 
-        // when overriding the search path to an existing file, count should be 1
-        InstWrapper inst(env.vulkan_functions);
-        inst.create_info.add_layer(regular_layer_name_1);
-        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_1.json");
         inst.CheckCreate(VK_SUCCESS);
         auto phys_dev = inst.GetPhysDev();
         uint32_t count = 0;
@@ -2123,16 +2114,24 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         ASSERT_EQ(count, 1U);
     }
     { 
-        // when overriding the search path to two existing files, count should be 2
+        // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
+        const char* regular_layer_name_1 = "RegularLayer1";
+        env.add_explicit_layer(
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_1.json").set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+
         const char* regular_layer_name_2 = "RegularLayer2";
         env.add_explicit_layer(
-            ManifestLayer{}.add_layer(
-                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-            "regular_layer_2.json");
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_2.json").set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+
         InstWrapper inst(env.vulkan_functions);
         inst.create_info.add_layer(regular_layer_name_1);
         inst.create_info.add_layer(regular_layer_name_2);
-        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_1.json:/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d/regular_layer_2.json");
         inst.CheckCreate(VK_SUCCESS);
         auto phys_dev = inst.GetPhysDev();
         uint32_t count = 0;
@@ -2140,16 +2139,24 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         ASSERT_EQ(count, 2U);
     }
     { 
-        // when overriding the search path to an existing directory with two files, count should be 2
+        // verify layers load successfully when setting VK_LAYER_PATH to a directory
+        const char* regular_layer_name_1 = "RegularLayer1";
+        env.add_explicit_layer(
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_1.json").set_discovery_type(ManifestDiscoveryType::env_var));
+
         const char* regular_layer_name_2 = "RegularLayer2";
         env.add_explicit_layer(
-            ManifestLayer{}.add_layer(
-                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-            "regular_layer_2.json");
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_2.json").set_discovery_type(ManifestDiscoveryType::env_var));
+
         InstWrapper inst(env.vulkan_functions);
         inst.create_info.add_layer(regular_layer_name_1);
         inst.create_info.add_layer(regular_layer_name_2);
-        set_env_var("VK_LAYER_PATH", "/home/phish3y/dev/Vulkan-Loader/build/install/etc/vulkan/explicit_layer.d");
         inst.CheckCreate(VK_SUCCESS);
         auto phys_dev = inst.GetPhysDev();
         uint32_t count = 0;
