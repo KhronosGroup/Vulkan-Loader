@@ -2112,6 +2112,10 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
         ASSERT_EQ(count, 1U);
+
+        VkLayerProperties layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
+        EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name_1));
     }
     { 
         // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
@@ -2137,6 +2141,10 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
         ASSERT_EQ(count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
     }
     { 
         // verify layers load successfully when setting VK_LAYER_PATH to a directory
@@ -2162,6 +2170,10 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         uint32_t count = 0;
         env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
         ASSERT_EQ(count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
     }
 }
 
