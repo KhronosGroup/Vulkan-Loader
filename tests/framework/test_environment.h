@@ -477,6 +477,7 @@ struct TestLayerDetails {
     BUILDER_VALUE(TestLayerDetails, std::string, json_name, "test_layer");
     BUILDER_VALUE(TestLayerDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
+    BUILDER_VALUE(TestLayerDetails, bool, is_dir, true);
 };
 
 enum class ManifestLocation {
