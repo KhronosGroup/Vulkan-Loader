@@ -99,7 +99,7 @@ the following:
 
 ```
 LAYER: Searching for layer manifest files
-LAYER:  In following folders:
+LAYER:  In following locations:
 LAYER:   /home/${USER}/.config/vulkan/implicit_layer.d
 LAYER:   /etc/xdg/vulkan/implicit_layer.d
 LAYER:   /usr/local/etc/vulkan/implicit_layer.d
