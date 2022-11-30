@@ -3118,7 +3118,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                 log_flags = VULKAN_LOADER_LAYER_BIT;
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for layer manifest files");
             }
-            loader_log(inst, log_flags, 0, "   In following folders:");
+            loader_log(inst, log_flags, 0, "   In following locations:");
             char *cur_file;
             char *next_file = tmp_search_path;
             while (NULL != next_file && *next_file != '\0') {
