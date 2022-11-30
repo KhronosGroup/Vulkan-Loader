@@ -37,6 +37,7 @@
 
 .macro PhysDevExtTramp num
 .global vkPhysDevExtTramp\num
+.hidden vkPhysDevExtTramp\num
 vkPhysDevExtTramp\num:
     _CET_ENDBR
     mov     rax, [rdi]
@@ -46,6 +47,7 @@ vkPhysDevExtTramp\num:
 
 .macro PhysDevExtTermin num
 .global vkPhysDevExtTermin\num
+.hidden vkPhysDevExtTermin\num
 vkPhysDevExtTermin\num:
     _CET_ENDBR
     mov     rax, [rdi + ICD_TERM_OFFSET_PHYS_DEV_TERM]                          # Store the loader_icd_term* in rax
@@ -68,6 +70,7 @@ terminError\num:
 
 .macro DevExtTramp num
 .global vkdev_ext\num
+.hidden vkdev_ext\num
 vkdev_ext\num:
     _CET_ENDBR
     mov     rax, [rdi]                                                          # Dereference the handle to get the dispatch table
@@ -78,6 +81,7 @@ vkdev_ext\num:
 
 .macro PhysDevExtTramp num
 .global vkPhysDevExtTramp\num
+.hidden vkPhysDevExtTramp\num
 vkPhysDevExtTramp\num:
     _CET_ENDBR
     mov     eax, [esp + 4]                              # Load the wrapped VkPhysicalDevice into eax
@@ -89,6 +93,7 @@ vkPhysDevExtTramp\num:
 
 .macro PhysDevExtTermin num
 .global vkPhysDevExtTermin\num
+.hidden vkPhysDevExtTermin\num
 vkPhysDevExtTermin\num:
     _CET_ENDBR
     mov     ecx, [esp + 4]                                                      # Move the wrapped VkPhysicalDevice into ecx
@@ -112,6 +117,7 @@ terminError\num:
 
 .macro DevExtTramp num
 .global vkdev_ext\num
+.hidden vkdev_ext\num
 vkdev_ext\num:
     _CET_ENDBR
     mov     eax, dword ptr [esp + 4]                                            # Dereference the handle to get the dispatch table
