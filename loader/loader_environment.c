@@ -435,7 +435,7 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
         if (name != NULL) {
             separator_count = 1;
             for (uint32_t c = 0; c < strlen(layer_env); ++c) {
-                if (c == PATH_SEPARATOR) {
+                if (layer_env[c] == PATH_SEPARATOR) {
                     separator_count++;
                 }
             }
