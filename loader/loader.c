@@ -1611,15 +1611,13 @@ static void loader_expand_path(const char *path, const char *rel_base, size_t ou
 // @return - A string in out_fullpath of either the full path or file.
 static void loader_get_fullpath(const char *file, const char *in_dirs, size_t out_size, char *out_fullpath) {
     if (!loader_platform_is_path(file) && *in_dirs) {
-        char *dirs_copy, *dir, *next_dir;
-
-        dirs_copy = loader_stack_alloc(strlen(in_dirs) + 1);
+        char *dirs_copy = loader_stack_alloc(strlen(in_dirs) + 1);
         strcpy(dirs_copy, in_dirs);
 
         // find if file exists after prepending paths in given list
         // for (dir = dirs_copy; *dir && (next_dir = loader_get_next_path(dir)); dir = next_dir) {
-        dir = dirs_copy;
-        next_dir = loader_get_next_path(dir);
+        char *dir = dirs_copy;
+        char *next_dir = loader_get_next_path(dir);
         while (*dir && next_dir) {
             loader_platform_combine_path(out_fullpath, out_size, dir, file, NULL);
             if (loader_platform_file_exists(out_fullpath)) {
@@ -3036,8 +3034,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
                         memcpy(cur_path_ptr, relative_location, rel_size);
                         cur_path_ptr += rel_size;
                         *cur_path_ptr++ = PATH_SEPARATOR;
-                        // only for ICD manifests
-                        if (override_env != NULL && manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
+                        if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
                             use_first_found_manifest = true;
                         }
                     }
