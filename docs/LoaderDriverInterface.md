@@ -506,6 +506,17 @@ The order is similar to the search path on Linux with the exception that
 the application's bundle resources are searched first:
 `(bundle)/Contents/Resources/`.
 
+System installed drivers will be ignored if drivers are found inside of the app
+bundle.
+This is because there is not a standard mechanism in which to distinguish drivers
+that happen to be duplicates.
+For example, MoltenVK is commonly placed inside application bundles.
+If there exists a system installed MoltenVK, the loader will load both the app
+bundled and the system installed MoltenVK, leading to potential issues or crashes.
+Drivers found through environment variables, such as `VK_DRIVER_FILES`, will be
+used regardless of whether there are bundled drivers present or not.
+
+
 #### Example macOS Driver Search Path
 
 For a fictional user "Me" the Driver Manifest search path might look
