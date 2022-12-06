@@ -456,6 +456,7 @@ enum class ManifestDiscoveryType {
     add_env_var,          // use the corresponding add-env-var for it
     override_folder,      // add to a special folder for the override layer to use
     windows_app_package,  // let the app package search find it
+    macos_bundle,         // place it in a location only accessible to macos bundles
 };
 
 struct TestICDDetails {
@@ -490,6 +491,7 @@ enum class ManifestLocation {
     implicit_layer = 6,
     override_layer = 7,
     windows_app_package = 8,
+    macos_bundle = 9,
 };
 
 struct FrameworkEnvironment {
@@ -516,7 +518,10 @@ struct FrameworkEnvironment {
     fs::path get_layer_manifest_path(size_t index = 0) noexcept;
 
     fs::FolderManager& get_folder(ManifestLocation location) noexcept;
-
+#if defined(__APPLE__)
+    // Set the path of the app bundle to the appropriate test framework bundle
+    void setup_macos_bundle() noexcept;
+#endif
     PlatformShimWrapper platform_shim;
     std::vector<fs::FolderManager> folders;
 

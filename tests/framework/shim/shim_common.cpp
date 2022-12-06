@@ -180,10 +180,15 @@ void PlatformShim::redirect_category(fs::path const& new_path, ManifestCategory 
         paths.push_back((home / ".config").str());
         paths.push_back((home / ".local/share").str());
     }
-    parse_and_add_env_var_override(paths, get_env_var("XDG_CONFIG_DIRS"));
-    parse_and_add_env_var_override(paths, get_env_var("XDG_CONFIG_HOME"));
-    parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_DIRS"));
-    parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_HOME"));
+    // Don't report errors on apple - these env-vars are not suppose to be defined
+    bool report_errors = true;
+#if defined(__APPLE__)
+    report_errors = false;
+#endif
+    parse_and_add_env_var_override(paths, get_env_var("XDG_CONFIG_DIRS", report_errors));
+    parse_and_add_env_var_override(paths, get_env_var("XDG_CONFIG_HOME", report_errors));
+    parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_DIRS", report_errors));
+    parse_and_add_env_var_override(paths, get_env_var("XDG_DATA_HOME", report_errors));
     if (category == ManifestCategory::explicit_layer) {
         parse_and_add_env_var_override(paths, get_env_var("VK_LAYER_PATH", false));  // don't report failure
     }

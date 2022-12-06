@@ -27,6 +27,12 @@
 
 #include "shim.h"
 
+#include <algorithm>
+
+#if defined(__APPLE__)
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+
 static PlatformShim platform_shim;
 extern "C" {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -270,6 +276,29 @@ FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char* name) {
 }
 #endif
 
+#if defined(__APPLE__)
+FRAMEWORK_EXPORT CFBundleRef my_CFBundleGetMainBundle() {
+    static CFBundleRef global_bundle{};
+    return reinterpret_cast<CFBundleRef>(&global_bundle);
+}
+FRAMEWORK_EXPORT CFURLRef my_CFBundleCopyResourcesDirectoryURL(CFBundleRef bundle) {
+    static CFURLRef global_url{};
+    return reinterpret_cast<CFURLRef>(&global_url);
+}
+FRAMEWORK_EXPORT Boolean my_CFURLGetFileSystemRepresentation(CFURLRef url, Boolean resolveAgainstBase, UInt8* buffer,
+                                                             CFIndex maxBufLen) {
+    if (!platform_shim.bundle_contents.empty()) {
+        size_t copy_len = platform_shim.bundle_contents.size();
+        if (copy_len > maxBufLen) {
+            copy_len = maxBufLen;
+        }
+        strncpy(reinterpret_cast<char*>(buffer), platform_shim.bundle_contents.c_str(), copy_len);
+        return TRUE;
+    }
+    return FALSE;
+}
+#endif
+
 /* Shiming functions on apple is limited by the linker prefering to not use functions in the
  * executable in loaded dylibs. By adding an interposer, we redirect the linker to use our
  * version of the function over the real one, thus shimming the system function.
@@ -299,5 +328,12 @@ __attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = 
 __attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my__secure_getenv),
                                                                                   VOIDP_CAST(__secure_getenv)};
 #endif
+__attribute__((used)) static Interposer _interpose_CFBundleGetMainBundle MACOS_ATTRIB = {VOIDP_CAST(my_CFBundleGetMainBundle),
+                                                                                         VOIDP_CAST(CFBundleGetMainBundle)};
+__attribute__((used)) static Interposer _interpose_CFBundleCopyResourcesDirectoryURL MACOS_ATTRIB = {
+    VOIDP_CAST(my_CFBundleCopyResourcesDirectoryURL), VOIDP_CAST(CFBundleCopyResourcesDirectoryURL)};
+__attribute__((used)) static Interposer _interpose_CFURLGetFileSystemRepresentation MACOS_ATTRIB = {
+    VOIDP_CAST(my_CFURLGetFileSystemRepresentation), VOIDP_CAST(CFURLGetFileSystemRepresentation)};
+
 #endif
 }  // extern "C"

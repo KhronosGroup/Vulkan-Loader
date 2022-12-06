@@ -2347,7 +2347,7 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
     // NOTE: This is a fake struct to make sure the pNext chain is properly passed down to the ICD
     //       vkEnumeratePhysicalDeviceGroups.
     //       The two versions must match:
-    //           "FakePNext" test in loader_regresion_tests.cpp
+    //           "FakePNext" test in loader_regression_tests.cpp
     //           "test_vkEnumeratePhysicalDeviceGroups" in test_icd.cpp
     struct FakePnextSharedWithICD {
         VkStructureType sType;
@@ -3641,5 +3641,51 @@ TEST(ManifestDiscovery, InvalidSymlink) {
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+}
+#endif
+
+#if defined(__APPLE__)
+// Add two drivers, one to the bundle and one to the system locations
+TEST(ManifestDiscovery, AppleBundles) {
+    FrameworkEnvironment env{};
+    env.setup_macos_bundle();
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::macos_bundle));
+    env.get_test_icd(0).physical_devices.push_back({});
+    env.get_test_icd(0).physical_devices.at(0).properties.deviceID = 1337;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd(1).physical_devices.push_back({});
+    env.get_test_icd(1).physical_devices.at(0).properties.deviceID = 9999;
+
+    InstWrapper inst{env.vulkan_functions};
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+    auto physical_devices = inst.GetPhysDevs();
+    ASSERT_EQ(1, physical_devices.size());
+
+    // Verify that this is the 'right' GPU, aka the one from the bundle
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
+    ASSERT_EQ(env.get_test_icd(0).physical_devices.at(0).properties.deviceID, props.deviceID);
+}
+
+// Add two drivers, one to the bundle and one using the driver env-var
+TEST(ManifestDiscovery, AppleBundlesEnvVarActive) {
+    FrameworkEnvironment env{};
+    env.setup_macos_bundle();
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::macos_bundle));
+    env.get_test_icd(0).physical_devices.push_back({});
+    env.get_test_icd(0).physical_devices.at(0).properties.deviceID = 1337;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::env_var));
+    env.get_test_icd(1).physical_devices.push_back({});
+    env.get_test_icd(1).physical_devices.at(0).properties.deviceID = 9999;
+
+    InstWrapper inst{env.vulkan_functions};
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+    auto physical_devices = inst.GetPhysDevs();
+    ASSERT_EQ(1, physical_devices.size());
+
+    // Verify that this is the 'right' GPU, aka the one from the env-var
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
+    ASSERT_EQ(env.get_test_icd(1).physical_devices.at(0).properties.deviceID, props.deviceID);
 }
 #endif

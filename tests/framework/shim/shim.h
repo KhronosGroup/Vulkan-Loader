@@ -194,6 +194,10 @@ struct PlatformShim {
     bool use_fake_elevation = false;
 
     std::vector<DirEntry> dir_entries;
+
+    #if defined(__APPLE__)
+    std::string bundle_contents;
+    #endif
 #endif
 };
 

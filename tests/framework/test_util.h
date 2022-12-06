@@ -169,7 +169,7 @@ struct path {
     path operator/(std::string const& in) const;
     path operator/(const char* in) const;
 
-    // accesors
+    // accessors
     path parent_path() const;
     bool has_parent_path() const;
     path filename() const;
