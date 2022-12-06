@@ -127,7 +127,7 @@ loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32
 bool loader_check_version_meets_required(loader_api_version required, loader_api_version version) {
     // major version is satisfied
     return (version.major > required.major) ||
-           // major version is equal, minor version is patch version is gerater to minimum minor
+           // major version is equal, minor version is patch version is greater to minimum minor
            (version.major == required.major && version.minor > required.minor) ||
            // major and minor version are equal, patch version is greater or equal to minimum patch
            (version.major == required.major && version.minor == required.minor && version.patch >= required.patch);

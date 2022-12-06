@@ -360,6 +360,7 @@ FrameworkEnvironment::FrameworkEnvironment(bool enable_log, bool set_default_sea
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("implicit_layer_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("override_layer_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("app_package_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("macos_bundle"));
 
     platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
     if (set_default_search_paths) {
@@ -367,6 +368,13 @@ FrameworkEnvironment::FrameworkEnvironment(bool enable_log, bool set_default_sea
         platform_shim->set_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
         platform_shim->set_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
     }
+#if defined(__APPLE__)
+    // Necessary since bundles look in sub folders for manifests, not the test framework folder itself
+    auto bundle_location = get_folder(ManifestLocation::macos_bundle).location();
+    platform_shim->redirect_path(bundle_location / "vulkan/icd.d", bundle_location);
+    platform_shim->redirect_path(bundle_location / "vulkan/explicit_layer.d", bundle_location);
+    platform_shim->redirect_path(bundle_location / "vulkan/implicit_layer.d", bundle_location);
+#endif
 }
 
 void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
@@ -378,6 +386,9 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     }
     if (icd_details.discovery_type == ManifestDiscoveryType::windows_app_package) {
         folder = &get_folder(ManifestLocation::windows_app_package);
+    }
+    if (icd_details.discovery_type == ManifestDiscoveryType::macos_bundle) {
+        folder = &get_folder(ManifestLocation::macos_bundle);
     }
     if (!icd_details.is_fake) {
         fs::path new_driver_name = fs::path(icd_details.icd_manifest.lib_path).stem() + "_" + std::to_string(cur_icd_index) +
@@ -415,6 +426,8 @@ void FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
             add_env_var_vk_icd_filenames += (folder->location() / full_json_name).str();
             set_env_var("VK_ADD_DRIVER_FILES", add_env_var_vk_icd_filenames);
             break;
+        case (ManifestDiscoveryType::macos_bundle):
+            platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
         case (ManifestDiscoveryType::none):
             break;
 #ifdef _WIN32
@@ -456,7 +469,7 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             if (!env_var_vk_layer_paths.empty()) {
                 env_var_vk_layer_paths += OS_ENV_VAR_LIST_SEPARATOR;
             }
-            if(layer_details.is_dir) {
+            if (layer_details.is_dir) {
                 env_var_vk_layer_paths += fs_ptr->location().str();
             } else {
                 env_var_vk_layer_paths += fs_ptr->location().str() + OS_ENV_VAR_LIST_SEPARATOR + layer_details.json_name;
@@ -474,6 +487,9 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             break;
         case (ManifestDiscoveryType::override_folder):
             fs_ptr = &get_folder(ManifestLocation::override_layer);
+            break;
+        case (ManifestDiscoveryType::macos_bundle):
+            fs_ptr = &(get_folder(ManifestLocation::macos_bundle));
             break;
         case (ManifestDiscoveryType::none):
             break;
@@ -520,6 +536,11 @@ fs::FolderManager& FrameworkEnvironment::get_folder(ManifestLocation location) n
     // index it directly using the enum location since they will always be in that order
     return folders.at(static_cast<size_t>(location));
 }
+#if defined(__APPLE__)
+void FrameworkEnvironment::setup_macos_bundle() noexcept {
+    platform_shim->bundle_contents = get_folder(ManifestLocation::macos_bundle).location().str();
+}
+#endif
 const char* get_platform_wsi_extension(const char* api_selection) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     return "VK_KHR_android_surface";

@@ -38,7 +38,7 @@
 
 // Trampoline entrypoints are in this file for core Vulkan commands
 
-/* vkGetInstanceProcAddr: Get global level or instance level entrypoint addressess.
+/* vkGetInstanceProcAddr: Get global level or instance level entrypoint addresses.
  * @param instance
  * @param pName
  * @return
@@ -55,7 +55,7 @@
  *
  * Note:
  * Vulkan header updated 1.2.193 changed the behavior of vkGetInstanceProcAddr for global entrypoints. They used to always be
- * returned regardless of the value of the instance paramtere. The spec was amended in this version to only allow querying global
+ * returned regardless of the value of the instance parameter. The spec was amended in this version to only allow querying global
  * level entrypoints with a NULL instance. However, as to not break old applications, the new behavior is only applied if the
  * instance passed in is both valid and minor version is greater than 1.2, which was when this change in behavior occurred. Only
  * instances with a newer version will get the new behavior.
@@ -2131,7 +2131,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyImage(VkCommandBuffer commandB
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdCopyImage: Invalid commandBuffer [VUID-vkCmdCopyImage-devcommandBufferice-parameter]");
+                   "vkCmdCopyImage: Invalid commandBuffer [VUID-vkCmdCopyImage-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
