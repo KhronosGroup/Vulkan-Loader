@@ -170,6 +170,14 @@ void loader_handle_load_library_error(const struct loader_instance *inst, const 
         if (NULL != lib_status) {
             *lib_status = LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE;
         }
+    }
+    // Check if the error is due to lack of memory
+    // "with error 8" is the windows error code for OOM cases, aka ERROR_NOT_ENOUGH_MEMORY
+    // Linux doesn't have such a nice error message - only if there are reported issues should this be called
+    else if (strstr(error_message, " with error 8") != NULL) {
+        if (NULL != lib_status) {
+            *lib_status = LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY;
+        }
     } else if (NULL != lib_status) {
         *lib_status = LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD;
     }
@@ -1373,7 +1381,11 @@ static VkResult loader_scanned_icd_add(const struct loader_instance *inst, struc
 #endif
     if (NULL == handle) {
         loader_handle_load_library_error(inst, filename, lib_status);
-        res = VK_ERROR_INCOMPATIBLE_DRIVER;
+        if (lib_status && *lib_status == LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        } else {
+            res = VK_ERROR_INCOMPATIBLE_DRIVER;
+        }
         goto out;
     }
 
@@ -3551,6 +3563,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     break;
                 }
                 case LOADER_LAYER_LIB_SUCCESS_LOADED:
+                case LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY:
                     // Shouldn't be able to reach this but if it is, best to report a debug
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "Shouldn't reach this. A valid version of requested ICD %s was loaded but something bad "
@@ -4450,6 +4463,9 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             }
 
             lib_handle = loader_open_layer_file(inst, layer_prop);
+            if (layer_prop->lib_status == LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
             if (!lib_handle) {
                 continue;
             }
@@ -4599,6 +4615,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                                ending);
                     break;
                 case LOADER_LAYER_LIB_SUCCESS_LOADED:
+                case LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY:
                     // Shouldn't be able to reach this but if it is, best to report a debug
                     loader_log(inst, log_flag, 0,
                                "Shouldn't reach this. A valid version of requested layer %s was loaded but was not found in the "
