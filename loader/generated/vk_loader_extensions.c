@@ -898,6 +898,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdSetStencilTestEnableEXT = (PFN_vkCmdSetStencilTestEnableEXT)gdpa(dev, "vkCmdSetStencilTestEnableEXT");
     table->CmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)gdpa(dev, "vkCmdSetStencilOpEXT");
 
+    // ---- VK_EXT_swapchain_maintenance1 extension commands
+    table->ReleaseSwapchainImagesEXT = (PFN_vkReleaseSwapchainImagesEXT)gdpa(dev, "vkReleaseSwapchainImagesEXT");
+
     // ---- VK_NV_device_generated_commands extension commands
     table->GetGeneratedCommandsMemoryRequirementsNV = (PFN_vkGetGeneratedCommandsMemoryRequirementsNV)gdpa(dev, "vkGetGeneratedCommandsMemoryRequirementsNV");
     table->CmdPreprocessGeneratedCommandsNV = (PFN_vkCmdPreprocessGeneratedCommandsNV)gdpa(dev, "vkCmdPreprocessGeneratedCommandsNV");
@@ -1985,6 +1988,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdSetDepthBoundsTestEnableEXT")) return (void *)table->CmdSetDepthBoundsTestEnableEXT;
     if (!strcmp(name, "CmdSetStencilTestEnableEXT")) return (void *)table->CmdSetStencilTestEnableEXT;
     if (!strcmp(name, "CmdSetStencilOpEXT")) return (void *)table->CmdSetStencilOpEXT;
+
+    // ---- VK_EXT_swapchain_maintenance1 extension commands
+    if (!strcmp(name, "ReleaseSwapchainImagesEXT")) return (void *)table->ReleaseSwapchainImagesEXT;
 
     // ---- VK_NV_device_generated_commands extension commands
     if (!strcmp(name, "GetGeneratedCommandsMemoryRequirementsNV")) return (void *)table->GetGeneratedCommandsMemoryRequirementsNV;
@@ -5917,6 +5923,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
 }
 
 
+// ---- VK_EXT_swapchain_maintenance1 extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkReleaseSwapchainImagesEXT: Invalid device "
+                   "[VUID-vkReleaseSwapchainImagesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->ReleaseSwapchainImagesEXT(device, pReleaseInfo);
+}
+
+
 // ---- VK_NV_device_generated_commands extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(
@@ -9223,6 +9245,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_swapchain_maintenance1 extension commands
+    if (!strcmp("vkReleaseSwapchainImagesEXT", name)) {
+        *addr = (void *)ReleaseSwapchainImagesEXT;
+        return true;
+    }
+
     // ---- VK_NV_device_generated_commands extension commands
     if (!strcmp("vkGetGeneratedCommandsMemoryRequirementsNV", name)) {
         *addr = (void *)GetGeneratedCommandsMemoryRequirementsNV;
@@ -10318,6 +10346,7 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #endif // VK_USE_PLATFORM_METAL_EXT
                                                   VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME,
                                                   VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
+                                                  VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME,
                                                   VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
                                                   VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME,
