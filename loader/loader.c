@@ -4687,10 +4687,17 @@ void loader_activate_instance_layer_extensions(struct loader_instance *inst, VkI
                                                   created_inst);
 }
 
+#ifdef __APPLE__
 VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
                                     struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
-                                    PFN_vkGetDeviceProcAddr *layerNextGDPA) {
+                                    PFN_vkGetDeviceProcAddr *layerNextGDPA) __attribute__ ((optnone)) {
+#else
+    VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
+                                        const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
+                                        struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
+                                        PFN_vkGetDeviceProcAddr *layerNextGDPA) {
+#endif
     uint32_t num_activated_layers = 0;
     struct activated_layer_info *activated_layers = NULL;
     VkLayerDeviceLink *layer_device_link_info;
