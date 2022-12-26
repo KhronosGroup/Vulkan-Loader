@@ -109,7 +109,9 @@ if(BUILD_STATIC_LOADER)
         "or tested as part of the loader. Use it at your own risk.")
 endif()
 
-find_package(VulkanHeaders REQUIRED CONFIG QUIET)
+if (NOT TARGET Vulkan::Headers)
+    find_package(VulkanHeaders REQUIRED CONFIG QUIET)
+endif()
 
 include(GNUInstallDirs)
 
