@@ -239,30 +239,6 @@ def makeGenOpts(args):
             helper_file_type  = 'object_types_header')
         ]
 
-    # Loader Generated Header Version Options for loader_generated_header_version.cmake
-    genOpts['loader_generated_header_version.cmake'] = [
-          LoaderVersioningGenerator,
-          LoaderVersioningGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'loader_generated_header_version.cmake',
-            directory         = directory,
-            genpath           = None,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants  = False)
-        ]
-
 # Create an API generator and corresponding generator options based on
 # the requested target and command line options.
 # This is encapsulated in a function so it can be profiled and/or timed.
@@ -381,7 +357,6 @@ if __name__ == '__main__':
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
     from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
-    from loader_versioning_generator import LoaderVersioningGenerator, LoaderVersioningGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
