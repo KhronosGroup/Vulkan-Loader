@@ -299,12 +299,8 @@ struct loader_icd_term_dispatch {
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_KHR_video_queue extension commands
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR GetPhysicalDeviceVideoCapabilitiesKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR GetPhysicalDeviceVideoFormatPropertiesKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_get_physical_device_properties2 extension commands
     PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysicalDeviceFeatures2KHR;

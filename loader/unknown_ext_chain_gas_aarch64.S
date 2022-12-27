@@ -27,6 +27,7 @@
 
 .macro PhysDevExtTramp num
 .global vkPhysDevExtTramp\num
+.hidden vkPhysDevExtTramp\num
 vkPhysDevExtTramp\num:
     ldr     x9, [x0]                                                 // Load the loader_instance_dispatch_table* into x9
     ldr     x0, [x0, PHYS_DEV_OFFSET_PHYS_DEV_TRAMP]                 // Load the unwrapped VkPhysicalDevice into x0
@@ -37,6 +38,7 @@ vkPhysDevExtTramp\num:
 
 .macro PhysDevExtTermin num
 .global vkPhysDevExtTermin\num
+.hidden vkPhysDevExtTermin\num
 vkPhysDevExtTermin\num:
     ldr     x9, [x0, ICD_TERM_OFFSET_PHYS_DEV_TERM]             // Load the loader_icd_term* in x9
     mov     x11, (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num)) // Put the offset into the dispatch table in x11
@@ -60,6 +62,7 @@ terminError\num:
 
 .macro DevExtTramp num
 .global vkdev_ext\num
+.hidden vkdev_ext\num
 vkdev_ext\num:
     ldr     x9, [x0]                                              // Load the loader_instance_dispatch_table* into x9
     mov     x10, (EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * \num)) // Offset of the desired function in the dispatch table

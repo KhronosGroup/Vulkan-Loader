@@ -49,61 +49,50 @@ class MemoryTracker {
     VkAllocationCallbacks callbacks{};
     // Implementation internals
     struct AllocationDetails {
+        std::unique_ptr<char[]> allocation;
         size_t requested_size_bytes;
         size_t actual_size_bytes;
+        size_t alignment;
         VkSystemAllocationScope alloc_scope;
     };
     const static size_t UNKNOWN_ALLOCATION = std::numeric_limits<size_t>::max();
     size_t allocation_count = 0;
     size_t call_count = 0;
-    std::vector<std::unique_ptr<char[]>> allocations;
-    std::vector<void*> allocations_aligned;
-    std::vector<AllocationDetails> allocation_details;
-    void add_element(std::unique_ptr<char[]>&& alloc, void* aligned_alloc, AllocationDetails detail) {
-        allocations.push_back(std::move(alloc));
-        allocations_aligned.push_back(aligned_alloc);
-        allocation_details.push_back(detail);
-    }
-    void erase_index(size_t index) {
-        allocations.erase(std::next(allocations.begin(), index));
-        allocations_aligned.erase(std::next(allocations_aligned.begin(), index));
-        allocation_details.erase(std::next(allocation_details.begin(), index));
-    }
-    size_t find_element(void* ptr) {
-        auto it = std::find(allocations_aligned.begin(), allocations_aligned.end(), ptr);
-        if (it == allocations_aligned.end()) return UNKNOWN_ALLOCATION;
-        return it - allocations_aligned.begin();
-    }
+    std::unordered_map<void*, AllocationDetails> allocations;
 
     void* allocate(size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
-        if (settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) return nullptr;
-        if (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls) return nullptr;
+        if ((settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) ||
+            (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)) {
+            return nullptr;
+        }
         call_count++;
-        AllocationDetails detail{size, size + (alignment - 1), alloc_scope};
-        auto alloc = std::unique_ptr<char[]>(new char[detail.actual_size_bytes]);
-        if (!alloc) return nullptr;
-        uint64_t addr = (uint64_t)alloc.get();
+        allocation_count++;
+        AllocationDetails detail{nullptr, size, size + (alignment - 1), alignment, alloc_scope};
+        detail.allocation = std::unique_ptr<char[]>(new char[detail.actual_size_bytes]);
+        if (!detail.allocation) {
+            abort();
+        };
+        uint64_t addr = (uint64_t)detail.allocation.get();
         addr += (alignment - 1);
         addr &= ~(alignment - 1);
         void* aligned_alloc = (void*)addr;
-        add_element(std::move(alloc), aligned_alloc, detail);
-        allocation_count++;
-        return allocations_aligned.back();
+        allocations.insert(std::make_pair(aligned_alloc, std::move(detail)));
+        return aligned_alloc;
     }
     void* reallocate(void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
         if (pOriginal == nullptr) {
             return allocate(size, alignment, alloc_scope);
         }
-        size_t index = find_element(pOriginal);
-        if (index == UNKNOWN_ALLOCATION) return nullptr;
-        size_t original_size = allocation_details[index].requested_size_bytes;
+        auto elem = allocations.find(pOriginal);
+        if (elem == allocations.end()) return nullptr;
+        size_t original_size = elem->second.requested_size_bytes;
 
         // We only care about the case where realloc is used to increase the size
         if (size >= original_size && settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)
             return nullptr;
         call_count++;
         if (size == 0) {
-            erase_index(index);
+            allocations.erase(elem);
             allocation_count--;
             return nullptr;
         } else if (size < original_size) {
@@ -111,16 +100,18 @@ class MemoryTracker {
         } else {
             void* new_alloc = allocate(size, alignment, alloc_scope);
             if (new_alloc == nullptr) return nullptr;
+            allocation_count--;  // allocate() increments this, we we don't want that
+            call_count--;        // allocate() also increments this, we don't want that
             memcpy(new_alloc, pOriginal, original_size);
-            erase_index(index);
+            allocations.erase(elem);
             return new_alloc;
         }
     }
     void free(void* pMemory) {
         if (pMemory == nullptr) return;
-        size_t index = find_element(pMemory);
-        if (index == UNKNOWN_ALLOCATION) return;
-        erase_index(index);
+        auto elem = allocations.find(pMemory);
+        if (elem == allocations.end()) return;
+        allocations.erase(elem);
         assert(allocation_count != 0 && "Cant free when there are no valid allocations");
         allocation_count--;
     }
@@ -153,9 +144,7 @@ class MemoryTracker {
 
    public:
     MemoryTracker(MemoryTrackerSettings settings) noexcept : settings(settings) {
-        allocations.reserve(512);
-        allocations_aligned.reserve(512);
-        allocation_details.reserve(512);
+        allocations.reserve(3000);
 
         callbacks.pUserData = this;
         callbacks.pfnAllocation = public_allocation;
@@ -170,9 +159,6 @@ class MemoryTracker {
 
     bool empty() noexcept { return allocation_count == 0; }
 
-    void update_settings(MemoryTrackerSettings new_settings) noexcept { settings = new_settings; }
-    size_t current_allocation_count() const noexcept { return allocation_count; }
-    size_t current_call_count() const noexcept { return call_count; }
     // Static callbacks
     static VKAPI_ATTR void* VKAPI_CALL public_allocation(void* pUserData, size_t size, size_t alignment,
                                                          VkSystemAllocationScope allocationScope) noexcept {
@@ -205,7 +191,7 @@ TEST(Allocation, Instance) {
     MemoryTracker tracker;
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
     }
     ASSERT_TRUE(tracker.empty());
 }
@@ -219,7 +205,7 @@ TEST(Allocation, GetInstanceProcAddr) {
     MemoryTracker tracker;
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         auto* pfnCreateDevice = inst->vkGetInstanceProcAddr(inst, "vkCreateDevice");
         auto* pfnDestroyDevice = inst->vkGetInstanceProcAddr(inst, "vkDestroyDevice");
@@ -239,7 +225,7 @@ TEST(Allocation, EnumeratePhysicalDevices) {
     driver.physical_devices.emplace_back("physical_device_0");
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
@@ -265,7 +251,7 @@ TEST(Allocation, InstanceAndDevice) {
     driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -313,7 +299,7 @@ TEST(Allocation, InstanceButNotDevice) {
         driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
         InstWrapper inst{env.vulkan_functions, tracker.get()};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -370,7 +356,7 @@ TEST(Allocation, DeviceButNotInstance) {
         driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
 
         InstWrapper inst{env.vulkan_functions};
-        inst.CheckCreate();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
         uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
@@ -493,7 +479,7 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
     env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
     InstWrapper inst{env.vulkan_functions};
-    inst.CheckCreate();
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
     uint32_t physical_count = 2;
     uint32_t returned_physical_count = 0;
@@ -541,24 +527,49 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
 // leak memory if one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    uint32_t num_physical_devices = 4;
+    uint32_t num_implicit_layers = 3;
+    for (uint32_t i = 0; i < num_physical_devices; i++) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)
+                        .icd_manifest.set_is_portability_driver(false)
+                        .set_library_arch(sizeof(void*) == 8 ? "64" : "32"));
+        auto& driver = env.get_test_icd(i);
+        driver.set_icd_api_version(VK_API_VERSION_1_1);
+        driver.add_instance_extension("VK_KHR_get_physical_device_properties2");
+        driver.physical_devices.emplace_back("physical_device_0");
+        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+        driver.physical_devices[0].add_extensions({"VK_EXT_one", "VK_EXT_two", "VK_EXT_three", "VK_EXT_four", "VK_EXT_five"});
+    }
 
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+    env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_ImplicitAllocFail";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_disable_environment("DISABLE_ENV")),
                            "test_layer.json");
     env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+    for (uint32_t i = 1; i < num_implicit_layers + 1; i++) {
+        env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("VK_LAYER_Implicit1" + std::to_string(i))
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ENV")),
+                               "test_layer_" + std::to_string(i) + ".json");
+    }
+    std::fstream custom_json_file{COMPLEX_JSON_FILE, std::ios_base::in};
+    ASSERT_TRUE(custom_json_file.is_open());
+    std::stringstream custom_json_file_contents;
+    custom_json_file_contents << custom_json_file.rdbuf();
+
+    fs::path new_path = env.get_folder(ManifestLocation::explicit_layer)
+                            .write_manifest("VkLayer_complex_file.json", custom_json_file_contents.str());
+    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, new_path);
 
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker{MemoryTrackerSettings{false, 0, true, fail_index}};
         fail_index++;  // applies to the next loop
 
         VkInstance instance;
@@ -568,8 +579,8 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
             ASSERT_TRUE(tracker.empty());
             continue;
         }
+        ASSERT_EQ(result, VK_SUCCESS);
 
-        uint32_t physical_count = 1;
         uint32_t returned_physical_count = 0;
         result = env.vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, nullptr);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
@@ -577,37 +588,44 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
             ASSERT_TRUE(tracker.empty());
             continue;
         }
-        ASSERT_EQ(physical_count, returned_physical_count);
+        ASSERT_EQ(result, VK_SUCCESS);
+        ASSERT_EQ(num_physical_devices, returned_physical_count);
 
-        VkPhysicalDevice physical_device;
-        result = env.vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, &physical_device);
+        std::vector<VkPhysicalDevice> physical_devices;
+        physical_devices.resize(returned_physical_count);
+        result = env.vulkan_functions.vkEnumeratePhysicalDevices(instance, &returned_physical_count, physical_devices.data());
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
             ASSERT_TRUE(tracker.empty());
             continue;
         }
-        ASSERT_EQ(physical_count, returned_physical_count);
+        ASSERT_EQ(result, VK_SUCCESS);
+        ASSERT_EQ(num_physical_devices, returned_physical_count);
+        for (uint32_t i = 0; i < returned_physical_count; i++) {
+            uint32_t family_count = 1;
+            uint32_t returned_family_count = 0;
+            env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices.at(i), &returned_family_count, nullptr);
+            ASSERT_EQ(returned_family_count, family_count);
 
-        uint32_t family_count = 1;
-        uint32_t returned_family_count = 0;
-        env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, nullptr);
-        ASSERT_EQ(returned_family_count, family_count);
+            VkQueueFamilyProperties family;
+            env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_devices.at(i), &returned_family_count, &family);
+            ASSERT_EQ(returned_family_count, family_count);
+            ASSERT_EQ(family.queueFlags, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT));
+            ASSERT_EQ(family.queueCount, family_count);
+            ASSERT_EQ(family.timestampValidBits, 0U);
 
-        VkQueueFamilyProperties family;
-        env.vulkan_functions.vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &returned_family_count, &family);
-        ASSERT_EQ(returned_family_count, family_count);
-        ASSERT_EQ(family.queueFlags, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT));
-        ASSERT_EQ(family.queueCount, family_count);
-        ASSERT_EQ(family.timestampValidBits, 0U);
+            DeviceCreateInfo dev_create_info;
+            DeviceQueueCreateInfo queue_info;
+            queue_info.add_priority(0.0f);
+            dev_create_info.add_device_queue(queue_info);
 
-        DeviceCreateInfo dev_create_info;
-        DeviceQueueCreateInfo queue_info;
-        queue_info.add_priority(0.0f);
-        dev_create_info.add_device_queue(queue_info);
+            VkDevice device;
+            result = env.vulkan_functions.vkCreateDevice(physical_devices.at(i), dev_create_info.get(), tracker.get(), &device);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                break;
+            }
+            ASSERT_EQ(result, VK_SUCCESS);
 
-        VkDevice device;
-        result = env.vulkan_functions.vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device);
-        if (result == VK_SUCCESS) {
             env.vulkan_functions.vkDestroyDevice(device, tracker.get());
         }
         env.vulkan_functions.vkDestroyInstance(instance, tracker.get());

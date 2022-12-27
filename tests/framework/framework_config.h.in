@@ -65,6 +65,8 @@
 #define TEST_LAYER_WRAP_OBJECTS_2 "$<TARGET_FILE:test_layer_wrap_objects_2>"
 #define TEST_LAYER_WRAP_OBJECTS_3 "$<TARGET_FILE:test_layer_wrap_objects_3>"
 
+#define COMPLEX_JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/data/VkLayer_complex_file.json"
+
 // Dummy Binaries
 #if _WIN32 || _WIN64
 #define DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.dll"

@@ -340,6 +340,9 @@ provided by the standard explicit layer paths mentioned above.
 The paths provided by `VK_ADD_LAYER_PATH` are added before the standard list
 of search folders and will therefore be searched first.
 
+If `VK_LAYER_PATH` is present, then `VK_ADD_LAYER_PATH` will not be used by the
+loader and any values will be ignored.
+
 For security reasons, both `VK_LAYER_PATH` and `VK_ADD_LAYER_PATH` are ignored
 if running with elevated privileges.
 See [Exception for Elevated Privileges](#exception-for-elevated-privileges)

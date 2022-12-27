@@ -659,7 +659,7 @@ discovery.
         <i>VK_LAYER_PATH</i></small></td>
     <td><small>
         Override the loader's standard Layer library search folders and use the
-        provided delimited folders to search for explicit layer manifest files.
+        provided delimited file and/or folders to locate explicit layer manifest files.
     </small></td>
     <td><small>
         <a href="#elevated-privilege-caveats">

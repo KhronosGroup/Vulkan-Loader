@@ -1035,6 +1035,7 @@ TEST(MetaLayers, ExplicitMetaLayer) {
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_test_layer.json");
+
     {  // global functions
         // should find 1, the 'regular' layer
         uint32_t layer_count = 0;
@@ -2087,6 +2088,92 @@ TEST(ExplicitLayers, WrapObjects) {
         DeviceWrapper dev{inst};
         dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_dev);
+    }
+}
+
+TEST(ExplicitLayers, VkLayerPathEnvVar) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    { 
+        // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
+        const char* regular_layer_name_1 = "RegularLayer1";
+        env.add_explicit_layer(
+        TestLayerDetails(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_1.json").set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+
+        InstWrapper inst(env.vulkan_functions);
+        inst.create_info.add_layer(regular_layer_name_1);
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 1U);
+
+        VkLayerProperties layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
+        EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name_1));
+    }
+    { 
+        // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
+        const char* regular_layer_name_1 = "RegularLayer1";
+        env.add_explicit_layer(
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_1.json").set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+
+        const char* regular_layer_name_2 = "RegularLayer2";
+        env.add_explicit_layer(
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_2.json").set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+
+        InstWrapper inst(env.vulkan_functions);
+        inst.create_info.add_layer(regular_layer_name_1);
+        inst.create_info.add_layer(regular_layer_name_2);
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
+    }
+    { 
+        // verify layers load successfully when setting VK_LAYER_PATH to a directory
+        const char* regular_layer_name_1 = "RegularLayer1";
+        env.add_explicit_layer(
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_1.json").set_discovery_type(ManifestDiscoveryType::env_var));
+
+        const char* regular_layer_name_2 = "RegularLayer2";
+        env.add_explicit_layer(
+            TestLayerDetails(
+                ManifestLayer{}.add_layer(
+                    ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                "regular_layer_2.json").set_discovery_type(ManifestDiscoveryType::env_var));
+
+        InstWrapper inst(env.vulkan_functions);
+        inst.create_info.add_layer(regular_layer_name_1);
+        inst.create_info.add_layer(regular_layer_name_2);
+        inst.CheckCreate(VK_SUCCESS);
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 0;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+        ASSERT_EQ(count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
     }
 }
 
