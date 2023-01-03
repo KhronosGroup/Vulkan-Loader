@@ -440,7 +440,7 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
     driver_files += (fs::path("totally_made_up") / "path_to_fake" / "jason_file.json").str();
     set_env_var("VK_DRIVER_FILES", driver_files);
     EnvVarCleaner cleaner("VK_DRIVER_FILES");
-    size_t fail_index = 66;  // 0
+    size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
         MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
