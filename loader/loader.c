@@ -4710,6 +4710,20 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
     memcpy(&loader_create_info, pCreateInfo, sizeof(VkInstanceCreateInfo));
 
+    if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
+        inst->enabled_layer_count = pCreateInfo->enabledLayerCount;
+
+        inst->enabled_layer_names = (char **)loader_instance_heap_alloc(inst, sizeof(char *) * pCreateInfo->enabledLayerCount,
+                                                                        VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+
+        for (uint32_t i = 0, n = inst->enabled_layer_count; i < n; ++i) {
+            size_t size = strlen(pCreateInfo->ppEnabledLayerNames[i]) + 1;
+            inst->enabled_layer_names[i] = (char *)loader_instance_heap_alloc(inst, sizeof(char) * size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            memset(inst->enabled_layer_names[i], '\0', sizeof(char) * size);
+            strcpy(inst->enabled_layer_names[i], pCreateInfo->ppEnabledLayerNames[i]);
+        }
+    }
+
     if (inst->expanded_activated_layer_list.count > 0) {
         chain_info.u.pLayerInfo = NULL;
         chain_info.pNext = pCreateInfo->pNext;
@@ -5003,6 +5017,34 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
     PFN_vkGetInstanceProcAddr fpGIPA = NULL, nextGIPA = loader_gpa_instance_terminator;
 
     memcpy(&loader_create_info, pCreateInfo, sizeof(VkDeviceCreateInfo));
+
+    if (loader_create_info.enabledLayerCount > 0 && loader_create_info.ppEnabledLayerNames != NULL) {
+        bool invalid_device_layer_usage = false;
+
+        if (loader_create_info.enabledLayerCount != inst->enabled_layer_count && loader_create_info.enabledLayerCount > 0) {
+            invalid_device_layer_usage = true;
+        } else if (loader_create_info.enabledLayerCount > 0 && loader_create_info.ppEnabledLayerNames == NULL) {
+            invalid_device_layer_usage = true;
+        } else if (loader_create_info.enabledLayerCount == 0 && loader_create_info.ppEnabledLayerNames != NULL) {
+            invalid_device_layer_usage = true;
+        } else if (inst->enabled_layer_names != NULL) {
+            for (uint32_t i = 0; i < loader_create_info.enabledLayerCount; i++) {
+                const char *device_layer_names = loader_create_info.ppEnabledLayerNames[i];
+
+                if (strcmp(device_layer_names, inst->enabled_layer_names[i]) != 0) {
+                    invalid_device_layer_usage = true;
+                    break;
+                }
+            }
+        }
+
+        if (invalid_device_layer_usage) {
+            loader_log(
+                inst, VULKAN_LOADER_WARN_BIT, 0,
+                "loader_create_device_chain: Using deprecated and ignored 'ppEnabledLayerNames' member of 'VkDeviceCreateInfo' "
+                "when creating a Vulkan device.");
+        }
+    }
 
     // Before we continue, we need to find out if the KHR_device_group extension is in the enabled list.  If it is, we then
     // need to look for the corresponding VkDeviceGroupDeviceCreateInfoKHR struct in the device list.  This is because we
@@ -5809,6 +5851,15 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     }
     loader_free_dev_ext_table(ptr_instance);
     loader_free_phys_dev_ext_table(ptr_instance);
+
+    for (uint32_t i = 0, n = ptr_instance->enabled_layer_count; i < n; ++i) {
+        loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names[i]);
+    }
+
+    if (ptr_instance->enabled_layer_count > 0) {
+        loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names);
+        memset(&ptr_instance->enabled_layer_names, 0, sizeof(ptr_instance->enabled_layer_names));
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
