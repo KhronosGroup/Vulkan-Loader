@@ -312,7 +312,7 @@ else()
     add_dependencies(vulkan loader_asm_gen_files)
     set_target_properties(vulkan
                           PROPERTIES SOVERSION "1"
-                          VERSION ${VulkanHeaders_VERSION})
+                          VERSION ${LOADER_GENERATED_HEADER_VERSION})
     target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m)
     if (NOT ANDROID)
         target_link_libraries(vulkan PRIVATE Threads::Threads)
@@ -351,7 +351,7 @@ else()
             OUTPUT_NAME vulkan
             FRAMEWORK TRUE
             FRAMEWORK_VERSION A
-            VERSION "${VulkanHeaders_VERSION}" # "current version"
+            VERSION "${LOADER_GENERATED_HEADER_VERSION}" # "current generated version"
             SOVERSION "1.0.0"                  # "compatibility version"
             MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
             PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
@@ -375,7 +375,7 @@ endif()
 # Generate pkg-config file.
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
-    set(VK_API_VERSION "${VulkanHeaders_VERSION}")
+    set(VK_API_VERSION "${LOADER_GENERATED_HEADER_VERSION}")
     set(PRIVATE_LIBS "")
     if (APPLE AND BUILD_STATIC_LOADER)
         # Libs.private should only be present when building a static loader

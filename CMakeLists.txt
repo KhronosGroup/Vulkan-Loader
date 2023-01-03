@@ -24,6 +24,9 @@ set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM OFF)
 
 project(Vulkan-Loader)
 
+# Gets the header version used during code generation
+include(cmake/generated_header_version.cmake)
+
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
 
@@ -322,8 +325,9 @@ if(PYTHONINTERP_FOUND)
     get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
     add_custom_target(VulkanLoader_generated_source
                       COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} --incremental
-                      )
+                              ${VulkanRegistry_DIR}
+                              --generated-version ${VulkanHeaders_VERSION}
+                              --incremental)
 else()
     message("WARNING: VulkanLoader_generated_source target requires python 3")
 endif()
