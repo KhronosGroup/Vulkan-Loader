@@ -194,6 +194,11 @@ void InstWrapper::CheckCreate(VkResult result_to_check) {
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
 }
 
+void InstWrapper::CheckCreateWithInfo(InstanceCreateInfo& create_info, VkResult result_to_check) {
+    ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
+}
+
+
 std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check) {
     uint32_t physical_count = phys_dev_count;
     std::vector<VkPhysicalDevice> physical_devices;

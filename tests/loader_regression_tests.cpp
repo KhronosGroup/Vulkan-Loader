@@ -969,6 +969,95 @@ TEST(CreateDevice, LayersNotPresent) {
     dev.CheckCreate(phys_dev);
 }
 
+// Device layers are deprecated.
+// Ensure that no error occur if instance and device are created with the same list of layers.
+// https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
+TEST(CreateDevice, MatchInstanceAndDeviceLayers) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_layer(layer_name).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+    dev.CheckCreate(phys_dev);
+}
+
+// Device layers are deprecated.
+// Ensure that a message is generated when instance and device are created with different list of layers.
+// At best , the user can list only instance layers in the device layer list
+// https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
+TEST(CreateDevice, UnmatchInstanceAndDeviceLayers) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
+
+    DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, debug_log);
+    inst.CheckCreate();
+
+    DebugUtilsWrapper log{inst, VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT};
+    CreateDebugUtilsMessenger(log);
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_layer(layer_name).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+    dev.CheckCreate(phys_dev);
+
+    ASSERT_TRUE(log.find("loader_create_device_chain: Using deprecated and ignored 'ppEnabledLayerNames' member of 'VkDeviceCreateInfo' when creating a Vulkan device."));
+}
+
+// Device layers are deprecated.
+// Ensure that when VkInstanceCreateInfo is deleted, the check of the instance layer lists is running correctly during VkDevice creation
+// https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
+TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    {
+        // We intentionally create a local InstanceCreateInfo that goes out of scope at the } so that when dev.CheckCreate is called the layer name pointers are no longer valid
+        InstanceCreateInfo create_info{};
+        create_info.add_layer(layer_name);
+        inst.CheckCreateWithInfo(create_info);
+    }
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_layer(layer_name).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+
+    dev.CheckCreate(phys_dev);
+}
+
 TEST(CreateDevice, ConsecutiveCreate) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));

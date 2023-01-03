@@ -266,6 +266,9 @@ struct loader_instance {
 
     struct loader_msg_callback_map_entry *icd_msg_callback_map;
 
+    uint32_t enabled_layer_count;
+    char **enabled_layer_names;
+
     struct loader_layer_list instance_layer_list;
     bool override_layer_present;
 
