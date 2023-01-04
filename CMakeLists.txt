@@ -267,6 +267,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(loader_common_options INTERFACE -Wno-stringop-truncation -Wno-stringop-overflow)
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
+            target_compile_options(loader_common_options INTERFACE -Wshadow=local) #only added in GCC 7
+        endif()
     endif()
 
     if(UNIX)

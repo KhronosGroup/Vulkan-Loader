@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021-2022 The Khronos Group Inc.
- * Copyright (c) 2021-2022 Valve Corporation
- * Copyright (c) 2021-2022 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -133,7 +133,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6_in_drive
 // Make the version_6 driver found through the D3DKMT driver discovery mechanism of the loader
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_3}.set_discovery_type(ManifestDiscoveryType::none));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_3}.set_discovery_type(ManifestDiscoveryType::null_dir));
     // Version 6 provides a mechanism to allow the loader to sort physical devices.
     // The loader will only attempt to sort physical devices on an ICD if version 6 of the interface is supported.
     // This version provides the vk_icdEnumerateAdapterPhysicalDevices function.
@@ -186,7 +186,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
 // EnumerateAdapterPhysicalDevices
 TEST(ICDInterfaceVersion2, EnumAdapters2) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::none));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::null_dir));
     InstWrapper inst{env.vulkan_functions};
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_1");
@@ -212,7 +212,7 @@ TEST(ICDInterfaceVersion2, EnumAdapters2) {
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResults) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}.set_discovery_type(
-        ManifestDiscoveryType::none));
+        ManifestDiscoveryType::null_dir));
     auto& driver = env.get_test_icd();
     driver.min_icd_interface_version = 6;
     driver.set_icd_api_version(VK_API_VERSION_1_1);
@@ -256,7 +256,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResul
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}.set_discovery_type(
-        ManifestDiscoveryType::none));
+        ManifestDiscoveryType::null_dir));
     auto& driver = env.get_test_icd();
     driver.min_icd_interface_version = 6;
     driver.set_icd_api_version(VK_API_VERSION_1_1);
@@ -942,4 +942,456 @@ TEST(LayerManifest, UnknownManifestVersion) {
     ASSERT_TRUE(log.find("loader_add_layer_properties: "));
     // log prints the path to the file, don't look for it since it is hard to determine inside the test what the path should be.
     ASSERT_TRUE(log.find("has unknown layer manifest file version 3.2.1.  May cause errors."));
+}
+
+struct DriverInfo {
+    DriverInfo(TestICDDetails icd_details, uint32_t driver_version, bool expect_to_find) noexcept
+        : icd_details(icd_details), driver_version(driver_version), expect_to_find(expect_to_find) {}
+    TestICDDetails icd_details;
+    uint32_t driver_version = 0;
+    bool expect_to_find = false;
+};
+
+void CheckDirectDriverLoading(FrameworkEnvironment& env, std::vector<DriverInfo> const& normal_drivers,
+                              std::vector<DriverInfo> const& direct_drivers, bool exclusive) {
+    std::vector<VkDirectDriverLoadingInfoLUNARG> ddl_infos;
+    uint32_t expected_driver_count = 0;
+
+    for (auto const& driver : direct_drivers) {
+        auto& direct_driver_icd = env.add_icd(driver.icd_details);
+        direct_driver_icd.get_test_icd().physical_devices.push_back({});
+        direct_driver_icd.get_test_icd().physical_devices.at(0).properties.driverVersion = driver.driver_version;
+        VkDirectDriverLoadingInfoLUNARG ddl_info{};
+        ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+        ddl_info.pfnGetInstanceProcAddr = direct_driver_icd.icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+        ddl_infos.push_back(ddl_info);
+        if (driver.expect_to_find) {
+            expected_driver_count++;
+        }
+    }
+
+    for (auto const& driver : normal_drivers) {
+        auto& direct_driver_icd = env.add_icd(driver.icd_details);
+        direct_driver_icd.get_test_icd().physical_devices.push_back({});
+        direct_driver_icd.get_test_icd().physical_devices.at(0).properties.driverVersion = driver.driver_version;
+        if (!exclusive && driver.expect_to_find) {
+            expected_driver_count++;
+        }
+    }
+
+    VkDirectDriverLoadingListLUNARG ddl_list{};
+    ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+    ddl_list.mode = exclusive ? VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG : VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG;
+    ddl_list.driverCount = static_cast<uint32_t>(ddl_infos.size());
+    ddl_list.pDrivers = ddl_infos.data();
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+    inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+
+    if (exclusive) {
+        ASSERT_TRUE(
+            log.find("loader_scan_for_direct_drivers: The VK_LUNARG_direct_driver_loading extension is active and specified "
+                     "VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG, skipping system and environment "
+                     "variable driver search mechanisms."));
+    }
+
+    // Make sure all drivers we expect to load were found - including checking that the pfn matches exactly.
+    for (uint32_t i = 0; i < direct_drivers.size(); i++) {
+        if (direct_drivers.at(i).expect_to_find) {
+            std::stringstream ss;
+            ss << "loader_add_direct_driver: Adding driver found in index " << i
+               << " of VkDirectDriverLoadingListLUNARG::pDrivers structure. pfnGetInstanceProcAddr was set to "
+               << reinterpret_cast<const void*>(ddl_infos.at(i).pfnGetInstanceProcAddr);
+            std::string log_message = ss.str();
+            ASSERT_TRUE(log.find(log_message));
+        }
+    }
+
+    auto phys_devs = inst.GetPhysDevs();
+    ASSERT_EQ(phys_devs.size(), expected_driver_count);
+
+    // We have to iterate through the driver lists backwards because the loader *prepends* icd's, so the last found ICD is found
+    // first in the driver list
+    uint32_t driver_index = 0;
+    for (size_t i = normal_drivers.size() - 1; i == 0; i--) {
+        if (normal_drivers.at(i).expect_to_find) {
+            VkPhysicalDeviceProperties props{};
+            inst.functions->vkGetPhysicalDeviceProperties(phys_devs.at(driver_index), &props);
+            ASSERT_EQ(props.driverVersion, normal_drivers.at(i).driver_version);
+            driver_index++;
+        }
+    }
+    for (size_t i = direct_drivers.size() - 1; i == 0; i--) {
+        if (direct_drivers.at(i).expect_to_find) {
+            VkPhysicalDeviceProperties props{};
+            inst.functions->vkGetPhysicalDeviceProperties(phys_devs.at(driver_index), &props);
+            ASSERT_EQ(props.driverVersion, direct_drivers.at(i).driver_version);
+            driver_index++;
+        }
+    }
+}
+
+// Only 1 direct driver
+TEST(DirectDriverLoading, Individual) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 10, true);
+
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
+}
+
+// 2 direct drivers
+TEST(DirectDriverLoading, MultipleDirectDrivers) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 13, true);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 7, true);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
+}
+
+// Multiple direct drivers with a normal driver in the middle
+TEST(DirectDriverLoading, MultipleDirectDriversAndNormalDrivers) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA), 90, true);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 80, true);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 70, true);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
+}
+
+// Normal driver and direct driver with direct driver exclusivity
+TEST(DirectDriverLoading, ExclusiveWithNormalDriver) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 33, true);
+    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2), 44, false);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
+}
+
+TEST(DirectDriverLoading, ExclusiveWithMultipleNormalDriver) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2), 55, true);
+    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2), 66, true);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 77, true);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
+}
+
+TEST(DirectDriverLoading, ExclusiveWithDriverEnvVar) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+    normal_drivers.emplace_back(
+        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::env_var), 4, false);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 5, true);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
+}
+
+TEST(DirectDriverLoading, ExclusiveWithAddDriverEnvVar) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+
+    normal_drivers.emplace_back(
+        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::add_env_var), 6, false);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 7, true);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
+}
+
+TEST(DirectDriverLoading, InclusiveWithFilterSelect) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+
+    EnvVarWrapper driver_filter_select_env_var{"VK_LOADER_DRIVERS_SELECT", "normal_driver.json"};
+
+    normal_drivers.emplace_back(
+        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 8, true);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 9, true);
+
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
+}
+
+TEST(DirectDriverLoading, ExclusiveWithFilterSelect) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+
+    EnvVarWrapper driver_filter_select_env_var{"VK_LOADER_DRIVERS_SELECT", "normal_driver.json"};
+
+    normal_drivers.emplace_back(
+        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 10,
+        false);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 11, true);
+
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
+}
+
+TEST(DirectDriverLoading, InclusiveWithFilterDisable) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+
+    EnvVarWrapper driver_filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE", "normal_driver.json"};
+
+    normal_drivers.emplace_back(
+        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 12,
+        false);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 13, true);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
+}
+
+TEST(DirectDriverLoading, ExclusiveWithFilterDisable) {
+    FrameworkEnvironment env{};
+    std::vector<DriverInfo> normal_drivers;
+    std::vector<DriverInfo> direct_drivers;
+
+    EnvVarWrapper driver_filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE", "normal_driver.json"};
+
+    normal_drivers.emplace_back(
+        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 14,
+        false);
+    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 15, true);
+    ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
+}
+
+// The VK_LUNARG_direct_driver_loading extension is not enabled
+TEST(DirectDriverLoading, ExtensionNotEnabled) {
+    FrameworkEnvironment env{};
+
+    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    direct_driver_icd.get_test_icd().physical_devices.push_back({});
+
+    VkDirectDriverLoadingInfoLUNARG ddl_info{};
+    ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+    ddl_info.pfnGetInstanceProcAddr = direct_driver_icd.icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+
+    VkDirectDriverLoadingListLUNARG ddl_list{};
+    ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+    ddl_list.mode = VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG;
+    ddl_list.driverCount = 1U;
+    ddl_list.pDrivers = &ddl_info;
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+    ASSERT_TRUE(
+        log.find("loader_scan_for_direct_drivers: The pNext chain of VkInstanceCreateInfo contained the "
+                 "VkDirectDriverLoadingListLUNARG structure, but the VK_LUNARG_direct_driver_loading extension was "
+                 "not enabled."));
+}
+
+// VkDirectDriverLoadingListLUNARG is not in the pNext chain of VkInstanceCreateInfo
+TEST(DirectDriverLoading, DriverListNotInPnextChain) {
+    FrameworkEnvironment env{};
+
+    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    direct_driver_icd.get_test_icd().physical_devices.push_back({});
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+    ASSERT_TRUE(
+        log.find("loader_scan_for_direct_drivers: The VK_LUNARG_direct_driver_loading extension was enabled but the pNext chain of "
+                 "VkInstanceCreateInfo did not contain the "
+                 "VkDirectDriverLoadingListLUNARG structure."));
+}
+
+// User sets the pDrivers pointer in VkDirectDriverLoadingListLUNARG to nullptr
+TEST(DirectDriverLoading, DriverListHasNullDriverPointer) {
+    FrameworkEnvironment env{};
+
+    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    direct_driver_icd.get_test_icd().physical_devices.push_back({});
+
+    VkDirectDriverLoadingListLUNARG ddl_list{};
+    ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+    ddl_list.mode = VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG;
+    ddl_list.driverCount = 1U;
+    ddl_list.pDrivers = nullptr;  // user forgot to set the pDrivers
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+    inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+    ASSERT_TRUE(
+        log.find("loader_scan_for_direct_drivers: The VkDirectDriverLoadingListLUNARG structure in the pNext chain of "
+                 "VkInstanceCreateInfo has a NULL pDrivers member."));
+}
+
+// User sets the driverCount in VkDirectDriverLoadingListLUNARG to zero
+TEST(DirectDriverLoading, DriverListHasZeroInfoCount) {
+    FrameworkEnvironment env{};
+
+    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    direct_driver_icd.get_test_icd().physical_devices.push_back({});
+
+    VkDirectDriverLoadingInfoLUNARG ddl_info{};
+    ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+    ddl_info.pfnGetInstanceProcAddr = direct_driver_icd.icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+
+    VkDirectDriverLoadingListLUNARG ddl_list{};
+    ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+    ddl_list.mode = VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG;
+    ddl_list.driverCount = 0;  // user set 0 for the info list
+    ddl_list.pDrivers = &ddl_info;
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+    inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+    ASSERT_TRUE(
+        log.find("loader_scan_for_direct_drivers: The VkDirectDriverLoadingListLUNARG structure in the pNext chain of "
+                 "VkInstanceCreateInfo has a non-null pDrivers member but a driverCount member with a value "
+                 "of zero."));
+}
+
+// pfnGetInstanceProcAddr in VkDirectDriverLoadingInfoLUNARG is nullptr
+TEST(DirectDriverLoading, DriverInfoMissingGetInstanceProcAddr) {
+    FrameworkEnvironment env{};
+
+    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    direct_driver_icd.get_test_icd().physical_devices.push_back({});
+
+    std::array<VkDirectDriverLoadingInfoLUNARG, 2> ddl_infos{};
+    ddl_infos[0].sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+    ddl_infos[0].pfnGetInstanceProcAddr = nullptr;  // user didn't set the pfnGetInstanceProcAddr to the driver's handle
+
+    ddl_infos[1].sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+    ddl_infos[1].pfnGetInstanceProcAddr = nullptr;  // user didn't set the pfnGetInstanceProcAddr to the driver's handle
+
+    VkDirectDriverLoadingListLUNARG ddl_list{};
+    ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+    ddl_list.mode = VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG;
+    ddl_list.driverCount = static_cast<uint32_t>(ddl_infos.size());
+    ddl_list.pDrivers = ddl_infos.data();
+
+    DebugUtilsLogger log;
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+    inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+    inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+    ASSERT_TRUE(
+        log.find("loader_add_direct_driver: VkDirectDriverLoadingInfoLUNARG structure at index 0 contains a NULL pointer for the "
+                 "pfnGetInstanceProcAddr member, skipping."));
+    ASSERT_TRUE(
+        log.find("loader_add_direct_driver: VkDirectDriverLoadingInfoLUNARG structure at index 1 contains a NULL pointer for the "
+                 "pfnGetInstanceProcAddr member, skipping."));
+}
+
+// test the various error paths in loader_add_direct_driver
+TEST(DirectDriverLoading, DriverDoesNotExportNegotiateFunction) {
+    FrameworkEnvironment env{};
+
+    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    direct_driver_icd.get_test_icd().physical_devices.push_back({});
+    direct_driver_icd.get_test_icd()
+        .set_exposes_vk_icdNegotiateLoaderICDInterfaceVersion(false)
+        .set_exposes_vkCreateInstance(false)
+        .set_exposes_vkEnumerateInstanceExtensionProperties(false);
+
+    VkDirectDriverLoadingInfoLUNARG ddl_info{};
+    ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+    ddl_info.pfnGetInstanceProcAddr = direct_driver_icd.icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+
+    VkDirectDriverLoadingListLUNARG ddl_list{};
+    ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+    ddl_list.mode = VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG;
+    ddl_list.driverCount = 1;
+    ddl_list.pDrivers = &ddl_info;
+
+    {
+        DebugUtilsLogger log;
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, log);
+        log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+        inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+        inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+        ASSERT_TRUE(
+            log.find("loader_add_direct_driver: Could not get 'vk_icdNegotiateLoaderICDInterfaceVersion' from "
+                     "VkDirectDriverLoadingInfoLUNARG structure at "
+                     "index 0, skipping."));
+    }
+
+    // Allow the negotiate function to be found, now it should fail to find instance creation function
+    direct_driver_icd.get_test_icd().set_exposes_vk_icdNegotiateLoaderICDInterfaceVersion(true);
+    direct_driver_icd.get_test_icd().set_max_icd_interface_version(4);
+
+    {
+        DebugUtilsLogger log;
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, log);
+        log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+        inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+        inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+        ASSERT_TRUE(log.find(
+            "loader_add_direct_driver: VkDirectDriverLoadingInfoLUNARG structure at index 0 supports interface version 4, "
+            "which is incompatible with the Loader Driver Interface version that supports the VK_LUNARG_direct_driver_loading "
+            "extension, skipping."));
+    }
+    direct_driver_icd.get_test_icd().set_max_icd_interface_version(7);
+
+    {
+        DebugUtilsLogger log;
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, log);
+        log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+        inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+        inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+        ASSERT_TRUE(
+            log.find("loader_add_direct_driver: Could not get 'vkEnumerateInstanceExtensionProperties' from "
+                     "VkDirectDriverLoadingInfoLUNARG structure at index 0, skipping."));
+    }
+
+    // Allow the instance creation function to be found, now it should fail to find EnumInstExtProps
+    direct_driver_icd.get_test_icd().set_exposes_vkCreateInstance(true);
+
+    {
+        DebugUtilsLogger log;
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, log);
+        log.get()->pNext = reinterpret_cast<const void*>(&ddl_list);
+        inst.create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+        inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0));
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER));
+
+        ASSERT_TRUE(
+            log.find("loader_add_direct_driver: Could not get 'vkEnumerateInstanceExtensionProperties' from "
+                     "VkDirectDriverLoadingInfoLUNARG structure at index 0, skipping."));
+    }
 }

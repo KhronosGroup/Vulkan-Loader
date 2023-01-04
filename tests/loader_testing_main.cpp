@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -44,32 +44,49 @@ int main(int argc, char** argv) {
     // clean up folders from old test
     fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "null_dir");
     fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "icd_manifests");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "portability_icd_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "icd_env_vars_manifests");
     fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_layer_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_env_var_layer_folder");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_add_env_var_layer_folder");
     fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "implicit_layer_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "override_layer_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "app_package_manifests");
+    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "macos_bundle");
 
     // make sure the tests don't find these env-vars if they were set on the system
-    remove_env_var("VK_ICD_FILENAMES");
-    remove_env_var("VK_DRIVER_FILES");
-    remove_env_var("VK_ADD_DRIVER_FILES");
-    remove_env_var("VK_LAYER_PATH");
-    remove_env_var("VK_ADD_LAYER_PATH");
-    remove_env_var("VK_INSTANCE_LAYERS");
-    remove_env_var("VK_LOADER_DRIVERS_SELECT");
-    remove_env_var("VK_LOADER_DRIVERS_DISABLE");
-    remove_env_var("VK_LOADER_LAYERS_ENABLE");
-    remove_env_var("VK_LOADER_LAYERS_DISABLE");
-    remove_env_var("VK_LOADER_DEBUG");
-    remove_env_var("VK_LOADER_DISABLE_INST_EXT_FILTER");
+    EnvVarWrapper vk_icd_filenames_env_var{"VK_ICD_FILENAMES"};
+    EnvVarWrapper vk_driver_files_env_var{"VK_DRIVER_FILES"};
+    EnvVarWrapper vk_add_driver_files_env_var{"VK_ADD_DRIVER_FILES"};
+    EnvVarWrapper vk_layer_path_env_var{"VK_LAYER_PATH"};
+    EnvVarWrapper vk_add_layer_path_env_var{"VK_ADD_LAYER_PATH"};
+    EnvVarWrapper vk_instance_layers_env_var{"VK_INSTANCE_LAYERS"};
+    EnvVarWrapper vk_loader_drivers_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
+    EnvVarWrapper vk_loader_drivers_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
+    EnvVarWrapper vk_loader_layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE"};
+    EnvVarWrapper vk_loader_layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
+    EnvVarWrapper vk_loader_debug_env_var{"VK_LOADER_DEBUG"};
+    EnvVarWrapper vk_loader_disable_inst_ext_filter_env_var{"VK_LOADER_DISABLE_INST_EXT_FILTER"};
+    vk_icd_filenames_env_var.remove_value();
+    vk_driver_files_env_var.remove_value();
+    vk_add_driver_files_env_var.remove_value();
+    vk_layer_path_env_var.remove_value();
+    vk_add_layer_path_env_var.remove_value();
+    vk_instance_layers_env_var.remove_value();
+    vk_loader_drivers_select_env_var.remove_value();
+    vk_loader_drivers_disable_env_var.remove_value();
+    vk_loader_layers_enable_env_var.remove_value();
+    vk_loader_layers_disable_env_var.remove_value();
+    vk_loader_debug_env_var.remove_value();
+    vk_loader_disable_inst_ext_filter_env_var.remove_value();
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-    set_env_var("XDG_CONFIG_HOME", "/etc");
-    set_env_var("XDG_CONFIG_DIRS", "/etc");
-    set_env_var("XDG_DATA_HOME", "/etc");
-    set_env_var("XDG_DATA_DIRS", "/etc");
+    EnvVarWrapper xdg_config_home_env_var{"XDG_CONFIG_HOME", "/etc"};
+    EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", "/etc"};
+    EnvVarWrapper xdg_data_home_env_var{"XDG_DATA_HOME", "/etc"};
+    EnvVarWrapper xdg_data_dirs_env_var{"XDG_DATA_DIRS", "/etc"};
 #endif
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-    set_env_var("HOME", "/home/fake_home");
+    EnvVarWrapper home_env_var{"HOME", "/home/fake_home"};
 #endif
     ::testing::InitGoogleTest(&argc, argv);
     int result = RUN_ALL_TESTS();

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021-2022 The Khronos Group Inc.
- * Copyright (c) 2021-2022 Valve Corporation
- * Copyright (c) 2021-2022 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -76,6 +76,14 @@ inline std::ostream& operator<<(std::ostream& os, const InterfaceVersionCheck& r
 
 struct TestICD {
     fs::path manifest_file_path;
+
+    BUILDER_VALUE(TestICD, bool, exposes_vk_icdNegotiateLoaderICDInterfaceVersion, true)
+    BUILDER_VALUE(TestICD, bool, exposes_vkEnumerateInstanceExtensionProperties, true)
+    BUILDER_VALUE(TestICD, bool, exposes_vkCreateInstance, true)
+    BUILDER_VALUE(TestICD, bool, exposes_vk_icdGetPhysicalDeviceProcAddr, true)
+#if defined(WIN32)
+    BUILDER_VALUE(TestICD, bool, exposes_vk_icdEnumerateAdapterPhysicalDevices, true)
+#endif
 
     CalledICDGIPA called_vk_icd_gipa = CalledICDGIPA::not_called;
     CalledNegotiateInterface called_negotiate_interface = CalledNegotiateInterface::not_called;

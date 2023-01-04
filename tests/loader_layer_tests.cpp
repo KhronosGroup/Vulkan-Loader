@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021-2022 The Khronos Group Inc.
- * Copyright (c) 2021-2022 Valve Corporation
- * Copyright (c) 2021-2022 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -47,17 +47,15 @@ TEST(ImplicitLayers, WithEnableAndDisableEnvVar) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
-    const char* enable_env_var = "ENABLE_ME";
-    const char* disable_env_var = "DISABLE_ME";
 
-    EnvVarCleaner enable_cleaner(enable_env_var);
-    EnvVarCleaner disable_cleaner(disable_env_var);
+    EnvVarWrapper enable_env_var{"ENABLE_ME"};
+    EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment(disable_env_var)
-                                                         .set_enable_environment(enable_env_var)),
+                                                         .set_disable_environment(disable_env_var.get())
+                                                         .set_enable_environment(enable_env_var.get())),
                            "implicit_test_layer.json");
 
     uint32_t count = 0;
@@ -68,27 +66,27 @@ TEST(ImplicitLayers, WithEnableAndDisableEnvVar) {
     CheckLogForLayerString(env, implicit_layer_name, false);
 
     // set enable env-var to 0, no layer should be found
-    set_env_var(enable_env_var, "0");
+    enable_env_var.set_new_value("0");
     CheckLogForLayerString(env, implicit_layer_name, false);
 
     // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    enable_env_var.set_new_value("1");
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     // remove enable env var, so we can check what happens when only disable is present
-    remove_env_var(enable_env_var);
+    enable_env_var.remove_value();
 
     // set disable env-var to 0, layer should not load
-    set_env_var(disable_env_var, "0");
+    disable_env_var.set_new_value("0");
     CheckLogForLayerString(env, implicit_layer_name, false);
 
     // set disable env-var to 1, layer should not load
-    set_env_var(disable_env_var, "1");
+    disable_env_var.set_new_value("1");
     CheckLogForLayerString(env, implicit_layer_name, false);
 
     // set both enable and disable env-var, layer should not load
-    set_env_var(enable_env_var, "1");
-    set_env_var(disable_env_var, "1");
+    enable_env_var.set_new_value("1");
+    disable_env_var.set_new_value("1");
     CheckLogForLayerString(env, implicit_layer_name, false);
 }
 
@@ -96,12 +94,12 @@ TEST(ImplicitLayers, OnlyDisableEnvVar) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "ImplicitTestLayer";
-    const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner disable_cleaner(disable_env_var);
+    EnvVarWrapper disable_env_var{"DISABLE_ME"};
+
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment(disable_env_var)),
+                                                         .set_disable_environment(disable_env_var.get())),
                            "implicit_test_layer.json");
 
     uint32_t count = 0;
@@ -112,11 +110,11 @@ TEST(ImplicitLayers, OnlyDisableEnvVar) {
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     // set disable env-var to 0, layer should load
-    set_env_var(disable_env_var, "0");
+    disable_env_var.set_new_value("0");
     CheckLogForLayerString(env, implicit_layer_name, false);
 
     // set disable env-var to 1, layer should not load
-    set_env_var(disable_env_var, "1");
+    disable_env_var.set_new_value("1");
     CheckLogForLayerString(env, implicit_layer_name, false);
 
     {
@@ -132,8 +130,7 @@ TEST(ImplicitLayers, PreInstanceEnumInstLayerProps) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "ImplicitTestLayer";
-    const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner disable_cleaner(disable_env_var);
+    EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(
         ManifestLayer{}
@@ -141,7 +138,7 @@ TEST(ImplicitLayers, PreInstanceEnumInstLayerProps) {
             .add_layer(ManifestLayer::LayerDescription{}
                            .set_name(implicit_layer_name)
                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                           .set_disable_environment(disable_env_var)
+                           .set_disable_environment(disable_env_var.get())
                            .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
                                                           .set_vk_func("vkEnumerateInstanceLayerProperties")
                                                           .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))),
@@ -156,7 +153,7 @@ TEST(ImplicitLayers, PreInstanceEnumInstLayerProps) {
     ASSERT_EQ(count, layer_props);
 
     // set disable env-var to 1, layer should not load
-    set_env_var(disable_env_var, "1");
+    disable_env_var.set_new_value("1");
 
     count = 0;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
@@ -168,15 +165,14 @@ TEST(ImplicitLayers, PreInstanceEnumInstExtProps) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     const char* implicit_layer_name = "ImplicitTestLayer";
-    const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner disable_cleaner(disable_env_var);
+    EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(ManifestLayer{}
                                .set_file_format_version(ManifestVersion(1, 1, 2))
                                .add_layer(ManifestLayer::LayerDescription{}
                                               .set_name(implicit_layer_name)
                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                              .set_disable_environment(disable_env_var)
+                                              .set_disable_environment(disable_env_var.get())
                                               .add_pre_instance_function(
                                                   ManifestLayer::LayerDescription::FunctionOverride{}
                                                       .set_vk_func("vkEnumerateInstanceExtensionProperties")
@@ -192,7 +188,7 @@ TEST(ImplicitLayers, PreInstanceEnumInstExtProps) {
     ASSERT_EQ(count, ext_props);
 
     // set disable env-var to 1, layer should not load
-    set_env_var(disable_env_var, "1");
+    disable_env_var.set_new_value("1");
 
     count = 0;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
@@ -207,8 +203,7 @@ TEST(ImplicitLayers, PreInstanceVersion) {
     env.get_test_icd().icd_api_version = VK_MAKE_API_VERSION(0, 1, 2, 3);
 
     const char* implicit_layer_name = "ImplicitTestLayer";
-    const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner disable_cleaner(disable_env_var);
+    EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(
         ManifestLayer{}
@@ -217,7 +212,7 @@ TEST(ImplicitLayers, PreInstanceVersion) {
                            .set_name(implicit_layer_name)
                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 2, 3))
-                           .set_disable_environment(disable_env_var)
+                           .set_disable_environment(disable_env_var.get())
                            .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
                                                           .set_vk_func("vkEnumerateInstanceVersion")
                                                           .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
@@ -232,7 +227,7 @@ TEST(ImplicitLayers, PreInstanceVersion) {
     ASSERT_EQ(version, layer_version);
 
     // set disable env-var to 1, layer should not load
-    set_env_var(disable_env_var, "1");
+    disable_env_var.set_new_value("1");
 
     version = 0;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceVersion(&version));
@@ -250,15 +245,14 @@ TEST(ImplicitLayers, OverrideGetInstanceProcAddr) {
     env.get_test_icd().physical_devices.push_back({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
-    const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner disable_cleaner(disable_env_var);
+    EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(ManifestLayer{}
                                .set_file_format_version(ManifestVersion(1, 0, 0))
                                .add_layer(ManifestLayer::LayerDescription{}
                                               .set_name(implicit_layer_name)
                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_1)
-                                              .set_disable_environment(disable_env_var)
+                                              .set_disable_environment(disable_env_var.get())
                                               .add_function(ManifestLayer::LayerDescription::FunctionOverride{}
                                                                 .set_vk_func("vkGetInstanceProcAddr")
                                                                 .set_override_name("test_override_vkGetInstanceProcAddr"))),
@@ -271,7 +265,7 @@ TEST(ImplicitLayers, OverrideGetInstanceProcAddr) {
 
     {
         // set disable env-var to 1, layer should not load
-        set_env_var(disable_env_var, "1");
+        disable_env_var.set_new_value("1");
         InstWrapper inst2{env.vulkan_functions};
         inst2.CheckCreate();
     }
@@ -319,8 +313,8 @@ TEST(ImplicitLayers, EnableWithFilter) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            implicit_json_name_3);
 
-    EnvVarCleaner layers_enable_cleaner("VK_LOADER_LAYERS_ENABLE");
-    EnvVarCleaner layer_1_enable_cleaner(enable_layer_name_1);
+    EnvVarWrapper layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE"};
+    EnvVarWrapper layer_1_enable_env_var{enable_layer_name_1};
 
     // First, test an instance/device without the layer forced on.
     InstWrapper inst1{env.vulkan_functions};
@@ -343,7 +337,7 @@ TEST(ImplicitLayers, EnableWithFilter) {
     // Now force on one layer with its full name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", implicit_layer_name_1);
+    layers_enable_env_var.set_new_value(implicit_layer_name_1);
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -365,7 +359,7 @@ TEST(ImplicitLayers, EnableWithFilter) {
     // Match prefix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "VK_LAYER_LUNARG_*");
+    layers_enable_env_var.set_new_value("VK_LAYER_LUNARG_*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -387,7 +381,7 @@ TEST(ImplicitLayers, EnableWithFilter) {
     // Match suffix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second_layer");
+    layers_enable_env_var.set_new_value("*Second_layer");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -409,7 +403,7 @@ TEST(ImplicitLayers, EnableWithFilter) {
     // Match substring
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst5{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
@@ -431,7 +425,7 @@ TEST(ImplicitLayers, EnableWithFilter) {
     // Match all with star '*'
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+    layers_enable_env_var.set_new_value("*");
 
     InstWrapper inst6{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
@@ -453,7 +447,7 @@ TEST(ImplicitLayers, EnableWithFilter) {
     // Match all with special name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "~all~");
+    layers_enable_env_var.set_new_value("~all~");
 
     InstWrapper inst7{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
@@ -475,8 +469,8 @@ TEST(ImplicitLayers, EnableWithFilter) {
     // Match substring, but enable the other layer manually
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var(enable_layer_name_1, "1");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layer_1_enable_env_var.set_new_value("1");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst8{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst8.create_info, env.debug_log);
@@ -532,7 +526,7 @@ TEST(ImplicitLayers, DisableWithFilter) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            implicit_json_name_3);
 
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
 
     // First, test an instance/device
     InstWrapper inst1{env.vulkan_functions};
@@ -555,7 +549,7 @@ TEST(ImplicitLayers, DisableWithFilter) {
     // Now force off one layer with its full name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", implicit_layer_name_1);
+    layers_disable_env_var.set_new_value(implicit_layer_name_1);
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -577,7 +571,7 @@ TEST(ImplicitLayers, DisableWithFilter) {
     // Match prefix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "VK_LAYER_LUNARG_*");
+    layers_disable_env_var.set_new_value("VK_LAYER_LUNARG_*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -599,7 +593,7 @@ TEST(ImplicitLayers, DisableWithFilter) {
     // Match suffix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second_layer");
+    layers_disable_env_var.set_new_value("*Second_layer");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -621,7 +615,7 @@ TEST(ImplicitLayers, DisableWithFilter) {
     // Match substring
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
+    layers_disable_env_var.set_new_value("*Second*");
 
     InstWrapper inst5{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
@@ -643,7 +637,7 @@ TEST(ImplicitLayers, DisableWithFilter) {
     // Match all with star '*'
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+    layers_disable_env_var.set_new_value("*");
 
     InstWrapper inst6{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
@@ -665,7 +659,7 @@ TEST(ImplicitLayers, DisableWithFilter) {
     // Match all with special name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
+    layers_disable_env_var.set_new_value("~all~");
 
     InstWrapper inst7{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
@@ -715,9 +709,9 @@ TEST(ImplicitLayers, DisableWithFilterWhenLayersEnableEnvVarIsActive) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            implicit_json_name_2);
 
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
-    EnvVarCleaner layer_1_enable_cleaner(enable_layer_name_1);
-    EnvVarCleaner layer_2_enable_cleaner(enable_layer_name_2);
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
+    EnvVarWrapper layer_1_enable_env_var{enable_layer_name_1};
+    EnvVarWrapper layer_2_enable_env_var{enable_layer_name_2};
 
     // First, test an instance/device
     InstWrapper inst1{env.vulkan_functions};
@@ -736,8 +730,8 @@ TEST(ImplicitLayers, DisableWithFilterWhenLayersEnableEnvVarIsActive) {
     // Set the layers enable env-var
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var(enable_layer_name_1, "1");
-    set_env_var(enable_layer_name_2, "1");
+    layer_1_enable_env_var.set_new_value("1");
+    layer_2_enable_env_var.set_new_value("1");
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -755,7 +749,7 @@ TEST(ImplicitLayers, DisableWithFilterWhenLayersEnableEnvVarIsActive) {
     // Now force off one layer with its full name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", implicit_layer_name_1);
+    layers_disable_env_var.set_new_value(implicit_layer_name_1);
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -773,7 +767,7 @@ TEST(ImplicitLayers, DisableWithFilterWhenLayersEnableEnvVarIsActive) {
     // Now force off both layers
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
+    layers_disable_env_var.set_new_value("~implicit~");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -826,14 +820,14 @@ TEST(ImplicitLayers, EnableAndDisableWithFilter) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            implicit_json_name_3);
 
-    EnvVarCleaner layers_enable_cleaner("VK_LOADER_LAYERS_ENABLE");
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
+    EnvVarWrapper layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE"};
 
     // Disable 2 but enable 1
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*test_layer");
+    layers_disable_env_var.set_new_value("*Second*");
+    layers_enable_env_var.set_new_value("*test_layer");
 
     InstWrapper inst1{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
@@ -855,8 +849,8 @@ TEST(ImplicitLayers, EnableAndDisableWithFilter) {
     // Disable all but enable 2
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("*");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -878,8 +872,8 @@ TEST(ImplicitLayers, EnableAndDisableWithFilter) {
     // Disable all but enable 2
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("~all~");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -901,8 +895,8 @@ TEST(ImplicitLayers, EnableAndDisableWithFilter) {
     // Disable implicit but enable 2
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("~implicit~");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -924,8 +918,8 @@ TEST(ImplicitLayers, EnableAndDisableWithFilter) {
     // Disable explicit but enable 2 (should still be everything)
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("~explicit~");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst5{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
@@ -947,8 +941,8 @@ TEST(ImplicitLayers, EnableAndDisableWithFilter) {
     // Disable implicit but enable all
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+    layers_disable_env_var.set_new_value("~implicit~");
+    layers_enable_env_var.set_new_value("*");
 
     InstWrapper inst6{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
@@ -1002,13 +996,13 @@ TEST(MetaLayers, InvalidComponentLayer) {
     EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
 
     uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 3> extensions;
+    std::array<VkExtensionProperties, 4> extensions;
     EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
+    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
 
     EXPECT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 3U);
+    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -1048,13 +1042,13 @@ TEST(MetaLayers, ExplicitMetaLayer) {
         EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
 
         uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 3> extensions;
+        std::array<VkExtensionProperties, 4> extensions;
         EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
+        EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
 
         EXPECT_EQ(VK_SUCCESS,
                   env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        EXPECT_EQ(extension_count, 3U);
+        EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
     }
     {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
         InstWrapper inst{env.vulkan_functions};
@@ -1111,13 +1105,13 @@ TEST(MetaLayers, MetaLayerNameInComponentLayers) {
     EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
 
     uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 3> extensions;
+    std::array<VkExtensionProperties, 4> extensions;
     EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
+    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration
 
     EXPECT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 3U);
+    EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -1160,13 +1154,13 @@ TEST(MetaLayers, MetaLayerWhichAddsMetaLayer) {
     EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name, meta_meta_layer_name}, layer_props));
 
     uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 3> extensions;
+    std::array<VkExtensionProperties, 4> extensions;
     EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 3U);  // return debug report & debug utils & portability enumeration
+    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
 
     EXPECT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 3U);
+    EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -1766,13 +1760,12 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
     ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + env_var_layer_name));
-    ASSERT_TRUE(
-        env.debug_log.find("Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
-                           "VK_LAYER_PATH is set to " +
-                           env.env_var_vk_layer_paths));
+    ASSERT_TRUE(env.debug_log.find(
+        std::string("Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
+                    "VK_LAYER_PATH is set to ") +
+        env.env_var_vk_layer_paths.value()));
 
     env.layers.clear();
-    remove_env_var("VK_LAYER_PATH");
 }
 
 // Make sure that implicit layers not in the override paths aren't found by mistake
@@ -1967,8 +1960,8 @@ TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {
                 ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_test_layer.json");
 
-    auto& layer = env.get_test_layer(0);
-    layer.set_create_instance_callback([](TestLayer& layer) -> VkResult {
+    auto& layer_handle = env.get_test_layer(0);
+    layer_handle.set_create_instance_callback([](TestLayer& layer) -> VkResult {
         uint32_t phys_dev_count = 0;
         VkResult res = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, nullptr);
         if (res != VK_SUCCESS || phys_dev_count > 1) {
@@ -2006,8 +1999,8 @@ TEST(LayerCreateInstance, GetPhysicalDeviceProperties2KHR) {
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_test_layer.json");
 
-    auto& layer = env.get_test_layer(0);
-    layer.set_create_instance_callback([](TestLayer& layer) -> VkResult {
+    auto& layer_handle = env.get_test_layer(0);
+    layer_handle.set_create_instance_callback([](TestLayer& layer) -> VkResult {
         uint32_t phys_dev_count = 1;
         VkPhysicalDevice phys_dev{};
         layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, &phys_dev);
@@ -2196,7 +2189,6 @@ TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner enable_cleaner(enable_env_var);
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
@@ -2210,7 +2202,7 @@ TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
     ASSERT_EQ(count, 1U);
 
     // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     uint32_t extension_count = 0;
@@ -2220,7 +2212,7 @@ TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 3U);  // debug_utils, debug_report, and portability enumeration
+    ASSERT_EQ(extension_count, 4U);  // debug_utils, debug_report, portability enumeration, direct driver loading
 
     // Make sure the extensions that are implemented only in the test layers is not present.
     ASSERT_FALSE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
@@ -2246,7 +2238,6 @@ TEST(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner enable_cleaner(enable_env_var);
 
     env.add_implicit_layer(
         ManifestLayer{}.add_layer(
@@ -2262,18 +2253,19 @@ TEST(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1U);
 
-    // // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    // set enable env-var, layer should load
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 4U);  // the instance extension, debug_utils, debug_report, and portability enumeration
+    ASSERT_EQ(extension_count,
+              5U);  // the instance extension, debug_utils, debug_report, portability enumeration, direct driver loading
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 4U);
+    ASSERT_EQ(extension_count, 5U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
     ASSERT_TRUE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
@@ -2300,7 +2292,6 @@ TEST(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner enable_cleaner(enable_env_var);
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
@@ -2316,18 +2307,19 @@ TEST(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1U);
 
-    // // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    // set enable env-var, layer should load
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 4U);  // the instance extension, debug_utils, debug_report, and portability enumeration
+    ASSERT_EQ(extension_count,
+              5U);  // the instance extension, debug_utils, debug_report, portability enumeration, direct driver loading
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 4U);
+    ASSERT_EQ(extension_count, 5U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
     ASSERT_FALSE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
@@ -2354,7 +2346,6 @@ TEST(LayerExtensions, ImplicitBothInstanceExtensions) {
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner enable_cleaner(enable_env_var);
 
     env.add_implicit_layer(
         ManifestLayer{}.add_layer(
@@ -2372,18 +2363,19 @@ TEST(LayerExtensions, ImplicitBothInstanceExtensions) {
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1U);
 
-    // // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    // set enable env-var, layer should load
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 5U);  // the two instance extension plus debug_utils, debug_report, portability enumeration
+    ASSERT_EQ(extension_count,
+              6U);  // the two instance extension plus debug_utils, debug_report, portability enumeration, direct driver loading
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 5U);
+    ASSERT_EQ(extension_count, 6U);
 
     // Make sure the extensions that are implemented only in the test layers is not present.
     ASSERT_TRUE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
@@ -2421,11 +2413,11 @@ TEST(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 3U);  // debug utils, debug report, portability enumeration
+    ASSERT_EQ(extension_count, 4U);  // debug utils, debug report, portability enumeration, direct driver loading
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 3U);
+    ASSERT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
 
     // Make sure the extensions are not present
     for (const auto& ext : extension_props) {
@@ -2473,11 +2465,11 @@ TEST(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
     uint32_t extension_count = 0;
     std::vector<VkExtensionProperties> extension_props;
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 3U);  // debug utils, debug report, portability enumeration
+    ASSERT_EQ(extension_count, 4U);  // debug utils, debug report, portability enumeration
     extension_props.resize(extension_count);
     ASSERT_EQ(VK_SUCCESS,
               env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 3U);
+    ASSERT_EQ(extension_count, 4U);
     // Make sure the extensions are not present
     for (const auto& ext : extension_props) {
         ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
@@ -2714,9 +2706,8 @@ TEST(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1U);
 
-    // // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
-    EnvVarCleaner enable_cleaner(enable_env_var);
+    // set enable env-var, layer should load
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     InstWrapper inst{env.vulkan_functions};
@@ -2788,7 +2779,6 @@ TEST(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner enable_cleaner(enable_env_var);
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
@@ -2801,8 +2791,8 @@ TEST(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1U);
 
-    // // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    // set enable env-var, layer should load
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     InstWrapper inst{env.vulkan_functions};
@@ -2848,7 +2838,6 @@ TEST(LayerExtensions, ImplicitPresentImageDeviceExtension) {
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner enable_cleaner(enable_env_var);
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
@@ -2861,8 +2850,8 @@ TEST(LayerExtensions, ImplicitPresentImageDeviceExtension) {
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1U);
 
-    // // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    // set enable env-var, layer should load
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     InstWrapper inst{env.vulkan_functions};
@@ -2909,7 +2898,6 @@ TEST(LayerExtensions, ImplicitBothDeviceExtensions) {
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
     const char* disable_env_var = "DISABLE_ME";
-    EnvVarCleaner enable_cleaner(enable_env_var);
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
@@ -2922,8 +2910,8 @@ TEST(LayerExtensions, ImplicitBothDeviceExtensions) {
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
     ASSERT_EQ(count, 1U);
 
-    // // set enable env-var, layer should load
-    set_env_var(enable_env_var, "1");
+    // set enable env-var, layer should load
+    EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
     InstWrapper inst{env.vulkan_functions};
@@ -3517,8 +3505,7 @@ TEST(TestLayers, InstEnvironEnableExplicitLayer) {
     handle_assert_null(pfn_GetSwapchainStatusBefore);
 
     // Now setup the instance layer
-    set_env_var("VK_INSTANCE_LAYERS", explicit_layer_name);
-    EnvVarCleaner instance_layers_cleaner("VK_INSTANCE_LAYERS");
+    EnvVarWrapper instance_layers_env_var{"VK_INSTANCE_LAYERS", explicit_layer_name};
 
     // Now, test an instance/device with the layer forced on.  The extensions should be present and
     // the function pointers should be valid.
@@ -3588,7 +3575,7 @@ TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            explicit_json_name_3);
 
-    EnvVarCleaner layers_enable_cleaner("VK_LOADER_LAYERS_ENABLE");
+    EnvVarWrapper layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE"};
 
     // First, test an instance/device without the layer forced on.
     InstWrapper inst1{env.vulkan_functions};
@@ -3611,7 +3598,7 @@ TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
     // Now force on one layer with its full name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", explicit_layer_name_1);
+    layers_enable_env_var.set_new_value(explicit_layer_name_1);
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -3633,7 +3620,7 @@ TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
     // Match prefix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "VK_LAYER_LUNARG_*");
+    layers_enable_env_var.set_new_value("VK_LAYER_LUNARG_*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -3655,7 +3642,7 @@ TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
     // Match suffix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second_layer");
+    layers_enable_env_var.set_new_value("*Second_layer");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -3677,7 +3664,7 @@ TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
     // Match substring
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst5{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
@@ -3699,7 +3686,7 @@ TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
     // Match all with star '*'
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+    layers_enable_env_var.set_new_value("*");
 
     InstWrapper inst6{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
@@ -3721,7 +3708,7 @@ TEST(TestLayers, EnvironLayerEnableExplicitLayer) {
     // Match all with special name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "~all~");
+    layers_enable_env_var.set_new_value("~all~");
 
     InstWrapper inst7{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
@@ -3771,7 +3758,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            explicit_json_name_3);
-    EnvVarCleaner layers_enable_cleaner("VK_LOADER_LAYERS_ENABLE");
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
 
     // First, test an instance/device without the layer forced on.
     InstWrapper inst1{env.vulkan_functions};
@@ -3795,7 +3782,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // Now force on one layer with its full name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1);
+    layers_disable_env_var.set_new_value(explicit_layer_name_1);
 
     InstWrapper inst2{env.vulkan_functions};
     inst2.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -3818,7 +3805,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // Match prefix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "VK_LAYER_LUNARG_*");
+    layers_disable_env_var.set_new_value("VK_LAYER_LUNARG_*");
 
     InstWrapper inst3{env.vulkan_functions};
     inst3.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -3841,7 +3828,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // Match suffix
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second_layer");
+    layers_disable_env_var.set_new_value("*Second_layer");
 
     InstWrapper inst4{env.vulkan_functions};
     inst4.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -3864,7 +3851,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // Match substring
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
+    layers_disable_env_var.set_new_value("*Second*");
 
     InstWrapper inst5{env.vulkan_functions};
     inst5.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -3887,7 +3874,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // Match all with star '*'
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+    layers_disable_env_var.set_new_value("*");
 
     InstWrapper inst6{env.vulkan_functions};
     inst6.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -3910,7 +3897,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // Match all with special name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
+    layers_disable_env_var.set_new_value("~all~");
 
     InstWrapper inst7{env.vulkan_functions};
     inst7.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -3933,7 +3920,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // Match explicit special name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
+    layers_disable_env_var.set_new_value("~explicit~");
 
     InstWrapper inst8{env.vulkan_functions};
     inst8.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -3956,7 +3943,7 @@ TEST(TestLayers, EnvironLayerDisableExplicitLayer) {
     // No match implicit special name
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
+    layers_disable_env_var.set_new_value("~implicit~");
 
     InstWrapper inst9{env.vulkan_functions};
     inst9.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -4008,8 +3995,8 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            explicit_json_name_3);
 
-    EnvVarCleaner layers_enable_cleaner("VK_LOADER_LAYERS_ENABLE");
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
+    EnvVarWrapper layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE"};
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
 
     // First, test an instance/device without the layer forced on.
     InstWrapper inst1{env.vulkan_functions};
@@ -4033,8 +4020,8 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
     // Disable 2 but enable 1
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*Second*");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*test_layer");
+    layers_disable_env_var.set_new_value("*Second*");
+    layers_enable_env_var.set_new_value("*test_layer");
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -4056,8 +4043,8 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
     // Disable all but enable 2
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("*");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -4079,8 +4066,8 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
     // Disable all but enable 2
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~all~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("~all~");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -4102,8 +4089,8 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
     // Disable explicit but enable 2
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("~explicit~");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst5{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
@@ -4125,8 +4112,8 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
     // Disable implicit but enable 2 (should still be everything)
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~implicit~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*Second*");
+    layers_disable_env_var.set_new_value("~implicit~");
+    layers_enable_env_var.set_new_value("*Second*");
 
     InstWrapper inst6{env.vulkan_functions};
     inst6.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -4149,8 +4136,8 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
     // Disable explicit but enable all
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "~explicit~");
-    set_env_var("VK_LOADER_LAYERS_ENABLE", "*");
+    layers_disable_env_var.set_new_value("~explicit~");
+    layers_enable_env_var.set_new_value("*");
 
     InstWrapper inst7{env.vulkan_functions};
     inst7.create_info.add_layer(explicit_layer_name_1).add_layer(explicit_layer_name_2).add_layer(explicit_layer_name_3);
@@ -4194,8 +4181,8 @@ TEST(TestLayers, EnvironVkInstanceLayersAndDisableFilters) {
                                                          .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))),
                            explicit_json_name_2);
 
-    EnvVarCleaner instance_layers_cleaner("VK_INSTANCE_LAYERS");
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
+    EnvVarWrapper layers_enable_env_var{"VK_INSTANCE_LAYERS"};
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
 
     // First, test an instance/device without the layer forced on.
     InstWrapper inst1{env.vulkan_functions};
@@ -4215,7 +4202,7 @@ TEST(TestLayers, EnvironVkInstanceLayersAndDisableFilters) {
     // Enable the non-default enabled layer with VK_INSTANCE_LAYERS
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_INSTANCE_LAYERS", explicit_layer_name_2);
+    layers_enable_env_var.set_new_value(explicit_layer_name_2);
 
     InstWrapper inst2{env.vulkan_functions};
     inst2.create_info.add_layer(explicit_layer_name_1);
@@ -4234,7 +4221,7 @@ TEST(TestLayers, EnvironVkInstanceLayersAndDisableFilters) {
     // Try to disable all
     // ------------------------------------------
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", "*");
+    layers_disable_env_var.set_new_value("*");
 
     InstWrapper inst3{env.vulkan_functions};
     inst3.create_info.add_layer(explicit_layer_name_1);
@@ -4265,8 +4252,7 @@ TEST(TestLayers, AppEnabledExplicitLayerFails) {
                            explicit_json_name_1);
 
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1);
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1};
 
     uint32_t count = 0;
     env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
@@ -4309,8 +4295,7 @@ TEST(TestLayers, OverrideEnabledExplicitLayerWithDisableFilter) {
                            "meta_test_layer.json");
 
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1);
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1};
 
     uint32_t count = 0;
     env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
@@ -4367,8 +4352,7 @@ TEST(TestLayers, OverrideEnabledExplicitLayerWithDisableFilterForOverrideLayer) 
                            "meta_test_layer.json");
 
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_DISABLE", lunarg_meta_layer_name);
-    EnvVarCleaner layers_disable_cleaner("VK_LOADER_LAYERS_DISABLE");
+    EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE", lunarg_meta_layer_name};
 
     uint32_t count = 0;
     env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
@@ -4425,8 +4409,7 @@ TEST(TestLayers, OverrideBlacklistedLayerWithEnableFilter) {
                            "meta_test_layer.json");
 
     env.debug_log.clear();
-    set_env_var("VK_LOADER_LAYERS_ENABLE", explicit_layer_name_1);
-    EnvVarCleaner layers_enable_cleaner("VK_LOADER_LAYERS_ENABLE");
+    EnvVarWrapper layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE", explicit_layer_name_1};
 
     uint32_t count = 0;
     env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);

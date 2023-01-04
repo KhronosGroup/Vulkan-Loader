@@ -4,16 +4,16 @@
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
 [2]: https://www.khronos.org/vulkan/
 
-# Layer Interface to the Loader
+# Layer Interface to the Loader <!-- omit from toc -->
 [![Creative Commons][3]][4]
 
-<!-- Copyright &copy; 2015-2022 LunarG, Inc. -->
+<!-- Copyright &copy; 2015-2023 LunarG, Inc. -->
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
 
-## Table of Contents
+## Table of Contents <!-- omit from toc -->
 
 - [Overview](#overview)
 - [Layer Discovery](#layer-discovery)
@@ -30,6 +30,7 @@
     - [Layer Disable Filtering](#layer-disable-filtering)
     - [Layer Special Case Disable](#layer-special-case-disable)
     - [Layer Disable Warning](#layer-disable-warning)
+      - [`VK_INSTANCE_LAYERS`](#vk_instance_layers)
   - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
 - [Layer Version Negotiation](#layer-version-negotiation)
 - [Layer Call Chains and Distributed Dispatch](#layer-call-chains-and-distributed-dispatch)
@@ -53,6 +54,7 @@
   - [Versioning and Activation Interactions](#versioning-and-activation-interactions)
 - [Layer Manifest File Format](#layer-manifest-file-format)
   - [Layer Manifest File Version History](#layer-manifest-file-version-history)
+  - [Layer Manifest File Version 1.2.1](#layer-manifest-file-version-121)
     - [Layer Manifest File Version 1.2.0](#layer-manifest-file-version-120)
     - [Layer Manifest File Version 1.1.2](#layer-manifest-file-version-112)
     - [Layer Manifest File Version 1.1.1](#layer-manifest-file-version-111)
@@ -504,7 +506,7 @@ Disabling layers, whether just through normal usage of
 `~all~` or `~explicit~` could cause application breakage if the application is
 relying on features provided by one or more explicit layers.
 
-##### VK_INSTANCE_LAYERS
+##### `VK_INSTANCE_LAYERS`
 
 The original `VK_INSTANCE_LAYERS` can be viewed as a special case of the new
 `VK_LOADER_LAYERS_ENABLE`.
