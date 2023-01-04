@@ -4,14 +4,14 @@
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
 [2]: https://www.khronos.org/vulkan/
 
-# Debugging The Vulkan Desktop Loader
+# Debugging The Vulkan Desktop Loader <!-- omit from toc -->
 [![Creative Commons][3]][4]
 
-<!-- Copyright &copy; 2015-2022 LunarG, Inc. -->
+<!-- Copyright &copy; 2015-2023 LunarG, Inc. -->
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
-## Table of Contents
+## Table of Contents <!-- omit from toc -->
 
 - [Debugging Issues](#debugging-issues)
 - [Loader Logging](#loader-logging)

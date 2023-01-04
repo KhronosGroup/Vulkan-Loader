@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2022 The Khronos Group Inc.
- * Copyright (c) 2014-2022 Valve Corporation
- * Copyright (c) 2014-2022 LunarG, Inc.
+ * Copyright (c) 2014-2023 The Khronos Group Inc.
+ * Copyright (c) 2014-2023 Valve Corporation
+ * Copyright (c) 2014-2023 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -122,9 +122,10 @@ void loader_destroy_generic_list(const struct loader_instance *inst, struct load
 void loader_destroy_layer_list(const struct loader_instance *inst, struct loader_device *device,
                                struct loader_layer_list *layer_list);
 void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list);
+VkResult loader_scanned_icd_init(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
-                         bool *skipped_portability_drivers);
+                         const VkInstanceCreateInfo *pCreateInfo, bool *skipped_portability_drivers);
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
                         const VkAllocationCallbacks *pAllocator);
 VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);

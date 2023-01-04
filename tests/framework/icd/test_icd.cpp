@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021-2022 The Khronos Group Inc.
- * Copyright (c) 2021-2022 Valve Corporation
- * Copyright (c) 2021-2022 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -1089,6 +1089,21 @@ VkResult test_vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersi
     return VK_SUCCESS;
 }
 
+// Forward declarations for trampolines
+extern "C" {
+#if TEST_ICD_EXPOSE_VERSION_7
+FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion);
+#if TEST_ICD_EXPORT_ICD_GPDPA
+FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(VkInstance instance, const char* pName);
+#endif
+#if defined(WIN32) && TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
+FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
+                                                                                      uint32_t* pPhysicalDeviceCount,
+                                                                                      VkPhysicalDevice* pPhysicalDevices);
+#endif
+#endif
+}
+
 //// trampolines
 
 PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pName) {
@@ -1362,10 +1377,6 @@ PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pNa
 }
 
 PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
-    if (string_eq(pName, "vkEnumerateInstanceExtensionProperties"))
-        return to_vkVoidFunction(test_vkEnumerateInstanceExtensionProperties);
-    if (string_eq(pName, "vkEnumerateInstanceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateInstanceLayerProperties);
-    if (string_eq(pName, "vkCreateInstance")) return to_vkVoidFunction(test_vkCreateInstance);
     if (string_eq(pName, "vkDestroyInstance")) return to_vkVoidFunction(test_vkDestroyInstance);
     if (string_eq(pName, "vkEnumeratePhysicalDevices")) return to_vkVoidFunction(test_vkEnumeratePhysicalDevices);
 
@@ -1466,24 +1477,33 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_vkGetDeviceProcAddr(VkDevice devic
 }
 
 PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* pName) {
+    if (pName == nullptr) return nullptr;
+    if (instance == NULL) {
 #if TEST_ICD_EXPOSE_VERSION_7
-    if (string_eq(pName, "vk_icdNegotiateLoaderICDInterfaceVersion"))
-        return to_vkVoidFunction(test_vk_icdNegotiateLoaderICDInterfaceVersion);
-    if (string_eq(pName, "vk_icdGetPhysicalDeviceProcAddr")) return to_vkVoidFunction(get_physical_device_func);
-#if defined(WIN32)
-    if (string_eq(pName, "vk_icdEnumerateAdapterPhysicalDevices"))
-        return to_vkVoidFunction(test_vk_icdEnumerateAdapterPhysicalDevices);
+        if (string_eq(pName, "vk_icdNegotiateLoaderICDInterfaceVersion"))
+            return icd.exposes_vk_icdNegotiateLoaderICDInterfaceVersion
+                       ? to_vkVoidFunction(vk_icdNegotiateLoaderICDInterfaceVersion)
+                       : NULL;
+#if TEST_ICD_EXPORT_ICD_GPDPA
+        if (string_eq(pName, "vk_icdGetPhysicalDeviceProcAddr"))
+            return icd.exposes_vk_icdGetPhysicalDeviceProcAddr ? to_vkVoidFunction(vk_icdGetPhysicalDeviceProcAddr) : NULL;
+#endif
+#if defined(WIN32) && TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
+        if (string_eq(pName, "vk_icdEnumerateAdapterPhysicalDevices"))
+            return icd.exposes_vk_icdEnumerateAdapterPhysicalDevices ? to_vkVoidFunction(vk_icdEnumerateAdapterPhysicalDevices)
+                                                                     : NULL;
 #endif  // defined(WIN32)
 #endif  // TEST_ICD_EXPOSE_VERSION_7
 
-    if (pName == nullptr) return nullptr;
-    if (instance == NULL) {
         if (string_eq(pName, "vkGetInstanceProcAddr")) return to_vkVoidFunction(test_vkGetInstanceProcAddr);
         if (string_eq(pName, "vkEnumerateInstanceExtensionProperties"))
-            return to_vkVoidFunction(test_vkEnumerateInstanceExtensionProperties);
+            return icd.exposes_vkEnumerateInstanceExtensionProperties
+                       ? to_vkVoidFunction(test_vkEnumerateInstanceExtensionProperties)
+                       : NULL;
         if (string_eq(pName, "vkEnumerateInstanceLayerProperties"))
             return to_vkVoidFunction(test_vkEnumerateInstanceLayerProperties);
         if (string_eq(pName, "vkEnumerateInstanceVersion")) return to_vkVoidFunction(test_vkEnumerateInstanceVersion);
+        if (string_eq(pName, "vkCreateInstance")) return to_vkVoidFunction(test_vkCreateInstance);
     }
     if (string_eq(pName, "vkGetDeviceProcAddr")) return to_vkVoidFunction(test_vkGetDeviceProcAddr);
 
@@ -1499,7 +1519,7 @@ PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* 
 // Exported functions
 extern "C" {
 #if TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
-extern FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
+FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
     return test_vk_icdNegotiateLoaderICDInterfaceVersion(pSupportedVersion);
 }
 #endif  // TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION

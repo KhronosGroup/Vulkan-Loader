@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -95,22 +95,62 @@
 #endif
 
 /*
- * Common Environment Variable operations
- * These operate on the actual environemnt, they are not shims.
- * set_env_var - sets the env-var with `name` to `value`.
- * remove_env_var - unsets the env-var `name`. Different than set_env_var(name, "");
- * get_env_var - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
- *     env-var
+ * Wrapper around Environment Variables with common operations
+ * Since Environment Variables leak between tests, there needs to be RAII code to remove them during test cleanup
+
  */
 
+// Wrapper to set & remove env-vars automatically
+struct EnvVarWrapper {
+    // Constructor which does NOT set the env-var
+    EnvVarWrapper(std::string const& name) noexcept : name(name) {}
+    // Constructor which DOES set the env-var
+    EnvVarWrapper(std::string const& name, std::string const& value) noexcept : name(name), cur_value(value) { set_env_var(); }
+    ~EnvVarWrapper() noexcept { remove_env_var(); }
+
+    // delete copy operators
+    EnvVarWrapper(const EnvVarWrapper&) = delete;
+    EnvVarWrapper& operator=(const EnvVarWrapper&) = delete;
+
+    void set_new_value(std::string const& value) {
+        cur_value = value;
+        set_env_var();
+    }
+    void add_to_list(std::string const& list_item) {
+        if (!cur_value.empty()) {
+            cur_value += OS_ENV_VAR_LIST_SEPARATOR;
+        }
+        cur_value += list_item;
+        set_env_var();
+    }
+    void remove_value() const { remove_env_var(); }
+    const char* get() const { return name.c_str(); }
+    const char* value() const { return cur_value.c_str(); }
+
+   private:
+    std::string name;
+    std::string cur_value;
+
 #if defined(WIN32)
-void set_env_var(std::string const& name, std::string const& value);
-void remove_env_var(std::string const& name);
-std::string get_env_var(std::string const& name, bool report_failure = true);
+    void set_env_var();
+    void remove_env_var() const;
+    // Environment variable list separator - not for filesystem paths
+    const char OS_ENV_VAR_LIST_SEPARATOR = ';';
 
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-void set_env_var(std::string const& name, std::string const& value);
-void remove_env_var(std::string const& name);
+    void set_env_var();
+    void remove_env_var() const;
+    // Environment variable list separator - not for filesystem paths
+    const char OS_ENV_VAR_LIST_SEPARATOR = ':';
+#endif
+};
+
+// get_env_var() - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
+//     env-var
+// NOTE: This is only intended for test framework code, all test code MUST use EnvVarWrapper
+#if defined(WIN32)
+std::string get_env_var(std::string const& name, bool report_failure = true);
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 std::string get_env_var(std::string const& name, bool report_failure = true);
 #endif
 
@@ -124,14 +164,6 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
 
 struct ManifestICD;    // forward declaration for FolderManager::write
 struct ManifestLayer;  // forward declaration for FolderManager::write
-
-#ifdef _WIN32
-// Environment variable list separator - not for filesystem paths
-const char OS_ENV_VAR_LIST_SEPARATOR = ';';
-#else
-// Environment variable list separator - not for filesystem paths
-const char OS_ENV_VAR_LIST_SEPARATOR = ':';
-#endif
 
 namespace fs {
 std::string make_native(std::string const&);

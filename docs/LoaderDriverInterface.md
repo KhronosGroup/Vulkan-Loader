@@ -4,16 +4,16 @@
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
 [2]: https://www.khronos.org/vulkan/
 
-# Driver interface to the Vulkan Loader
+# Driver interface to the Vulkan Loader <!-- omit from toc -->
 [![Creative Commons][3]][4]
 
-<!-- Copyright &copy; 2015-2022 LunarG, Inc. -->
+<!-- Copyright &copy; 2015-2023 LunarG, Inc. -->
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
 
-## Table of Contents
+## Table of Contents <!-- omit from toc -->
 
 - [Overview](#overview)
 - [Driver Discovery](#driver-discovery)
@@ -35,6 +35,10 @@
   - [Driver Discovery on macOS](#driver-discovery-on-macos)
     - [Example macOS Driver Search Path](#example-macos-driver-search-path)
     - [Additional Settings For Driver Debugging](#additional-settings-for-driver-debugging)
+  - [Driver Discovery using the`VK_LUNARG_direct_driver_loading` extension](#driver-discovery-using-thevk_lunarg_direct_driver_loading-extension)
+    - [How to use `VK_LUNARG_direct_driver_loading`](#how-to-use-vk_lunarg_direct_driver_loading)
+    - [Interactions with other driver discovery mechanisms](#interactions-with-other-driver-discovery-mechanisms)
+    - [Limitations of `VK_LUNARG_direct_driver_loading`](#limitations-of-vk_lunarg_direct_driver_loading)
   - [Using Pre-Production ICDs or Software Drivers](#using-pre-production-icds-or-software-drivers)
   - [Driver Discovery on Android](#driver-discovery-on-android)
 - [Driver Manifest File Format](#driver-manifest-file-format)
@@ -545,6 +549,117 @@ If there is a problem with a driver missing symbols on the current system, this
 will expose it and cause the Vulkan loader to fail on loading the driver.
 It is recommended that `LD_BIND_NOW` along with `VK_LOADER_DEBUG=error,warn`
 to expose any issues.
+
+### Driver Discovery using the`VK_LUNARG_direct_driver_loading` extension
+
+The `VK_LUNARG_direct_driver_loading` extension allows for applications to
+provide a driver or drivers to the Loader during vkCreateInstance.
+This allows drivers to be included with an application without requiring
+installation and is capable of being used in any execution environment, such as
+a process running with elevated privileges.
+
+When calling `vkEnumeratePhysicalDevices` with the
+`VK_LUNARG_direct_driver_loading` extension enabled, the `VkPhysicalDevice`s
+from system installed drivers and environment variable specified drivers will
+appear before any `VkPhysicalDevice`s that originate from drivers from the
+`VkDirectDriverLoadingListLUNARG::pDrivers` list.
+
+#### How to use `VK_LUNARG_direct_driver_loading`
+
+To use this extension, it must first be enabled on the VkInstance.
+This requires enabling the `VK_LUNARG_direct_driver_loading` extension through
+the `enabledExtensionCount` and `ppEnabledExtensionNames`members of
+`VkInstanceCreateInfo`.
+
+```c
+const char* extensions[] = {VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME, <other extensions>};
+VkInstanceCreateInfo instance_create_info = {};
+instance_create_info.enabledExtensionCount = <size of extension list>;
+instance_create_info.ppEnabledExtensionNames = extensions;
+```
+
+The `VkDirectDriverLoadingInfoLUNARG` structure contains a
+`VkDirectDriverLoadingFlagsLUNARG` member (reserved for future use) and a
+`PFN_vkGetInstanceProcAddrLUNARG` member which provides the loader with the
+function pointer for the driver's `vkGetInstanceProcAddr`.
+
+The `VkDirectDriverLoadingListLUNARG` structure contains a count and pointer
+members which provide the size of and pointer to an application provided array of
+`VkDirectDriverLoadingInfoLUNARG` structures.
+
+Creating those structures looks like the following
+```c
+VkDirectDriverLoadingInfoLUNARG direct_loading_info = {};
+direct_loading_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG
+direct_loading_info.pfnGetInstanceProcAddr = <put the PFN_vkGetInstanceProcAddr of the driver here>
+
+VkDirectDriverLoadingListLUNARG direct_driver_list = {};
+direct_driver_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+direct_driver_list.mode = VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG; // or VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG
+direct_driver_list.driverCount = 1;
+direct_driver_list.pDrivers = &direct_loading_info; // can include multiple drivers here if so desired
+```
+
+The `VkDirectDriverLoadingListLUNARG` structure contains the enum
+`VkDirectDriverLoadingModeLUNARG`.
+There are two modes:
+* `VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG` - specifies that the only drivers
+to be loaded will come from the `VkDirectDriverLoadingListLUNARG` structure.
+* `VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG` - specifies that drivers
+from the `VkDirectDriverLoadingModeLUNARG` structure will be used in addition to
+any system installed drivers and environment variable specified drivers.
+
+
+
+Then, the `VkDirectDriverLoadingListLUNARG` structure *must* be appended to the
+`pNext` chain of `VkInstanceCreateInfo`.
+
+```c
+instance_create_info.pNext = (const void*)&direct_driver_list;
+```
+
+Finally, create the instance like normal.
+
+#### Interactions with other driver discovery mechanisms
+
+If the `VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG` mode is specified in the
+`VkDirectDriverLoadingListLUNARG` structure, then no system installed drivers
+are loaded.
+This applies equally to all platforms.
+Additionally, the following environment variables have no effect:
+
+* `VK_DRIVER_FILES`
+* `VK_ICD_FILENAMES`
+* `VK_ADD_DRIVER_FILES`
+* `VK_LOADER_DRIVERS_SELECT`
+* `VK_LOADER_DRIVERS_DISABLE`
+
+Exclusive mode will also disable MacOS bundle manifest discovery of drivers.
+
+#### Limitations of `VK_LUNARG_direct_driver_loading`
+
+Because `VkDirectDriverLoadingListLUNARG` is provided to the loader at instance
+creation, there is no mechanism for the loader to query the list of instance
+extensions that originate from `VkDirectDriverLoadingListLUNARG` drivers during
+`vkEnumerateInstanceExtensionProperties`.
+Applications can instead manually load the `vkEnumerateInstanceExtensionProperties`
+function pointer directly from the drivers the application provides to the loader
+using the `pfnGetInstanceProcAddrLUNARG` for each driver.
+Then the application can call each driver's
+`vkEnumerateInstanceExtensionProperties` and append non-duplicate entriees to the
+list from the loader's `vkEnumerateInstanceExtensionProperties` to get the full
+list of supported instance extensions.
+Alternatively, because the Application is providing drivers, it is reasonable for
+the application to already know which instance extensions are available with the
+provided drivers, preventing the need to manually query them.
+
+However, there are limitations.
+If there are any active implicit layers which intercept
+`vkEnumerateInstanceExtensionProperties` to remove unsupported extensions, then
+those layers will not be able to remove unsupported extensions from drivers that
+are provided by the application.
+This is due to `vkEnumerateInstanceExtensionProperties` not having a mechanism
+to extend it.
 
 
 ### Using Pre-Production ICDs or Software Drivers

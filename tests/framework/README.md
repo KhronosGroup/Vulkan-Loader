@@ -133,7 +133,7 @@ This is due to some functions being used to query other functions, which the shi
 There are many utilities that the test framework and tests have access to. These include:
 * Including common C and C++ headers
 * `FRAMEWORK_EXPORT` - macro used for exporting shared library funtions
-* Environment Variable helpers: `get_env_var`, `set_env_var`, `remove_env_var`
+* Environment Variable Wrapper: `EnvVarWrapper` for creating, setting, getting, and removing environment variables in a RAII manner
 * Windows API error handling helpers
 * filesystem abstractions:
   * `fs::path` - wrapper around std::string that has a similar API to C++17's `filesystem::path` library

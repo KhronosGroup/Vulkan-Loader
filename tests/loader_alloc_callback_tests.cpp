@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -435,11 +435,7 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
                            "test_layer.json");
     env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
-    auto driver_files = get_env_var("VK_DRIVER_FILES");
-    driver_files += OS_ENV_VAR_LIST_SEPARATOR;
-    driver_files += (fs::path("totally_made_up") / "path_to_fake" / "jason_file.json").str();
-    set_env_var("VK_DRIVER_FILES", driver_files);
-    EnvVarCleaner cleaner("VK_DRIVER_FILES");
+    env.env_var_vk_icd_filenames.add_to_list((fs::path("totally_made_up") / "path_to_fake" / "jason_file.json").str());
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
@@ -525,6 +521,7 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
 
 // Test failure during vkCreateInstance and vkCreateDevice to make sure we don't
 // leak memory if one of the out-of-memory conditions trigger.
+// Includes drivers with several instance extensions, drivers that will fail to load, directly loaded drivers
 TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     FrameworkEnvironment env{};
     uint32_t num_physical_devices = 4;
@@ -542,6 +539,18 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     }
 
     env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
+
+    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+
+    VkDirectDriverLoadingInfoLUNARG ddl_info{};
+    ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+    ddl_info.pfnGetInstanceProcAddr = direct_driver_icd.icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+
+    VkDirectDriverLoadingListLUNARG ddl_list{};
+    ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+    ddl_list.mode = VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG;
+    ddl_list.driverCount = 1;
+    ddl_list.pDrivers = &ddl_info;
 
     const char* layer_name = "VK_LAYER_ImplicitAllocFail";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -574,6 +583,8 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
+        inst_create_info.add_extension(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME);
+        inst_create_info.instance_info.pNext = reinterpret_cast<const void*>(&ddl_list);
         result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             ASSERT_TRUE(tracker.empty());
@@ -779,7 +790,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
 // leak memory if one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_discovery_type(ManifestDiscoveryType::none));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_discovery_type(ManifestDiscoveryType::null_dir));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     for (uint32_t i = 0; i < 2; i++) {

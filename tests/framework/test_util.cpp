@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -57,13 +57,13 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
     LocalFree(lpMsgBuf);
 }
 
-void set_env_var(std::string const& name, std::string const& value) {
-    BOOL ret = SetEnvironmentVariableW(widen(name).c_str(), widen(value).c_str());
+void EnvVarWrapper::set_env_var() {
+    BOOL ret = SetEnvironmentVariableW(widen(name).c_str(), widen(cur_value).c_str());
     if (ret == 0) {
         print_error_message(ERROR_SETENV_FAILED, "SetEnvironmentVariableW");
     }
 }
-void remove_env_var(std::string const& name) { SetEnvironmentVariableW(widen(name).c_str(), nullptr); }
+void EnvVarWrapper::remove_env_var() const { SetEnvironmentVariableW(widen(name).c_str(), nullptr); }
 std::string get_env_var(std::string const& name, bool report_failure) {
     std::wstring name_utf16 = widen(name);
     DWORD value_size = GetEnvironmentVariableW(name_utf16.c_str(), nullptr, 0);
@@ -79,8 +79,8 @@ std::string get_env_var(std::string const& name, bool report_failure) {
 }
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 
-void set_env_var(std::string const& name, std::string const& value) { setenv(name.c_str(), value.c_str(), 1); }
-void remove_env_var(std::string const& name) { unsetenv(name.c_str()); }
+void EnvVarWrapper::set_env_var() { setenv(name.c_str(), cur_value.c_str(), 1); }
+void EnvVarWrapper::remove_env_var() const { unsetenv(name.c_str()); }
 std::string get_env_var(std::string const& name, bool report_failure) {
     char* ret = getenv(name.c_str());
     if (ret == nullptr) {

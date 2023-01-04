@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -418,6 +418,7 @@ struct PlatformShimWrapper {
 
     LibraryWrapper shim_library;
     PlatformShim* platform_shim;
+    EnvVarWrapper loader_logging;
 };
 
 struct TestICDHandle {
@@ -449,9 +450,11 @@ struct TestLayerHandle {
     fs::path manifest_path;
 };
 
+// Controls whether to create a manifest and where to put it
 enum class ManifestDiscoveryType {
     generic,              // put the manifest in the regular locations
-    none,                 // don't add to regular locations - eg D3DKMT
+    none,                 // Do not write the manifest anywhere (for Direct Driver Loading)
+    null_dir,             // put the manifest in the 'null_dir' which the loader does not search in (D3DKMT for instance)
     env_var,              // use the corresponding env-var for it
     add_env_var,          // use the corresponding add-env-var for it
     override_folder,      // add to a special folder for the override layer to use
@@ -499,7 +502,7 @@ struct FrameworkEnvironment {
     FrameworkEnvironment(bool enable_log) noexcept;
     FrameworkEnvironment(bool enable_log, bool enable_default_search_paths) noexcept;
 
-    void add_icd(TestICDDetails icd_details) noexcept;
+    TestICDHandle& add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_implicit_layer(TestLayerDetails layer_details) noexcept;
     void add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
@@ -531,11 +534,11 @@ struct FrameworkEnvironment {
     std::vector<TestICDHandle> icds;
     std::vector<TestLayerHandle> layers;
 
-    std::string env_var_vk_icd_filenames;
-    std::string add_env_var_vk_icd_filenames;
+    EnvVarWrapper env_var_vk_icd_filenames;      //"VK_DRIVER_FILES"
+    EnvVarWrapper add_env_var_vk_icd_filenames;  //"VK_ADD_DRIVER_FILES"
 
-    std::string env_var_vk_layer_paths;
-    std::string add_env_var_vk_layer_paths;
+    EnvVarWrapper env_var_vk_layer_paths;      //"VK_LAYER_PATH"
+    EnvVarWrapper add_env_var_vk_layer_paths;  //"VK_ADD_LAYER_PATH"
 
    private:
     void add_layer_impl(TestLayerDetails layer_details, ManifestCategory category);
@@ -555,13 +558,3 @@ void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection =
 //    defaults to Metal on macOS and XCB on linux if not provided
 // Returns an assertion failure if the surface failed to be created
 testing::AssertionResult create_surface(InstWrapper& inst, VkSurfaceKHR& out_surface, const char* api_selection = nullptr);
-
-struct EnvVarCleaner {
-    std::string env_var;
-    EnvVarCleaner(std::string env_var) noexcept : env_var(env_var) {}
-    ~EnvVarCleaner() noexcept { remove_env_var(env_var); }
-
-    // delete copy operators
-    EnvVarCleaner(const EnvVarCleaner&) = delete;
-    EnvVarCleaner& operator=(const EnvVarCleaner&) = delete;
-};

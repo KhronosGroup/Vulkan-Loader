@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021-2022 The Khronos Group Inc.
- * Copyright (c) 2021-2022 Valve Corporation
- * Copyright (c) 2021-2022 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -27,21 +27,6 @@
  */
 
 #include "test_environment.h"
-
-class EnvVarICDOverrideSetup : public ::testing::Test {
-   protected:
-    virtual void SetUp() {
-        remove_env_var("VK_ICD_FILENAMES");
-        remove_env_var("VK_DRIVER_FILES");
-        remove_env_var("VK_ADD_DRIVER_FILES");
-    }
-
-    virtual void TearDown() {
-        remove_env_var("VK_ICD_FILENAMES");
-        remove_env_var("VK_DRIVER_FILES");
-        remove_env_var("VK_ADD_DRIVER_FILES");
-    }
-};
 
 // Don't support vk_icdNegotiateLoaderICDInterfaceVersion
 // Loader calls vk_icdGetInstanceProcAddr second
@@ -174,11 +159,11 @@ TEST(EnvVarICDOverrideSetup, XDG) {
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
     fs::path HOME = "/home/fake_home";
-    set_env_var("HOME", HOME.str());
-    set_env_var("XDG_CONFIG_DIRS", ":/tmp/goober:::::/tmp/goober/::::");
-    set_env_var("XDG_CONFIG_HOME", ":/tmp/goober:::::/tmp/goober2/::::");
-    set_env_var("XDG_DATA_DIRS", "::::/tmp/goober3:/tmp/goober4/with spaces:::");
-    set_env_var("XDG_DATA_HOME", "::::/tmp/goober3:/tmp/goober4/with spaces:::");
+    EnvVarWrapper home_env_var{"HOME", HOME.str()};
+    EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", ":/tmp/goober:::::/tmp/goober/::::"};
+    EnvVarWrapper xdg_config_home_env_var{"XDG_CONFIG_HOME", ":/tmp/goober:::::/tmp/goober2/::::"};
+    EnvVarWrapper xdg_data_dirs_env_var{"XDG_DATA_DIRS", "::::/tmp/goober3:/tmp/goober4/with spaces:::"};
+    EnvVarWrapper xdg_data_home_env_var{"XDG_DATA_HOME", "::::/tmp/goober3:/tmp/goober4/with spaces:::"};
 
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -188,22 +173,22 @@ TEST(EnvVarICDOverrideSetup, XDG) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
 
-    auto check_paths = [](DebugUtilsLogger const& debug_log, ManifestCategory category, fs::path const& HOME) {
+    auto check_paths = [](DebugUtilsLogger const& debug_log, ManifestCategory category) {
         EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober/vulkan") / category_path_name(category)).str()));
         EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober2/vulkan") / category_path_name(category)).str()));
         EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober3/vulkan") / category_path_name(category)).str()));
         EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober4/with spaces/vulkan") / category_path_name(category)).str()));
     };
-    check_paths(env.debug_log, ManifestCategory::icd, HOME);
-    check_paths(env.debug_log, ManifestCategory::implicit_layer, HOME);
-    check_paths(env.debug_log, ManifestCategory::explicit_layer, HOME);
+    check_paths(env.debug_log, ManifestCategory::icd);
+    check_paths(env.debug_log, ManifestCategory::implicit_layer);
+    check_paths(env.debug_log, ManifestCategory::explicit_layer);
 }
 // Check that a json file in the paths don't cause the loader to crash
 TEST(EnvVarICDOverrideSetup, XDGContainsJsonFile) {
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
-    set_env_var("XDG_CONFIG_DIRS", "bad_file.json");
+    EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", "bad_file.json"};
 
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -282,11 +267,10 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
     fs::path HOME = "/home/fake_home";
-    set_env_var("HOME", HOME.str());
+    EnvVarWrapper home_env_var{"HOME", HOME.str()};
     std::string vk_layer_path = ":/tmp/carol::::/:";
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
-    set_env_var("VK_LAYER_PATH", vk_layer_path);
-    EnvVarCleaner layer_path_cleaner("VK_LAYER_PATH");
+    EnvVarWrapper layer_path_env_var{"VK_LAYER_PATH", vk_layer_path};
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_layer(layer_name);
     FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
@@ -329,11 +313,10 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
     fs::path HOME = "/home/fake_home";
-    set_env_var("HOME", HOME.str());
+    EnvVarWrapper home_env_var{"HOME", HOME.str()};
     std::string vk_layer_path = ":/tmp/carol::::/:";
     vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
-    set_env_var("VK_ADD_LAYER_PATH", vk_layer_path);
-    EnvVarCleaner add_layer_path_cleaner("VK_ADD_LAYER_PATH");
+    EnvVarWrapper add_layer_path_env_var{"VK_ADD_LAYER_PATH", vk_layer_path};
 
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_layer(layer_name);
@@ -364,7 +347,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
 // Test that the driver filter select will only enable driver manifest files that match the filter
 TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FrameworkEnvironment env{};
-    const char* filter_select_env_var = "VK_LOADER_DRIVERS_SELECT";
+    EnvVarWrapper filter_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_disable_icd_inc(true).set_json_name("ABC_ICD"));
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_2}.set_disable_icd_inc(true).set_json_name("BCD_ICD"));
@@ -386,7 +369,7 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
 
     // Match full-name
     env.debug_log.clear();
-    set_env_var(filter_select_env_var, "ABC_ICD.json");
+    filter_select_env_var.set_new_value("ABC_ICD.json");
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -404,7 +387,7 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
 
     // Match prefix
     env.debug_log.clear();
-    set_env_var(filter_select_env_var, "ABC*");
+    filter_select_env_var.set_new_value("ABC*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -422,7 +405,7 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
 
     // Match suffix
     env.debug_log.clear();
-    set_env_var(filter_select_env_var, "*C_ICD.json");
+    filter_select_env_var.set_new_value("*C_ICD.json");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -440,7 +423,7 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
 
     // Match sub-string
     env.debug_log.clear();
-    set_env_var(filter_select_env_var, "*BC*");
+    filter_select_env_var.set_new_value("*BC*");
 
     InstWrapper inst5{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
@@ -458,7 +441,7 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
 
     // Match all with star '*'
     env.debug_log.clear();
-    set_env_var(filter_select_env_var, "*");
+    filter_select_env_var.set_new_value("*");
 
     InstWrapper inst6{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
@@ -476,7 +459,7 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
 
     // Match all with special name
     env.debug_log.clear();
-    set_env_var(filter_select_env_var, "~all~");
+    filter_select_env_var.set_new_value("~all~");
 
     InstWrapper inst7{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
@@ -496,8 +479,7 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
 // Test that the driver filter disable disables driver manifest files that match the filter
 TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FrameworkEnvironment env{};
-    const char* filter_disable_env_var = "VK_LOADER_DRIVERS_DISABLE";
-    EnvVarCleaner filter_disable_cleaner(filter_disable_env_var);
+    EnvVarWrapper filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_disable_icd_inc(true).set_json_name("ABC_ICD"));
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_2}.set_disable_icd_inc(true).set_json_name("BCD_ICD"));
@@ -519,7 +501,7 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
 
     // Match full-name
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "ABC_ICD.json");
+    filter_disable_env_var.set_new_value("ABC_ICD.json");
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -537,7 +519,7 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
 
     // Match prefix
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "ABC_*");
+    filter_disable_env_var.set_new_value("ABC_*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -555,7 +537,7 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
 
     // Match suffix
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "*C_ICD.json");
+    filter_disable_env_var.set_new_value("*C_ICD.json");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
@@ -573,7 +555,7 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
 
     // Match substring
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "*BC*");
+    filter_disable_env_var.set_new_value("*BC*");
 
     InstWrapper inst5{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst5.create_info, env.debug_log);
@@ -591,7 +573,7 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
 
     // Match all with star '*'
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "*");
+    filter_disable_env_var.set_new_value("*");
 
     InstWrapper inst6{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst6.create_info, env.debug_log);
@@ -609,7 +591,7 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
 
     // Match all with special name
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "~all~");
+    filter_disable_env_var.set_new_value("~all~");
 
     InstWrapper inst7{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst7.create_info, env.debug_log);
@@ -630,10 +612,8 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
 // appropriate drivers are enabled and disabled
 TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     FrameworkEnvironment env{};
-    const char* filter_select_env_var = "VK_LOADER_DRIVERS_SELECT";
-    const char* filter_disable_env_var = "VK_LOADER_DRIVERS_DISABLE";
-    EnvVarCleaner filter_select_cleaner(filter_select_env_var);
-    EnvVarCleaner filter_disable_cleaner(filter_disable_env_var);
+    EnvVarWrapper filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
+    EnvVarWrapper filter_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_disable_icd_inc(true).set_json_name("ABC_ICD"));
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_2}.set_disable_icd_inc(true).set_json_name("BCD_ICD"));
@@ -655,8 +635,8 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
 
     // Disable two, but enable one
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "*BC*");
-    set_env_var(filter_select_env_var, "BCD*");
+    filter_disable_env_var.set_new_value("*BC*");
+    filter_select_env_var.set_new_value("BCD*");
 
     InstWrapper inst2{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
@@ -674,8 +654,8 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
 
     // Disable all, but enable two
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "*");
-    set_env_var(filter_select_env_var, "*BC*");
+    filter_disable_env_var.set_new_value("*");
+    filter_select_env_var.set_new_value("*BC*");
 
     InstWrapper inst3{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
@@ -693,8 +673,8 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
 
     // Disable all, but enable all
     env.debug_log.clear();
-    set_env_var(filter_disable_env_var, "*");
-    set_env_var(filter_select_env_var, "*");
+    filter_disable_env_var.set_new_value("*");
+    filter_select_env_var.set_new_value("*");
 
     InstWrapper inst4{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
