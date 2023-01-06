@@ -186,7 +186,6 @@ if(WIN32)
 elseif(APPLE)
     # For MacOS, use the C code and force the compiler's tail-call optimization instead of using assembly code.
     set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
-    set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
     add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
 else() # i.e.: Linux
     option(USE_GAS "Use GAS" ON)

@@ -338,9 +338,6 @@ using layer_intercept_physical_device_functions = layer_intercept_functions<VkPh
 using layer_implementation_physical_device_functions = layer_implementation_functions<VkPhysicalDevice>;
 
 TEST(UnknownFunction, PhysicalDeviceFunction) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
@@ -360,9 +357,6 @@ TEST(UnknownFunction, PhysicalDeviceFunction) {
 }
 
 TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -408,9 +402,6 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
 
 // Add unknown functions to driver 0, and try to use them on driver 1.
 TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -449,9 +440,6 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
 }
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
@@ -479,9 +467,6 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
 }
 
 TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLayerImplementation) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -532,9 +517,6 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLay
 }
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
@@ -561,9 +543,6 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
 }
 
 TEST(UnknownFunction, PhysicalDeviceFunctionDriverSupportWithImplicitLayerInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
@@ -590,9 +569,6 @@ TEST(UnknownFunction, PhysicalDeviceFunctionDriverSupportWithImplicitLayerInterc
 }
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
@@ -764,30 +740,18 @@ TEST(UnknownFunction, DeviceFromGDPAWithLayerInterceptionAndLayerImplementation)
 }
 
 TEST(UnknownFunction, DeviceFromGIPA) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkDevice>({});
 }
 
 TEST(UnknownFunction, DeviceFromGIPAWithLayerImplementation) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkDevice>({TestConfig::add_layer_implementation});
 }
 
 TEST(UnknownFunction, DeviceFromGIPAWithLayerInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkDevice>({TestConfig::add_layer_implementation});
 }
 
 TEST(UnknownFunction, DeviceFromGIPAWithLayerInterceptionAndLayerImplementation) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkDevice>({TestConfig::add_layer_interception, TestConfig::add_layer_implementation});
 }
 
@@ -809,30 +773,18 @@ TEST(UnknownFunction, CommandBufferFromGDPAWithLayerInterceptionAndLayerImplemen
 }
 
 TEST(UnknownFunction, CommandBufferFromGIPA) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkCommandBuffer>({});
 }
 
 TEST(UnknownFunction, CommandBufferFromGIPAWithLayerImplementation) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkCommandBuffer>({TestConfig::add_layer_implementation});
 }
 
 TEST(UnknownFunction, CommandBufferFromGIPAWithLayerInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkCommandBuffer>({TestConfig::add_layer_implementation});
 }
 
 TEST(UnknownFunction, CommandBufferFromGIPAWithLayerInterceptionAndLayerImplementation) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkCommandBuffer>(
         {TestConfig::add_layer_interception, TestConfig::add_layer_implementation});
 }
@@ -854,30 +806,18 @@ TEST(UnknownFunction, QueueFromGDPAWithLayerInterceptionAndLayerImplementation) 
 }
 
 TEST(UnknownFunction, QueueFromGIPA) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkQueue>({});
 }
 
 TEST(UnknownFunction, QueueFromGIPAWithLayer) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkQueue>({TestConfig::add_layer_implementation});
 }
 
 TEST(UnknownFunction, QueueFromGIPAWithLayerInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkQueue>({TestConfig::add_layer_implementation});
 }
 
 TEST(UnknownFunction, QueueFromGIPAWithLayerInterceptionAndLayerImplementation) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     unknown_function_test_impl<VkInstance, VkQueue>({TestConfig::add_layer_interception, TestConfig::add_layer_implementation});
 }
 
@@ -1192,9 +1132,6 @@ template <size_t I>
 struct D {};
 
 TEST(UnknownFunction, PhysicalDeviceFunctionTwoLayerInterception) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
@@ -1231,9 +1168,6 @@ TEST(UnknownFunction, PhysicalDeviceFunctionTwoLayerInterception) {
 }
 
 TEST(UnknownFunction, ManyCombinations) {
-#if defined(__APPLE__)
-    GTEST_SKIP() << "Skip this test as currently macOS doesn't fully support unknown functions.";
-#endif
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();

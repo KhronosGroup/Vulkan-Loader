@@ -33,33 +33,40 @@
 #pragma GCC optimize(3)  // force gcc to use tail-calls
 #endif
 
+// clang 13 has a tail call attribute for return statements
+#if defined(__clang__) && __clang_major__ >= 13
+#define TAIL_CALL __attribute__((musttail))
+#else
+#define TAIL_CALL
+#endif
+
 // Trampoline function macro for unknown physical device extension command.
-#define PhysDevExtTramp(num)                                                              \
-    VKAPI_ATTR void VKAPI_CALL vkPhysDevExtTramp##num(VkPhysicalDevice physical_device) { \
-        const struct loader_instance_dispatch_table *disp;                                \
-        disp = loader_get_instance_dispatch(physical_device);                             \
-        disp->phys_dev_ext[num](loader_unwrap_physical_device(physical_device));          \
+#define PhysDevExtTramp(num)                                                                      \
+    VKAPI_ATTR VkResult VKAPI_CALL vkPhysDevExtTramp##num(VkPhysicalDevice physical_device) {     \
+        const struct loader_instance_dispatch_table *disp;                                        \
+        disp = loader_get_instance_dispatch(physical_device);                                     \
+        TAIL_CALL return disp->phys_dev_ext[num](loader_unwrap_physical_device(physical_device)); \
     }
 
 // Terminator function macro for unknown physical device extension command.
 #define PhysDevExtTermin(num)                                                                                      \
-    VKAPI_ATTR void VKAPI_CALL vkPhysDevExtTermin##num(VkPhysicalDevice physical_device) {                         \
+    VKAPI_ATTR VkResult VKAPI_CALL vkPhysDevExtTermin##num(VkPhysicalDevice physical_device) {                     \
         struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physical_device; \
         struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;                                           \
         struct loader_instance *inst = (struct loader_instance *)icd_term->this_instance;                          \
         if (NULL == icd_term->phys_dev_ext[num]) {                                                                 \
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Function %s not supported for this physical device",    \
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Function %s not supported for this physical device",     \
                        inst->phys_dev_ext_disp_functions[num]);                                                    \
         }                                                                                                          \
-        icd_term->phys_dev_ext[num](phys_dev_term->phys_dev);                                                      \
+        TAIL_CALL return icd_term->phys_dev_ext[num](phys_dev_term->phys_dev);                                     \
     }
 
 // Trampoline function macro for unknown physical device extension command.
-#define DevExtTramp(num)                                         \
-    VKAPI_ATTR void VKAPI_CALL vkdev_ext##num(VkDevice device) { \
-        const struct loader_dev_dispatch_table *disp;            \
-        disp = loader_get_dev_dispatch(device);                  \
-        disp->ext_dispatch[num](device);                         \
+#define DevExtTramp(num)                                             \
+    VKAPI_ATTR VkResult VKAPI_CALL vkdev_ext##num(VkDevice device) { \
+        const struct loader_dev_dispatch_table *disp;                \
+        disp = loader_get_dev_dispatch(device);                      \
+        TAIL_CALL return disp->ext_dispatch[num](device);            \
     }
 
 // clang-format off
