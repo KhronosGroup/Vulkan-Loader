@@ -322,16 +322,14 @@ endif()
 
 # Optional codegen target
 if(PYTHONINTERP_FOUND)
-    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
     add_custom_target(VulkanLoader_generated_source
                       COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR}
+                              ${VULKAN_HEADERS_REGISTRY_DIRECTORY}
                               --generated-version ${VulkanHeaders_VERSION}
                               --incremental)
 else()
     message("WARNING: VulkanLoader_generated_source target requires python 3")
 endif()
-
 
 if(UNIX)
     target_compile_definitions(loader_common_options INTERFACE FALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}" FALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
