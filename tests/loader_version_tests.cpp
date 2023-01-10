@@ -83,19 +83,23 @@ TEST(ICDInterfaceVersion2Plus, version_4) {
 }
 
 TEST(ICDInterfaceVersion2Plus, l4_icd4) {
+    // TODO:
     // ICD must fail with VK_ERROR_INCOMPATIBLE_DRIVER for all vkCreateInstance calls with apiVersion set to > Vulkan 1.0
     // because both the loader and ICD support interface version <= 4. Otherwise, the ICD should behave as normal.
 }
 TEST(ICDInterfaceVersion2Plus, l4_icd5) {
+    // TODO:
     // ICD must fail with VK_ERROR_INCOMPATIBLE_DRIVER for all vkCreateInstance calls with apiVersion set to > Vulkan 1.0
     // because the loader is still at interface version <= 4. Otherwise, the ICD should behave as normal.
 }
 TEST(ICDInterfaceVersion2Plus, l5_icd4) {
+    // TODO:
     // Loader will fail with VK_ERROR_INCOMPATIBLE_DRIVER if it can't handle the apiVersion. ICD may pass for all apiVersions,
     // but since its interface is <= 4, it is best if it assumes it needs to do the work of rejecting anything > Vulkan 1.0 and
     // fail with VK_ERROR_INCOMPATIBLE_DRIVER. Otherwise, the ICD should behave as normal.
 }
 TEST(ICDInterfaceVersion2Plus, l5_icd5) {
+    // TODO:
     // Loader will fail with VK_ERROR_INCOMPATIBLE_DRIVER if it can't handle the apiVersion, and ICDs should fail with
     // VK_ERROR_INCOMPATIBLE_DRIVER only if they can not support the specified apiVersion. Otherwise, the ICD should behave as
     // normal.

@@ -1384,11 +1384,30 @@ void init_extension_device_proc_terminator_dispatch(struct loader_device *dev) {
 #endif // None
 }
 
+// These are prototypes for functions that need their trampoline called in all circumstances.
+// They are used in loader_lookup_device_dispatch_table but are defined afterwards.
+    // ---- VK_EXT_debug_marker extension commands
+VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(
+    VkDevice                                    device,
+    const VkDebugMarkerObjectTagInfoEXT*        pTagInfo);
+VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(
+    VkDevice                                    device,
+    const VkDebugMarkerObjectNameInfoEXT*       pNameInfo);
+    // ---- VK_EXT_debug_utils extension commands
+VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(
+    VkDevice                                    device,
+    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo);
+VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(
+    VkDevice                                    device,
+    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo);
+
 // Device command lookup function
 VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDispatchTable *table, const char *name) {
     if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
 
     name += 2;
+    struct loader_device* dev = (struct loader_device *)table;
+
 
     // ---- Core 1_0 commands
     if (!strcmp(name, "GetDeviceProcAddr")) return (void *)table->GetDeviceProcAddr;
@@ -1762,8 +1781,8 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetDeviceImageSparseMemoryRequirementsKHR")) return (void *)table->GetDeviceImageSparseMemoryRequirementsKHR;
 
     // ---- VK_EXT_debug_marker extension commands
-    if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return (void *)table->DebugMarkerSetObjectTagEXT;
-    if (!strcmp(name, "DebugMarkerSetObjectNameEXT")) return (void *)table->DebugMarkerSetObjectNameEXT;
+    if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return dev->extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectTagEXT : NULL;
+    if (!strcmp(name, "DebugMarkerSetObjectNameEXT")) return dev->extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectNameEXT : NULL;
     if (!strcmp(name, "CmdDebugMarkerBeginEXT")) return (void *)table->CmdDebugMarkerBeginEXT;
     if (!strcmp(name, "CmdDebugMarkerEndEXT")) return (void *)table->CmdDebugMarkerEndEXT;
     if (!strcmp(name, "CmdDebugMarkerInsertEXT")) return (void *)table->CmdDebugMarkerInsertEXT;
@@ -1823,8 +1842,8 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "SetHdrMetadataEXT")) return (void *)table->SetHdrMetadataEXT;
 
     // ---- VK_EXT_debug_utils extension commands
-    if (!strcmp(name, "SetDebugUtilsObjectNameEXT")) return (void *)table->SetDebugUtilsObjectNameEXT;
-    if (!strcmp(name, "SetDebugUtilsObjectTagEXT")) return (void *)table->SetDebugUtilsObjectTagEXT;
+    if (!strcmp(name, "SetDebugUtilsObjectNameEXT")) return dev->extensions.ext_debug_utils_enabled ? (void *)SetDebugUtilsObjectNameEXT : NULL;
+    if (!strcmp(name, "SetDebugUtilsObjectTagEXT")) return dev->extensions.ext_debug_utils_enabled ? (void *)SetDebugUtilsObjectTagEXT : NULL;
     if (!strcmp(name, "QueueBeginDebugUtilsLabelEXT")) return (void *)table->QueueBeginDebugUtilsLabelEXT;
     if (!strcmp(name, "QueueEndDebugUtilsLabelEXT")) return (void *)table->QueueEndDebugUtilsLabelEXT;
     if (!strcmp(name, "QueueInsertDebugUtilsLabelEXT")) return (void *)table->QueueInsertDebugUtilsLabelEXT;
@@ -3942,6 +3961,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
                 local_tag_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
+    // If this is an instance we have to replace it with the proper one for the next call.
+    } else if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {
+        local_tag_info.object = (uint64_t)(uintptr_t)icd_term->instance;
     }
     // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
     // debug utils but the driver does not.
@@ -3994,6 +4016,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
                 local_name_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
+    // If this is an instance we have to replace it with the proper one for the next call.
+    } else if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {
+        local_name_info.object = (uint64_t)(uintptr_t)icd_term->instance;
     }
     // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
     // debug utils but the driver does not.
@@ -4552,6 +4577,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
                 local_name_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
+    // If this is an instance we have to replace it with the proper one for the next call.
+    } else if (pNameInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {
+        local_name_info.objectHandle = (uint64_t)(uintptr_t)icd_term->instance;
     }
     // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
     // debug utils but the driver does not.
@@ -4608,6 +4636,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
                 local_tag_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
+    // If this is an instance we have to replace it with the proper one for the next call.
+    } else if (pTagInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {
+        local_tag_info.objectHandle = (uint64_t)(uintptr_t)icd_term->instance;
     }
     // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports
     // debug utils but the driver does not.

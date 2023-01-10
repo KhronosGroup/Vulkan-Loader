@@ -77,6 +77,11 @@ DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkCmdInsertDebugUtilsLabelEXT',
                          'vkGetDeviceGroupSurfacePresentModes2EXT']
 
+DEVICE_CMDS_MUST_USE_TRAMP = ['vkSetDebugUtilsObjectNameEXT',
+                              'vkSetDebugUtilsObjectTagEXT',
+                              'vkDebugMarkerSetObjectNameEXT',
+                              'vkDebugMarkerSetObjectTagEXT']
+
 # These are the aliased functions that use the same terminator for both extension and core versions
 # Generally, this is only applies to physical device level functions in instance extensions
 SHARED_ALIASES = {
@@ -250,6 +255,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             file_data += self.OutputIcdDispatchTableInit()
             file_data += self.OutputLoaderDispatchTables()
             file_data += self.InitDeviceFunctionTerminatorDispatchTable()
+            file_data += self.OutputDeviceFunctionTrampolinePrototypes()
             file_data += self.OutputLoaderLookupFunc()
             file_data += self.CreateTrampTermFuncs()
             file_data += self.InstExtensionGPA()
@@ -872,6 +878,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 tables += '    if (!name || name[0] != \'v\' || name[1] != \'k\') return NULL;\n'
                 tables += '\n'
                 tables += '    name += 2;\n'
+                tables += '    struct loader_device* dev = (struct loader_device *)table;\n'
+                tables += '\n'
             else:
                 cur_type = 'instance'
 
@@ -915,7 +923,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         if cur_cmd.protect is not None:
                             tables += '#ifdef %s\n' % cur_cmd.protect
 
-                        tables += '    if (!strcmp(name, "%s")) return (void *)table->%s;\n' % (base_name, base_name)
+                        if cur_cmd.name in DEVICE_CMDS_MUST_USE_TRAMP:
+                            tables += f'    if (!strcmp(name, "{base_name}")) return dev->extensions.{cur_cmd.ext_name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n'
+                        else:
+                            tables += f'    if (!strcmp(name, "{base_name}")) return (void *)table->{base_name};\n'
 
                         if cur_cmd.protect is not None:
                             tables += '#endif // %s\n' % cur_cmd.protect
@@ -1223,6 +1234,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         member_name = 'objectHandle' if is_debug_utils else 'object'
                         phys_dev_check = 'VK_OBJECT_TYPE_PHYSICAL_DEVICE' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT'
                         surf_check = 'VK_OBJECT_TYPE_SURFACE_KHR' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT'
+                        inst_check = 'VK_OBJECT_TYPE_INSTANCE' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT'
                         funcs += '    uint32_t icd_index = 0;\n'
                         funcs += '    struct loader_device *dev;\n'
                         funcs += f'    struct loader_icd_term *icd_term = loader_get_icd_and_device({ ext_cmd.params[0].name}, &dev, &icd_index);\n'
@@ -1244,6 +1256,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += f'                {local_struct}.{member_name} = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
                         funcs += '            }\n'
                         funcs += '        }\n'
+                        funcs += '    // If this is an instance we have to replace it with the proper one for the next call.\n'
+                        funcs += f'    }} else if ({debug_struct_name}->objectType == {inst_check}) {{\n'
+                        funcs += f'        {local_struct}.{member_name} = (uint64_t)(uintptr_t)icd_term->instance;\n'
                         funcs += '    }\n'
                         funcs += '    // Exit early if the driver does not support the function - this can happen as a layer or the loader itself supports\n'
                         funcs += '    // debug utils but the driver does not.\n'
@@ -1496,6 +1511,31 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         term_func += '}; \n\n'
 
         return term_func
+
+    def OutputDeviceFunctionTrampolinePrototypes(self):
+        tramp_protos = ''
+        tramp_protos += '// These are prototypes for functions that need their trampoline called in all circumstances.\n'
+        tramp_protos += '// They are used in loader_lookup_device_dispatch_table but are defined afterwards.\n'
+        last_protect = None
+        last_ext = None
+        for ext_cmd in self.ext_commands:
+            if ext_cmd.name in DEVICE_CMDS_MUST_USE_TRAMP:
+                if 'VK_VERSION_' in ext_cmd.ext_name:
+                    tramp_protos += f'    // ---- Core {ext_cmd.ext_name[11:]} commands\n'
+                else:
+                    last_protect = ext_cmd.protect
+                    if ext_cmd.protect is not None:
+                        tramp_protos += f'#ifdef {ext_cmd.protect}\n'
+                    if (last_ext != ext_cmd.ext_name):
+                        tramp_protos += f'    // ---- {ext_cmd.ext_name} extension commands\n'
+                        last_ext = ext_cmd.ext_name
+
+                tramp_protos += f'{ext_cmd.cdecl.replace("VKAPI_CALL vk", "VKAPI_CALL ")}\n'
+
+        if last_protect is not None:
+            tramp_protos += '#endif // %s\n' % ext_cmd.protect
+        tramp_protos += '\n'
+        return tramp_protos
 
     #
     # Create code to initialize a dispatch table from the appropriate list of
