@@ -329,15 +329,59 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT(VkInstance insta
 
 // Debug utils & debug marker ext stubs
 VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectTagEXT(VkDevice dev, const VkDebugMarkerObjectTagInfoEXT* pTagInfo) {
+    if (pTagInfo && pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {
+        VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pTagInfo->object);
+        if (pd != icd.physical_devices.at(icd.lookup_device(dev).phys_dev_index).vk_physical_device.handle)
+            return VK_ERROR_DEVICE_LOST;
+    }
+    if (pTagInfo && pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
+        if (pTagInfo->object != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
+    }
+    if (pTagInfo && pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {
+        if (pTagInfo->object != (uint64_t)(uintptr_t)icd.instance_handle.handle) return VK_ERROR_DEVICE_LOST;
+    }
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectNameEXT(VkDevice dev, const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
+    if (pNameInfo && pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {
+        VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pNameInfo->object);
+        if (pd != icd.physical_devices.at(icd.lookup_device(dev).phys_dev_index).vk_physical_device.handle)
+            return VK_ERROR_DEVICE_LOST;
+    }
+    if (pNameInfo && pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
+        if (pNameInfo->object != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
+    }
+    if (pNameInfo && pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {
+        if (pNameInfo->object != (uint64_t)(uintptr_t)icd.instance_handle.handle) return VK_ERROR_DEVICE_LOST;
+    }
     return VK_SUCCESS;
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectNameEXT(VkDevice dev, const VkDebugUtilsObjectTagInfoEXT* pTagInfo) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectNameEXT(VkDevice dev, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
+    if (pNameInfo && pNameInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {
+        VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pNameInfo->objectHandle);
+        if (pd != icd.physical_devices.at(icd.lookup_device(dev).phys_dev_index).vk_physical_device.handle)
+            return VK_ERROR_DEVICE_LOST;
+    }
+    if (pNameInfo && pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
+        if (pNameInfo->objectHandle != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
+    }
+    if (pNameInfo && pNameInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {
+        if (pNameInfo->objectHandle != (uint64_t)(uintptr_t)icd.instance_handle.handle) return VK_ERROR_DEVICE_LOST;
+    }
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectTagEXT(VkDevice dev, const VkDebugUtilsObjectTagInfoEXT* pTagInfo) {
+    if (pTagInfo && pTagInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {
+        VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pTagInfo->objectHandle);
+        if (pd != icd.physical_devices.at(icd.lookup_device(dev).phys_dev_index).vk_physical_device.handle)
+            return VK_ERROR_DEVICE_LOST;
+    }
+    if (pTagInfo && pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
+        if (pTagInfo->objectHandle != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
+    }
+    if (pTagInfo && pTagInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {
+        if (pTagInfo->objectHandle != (uint64_t)(uintptr_t)icd.instance_handle.handle) return VK_ERROR_DEVICE_LOST;
+    }
     return VK_SUCCESS;
 }
 VKAPI_ATTR void VKAPI_CALL test_vkQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {}

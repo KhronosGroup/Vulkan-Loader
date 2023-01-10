@@ -587,6 +587,7 @@ const char* get_platform_wsi_extension(const char* api_selection) {
 void setup_WSI_in_ICD(TestICD& icd, const char* api_selection) {
     icd.enable_icd_wsi = true;
     icd.add_instance_extensions({"VK_KHR_surface", get_platform_wsi_extension(api_selection)});
+    icd.min_icd_interface_version = std::max(icd.min_icd_interface_version, 3U);
 }
 void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection) {
     inst.create_info.add_extensions({"VK_KHR_surface", get_platform_wsi_extension(api_selection)});
