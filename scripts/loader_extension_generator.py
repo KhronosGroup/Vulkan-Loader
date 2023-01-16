@@ -226,7 +226,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         elif self.genOpts.filename == 'vk_layer_dispatch_table.h':
             preamble += '#pragma once\n'
             preamble += '\n'
+            preamble += '#ifndef PFN_GetPhysicalDeviceProcAddr\n'
             preamble += 'typedef PFN_vkVoidFunction (VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char* pName);\n'
+            preamble += '#endif\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
