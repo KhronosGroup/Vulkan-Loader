@@ -1,5 +1,5 @@
-# Copyright (c) 2021 Valve Corporation
-# Copyright (c) 2021 LunarG, Inc.
+# Copyright (c) 2021-2023 Valve Corporation
+# Copyright (c) 2021-2023 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -203,3 +203,31 @@ jobs:
 
             - name: Build the loader
               run: ninja -C out/${{matrix.config}}
+
+    test-cmake-minimum:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: lukka/get-cmake@latest
+          with:
+            cmakeVersion: 3.10.2
+
+        - name: Install Dependencies
+          run: sudo apt update && sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+
+        - name: CMake Version
+          run: cmake --version
+
+        - name: Create build directory
+          run: mkdir build/
+
+        - name: Get Dependencies
+          working-directory: ./build
+          run: python ../scripts/update_deps.py
+
+        - name: Configure Vulkan-Loader
+          working-directory: ./build
+          run: cmake -C helper.cmake -D BUILD_TESTS=OFF -G "Ninja" ../
+
+        - name: Build the loader
+          run: cmake --build build/
