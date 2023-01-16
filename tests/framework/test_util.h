@@ -236,17 +236,7 @@ class FolderManager {
 // src - std::string to read from
 // dst - char array to write to
 // size_dst - number of characters in the dst array
-inline void copy_string_to_char_array(std::string const& src, char* dst, size_t size_dst) {
-// Creates a spurious C4996 Warning in VS 2015 - ignore it
-#if defined(WIN32)
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#endif
-    dst[src.copy(dst, size_dst - 1)] = 0;
-#if defined(WIN32)
-#pragma warning(pop)
-#endif
-}
+inline void copy_string_to_char_array(std::string const& src, char* dst, size_t size_dst) { dst[src.copy(dst, size_dst - 1)] = 0; }
 
 #if defined(WIN32)
 // Convert an UTF-16 wstring to an UTF-8 string

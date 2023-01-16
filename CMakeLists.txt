@@ -17,11 +17,6 @@
 cmake_minimum_required(VERSION 3.10.2)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# If we are building in Visual Studio 2015 and with a CMake version 3.19 or greater, we need to set this variable
-# so that CMake will choose a Windows SDK version higher than 10.0.14393.0, as dxgi1_6.h is only found in Windows SDK
-# 10.0.17763 and higher.
-set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM OFF)
-
 project(Vulkan-Loader)
 
 # Gets the header version used during code generation
