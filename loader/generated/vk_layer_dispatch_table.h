@@ -957,6 +957,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetDeviceMicromapCompatibilityEXT GetDeviceMicromapCompatibilityEXT;
     PFN_vkGetMicromapBuildSizesEXT GetMicromapBuildSizesEXT;
 
+    // ---- VK_HUAWEI_cluster_culling_shader extension commands
+    PFN_vkCmdDrawClusterHUAWEI CmdDrawClusterHUAWEI;
+    PFN_vkCmdDrawClusterIndirectHUAWEI CmdDrawClusterIndirectHUAWEI;
+
     // ---- VK_EXT_pageable_device_local_memory extension commands
     PFN_vkSetDeviceMemoryPriorityEXT SetDeviceMemoryPriorityEXT;
 

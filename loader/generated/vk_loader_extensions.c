@@ -995,6 +995,10 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetDeviceMicromapCompatibilityEXT = (PFN_vkGetDeviceMicromapCompatibilityEXT)gdpa(dev, "vkGetDeviceMicromapCompatibilityEXT");
     table->GetMicromapBuildSizesEXT = (PFN_vkGetMicromapBuildSizesEXT)gdpa(dev, "vkGetMicromapBuildSizesEXT");
 
+    // ---- VK_HUAWEI_cluster_culling_shader extension commands
+    table->CmdDrawClusterHUAWEI = (PFN_vkCmdDrawClusterHUAWEI)gdpa(dev, "vkCmdDrawClusterHUAWEI");
+    table->CmdDrawClusterIndirectHUAWEI = (PFN_vkCmdDrawClusterIndirectHUAWEI)gdpa(dev, "vkCmdDrawClusterIndirectHUAWEI");
+
     // ---- VK_EXT_pageable_device_local_memory extension commands
     table->SetDeviceMemoryPriorityEXT = (PFN_vkSetDeviceMemoryPriorityEXT)gdpa(dev, "vkSetDeviceMemoryPriorityEXT");
 
@@ -2059,6 +2063,10 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdWriteMicromapsPropertiesEXT")) return (void *)table->CmdWriteMicromapsPropertiesEXT;
     if (!strcmp(name, "GetDeviceMicromapCompatibilityEXT")) return (void *)table->GetDeviceMicromapCompatibilityEXT;
     if (!strcmp(name, "GetMicromapBuildSizesEXT")) return (void *)table->GetMicromapBuildSizesEXT;
+
+    // ---- VK_HUAWEI_cluster_culling_shader extension commands
+    if (!strcmp(name, "CmdDrawClusterHUAWEI")) return (void *)table->CmdDrawClusterHUAWEI;
+    if (!strcmp(name, "CmdDrawClusterIndirectHUAWEI")) return (void *)table->CmdDrawClusterIndirectHUAWEI;
 
     // ---- VK_EXT_pageable_device_local_memory extension commands
     if (!strcmp(name, "SetDeviceMemoryPriorityEXT")) return (void *)table->SetDeviceMemoryPriorityEXT;
@@ -6955,6 +6963,38 @@ VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(
 }
 
 
+// ---- VK_HUAWEI_cluster_culling_shader extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    groupCountX,
+    uint32_t                                    groupCountY,
+    uint32_t                                    groupCountZ) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawClusterHUAWEI: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawClusterHUAWEI-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawClusterIndirectHUAWEI: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawClusterIndirectHUAWEI-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
+}
+
+
 // ---- VK_EXT_pageable_device_local_memory extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
@@ -9474,6 +9514,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetMicromapBuildSizesEXT", name)) {
         *addr = (void *)GetMicromapBuildSizesEXT;
+        return true;
+    }
+
+    // ---- VK_HUAWEI_cluster_culling_shader extension commands
+    if (!strcmp("vkCmdDrawClusterHUAWEI", name)) {
+        *addr = (void *)CmdDrawClusterHUAWEI;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawClusterIndirectHUAWEI", name)) {
+        *addr = (void *)CmdDrawClusterIndirectHUAWEI;
         return true;
     }
 
