@@ -327,6 +327,8 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryToMicromapEXT(VkCommandBuffer
 static VKAPI_ATTR void VKAPI_CALL StubCmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount, const VkMicromapEXT* pMicromaps, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {  }
 static VKAPI_ATTR void VKAPI_CALL StubGetDeviceMicromapCompatibilityEXT(VkDevice device, const VkMicromapVersionInfoEXT* pVersionInfo, VkAccelerationStructureCompatibilityKHR* pCompatibility) {  }
 static VKAPI_ATTR void VKAPI_CALL StubGetMicromapBuildSizesEXT(VkDevice                                            device, VkAccelerationStructureBuildTypeKHR                 buildType, const VkMicromapBuildInfoEXT*  pBuildInfo, VkMicromapBuildSizesInfoEXT*           pSizeInfo) {  }
+static VKAPI_ATTR void VKAPI_CALL StubCmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {  }
+static VKAPI_ATTR void VKAPI_CALL StubCmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {  }
 static VKAPI_ATTR void VKAPI_CALL StubSetDeviceMemoryPriorityEXT(VkDevice       device, VkDeviceMemory memory, float          priority) {  }
 static VKAPI_ATTR void VKAPI_CALL StubGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference, VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {  }
 static VKAPI_ATTR void VKAPI_CALL StubGetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {  }
@@ -1150,6 +1152,10 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetDeviceMicromapCompatibilityEXT == nullptr) { table->GetDeviceMicromapCompatibilityEXT = (PFN_vkGetDeviceMicromapCompatibilityEXT)StubGetDeviceMicromapCompatibilityEXT; }
     table->GetMicromapBuildSizesEXT = (PFN_vkGetMicromapBuildSizesEXT) gpa(device, "vkGetMicromapBuildSizesEXT");
     if (table->GetMicromapBuildSizesEXT == nullptr) { table->GetMicromapBuildSizesEXT = (PFN_vkGetMicromapBuildSizesEXT)StubGetMicromapBuildSizesEXT; }
+    table->CmdDrawClusterHUAWEI = (PFN_vkCmdDrawClusterHUAWEI) gpa(device, "vkCmdDrawClusterHUAWEI");
+    if (table->CmdDrawClusterHUAWEI == nullptr) { table->CmdDrawClusterHUAWEI = (PFN_vkCmdDrawClusterHUAWEI)StubCmdDrawClusterHUAWEI; }
+    table->CmdDrawClusterIndirectHUAWEI = (PFN_vkCmdDrawClusterIndirectHUAWEI) gpa(device, "vkCmdDrawClusterIndirectHUAWEI");
+    if (table->CmdDrawClusterIndirectHUAWEI == nullptr) { table->CmdDrawClusterIndirectHUAWEI = (PFN_vkCmdDrawClusterIndirectHUAWEI)StubCmdDrawClusterIndirectHUAWEI; }
     table->SetDeviceMemoryPriorityEXT = (PFN_vkSetDeviceMemoryPriorityEXT) gpa(device, "vkSetDeviceMemoryPriorityEXT");
     if (table->SetDeviceMemoryPriorityEXT == nullptr) { table->SetDeviceMemoryPriorityEXT = (PFN_vkSetDeviceMemoryPriorityEXT)StubSetDeviceMemoryPriorityEXT; }
     table->GetDescriptorSetLayoutHostMappingInfoVALVE = (PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE) gpa(device, "vkGetDescriptorSetLayoutHostMappingInfoVALVE");
