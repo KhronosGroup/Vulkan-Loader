@@ -2,6 +2,10 @@
 
 This project provides the Khronos official Vulkan ICD desktop loader for Windows, Linux, and MacOS.
 
+## master to main upcoming change (January 23, 2023)
+
+See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5084 for details.
+
 ## CI Build Status
 
 [![Build Status](https://github.com/KhronosGroup/Vulkan-Loader/workflows/CI%20Build/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-Loader/actions)
