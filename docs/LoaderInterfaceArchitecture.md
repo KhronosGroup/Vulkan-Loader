@@ -226,7 +226,7 @@ In the future, VkConfig may have additional interactions with the Vulkan
 loader.
 
 More details on VkConfig can be found in its
-[GitHub documentation](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md).
+[GitHub documentation](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md).
 <br/>
 <br/>
 

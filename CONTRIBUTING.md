@@ -42,7 +42,7 @@ current assignee.
   [submitting a pull request](https://help.github.com/articles/using-pull-requests/).
 * Please read and adhere to the style and process
   [guidelines](#coding-conventions-and-formatting) enumerated below.
-* Please base your fixes on the master branch.
+* Please base your fixes on the `main` branch.
   SDK branches are generally not updated except for critical fixes needed to
   repair an SDK release.
 * Provide one or more tests which show a failure for the issue before your changes
@@ -117,7 +117,7 @@ generator scripts in the `scripts` directory. All changes to these scripts _must
 corresponding generated output to keep the repository self-consistent. This requirement is enforced by both
 Travis CI and AppVeyor test configurations. Regenerate source files after modifying any of the generator
 scripts and before building and testing your changes. More details can be found in
-[BUILD.md](https://github.com/KhronosGroup/Vulkan-Loader/blob/master/BUILD.md#generated-source-code).
+[BUILD.md](BUILD.md#generated-source-code).
 
 #### Testing Your Changes
 
