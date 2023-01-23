@@ -1524,7 +1524,7 @@ Android Vulkan documentation</a>.
         possibly including crashes or corruption.
     </td>
     <td><small>
-        <a href="https://github.com/KhronosGroup/VK-GL-CTS/blob/master/external/openglcts/README.md">
+        <a href="https://github.com/KhronosGroup/VK-GL-CTS/blob/main/external/openglcts/README.md">
         Vulkan CTS Documentation</a>
         </small>
     </td>

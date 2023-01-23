@@ -373,7 +373,7 @@ layer, dropping the need for meta layers.
 While not necessary for validation anymore, VkConfig does use meta layers to
 group layers together based on user's preferences.
 More can be found out about this functionality through both the
-[VkConfig documentation](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
+[VkConfig documentation](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
 and the section later on the [Override Layer](#override-layer).
 
 Meta-layers are detailed more in the
@@ -446,7 +446,7 @@ The table below details more information:
 #### Override Layer
 
 The "Override Layer" is a special implicit meta-layer created by the
-[VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
+[VkConfig](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
 tool and available by default when the tool is running.
 Once VkConfig exits, the override layer is removed, and the system should
 return to standard Vulkan behavior.
@@ -469,7 +469,7 @@ the system-installed layers.
 This can be accomplished in one of two ways:
 
  1. Selecting specific layer paths using the
-[VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
+[VkConfig](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
 tool shipped with the Vulkan SDK.
  2. Directing the loader to look for layers in specific files and/or folders by using the
 `VK_LAYER_PATH` environment variable.
@@ -512,7 +512,7 @@ application they are using.
 This can be also be accomplished in one of two ways:
 
  1. Selecting specific layers using the
-[VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
+[VkConfig](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
 tool shipped with the Vulkan SDK.
  2. Directing the loader to look for additional layers by name using the
 `VK_INSTANCE_LAYERS` environment variable.

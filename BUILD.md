@@ -622,11 +622,6 @@ NOTE: To force the OSX version set the environment variable [MACOSX_DEPLOYMENT_T
 
 Setup Homebrew and components
 
-- Follow instructions on [brew.sh](http://brew.sh) to get Homebrew installed.
-
-      /usr/bin/ruby -e "$(curl -fsSL \
-          https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
 - Ensure Homebrew is at the beginning of your PATH:
 
       export PATH=/usr/local/bin:$PATH

@@ -1176,7 +1176,7 @@ If any component layer is not present in the provided override paths, the meta
 layer is disabled.
 
 The override meta-layer is primarily enabled when using the
-[VkConfig](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
+[VkConfig](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
 tool included in the Vulkan SDK.
 It is typically only available while the VkConfig tool is actually executing.
 Please refer to that documentation for more information.
@@ -1895,7 +1895,7 @@ application.
 #### Layer Manifest File Version 1.2.0
 
 The ability to define the layer settings as defined by the
-[layer manifest schema](https://github.com/LunarG/VulkanTools/blob/master/vkconfig_core/layers/layers_schema.json).
+[layer manifest schema](https://github.com/LunarG/VulkanTools/blob/main/vkconfig_core/layers/layers_schema.json).
 
 The ability to briefly document the layer thanks to the fields:
  * "introduction": Presentation of the purpose of the layer in a paragraph.
@@ -1905,7 +1905,7 @@ The ability to briefly document the layer thanks to the fields:
 
 These changes were made to enable third-party layers to expose their features
 within
-[Vulkan Configurator](https://github.com/LunarG/VulkanTools/blob/master/vkconfig/README.md)
+[Vulkan Configurator](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
 or other tools.
 
 #### Layer Manifest File Version 1.1.2
@@ -2193,7 +2193,7 @@ Android Vulkan documentation</a>.
     <td>A layer <b>must</b> have a valid JSON manifest file for the
         loader to process that ends with the ".json" suffix.
         It is recommended validating the layer manifest file against
-        <a href="https://github.com/LunarG/VulkanTools/blob/master/vkconfig_core/layers/layers_schema.json">
+        <a href="https://github.com/LunarG/VulkanTools/blob/main/vkconfig_core/layers/layers_schema.json">
         the layer schema</a> prior to publication.</br>
         The <b>only</b> exception is on Android which determines layer
         functionality through the introspection functions defined in
@@ -2271,7 +2271,7 @@ Android Vulkan documentation</a>.
     <td>Yes</td>
     <td>No</td>
     <td><small>
-        <a href="https://github.com/KhronosGroup/VK-GL-CTS/blob/master/external/openglcts/README.md">
+        <a href="https://github.com/KhronosGroup/VK-GL-CTS/blob/main/external/openglcts/README.md">
         Vulkan CTS Documentation</a>
         </small>
     </td>
