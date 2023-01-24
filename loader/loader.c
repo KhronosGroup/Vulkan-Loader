@@ -2990,6 +2990,14 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
             break;
     }
 
+    // Log a message when VK_LAYER_PATH is set but the override layer paths take priority
+    if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER && NULL != override_env && NULL != path_override) {
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                   "Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
+                   "VK_LAYER_PATH is set to %s",
+                   override_env);
+    }
+
     if (path_override != NULL) {
         override_path = path_override;
     } else if (override_env != NULL) {
@@ -4742,12 +4750,12 @@ void loader_activate_instance_layer_extensions(struct loader_instance *inst, VkI
 VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
                                     struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
-                                    PFN_vkGetDeviceProcAddr *layerNextGDPA) __attribute__ ((optnone)) {
+                                    PFN_vkGetDeviceProcAddr *layerNextGDPA) __attribute__((optnone)) {
 #else
-    VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
-                                        const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
-                                        struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
-                                        PFN_vkGetDeviceProcAddr *layerNextGDPA) {
+VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
+                                    struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
+                                    PFN_vkGetDeviceProcAddr *layerNextGDPA) {
 #endif
     uint32_t num_activated_layers = 0;
     struct activated_layer_info *activated_layers = NULL;
