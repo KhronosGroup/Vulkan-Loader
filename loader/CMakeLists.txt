@@ -1,7 +1,7 @@
 # ~~~
-# Copyright (c) 2014-2021 The Khronos Group Inc.
-# Copyright (c) 2014-2021 Valve Corporation
-# Copyright (c) 2014-2021 LunarG, Inc.
+# Copyright (c) 2014-2023 The Khronos Group Inc.
+# Copyright (c) 2014-2023 Valve Corporation
+# Copyright (c) 2014-2023 LunarG, Inc.
 # Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,9 +69,10 @@ if(WIN32)
     # Optionally uses the BUILD_DLL_VERSIONINFO build option to allow setting the exact build version
     # Adds "Dev Build" to any build without the BUILD_DLL_VERSIONINFO option set
     # ~~~
+    string(TIMESTAMP CURRENT_YEAR "%Y")
+    set(LOADER_CUR_COPYRIGHT_STR "${CURRENT_YEAR}")
     if ("$CACHE{BUILD_DLL_VERSIONINFO}" STREQUAL "")
-        # default case - use 0 as the BUILDNO
-        set(LOADER_RC_VERSION "1.0.1111.2222")
+        set(LOADER_RC_VERSION "${VulkanHeaders_VERSION}")
         set(LOADER_VER_FILE_VERSION_STR "\"${LOADER_RC_VERSION}.Dev Build\"")
         set(LOADER_VER_FILE_DESCRIPTION_STR "\"Vulkan Loader - Dev Build\"")
     else()
@@ -85,7 +86,7 @@ if(WIN32)
 
     # Configure the file to include the versioning info
     # Place it in the current directory for check-in - so the GN build has up to date info
-    configure_file(loader.rc.in ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
+    configure_file(loader.rc.in ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
 else()
     # Used to make alloca() and secure_getenv() available
     target_compile_definitions(loader_specific_options INTERFACE _GNU_SOURCE)
@@ -272,7 +273,7 @@ if(WIN32)
                 ${NORMAL_LOADER_SRCS}
                 $<TARGET_OBJECTS:loader-unknown-chain>
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
-                ${CMAKE_CURRENT_LIST_DIR}/loader.rc)
+                ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
 
     target_link_libraries(vulkan PRIVATE loader_specific_options loader-opt)
 
