@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2022 The Khronos Group Inc.
- * Copyright (c) 2014-2022 Valve Corporation
- * Copyright (c) 2014-2022 LunarG, Inc.
+ * Copyright (c) 2014-2023 The Khronos Group Inc.
+ * Copyright (c) 2014-2023 Valve Corporation
+ * Copyright (c) 2014-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@
 #include "allocation.h"
 #include "loader.h"
 #include "log.h"
+
+#include <vulkan/vulkan.h>
 
 #include <ctype.h>
 
@@ -524,4 +526,799 @@ out:
     }
 
     return res;
+}
+
+// Loader settings handling
+
+void parse_env_loader_debug_log_flags(uint32_t *debug_flags) {
+    char *env = NULL;
+    char *orig = NULL;
+
+    if (NULL == debug_flags) {
+        return;
+    }
+
+    // Parse comma-separated debug options
+    orig = env = loader_getenv("VK_LOADER_DEBUG", NULL);
+    while (env) {
+        char *p = strchr(env, ',');
+        size_t len;
+
+        if (p) {
+            len = p - env;
+        } else {
+            len = strlen(env);
+        }
+
+        if (len > 0) {
+            if (strncmp(env, "all", len) == 0) {
+                *debug_flags = ~0u;
+            } else if (strncmp(env, "warn", len) == 0) {
+                *debug_flags |= VULKAN_LOADER_WARN_BIT;
+            } else if (strncmp(env, "info", len) == 0) {
+                *debug_flags |= VULKAN_LOADER_INFO_BIT;
+            } else if (strncmp(env, "perf", len) == 0) {
+                *debug_flags |= VULKAN_LOADER_PERF_BIT;
+            } else if (strncmp(env, "error", len) == 0) {
+                *debug_flags |= VULKAN_LOADER_ERROR_BIT;
+            } else if (strncmp(env, "debug", len) == 0) {
+                *debug_flags |= VULKAN_LOADER_DEBUG_BIT;
+            } else if (strncmp(env, "layer", len) == 0) {
+                *debug_flags |= VULKAN_LOADER_LAYER_BIT;
+            } else if (strncmp(env, "driver", len) == 0 || strncmp(env, "implem", len) == 0 || strncmp(env, "icd", len) == 0) {
+                *debug_flags |= VULKAN_LOADER_DRIVER_BIT;
+            }
+        }
+
+        if (!p) {
+            break;
+        }
+
+        env = p + 1;
+    }
+
+    loader_free_getenv(orig, NULL);
+}
+
+// Determine if the environment variables indicate that unknown instance extensions should be disabled.
+void parse_env_disable_instance_extensions(struct loader_instance *inst, bool *disable_instance_ext) {
+    char *env = NULL;
+    if (NULL == disable_instance_ext) {
+        return;
+    }
+    env = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", NULL);
+    if (NULL != env && atoi(env) != 0) {
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Found environment var 'VK_LOADER_DISABLE_INST_EXT_FILTER' set to %s", env);
+        *disable_instance_ext = true;
+    } else {
+        *disable_instance_ext = false;
+    }
+    loader_free_getenv(env, NULL);
+}
+
+// Determine if the environment variables indicate that driver sorting should be modified.
+VkResult parse_env_device_sorting_settings(struct loader_instance *inst, struct loader_device_sorting_settings *sorting_settings) {
+    if (NULL == sorting_settings) {
+        return VK_SUCCESS;
+    }
+
+#if LOADER_ENABLE_LINUX_SORT
+    char *env_value = loader_getenv("VK_LOADER_DISABLE_SELECT", inst);
+    if (NULL != env_value && atoi(env_value) != 0) {
+        // Device select disabled so bail out early
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "Found environment var `VK_LOADER_DISABLE_SELECT` set to non-zero.  Disabling device sorting.");
+        loader_free_getenv(env_value, inst);
+    } else {
+        char *selection = loader_getenv("VK_LOADER_DEVICE_SELECT", inst);
+        size_t string_len = selection == NULL ? 0 : strlen(selection);
+        if (NULL != selection && 1 < string_len) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                       "Found environment var `VK_LOADER_DEVICE_SELECT` set %s", selection);
+            sorting_settings->device_select_string =
+                loader_instance_heap_alloc(inst, string_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (NULL == sorting_settings->device_select_string) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed allocating loader settings structure");
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+            strncpy(sorting_settings->device_select_string, selection, string_len);
+            sorting_settings->device_select_string[string_len] = '\0';
+            sorting_settings->device_select_enabled = true;
+            loader_free_getenv(selection, inst);
+        }
+    }
+#endif  // LOADER_ENABLE_LINUX_SORT
+    return VK_SUCCESS;
+}
+
+// Determine how long a give path is in a path list string
+size_t determine_data_file_path_size(const char *cur_path, size_t relative_path_size) {
+    size_t path_size = 0;
+
+    if (NULL != cur_path) {
+        // For each folder in cur_path, (detected by finding additional
+        // path separators in the string) we need to add the relative path on
+        // the end.  Plus, leave an additional two slots on the end to add an
+        // additional directory slash and path separator if needed
+        path_size += strlen(cur_path) + relative_path_size + 2;
+        for (const char *x = cur_path; *x; ++x) {
+            if (*x == PATH_SEPARATOR) {
+                path_size += relative_path_size + 2;
+            }
+        }
+    }
+
+    return path_size;
+}
+
+// Free the paths we used for setting up the search paths for layers and drivers.
+void loader_free_search_paths(struct loader_instance *inst, char **driver_path, char **implicit_path, char **explicit_path,
+                              char **settings_path) {
+    if (driver_path != NULL && *driver_path != NULL) {
+        loader_instance_heap_free(inst, *driver_path);
+        *driver_path = NULL;
+    }
+    if (implicit_path != NULL && *implicit_path != NULL) {
+        loader_instance_heap_free(inst, *implicit_path);
+        *implicit_path = NULL;
+    }
+    if (explicit_path != NULL && *explicit_path != NULL) {
+        loader_instance_heap_free(inst, *explicit_path);
+        *explicit_path = NULL;
+    }
+    if (settings_path != NULL && *settings_path != NULL) {
+        loader_instance_heap_free(inst, *settings_path);
+        *settings_path = NULL;
+    }
+}
+
+// Figure out the default search paths for driver and layers based on the current operating
+// system.
+VkResult loader_default_search_paths(struct loader_instance *inst, char **default_driver_path, char **default_implicit_path,
+                                     char **default_explicit_path, char **default_settings_path) {
+    VkResult result = VK_SUCCESS;
+    const char curPassString[4][24] = {{"Driver"}, {"Implicit Layers"}, {"Explicit Layers"}, {"Settings"}};
+    const char *relative_driver_folder = VK_DRIVERS_INFO_RELATIVE_DIR;
+    const char *relative_implicit_layer_folder = VK_ILAYERS_INFO_RELATIVE_DIR;
+    const char *relative_explicit_layer_folder = VK_ELAYERS_INFO_RELATIVE_DIR;
+    const char *relative_settings_folder = VK_SETTINGS_INFO_RELATIVE_DIR;
+
+#if defined(_WIN32)
+    // Driver only
+    char *package_path = windows_get_app_package_manifest_path(inst);
+#else
+    // Determine how much space is needed to generate the full search path
+    // for the current manifest files.
+    char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
+    char *xdg_config_dirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
+
+#if !defined(__Fuchsia__) && !defined(__QNXNTO__)
+    if (NULL == xdg_config_dirs || '\0' == xdg_config_dirs[0]) {
+        xdg_config_dirs = FALLBACK_CONFIG_DIRS;
+    }
+#endif
+
+    char *xdg_data_home = loader_secure_getenv("XDG_DATA_HOME", inst);
+    char *xdg_data_dirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
+
+#if !defined(__Fuchsia__) && !defined(__QNXNTO__)
+    if (NULL == xdg_data_dirs || '\0' == xdg_data_dirs[0]) {
+        xdg_data_dirs = FALLBACK_DATA_DIRS;
+    }
+#endif
+
+    char *home = NULL;
+    char *default_data_home = NULL;
+    char *default_config_home = NULL;
+    char *home_data_dir = NULL;
+    char *home_config_dir = NULL;
+
+    // Only use HOME if XDG_DATA_HOME is not present on the system
+    home = loader_secure_getenv("HOME", inst);
+    if (home != NULL) {
+        if (NULL == xdg_config_home || '\0' == xdg_config_home[0]) {
+            const char config_suffix[] = "/.config";
+            default_config_home =
+                loader_instance_heap_alloc(inst, strlen(home) + strlen(config_suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (default_config_home == NULL) {
+                result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+            strcpy(default_config_home, home);
+            strcat(default_config_home, config_suffix);
+        }
+        if (NULL == xdg_data_home || '\0' == xdg_data_home[0]) {
+            const char data_suffix[] = "/.local/share";
+            default_data_home =
+                loader_instance_heap_alloc(inst, strlen(home) + strlen(data_suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (default_data_home == NULL) {
+                result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+            strcpy(default_data_home, home);
+            strcat(default_data_home, data_suffix);
+        }
+    }
+
+    if (NULL != default_config_home) {
+        home_config_dir = default_config_home;
+    } else {
+        home_config_dir = xdg_config_home;
+    }
+    if (NULL != default_data_home) {
+        home_data_dir = default_data_home;
+    } else {
+        home_data_dir = xdg_data_home;
+    }
+#endif  // !_WIN32
+
+    for (uint32_t pass = 0; pass < 4; ++pass) {
+        const char *relative_folder = NULL;
+        char **target_pointer = NULL;
+        char *cur_path_ptr = NULL;
+        size_t search_path_size = 2;  // Add two for NULL terminator and one path separator (just in case)
+        size_t rel_size = 0;
+        bool settings_file_search = false;
+        switch (pass) {
+            case 0:
+            default:
+                relative_folder = relative_driver_folder;
+                target_pointer = default_driver_path;
+                break;
+            case 1:
+                relative_folder = relative_implicit_layer_folder;
+                target_pointer = default_implicit_path;
+                break;
+            case 2:
+                relative_folder = relative_explicit_layer_folder;
+                target_pointer = default_explicit_path;
+                break;
+            case 3:
+                relative_folder = relative_settings_folder;
+                target_pointer = default_settings_path;
+                settings_file_search = true;
+                break;
+        }
+
+#if defined(_WIN32)
+        if (NULL != package_path) {
+            search_path_size += determine_data_file_path_size(package_path, 0) + 2;
+        }
+        if (search_path_size == 2) {
+            continue;
+        }
+#else  // !_WIN32
+
+        // Add the general search folders (with the appropriate relative folder added)
+        rel_size = strlen(relative_folder);
+#if defined(__APPLE__)
+        search_path_size += MAXPATHLEN;
+#endif
+        // Only add the home folders if defined
+        if (NULL != home_config_dir) {
+            search_path_size += determine_data_file_path_size(home_config_dir, rel_size);
+        }
+        search_path_size += determine_data_file_path_size(xdg_config_dirs, rel_size);
+        // Don't add system folders for settings file search
+        if (!settings_file_search) {
+            search_path_size += determine_data_file_path_size(SYSCONFDIR, rel_size);
+#if defined(EXTRASYSCONFDIR)
+            search_path_size += determine_data_file_path_size(EXTRASYSCONFDIR, rel_size);
+#endif
+        }
+        // Only add the home folders if defined
+        if (NULL != home_data_dir) {
+            search_path_size += determine_data_file_path_size(home_data_dir, rel_size);
+        }
+        search_path_size += determine_data_file_path_size(xdg_data_dirs, rel_size);
+#endif  // !_WIN32
+
+        // Allocate the required space
+        *target_pointer = loader_instance_heap_calloc(inst, search_path_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == *target_pointer) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "Failed to allocate space for default search path of %s files of length %d", curPassString[pass],
+                       (uint32_t)search_path_size);
+            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+
+        cur_path_ptr = *target_pointer;
+
+#if defined(_WIN32)
+        if (NULL != package_path) {
+            copy_data_file_info(package_path, NULL, 0, &cur_path_ptr);
+        }
+#else
+#if defined(__APPLE__)
+        // Add the bundle's Resources dir to the beginning of the search path.
+        // Looks for manifests in the bundle first, before any system directories.
+        CFBundleRef main_bundle = CFBundleGetMainBundle();
+        if (NULL != main_bundle) {
+            CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);
+            if (NULL != ref) {
+                if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)cur_path_ptr, search_path_size)) {
+                    cur_path_ptr += strlen(cur_path_ptr);
+                    *cur_path_ptr++ = DIRECTORY_SYMBOL;
+                    memcpy(cur_path_ptr, relative_folder, rel_size);
+                    cur_path_ptr += rel_size;
+                    *cur_path_ptr++ = PATH_SEPARATOR;
+                    if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
+                        use_first_found_manifest = true;
+                    }
+                }
+                CFRelease(ref);
+            }
+        }
+#endif  // __APPLE__
+
+        // Only add the home folders if not NULL
+        if (NULL != home_config_dir) {
+            copy_data_file_info(home_config_dir, relative_folder, rel_size, &cur_path_ptr);
+        }
+        copy_data_file_info(xdg_config_dirs, relative_folder, rel_size, &cur_path_ptr);
+
+        // Don't add system folders for settings file search
+        if (!settings_file_search) {
+            copy_data_file_info(SYSCONFDIR, relative_folder, rel_size, &cur_path_ptr);
+#if defined(EXTRASYSCONFDIR)
+            copy_data_file_info(EXTRASYSCONFDIR, relative_folder, rel_size, &cur_path_ptr);
+#endif
+        }
+
+        // Only add the home folders if not NULL
+        if (NULL != home_data_dir) {
+            copy_data_file_info(home_data_dir, relative_folder, rel_size, &cur_path_ptr);
+        }
+        copy_data_file_info(xdg_data_dirs, relative_folder, rel_size, &cur_path_ptr);
+
+        // Remove the last path separator
+        --cur_path_ptr;
+
+        assert(cur_path_ptr - (*target_pointer) < (ptrdiff_t)search_path_size);
+        *cur_path_ptr = '\0';
+#endif  // !_WIN32
+    }
+
+out:
+    if (VK_SUCCESS != result) {
+        loader_free_search_paths(inst, default_driver_path, default_implicit_path, default_explicit_path, default_settings_path);
+    }
+
+#if defined(_WIN32)
+    loader_instance_heap_free(inst, package_path);
+#else
+    loader_free_getenv(xdg_config_home, inst);
+    loader_free_getenv(xdg_config_dirs, inst);
+    loader_free_getenv(xdg_data_home, inst);
+    loader_free_getenv(xdg_data_dirs, inst);
+    loader_free_getenv(xdg_data_home, inst);
+    loader_free_getenv(home, inst);
+    loader_instance_heap_free(inst, default_data_home);
+    loader_instance_heap_free(inst, default_config_home);
+#endif
+
+    return result;
+}
+
+// Read a path that is stored in an environment variable.
+VkResult read_env_var_path(struct loader_instance *inst, uint32_t log_msg_flag, char **output_var, char *env_var) {
+    if (inst == NULL || output_var == NULL || env_var == NULL) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    char *env_var_value = loader_secure_getenv(env_var, inst);
+    size_t env_var_size = env_var_value == NULL ? 0 : strlen(env_var_value);
+    if (NULL != env_var_value && env_var_size > 1) {
+        *output_var = loader_instance_heap_calloc(inst, env_var_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == *output_var) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for env var `%s` value", env_var);
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        } else {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | log_msg_flag, 0, "Found environment var `%s`, using value: `%s`", env_var,
+                       env_var_value);
+            strncpy(*output_var, env_var_value, env_var_size);
+            (*output_var)[env_var_size] = '\0';
+        }
+        loader_free_getenv(env_var_value, inst);
+    }
+    return VK_SUCCESS;
+}
+
+// Determine how many actual paths are listed in a path_list string
+uint32_t get_path_count(char *path_list) {
+    uint32_t count = 0;
+    if (path_list == NULL) {
+        return 0;
+    }
+    // Now, parse the paths
+    char *cur_path;
+    char *next_path = path_list;
+    while (NULL != next_path && *next_path != '\0') {
+        cur_path = next_path;
+        next_path = loader_get_next_path(cur_path);
+
+        // Is this a JSON file, then try to open it.
+        size_t len = strlen(cur_path);
+        if (len > 1) {
+            count++;
+        }
+    }
+    return count;
+}
+
+// Extract each individual paths listed in a path_list string and place it in a path_array for
+// easier use.
+VkResult add_paths_to_array(struct loader_instance *inst, uint32_t log_msg_flag, char *path_list, char **path_array,
+                            uint32_t *start_index) {
+    // Now, parse the paths
+    char *cur_path;
+    char *next_path = path_list;
+    while (NULL != next_path && *next_path != '\0') {
+        cur_path = next_path;
+        next_path = loader_get_next_path(cur_path);
+
+        // Is this a JSON file, then try to open it.
+        size_t len = strlen(cur_path);
+        if (len > 1) {
+            path_array[*start_index] = loader_instance_heap_alloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (path_array[*start_index] == NULL) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for path search element %d",
+                           *start_index);
+                for (uint32_t count = 0; count < *start_index; ++count) {
+                    loader_instance_heap_free(inst, path_array[count]);
+                    path_array[count] = NULL;
+                }
+                *start_index = 0;
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+            strncpy(path_array[*start_index], cur_path, len);
+            path_array[*start_index][len] = '\0';
+            (*start_index)++;
+        }
+    }
+    return VK_SUCCESS;
+}
+
+// Generate the complete list of search paths using the environment variables (or file variables) and
+// the default paths for this platform.
+// NOTE: This can be overridden by the "override" layer later on.
+VkResult generate_complete_search_path(struct loader_instance *inst, enum loader_data_files_type search_type, char *default_path,
+                                       char *override_path, char *add_path, uint32_t *count, char ***value) {
+    uint32_t path_count = 0;
+    uint32_t cur_path_index = 0;
+    enum vulkan_loader_debug_flags log_msg_flag;
+    uint8_t message_index = 0;
+    const char message_str[4][20] = {{"driver"}, {"implicit layer"}, {"explicit layer"}, {"settings file"}};
+
+    if (inst == NULL || default_path == NULL || count == NULL || value == NULL) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    // Set to 0, just in case we have a failure.
+    *count = 0;
+
+    switch (search_type) {
+        case LOADER_DATA_FILE_MANIFEST_DRIVER:
+        default:
+            log_msg_flag = VULKAN_LOADER_DRIVER_BIT;
+            message_index = 0;
+            break;
+        case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
+            log_msg_flag = VULKAN_LOADER_LAYER_BIT;
+            message_index = 2;
+            break;
+        case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
+            log_msg_flag = VULKAN_LOADER_LAYER_BIT;
+            message_index = 1;
+            break;
+        case LOADER_DATA_FILE_SETTINGS_FILE:
+            log_msg_flag = VULKAN_LOADER_INFO_BIT;
+            message_index = 3;
+            break;
+    }
+
+    char **path_array = NULL;
+    char *modifiable_path = NULL;
+    bool failed = false;
+
+    if (NULL != override_path) {
+        size_t cur_len = strlen(override_path);
+        modifiable_path = loader_instance_heap_calloc(inst, cur_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (modifiable_path == NULL) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for modifiable path string");
+            failed = true;
+        }
+        if (!failed) {
+            strncpy(modifiable_path, override_path, cur_len);
+            modifiable_path[cur_len] = '\0';
+            path_count = get_path_count(modifiable_path);
+            path_array = loader_instance_heap_calloc(inst, sizeof(char *) * path_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (path_array == NULL) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for %s override path search array",
+                           message_str[message_index]);
+                failed = true;
+            }
+        }
+        if (!failed) {
+            strncpy(modifiable_path, override_path, cur_len);
+            modifiable_path[cur_len] = '\0';
+            if (add_paths_to_array(inst, log_msg_flag, modifiable_path, path_array, &cur_path_index)) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
+                           "Failed copying paths from %s override path into search array", message_str[message_index]);
+                failed = true;
+            }
+        }
+    } else {
+        size_t add_len = add_path == NULL ? 0 : strlen(add_path);
+        size_t default_len = default_path == NULL ? 0 : strlen(default_path);
+        size_t max_len = add_len > default_len ? add_len : default_len;
+        assert(max_len > 0);
+        modifiable_path = loader_instance_heap_calloc(inst, max_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (modifiable_path == NULL) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for modifiable path string");
+            failed = true;
+        }
+        if (!failed) {
+            path_count = 0;
+            if (add_path != NULL) {
+                strncpy(modifiable_path, add_path, add_len);
+                modifiable_path[add_len] = '\0';
+                path_count += get_path_count(modifiable_path);
+            }
+            if (default_path != NULL) {
+                strncpy(modifiable_path, default_path, default_len);
+                modifiable_path[default_len] = '\0';
+                path_count += get_path_count(modifiable_path);
+            }
+            path_array = loader_instance_heap_calloc(inst, sizeof(char *) * path_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (path_array == NULL) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for standard %s path search array",
+                           message_str[message_index]);
+                failed = true;
+            }
+        }
+        if (!failed && add_path != NULL) {
+            strncpy(modifiable_path, add_path, add_len);
+            modifiable_path[add_len] = '\0';
+            if (add_paths_to_array(inst, log_msg_flag, modifiable_path, path_array, &cur_path_index)) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
+                           "Failed copying paths from additional %s path into search array", message_str[message_index]);
+                failed = true;
+            }
+        }
+        if (!failed && default_path != NULL) {
+            strncpy(modifiable_path, default_path, default_len);
+            modifiable_path[default_len] = '\0';
+            if (add_paths_to_array(inst, log_msg_flag, modifiable_path, path_array, &cur_path_index)) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
+                           "Failed copying paths from default %s path into search array", message_str[message_index]);
+                failed = true;
+            }
+        }
+    }
+    if (failed) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    loader_instance_heap_free(inst, modifiable_path);
+
+    // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
+    for (int32_t cur_path = 0; cur_path < (int32_t)path_count; ++cur_path) {
+        for (int32_t check_path = cur_path + 1; check_path < (int32_t)path_count; ++check_path) {
+            if (!strcmp(path_array[check_path], path_array[cur_path])) {
+                loader_instance_heap_free(inst, path_array[check_path]);
+                for (int32_t copy_path = check_path; copy_path < (int32_t)path_count - 1; ++copy_path) {
+                    path_array[copy_path] = path_array[copy_path + 1];
+                }
+                path_array[--path_count] = NULL;
+                check_path--;
+            }
+        }
+    }
+
+    // Print out the paths being searched if debugging is enabled
+    if (path_count > 0) {
+        loader_log(inst, log_msg_flag, 0, "Search paths for %s manifest files set to following order:", message_str[message_index]);
+        for (uint32_t cur_path = 0; cur_path < path_count; ++cur_path) {
+            loader_log(inst, log_msg_flag, 0, "   %s", path_array[cur_path]);
+        }
+    } else {
+        if (path_array != NULL) {
+            loader_instance_heap_free(inst, path_array);
+            path_array = NULL;
+        }
+    }
+
+    *count = path_count;
+    *value = path_array;
+    return VK_SUCCESS;
+}
+
+// Free the items that were allocated in the settings struct, and then the settings struct itself.
+void free_settings_struct(struct loader_instance *inst, struct loader_settings **set_struct) {
+    if (set_struct == NULL || *set_struct == NULL) {
+        return;
+    }
+    struct loader_settings *settings = *set_struct;
+
+    // Free log file info
+    if (settings->log_settings.log_to_file) {
+        loader_instance_heap_free(inst, settings->log_settings.log_filename);
+        if (NULL != settings->log_settings.log_file) {
+            fclose(settings->log_settings.log_file);
+            settings->log_settings.log_file = NULL;
+        }
+        settings->log_settings.log_to_file = false;
+    }
+    loader_instance_heap_free(inst, settings->log_settings.log_filename);
+    settings->log_settings.log_filename = NULL;
+
+    // Free device items
+    if (NULL != settings->device_sorting_settings.device_select_string) {
+        loader_instance_heap_free(inst, settings->device_sorting_settings.device_select_string);
+        settings->device_sorting_settings.device_select_string = NULL;
+    }
+
+    // Free search paths
+    if (NULL != settings->driver_search_paths) {
+        for (uint32_t count = 0; count < settings->driver_search_paths_count; ++count) {
+            loader_instance_heap_free(inst, settings->driver_search_paths[count]);
+        }
+        loader_instance_heap_free(inst, settings->driver_search_paths);
+        settings->driver_search_paths_count = 0;
+        settings->driver_search_paths = NULL;
+    }
+    if (NULL != settings->implicit_layer_search_paths) {
+        for (uint32_t count = 0; count < settings->implicit_layer_search_paths_count; ++count) {
+            loader_instance_heap_free(inst, settings->implicit_layer_search_paths[count]);
+        }
+        loader_instance_heap_free(inst, settings->implicit_layer_search_paths);
+        settings->implicit_layer_search_paths_count = 0;
+        settings->implicit_layer_search_paths = NULL;
+    }
+    if (NULL != settings->explicit_layer_search_paths) {
+        for (uint32_t count = 0; count < settings->explicit_layer_search_paths_count; ++count) {
+            loader_instance_heap_free(inst, settings->explicit_layer_search_paths[count]);
+        }
+        loader_instance_heap_free(inst, settings->explicit_layer_search_paths);
+        settings->explicit_layer_search_paths_count = 0;
+        settings->explicit_layer_search_paths = NULL;
+    }
+
+    // Free the rest of the struct
+    loader_instance_heap_free(inst, settings);
+    *set_struct = NULL;
+}
+
+// Generate a settings structure containing all the settings necessary for the loader.
+// This is generated from platform defaults, environment variables, and the loader settings
+// file.
+VkResult generate_settings_struct(struct loader_instance *inst, struct loader_settings **set_struct) {
+    if (set_struct == NULL) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    *set_struct = NULL;
+    struct loader_settings *settings =
+        loader_instance_heap_calloc(inst, sizeof(struct loader_settings), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (settings == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed allocating loader settings structure");
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    // Search paths, these are eventually used to fill in the final search paths
+    // for each driver, implicit layers, and explicit layers.
+    char *default_driver_search_path = NULL;
+    char *override_driver_env_var_search_path = NULL;
+    char *override_driver_file_search_path = NULL;
+    char *additional_driver_env_var_search_path = NULL;
+    char *additional_driver_file_search_path = NULL;
+    char *default_implicit_layer_search_path = NULL;
+    char *default_explicit_layer_search_path = NULL;
+    char *override_explicit_layer_env_var_search_path = NULL;
+    char *override_explicit_layer_file_search_path = NULL;
+    char *additional_explicit_layer_env_var_search_path = NULL;
+    char *additional_explicit_layer_file_search_path = NULL;
+    char *default_settings_file_search_path = NULL;
+    uint32_t settings_file_search_paths_count;
+    char **settings_file_search_paths;
+
+    // Set defaults
+    settings->log_settings.log_errors_to_stderr = true;
+    settings->log_settings.log_nonerrors_to_stdout = true;
+    settings->driver_search_paths_count = 0;
+    settings->driver_search_paths = NULL;
+    settings->implicit_layer_search_paths_count = 0;
+    settings->implicit_layer_search_paths = NULL;
+    settings->explicit_layer_search_paths_count = 0;
+    settings->explicit_layer_search_paths = NULL;
+#if LOADER_ENABLE_LINUX_SORT
+    settings->device_sorting_settings.device_sorting_enabled = true;
+#else
+    settings->device_sorting_settings.device_sorting_enabled = false;
+#endif
+    settings->device_sorting_settings.device_select_enabled = false;
+    settings->device_sorting_settings.device_select_string = NULL;
+    if (VK_SUCCESS != loader_default_search_paths(inst, &default_driver_search_path, &default_implicit_layer_search_path,
+                                                  &default_explicit_layer_search_path, &default_settings_file_search_path)) {
+        goto out;
+    }
+
+    // Find a settings file and load the settings out of that if one exists in one of the
+    // appropriate locations.
+    if (VK_SUCCESS != generate_complete_search_path(inst, LOADER_DATA_FILE_SETTINGS_FILE, default_settings_file_search_path, NULL,
+                                                    NULL, &settings_file_search_paths_count, &settings_file_search_paths)) {
+        goto out;
+    }
+    //
+    // TODO: Read loader settings file here.
+    //
+
+    // Override any settings with environment variable versions
+    VkResult env_var_result = VK_SUCCESS;
+    parse_env_loader_debug_log_flags(&settings->log_settings.enabled_log_flags);
+    parse_env_disable_instance_extensions(inst, &settings->disable_instance_extension_filter);
+    env_var_result = parse_env_device_sorting_settings(inst, &settings->device_sorting_settings);
+    if (VK_SUCCESS != env_var_result) {
+        goto out;
+    }
+    if (VK_SUCCESS !=
+            read_env_var_path(inst, VULKAN_LOADER_DRIVER_BIT, &override_driver_env_var_search_path, VK_DRIVER_FILES_ENV_VAR) &&
+        VK_SUCCESS !=
+            read_env_var_path(inst, VULKAN_LOADER_DRIVER_BIT, &override_driver_env_var_search_path, VK_ICD_FILENAMES_ENV_VAR)) {
+        goto out;
+    }
+    if (VK_SUCCESS != read_env_var_path(inst, VULKAN_LOADER_DRIVER_BIT, &additional_driver_env_var_search_path,
+                                        VK_ADDITIONAL_DRIVER_FILES_ENV_VAR)) {
+        goto out;
+    }
+    if (VK_SUCCESS !=
+        read_env_var_path(inst, VULKAN_LOADER_LAYER_BIT, &override_explicit_layer_env_var_search_path, VK_LAYER_PATH_ENV_VAR)) {
+        goto out;
+    }
+    if (VK_SUCCESS != read_env_var_path(inst, VULKAN_LOADER_LAYER_BIT, &additional_explicit_layer_env_var_search_path,
+                                        VK_ADDITIONAL_LAYER_PATH_ENV_VAR)) {
+        goto out;
+    }
+    if (VK_SUCCESS !=
+        generate_complete_search_path(
+            inst, LOADER_DATA_FILE_MANIFEST_DRIVER, default_driver_search_path,
+            (override_driver_file_search_path == NULL) ? override_driver_env_var_search_path : override_driver_file_search_path,
+            (additional_driver_file_search_path == NULL) ? additional_driver_env_var_search_path
+                                                         : additional_driver_file_search_path,
+            &settings->driver_search_paths_count, &settings->driver_search_paths)) {
+        goto out;
+    }
+    if (VK_SUCCESS !=
+        generate_complete_search_path(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, default_implicit_layer_search_path, NULL,
+                                      NULL, &settings->implicit_layer_search_paths_count, &settings->implicit_layer_search_paths)) {
+        goto out;
+    }
+    if (VK_SUCCESS != generate_complete_search_path(
+                          inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, default_explicit_layer_search_path,
+                          (override_explicit_layer_file_search_path == NULL) ? override_explicit_layer_env_var_search_path
+                                                                             : override_explicit_layer_file_search_path,
+                          (additional_explicit_layer_file_search_path == NULL) ? additional_explicit_layer_env_var_search_path
+                                                                               : additional_explicit_layer_file_search_path,
+                          &settings->explicit_layer_search_paths_count, &settings->explicit_layer_search_paths)) {
+        goto out;
+    }
+
+    // Return structure
+    *set_struct = settings;
+out:
+    if (settings_file_search_paths != NULL) {
+        for (uint32_t count = 0; count < settings_file_search_paths_count; ++count) {
+            loader_instance_heap_free(inst, settings_file_search_paths[count]);
+        }
+        loader_instance_heap_free(inst, settings_file_search_paths);
+    }
+    loader_free_search_paths(inst, &default_driver_search_path, &default_implicit_layer_search_path,
+                             &default_explicit_layer_search_path, &default_settings_file_search_path);
+    loader_free_search_paths(inst, &override_driver_env_var_search_path, NULL, &override_explicit_layer_env_var_search_path, NULL);
+    loader_free_search_paths(inst, &additional_driver_env_var_search_path, NULL, &additional_explicit_layer_env_var_search_path,
+                             NULL);
+    if (env_var_result != VK_SUCCESS) {
+        free_settings_struct(inst, &settings);
+    }
+    return env_var_result;
 }

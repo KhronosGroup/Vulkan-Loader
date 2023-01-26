@@ -508,6 +508,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         }
     }
 
+    // Initialize the loader settings struct
+    if (VK_SUCCESS != generate_settings_struct(ptr_instance, &ptr_instance->settings)) {
+        goto out;
+    }
+
     // Due to implicit layers need to get layer list even if
     // enabledLayerCount == 0 and VK_INSTANCE_LAYERS is unset. For now always
     // get layer list via loader_scan_for_layers().
@@ -713,6 +718,8 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
         }
         loader_instance_heap_free(ptr_instance, ptr_instance->phys_devs_tramp);
     }
+
+    free_settings_struct(ptr_instance, &ptr_instance->settings);
 
     // Destroy the debug callbacks created during instance creation
     destroy_debug_callbacks_chain(ptr_instance, pAllocator);

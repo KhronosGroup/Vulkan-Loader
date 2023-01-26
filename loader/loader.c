@@ -2871,27 +2871,7 @@ out:
     return result;
 }
 
-static inline size_t determine_data_file_path_size(const char *cur_path, size_t relative_path_size) {
-    size_t path_size = 0;
-
-    if (NULL != cur_path) {
-        // For each folder in cur_path, (detected by finding additional
-        // path separators in the string) we need to add the relative path on
-        // the end.  Plus, leave an additional two slots on the end to add an
-        // additional directory slash and path separator if needed
-        path_size += strlen(cur_path) + relative_path_size + 2;
-        for (const char *x = cur_path; *x; ++x) {
-            if (*x == PATH_SEPARATOR) {
-                path_size += relative_path_size + 2;
-            }
-        }
-    }
-
-    return path_size;
-}
-
-static inline void copy_data_file_info(const char *cur_path, const char *relative_path, size_t relative_path_size,
-                                       char **output_path) {
+void copy_data_file_info(const char *cur_path, const char *relative_path, size_t relative_path_size, char **output_path) {
     if (NULL != cur_path) {
         uint32_t start = 0;
         uint32_t stop = 0;
