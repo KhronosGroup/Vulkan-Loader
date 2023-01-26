@@ -325,7 +325,7 @@ if(PYTHONINTERP_FOUND)
                               --generated-version ${VulkanHeaders_VERSION}
                               --incremental)
 else()
-    message("WARNING: VulkanLoader_generated_source target requires python 3")
+    message(WARNING "VulkanLoader_generated_source target requires python 3")
 endif()
 
 if(UNIX)
