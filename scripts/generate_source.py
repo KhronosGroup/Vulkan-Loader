@@ -26,6 +26,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import datetime
 
 # files to exclude from --verify check
 verify_exclude = ['.clang-format']
@@ -112,8 +113,19 @@ def main(argv):
         f = open(common_codegen.repo_relative('cmake/generated_header_version.cmake'), "w")
         f.write('# *** THIS FILE IS GENERATED - DO NOT EDIT ***\n')
         f.write('# See generate_source.py for modifications\n')
-        f.write(f'set(LOADER_GENERATED_HEADER_VERSION {args.generated_version})')
+        f.write(f'set(LOADER_GENERATED_HEADER_VERSION {args.generated_version})\n')
         f.close()
+
+        with open(common_codegen.repo_relative('loader/loader.rc.in'), "r") as rc_file:
+            rc_file_contents = rc_file.read()
+        rc_ver = ', '.join(args.generated_version.split('.'))
+        rc_file_contents = rc_file_contents.replace('${LOADER_VER_FILE_VERSION}', f'{rc_ver}')
+        rc_file_contents = rc_file_contents.replace('${LOADER_VER_FILE_DESCRIPTION_STR}', f'"{args.generated_version}.Dev Build"')
+        rc_file_contents = rc_file_contents.replace('${LOADER_VER_FILE_VERSION_STR}', f'"Vulkan Loader - Dev Build"')
+        rc_file_contents = rc_file_contents.replace('${LOADER_CUR_COPYRIGHT_YEAR}', f'{datetime.date.today().year}')
+        with open(common_codegen.repo_relative('loader/loader.rc'), "w") as rc_file_out:
+            rc_file_out.write(rc_file_contents)
+            rc_file_out.close()
 
     return 0
 
