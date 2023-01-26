@@ -40,7 +40,7 @@ jobs:
                       cxx: g++
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: actions/setup-python@v2
               with:
                 python-version: '3.7'
@@ -86,7 +86,7 @@ jobs:
                       cxx: g++
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: actions/setup-python@v2
               with:
                 python-version: '3.7'
@@ -122,7 +122,7 @@ jobs:
                 os: [ windows-latest ]
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: actions/setup-python@v2
               with:
                 python-version: '3.7'
@@ -156,7 +156,7 @@ jobs:
                     static_build: BUILD_STATIC_LOADER=ON
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: actions/setup-python@v2
               with:
                 python-version: '3.7'
@@ -183,7 +183,7 @@ jobs:
                 config: [ Debug, Release ]
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
 
             - name: Get depot tools
               run: |
