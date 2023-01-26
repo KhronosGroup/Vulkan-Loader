@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017-2021 The Khronos Group Inc.
- * Copyright (c) 2017-2021 Valve Corporation
- * Copyright (c) 2017-2021 LunarG, Inc.
+ * Copyright (c) 2017-2023 The Khronos Group Inc.
+ * Copyright (c) 2017-2023 Valve Corporation
+ * Copyright (c) 2017-2023 LunarG, Inc.
  * Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@
 
 // This code generates an assembly file which provides offsets to get struct members from assembly code.
 
-#include <stdio.h>
 #include "loader_common.h"
 #include "log.h"
 

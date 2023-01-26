@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2022 The Khronos Group Inc.
- * Copyright (c) 2014-2022 Valve Corporation
- * Copyright (c) 2014-2022 LunarG, Inc.
+ * Copyright (c) 2014-2023 The Khronos Group Inc.
+ * Copyright (c) 2014-2023 Valve Corporation
+ * Copyright (c) 2014-2023 LunarG, Inc.
  * Copyright (C) 2015 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,6 +38,8 @@
 #include "vk_loader_layer.h"
 #include "vk_layer_dispatch_table.h"
 #include "vk_loader_extensions.h"
+
+#include <stdio.h>
 
 typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_NONE = 0x00000000,
@@ -230,6 +232,48 @@ struct loader_instance_dispatch_table {
 // Unique magic number identifier for the loader.
 #define LOADER_MAGIC_NUMBER 0x10ADED010110ADEDUL
 
+struct loader_log_settings {
+    uint32_t enabled_log_flags;  // What log messages to pay attention to
+
+    // Where messages should go to.  More than one of these may be enabled.
+    bool log_errors_to_stdout;     // Log all error output to stdout
+    bool log_errors_to_stderr;     // Log all error output to stderr (default)
+    bool log_nonerrors_to_stdout;  // Log all non-error output to stdout (default)
+    bool log_nonerrors_to_stderr;  // Log all non-error output to stderr
+
+    // TODO: Loader log file output will be added in the future
+    bool log_to_file;  // Log all enabled messages to a file
+    char *log_filename;
+    FILE *log_file;
+};
+
+// Options for sorting or selecting a device based on specific information.
+// Currently only works for Linux
+struct loader_device_sorting_settings {
+    bool device_sorting_enabled;
+    bool device_select_enabled;
+    char *device_select_string;
+};
+
+// Loader settings
+struct loader_settings {
+    struct loader_log_settings log_settings;
+
+    // Instance settings
+    bool disable_instance_extension_filter;
+
+    // Global path settings
+    uint32_t driver_search_paths_count;
+    char **driver_search_paths;
+    uint32_t implicit_layer_search_paths_count;
+    char **implicit_layer_search_paths;
+    uint32_t explicit_layer_search_paths_count;
+    char **explicit_layer_search_paths;
+
+    // Device settings
+    struct loader_device_sorting_settings device_sorting_settings;
+};
+
 // Per instance structure
 struct loader_instance {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
@@ -268,6 +312,8 @@ struct loader_instance {
 
     uint32_t enabled_layer_count;
     char **enabled_layer_names;
+
+    struct loader_settings *settings;
 
     struct loader_layer_list instance_layer_list;
     bool override_layer_present;
@@ -436,6 +482,7 @@ enum loader_data_files_type {
     LOADER_DATA_FILE_MANIFEST_DRIVER = 0,
     LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER,
     LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER,
+    LOADER_DATA_FILE_SETTINGS_FILE,
     LOADER_DATA_FILE_NUM_TYPES  // Not a real field, used for possible loop terminator
 };
 

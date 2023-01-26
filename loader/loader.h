@@ -97,6 +97,10 @@ void loader_initialize(void);
 void loader_release(void);
 void loader_preload_icds(void);
 void loader_unload_preloaded_icds(void);
+size_t determine_data_file_path_size(const char *cur_path, size_t relative_path_size);
+void copy_data_file_info(const char *cur_path, const char *relative_path, size_t relative_path_size, char **output_path);
+VkResult generateSettingsStruct(struct loader_instance *inst, struct loader_settings **set_struct);
+void freeSettingsStruct(struct loader_instance *inst, struct loader_settings **set_struct);
 bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, const uint32_t count,
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
