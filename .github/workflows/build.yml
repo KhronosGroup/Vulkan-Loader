@@ -160,16 +160,19 @@ jobs:
             - uses: actions/setup-python@v2
               with:
                 python-version: '3.7'
+            - uses: lukka/get-cmake@latest
+              with:
+                cmakeVersion: 3.17.2
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -D${{matrix.static_build}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON
+              run: cmake -S. -B build -DCMAKE_BUILD_TYPE=${{matrix.config}} -D${{matrix.static_build}} -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON -G "Ninja"
               env:
                 # Specify the minimum version of macOS on which the target binaries are to be deployed.
                 # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
                 MACOSX_DEPLOYMENT_TARGET: 10.12
 
             - name: Build the loader
-              run: make -C build
+              run: cmake --build build
 
             - name: Run regression tests
               working-directory: ./build
@@ -184,7 +187,6 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
-
             - name: Get depot tools
               run: |
                 git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools
@@ -203,31 +205,3 @@ jobs:
 
             - name: Build the loader
               run: ninja -C out/${{matrix.config}}
-
-    test-cmake-minimum:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - uses: lukka/get-cmake@latest
-          with:
-            cmakeVersion: 3.10.2
-
-        - name: Install Dependencies
-          run: sudo apt update && sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
-
-        - name: CMake Version
-          run: cmake --version
-
-        - name: Create build directory
-          run: mkdir build/
-
-        - name: Get Dependencies
-          working-directory: ./build
-          run: python ../scripts/update_deps.py
-
-        - name: Configure Vulkan-Loader
-          working-directory: ./build
-          run: cmake -C helper.cmake -D BUILD_TESTS=OFF -G "Ninja" ../
-
-        - name: Build the loader
-          run: cmake --build build/

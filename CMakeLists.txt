@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.17.2)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(Vulkan-Loader)
@@ -156,12 +156,6 @@ if(UNIX)
     set(SYSCONFDIR "" CACHE STRING
             "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used.")
 endif()
-
-# Because we use CMake 3.10.2, we can't use the policy which would disable adding /W3 by default. In the interim, replace the flags
-# When this project is updated to 3.15 and above, use the following line.
-#     cmake_policy(SET CMP0092 NEW)
-string(REGEX REPLACE "/W3" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-string(REGEX REPLACE "/W3" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 # For MSVC/Windows, replace /GR with an empty string, this prevents warnings of /GR being overriden by /GR-
 # Newer CMake versions (3.20) have better solutions for this through policy - using the old
