@@ -44,7 +44,6 @@ Instructions for building this repository on Linux, Windows, and MacOS.
       - [Using The Vulkan Loader Library in this Repository on Linux](#using-the-vulkan-loader-library-in-this-repository-on-linux)
       - [WSI Support Build Options](#wsi-support-build-options)
       - [Linux Install to System Directories](#linux-install-to-system-directories)
-      - [Linux Uninstall](#linux-uninstall)
       - [Linux 32-bit support](#linux-32-bit-support)
   - [Building on MacOS](#building-on-macos)
     - [MacOS Development Environment Requirements](#macos-development-environment-requirements)
@@ -83,9 +82,6 @@ indicated by *install_dir*:
 
 - *install_dir*`/lib` : The Vulkan loader library
 - *install_dir*`/bin` : The Vulkan loader library DLL (Windows)
-
-The `uninstall` target can be used to remove the above files from the install
-directory.
 
 ## Repository Set-Up
 
@@ -576,13 +572,6 @@ Note that some executables in this repository (e.g.,
 Vulkan loader from the build directory, `build` in this example. This means
 that even after installing the loader to the system directories, these
 executables still use the loader from the build directory.
-
-#### Linux Uninstall
-
-To uninstall the files from the system directories, you can execute:
-
-    sudo make uninstall
-
 
 #### Linux 32-bit support
 
