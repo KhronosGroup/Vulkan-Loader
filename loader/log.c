@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2022 The Khronos Group Inc.
- * Copyright (c) 2014-2022 Valve Corporation
- * Copyright (c) 2014-2022 LunarG, Inc.
+ * Copyright (c) 2014-2023 The Khronos Group Inc.
+ * Copyright (c) 2014-2023 Valve Corporation
+ * Copyright (c) 2014-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
  *
  */
 
+#include "loader.h"
 #include "log.h"
 
 #include <stdio.h>
@@ -34,56 +35,7 @@
 #include "debug_utils.h"
 #include "loader_environment.h"
 
-uint32_t g_loader_debug = 0;
-
-void loader_debug_init(void) {
-    char *env, *orig;
-
-    if (g_loader_debug > 0) return;
-
-    g_loader_debug = 0;
-
-    // Parse comma-separated debug options
-    orig = env = loader_getenv("VK_LOADER_DEBUG", NULL);
-    while (env) {
-        char *p = strchr(env, ',');
-        size_t len;
-
-        if (p) {
-            len = p - env;
-        } else {
-            len = strlen(env);
-        }
-
-        if (len > 0) {
-            if (strncmp(env, "all", len) == 0) {
-                g_loader_debug = ~0u;
-            } else if (strncmp(env, "warn", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_WARN_BIT;
-            } else if (strncmp(env, "info", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_INFO_BIT;
-            } else if (strncmp(env, "perf", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_PERF_BIT;
-            } else if (strncmp(env, "error", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_ERROR_BIT;
-            } else if (strncmp(env, "debug", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_DEBUG_BIT;
-            } else if (strncmp(env, "layer", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_LAYER_BIT;
-            } else if (strncmp(env, "driver", len) == 0 || strncmp(env, "implem", len) == 0 || strncmp(env, "icd", len) == 0) {
-                g_loader_debug |= VULKAN_LOADER_DRIVER_BIT;
-            }
-        }
-
-        if (!p) break;
-
-        env = p + 1;
-    }
-
-    loader_free_getenv(orig, NULL);
-}
-
-uint32_t loader_get_debug_level(void) { return g_loader_debug; }
+extern struct loader_pre_instance_settings pre_instance_settings;
 
 void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
     char msg[512];
@@ -92,6 +44,9 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     size_t num_used = 0;
     va_list ap;
     int ret;
+    bool is_error = false;
+    struct loader_settings *settings = NULL;
+    bool using_pre_inst_settings = false;
 
     va_start(ap, format);
     ret = vsnprintf(msg, sizeof(msg), format, ap);
@@ -101,6 +56,8 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     va_end(ap);
 
     if (inst) {
+        settings = inst->settings;
+
         VkDebugUtilsMessageSeverityFlagBitsEXT severity = 0;
         VkDebugUtilsMessageTypeFlagsEXT type;
         VkDebugUtilsMessengerCallbackDataEXT callback_data;
@@ -149,10 +106,20 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 
         util_SubmitDebugUtilsMessageEXT(inst, severity, type, &callback_data);
     }
+    if (settings == NULL) {
+        if (!pre_instance_settings.ready) {
+            return;
+        }
+        loader_platform_thread_lock_mutex(&pre_instance_settings.lock);
+        pre_instance_settings.ref_count++;
+        settings = pre_instance_settings.settings;
+        loader_platform_thread_unlock_mutex(&pre_instance_settings.lock);
+        using_pre_inst_settings = true;
+    }
 
-    uint32_t filtered_msg_type = (msg_type & g_loader_debug);
+    uint32_t filtered_msg_type = (msg_type & settings->log_settings.enabled_log_flags);
     if (0 == filtered_msg_type) {
-        return;
+        goto out;
     }
 
     cmd_line_msg[0] = '\0';
@@ -160,6 +127,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     num_used = 1;
 
     if ((msg_type & VULKAN_LOADER_ERROR_BIT) != 0) {
+        is_error = true;
         strncat(cmd_line_msg, "ERROR", cmd_line_size - num_used);
         num_used += 5;
     } else if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
@@ -220,13 +188,30 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         OutputDebugString(cmd_line_msg);
         OutputDebugString("\n");
 #endif
-
-        fputs(cmd_line_msg, stderr);
-        fputc('\n', stderr);
+        // Allow output to go to a file, stderr, and/or stdout.
+        // NOTE: We allow the same message to go to all 3 if the user desires.
+        if (settings->log_settings.log_to_file && settings->log_settings.log_file != NULL) {
+            fprintf(settings->log_settings.log_file, "%s\n", cmd_line_msg);
+        }
+        if ((is_error && settings->log_settings.log_errors_to_stderr) ||
+            (!is_error && settings->log_settings.log_nonerrors_to_stderr)) {
+            fprintf(stderr, "%s\n", cmd_line_msg);
+        }
+        if ((is_error && settings->log_settings.log_errors_to_stdout) ||
+            (!is_error && settings->log_settings.log_nonerrors_to_stdout)) {
+            fprintf(stdout, "%s\n", cmd_line_msg);
+        }
     } else {
         // Shouldn't get here, but check to make sure if we've already overrun
         // the string boundary
         assert(false);
+    }
+
+out:
+    if (using_pre_inst_settings) {
+        loader_platform_thread_lock_mutex(&pre_instance_settings.lock);
+        pre_instance_settings.ref_count--;
+        loader_platform_thread_unlock_mutex(&pre_instance_settings.lock);
     }
 }
 

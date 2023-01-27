@@ -1823,10 +1823,10 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
     ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + env_var_layer_name));
+    ASSERT_TRUE(env.debug_log.find(std::string("Found environment var `VK_LAYER_PATH`, using value: `") +
+                                   env.env_var_vk_layer_paths.value()));
     ASSERT_TRUE(env.debug_log.find(
-        std::string("Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
-                    "VK_LAYER_PATH is set to ") +
-        env.env_var_vk_layer_paths.value()));
+        std::string("Ignoring any environment variable paths like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`")));
 
     env.layers.clear();
 }

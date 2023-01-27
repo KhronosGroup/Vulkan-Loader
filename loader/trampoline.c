@@ -21,6 +21,7 @@
  * Author: Jon Ashburn <jon@lunarg.com>
  * Author: Tony Barbour <tony@LunarG.com>
  * Author: Chia-I Wu <olv@lunarg.com>
+ * Author: Mark Young <marky@LunarG.com>
  * Author: Charles Giessen <charles@lunarg.com>
  */
 
@@ -32,6 +33,7 @@
 #include "gpa_helper.h"
 #include "loader.h"
 #include "log.h"
+#include "loader_environment.h"
 #include "vk_loader_extensions.h"
 #include "vk_loader_platform.h"
 #include "wsi.h"
@@ -145,7 +147,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
     // We know we need to call at least the terminator
-    VkResult res = VK_SUCCESS;
     VkEnumerateInstanceExtensionPropertiesChain chain_tail = {
         .header =
             {
@@ -159,14 +160,21 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     VkEnumerateInstanceExtensionPropertiesChain *chain_head = &chain_tail;
 
     // Get the implicit layers
+    VkResult res = VK_SUCCESS;
     struct loader_layer_list layers;
     loader_platform_dl_handle *libs = NULL;
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
 
-    res = loader_scan_for_implicit_layers(NULL, &layers, &libs);
+    struct loader_settings *temporary_settings = NULL;
+    res = generate_settings_struct(NULL, &temporary_settings);
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
+    }
+
+    res = loader_scan_for_implicit_layers(NULL, temporary_settings, &layers, &libs);
+    if (VK_SUCCESS != res) {
+        goto out;
     }
 
     // Prepend layers onto the chain if they implement this entry point
@@ -214,6 +222,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         res = chain_head->pfnNextLayer(chain_head->pNextLink, pLayerName, pPropertyCount, pProperties);
     }
 
+out:
     // Free up the layers
     loader_delete_layer_list_and_properties(NULL, &layers);
 
@@ -229,7 +238,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         loader_platform_close_library(libs[i]);
     }
     loader_free(NULL, libs);
-
+    if (temporary_settings != NULL) {
+        free_settings_struct(NULL, &temporary_settings);
+    }
     return res;
 }
 
@@ -238,7 +249,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
     // We know we need to call at least the terminator
-    VkResult res = VK_SUCCESS;
     VkEnumerateInstanceLayerPropertiesChain chain_tail = {
         .header =
             {
@@ -252,14 +262,21 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     VkEnumerateInstanceLayerPropertiesChain *chain_head = &chain_tail;
 
     // Get the implicit layers
+    VkResult res = VK_SUCCESS;
     struct loader_layer_list layers;
     loader_platform_dl_handle *libs = NULL;
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
 
-    res = loader_scan_for_implicit_layers(NULL, &layers, &libs);
+    struct loader_settings *temporary_settings = NULL;
+    res = generate_settings_struct(NULL, &temporary_settings);
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
+    }
+
+    res = loader_scan_for_implicit_layers(NULL, temporary_settings, &layers, &libs);
+    if (VK_SUCCESS != res) {
+        goto out;
     }
 
     // Prepend layers onto the chain if they implement this entry point
@@ -307,6 +324,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         res = chain_head->pfnNextLayer(chain_head->pNextLink, pPropertyCount, pProperties);
     }
 
+out:
     // Free up the layers
     loader_delete_layer_list_and_properties(NULL, &layers);
 
@@ -322,7 +340,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         loader_platform_close_library(libs[i]);
     }
     loader_free(NULL, libs);
-
+    if (temporary_settings != NULL) {
+        free_settings_struct(NULL, &temporary_settings);
+    }
     return res;
 }
 
@@ -338,7 +358,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     }
 
     // We know we need to call at least the terminator
-    VkResult res = VK_SUCCESS;
     VkEnumerateInstanceVersionChain chain_tail = {
         .header =
             {
@@ -352,14 +371,21 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     VkEnumerateInstanceVersionChain *chain_head = &chain_tail;
 
     // Get the implicit layers
+    VkResult res = VK_SUCCESS;
     struct loader_layer_list layers;
     loader_platform_dl_handle *libs = NULL;
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
 
-    res = loader_scan_for_implicit_layers(NULL, &layers, &libs);
+    struct loader_settings *temporary_settings = NULL;
+    res = generate_settings_struct(NULL, &temporary_settings);
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
+    }
+
+    res = loader_scan_for_implicit_layers(NULL, temporary_settings, &layers, &libs);
+    if (VK_SUCCESS != res) {
+        goto out;
     }
 
     // Prepend layers onto the chain if they implement this entry point
@@ -405,6 +431,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
         res = chain_head->pfnNextLayer(chain_head->pNextLink, pApiVersion);
     }
 
+out:
     // Free up the layers
     loader_delete_layer_list_and_properties(NULL, &layers);
 
@@ -420,7 +447,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
         loader_platform_close_library(libs[i]);
     }
     loader_free(NULL, libs);
-
+    if (temporary_settings != NULL) {
+        free_settings_struct(NULL, &temporary_settings);
+    }
     return res;
 }
 
@@ -485,6 +514,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         goto out;
     }
 
+    // Initialize the loader settings struct
+    res = generate_settings_struct(ptr_instance, &ptr_instance->settings);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
+
     // Check the VkInstanceCreateInfoFlags wether to allow the portability enumeration flag
     if ((pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR) == 1) {
         // Make sure the extension has been enabled
@@ -508,16 +543,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         }
     }
 
-    // Initialize the loader settings struct
-    if (VK_SUCCESS != generate_settings_struct(ptr_instance, &ptr_instance->settings)) {
-        goto out;
-    }
-
     // Due to implicit layers need to get layer list even if
     // enabledLayerCount == 0 and VK_INSTANCE_LAYERS is unset. For now always
     // get layer list via loader_scan_for_layers().
     memset(&ptr_instance->instance_layer_list, 0, sizeof(ptr_instance->instance_layer_list));
-    res = loader_scan_for_layers(ptr_instance, &ptr_instance->instance_layer_list);
+    res = loader_scan_for_layers(ptr_instance, ptr_instance->settings, &ptr_instance->instance_layer_list);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -533,7 +563,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
 
     // Scan/discover all System and Environment Variable ICD libraries
     bool skipped_portability_drivers = false;
-    res = loader_icd_scan(ptr_instance, &ptr_instance->icd_tramp_list, pCreateInfo, &skipped_portability_drivers);
+    res = loader_icd_scan(ptr_instance, ptr_instance->settings, &ptr_instance->icd_tramp_list, pCreateInfo,
+                          &skipped_portability_drivers);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         goto out;
     }
@@ -554,7 +585,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     }
 
     // Get extensions from all ICD's, merge so no duplicates, then validate
-    res = loader_get_icd_loader_instance_extensions(ptr_instance, &ptr_instance->icd_tramp_list, &ptr_instance->ext_list);
+    res = loader_get_icd_loader_instance_extensions(ptr_instance, ptr_instance->settings, &ptr_instance->icd_tramp_list,
+                                                    &ptr_instance->ext_list);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -661,6 +693,9 @@ out:
                 memset(&ptr_instance->enabled_layer_names, 0, sizeof(ptr_instance->enabled_layer_names));
             }
 
+            // Free the instance settings
+            free_settings_struct(ptr_instance, &ptr_instance->settings);
+
             loader_instance_heap_free(ptr_instance, ptr_instance);
         } else {
             // success path, swap out created debug callbacks out so they aren't used until instance destruction
@@ -719,10 +754,11 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
         loader_instance_heap_free(ptr_instance, ptr_instance->phys_devs_tramp);
     }
 
-    free_settings_struct(ptr_instance, &ptr_instance->settings);
-
     // Destroy the debug callbacks created during instance creation
     destroy_debug_callbacks_chain(ptr_instance, pAllocator);
+
+    // Free the instance settings
+    free_settings_struct(ptr_instance, &ptr_instance->settings);
 
     loader_instance_heap_free(ptr_instance, ptr_instance->disp);
     loader_instance_heap_free(ptr_instance, ptr_instance);

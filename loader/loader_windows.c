@@ -69,7 +69,7 @@ void windows_initialization(void) {
 
     // Get a module handle to a static function inside of this source
     if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          (LPCSTR)&loader_debug_init, &module_handle) != 0 &&
+                          (LPCSTR)&loader_log, &module_handle) != 0 &&
         GetModuleFileName(module_handle, dll_location, sizeof(dll_location)) != 0) {
         loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Using Vulkan Loader %s", dll_location);
     }
@@ -701,6 +701,8 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
                                              struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char *search_path = NULL;
+    const char **search_path_array = NULL;
+    uint32_t search_path_count = 0;
     uint32_t log_target_flag = 0;
 
     if (data_file_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
@@ -774,9 +776,17 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files(inst, search_path, out_files, false);
+    vk_result =
+        generate_complete_search_path(inst, data_file_type, search_path, NULL, NULL, &search_path_count, &search_path_array);
+    if (VK_SUCCESS != vk_result) {
+        goto out;
+    }
+    vk_result = add_data_files(inst, search_path_count, search_path_array, out_files, false);
 
 out:
+    if (search_path_array != NULL) {
+        free_search_path(inst, search_path_array);
+    }
 
     loader_instance_heap_free(inst, search_path);
 

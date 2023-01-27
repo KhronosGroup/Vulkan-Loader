@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2021 The Khronos Group Inc.
- * Copyright (c) 2014-2021 Valve Corporation
- * Copyright (c) 2014-2021 LunarG, Inc.
+ * Copyright (c) 2014-2023 The Khronos Group Inc.
+ * Copyright (c) 2014-2023 Valve Corporation
+ * Copyright (c) 2014-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,3 +55,12 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
                                        const struct loader_envvar_disable_layers_filter *disable_filter,
                                        struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
                                        const struct loader_layer_list *source_list);
+
+// Functionality used for the new loader settings structure and file
+
+VkResult generate_complete_search_path(const struct loader_instance *inst, enum loader_data_files_type search_type,
+                                       const char *default_path, const char *override_path, const char *add_path, uint32_t *count,
+                                       char ***value);
+void free_search_path(const struct loader_instance *inst, char **search_path);
+VkResult generate_settings_struct(struct loader_instance *inst, struct loader_settings **set_struc);
+void free_settings_struct(struct loader_instance *inst, struct loader_settings **set_struct);

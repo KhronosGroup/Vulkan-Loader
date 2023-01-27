@@ -249,7 +249,7 @@ struct loader_log_settings {
 
 // Options for sorting or selecting a device based on specific information.
 // Currently only works for Linux
-struct loader_device_sorting_settings {
+struct loader_device_settings {
     bool device_sorting_enabled;
     bool device_select_enabled;
     char *device_select_string;
@@ -271,7 +271,14 @@ struct loader_settings {
     char **explicit_layer_search_paths;
 
     // Device settings
-    struct loader_device_sorting_settings device_sorting_settings;
+    struct loader_device_settings device_settings;
+};
+
+struct loader_pre_instance_settings {
+    bool ready;
+    loader_platform_thread_mutex lock;
+    struct loader_settings *settings;
+    uint32_t ref_count;
 };
 
 // Per instance structure
