@@ -1,3 +1,5 @@
+gclient_gn_args_file = 'build/config/gclient_args.gni'
+
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
 }
@@ -5,49 +7,47 @@ vars = {
 deps = {
 
   'build': {
-    'url': '{chromium_git}/chromium/src/build.git@45ab3c89af6fc3126b0ca5a7836f0db85ad1ba0e',
+    'url': '{chromium_git}/chromium/src/build.git@1015724d82945f9ef7e51c6f804034ccf5f79951',
   },
 
   'buildtools': {
-    'url': '{chromium_git}/chromium/src/buildtools.git@204a35a2a64f7179f8b76d7a0385653690839e21',
+    'url': '{chromium_git}/chromium/src/buildtools.git@3c7e3f1b8b1e4c0b6ec693430379cea682de78d6',
+  },
+
+  'buildtools/linux64': {
+    'packages': [
+      {
+        'package': 'gn/gn/linux-${{arch}}',
+        'version': 'git_revision:5e19d2fb166fbd4f6f32147fbb2f497091a54ad8',
+      }
+    ],
+    'dep_type': 'cipd',
+    'condition': 'host_os == "linux"',
   },
 
   'testing': {
-    'url': '{chromium_git}/chromium/src/testing@3993ef1f527b206d8d3bf3f9824f4fe0e4bbdb0e',
+    'url': '{chromium_git}/chromium/src/testing@949b2864b6bd27656753b917c9aa7731dc7a06f6',
   },
 
   'tools/clang': {
-    'url': '{chromium_git}/chromium/src/tools/clang.git@04b99e7bf9160d551c3a5562f583014b6afc90f9',
+    'url': '{chromium_git}/chromium/src/tools/clang.git@566877f1ff1a5fa6beaca3ab4b47bd0b92eb614f',
   },
 
 }
 
 hooks = [
-  # Pull clang-format binaries using checked-in hashes.
-  {
-    'name': 'clang_format_linux',
-    'pattern': '.',
-    'condition': 'host_os == "linux"',
-    'action': [ 'download_from_google_storage',
-                '--no_resume',
-                '--platform=linux*',
-                '--no_auth',
-                '--bucket', 'chromium-clang-format',
-                '-s', 'buildtools/linux64/clang-format.sha1',
-    ],
-  },
   {
     'name': 'sysroot_x64',
     'pattern': '.',
     'condition': 'checkout_linux and checkout_x64',
-    'action': ['python', 'build/linux/sysroot_scripts/install-sysroot.py',
+    'action': ['python3', 'build/linux/sysroot_scripts/install-sysroot.py',
                '--arch=x64'],
   },
   {
     # Note: On Win, this should run after win_toolchain, as it may use it.
     'name': 'clang',
     'pattern': '.',
-    'action': ['python', 'tools/clang/scripts/update.py'],
+    'action': ['python3', 'tools/clang/scripts/update.py'],
   },
 ]
 
