@@ -206,15 +206,15 @@ int32_t compare_device_groups(const void *a, const void *b) {
 // Search for the default device using the loader environment variable.
 static void linux_env_var_default_device(struct loader_instance *inst, uint32_t device_count,
                                          struct LinuxSortedDeviceInfo *sorted_device_info) {
-    char *selection = loader_getenv("VK_LOADER_DEVICE_SELECT", inst);
-    if (NULL != selection) {
+    if (inst->settings->device_settings.device_select_enabled) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                   "linux_env_var_default_device:  Found \'VK_LOADER_DEVICE_SELECT\' set to %s", selection);
+                   "linux_env_var_default_device:  Found \'VK_LOADER_DEVICE_SELECT\' set to %s",
+                   inst->settings->device_settings.device_select_string);
 
         // The environment variable exists, so grab the vendor ID and device ID of the
         // selected default device
         unsigned vendor_id, device_id;
-        int32_t matched = sscanf(selection, "%x:%x", &vendor_id, &device_id);
+        int32_t matched = sscanf(inst->settings->device_settings.device_select_string, "%x:%x", &vendor_id, &device_id);
         if (matched == 2) {
             for (int32_t i = 0; i < (int32_t)device_count; ++i) {
                 if (sorted_device_info[i].vendor_id == vendor_id && sorted_device_info[i].device_id == device_id) {
@@ -226,8 +226,6 @@ static void linux_env_var_default_device(struct loader_instance *inst, uint32_t 
                 }
             }
         }
-
-        loader_free_getenv(selection, inst);
     }
 }
 
@@ -437,7 +435,7 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
     // Sort device groups by PCI info
     qsort(sorted_group_term, group_count, sizeof(struct loader_physical_device_group_term), compare_device_groups);
 
-    if (loader_get_debug_level() & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT)) {
+    if (inst->settings->log_settings.enabled_log_flags & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT)) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Sorted order:");
         for (uint32_t group = 0; group < group_count; ++group) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);

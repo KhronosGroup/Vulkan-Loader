@@ -21,6 +21,7 @@
  * Author: Chia-I Wu <olvaffe@gmail.com>
  * Author: Chia-I Wu <olv@lunarg.com>
  * Author: Mark Lobodzinski <mark@LunarG.com>
+ * Author: Mark Young <marky@LunarG.com>
  * Author: Lenny Komow <lenny@lunarg.com>
  * Author: Charles Giessen <charles@lunarg.com>
  *
@@ -619,9 +620,9 @@ void parseEnvDisableInstanceExtensions(struct loader_instance *inst, bool *disab
     loader_free_getenv(env, NULL);
 }
 
-// Determine if the environment variables indicate that driver sorting should be modified.
-VkResult parseEnvDeviceSortingSettings(struct loader_instance *inst, struct loader_device_sorting_settings *sorting_settings) {
-    if (NULL == sorting_settings) {
+// Determine if the environment variables indicate that driver should be modified.
+VkResult parseEnvDeviceSettings(struct loader_instance *inst, struct loader_device_settings *device_settings) {
+    if (NULL == device_settings) {
         return VK_SUCCESS;
     }
 
@@ -632,21 +633,22 @@ VkResult parseEnvDeviceSortingSettings(struct loader_instance *inst, struct load
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "Found environment var `VK_LOADER_DISABLE_SELECT` set to non-zero.  Disabling device sorting.");
         loader_free_getenv(env_value, inst);
+        device_settings->device_sorting_enabled = false;
     } else {
         char *selection = loader_getenv("VK_LOADER_DEVICE_SELECT", inst);
         size_t string_len = selection == NULL ? 0 : strlen(selection);
         if (NULL != selection && 1 < string_len) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "Found environment var `VK_LOADER_DEVICE_SELECT` set %s", selection);
-            sorting_settings->device_select_string =
+            device_settings->device_select_string =
                 loader_instance_heap_alloc(inst, string_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (NULL == sorting_settings->device_select_string) {
+            if (NULL == device_settings->device_select_string) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed allocating loader settings structure");
                 return VK_ERROR_OUT_OF_HOST_MEMORY;
             }
-            strncpy(sorting_settings->device_select_string, selection, string_len);
-            sorting_settings->device_select_string[string_len] = '\0';
-            sorting_settings->device_select_enabled = true;
+            strncpy(device_settings->device_select_string, selection, string_len);
+            device_settings->device_select_string[string_len] = '\0';
+            device_settings->device_select_enabled = true;
             loader_free_getenv(selection, inst);
         }
     }
@@ -654,50 +656,26 @@ VkResult parseEnvDeviceSortingSettings(struct loader_instance *inst, struct load
     return VK_SUCCESS;
 }
 
-// Determine how long a give path is in a path list string
-size_t determine_data_file_path_size(const char *cur_path, size_t relative_path_size) {
-    size_t path_size = 0;
-
-    if (NULL != cur_path) {
-        // For each folder in cur_path, (detected by finding additional
-        // path separators in the string) we need to add the relative path on
-        // the end.  Plus, leave an additional two slots on the end to add an
-        // additional directory slash and path separator if needed
-        path_size += strlen(cur_path) + relative_path_size + 2;
-        for (const char *x = cur_path; *x; ++x) {
-            if (*x == PATH_SEPARATOR) {
-                path_size += relative_path_size + 2;
-            }
-        }
+// Free the paths we used for setting up the search paths for layers and drivers.
+void freeSearchPath(const struct loader_instance *inst, char **search_path) {
+    if (search_path != NULL && *search_path != NULL) {
+        loader_instance_heap_free(inst, *search_path);
+        *search_path = NULL;
     }
-
-    return path_size;
 }
 
 // Free the paths we used for setting up the search paths for layers and drivers.
-void loaderFreeSearchPaths(struct loader_instance *inst, char **driver_path, char **implicit_path, char **explicit_path,
-                           char **settings_path) {
-    if (driver_path != NULL && *driver_path != NULL) {
-        loader_instance_heap_free(inst, *driver_path);
-        *driver_path = NULL;
-    }
-    if (implicit_path != NULL && *implicit_path != NULL) {
-        loader_instance_heap_free(inst, *implicit_path);
-        *implicit_path = NULL;
-    }
-    if (explicit_path != NULL && *explicit_path != NULL) {
-        loader_instance_heap_free(inst, *explicit_path);
-        *explicit_path = NULL;
-    }
-    if (settings_path != NULL && *settings_path != NULL) {
-        loader_instance_heap_free(inst, *settings_path);
-        *settings_path = NULL;
-    }
+void freeSearchPaths(const struct loader_instance *inst, char **driver_path, char **implicit_path, char **explicit_path,
+                     char **settings_path) {
+    freeSearchPath(inst, driver_path);
+    freeSearchPath(inst, implicit_path);
+    freeSearchPath(inst, explicit_path);
+    freeSearchPath(inst, settings_path);
 }
 
 // Figure out the default search paths for driver and layers based on the current operating
 // system.
-VkResult loaderDefaultSearchPaths(struct loader_instance *inst, char **default_driver_path, char **default_implicit_path,
+VkResult loaderDefaultSearchPaths(const struct loader_instance *inst, char **default_driver_path, char **default_implicit_path,
                                   char **default_explicit_path, char **default_settings_path) {
     VkResult result = VK_SUCCESS;
     const char curPassString[4][24] = {{"Driver"}, {"Implicit Layers"}, {"Explicit Layers"}, {"Settings"}};
@@ -714,10 +692,17 @@ VkResult loaderDefaultSearchPaths(struct loader_instance *inst, char **default_d
     // for the current manifest files.
     char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
     char *xdg_config_dirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
+    bool env_xdg_config_dirs = true;
+    bool env_xdg_data_dirs = true;
 
 #if !defined(__Fuchsia__) && !defined(__QNXNTO__)
-    if (NULL == xdg_config_dirs || '\0' == xdg_config_dirs[0]) {
+    if (NULL != xdg_config_dirs && '\0' == xdg_config_dirs[0]) {
+        loader_free_getenv(xdg_config_dirs, inst);
+        xdg_config_dirs = NULL;
+    }
+    if (NULL == xdg_config_dirs) {
         xdg_config_dirs = FALLBACK_CONFIG_DIRS;
+        env_xdg_config_dirs = false;
     }
 #endif
 
@@ -725,8 +710,13 @@ VkResult loaderDefaultSearchPaths(struct loader_instance *inst, char **default_d
     char *xdg_data_dirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
 
 #if !defined(__Fuchsia__) && !defined(__QNXNTO__)
-    if (NULL == xdg_data_dirs || '\0' == xdg_data_dirs[0]) {
+    if (NULL != xdg_data_dirs && '\0' == xdg_data_dirs[0]) {
+        loader_free_getenv(xdg_data_dirs, inst);
+        xdg_data_dirs = NULL;
+    }
+    if (NULL == xdg_data_dirs) {
         xdg_data_dirs = FALLBACK_DATA_DIRS;
+        env_xdg_data_dirs = false;
     }
 #endif
 
@@ -905,16 +895,20 @@ VkResult loaderDefaultSearchPaths(struct loader_instance *inst, char **default_d
 
 out:
     if (VK_SUCCESS != result) {
-        loaderFreeSearchPaths(inst, default_driver_path, default_implicit_path, default_explicit_path, default_settings_path);
+        freeSearchPaths(inst, default_driver_path, default_implicit_path, default_explicit_path, default_settings_path);
     }
 
 #if defined(_WIN32)
     loader_instance_heap_free(inst, package_path);
 #else
     loader_free_getenv(xdg_config_home, inst);
-    loader_free_getenv(xdg_config_dirs, inst);
+    if (env_xdg_config_dirs) {
+        loader_free_getenv(xdg_config_dirs, inst);
+    }
     loader_free_getenv(xdg_data_home, inst);
-    loader_free_getenv(xdg_data_dirs, inst);
+    if (env_xdg_data_dirs) {
+        loader_free_getenv(xdg_data_dirs, inst);
+    }
     loader_free_getenv(xdg_data_home, inst);
     loader_free_getenv(home, inst);
     loader_instance_heap_free(inst, default_data_home);
@@ -925,8 +919,8 @@ out:
 }
 
 // Read a path that is stored in an environment variable.
-VkResult readEnvVarPath(struct loader_instance *inst, uint32_t log_msg_flag, char **output_var, char *env_var) {
-    if (inst == NULL || output_var == NULL || env_var == NULL) {
+VkResult readEnvVarPath(const struct loader_instance *inst, uint32_t log_msg_flag, char **output_var, char *env_var) {
+    if (output_var == NULL || env_var == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -972,7 +966,7 @@ uint32_t getPathCount(char *path_list) {
 
 // Extract each individual paths listed in a path_list string and place it in a path_array for
 // easier use.
-VkResult addPathsToArray(struct loader_instance *inst, uint32_t log_msg_flag, char *path_list, char **path_array,
+VkResult addPathsToArray(const struct loader_instance *inst, uint32_t log_msg_flag, char *path_list, char **path_array,
                          uint32_t *start_index) {
     // Now, parse the paths
     char *cur_path;
@@ -1006,15 +1000,16 @@ VkResult addPathsToArray(struct loader_instance *inst, uint32_t log_msg_flag, ch
 // Generate the complete list of search paths using the environment variables (or file variables) and
 // the default paths for this platform.
 // NOTE: This can be overridden by the "override" layer later on.
-VkResult generateCompleteSearchPath(struct loader_instance *inst, enum loader_data_files_type search_type, char *default_path,
-                                    char *override_path, char *add_path, uint32_t *count, char ***value) {
+VkResult generateCompleteSearchPath(const struct loader_instance *inst, enum loader_data_files_type search_type,
+                                    const char *default_path, const char *override_path, const char *add_path, uint32_t *count,
+                                    char ***value) {
     uint32_t path_count = 0;
     uint32_t cur_path_index = 0;
     enum vulkan_loader_debug_flags log_msg_flag;
     uint8_t message_index = 0;
     const char message_str[4][20] = {{"driver"}, {"implicit layer"}, {"explicit layer"}, {"settings file"}};
 
-    if (inst == NULL || default_path == NULL || count == NULL || value == NULL) {
+    if (default_path == NULL || count == NULL || value == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -1043,6 +1038,7 @@ VkResult generateCompleteSearchPath(struct loader_instance *inst, enum loader_da
 
     char **path_array = NULL;
     char *modifiable_path = NULL;
+    char *cur_mod_ptr;
     bool failed = false;
 
     if (NULL != override_path) {
@@ -1053,9 +1049,10 @@ VkResult generateCompleteSearchPath(struct loader_instance *inst, enum loader_da
             failed = true;
         }
         if (!failed) {
-            strncpy(modifiable_path, override_path, cur_len);
-            modifiable_path[cur_len] = '\0';
-            path_count = getPathCount(modifiable_path);
+            cur_mod_ptr = modifiable_path;
+            strncpy(cur_mod_ptr, override_path, cur_len);
+            cur_mod_ptr[cur_len] = '\0';
+            path_count = getPathCount(cur_mod_ptr);
             path_array = loader_instance_heap_calloc(inst, sizeof(char *) * path_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (path_array == NULL) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for %s override path search array",
@@ -1064,9 +1061,10 @@ VkResult generateCompleteSearchPath(struct loader_instance *inst, enum loader_da
             }
         }
         if (!failed) {
-            strncpy(modifiable_path, override_path, cur_len);
-            modifiable_path[cur_len] = '\0';
-            if (addPathsToArray(inst, log_msg_flag, modifiable_path, path_array, &cur_path_index)) {
+            cur_mod_ptr = modifiable_path;
+            strncpy(cur_mod_ptr, override_path, cur_len);
+            cur_mod_ptr[cur_len] = '\0';
+            if (addPathsToArray(inst, log_msg_flag, cur_mod_ptr, path_array, &cur_path_index)) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
                            "Failed copying paths from %s override path into search array", message_str[message_index]);
                 failed = true;
@@ -1085,14 +1083,16 @@ VkResult generateCompleteSearchPath(struct loader_instance *inst, enum loader_da
         if (!failed) {
             path_count = 0;
             if (add_path != NULL) {
-                strncpy(modifiable_path, add_path, add_len);
-                modifiable_path[add_len] = '\0';
-                path_count += getPathCount(modifiable_path);
+                cur_mod_ptr = modifiable_path;
+                strncpy(cur_mod_ptr, add_path, add_len);
+                cur_mod_ptr[add_len] = '\0';
+                path_count += getPathCount(cur_mod_ptr);
             }
             if (default_path != NULL) {
-                strncpy(modifiable_path, default_path, default_len);
-                modifiable_path[default_len] = '\0';
-                path_count += getPathCount(modifiable_path);
+                cur_mod_ptr = modifiable_path;
+                strncpy(cur_mod_ptr, default_path, default_len);
+                cur_mod_ptr[default_len] = '\0';
+                path_count += getPathCount(cur_mod_ptr);
             }
             path_array = loader_instance_heap_calloc(inst, sizeof(char *) * path_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (path_array == NULL) {
@@ -1102,28 +1102,35 @@ VkResult generateCompleteSearchPath(struct loader_instance *inst, enum loader_da
             }
         }
         if (!failed && add_path != NULL) {
-            strncpy(modifiable_path, add_path, add_len);
-            modifiable_path[add_len] = '\0';
-            if (addPathsToArray(inst, log_msg_flag, modifiable_path, path_array, &cur_path_index)) {
+            cur_mod_ptr = modifiable_path;
+            strncpy(cur_mod_ptr, add_path, add_len);
+            cur_mod_ptr[add_len] = '\0';
+            if (addPathsToArray(inst, log_msg_flag, cur_mod_ptr, path_array, &cur_path_index)) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
                            "Failed copying paths from additional %s path into search array", message_str[message_index]);
                 failed = true;
             }
         }
         if (!failed && default_path != NULL) {
-            strncpy(modifiable_path, default_path, default_len);
-            modifiable_path[default_len] = '\0';
-            if (addPathsToArray(inst, log_msg_flag, modifiable_path, path_array, &cur_path_index)) {
+            cur_mod_ptr = modifiable_path;
+            strncpy(cur_mod_ptr, default_path, default_len);
+            cur_mod_ptr[default_len] = '\0';
+            if (addPathsToArray(inst, log_msg_flag, cur_mod_ptr, path_array, &cur_path_index)) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
                            "Failed copying paths from default %s path into search array", message_str[message_index]);
                 failed = true;
             }
         }
     }
+    if (modifiable_path != NULL) {
+        loader_instance_heap_free(inst, modifiable_path);
+    }
     if (failed) {
+        if (path_array != NULL) {
+            loader_instance_heap_free(inst, path_array);
+        }
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    loader_instance_heap_free(inst, modifiable_path);
 
     // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
     for (int32_t cur_path = 0; cur_path < (int32_t)path_count; ++cur_path) {
@@ -1152,6 +1159,8 @@ VkResult generateCompleteSearchPath(struct loader_instance *inst, enum loader_da
         }
     }
 
+    assert(path_array != NULL);
+    assert(path_count != 0);
     *count = path_count;
     *value = path_array;
     return VK_SUCCESS;
@@ -1173,13 +1182,12 @@ void freeSettingsStruct(struct loader_instance *inst, struct loader_settings **s
         }
         settings->log_settings.log_to_file = false;
     }
-    loader_instance_heap_free(inst, settings->log_settings.log_filename);
     settings->log_settings.log_filename = NULL;
 
     // Free device items
-    if (NULL != settings->device_sorting_settings.device_select_string) {
-        loader_instance_heap_free(inst, settings->device_sorting_settings.device_select_string);
-        settings->device_sorting_settings.device_select_string = NULL;
+    if (NULL != settings->device_settings.device_select_string) {
+        loader_instance_heap_free(inst, settings->device_settings.device_select_string);
+        settings->device_settings.device_select_string = NULL;
     }
 
     // Free search paths
@@ -1217,6 +1225,7 @@ void freeSettingsStruct(struct loader_instance *inst, struct loader_settings **s
 // This is generated from platform defaults, environment variables, and the loader settings
 // file.
 VkResult generateSettingsStruct(struct loader_instance *inst, struct loader_settings **set_struct) {
+    VkResult result = VK_SUCCESS;
     if (set_struct == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
@@ -1227,6 +1236,7 @@ VkResult generateSettingsStruct(struct loader_instance *inst, struct loader_sett
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed allocating loader settings structure");
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
+    *set_struct = settings;
 
     // Search paths, these are eventually used to fill in the final search paths
     // for each driver, implicit layers, and explicit layers.
@@ -1242,8 +1252,8 @@ VkResult generateSettingsStruct(struct loader_instance *inst, struct loader_sett
     char *additional_explicit_layer_env_var_search_path = NULL;
     char *additional_explicit_layer_file_search_path = NULL;
     char *default_settings_file_search_path = NULL;
-    uint32_t settings_file_search_paths_count;
-    char **settings_file_search_paths;
+    uint32_t settings_file_search_paths_count = 0;
+    char **settings_file_search_paths = NULL;
 
     // Set defaults
     settings->log_settings.log_errors_to_stderr = true;
@@ -1255,79 +1265,82 @@ VkResult generateSettingsStruct(struct loader_instance *inst, struct loader_sett
     settings->explicit_layer_search_paths_count = 0;
     settings->explicit_layer_search_paths = NULL;
 #if LOADER_ENABLE_LINUX_SORT
-    settings->device_sorting_settings.device_sorting_enabled = true;
+    settings->device_settings.device_sorting_enabled = true;
 #else
-    settings->device_sorting_settings.device_sorting_enabled = false;
+    settings->device_settings.device_sorting_enabled = false;
 #endif
-    settings->device_sorting_settings.device_select_enabled = false;
-    settings->device_sorting_settings.device_select_string = NULL;
-    if (VK_SUCCESS != loaderDefaultSearchPaths(inst, &default_driver_search_path, &default_implicit_layer_search_path,
-                                               &default_explicit_layer_search_path, &default_settings_file_search_path)) {
+    settings->device_settings.device_select_enabled = false;
+    settings->device_settings.device_select_string = NULL;
+    result = loaderDefaultSearchPaths(inst, &default_driver_search_path, &default_implicit_layer_search_path,
+                                      &default_explicit_layer_search_path, &default_settings_file_search_path);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
     // Find a settings file and load the settings out of that if one exists in one of the
     // appropriate locations.
-    if (VK_SUCCESS != generateCompleteSearchPath(inst, LOADER_DATA_FILE_SETTINGS_FILE, default_settings_file_search_path, NULL,
-                                                 NULL, &settings_file_search_paths_count, &settings_file_search_paths)) {
+    result = generateCompleteSearchPath(inst, LOADER_DATA_FILE_SETTINGS_FILE, default_settings_file_search_path, NULL, NULL,
+                                        &settings_file_search_paths_count, &settings_file_search_paths);
+    if (VK_SUCCESS != result) {
         goto out;
     }
+
     //
     // TODO: Read loader settings file here.
     //
 
     // Override any settings with environment variable versions
-    VkResult env_var_result = VK_SUCCESS;
     parseEnvLoaderDebugLogFlags(&settings->log_settings.enabled_log_flags);
     parseEnvDisableInstanceExtensions(inst, &settings->disable_instance_extension_filter);
-    env_var_result = parseEnvDeviceSortingSettings(inst, &settings->device_sorting_settings);
-    if (VK_SUCCESS != env_var_result) {
+    result = parseEnvDeviceSettings(inst, &settings->device_settings);
+    if (VK_SUCCESS != result) {
         goto out;
     }
-    if (VK_SUCCESS !=
-            readEnvVarPath(inst, VULKAN_LOADER_DRIVER_BIT, &override_driver_env_var_search_path, VK_DRIVER_FILES_ENV_VAR) &&
-        VK_SUCCESS !=
-            readEnvVarPath(inst, VULKAN_LOADER_DRIVER_BIT, &override_driver_env_var_search_path, VK_ICD_FILENAMES_ENV_VAR)) {
+    result = readEnvVarPath(inst, VULKAN_LOADER_DRIVER_BIT, &override_driver_env_var_search_path, VK_DRIVER_FILES_ENV_VAR);
+    if (VK_SUCCESS != result) {
+        result = readEnvVarPath(inst, VULKAN_LOADER_DRIVER_BIT, &override_driver_env_var_search_path, VK_ICD_FILENAMES_ENV_VAR);
+        if (VK_SUCCESS != result) {
+            goto out;
+        }
+    }
+    result =
+        readEnvVarPath(inst, VULKAN_LOADER_DRIVER_BIT, &additional_driver_env_var_search_path, VK_ADDITIONAL_DRIVER_FILES_ENV_VAR);
+    if (VK_SUCCESS != result) {
         goto out;
     }
-    if (VK_SUCCESS != readEnvVarPath(inst, VULKAN_LOADER_DRIVER_BIT, &additional_driver_env_var_search_path,
-                                     VK_ADDITIONAL_DRIVER_FILES_ENV_VAR)) {
+    result = readEnvVarPath(inst, VULKAN_LOADER_LAYER_BIT, &override_explicit_layer_env_var_search_path, VK_LAYER_PATH_ENV_VAR);
+    if (VK_SUCCESS != result) {
         goto out;
     }
-    if (VK_SUCCESS !=
-        readEnvVarPath(inst, VULKAN_LOADER_LAYER_BIT, &override_explicit_layer_env_var_search_path, VK_LAYER_PATH_ENV_VAR)) {
+    result = readEnvVarPath(inst, VULKAN_LOADER_LAYER_BIT, &additional_explicit_layer_env_var_search_path,
+                            VK_ADDITIONAL_LAYER_PATH_ENV_VAR);
+    if (VK_SUCCESS != result) {
         goto out;
     }
-    if (VK_SUCCESS != readEnvVarPath(inst, VULKAN_LOADER_LAYER_BIT, &additional_explicit_layer_env_var_search_path,
-                                     VK_ADDITIONAL_LAYER_PATH_ENV_VAR)) {
+    result = generateCompleteSearchPath(
+        inst, LOADER_DATA_FILE_MANIFEST_DRIVER, default_driver_search_path,
+        (override_driver_file_search_path == NULL) ? override_driver_env_var_search_path : override_driver_file_search_path,
+        (additional_driver_file_search_path == NULL) ? additional_driver_env_var_search_path : additional_driver_file_search_path,
+        &settings->driver_search_paths_count, &settings->driver_search_paths);
+    if (VK_SUCCESS != result) {
         goto out;
     }
-    if (VK_SUCCESS !=
-        generateCompleteSearchPath(
-            inst, LOADER_DATA_FILE_MANIFEST_DRIVER, default_driver_search_path,
-            (override_driver_file_search_path == NULL) ? override_driver_env_var_search_path : override_driver_file_search_path,
-            (additional_driver_file_search_path == NULL) ? additional_driver_env_var_search_path
-                                                         : additional_driver_file_search_path,
-            &settings->driver_search_paths_count, &settings->driver_search_paths)) {
+    result = generateCompleteSearchPath(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, default_implicit_layer_search_path, NULL,
+                                        NULL, &settings->implicit_layer_search_paths_count, &settings->implicit_layer_search_paths);
+    if (VK_SUCCESS != result) {
         goto out;
     }
-    if (VK_SUCCESS != generateCompleteSearchPath(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, default_implicit_layer_search_path,
-                                                 NULL, NULL, &settings->implicit_layer_search_paths_count,
-                                                 &settings->implicit_layer_search_paths)) {
-        goto out;
-    }
-    if (VK_SUCCESS != generateCompleteSearchPath(
-                          inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, default_explicit_layer_search_path,
-                          (override_explicit_layer_file_search_path == NULL) ? override_explicit_layer_env_var_search_path
-                                                                             : override_explicit_layer_file_search_path,
-                          (additional_explicit_layer_file_search_path == NULL) ? additional_explicit_layer_env_var_search_path
-                                                                               : additional_explicit_layer_file_search_path,
-                          &settings->explicit_layer_search_paths_count, &settings->explicit_layer_search_paths)) {
+    result = generateCompleteSearchPath(
+        inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, default_explicit_layer_search_path,
+        (override_explicit_layer_file_search_path == NULL) ? override_explicit_layer_env_var_search_path
+                                                           : override_explicit_layer_file_search_path,
+        (additional_explicit_layer_file_search_path == NULL) ? additional_explicit_layer_env_var_search_path
+                                                             : additional_explicit_layer_file_search_path,
+        &settings->explicit_layer_search_paths_count, &settings->explicit_layer_search_paths);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    // Return structure
-    *set_struct = settings;
 out:
     if (settings_file_search_paths != NULL) {
         for (uint32_t count = 0; count < settings_file_search_paths_count; ++count) {
@@ -1335,12 +1348,13 @@ out:
         }
         loader_instance_heap_free(inst, settings_file_search_paths);
     }
-    loaderFreeSearchPaths(inst, &default_driver_search_path, &default_implicit_layer_search_path,
-                          &default_explicit_layer_search_path, &default_settings_file_search_path);
-    loaderFreeSearchPaths(inst, &override_driver_env_var_search_path, NULL, &override_explicit_layer_env_var_search_path, NULL);
-    loaderFreeSearchPaths(inst, &additional_driver_env_var_search_path, NULL, &additional_explicit_layer_env_var_search_path, NULL);
-    if (env_var_result != VK_SUCCESS) {
+    freeSearchPaths(inst, &default_driver_search_path, &default_implicit_layer_search_path, &default_explicit_layer_search_path,
+                    &default_settings_file_search_path);
+    freeSearchPaths(inst, &override_driver_env_var_search_path, &override_explicit_layer_env_var_search_path,
+                    &additional_driver_env_var_search_path, &additional_explicit_layer_env_var_search_path);
+    if (result != VK_SUCCESS) {
         freeSettingsStruct(inst, &settings);
+        *set_struct = NULL;
     }
-    return env_var_result;
+    return result;
 }
