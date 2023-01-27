@@ -29,12 +29,6 @@ find_package(PythonInterp 3 QUIET)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-option(BUILD_TESTS "Build Tests" OFF)
-
-if(BUILD_TESTS)
-    enable_testing()
-endif()
-
 if(APPLE)
     option(BUILD_STATIC_LOADER "Build a loader that can be statically linked" OFF)
 endif()
@@ -293,6 +287,7 @@ endif()
 
 add_subdirectory(loader)
 
+option(BUILD_TESTS "Build Tests")
 if(BUILD_TESTS)
     # Set gtest build configuration
     # Attempt to enable if it is available.
@@ -394,7 +389,7 @@ if(BUILD_TESTS)
     endif()
 
     if (BUILD_TESTS)
+        enable_testing()
         add_subdirectory(tests)
     endif()
-
 endif()
