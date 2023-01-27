@@ -41,7 +41,7 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
-            - uses: actions/setup-python@v2
+            - uses: actions/setup-python@v3
               with:
                 python-version: '3.7'
             - run: sudo apt update
@@ -87,7 +87,7 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
-            - uses: actions/setup-python@v2
+            - uses: actions/setup-python@v3
               with:
                 python-version: '3.7'
             - name: Install Dependencies
@@ -123,7 +123,7 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
-            - uses: actions/setup-python@v2
+            - uses: actions/setup-python@v3
               with:
                 python-version: '3.7'
 
@@ -157,7 +157,7 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
-            - uses: actions/setup-python@v2
+            - uses: actions/setup-python@v3
               with:
                 python-version: '3.7'
             - uses: lukka/get-cmake@latest
@@ -179,7 +179,7 @@ jobs:
               run: ctest --output-on-failure
 
     gn:
-        runs-on: ubuntu-18.04
+        runs-on: ubuntu-20.04
 
         strategy:
             matrix:
