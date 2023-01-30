@@ -2818,7 +2818,7 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
                 str_len = strlen(cur_file) + 1;
             }
             if (str_len > sizeof(temp_path)) {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files: Path to %s too long\n", cur_file);
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files: Path to %s too long", cur_file);
                 continue;
             }
             strcpy(temp_path, cur_file);
@@ -4723,7 +4723,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             }
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Drivers>\n");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Drivers>");
         }
 
         res = fpCreateInstance(&loader_create_info, pAllocator, created_instance);
@@ -5791,7 +5791,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     }
 
     loader_log(icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-               "       Using \"%s\" with driver: \"%s\"\n", properties.deviceName, icd_term->scanned_icd->lib_name);
+               "       Using \"%s\" with driver: \"%s\"", properties.deviceName, icd_term->scanned_icd->lib_name);
 
     res = fpCreateDevice(phys_dev_term->phys_dev, &localCreateInfo, pAllocator, &dev->icd_device);
     if (res != VK_SUCCESS) {

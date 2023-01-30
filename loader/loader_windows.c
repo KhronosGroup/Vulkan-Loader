@@ -1013,7 +1013,7 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
     if (ERROR_INSUFFICIENT_BUFFER != fpGetPackagesByPackageFamily(familyName, &numPackages, NULL, &bufferLength, NULL) ||
         numPackages == 0 || bufferLength == 0) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                   "windows_get_app_package_manifest_path: Failed to find mapping layers packages by family name\n");
+                   "windows_get_app_package_manifest_path: Failed to find mapping layers packages by family name");
         return NULL;
     }
 
@@ -1022,13 +1022,13 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
     PWSTR *packages = loader_instance_heap_alloc(inst, sizeof(PWSTR) * numPackages, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!buffer || !packages) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "windows_get_app_package_manifest_path: Failed to allocate memory for package names\n");
+                   "windows_get_app_package_manifest_path: Failed to allocate memory for package names");
         goto cleanup;
     }
 
     if (ERROR_SUCCESS != fpGetPackagesByPackageFamily(familyName, &numPackages, packages, &bufferLength, buffer)) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "windows_get_app_package_manifest_path: Failed to mapping layers package full names\n");
+                   "windows_get_app_package_manifest_path: Failed to mapping layers package full names");
         goto cleanup;
     }
 
@@ -1038,20 +1038,20 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
     if (ERROR_INSUFFICIENT_BUFFER != fpGetPackagePathByFullName(packages[0], &pathLength, NULL) || pathLength > MAX_PATH ||
         ERROR_SUCCESS != fpGetPackagePathByFullName(packages[0], &pathLength, path)) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "windows_get_app_package_manifest_path: Failed to get mapping layers package path\n");
+                   "windows_get_app_package_manifest_path: Failed to get mapping layers package path");
         goto cleanup;
     }
 
     int narrowPathLength = WideCharToMultiByte(CP_ACP, 0, path, -1, NULL, 0, NULL, NULL);
     if (narrowPathLength == 0) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "windows_get_app_package_manifest_path: Failed to convert path from wide to narrow\n");
+                   "windows_get_app_package_manifest_path: Failed to convert path from wide to narrow");
         goto cleanup;
     }
 
     ret = loader_instance_heap_alloc(inst, narrowPathLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!ret) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_app_package_manifest_path: Failed to allocate path\n");
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_app_package_manifest_path: Failed to allocate path");
         goto cleanup;
     }
 
