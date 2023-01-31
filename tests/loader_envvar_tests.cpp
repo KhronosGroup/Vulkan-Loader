@@ -474,6 +474,24 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
     ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
     ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
+
+    // The full-name string is not a valid match if it doesn't also include the file extension
+    env.debug_log.clear();
+    filter_select_env_var.set_new_value("ABC_ICD");
+
+    InstWrapper inst8{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst8.create_info, env.debug_log);
+    inst8.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "ABC_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "BCD_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", "CDE_ICD.json"));
+    ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 }
 
 // Test that the driver filter disable disables driver manifest files that match the filter

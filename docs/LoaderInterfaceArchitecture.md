@@ -781,10 +781,10 @@ discovery.
     </small></td>
     <td><small>
         export<br/>
-        &nbsp;&nbsp;VK_LOADER_DRIVERS_SELECT=nvidia<br/>
+        &nbsp;&nbsp;VK_LOADER_DRIVERS_SELECT=nvidia*<br/>
         <br/>
         set<br/>
-        &nbsp;&nbsp;VK_LOADER_DRIVERS_SELECT=nvidia<br/><br/>
+        &nbsp;&nbsp;VK_LOADER_DRIVERS_SELECT=nvidia*<br/><br/>
         The above would select only the Nvidia driver if it was present on the
         system and already visible to the loader.
     </small></td>
