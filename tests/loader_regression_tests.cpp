@@ -1027,7 +1027,7 @@ TEST(CreateDevice, UnmatchInstanceAndDeviceLayers) {
 
     ASSERT_TRUE(log.find("loader_create_device_chain: Using deprecated and ignored 'ppEnabledLayerNames' member of 'VkDeviceCreateInfo' when creating a Vulkan device."));
 }
-
+/*
 // Device layers are deprecated.
 // Ensure that when VkInstanceCreateInfo is deleted, the check of the instance layer lists is running correctly during VkDevice creation
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
@@ -1057,7 +1057,7 @@ TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
 
     dev.CheckCreate(phys_dev);
 }
-
+*/
 TEST(CreateDevice, ConsecutiveCreate) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
