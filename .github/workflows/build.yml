@@ -44,18 +44,21 @@ jobs:
             - uses: actions/setup-python@v3
               with:
                 python-version: '3.7'
+            - uses: lukka/get-cmake@latest
+              with:
+                cmakeVersion: 3.17.2
             - run: sudo apt update
             - name: Install Dependencies
               run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON
+              run: cmake -S. -B build -D CMAKE_BUILD_TYPE=${{matrix.config}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -D TEST_USE_ADDRESS_SANITIZER=ON
               env:
                 CC: ${{matrix.cc}}
                 CXX: ${{matrix.cxx}}
 
             - name: Build the loader
-              run: make -C build
+              run: cmake --build build
 
             - name: Run regression tests
               working-directory: ./build
@@ -90,13 +93,16 @@ jobs:
             - uses: actions/setup-python@v3
               with:
                 python-version: '3.7'
+            - uses: lukka/get-cmake@latest
+              with:
+                cmakeVersion: 3.17.2
             - name: Install Dependencies
               run: |-
                 sudo dpkg --add-architecture i386
                 sudo apt-get update
                 sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6-dev-i386 pkg-config-i686-linux-gnu libwayland-dev:i386 libxrandr-dev:i386
             - name: Generate build files
-              run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
+              run: cmake -S. -B build -D CMAKE_BUILD_TYPE=${{matrix.config}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON
               env:
                 CFLAGS: -m32
                 CXXFLAGS: -m32
@@ -104,9 +110,8 @@ jobs:
                 ASFLAGS: --32
                 PKG_CONFIG: i686-pc-linux-gnu-pkg-config
 
-
             - name: Build the loader
-              run: make -C build
+              run: cmake --build build
 
             - name: Run regression tests
               working-directory: ./build
@@ -128,7 +133,7 @@ jobs:
                 python-version: '3.7'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=On -DUPDATE_DEPS=ON
+              run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=ON -DUPDATE_DEPS=ON
 
             - name: Build the loader
               run: cmake --build ./build --config ${{matrix.config}}
@@ -161,9 +166,6 @@ jobs:
               with:
                 python-version: '3.7'
             - uses: lukka/get-cmake@latest
-              with:
-                cmakeVersion: 3.17.2
-
             - name: Generate build files
               run: cmake -S. -B build -DCMAKE_BUILD_TYPE=${{matrix.config}} -D${{matrix.static_build}} -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -DTEST_USE_ADDRESS_SANITIZER=ON -G "Ninja"
               env:
