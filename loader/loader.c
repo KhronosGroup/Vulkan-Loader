@@ -4712,7 +4712,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
     if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
         inst->enabled_layer_count = pCreateInfo->enabledLayerCount;
-        inst->enabled_layer_names = pCreateInfo->ppEnabledLayerNames;
+        inst->enabled_layer_names = (char**)pCreateInfo->ppEnabledLayerNames;
         /*
         inst->enabled_layer_names = (char **)loader_instance_heap_alloc(inst, sizeof(char *) * pCreateInfo->enabledLayerCount,
                                                                         VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
