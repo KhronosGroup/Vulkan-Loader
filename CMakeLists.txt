@@ -214,12 +214,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     target_compile_options(loader_common_options INTERFACE /GR- /guard:cf /wd4100 /wd4152 /wd4201)
 
     # Enable control flow guard
-    if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
-        target_link_options(loader_common_options INTERFACE "LINKER:/guard:cf")
-    else()
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /guard:cf")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /guard:cf")
-    endif()
+    target_link_options(loader_common_options INTERFACE "LINKER:/guard:cf")
 
     # Prevent <windows.h> from polluting the code. guards against things like MIN and MAX
     target_compile_definitions(loader_common_options INTERFACE WIN32_LEAN_AND_MEAN)
