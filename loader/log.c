@@ -71,8 +71,9 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         } else if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-        } else if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0 || (msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
-            // Just driver or just layer bit should be treated as an info message in debug utils.
+        } else if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0 || (msg_type & VULKAN_LOADER_DRIVER_BIT) != 0 ||
+                   (msg_type & VULKAN_LOADER_SETTING_BIT) != 0) {
+            // Just driver, layer, or setting bit should be treated as an info message in debug utils.
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
         }
 
@@ -106,10 +107,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 
         util_SubmitDebugUtilsMessageEXT(inst, severity, type, &callback_data);
     }
-    if (settings == NULL) {
-        if (!pre_instance_settings.ready) {
-            return;
-        }
+    if (settings == NULL && pre_instance_settings.ready) {
         loader_platform_thread_lock_mutex(&pre_instance_settings.lock);
         pre_instance_settings.ref_count++;
         settings = pre_instance_settings.settings;
@@ -117,7 +115,10 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         using_pre_inst_settings = true;
     }
 
-    uint32_t filtered_msg_type = (msg_type & settings->log_settings.enabled_log_flags);
+    uint32_t filtered_msg_type = VULKAN_LOADER_ERROR_BIT;
+    if (settings != NULL) {
+        filtered_msg_type = (msg_type & settings->log_settings.enabled_log_flags);
+    }
     if (0 == filtered_msg_type) {
         goto out;
     }
@@ -166,6 +167,15 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         strncat(cmd_line_msg, "LAYER", cmd_line_size - num_used);
         num_used += 5;
     }
+    if ((filtered_msg_type & VULKAN_LOADER_SETTING_BIT) != 0) {
+        if (num_used > 1) {
+            strncat(cmd_line_msg, " | ", cmd_line_size - num_used);
+            num_used += 3;
+        }
+        strncat(cmd_line_msg, "SETTING", cmd_line_size - num_used);
+        num_used += 7;
+    }
+
     // Add any preceeding spaces so we can have clean output
     if (num_used > 1) {
         strncat(cmd_line_msg, ": ", cmd_line_size - num_used);
@@ -188,18 +198,25 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         OutputDebugString(cmd_line_msg);
         OutputDebugString("\n");
 #endif
-        // Allow output to go to a file, stderr, and/or stdout.
-        // NOTE: We allow the same message to go to all 3 if the user desires.
-        if (settings->log_settings.log_to_file && settings->log_settings.log_file != NULL) {
-            fprintf(settings->log_settings.log_file, "%s\n", cmd_line_msg);
-        }
-        if ((is_error && settings->log_settings.log_errors_to_stderr) ||
-            (!is_error && settings->log_settings.log_nonerrors_to_stderr)) {
-            fprintf(stderr, "%s\n", cmd_line_msg);
-        }
-        if ((is_error && settings->log_settings.log_errors_to_stdout) ||
-            (!is_error && settings->log_settings.log_nonerrors_to_stdout)) {
-            fprintf(stdout, "%s\n", cmd_line_msg);
+        if (settings == NULL) {
+            // Fallback in case we don't have a settings file we still want errors output
+            if (is_error) {
+                fprintf(stderr, "%s\n", cmd_line_msg);
+            }
+        } else {
+            // Allow output to go to a file, stderr, and/or stdout.
+            // NOTE: We allow the same message to go to all 3 if the user desires.
+            if (settings->log_settings.log_to_file && settings->log_settings.log_file != NULL) {
+                fprintf(settings->log_settings.log_file, "%s\n", cmd_line_msg);
+            }
+            if ((is_error && settings->log_settings.log_errors_to_stderr) ||
+                (!is_error && settings->log_settings.log_nonerrors_to_stderr)) {
+                fprintf(stderr, "%s\n", cmd_line_msg);
+            }
+            if ((is_error && settings->log_settings.log_errors_to_stdout) ||
+                (!is_error && settings->log_settings.log_nonerrors_to_stdout)) {
+                fprintf(stdout, "%s\n", cmd_line_msg);
+            }
         }
     } else {
         // Shouldn't get here, but check to make sure if we've already overrun

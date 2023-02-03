@@ -241,15 +241,64 @@ struct loader_log_settings {
     bool log_nonerrors_to_stdout;  // Log all non-error output to stdout (default)
     bool log_nonerrors_to_stderr;  // Log all non-error output to stderr
 
-    // TODO: Loader log file output will be added in the future
     bool log_to_file;  // Log all enabled messages to a file
     char *log_filename;
     FILE *log_file;
 };
 
-// Options for sorting or selecting a device based on specific information.
-// Currently only works for Linux
-struct loader_device_settings {
+// Options for how the loader handles instance logic
+struct loader_instance_settings {
+    bool disable_instance_extension_filter;
+};
+
+typedef enum loader_filter_string_type {
+    FILTER_STRING_FULLNAME = 0,
+    FILTER_STRING_SUBSTRING,
+    FILTER_STRING_PREFIX,
+    FILTER_STRING_SUFFIX,
+    FILTER_STRING_SPECIAL,
+} loader_filter_string_type;
+
+struct loader_envvar_filter_value {
+    char value[VK_MAX_EXTENSION_NAME_SIZE];
+    size_t length;
+    loader_filter_string_type type;
+};
+
+#define MAX_ADDITIONAL_FILTERS 16
+struct loader_envvar_filter {
+    uint32_t count;
+    struct loader_envvar_filter_value filters[MAX_ADDITIONAL_FILTERS];
+};
+
+struct loader_envvar_disable_layers_filter {
+    struct loader_envvar_filter additional_filters;
+    bool disable_all;
+    bool disable_all_implicit;
+    bool disable_all_explicit;
+};
+
+// Options for how the loader handles layer logic
+struct loader_layer_settings {
+    bool exit_on_missing_layer;
+
+    // Filter env vars
+    struct loader_envvar_filter *enable_filters;
+    struct loader_envvar_disable_layers_filter *disable_filters;
+
+    // Layers that are forced on
+    uint32_t forced_on_layers_count;
+    char **forced_on_layers;
+};
+
+// Options for how the loader handles drivers
+struct loader_driver_settings {
+    struct loader_envvar_filter *select_filters;
+    struct loader_envvar_filter *disable_filters;
+};
+
+// Options for how the loader handles physical device logic
+struct loader_physical_device_settings {
     bool device_sorting_enabled;
     bool device_select_enabled;
     char *device_select_string;
@@ -257,10 +306,11 @@ struct loader_device_settings {
 
 // Loader settings
 struct loader_settings {
+    struct loader_instance_settings instance_settings;
     struct loader_log_settings log_settings;
-
-    // Instance settings
-    bool disable_instance_extension_filter;
+    struct loader_driver_settings driver_settings;
+    struct loader_layer_settings layer_settings;
+    struct loader_physical_device_settings physical_device_settings;
 
     // Global path settings
     uint32_t driver_search_paths_count;
@@ -269,9 +319,6 @@ struct loader_settings {
     char **implicit_layer_search_paths;
     uint32_t explicit_layer_search_paths_count;
     char **explicit_layer_search_paths;
-
-    // Device settings
-    struct loader_device_settings device_settings;
 };
 
 struct loader_pre_instance_settings {
@@ -509,30 +556,4 @@ struct loader_phys_dev_per_icd {
 struct loader_msg_callback_map_entry {
     VkDebugReportCallbackEXT icd_obj;
     VkDebugReportCallbackEXT loader_obj;
-};
-
-typedef enum loader_filter_string_type {
-    FILTER_STRING_FULLNAME = 0,
-    FILTER_STRING_SUBSTRING,
-    FILTER_STRING_PREFIX,
-    FILTER_STRING_SUFFIX,
-    FILTER_STRING_SPECIAL,
-} loader_filter_string_type;
-
-struct loader_envvar_filter_value {
-    char value[VK_MAX_EXTENSION_NAME_SIZE];
-    size_t length;
-    loader_filter_string_type type;
-};
-
-#define MAX_ADDITIONAL_FILTERS 16
-struct loader_envvar_filter {
-    uint32_t count;
-    struct loader_envvar_filter_value filters[MAX_ADDITIONAL_FILTERS];
-};
-struct loader_envvar_disable_layers_filter {
-    struct loader_envvar_filter additional_filters;
-    bool disable_all;
-    bool disable_all_implicit;
-    bool disable_all_explicit;
 };

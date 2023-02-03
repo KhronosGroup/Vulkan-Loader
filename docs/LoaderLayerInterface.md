@@ -513,6 +513,16 @@ The original `VK_INSTANCE_LAYERS` can be viewed as a special case of the new
 Because of this, any layers enabled via `VK_INSTANCE_LAYERS` will be treated the
 same as layers enabled with `VK_LOADER_LAYERS_ENABLE` and will therefore
 override any disables supplied in `VK_LOADER_LAYERS_DISABLE`.
+There are several benefits to using `VK_INSTANCE_LAYERS` over
+`VK_LOADER_LAYERS_ENABLE`:
+  * `VK_INSTANCE_LAYERS` forces the loading of the layers defined in the strict
+    ordering they are defined.
+  * `VK_INSTANCE_LAYERS` requires the full name of the layer, which may be
+    beneficial to forcing only the specific layers
+  * `VK_INSTANCE_LAYERS` is guaranteed to work on very old loaders.
+  * `VK_INSTANCE_LAYERS` can be used with `VK_LOADER_LAYER_EXIT_ON_MISSING` to
+    make sure that a desired layer was properly loaded before continuing.
+
 
 ### Exception for Elevated Privileges
 

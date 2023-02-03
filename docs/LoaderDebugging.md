@@ -22,6 +22,8 @@
 - [Debugging Possible Driver Issues](#debugging-possible-driver-issues)
   - [Enable Driver Logging](#enable-driver-logging)
   - [Selectively Enable Specific Drivers](#selectively-enable-specific-drivers)
+- [Forcing Specific Layers In Order](#forcing-specific-layers-in-order)
+  - [Forcing A Crash If Layer Not Found](#forcing-a-crash-if-layer-not-found)
 
 ## Debugging Issues
 
@@ -329,3 +331,23 @@ For more info on how to use the filtering environment variables, refer to the
 [Driver Filtering](LoaderDriverInterface.md#driver-filtering) section of the
 [LoaderDriverInterface](LoaderDriverInterface.md) document.
 
+
+## Forcing Specific Layers In Order
+
+If adding layers using an environment variable, and the ordering is important,
+`VK_INSTANCE_LAYERS` can be used.
+The names of the layers supplied must be comma-delimited and contain the full
+name of each layer to loader.
+These layers will only load if they are found in one of the system installed
+paths or a path defined by one of the loader environment variables used to
+adjust layer paths (like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`).
+
+### Forcing A Crash If Layer Not Found
+
+If you use `VK_INSTANCE_LAYERS`, and the loader fails to find a layer that
+was specified in the list, it will print an error message, but continue on
+its way.
+This could be problematic if a layer is absolutely required for the task.
+Setting the environment variable `VK_LOADER_LAYER_EXIT_ON_MISSING` equal to
+`1` will cause the loader to abort if the layer defined in
+`VK_INSTANCE_LAYERS` is not found and also an error message will be reported.

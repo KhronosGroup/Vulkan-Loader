@@ -98,6 +98,7 @@
 #define VK_LAYERS_DISABLE_ENV_VAR "VK_LOADER_LAYERS_DISABLE"
 #define VK_DRIVERS_SELECT_ENV_VAR "VK_LOADER_DRIVERS_SELECT"
 #define VK_DRIVERS_DISABLE_ENV_VAR "VK_LOADER_DRIVERS_DISABLE"
+
 #define VK_LOADER_DISABLE_ALL_LAYERS_VAR_1 "~all~"
 #define VK_LOADER_DISABLE_ALL_LAYERS_VAR_2 "*"
 #define VK_LOADER_DISABLE_ALL_LAYERS_VAR_3 "**"
@@ -107,7 +108,6 @@
 // Override layer information
 #define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
 
-#define LAYERS_PATH_ENV "VK_LAYER_PATH"
 #define ENABLED_LAYERS_ENV "VK_INSTANCE_LAYERS"
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
