@@ -658,6 +658,34 @@ discovery.
   </tr>
   <tr>
     <td><small>
+        <i>VK_INSTANCE_LAYERS</i>
+    </small></td>
+    <td><small>
+        Force the loader to add the given layers to the list of Enabled layers
+        normally passed into <b>vkCreateInstance</b>.
+        These layers are added first, and the loader will remove any duplicate
+        layers that appear in both this list as well as that passed into
+        <i>ppEnabledLayerNames</i>.
+    </small></td>
+    <td><small>
+        This has <b>NOT</b> been deprecated by <i>VK_LOADER_LAYERS_ENABLE</i>.
+        This allows explicit layer ordering which is not available in the new
+        filter environment variables<br/>
+        Like <i>VK_LOADER_LAYERS_ENABLE</i>, this environment variable takes
+        precedence over <i>VK_LOADER_LAYERS_DISABLE</i>, so users can quickly
+        enable specific layers while disabling everything else.
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;:&lt;layer_b&gt;<br/><br/>
+        set<br/>
+        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
         <i>VK_LAYER_PATH</i></small></td>
     <td><small>
         Override the loader's standard Layer library search folders and use the
@@ -703,6 +731,29 @@ discovery.
         <br/>
         set<br/>
         &nbsp;&nbsp;VK_LOADER_DEBUG=warn
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
+        <i>VK_LOADER_LOG_FILE</i>
+    </small></td>
+    <td><small>
+        Define the name of a log file to output the loader debug output to.
+        The data is appended to the file so each execution will cause the same
+        file to grow.<br/>
+        Messages enabled by <i>VK_LOADER_DEBUG</i> will be output to here, but
+        may also appear on the command-line as well.
+    </small></td>
+    <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.244 of the Vulkan headers and later.
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_LOG_FILE=~/vulkan_loader_log.txt<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_LOG_FILE=%TMP%\\vulkan_loader_log.txt<br/>
     </small></td>
   </tr>
   <tr>
@@ -826,6 +877,29 @@ discovery.
   </tr>
   <tr>
     <td><small>
+        <i>VK_LOADER_LAYER_EXIT_ON_MISSING</i>
+    </small></td>
+    <td><small>
+        If a layer requested with <i>VK_INSTANCE_LAYERS</i> is not found, setting
+        this environment variable to `1` will cause instance creation to fail with
+        <i>VK_ERROR_LAYER_NOT_PRESENT</i>.<br/>
+        This is useful for ensuring that all the layers enabled through
+        <i>VK_INSTANCE_LAYERS</i> were properly loaded.
+    </small></td>
+    <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.247 of the Vulkan headers and later.
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_LAYER_EXIT_ON_MISSING=1<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_LAYER_EXIT_ON_MISSING=1<br/>
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
         <i>VK_LOADER_LAYERS_ENABLE</i>
     </small></td>
     <td><small>
@@ -835,9 +909,6 @@ discovery.
         Known layers are those which are found by the loader taking into account
         default search paths and other environment variables
         (like <i>VK_LAYER_PATH</i>).
-        <br/>
-        This has replaced the older deprecated environment variable
-        <i>VK_INSTANCE_LAYERS</i>
     </small></td>
     <td><small>
         This functionality is only available with Loaders built with version
@@ -930,34 +1001,6 @@ may be removed in a future loader release.
         set<br/>
         &nbsp;&nbsp;VK_ICD_FILENAMES=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<folder_a>\nvidia.json;<folder_b>\mesa.json
-    </small></td>
-  </tr>
-  <tr>
-    <td><small>
-        <i>VK_INSTANCE_LAYERS</i>
-    </small></td>
-    <td><small>
-        Force the loader to add the given layers to the list of Enabled layers
-        normally passed into <b>vkCreateInstance</b>.
-        These layers are added first, and the loader will remove any duplicate
-        layers that appear in both this list as well as that passed into
-        <i>ppEnabledLayerNames</i>.
-    </small></td>
-    <td><small>
-        This has been deprecated by <i>VK_LOADER_LAYERS_ENABLE</i>.
-        It also overrides any layers disabled with
-        <i>VK_LOADER_LAYERS_DISABLE</i>.
-    </small></td>
-    <td><small>
-        None
-    </small></td>
-    <td><small>
-        export<br/>
-        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;<br/><br/>
-        set<br/>
-        &nbsp;&nbsp;VK_INSTANCE_LAYERS=<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;layer_a&gt;;&lt;layer_b&gt;
     </small></td>
   </tr>
 </table>

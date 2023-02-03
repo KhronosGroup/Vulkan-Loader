@@ -22,6 +22,8 @@
 - [Debugging Possible Driver Issues](#debugging-possible-driver-issues)
   - [Enable Driver Logging](#enable-driver-logging)
   - [Selectively Enable Specific Drivers](#selectively-enable-specific-drivers)
+- [Forcing Specific Layers In Order](#forcing-specific-layers-in-order)
+  - [Forcing Instance Creation Failure If Layer Not Found](#forcing-instance-creation-failure-if-layer-not-found)
 
 ## Debugging Issues
 
@@ -329,3 +331,25 @@ For more info on how to use the filtering environment variables, refer to the
 [Driver Filtering](LoaderDriverInterface.md#driver-filtering) section of the
 [LoaderDriverInterface](LoaderDriverInterface.md) document.
 
+
+## Forcing Specific Layers In Order
+
+When enabling layers using environment variables, and the order is important,
+`VK_INSTANCE_LAYERS` can be used.
+The names of the layers supplied are separated by the platform specific path
+separator (typically `:` on Posix and `;` on Windows) and contain each layers
+full name.
+These layers will only be loaded if they are found in one of the system
+installed paths or a path defined by one of the loader environment variables
+used to adjust layer searching (like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`).
+
+### Forcing Instance Creation Failure If Layer Not Found
+
+By default `VK_INSTANCE_LAYERS` will not cause instance creation to fail if
+the listed layers are not found. Rather, it will print a error message but
+otherwise continue on without it.
+To force the loader to fail to create an instance if any of the layers in
+`VK_INSTANCE_LAYERS` are missing, set the environment variable
+`VK_LOADER_LAYER_EXIT_ON_MISSING` equal to `1`.
+This forces the loader to return `VK_ERROR_LAYER_NOT_PRESENT` from
+`vkCreateInstance`.

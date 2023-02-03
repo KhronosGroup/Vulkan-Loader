@@ -206,15 +206,15 @@ int32_t compare_device_groups(const void *a, const void *b) {
 // Search for the default device using the loader environment variable.
 static void linux_env_var_default_device(struct loader_instance *inst, uint32_t device_count,
                                          struct LinuxSortedDeviceInfo *sorted_device_info) {
-    if (inst->settings->device_settings.device_select_enabled) {
+    if (inst->settings->physical_device_settings.device_select_enabled) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "linux_env_var_default_device:  Found \'VK_LOADER_DEVICE_SELECT\' set to %s",
-                   inst->settings->device_settings.device_select_string);
+                   inst->settings->physical_device_settings.device_select_string);
 
         // The environment variable exists, so grab the vendor ID and device ID of the
         // selected default device
         unsigned vendor_id, device_id;
-        int32_t matched = sscanf(inst->settings->device_settings.device_select_string, "%x:%x", &vendor_id, &device_id);
+        int32_t matched = sscanf(inst->settings->physical_device_settings.device_select_string, "%x:%x", &vendor_id, &device_id);
         if (matched == 2) {
             for (int32_t i = 0; i < (int32_t)device_count; ++i) {
                 if (sorted_device_info[i].vendor_id == vendor_id && sorted_device_info[i].device_id == device_id) {

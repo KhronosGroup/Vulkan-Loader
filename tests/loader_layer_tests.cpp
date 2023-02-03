@@ -1825,8 +1825,8 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
     ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + env_var_layer_name));
     ASSERT_TRUE(env.debug_log.find(std::string("Found environment var `VK_LAYER_PATH`, using value: `") +
                                    env.env_var_vk_layer_paths.value()));
-    ASSERT_TRUE(env.debug_log.find(
-        std::string("Ignoring any environment variable paths like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`")));
+    ASSERT_TRUE(
+        env.debug_log.find(std::string("Ignoring any environment variable paths like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`")));
 
     env.layers.clear();
 }
@@ -4072,6 +4072,25 @@ TEST(TestLayers, InstEnvironEnableExplicitLayer) {
     handle_assert_has_value(pfn_GetSwapchainStatusAfter);
 
     ASSERT_EQ(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, pfn_GetSwapchainStatusAfter(dev2.dev, VK_NULL_HANDLE));
+
+    // Make sure an unknown layer in VK_INSTANCE_LAYERS doesn't crash
+
+    // Now setup the instance layer
+    instance_layers_env_var.add_to_list("VK_LAYER_LUNARG_bad_layer");
+
+    // Now, test an instance/device with the layer forced on.  The extensions should be present and
+    // the function pointers should be valid.
+    InstWrapper inst3{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate();
+    ASSERT_TRUE(env.debug_log.find("Failed to find forced on layer 'VK_LAYER_LUNARG_bad_layer'"));
+
+    // Make sure if VK_LOADER_LAYER_EXIT_ON_MISSING returns the error VK_ERROR_LAYER_NOT_PRESENT with VK_INSTANCE_LAYERS
+    EnvVarWrapper exit_on_missing_layer{"VK_LOADER_LAYER_EXIT_ON_MISSING", "1"};
+    InstWrapper inst4{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst4.create_info, env.debug_log);
+    inst4.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
+    ASSERT_TRUE(env.debug_log.find("Failed to find forced on layer 'VK_LAYER_LUNARG_bad_layer'"));
 }
 
 // Verify that VK_LOADER_LAYERS_ENABLE work.  To test this, make sure that an explicit layer does not affect an instance until

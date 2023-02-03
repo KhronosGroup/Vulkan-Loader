@@ -107,8 +107,7 @@ bool loader_find_layer_name_in_list(const char *name, const struct loader_layer_
 VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_layer_list *list,
                                              uint32_t prop_list_count, const struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
-VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                               const struct loader_envvar_disable_layers_filter *disable_filter,
+VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_settings *settings,
                                const struct loader_layer_properties *prop, struct loader_layer_list *target_list,
                                struct loader_layer_list *expanded_target_list, const struct loader_layer_list *source_list,
                                bool *out_found_all_component_layers);
@@ -181,7 +180,7 @@ VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance *inst, uint32
                                             VkPhysicalDeviceGroupProperties *groups);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
-char *loader_get_next_path(char *path);
+char *loader_get_next_list_item(char *path, char separator);
 VkResult add_data_files(const struct loader_instance *inst, uint32_t search_path_count, char **search_path_array,
                         struct loader_data_files *out_files, bool use_first_found_manifest);
 
