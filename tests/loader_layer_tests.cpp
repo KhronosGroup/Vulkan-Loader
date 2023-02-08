@@ -3563,8 +3563,6 @@ TEST(TestLayers, InstEnvironEnableExplicitLayer) {
     ASSERT_DEATH(inst4.functions->vkCreateInstance(inst4.create_info.get(), inst4.callbacks, &inst4.inst), "");
     ASSERT_TRUE(env.debug_log.find("Failed to find forced on layer 'VK_LAYER_LUNARG_bad_layer'"));
     exit_on_missing_layer.remove_value();
-
- 
 }
 
 // Verify that VK_LOADER_LAYERS_ENABLE work.  To test this, make sure that an explicit layer does not affect an instance until

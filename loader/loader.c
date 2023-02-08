@@ -37,11 +37,6 @@
 #include <string.h>
 #include <stddef.h>
 
-#if defined(__APPLE__)
-#include <CoreFoundation/CoreFoundation.h>
-#include <sys/param.h>
-#endif
-
 #include <sys/types.h>
 #if defined(_WIN32)
 #include "dirent_on_windows.h"
@@ -1479,7 +1474,7 @@ VkResult loader_add_direct_driver(const struct loader_instance *inst, uint32_t i
     new_scanned_icd->lib_name = NULL;
     icd_tramp_list->count++;
 
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0,
                "loader_add_direct_driver: Adding driver found in index %d of "
                "VkDirectDriverLoadingListLUNARG::pDrivers structure. pfnGetInstanceProcAddr was set to %p",
                index, pDriver->pfnGetInstanceProcAddr);
@@ -1538,7 +1533,7 @@ VkResult loader_scan_for_direct_drivers(const struct loader_instance *inst, cons
     // If we are using exclusive mode, skip looking for any more drivers from system or environment variables
     if (ddl_list->mode == VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG) {
         *direct_driver_loading_exclusive_mode = true;
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_scan_for_direct_drivers: The VK_LUNARG_direct_driver_loading extension is active and specified "
                    "VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG, skipping system and environment "
                    "variable driver search mechanisms.");
@@ -2070,9 +2065,8 @@ static bool verify_meta_layer_component_layers(const struct loader_instance *ins
         }
     }
     if (success) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                   "Meta-layer \"%s\" all %d component layers appear to be valid.", prop->info.layerName,
-                   prop->num_component_layers);
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Meta-layer \"%s\" all %d component layers appear to be valid.",
+                   prop->info.layerName, prop->num_component_layers);
 
         // If layer logging is on, list the internals included in the meta-layer
         if ((settings->log_settings.enabled_log_flags & VULKAN_LOADER_LAYER_BIT) != 0) {
@@ -2147,7 +2141,7 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
                     }
                 }
                 if (!found_active_override_layer) {
-                    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0,
                                "--Override layer found but not used because app \'%s\' is not in \'app_keys\' list!", cur_path);
 
                     // Remove non-global override layers that don't have an app_key that matches cur_path
@@ -2174,9 +2168,9 @@ static void remove_all_non_valid_override_layers(struct loader_instance *inst, s
     }
     // Should be at most 1 override layer in the list now.
     if (found_active_override_layer) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Using the override layer for app key %s", cur_path);
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Using the override layer for app key %s", cur_path);
     } else if (global_layer_index >= 0) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Using the global override layer");
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Using the global override layer");
     }
 }
 
@@ -2353,7 +2347,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
         // This is now, officially, a meta-layer
         props->type_flags |= VK_LAYER_TYPE_FLAG_META_LAYER;
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Encountered meta-layer \"%s\"", name);
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Encountered meta-layer \"%s\"", name);
 
         // Make sure we set up other things so we head down the correct branches below
         library_path_str = NULL;
@@ -2470,7 +2464,7 @@ static VkResult loader_read_layer_json(const struct loader_instance *inst, struc
 
     // Make sure the layer's manifest doesn't contain a non zero variant value
     if (VK_API_VERSION_VARIANT(props->info.specVersion) != 0) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0,
                    "Layer \"%s\" has an \'api_version\' field which contains a non-zero variant value of %d. "
                    " Skipping Layer.",
                    props->info.layerName, VK_API_VERSION_VARIANT(props->info.specVersion));
@@ -2810,7 +2804,7 @@ static VkResult loader_add_layer_properties(const struct loader_instance *inst, 
     json_version = loader_make_full_version(loader_parse_version_string(file_vers));
 
     if (!is_valid_layer_json_version(&json_version)) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0,
                    "loader_add_layer_properties: %s has unknown layer manifest file version %d.%d.%d.  May cause errors.", filename,
                    json_version.major, json_version.minor, json_version.patch);
     }
@@ -3118,6 +3112,9 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
         case LOADER_DATA_FILE_MANIFEST_DRIVER:
         default:
             log_flags |= VULKAN_LOADER_DRIVER_BIT;
+#if defined(__APPLE__)
+            use_first_found_manifest = true;
+#endif
             break;
         case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
             log_flags |= VULKAN_LOADER_LAYER_BIT;
@@ -3342,7 +3339,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 
     // Loader only knows versions 1.0.0 and 1.0.1, anything above it is unknown
     if (loader_check_version_meets_required(loader_combine_version(1, 0, 2), json_file_version)) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: %s has unknown icd manifest file version %d.%d.%d. May cause errors.", file_str,
                    json_file_version.major, json_file_version.minor, json_file_version.patch);
     }
@@ -3421,7 +3418,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
     icd->version = loader_parse_version_string(version_str);
 
     if (VK_API_VERSION_VARIANT(icd->version) != 0) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Driver's ICD JSON %s \'api_version\' field contains a non-zero variant value of %d. "
                    " Skipping ICD JSON.",
                    file_str, VK_API_VERSION_VARIANT(icd->version));
@@ -4565,8 +4562,8 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 activated_layers[num_activated_layers].disable_env = layer_prop->disable_env_var.name;
             }
 
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Insert instance layer \"%s\" (%s)",
-                       layer_prop->info.layerName, layer_prop->lib_name);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Insert instance layer \"%s\" (%s)", layer_prop->info.layerName,
+                       layer_prop->lib_name);
 
             num_activated_layers++;
         }
@@ -4659,11 +4656,11 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
-        if ((inst->settings->log_settings.enabled_log_flags & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if ((inst->settings->log_settings.enabled_log_flags & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT)) != 0) {
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "vkCreateInstance layer callstack set to:");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Application>");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader>");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader Trampoline>");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
                 uint32_t index = num_activated_layers - cur_layer - 1;
@@ -4678,6 +4675,8 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             }
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader Terminator>");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Drivers>");
         }
 
@@ -4881,8 +4880,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                 } else
                     fpGDPA = (PFN_vkGetDeviceProcAddr)loader_platform_get_proc_address(lib_handle, layer_prop->functions.str_gdpa);
                 if (!fpGDPA) {
-                    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                               "Failed to find vkGetDeviceProcAddr in layer \"%s\"", layer_prop->lib_name);
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Failed to find vkGetDeviceProcAddr in layer \"%s\"",
+                               layer_prop->lib_name);
                     continue;
                 }
             }
@@ -4902,8 +4901,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                 activated_layers[num_activated_layers].disable_env = layer_prop->disable_env_var.name;
             }
 
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Inserted device layer \"%s\" (%s)",
-                       layer_prop->info.layerName, layer_prop->lib_name);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Inserted device layer \"%s\" (%s)", layer_prop->info.layerName,
+                       layer_prop->lib_name);
 
             num_activated_layers++;
         }
@@ -4921,14 +4920,14 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
-        uint32_t layer_driver_bits = VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT;
+        uint32_t layer_driver_bits = VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT;
         if ((inst->settings->log_settings.enabled_log_flags & layer_driver_bits) != 0) {
-            loader_log(inst, layer_driver_bits, 0, "vkCreateDevice layer callstack setup to:");
-            loader_log(inst, layer_driver_bits, 0, "   <Application>");
-            loader_log(inst, layer_driver_bits, 0, "     ||");
-            loader_log(inst, layer_driver_bits, 0, "   <Loader>");
-            loader_log(inst, layer_driver_bits, 0, "     ||");
-            if ((inst->settings->log_settings.enabled_log_flags & VULKAN_LOADER_LAYER_BIT) != 0) {
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "vkCreateDevice layer callstack setup to:");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "   <Application>");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     ||");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "   <Loader>");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     ||");
+            if ((inst->settings->log_settings.enabled_log_flags & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT)) != 0) {
                 for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
                     uint32_t index = num_activated_layers - cur_layer - 1;
                     loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
@@ -4943,7 +4942,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                     loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
                 }
             }
-            loader_log(inst, layer_driver_bits, 0, "   <Device>");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "   <Device>");
         }
         create_info_disp.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp;

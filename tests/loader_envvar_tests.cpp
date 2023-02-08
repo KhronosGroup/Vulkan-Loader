@@ -708,3 +708,62 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because not selected by env var"));
     ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 }
+
+// Test the loader log file environment variable works
+TEST(EnvVarICDOverrideSetup, LoaderLogFile) {
+    FrameworkEnvironment env{};
+    EnvVarWrapper filter_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
+    const std::string log_file_name = "test_vulkan_loader_log.txt";
+    EnvVarWrapper log_loader_to_file{"VK_LOADER_LOG_FILE", log_file_name.c_str()};
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_disable_icd_inc(true).set_json_name("ABC_ICD"));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_2}.set_disable_icd_inc(true).set_json_name("BCD_ICD"));
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_3}.set_disable_icd_inc(true).set_json_name("CDE_ICD"));
+
+    InstWrapper inst1{env.vulkan_functions};
+    inst1.CheckCreate();
+
+    // NOTE: This test reads the log file while it is still open by the instance.
+    // It works, but this seems risky.
+    bool found[3] = {false, false, false};
+    char buffer[2048];
+    char* fp_ret;
+    FILE* fp = nullptr;
+
+#if defined(_WIN32)
+    errno_t err = fopen_s(&fp, log_file_name.c_str(), "rt");
+    ASSERT_EQ(0, err);
+#else
+    fp = fopen(log_file_name.c_str(), "rt");
+#endif
+    ASSERT_NE(nullptr, fp);
+    do {
+        fp_ret = fgets(buffer, 2047, fp);
+        buffer[2047] = '\0';
+        if (fp_ret != nullptr) {
+            std::string tmp = buffer;
+            if (std::string::npos != tmp.find("Found ICD manifest file")) {
+                if (std::string::npos != tmp.find("ABC_ICD.json")) {
+                    found[0] = true;
+                }
+                if (std::string::npos != tmp.find("BCD_ICD.json")) {
+                    found[1] = true;
+                }
+                if (std::string::npos != tmp.find("CDE_ICD.json")) {
+                    found[2] = true;
+                }
+            }
+        }
+    } while (fp_ret != nullptr && !feof(fp));
+    fclose(fp);
+#if defined(WIN32)
+    DeleteFileW(widen(log_file_name).c_str());
+#else
+    unlink(log_file_name.c_str());
+#endif
+    ASSERT_TRUE(found[0]);
+    ASSERT_TRUE(found[1]);
+    ASSERT_TRUE(found[2]);
+
+    log_loader_to_file.remove_value();
+}

@@ -717,6 +717,7 @@ discovery.
         &nbsp;&nbsp;* debug (only debug)<br/>
         &nbsp;&nbsp;* layer (layer-specific output)<br/>
         &nbsp;&nbsp;* driver (driver-specific output)<br/>
+        &nbsp;&nbsp;* setting (setting-specific output)<br/>
         &nbsp;&nbsp;* all (report out all messages)<br/><br/>
         To enable multiple options (outside of "all") like info, warning and
         error messages, set the value to "error,warn,info".
