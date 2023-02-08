@@ -56,5 +56,6 @@ VkResult generate_complete_search_path(const struct loader_instance *inst, enum 
                                        const char *default_path, const char *override_path, const char *add_path, uint32_t *count,
                                        char ***value);
 void free_list(const struct loader_instance *inst, uint32_t *count, char ***list);
+void free_search_path(const struct loader_instance *inst, char **search_path);
 VkResult generate_settings_struct(struct loader_instance *inst, struct loader_settings **set_struc);
 void free_settings_struct(struct loader_instance *inst, struct loader_settings **set_struct);

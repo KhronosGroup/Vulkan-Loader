@@ -30,6 +30,14 @@
 #include "loader_environment.h"
 #include "vk_loader_platform.h"
 
+#if defined(WIN32)
+#include "loader_windows.h"
+#endif
+#if defined(__APPLE__)
+#include <CoreFoundation/CoreFoundation.h>
+#include <sys/param.h>
+#endif
+
 #include "allocation.h"
 #include "loader.h"
 #include "log.h"
@@ -928,7 +936,7 @@ VkResult parse_env_loader_log_settings(struct loader_instance *inst, struct load
             settings->log_filename[len] = '\0';
             settings->log_to_file = true;
         } else {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed allocating loader log file name");
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Failed allocating loader log file name");
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
         }
     }
@@ -943,7 +951,7 @@ VkResult parse_env_instance_settings(struct loader_instance *inst, struct loader
     }
     env = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", inst);
     if (NULL != env && atoi(env) != 0) {
-        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Found environment var 'VK_LOADER_DISABLE_INST_EXT_FILTER' set to %s", env);
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "Found environment var 'VK_LOADER_DISABLE_INST_EXT_FILTER' set to %s", env);
         instance_settings->disable_instance_extension_filter = true;
     }
     loader_free_getenv(env, inst);
@@ -958,7 +966,7 @@ VkResult parse_env_layer_settings(struct loader_instance *inst, struct loader_la
     }
     env = loader_getenv("VK_LOADER_LAYER_EXIT_ON_MISSING", inst);
     if (NULL != env && atoi(env) != 0) {
-        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Found environment var 'VK_LOADER_LAYER_EXIT_ON_MISSING' set to %s", env);
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "Found environment var 'VK_LOADER_LAYER_EXIT_ON_MISSING' set to %s", env);
         layer_settings->exit_on_missing_layer = true;
     }
     loader_free_getenv(env, inst);
@@ -1010,7 +1018,7 @@ VkResult parseEnvPhysicalDeviceSettings(struct loader_instance *inst,
     char *env_value = loader_getenv("VK_LOADER_DISABLE_SELECT", inst);
     if (NULL != env_value && atoi(env_value) != 0) {
         // Device select disabled so bail out early
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT | VULKAN_LOADER_SETTING_BIT, 0,
                    "Found environment var `VK_LOADER_DISABLE_SELECT` set to non-zero.  Disabling device sorting.");
         loader_free_getenv(env_value, inst);
         physical_device_settings->device_sorting_enabled = false;
@@ -1018,12 +1026,13 @@ VkResult parseEnvPhysicalDeviceSettings(struct loader_instance *inst,
         char *selection = loader_getenv("VK_LOADER_DEVICE_SELECT", inst);
         size_t string_len = selection == NULL ? 0 : strlen(selection);
         if (NULL != selection && 1 < string_len) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_DRIVER_BIT | VULKAN_LOADER_SETTING_BIT, 0,
                        "Found environment var `VK_LOADER_DEVICE_SELECT` set %s", selection);
             physical_device_settings->device_select_string =
                 loader_instance_heap_alloc(inst, string_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == physical_device_settings->device_select_string) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed allocating loader settings structure");
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_SETTING_BIT, 0,
+                           "Failed allocating loader settings structure");
                 res = VK_ERROR_OUT_OF_HOST_MEMORY;
             } else {
                 strncpy(physical_device_settings->device_select_string, selection, string_len);
@@ -1167,7 +1176,9 @@ VkResult loader_default_search_paths(const struct loader_instance *inst, char **
         char **target_pointer = NULL;
         char *cur_path_ptr = NULL;
         size_t search_path_size = 2;  // Add two for NULL terminator and one path separator (just in case)
+#if !defined(_WIN32)
         size_t rel_size = 0;
+#endif
         bool settings_file_search = false;
         switch (pass) {
             case 0:
@@ -1245,6 +1256,7 @@ VkResult loader_default_search_paths(const struct loader_instance *inst, char **
         // Looks for manifests in the bundle first, before any system directories.
         CFBundleRef main_bundle = CFBundleGetMainBundle();
         if (NULL != main_bundle) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Found Apple Main Bundle");
             CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);
             if (NULL != ref) {
                 if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)cur_path_ptr, search_path_size)) {
@@ -1252,10 +1264,9 @@ VkResult loader_default_search_paths(const struct loader_instance *inst, char **
                     *cur_path_ptr++ = DIRECTORY_SYMBOL;
                     memcpy(cur_path_ptr, relative_folder, rel_size);
                     cur_path_ptr += rel_size;
+                    *cur_path_ptr = '\0';  // Just for debugging
+                    loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Using path for Apple Bundle Path %s", *target_pointer);
                     *cur_path_ptr++ = PATH_SEPARATOR;
-                    if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
-                        use_first_found_manifest = true;
-                    }
                 }
                 CFRelease(ref);
             }
@@ -1318,10 +1329,10 @@ out:
 // Loader File Settings handling
 
 // Determine if the environment variables indicate that driver should be modified.
+#define MAX_SETTINGS_LINE_LEN 1024
 VkResult parse_settings_file(struct loader_instance *inst, struct loader_settings *settings,
                              uint32_t settings_file_search_paths_count, char **settings_file_search_paths) {
-    const uint32_t temp_string_len = 1024;
-    char temp_string[temp_string_len];
+    char temp_string[MAX_SETTINGS_LINE_LEN];
     const char loader_settings_file[] = "vk_loader_settings.txt";
     FILE *settings_file = NULL;
     if (NULL == settings || 0 == settings_file_search_paths_count || NULL == settings_file_search_paths) {
@@ -1329,14 +1340,21 @@ VkResult parse_settings_file(struct loader_instance *inst, struct loader_setting
     }
     for (uint32_t path = 0; path < settings_file_search_paths_count; ++path) {
         if (strlen(settings_file_search_paths[path]) > strlen(temp_string) - strlen(loader_settings_file) - 2) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Settings file path %s is too long, skipping.",
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Settings file path %s is too long, skipping.",
                        settings_file_search_paths[path]);
             continue;
         }
-        snprintf(temp_string, temp_string_len, "%s%c%s", settings_file_search_paths[path], DIRECTORY_SYMBOL, loader_settings_file);
+        snprintf(temp_string, MAX_SETTINGS_LINE_LEN, "%s%c%s", settings_file_search_paths[path], DIRECTORY_SYMBOL,
+                 loader_settings_file);
+
+#if defined(_WIN32)
+        errno_t err = fopen_s(&settings_file, temp_string, "rt");
+        if (err == 0 && settings_file != NULL) {
+#else
         settings_file = fopen(temp_string, "rt");
         if (settings_file != NULL) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Using Loader settings file %s", temp_string);
+#endif
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Using Loader settings file %s", temp_string);
             break;
         }
     }
@@ -1428,7 +1446,7 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
     struct loader_settings *settings =
         loader_instance_heap_calloc(inst, sizeof(struct loader_settings), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (settings == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed allocating loader settings structure");
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Failed allocating loader settings structure");
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     *set_struct = settings;
@@ -1568,7 +1586,8 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
         settings->log_settings.log_file = fopen(settings->log_settings.log_filename, "at");
         if (NULL == settings->log_settings.log_file) {
             settings->log_settings.log_to_file = false;
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "Failed opening loader log file %s", settings->log_settings.log_file);
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Failed opening loader log file %s",
+                       settings->log_settings.log_file);
         }
     }
 

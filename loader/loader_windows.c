@@ -184,10 +184,10 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
 
     if (ret != ERROR_SUCCESS) {
         if (ret == ERROR_FILE_NOT_FOUND) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0,
                        "windows_get_device_registry_entry: Device ID(%d) Does not contain a value for \"%s\"", dev_id, value_name);
         } else {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0,
                        "windows_get_device_registry_entry: DeviceID(%d) Failed to obtain %s size", dev_id, value_name);
         }
         goto out;
@@ -701,7 +701,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
                                              struct loader_data_files *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char *search_path = NULL;
-    const char **search_path_array = NULL;
+    char **search_path_array = NULL;
     uint32_t search_path_count = 0;
     uint32_t log_target_flag = 0;
 

@@ -218,9 +218,8 @@ static void linux_env_var_default_device(struct loader_instance *inst, uint32_t 
         if (matched == 2) {
             for (int32_t i = 0; i < (int32_t)device_count; ++i) {
                 if (sorted_device_info[i].vendor_id == vendor_id && sorted_device_info[i].device_id == device_id) {
-                    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                               "linux_env_var_default_device:  Found default at index %u \'%s\'", i,
-                               sorted_device_info[i].device_name);
+                    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "linux_env_var_default_device:  Found default at index %u \'%s\'",
+                               i, sorted_device_info[i].device_name);
                     sorted_device_info[i].default_device = true;
                     break;
                 }
@@ -243,8 +242,8 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
         goto out;
     }
 
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_read_sorted_physical_devices:");
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     Original order:");
+    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "linux_read_sorted_physical_devices:");
+    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "     Original order:");
 
     // Grab all the necessary info we can about each device
     uint32_t index = 0;
@@ -310,8 +309,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
                     sorted_device_info[index].has_pci_bus_info = false;
                 }
             }
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s", index,
-                       sorted_device_info[index].device_name);
+            loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s", index, sorted_device_info[index].device_name);
             index++;
         }
     }
@@ -323,7 +321,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     qsort(sorted_device_info, phys_dev_count, sizeof(struct LinuxSortedDeviceInfo), compare_devices);
 
     // If we have a selected index, add that first.
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "     Sorted order:");
+    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "     Sorted order:");
 
     // Add all others after (they've already been sorted)
     for (uint32_t dev = 0; dev < phys_dev_count; ++dev) {
@@ -331,8 +329,8 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
         sorted_device_term[dev]->icd_index = sorted_device_info[dev].icd_index;
         sorted_device_term[dev]->phys_dev = sorted_device_info[dev].physical_device;
         loader_set_dispatch((void *)sorted_device_term[dev], inst->disp);
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s  %s", dev,
-                   sorted_device_info[dev].device_name, (sorted_device_info[dev].default_device ? "[default]" : ""));
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s  %s", dev, sorted_device_info[dev].device_name,
+                   (sorted_device_info[dev].default_device ? "[default]" : ""));
     }
 
 out:
@@ -347,10 +345,10 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
     VkResult res = VK_SUCCESS;
     bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
 
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Original order:");
+    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Original order:");
 
     for (uint32_t group = 0; group < group_count; ++group) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
 
         struct loader_icd_term *icd_term = sorted_group_term[group].this_icd_term;
         for (uint32_t gpu = 0; gpu < sorted_group_term[group].group_props.physicalDeviceCount; ++gpu) {
@@ -413,7 +411,7 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
                     sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info = false;
                 }
             }
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "               [%u] %s", gpu,
+            loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "               [%u] %s", gpu,
                        sorted_group_term[group].internal_device_info[gpu].device_name);
         }
 
@@ -436,11 +434,11 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
     qsort(sorted_group_term, group_count, sizeof(struct loader_physical_device_group_term), compare_device_groups);
 
     if (inst->settings->log_settings.enabled_log_flags & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT)) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Sorted order:");
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Sorted order:");
         for (uint32_t group = 0; group < group_count; ++group) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
+            loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
             for (uint32_t gpu = 0; gpu < sorted_group_term[group].group_props.physicalDeviceCount; ++gpu) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "               [%u] %s %p %s", gpu,
+                loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "               [%u] %s %p %s", gpu,
                            sorted_group_term[group].internal_device_info[gpu].device_name,
                            sorted_group_term[group].internal_device_info[gpu].physical_device,
                            (sorted_group_term[group].internal_device_info[gpu].default_device ? "[default]" : ""));

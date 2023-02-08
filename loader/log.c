@@ -71,10 +71,12 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         } else if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-        } else if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0 || (msg_type & VULKAN_LOADER_DRIVER_BIT) != 0 ||
-                   (msg_type & VULKAN_LOADER_SETTING_BIT) != 0) {
-            // Just driver, layer, or setting bit should be treated as an info message in debug utils.
+        } else if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0 || (msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
+            // Just driver or layer bit should be treated as an info message in debug utils.
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        } else if ((msg_type & VULKAN_LOADER_SETTING_BIT) != 0) {
+            // Just setting bit should be treated as a verbose message in debug utils.
+            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
         }
 
         if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
@@ -208,6 +210,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
             // NOTE: We allow the same message to go to all 3 if the user desires.
             if (settings->log_settings.log_to_file && settings->log_settings.log_file != NULL) {
                 fprintf(settings->log_settings.log_file, "%s\n", cmd_line_msg);
+                fflush(settings->log_settings.log_file);
             }
             if ((is_error && settings->log_settings.log_errors_to_stderr) ||
                 (!is_error && settings->log_settings.log_nonerrors_to_stderr)) {
