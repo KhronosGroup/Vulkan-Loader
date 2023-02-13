@@ -100,7 +100,7 @@ jobs:
               run: |-
                 sudo dpkg --add-architecture i386
                 sudo apt-get update
-                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6-dev-i386 pkg-config-i686-linux-gnu libwayland-dev:i386 libxrandr-dev:i386 libx11-dev:i386
+                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6-dev-i386 pkg-config-i686-linux-gnu libwayland-dev:i386 libxrandr-dev:i386
             - name: Generate build files
               run: cmake -S. -B build -D CMAKE_BUILD_TYPE=${{matrix.config}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON
               env:
@@ -108,7 +108,6 @@ jobs:
                 CXXFLAGS: -m32
                 LDFLAGS: -m32
                 ASFLAGS: --32
-                PKG_CONFIG: i686-pc-linux-gnu-pkg-config
 
             - name: Build the loader
               run: cmake --build build
