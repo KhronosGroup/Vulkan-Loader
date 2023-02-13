@@ -15,12 +15,8 @@
 # limitations under the License.
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-project(Vulkan-Loader)
-
-# Gets the header version used during code generation
-include(cmake/generated_header_version.cmake)
+project(VULKAN_LOADER VERSION 1.3.240)
 
 add_subdirectory(scripts)
 
