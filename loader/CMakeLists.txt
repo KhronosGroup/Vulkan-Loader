@@ -315,7 +315,7 @@ else()
     add_dependencies(vulkan loader_asm_gen_files)
     set_target_properties(vulkan
                           PROPERTIES SOVERSION "1"
-                          VERSION ${LOADER_GENERATED_HEADER_VERSION})
+                          VERSION ${VULKAN_LOADER_VERSION})
     target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m)
     if (NOT ANDROID)
         target_link_libraries(vulkan PRIVATE Threads::Threads)
@@ -349,7 +349,7 @@ else()
             OUTPUT_NAME vulkan
             FRAMEWORK TRUE
             FRAMEWORK_VERSION A
-            VERSION "${LOADER_GENERATED_HEADER_VERSION}" # "current generated version"
+            VERSION "${VULKAN_LOADER_VERSION}" # "current generated version"
             SOVERSION "1.0.0"                  # "compatibility version"
             MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
             PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
@@ -373,7 +373,6 @@ endif()
 # Generate pkg-config file.
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
-    set(VK_API_VERSION "${LOADER_GENERATED_HEADER_VERSION}")
     set(PRIVATE_LIBS "")
     if (APPLE AND BUILD_STATIC_LOADER)
         # Libs.private should only be present when building a static loader
@@ -406,6 +405,7 @@ if(PKG_CONFIG_FOUND)
         file(RELATIVE_PATH CMAKE_INSTALL_REL_LIBDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_LIBDIR_PC})
         file(RELATIVE_PATH CMAKE_INSTALL_REL_INCLUDEDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_INCLUDEDIR})
     endif()
+    set(VULKAN_LOADER_PKG_CONFIG_NAME "Vulkan-Loader")
     configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()

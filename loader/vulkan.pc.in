@@ -3,10 +3,9 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/@CMAKE_INSTALL_REL_LIBDIR_PC@
 includedir=${prefix}/@CMAKE_INSTALL_REL_INCLUDEDIR_PC@
 
-Name: @CMAKE_PROJECT_NAME@
+Name: @VULKAN_LOADER_PKG_CONFIG_NAME@
 Description: Vulkan Loader
-Version: @VK_API_VERSION@
+Version: @VULKAN_LOADER_VERSION@
 Libs: -L${libdir} -lvulkan@VULKAN_LIB_SUFFIX@
 @PRIVATE_LIBS@
 Cflags: -I${includedir}
-

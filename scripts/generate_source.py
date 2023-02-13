@@ -27,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import datetime
+import re
 
 # files to exclude from --verify check
 verify_exclude = ['.clang-format']
@@ -110,11 +111,12 @@ def main(argv):
 
     # write out the header version used to generate the code to a checked in CMake FIle
     if args.generated_version:
-        f = open(common_codegen.repo_relative('cmake/generated_header_version.cmake'), "w")
-        f.write('# *** THIS FILE IS GENERATED - DO NOT EDIT ***\n')
-        f.write('# See generate_source.py for modifications\n')
-        f.write(f'set(LOADER_GENERATED_HEADER_VERSION {args.generated_version})\n')
-        f.close()
+        # Update the CMake project version
+        with open(common_codegen.repo_relative('CMakeLists.txt'), "r+") as f:
+            data = f.read()
+            f.seek(0)
+            f.write(re.sub("project.*VERSION.*", f"project(VULKAN_LOADER VERSION {args.generated_version})", data))
+            f.truncate()
 
         with open(common_codegen.repo_relative('loader/loader.rc.in'), "r") as rc_file:
             rc_file_contents = rc_file.read()
