@@ -4720,7 +4720,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             size_t size = strlen(pCreateInfo->ppEnabledLayerNames[i]) + 1;
             inst->enabled_layer_names[i] =
                 (char *)loader_instance_heap_calloc(inst, sizeof(char) * size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            strcpy(inst->enabled_layer_names[i], pCreateInfo->ppEnabledLayerNames[i]);
+            strncpy(inst->enabled_layer_names[i], pCreateInfo->ppEnabledLayerNames[i], strlen(pCreateInfo->ppEnabledLayerNames[i]));
         }
     }
 
