@@ -4712,18 +4712,16 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
     if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
         inst->enabled_layer_count = pCreateInfo->enabledLayerCount;
-        inst->enabled_layer_names = (char**)pCreateInfo->ppEnabledLayerNames;
-        /*
-        inst->enabled_layer_names = (char **)loader_instance_heap_alloc(inst, sizeof(char *) * pCreateInfo->enabledLayerCount,
+
+        inst->enabled_layer_names = (char **)loader_instance_heap_calloc(inst, sizeof(char *) * pCreateInfo->enabledLayerCount,
                                                                         VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
 
         for (uint32_t i = 0, n = inst->enabled_layer_count; i < n; ++i) {
             size_t size = strlen(pCreateInfo->ppEnabledLayerNames[i]) + 1;
-            inst->enabled_layer_names[i] = (char *)loader_instance_heap_alloc(inst, sizeof(char) * size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            memset(inst->enabled_layer_names[i], '\0', sizeof(char) * size);
+            inst->enabled_layer_names[i] =
+                (char *)loader_instance_heap_calloc(inst, sizeof(char) * size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             strcpy(inst->enabled_layer_names[i], pCreateInfo->ppEnabledLayerNames[i]);
         }
-        */
     }
 
     if (inst->expanded_activated_layer_list.count > 0) {
