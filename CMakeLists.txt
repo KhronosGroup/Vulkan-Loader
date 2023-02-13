@@ -50,10 +50,6 @@ endif()
 
 include(GNUInstallDirs)
 
-if(UNIX AND NOT APPLE) # i.e.: Linux
-    find_package(PkgConfig)
-endif()
-
 set(GIT_BRANCH_NAME "--unknown--")
 set(GIT_TAG_INFO "--unknown--")
 find_package (Git)
@@ -94,58 +90,47 @@ endif()
 # way while waiting for when updating can occur
 string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
-if(UNIX AND NOT APPLE) # i.e.: Linux
+if(WIN32)
+    option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
+endif()
+
+add_library(platform_wsi INTERFACE)
+if(WIN32)
+    target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_WIN32_KHR)
+elseif(ANDROID)
+    target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_ANDROID_KHR)
+elseif(APPLE)
+    target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
+elseif(UNIX AND NOT APPLE) # i.e.: Linux
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
     option(BUILD_WSI_DIRECTFB_SUPPORT "Build DirectFB WSI support" OFF)
     option(BUILD_WSI_SCREEN_QNX_SUPPORT "Build QNX Screen WSI support" OFF)
 
+    find_package(PkgConfig REQUIRED QUIET) # Use PkgConfig to find Linux system libraries
+
     if(BUILD_WSI_XCB_SUPPORT)
-        find_package(XCB REQUIRED)
-        include_directories(SYSTEM ${XCB_INCLUDE_DIR})
-    endif()
-
-    if(BUILD_WSI_XLIB_SUPPORT)
-        find_package(X11 REQUIRED)
-    endif()
-
-    if(BUILD_WSI_DIRECTFB_SUPPORT)
-        find_package(DirectFB REQUIRED)
-        include_directories(SYSTEM ${DIRECTFB_INCLUDE_DIR})
-    endif()
-
-    if(BUILD_WSI_SCREEN_QNX_SUPPORT)
-        # Part of OS, no additional include directories are required
-    endif()
-endif()
-
-if(WIN32)
-    option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
-endif()
-
-add_library(platform_wsi_defines INTERFACE)
-if(WIN32)
-    target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_WIN32_KHR)
-elseif(ANDROID)
-    target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_ANDROID_KHR)
-elseif(APPLE)
-    target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
-elseif(UNIX AND NOT APPLE) # i.e.: Linux
-    if(BUILD_WSI_XCB_SUPPORT)
-        target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_XCB_KHR)
+        pkg_check_modules(XCB REQUIRED QUIET IMPORTED_TARGET xcb)
+        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_XCB_KHR)
+        target_link_libraries(platform_wsi INTERFACE PkgConfig::XCB)
     endif()
     if(BUILD_WSI_XLIB_SUPPORT)
-        target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_XLIB_KHR VK_USE_PLATFORM_XLIB_XRANDR_EXT)
+        pkg_check_modules(X11 REQUIRED QUIET IMPORTED_TARGET x11)
+        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_XLIB_KHR VK_USE_PLATFORM_XLIB_XRANDR_EXT)
+        target_link_libraries(platform_wsi INTERFACE PkgConfig::X11)
     endif()
     if(BUILD_WSI_WAYLAND_SUPPORT)
-        target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_WAYLAND_KHR)
+        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_WAYLAND_KHR)
     endif()
     if(BUILD_WSI_DIRECTFB_SUPPORT)
-        target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_DIRECTFB_EXT)
+        pkg_check_modules(DirectFB QUIET REQUIRED IMPORTED_TARGET directfb)
+        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_DIRECTFB_EXT)
+        target_link_libraries(platform_wsi INTERFACE PkgConfig::DirectFB)
     endif()
     if(BUILD_WSI_SCREEN_QNX_SUPPORT)
-        target_compile_definitions(platform_wsi_defines INTERFACE VK_USE_PLATFORM_SCREEN_QNX)
+        # Part of OS, no additional include directories are required
+        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_SCREEN_QNX)
     endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
@@ -153,7 +138,7 @@ endif()
 
 add_library(loader_common_options INTERFACE)
 target_compile_definitions(loader_common_options INTERFACE API_NAME="Vulkan")
-target_link_libraries(loader_common_options INTERFACE platform_wsi_defines)
+target_link_libraries(loader_common_options INTERFACE platform_wsi)
 
 # Enable beta Vulkan extensions
 target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)

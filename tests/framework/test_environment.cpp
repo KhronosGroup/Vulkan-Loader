@@ -605,7 +605,7 @@ testing::AssertionResult create_surface(InstWrapper& inst, VkSurfaceKHR& surface
                                                                                                "vkCreateAndroidSurfaceKHR");
 #elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
     return create_surface_helper<PFN_vkCreateDirectFBSurfaceEXT, VkDirectFBSurfaceCreateInfoEXT>(inst, surface,
-                                                                                                 "vkCreateDirectFBSurfaceEXT")
+                                                                                                 "vkCreateDirectFBSurfaceEXT");
 #elif defined(VK_USE_PLATFORM_FUCHSIA)
     return create_surface_helper<PFN_vkCreateImagePipeSurfaceFUCHSIA, VkImagePipeSurfaceCreateInfoFUCHSIA>(
         inst, surface, "vkCreateImagePipeSurfaceFUCHSIA");
