@@ -4710,20 +4710,6 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
     memcpy(&loader_create_info, pCreateInfo, sizeof(VkInstanceCreateInfo));
 
-    if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
-        inst->enabled_layer_count = pCreateInfo->enabledLayerCount;
-
-        inst->enabled_layer_names = (char **)loader_instance_heap_calloc(inst, sizeof(char *) * pCreateInfo->enabledLayerCount,
-                                                                        VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-
-        for (uint32_t i = 0, n = inst->enabled_layer_count; i < n; ++i) {
-            size_t size = strlen(pCreateInfo->ppEnabledLayerNames[i]) + 1;
-            inst->enabled_layer_names[i] =
-                (char *)loader_instance_heap_calloc(inst, sizeof(char) * size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            strncpy(inst->enabled_layer_names[i], pCreateInfo->ppEnabledLayerNames[i], strlen(pCreateInfo->ppEnabledLayerNames[i]));
-        }
-    }
-
     if (inst->expanded_activated_layer_list.count > 0) {
         chain_info.u.pLayerInfo = NULL;
         chain_info.pNext = pCreateInfo->pNext;
@@ -4984,6 +4970,20 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     if (res == VK_SUCCESS) {
         loader_init_instance_core_dispatch_table(&inst->disp->layer_inst_disp, next_gipa, *created_instance);
         inst->instance = *created_instance;
+    }
+
+    if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
+        inst->enabled_layer_count = pCreateInfo->enabledLayerCount;
+
+        inst->enabled_layer_names = (char **)loader_instance_heap_calloc(inst, sizeof(char *) * pCreateInfo->enabledLayerCount,
+                                                                         VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+
+        for (uint32_t i = 0, n = inst->enabled_layer_count; i < n; ++i) {
+            size_t size = strlen(pCreateInfo->ppEnabledLayerNames[i]) + 1;
+            inst->enabled_layer_names[i] =
+                (char *)loader_instance_heap_calloc(inst, sizeof(char) * size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            strncpy(inst->enabled_layer_names[i], pCreateInfo->ppEnabledLayerNames[i], strlen(pCreateInfo->ppEnabledLayerNames[i]));
+        }
     }
 
     return res;
@@ -5852,7 +5852,6 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     loader_free_dev_ext_table(ptr_instance);
     loader_free_phys_dev_ext_table(ptr_instance);
 
-/*
     for (uint32_t i = 0, n = ptr_instance->enabled_layer_count; i < n; ++i) {
         loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names[i]);
     }
@@ -5861,7 +5860,6 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
         loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names);
         memset(&ptr_instance->enabled_layer_names, 0, sizeof(ptr_instance->enabled_layer_names));
     }
-*/
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
