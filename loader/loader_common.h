@@ -309,8 +309,8 @@ struct loader_settings {
     struct loader_instance_settings instance_settings;
     struct loader_log_settings log_settings;
     struct loader_driver_settings driver_settings;
-    struct loader_layer_settings layer_settings;
     struct loader_physical_device_settings physical_device_settings;
+    struct loader_layer_settings layer_settings;
 
     // Global path settings
     uint32_t driver_search_paths_count;
