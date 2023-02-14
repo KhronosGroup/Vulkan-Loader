@@ -1329,6 +1329,120 @@ out:
 
 // Loader File Settings handling
 
+void logLoaderSettings(struct loader_instance *inst, struct loader_settings *settings) {
+    if ((settings->log_settings.enabled_log_flags & VULKAN_LOADER_SETTING_BIT) != 0) {
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "Settings Data");
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "-------------");
+
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "  Instance Settings");
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Disable Extension Filter:     %d",
+                   settings->instance_settings.disable_instance_extension_filter);
+
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "  Log Settings");
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Enabled Flags:                0x%08x",
+                   settings->log_settings.enabled_log_flags);
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Errors to StdOut:             %d",
+                   settings->log_settings.log_errors_to_stdout);
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Errors to StdErr:             %d",
+                   settings->log_settings.log_errors_to_stderr);
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Non-errors to StdOut:         %d",
+                   settings->log_settings.log_nonerrors_to_stdout);
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Non-errors to StdErr:         %d",
+                   settings->log_settings.log_nonerrors_to_stderr);
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Log File :                    %s", settings->log_settings.log_filename);
+
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "  Driver Settings");
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Search Paths:                 %d", settings->driver_search_paths_count);
+        if (settings->driver_search_paths != NULL) {
+            for (uint32_t path = 0; path < settings->driver_search_paths_count; ++path) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Search Path[%02d]:            %s", path,
+                           settings->driver_search_paths[path]);
+            }
+        } else {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Search Paths:                 0");
+        }
+        if (settings->driver_settings.select_filters != NULL) {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Select Filters:               %d",
+                       settings->driver_settings.select_filters->count);
+            for (uint32_t filt = 0; filt < settings->driver_settings.select_filters->count; ++filt) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Select Filter[%02d]:          %s", filt,
+                           settings->driver_settings.select_filters->filters[filt].value);
+            }
+        } else {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Select Filters:               0");
+        }
+        if (settings->driver_settings.disable_filters != NULL) {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Disable Filters:              %d",
+                       settings->driver_settings.disable_filters->count);
+            for (uint32_t filt = 0; filt < settings->driver_settings.disable_filters->count; ++filt) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Disable Filter[%02d]:         %s", filt,
+                           settings->driver_settings.disable_filters->filters[filt].value);
+            }
+        } else {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Disable Filters:              0");
+        }
+
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "  Physical Device Settings");
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Sorting Enabled:              %d",
+                   settings->physical_device_settings.device_sorting_enabled);
+        if (settings->physical_device_settings.device_select_enabled &&
+            settings->physical_device_settings.device_select_string != NULL) {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Device Select:                %d",
+                       settings->physical_device_settings.device_select_string);
+        } else {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Device Select:                NULL");
+        }
+
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "  Layer Settings");
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Implicit Search Paths:        %d",
+                   settings->implicit_layer_search_paths_count);
+        if (settings->implicit_layer_search_paths != NULL) {
+            for (uint32_t path = 0; path < settings->implicit_layer_search_paths_count; ++path) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Search Path[%02d]:            %s", path,
+                           settings->implicit_layer_search_paths[path]);
+            }
+        }
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Explicit Search Paths:        %d",
+                   settings->explicit_layer_search_paths_count);
+        if (settings->explicit_layer_search_paths != NULL) {
+            for (uint32_t path = 0; path < settings->explicit_layer_search_paths_count; ++path) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Search Path[%02d]:            %s", path,
+                           settings->explicit_layer_search_paths[path]);
+            }
+        }
+        if (settings->layer_settings.enable_filters != NULL) {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Enable Filters:               %d",
+                       settings->layer_settings.enable_filters->count);
+            for (uint32_t filt = 0; filt < settings->layer_settings.enable_filters->count; ++filt) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Enable Filter[%02d]:          %s", filt,
+                           settings->layer_settings.enable_filters->filters[filt].value);
+            }
+        } else {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Enable Filters:               0");
+        }
+        if (settings->layer_settings.disable_filters != NULL) {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Disable Filters:              %d",
+                       settings->layer_settings.disable_filters->additional_filters.count);
+            for (uint32_t filt = 0; filt < settings->layer_settings.disable_filters->additional_filters.count; ++filt) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Disable Filter[%02d]:         %s", filt,
+                           settings->layer_settings.disable_filters->additional_filters.filters[filt].value);
+            }
+        } else {
+            loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Disable Filters:              0");
+        }
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Forced On Layers:             %d",
+                   settings->layer_settings.forced_on_layers_count);
+        if (settings->layer_settings.forced_on_layers != NULL) {
+            for (uint32_t layer = 0; layer < settings->layer_settings.forced_on_layers_count; ++layer) {
+                loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "      Forced Layer[%02d]:           %s", layer,
+                           settings->layer_settings.forced_on_layers[layer]);
+            }
+        }
+        loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "    Exit On Missing Forced Layer: %d",
+                   settings->layer_settings.exit_on_missing_layer);
+    }
+}
+
 // Determine if the environment variables indicate that driver should be modified.
 #define MAX_SETTINGS_LINE_LEN 1024
 VkResult parseSettingsFile(struct loader_instance *inst, struct loader_settings *settings,
@@ -1340,7 +1454,7 @@ VkResult parseSettingsFile(struct loader_instance *inst, struct loader_settings 
         return VK_SUCCESS;
     }
     for (uint32_t path = 0; path < settings_file_search_paths_count; ++path) {
-        if (strlen(settings_file_search_paths[path]) > strlen(temp_string) - strlen(loader_settings_file) - 2) {
+        if (strlen(settings_file_search_paths[path]) > MAX_SETTINGS_LINE_LEN - strlen(loader_settings_file) - 2) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Settings file path %s is too long, skipping.",
                        settings_file_search_paths[path]);
             continue;
@@ -1590,6 +1704,8 @@ VkResult generateSettingsStruct(struct loader_instance *inst, struct loader_sett
                        settings->log_settings.log_file);
         }
     }
+
+    logLoaderSettings(inst, settings);
 
 out:
     if (settings_file_search_paths != NULL) {
