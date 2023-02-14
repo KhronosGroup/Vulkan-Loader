@@ -86,6 +86,9 @@ endif()
 # way while waiting for when updating can occur
 string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
+# Use static MSVCRT libraries
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 if(WIN32)
     option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
 endif()
