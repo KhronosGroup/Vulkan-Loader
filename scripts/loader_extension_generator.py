@@ -347,8 +347,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         require = None
         if name == 'vkGetDeviceGroupSurfacePresentModes2EXT':
             require_node = self.registry.tree.find("./extensions/extension[@name='{}']/require/command[@name='{}']/..".format(extension_name, name))
-            if 'extension' in require_node.attrib:
-                require = require_node.attrib['extension']
+            if 'depends' in require_node.attrib:
+                require = require_node.attrib['depends']
 
         cmd_params = []
 
