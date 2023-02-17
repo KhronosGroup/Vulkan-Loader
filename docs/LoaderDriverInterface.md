@@ -1227,7 +1227,7 @@ version that will be used.
 This entry point is not a part of the Vulkan API itself, only a private
 interface between the loader and drivers.
 Note: Loader and Driver Interface Version 7 makes exporting
-`vk_icdGetInstanceProcAddr` optional.
+`vk_icdNegotiateLoaderICDInterfaceVersion` optional.
 Instead, drivers *must* expose it through `vk_icdGetInstanceProcAddr`.
 
 ```cpp
