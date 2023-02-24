@@ -1778,15 +1778,15 @@ void loader_initialize(void) {
     loader_platform_thread_create_mutex(&loader_preload_icd_lock);
     loader_platform_thread_create_mutex(&loader_global_instance_list_lock);
 
+#if defined(_WIN32)
+    windows_initialization();
+#endif
+
     if (VK_SUCCESS == generate_settings_struct(NULL, &pre_instance_settings.settings)) {
         loader_platform_thread_create_mutex(&pre_instance_settings.lock);
         pre_instance_settings.ref_count = 1;
         pre_instance_settings.ready = true;
     }
-
-#if defined(_WIN32)
-    windows_initialization();
-#endif
 
     loader_api_version version = loader_make_full_version(VK_HEADER_VERSION_COMPLETE);
     loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Vulkan Loader Version %d.%d.%d", version.major, version.minor, version.patch);
@@ -1852,12 +1852,12 @@ __attribute__((destructor)) void loader_free_library() { loader_release(); }
 // A pointer to first char in the next list item.
 // The next item (or NULL) in the list is returned in next.
 // Note: input string is modified in some cases. PASS IN A COPY!
-char *loader_get_next_list_item(char *path, char separator) {
+char *loader_get_next_list_item(char *path) {
     uint32_t len;
     char *next;
 
     if (path == NULL) return NULL;
-    next = strchr(path, separator);
+    next = strchr(path, PATH_SEPARATOR);
     if (next == NULL) {
         len = (uint32_t)strlen(path);
         next = path + len;
@@ -1893,16 +1893,15 @@ static void loader_get_fullpath(const char *file, const char *in_dirs, size_t ou
         strcpy(dirs_copy, in_dirs);
 
         // find if file exists after prepending paths in given list
-        // for (dir = dirs_copy; *dir && (next_dir = loader_get_next_list_item(dir, PATH_SEPARATOR)); dir = next_dir) {
         char *dir = dirs_copy;
-        char *next_dir = loader_get_next_list_item(dir, PATH_SEPARATOR);
+        char *next_dir = loader_get_next_list_item(dir);
         while (*dir && next_dir) {
             loader_platform_combine_path(out_fullpath, out_size, dir, file, NULL);
             if (loader_platform_file_exists(out_fullpath)) {
                 return;
             }
             dir = next_dir;
-            next_dir = loader_get_next_list_item(dir, PATH_SEPARATOR);
+            next_dir = loader_get_next_list_item(dir);
         }
     }
 
@@ -3138,7 +3137,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     // If there's an override, use that (and the local folder if required) and nothing else
     if (NULL != path_override && strlen(path_override) > 1) {
         vk_result =
-            generate_complete_search_path(inst, manifest_type, path_override, NULL, NULL, &search_path_count, &search_path_array);
+            generate_complete_search_list(inst, manifest_type, path_override, NULL, NULL, &search_path_count, &search_path_array);
         if (VK_SUCCESS != vk_result) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "read_data_files_in_search_paths: Failed using override %s path",
                        log_label[label_index]);
@@ -3150,20 +3149,32 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
         switch (manifest_type) {
             case LOADER_DATA_FILE_MANIFEST_DRIVER:
             default:
+#ifndef _WIN32
+                // Windows can have empty paths (because it searches the
+                // registry.   But all other systems should have some valid info.
                 assert(settings->driver_search_paths != NULL);
                 assert(settings->driver_search_paths_count != 0);
+#endif
                 search_path_array = settings->driver_search_paths;
                 search_path_count = settings->driver_search_paths_count;
                 break;
             case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
+#ifndef _WIN32
+                // Windows can have empty paths (because it searches the
+                // registry.   But all other systems should have some valid info.
                 assert(settings->explicit_layer_search_paths != NULL);
                 assert(settings->explicit_layer_search_paths_count != 0);
+#endif
                 search_path_array = settings->explicit_layer_search_paths;
                 search_path_count = settings->explicit_layer_search_paths_count;
                 break;
             case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
+#ifndef _WIN32
+                // Windows can have empty paths (because it searches the
+                // registry.   But all other systems should have some valid info.
                 assert(settings->implicit_layer_search_paths != NULL);
                 assert(settings->implicit_layer_search_paths_count != 0);
+#endif
                 search_path_array = settings->implicit_layer_search_paths;
                 search_path_count = settings->implicit_layer_search_paths_count;
                 break;
@@ -3184,7 +3195,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
 
 out:
     if (override_path_active && search_path_array != NULL) {
-        free_list(inst, &search_path_count, &search_path_array);
+        free_list(inst, &search_path_count, search_path_array);
     }
     *override_active = override_path_active;
 
@@ -6558,15 +6569,15 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
     struct loader_icd_tramp_list icd_tramp_list;
     uint32_t copy_size;
 
+    memset(&local_ext_list, 0, sizeof(local_ext_list));
+    memset(&instance_layers, 0, sizeof(instance_layers));
+    memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
+
     struct loader_settings *temporary_settings = NULL;
     VkResult res = generate_settings_struct(NULL, &temporary_settings);
     if (VK_SUCCESS != res) {
         goto out;
     }
-
-    memset(&local_ext_list, 0, sizeof(local_ext_list));
-    memset(&instance_layers, 0, sizeof(instance_layers));
-    memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
 
     // Get layer libraries if needed
     if (pLayerName && strlen(pLayerName) != 0) {

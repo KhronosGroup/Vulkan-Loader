@@ -720,11 +720,20 @@ TEST(EnvVarICDOverrideSetup, LoaderLogFile) {
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_2}.set_disable_icd_inc(true).set_json_name("BCD_ICD"));
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_3}.set_disable_icd_inc(true).set_json_name("CDE_ICD"));
 
-    InstWrapper inst1{env.vulkan_functions};
-    inst1.CheckCreate();
+    // We can't use the instance wrapper here because it won't delete until later.
+    // We want to create and destroy the instance (which will free the instance logging)
+    // then verify the log exists.
+    PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)env.vulkan_functions.vkGetInstanceProcAddr(nullptr, "vkCreateInstance");
+    ASSERT_NE(nullptr, fpCreateInstance);
+    VkInstanceCreateInfo instance_create_info{};
+    VkApplicationInfo application_info{};
+    instance_create_info.pApplicationInfo = &application_info;
+    VkInstance instance;
+    VkResult result = fpCreateInstance(&instance_create_info, nullptr, &instance);
+    ASSERT_EQ(VK_SUCCESS, result);
+    PFN_vkDestroyInstance fpDestroyInstance = (PFN_vkDestroyInstance)env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyInstance");
+    fpDestroyInstance(instance, nullptr);
 
-    // NOTE: This test reads the log file while it is still open by the instance.
-    // It works, but this seems risky.
     bool found[3] = {false, false, false};
     char buffer[2048];
     char* fp_ret;

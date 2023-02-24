@@ -560,13 +560,15 @@ VkResult read_env_var_path(const struct loader_instance *inst, uint32_t log_msg_
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
+    VkResult res = VK_SUCCESS;
+
     char *env_var_value = loader_secure_getenv(env_var, inst);
     size_t env_var_size = env_var_value == NULL ? 0 : strlen(env_var_value);
     if (NULL != env_var_value && env_var_size > 0) {
         *output_var = loader_instance_heap_calloc(inst, env_var_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == *output_var) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for env var `%s` value", env_var);
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
         } else {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | log_msg_flag, 0, "Found environment var `%s`, using value: `%s`", env_var,
                        env_var_value);
@@ -575,7 +577,7 @@ VkResult read_env_var_path(const struct loader_instance *inst, uint32_t log_msg_
         }
         loader_free_getenv(env_var_value, inst);
     }
-    return VK_SUCCESS;
+    return res;
 }
 
 // Determine how many actual items are listed in a in_list string
@@ -636,6 +638,7 @@ VkResult add_list_items_to_array(const struct loader_instance *inst, uint32_t lo
 VkResult read_env_var_list(struct loader_instance *inst, const char *env_var, const char separator,
                            enum vulkan_loader_debug_flags log_flag, uint32_t *count, char ***item_array) {
     VkResult res = VK_SUCCESS;
+
     char *env = loader_getenv(env_var, inst);
     if (env != NULL && strlen(env) > 0) {
         bool failed = false;
@@ -697,7 +700,7 @@ VkResult read_env_var_list(struct loader_instance *inst, const char *env_var, co
 // Generate the complete list of search paths using the environment variables (or file variables) and
 // the default paths for this platform.
 // NOTE: This can be overridden by the "override" layer later on.
-VkResult generate_complete_search_path(const struct loader_instance *inst, enum loader_data_files_type search_type,
+VkResult generate_complete_search_list(const struct loader_instance *inst, enum loader_data_files_type search_type,
                                        const char *default_path, const char *override_path, const char *add_path, uint32_t *count,
                                        char ***value) {
     uint32_t path_count = 0;
@@ -705,9 +708,14 @@ VkResult generate_complete_search_path(const struct loader_instance *inst, enum 
     enum vulkan_loader_debug_flags log_msg_flag;
     uint8_t message_index = 0;
     const char message_str[4][20] = {{"driver"}, {"implicit layer"}, {"explicit layer"}, {"settings file"}};
+    VkResult res = VK_SUCCESS;
 
-    if (default_path == NULL || count == NULL || value == NULL) {
-        return VK_ERROR_INITIALIZATION_FAILED;
+    // Windows can have a NULL default_path, but only return early if every other path is also NULL.
+    if (default_path == NULL && override_path == NULL && add_path == NULL) {
+        goto out;
+    } else if (count == NULL || value == NULL) {
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
     }
 
     // Set to 0, just in case we have a failure.
@@ -736,7 +744,6 @@ VkResult generate_complete_search_path(const struct loader_instance *inst, enum 
     char **path_array = NULL;
     char *modifiable_path = NULL;
     char *cur_mod_ptr;
-    VkResult res = VK_SUCCESS;
     bool failed = false;
 
     if (NULL != override_path) {
@@ -834,7 +841,7 @@ VkResult generate_complete_search_path(const struct loader_instance *inst, enum 
         if (path_array != NULL) {
             loader_instance_heap_free(inst, path_array);
         }
-        return res;
+        goto out;
     }
 
     // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
@@ -868,7 +875,9 @@ VkResult generate_complete_search_path(const struct loader_instance *inst, enum 
     assert(path_count != 0);
     *count = path_count;
     *value = path_array;
-    return VK_SUCCESS;
+
+out:
+    return res;
 }
 
 // Loader settings handling
@@ -877,10 +886,6 @@ VkResult parse_env_loader_log_settings(struct loader_instance *inst, struct load
     char *env = NULL;
     char *orig = NULL;
     VkResult res = VK_SUCCESS;
-
-    if (NULL == settings) {
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
 
     // Parse comma-separated debug options
     uint32_t debug_flags = VULKAN_LOADER_ERROR_BIT;
@@ -941,11 +946,13 @@ VkResult parse_env_loader_log_settings(struct loader_instance *inst, struct load
         }
     }
     loader_free_getenv(env, inst);
+
     return res;
 }
 
 VkResult parse_env_instance_settings(struct loader_instance *inst, struct loader_instance_settings *instance_settings) {
     char *env = NULL;
+
     if (NULL == instance_settings) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
@@ -955,15 +962,14 @@ VkResult parse_env_instance_settings(struct loader_instance *inst, struct loader
         instance_settings->disable_instance_extension_filter = true;
     }
     loader_free_getenv(env, inst);
+
     return VK_SUCCESS;
 }
 
 VkResult parse_env_layer_settings(struct loader_instance *inst, struct loader_layer_settings *layer_settings) {
     VkResult res = VK_SUCCESS;
     char *env = NULL;
-    if (NULL == layer_settings) {
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
+
     env = loader_getenv("VK_LOADER_LAYER_EXIT_ON_MISSING", inst);
     if (NULL != env && atoi(env) != 0) {
         loader_log(inst, VULKAN_LOADER_SETTING_BIT, 0, "Found environment var 'VK_LOADER_LAYER_EXIT_ON_MISSING' set to %s", env);
@@ -974,36 +980,40 @@ VkResult parse_env_layer_settings(struct loader_instance *inst, struct loader_la
     res = read_env_var_list(inst, ENABLED_LAYERS_ENV, PATH_SEPARATOR, VULKAN_LOADER_LAYER_BIT,
                             &layer_settings->forced_on_layers_count, &layer_settings->forced_on_layers);
     if (res != VK_SUCCESS) {
-        return res;
+        goto out;
     }
 
     res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &layer_settings->enable_filters);
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
     }
 
     res = parse_layers_disable_filter_environment_var(inst, &layer_settings->disable_filters);
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
     }
+
+out:
     return res;
 }
 
 VkResult parse_env_driver_settings(struct loader_instance *inst, struct loader_driver_settings *driver_settings) {
     VkResult res = VK_SUCCESS;
+
     if (NULL == driver_settings) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     res = parse_generic_filter_environment_var(inst, VK_DRIVERS_SELECT_ENV_VAR, &driver_settings->select_filters);
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
     }
     res = parse_generic_filter_environment_var(inst, VK_DRIVERS_DISABLE_ENV_VAR, &driver_settings->disable_filters);
     if (VK_SUCCESS != res) {
-        return res;
+        goto out;
     }
 
+out:
     return res;
 }
 
@@ -1046,16 +1056,12 @@ VkResult parse_env_physical_device_settings(struct loader_instance *inst,
     return res;
 }
 
-void free_list(const struct loader_instance *inst, uint32_t *list_count, char ***list_ptr) {
-    if (list_ptr != NULL && list_count != NULL) {
-        char **list = *list_ptr;
-        if (list != NULL) {
-            for (uint32_t count = 0; count < *list_count; ++count) {
-                loader_instance_heap_free(inst, list[count]);
-            }
-            loader_instance_heap_free(inst, list);
+void free_list(const struct loader_instance *inst, uint32_t *list_count, char **list) {
+    if (list != NULL && list_count != NULL) {
+        for (uint32_t count = 0; count < *list_count; ++count) {
+            loader_instance_heap_free(inst, list[count]);
         }
-        *list_ptr = NULL;
+        loader_instance_heap_free(inst, list);
     }
     if (list_count != NULL) {
         *list_count = 0;
@@ -1504,7 +1510,7 @@ void free_settings_struct(struct loader_instance *inst, struct loader_settings *
 
     // Free layer items
     if (NULL != settings->layer_settings.forced_on_layers) {
-        free_list(inst, &settings->layer_settings.forced_on_layers_count, &settings->layer_settings.forced_on_layers);
+        free_list(inst, &settings->layer_settings.forced_on_layers_count, settings->layer_settings.forced_on_layers);
     }
     if (NULL != settings->layer_settings.enable_filters) {
         loader_instance_heap_free(inst, settings->layer_settings.enable_filters);
@@ -1529,13 +1535,13 @@ void free_settings_struct(struct loader_instance *inst, struct loader_settings *
 
     // Free search paths
     if (NULL != settings->driver_search_paths) {
-        free_list(inst, &settings->driver_search_paths_count, &settings->driver_search_paths);
+        free_list(inst, &settings->driver_search_paths_count, settings->driver_search_paths);
     }
     if (NULL != settings->implicit_layer_search_paths) {
-        free_list(inst, &settings->implicit_layer_search_paths_count, &settings->implicit_layer_search_paths);
+        free_list(inst, &settings->implicit_layer_search_paths_count, settings->implicit_layer_search_paths);
     }
     if (NULL != settings->explicit_layer_search_paths) {
-        free_list(inst, &settings->explicit_layer_search_paths_count, &settings->explicit_layer_search_paths);
+        free_list(inst, &settings->explicit_layer_search_paths_count, settings->explicit_layer_search_paths);
     }
 
     // Free the rest of the struct
@@ -1551,14 +1557,11 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
     if (set_struct == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-    *set_struct = NULL;
-    struct loader_settings *settings =
-        loader_instance_heap_calloc(inst, sizeof(struct loader_settings), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (settings == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Failed allocating loader settings structure");
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    if (*set_struct != NULL) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_SETTING_BIT, 0,
+                   "Passed in pointer for creating settings struct not NULL");
     }
-    *set_struct = settings;
+    *set_struct = NULL;
 
     // Search paths, these are eventually used to fill in the final search paths
     // for each driver, implicit layers, and explicit layers.
@@ -1576,6 +1579,14 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
     char *default_settings_file_search_path = NULL;
     uint32_t settings_file_search_paths_count = 0;
     char **settings_file_search_paths = NULL;
+
+    struct loader_settings *settings =
+        loader_instance_heap_calloc(inst, sizeof(struct loader_settings), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (settings == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_SETTING_BIT, 0, "Failed allocating loader settings structure");
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    *set_struct = settings;
 
     // Set defaults
     settings->log_settings.enabled_log_flags = VULKAN_LOADER_ERROR_BIT;
@@ -1610,7 +1621,7 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
 
     // Find a settings file and load the settings out of that if one exists in one of the
     // appropriate locations.
-    result = generate_complete_search_path(inst, LOADER_DATA_FILE_SETTINGS_FILE, default_settings_file_search_path, NULL, NULL,
+    result = generate_complete_search_list(inst, LOADER_DATA_FILE_SETTINGS_FILE, default_settings_file_search_path, NULL, NULL,
                                            &settings_file_search_paths_count, &settings_file_search_paths);
     if (VK_SUCCESS != result) {
         goto out;
@@ -1666,7 +1677,7 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
     if (VK_SUCCESS != result) {
         goto out;
     }
-    result = generate_complete_search_path(
+    result = generate_complete_search_list(
         inst, LOADER_DATA_FILE_MANIFEST_DRIVER, default_driver_search_path,
         (override_driver_file_search_path == NULL) ? override_driver_env_var_search_path : override_driver_file_search_path,
         (additional_driver_file_search_path == NULL) ? additional_driver_env_var_search_path : additional_driver_file_search_path,
@@ -1675,12 +1686,12 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
         goto out;
     }
     result =
-        generate_complete_search_path(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, default_implicit_layer_search_path, NULL,
+        generate_complete_search_list(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, default_implicit_layer_search_path, NULL,
                                       NULL, &settings->implicit_layer_search_paths_count, &settings->implicit_layer_search_paths);
     if (VK_SUCCESS != result) {
         goto out;
     }
-    result = generate_complete_search_path(
+    result = generate_complete_search_list(
         inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, default_explicit_layer_search_path,
         (override_explicit_layer_file_search_path == NULL) ? override_explicit_layer_env_var_search_path
                                                            : override_explicit_layer_file_search_path,
@@ -1704,7 +1715,7 @@ VkResult generate_settings_struct(struct loader_instance *inst, struct loader_se
 
 out:
     if (settings_file_search_paths != NULL) {
-        free_list(inst, &settings_file_search_paths_count, &settings_file_search_paths);
+        free_list(inst, &settings_file_search_paths_count, settings_file_search_paths);
     }
     free_search_paths(inst, &default_driver_search_path, &default_implicit_layer_search_path, &default_explicit_layer_search_path,
                       &default_settings_file_search_path);
