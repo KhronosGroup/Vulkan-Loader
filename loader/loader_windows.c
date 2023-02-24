@@ -776,7 +776,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = generateCompleteSearchPath(inst, data_file_type, search_path, NULL, NULL, &search_path_count, &search_path_array);
+    vk_result = generateCompleteSearchList(inst, data_file_type, search_path, NULL, NULL, &search_path_count, &search_path_array);
     if (VK_SUCCESS != vk_result) {
         goto out;
     }
@@ -784,7 +784,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
 
 out:
     if (search_path_array != NULL) {
-        freeSearchPath(inst, search_path_array);
+        freeList(inst, &search_path_count, &search_path_array);
     }
 
     loader_instance_heap_free(inst, search_path);

@@ -52,10 +52,9 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
 
 // Functionality used for the new loader settings structure and file
 
-VkResult generateCompleteSearchPath(const struct loader_instance *inst, enum loader_data_files_type search_type,
+VkResult generateCompleteSearchList(const struct loader_instance *inst, enum loader_data_files_type search_type,
                                     const char *default_path, const char *override_path, const char *add_path, uint32_t *count,
                                     char ***value);
 void freeList(const struct loader_instance *inst, uint32_t *count, char ***list);
-void freeSearchPath(const struct loader_instance *inst, char **search_path);
 VkResult generateSettingsStruct(struct loader_instance *inst, struct loader_settings **set_struc);
 void freeSettingsStruct(struct loader_instance *inst, struct loader_settings **set_struct);

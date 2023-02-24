@@ -3136,7 +3136,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     // If there's an override, use that (and the local folder if required) and nothing else
     if (NULL != path_override && strlen(path_override) > 1) {
         vk_result =
-            generateCompleteSearchPath(inst, manifest_type, path_override, NULL, NULL, &search_path_count, &search_path_array);
+            generateCompleteSearchList(inst, manifest_type, path_override, NULL, NULL, &search_path_count, &search_path_array);
         if (VK_SUCCESS != vk_result) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "read_data_files_in_search_paths: Failed using override %s path",
                        log_label[label_index]);
@@ -3148,20 +3148,32 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
         switch (manifest_type) {
             case LOADER_DATA_FILE_MANIFEST_DRIVER:
             default:
+#ifndef _WIN32
+                // Windows can have empty paths (because it searches the
+                // registry.   But all other systems should have some valid info.
                 assert(settings->driver_search_paths != NULL);
                 assert(settings->driver_search_paths_count != 0);
+#endif
                 search_path_array = settings->driver_search_paths;
                 search_path_count = settings->driver_search_paths_count;
                 break;
             case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
+#ifndef _WIN32
+                // Windows can have empty paths (because it searches the
+                // registry.   But all other systems should have some valid info.
                 assert(settings->explicit_layer_search_paths != NULL);
                 assert(settings->explicit_layer_search_paths_count != 0);
+#endif
                 search_path_array = settings->explicit_layer_search_paths;
                 search_path_count = settings->explicit_layer_search_paths_count;
                 break;
             case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
+#ifndef _WIN32
+                // Windows can have empty paths (because it searches the
+                // registry.   But all other systems should have some valid info.
                 assert(settings->implicit_layer_search_paths != NULL);
                 assert(settings->implicit_layer_search_paths_count != 0);
+#endif
                 search_path_array = settings->implicit_layer_search_paths;
                 search_path_count = settings->implicit_layer_search_paths_count;
                 break;
@@ -6555,15 +6567,15 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
     struct loader_icd_tramp_list icd_tramp_list;
     uint32_t copy_size;
 
+    memset(&local_ext_list, 0, sizeof(local_ext_list));
+    memset(&instance_layers, 0, sizeof(instance_layers));
+    memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
+
     struct loader_settings *temporary_settings = NULL;
     VkResult res = generateSettingsStruct(NULL, &temporary_settings);
     if (VK_SUCCESS != res) {
         goto out;
     }
-
-    memset(&local_ext_list, 0, sizeof(local_ext_list));
-    memset(&instance_layers, 0, sizeof(instance_layers));
-    memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
 
     // Get layer libraries if needed
     if (pLayerName && strlen(pLayerName) != 0) {
