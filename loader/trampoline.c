@@ -632,8 +632,23 @@ out:
             struct loader_icd_term *icd_term = NULL;
             while (NULL != ptr_instance->icd_terms) {
                 icd_term = ptr_instance->icd_terms;
+                // Call destroy Instance on each driver in case we successfully called down the chain but failed on
+                // our way back out of it.
+                if (icd_term->instance) {
+                    icd_term->dispatch.DestroyInstance(icd_term->instance, pAllocator);
+                }
+                icd_term->instance = VK_NULL_HANDLE;
                 ptr_instance->icd_terms = icd_term->next;
                 loader_icd_destroy(ptr_instance, icd_term, pAllocator);
+            }
+
+            for (uint32_t i = 0, n = ptr_instance->enabled_layer_count; i < n; ++i) {
+                loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names[i]);
+            }
+
+            if (ptr_instance->enabled_layer_count > 0) {
+                loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names);
+                memset(&ptr_instance->enabled_layer_names, 0, sizeof(ptr_instance->enabled_layer_names));
             }
 
             loader_instance_heap_free(ptr_instance, ptr_instance);
