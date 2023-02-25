@@ -647,6 +647,7 @@ void loader_destroy_generic_list(const struct loader_instance *inst, struct load
     loader_instance_heap_free(inst, list->list);
     list->count = 0;
     list->capacity = 0;
+    list->list = NULL;
 }
 
 // Append non-duplicate extension properties defined in props to the given ext_list.
