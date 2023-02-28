@@ -383,7 +383,7 @@ layers to marshall the appropriate information to all available drivers.
 For example, the diagram below represents what happens in the call chain for
 `vkCreateInstance`.
 After initializing the chain, the loader calls into the first layer's
-`vkCreateInstance`, which will call the next layer's `vkCreateInstance
+`vkCreateInstance`, which will call the next layer's `vkCreateInstance`
 before finally terminating in the loader again where it will call
 every driver's `vkCreateInstance`.
 This allows every enabled layer in the chain to set up what it needs based on
