@@ -230,6 +230,9 @@ struct loader_instance_dispatch_table {
 // Unique magic number identifier for the loader.
 #define LOADER_MAGIC_NUMBER 0x10ADED010110ADEDUL
 
+// Forward declare VkIcdSurface which comes from wsi.h
+typedef struct VkIcdSurface VkIcdSurface;
+
 // Per instance structure
 struct loader_instance {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
@@ -294,6 +297,8 @@ struct loader_instance {
     VkLayerDbgFunctionNode *InstanceCreationDeletionDebugFunctionHead;
 
     VkAllocationCallbacks alloc_callbacks;
+
+    VkIcdSurface *icd_surface_chain_head;
 
     bool portability_enumeration_enabled;
 

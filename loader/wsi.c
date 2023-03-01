@@ -208,6 +208,26 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
             loader_instance_heap_free(loader_inst, icd_surface->real_icd_surfaces);
         }
 
+        // Find and remove the VkIcdSurface from the chain
+        VkIcdSurface *surface_chain_link = loader_inst->icd_surface_chain_head;
+        if (NULL != surface_chain_link) {
+            if (surface_chain_link == icd_surface) {  // Replace the head if its first
+                loader_inst->icd_surface_chain_head = surface_chain_link->next_surface;
+            } else {
+                // Otherwise look for it in the rest of the list
+                VkIcdSurface *prev_surface_chain_link = surface_chain_link;
+                surface_chain_link = surface_chain_link->next_surface;
+                while (surface_chain_link) {
+                    if (surface_chain_link == icd_surface) {
+                        // Found it, so replace the prev's next_surfaces with the next_surface of the item to remove
+                        prev_surface_chain_link->next_surface = surface_chain_link->next_surface;
+                        break;
+                    }
+                    prev_surface_chain_link = surface_chain_link;
+                    surface_chain_link = surface_chain_link->next_surface;
+                }
+            }
+        }
         loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
     }
 }
@@ -633,6 +653,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
 
     *pSurface = (VkSurfaceKHR)(pIcdSurface);
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -752,6 +775,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance ins
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -874,6 +900,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXcbSurfaceKHR(VkInstance instanc
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -999,6 +1028,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instan
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -1124,6 +1156,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance in
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -1230,6 +1265,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
     return VK_SUCCESS;
 }
 
@@ -1254,20 +1292,21 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
                                                                    const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
                                                                    const VkAllocationCallbacks *pAllocator,
                                                                    VkSurfaceKHR *pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
+    struct loader_instance *loader_inst = loader_get_instance(instance);
     VkIcdSurface *pIcdSurface = NULL;
     VkResult vkRes = VK_SUCCESS;
     uint32_t i = 0;
 
-    if (!inst->wsi_headless_surface_enabled) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+    if (!loader_inst->wsi_headless_surface_enabled) {
+        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_EXT_headless_surface extension not enabled.  "
                    "vkCreateHeadlessSurfaceEXT not executed!");
         return VK_SUCCESS;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(inst, sizeof(pIcdSurface->headless_surf.base), sizeof(pIcdSurface->headless_surf));
+    pIcdSurface =
+        AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->headless_surf.base), sizeof(pIcdSurface->headless_surf));
     if (pIcdSurface == NULL) {
         vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
@@ -1275,7 +1314,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
 
     pIcdSurface->headless_surf.base.platform = VK_ICD_WSI_PLATFORM_HEADLESS;
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateHeadlessSurfaceEXT) {
                 vkRes = icd_term->dispatch.CreateHeadlessSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
@@ -1289,20 +1328,23 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
-            for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
                 if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
                     NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
-            loader_instance_heap_free(inst, pIcdSurface->real_icd_surfaces);
+            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
         }
-        loader_instance_heap_free(inst, pIcdSurface);
+        loader_instance_heap_free(loader_inst, pIcdSurface);
     }
 
     return vkRes;
@@ -1367,6 +1409,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance insta
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -1428,6 +1473,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instanc
     pIcdSurface->pView = pCreateInfo->pView;
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 
     return VK_SUCCESS;
 }
@@ -1495,6 +1544,9 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -1568,6 +1620,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
     }
     *pSurface = (VkSurfaceKHR)icd_surface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
     if (result != VK_SUCCESS && icd_surface != NULL) {
         if (icd_surface->real_icd_surfaces != NULL) {
@@ -1645,6 +1700,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance inst
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -1764,6 +1822,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance,
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
@@ -2052,20 +2113,20 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
                                                                        const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
                                                                        const VkAllocationCallbacks *pAllocator,
                                                                        VkSurfaceKHR *pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
+    struct loader_instance *loader_inst = loader_get_instance(instance);
     VkIcdSurface *pIcdSurface = NULL;
     VkResult vkRes = VK_SUCCESS;
     uint32_t i = 0;
 
-    if (!inst->wsi_display_enabled) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+    if (!loader_inst->wsi_display_enabled) {
+        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_surface extension not enabled. vkCreateDisplayPlaneSurfaceKHR not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(inst, sizeof(pIcdSurface->display_surf.base), sizeof(pIcdSurface->display_surf));
+    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->display_surf.base), sizeof(pIcdSurface->display_surf));
     if (pIcdSurface == NULL) {
         vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
@@ -2081,7 +2142,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
     pIcdSurface->display_surf.imageExtent = pCreateInfo->imageExtent;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateDisplayPlaneSurfaceKHR) {
                 vkRes = icd_term->dispatch.CreateDisplayPlaneSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
@@ -2095,20 +2156,23 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
 
     *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
         if (NULL != pIcdSurface->real_icd_surfaces) {
             i = 0;
-            for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
                 if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
                     NULL != icd_term->dispatch.DestroySurfaceKHR) {
                     icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
                 }
             }
-            loader_instance_heap_free(inst, pIcdSurface->real_icd_surfaces);
+            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
         }
-        loader_instance_heap_free(inst, pIcdSurface);
+        loader_instance_heap_free(loader_inst, pIcdSurface);
     }
 
     return vkRes;
@@ -2544,6 +2608,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
 
     *pSurface = (VkSurfaceKHR)(pIcdSurface);
 
+    // Prepend this surface onto the linked list of VkIcdSurface structs
+    pIcdSurface->next_surface = loader_inst->icd_surface_chain_head;
+    loader_inst->icd_surface_chain_head = pIcdSurface;
 out:
 
     if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {

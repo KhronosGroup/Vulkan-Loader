@@ -24,7 +24,7 @@
 
 #include "loader_common.h"
 
-typedef struct {
+typedef struct VkIcdSurface {
     union {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
         VkIcdSurfaceWayland wayland_surf;
@@ -67,6 +67,7 @@ typedef struct {
     uint32_t non_platform_offset;  // Start offset to base_size
     uint32_t entire_size;          // Size of entire VkIcdSurface
     VkSurfaceKHR *real_icd_surfaces;
+    struct VkIcdSurface *next_surface;
 } VkIcdSurface;
 
 bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr);

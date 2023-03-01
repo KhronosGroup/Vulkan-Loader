@@ -5796,6 +5796,13 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     if (NULL == ptr_instance) {
         return;
     }
+
+    // Remove any surfaces that the application leaked.
+    // The terminator updates the chain, so we just need to call it until nothing is left.
+    while (ptr_instance->icd_surface_chain_head) {
+        terminator_DestroySurfaceKHR(instance, (VkSurfaceKHR)(uintptr_t)ptr_instance->icd_surface_chain_head, pAllocator);
+    }
+
     struct loader_icd_term *icd_terms = ptr_instance->icd_terms;
     struct loader_icd_term *next_icd_term;
 
