@@ -16,10 +16,6 @@
 # ~~~
 
 
-# By default, tests and loader are built without sanitizers
-# Use these options to force a specific sanitizer on all test executables
-option(TEST_USE_ADDRESS_SANITIZER "Linux only: Advanced memory checking" OFF)
-option(TEST_USE_THREAD_SANITIZER "Linux only: Advanced thread checking" OFF)
 option(ENABLE_LIVE_VERIFICATION_TESTS "Enable tests which expect to run on live drivers. Meant for manual verification only" OFF)
 
 include(GoogleTest)

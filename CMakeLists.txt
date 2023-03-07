@@ -25,6 +25,13 @@ find_package(PythonInterp 3 QUIET)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
+# By default, loader & tests are built without sanitizers
+# Use these options to force a specific sanitizer on the loader and test executables
+if (UNIX)
+    option(LOADER_ENABLE_ADDRESS_SANITIZER "Linux & macOS only: Advanced memory checking" OFF)
+    option(LOADER_ENABLE_THREAD_SANITIZER "Linux & macOS only: Advanced thread checking" OFF)
+endif()
+
 if(APPLE)
     option(BUILD_STATIC_LOADER "Build a loader that can be statically linked" OFF)
 endif()

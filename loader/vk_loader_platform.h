@@ -328,7 +328,15 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 #endif
 
 #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
-#define LOADER_ADDRESS_SANITIZER  // TODO: Add proper build flag for ASAN support
+#define LOADER_ADDRESS_SANITIZER_ACTIVE  // TODO: Add proper build flag for ASAN support
+#endif
+
+// We should always unload dynamic libraries in loader_platform_close_library() unless both Address Sanitizer is active and
+// LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING is set
+#if defined(LOADER_ADDRESS_SANITIZER_ACTIVE) && defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
+#define SHOULD_UNLOAD_DYNAMIC_LIBRARIES 0
+#else
+#define SHOULD_UNLOAD_DYNAMIC_LIBRARIES 1
 #endif
 
 // When loading the library, we use RTLD_LAZY so that not all symbols have to be
@@ -357,7 +365,12 @@ static inline const char *loader_platform_open_library_error(const char *libPath
     return dlerror();
 #endif
 }
-static inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
+static inline void loader_platform_close_library(loader_platform_dl_handle library) {
+// We only want to remove dlclose if both Asan is active and LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING is set
+#if SHOULD_UNLOAD_DYNAMIC_LIBRARIES == 1
+    dlclose(library);
+#endif
+}
 static inline void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);
     assert(name);
