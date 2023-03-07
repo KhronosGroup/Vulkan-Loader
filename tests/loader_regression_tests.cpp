@@ -1025,11 +1025,14 @@ TEST(CreateDevice, UnmatchInstanceAndDeviceLayers) {
 
     dev.CheckCreate(phys_dev);
 
-    ASSERT_TRUE(log.find("loader_create_device_chain: Using deprecated and ignored 'ppEnabledLayerNames' member of 'VkDeviceCreateInfo' when creating a Vulkan device."));
+    ASSERT_TRUE(
+        log.find("loader_create_device_chain: Using deprecated and ignored 'ppEnabledLayerNames' member of 'VkDeviceCreateInfo' "
+                 "when creating a Vulkan device."));
 }
 
 // Device layers are deprecated.
-// Ensure that when VkInstanceCreateInfo is deleted, the check of the instance layer lists is running correctly during VkDevice creation
+// Ensure that when VkInstanceCreateInfo is deleted, the check of the instance layer lists is running correctly during VkDevice
+// creation
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
 TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
     FrameworkEnvironment env{};
@@ -1044,7 +1047,8 @@ TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
 
     InstWrapper inst{env.vulkan_functions};
     {
-        // We intentionally create a local InstanceCreateInfo that goes out of scope at the } so that when dev.CheckCreate is called the layer name pointers are no longer valid
+        // We intentionally create a local InstanceCreateInfo that goes out of scope at the } so that when dev.CheckCreate is called
+        // the layer name pointers are no longer valid
         InstanceCreateInfo create_info{};
         create_info.add_layer(layer_name);
         inst.CheckCreateWithInfo(create_info);
@@ -1951,7 +1955,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
         for (uint32_t group2 = 0; group2 < group_props_after.size(); ++group2) {
             if (group_props_before[group1].physicalDeviceCount == group_props_after[group2].physicalDeviceCount) {
                 uint32_t found_count = 0;
-                bool found;
+                bool found = false;
                 for (uint32_t dev1 = 0; dev1 < group_props_before[group1].physicalDeviceCount; ++dev1) {
                     found = false;
                     for (uint32_t dev2 = 0; dev2 < group_props_after[group2].physicalDeviceCount; ++dev2) {
@@ -2036,7 +2040,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
         for (uint32_t group2 = 0; group2 < group_props_before.size(); ++group2) {
             if (group_props_after[group1].physicalDeviceCount == group_props_before[group2].physicalDeviceCount) {
                 uint32_t found_count = 0;
-                bool found;
+                bool found = false;
                 for (uint32_t dev1 = 0; dev1 < group_props_after[group1].physicalDeviceCount; ++dev1) {
                     found = false;
                     for (uint32_t dev2 = 0; dev2 < group_props_before[group2].physicalDeviceCount; ++dev2) {
@@ -2118,7 +2122,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceAddDeviceInBetween) {
     for (uint32_t group1 = 0; group1 < group_props_before.size(); ++group1) {
         for (uint32_t group2 = 0; group2 < group_props_after.size(); ++group2) {
             uint32_t found_count = 0;
-            bool found;
+            bool found = false;
             for (uint32_t dev1 = 0; dev1 < group_props_before[group1].physicalDeviceCount; ++dev1) {
                 found = false;
                 for (uint32_t dev2 = 0; dev2 < group_props_after[group2].physicalDeviceCount; ++dev2) {
@@ -2213,7 +2217,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveDeviceInBetween) {
     for (uint32_t group1 = 0; group1 < group_props_after.size(); ++group1) {
         for (uint32_t group2 = 0; group2 < group_props_before.size(); ++group2) {
             uint32_t found_count = 0;
-            bool found;
+            bool found = false;
             for (uint32_t dev1 = 0; dev1 < group_props_after[group1].physicalDeviceCount; ++dev1) {
                 found = false;
                 for (uint32_t dev2 = 0; dev2 < group_props_before[group2].physicalDeviceCount; ++dev2) {

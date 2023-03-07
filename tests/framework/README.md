@@ -22,8 +22,8 @@ Use the CMake configuration `UPDATE_DEPS=ON` to automatically get all required t
 Or Ensure that `googletest` is in the `external` directory.
 And on Windows only, ensure that the `Detours` library is in the `external` directory.
 
-Linux only: The CMake Configuration `TEST_USE_ADDRESS_SANITIZER` can be used to
-enable Address Sanitizer inside the testing framework.
+Linux & macOS only: The CMake Configuration `LOADER_ENABLE_ADDRESS_SANITIZER` can be used to
+enable Address Sanitizer.
 
 Run the test executables as normal
 
