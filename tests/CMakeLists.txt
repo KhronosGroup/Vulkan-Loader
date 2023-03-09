@@ -169,3 +169,7 @@ add_test(NAME integration.find_package
 
 # Installing comes before testing
 set_tests_properties(integration.find_package PROPERTIES DEPENDS integration.install)
+
+if (CODE_COVERAGE)
+    target_code_coverage(test_regression AUTO ALL )
+endif()
