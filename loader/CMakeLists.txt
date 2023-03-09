@@ -533,3 +533,7 @@ if (PKG_CONFIG_FOUND)
     configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig" RENAME "${API_TYPE}.pc")
 endif()
+
+if (CODE_COVERAGE)
+    target_code_coverage(vulkan AUTO ALL)
+endif()

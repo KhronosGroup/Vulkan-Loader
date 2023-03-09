@@ -20,6 +20,13 @@ cmake_minimum_required(VERSION 3.17.2)
 
 project(VULKAN_LOADER VERSION 1.3.281 LANGUAGES C)
 
+option(CODE_COVERAGE "Enable Code Coverage" OFF)
+if (CODE_COVERAGE)
+    include(scripts/CodeCoverage.cmake)
+    add_code_coverage_all_targets()
+endif()
+
+
 # This variable enables downstream users to customize the target API
 # variant (e.g. Vulkan SC)
 set(API_TYPE "vulkan")
