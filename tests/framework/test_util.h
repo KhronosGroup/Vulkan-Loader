@@ -512,6 +512,8 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
             return os << "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
         case (VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR):
             return os << "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
+        case (VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR):
+            return os << "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
     }
     return os << static_cast<int32_t>(result);
 }
