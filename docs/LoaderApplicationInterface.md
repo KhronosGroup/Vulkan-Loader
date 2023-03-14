@@ -408,7 +408,7 @@ On Desktop platforms (Windows, Linux, and macOS), these enable/disable settings
 are defined in the layer's JSON file.
 
 Discovery of system-installed implicit and explicit layers is described later
-in the [Layer discovery](LoaderLayerInterface#layer-discovery)
+in the [Layer discovery](LoaderLayerInterface.md#layer-discovery)
 section in the
 [LoaderLayerInterface.md](LoaderLayerInterface.md) document.
 
