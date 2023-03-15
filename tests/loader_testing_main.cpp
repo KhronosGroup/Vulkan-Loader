@@ -27,6 +27,15 @@
 
 #include "test_environment.h"
 
+// Makes any failed assertion throw, allowing for graceful cleanup of resources instead of hard aborts
+class ThrowListener : public testing::EmptyTestEventListener {
+    void OnTestPartResult(const testing::TestPartResult& result) override {
+        if (result.type() == testing::TestPartResult::kFatalFailure) {
+            throw testing::AssertionException(result);
+        }
+    }
+};
+
 int main(int argc, char** argv) {
 #if defined(_WIN32)
     // Avoid "Abort, Retry, Ignore" dialog boxes
@@ -89,6 +98,7 @@ int main(int argc, char** argv) {
     EnvVarWrapper home_env_var{"HOME", "/home/fake_home"};
 #endif
     ::testing::InitGoogleTest(&argc, argv);
+    ::testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);
     int result = RUN_ALL_TESTS();
 
     return result;
