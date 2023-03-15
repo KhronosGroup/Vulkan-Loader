@@ -410,6 +410,298 @@ TEST(EnumerateDeviceExtensionProperties, ZeroPhysicalDeviceExtensions) {
     ASSERT_EQ(ext_count, 0U);
 }
 
+void exercise_EnumerateDeviceExtensionProperties(InstWrapper& inst, VkPhysicalDevice physical_device,
+                                                 std::vector<Extension>& exts_to_expect) {
+    {  // "expected enumeration pattern"
+        uint32_t extension_count = 0;
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, exts_to_expect.size());
+
+        std::vector<VkExtensionProperties> enumerated_device_exts{extension_count};
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count,
+                                                                         enumerated_device_exts.data()));
+        ASSERT_EQ(extension_count, exts_to_expect.size());
+        for (uint32_t i = 0; i < exts_to_expect.size(); i++) {
+            ASSERT_TRUE(exts_to_expect[i].extensionName == enumerated_device_exts[i].extensionName);
+            ASSERT_EQ(exts_to_expect[i].specVersion, enumerated_device_exts[i].specVersion);
+        }
+    }
+    {  // "Single call pattern"
+        uint32_t extension_count = static_cast<uint32_t>(exts_to_expect.size());
+        std::vector<VkExtensionProperties> enumerated_device_exts{extension_count};
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count,
+                                                                         enumerated_device_exts.data()));
+        ASSERT_EQ(extension_count, exts_to_expect.size());
+        enumerated_device_exts.resize(extension_count);
+
+        ASSERT_EQ(extension_count, exts_to_expect.size());
+        for (uint32_t i = 0; i < exts_to_expect.size(); i++) {
+            ASSERT_TRUE(exts_to_expect[i].extensionName == enumerated_device_exts[i].extensionName);
+            ASSERT_EQ(exts_to_expect[i].specVersion, enumerated_device_exts[i].specVersion);
+        }
+    }
+    {  // pPropertiesCount == NULL
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, nullptr, nullptr));
+    }
+    {  // 2nd call pass in way more than in reality
+        uint32_t extension_count = std::numeric_limits<uint32_t>::max();
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, exts_to_expect.size());
+
+        // reset size to a not earthshatteringly large number of extensions
+        extension_count = static_cast<uint32_t>(exts_to_expect.size()) * 4;
+        std::vector<VkExtensionProperties> enumerated_device_exts{extension_count};
+
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count,
+                                                                         enumerated_device_exts.data()));
+        ASSERT_EQ(extension_count, exts_to_expect.size());
+        for (uint32_t i = 0; i < exts_to_expect.size(); i++) {
+            ASSERT_TRUE(exts_to_expect[i].extensionName == enumerated_device_exts[i].extensionName);
+            ASSERT_EQ(exts_to_expect[i].specVersion, enumerated_device_exts[i].specVersion);
+        }
+    }
+    {  // 2nd call pass in not enough, go through all possible values from 0 to exts_to_expect.size()
+        uint32_t extension_count = std::numeric_limits<uint32_t>::max();
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr));
+        ASSERT_EQ(extension_count, exts_to_expect.size());
+        std::vector<VkExtensionProperties> enumerated_device_exts{extension_count};
+        for (uint32_t i = 0; i < exts_to_expect.size() - 1; i++) {
+            extension_count = i;
+            ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count,
+                                                                                enumerated_device_exts.data()));
+            ASSERT_EQ(extension_count, i);
+            for (uint32_t j = 0; j < i; j++) {
+                ASSERT_TRUE(exts_to_expect[j].extensionName == enumerated_device_exts[j].extensionName);
+                ASSERT_EQ(exts_to_expect[j].specVersion, enumerated_device_exts[j].specVersion);
+            }
+        }
+    }
+}
+
+TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentNoExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer.json");
+    std::vector<Extension> exts;
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension2", 6);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension3", 10);
+
+    exts.insert(exts.begin(), driver.physical_devices.front().extensions.begin(), driver.physical_devices.front().extensions.end());
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+}
+
+TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    std::vector<Extension> exts;
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
+    for (uint32_t i = 0; i < 6; i++) {
+        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_device_extensions({layer_exts})),
+                           "implicit_test_layer.json");
+    auto& layer = env.get_test_layer();
+    layer.device_extensions = exts;
+
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
+
+    exts.insert(exts.begin(), driver.physical_devices.front().extensions.begin(), driver.physical_devices.front().extensions.end());
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+}
+
+TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithLotsOfExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    std::vector<Extension> exts;
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
+    for (uint32_t i = 0; i < 26; i++) {
+        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_device_extensions({layer_exts})),
+                           "implicit_test_layer.json");
+    auto& layer = env.get_test_layer();
+    layer.device_extensions = exts;
+
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension2", 6);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension3", 9);
+
+    exts.insert(exts.begin(), driver.physical_devices.front().extensions.begin(), driver.physical_devices.front().extensions.end());
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+}
+
+TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentWithExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    std::vector<Extension> exts;
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
+    for (uint32_t i = 0; i < 6; i++) {
+        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_device_extensions({layer_exts})),
+                           "implicit_test_layer.json");
+    auto& layer = env.get_test_layer();
+    layer.device_extensions = exts;
+
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+}
+
+TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentWithLotsOfExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    std::vector<Extension> exts;
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
+    for (uint32_t i = 0; i < 6; i++) {
+        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_device_extensions({layer_exts})),
+                           "implicit_test_layer.json");
+    auto& layer = env.get_test_layer();
+    layer.device_extensions = exts;
+
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+}
+
+TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithDuplicateExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    std::vector<Extension> exts;
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
+    for (uint32_t i = 0; i < 26; i++) {
+        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_device_extensions({layer_exts})),
+                           "implicit_test_layer.json");
+    auto& layer = env.get_test_layer();
+    layer.device_extensions = exts;
+
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
+    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
+
+    driver.physical_devices.front().extensions.insert(driver.physical_devices.front().extensions.end(), exts.begin(), exts.end());
+    exts.emplace_back("MyDriverExtension0", 4);
+    exts.emplace_back("MyDriverExtension1", 7);
+
+    driver.physical_devices.front().extensions = exts;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+}
+
+TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithOnlyDuplicateExtensions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    std::vector<Extension> exts;
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
+    for (uint32_t i = 0; i < 26; i++) {
+        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+    }
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_device_extensions({layer_exts})),
+                           "implicit_test_layer.json");
+    auto& layer = env.get_test_layer();
+    layer.device_extensions = exts;
+
+    auto& driver = env.get_test_icd();
+    driver.physical_devices.emplace_back("physical_device_0");
+
+    driver.physical_devices.front().extensions = exts;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+}
+
 TEST(EnumeratePhysicalDevices, OneCall) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
