@@ -654,9 +654,6 @@ void loader_destroy_generic_list(const struct loader_instance *inst, struct load
 // Return - Vk_SUCCESS on success
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props) {
-    uint32_t i;
-    const VkExtensionProperties *cur_ext;
-
     if (ext_list->list == NULL || ext_list->capacity == 0) {
         VkResult res = loader_init_generic_list(inst, (struct loader_generic_list *)ext_list, sizeof(VkExtensionProperties));
         if (VK_SUCCESS != res) {
@@ -664,8 +661,8 @@ VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loade
         }
     }
 
-    for (i = 0; i < prop_list_count; i++) {
-        cur_ext = &props[i];
+    for (uint32_t i = 0; i < prop_list_count; i++) {
+        const VkExtensionProperties *cur_ext = &props[i];
 
         // look for duplicates
         if (has_vk_extension_property(cur_ext, ext_list)) {
