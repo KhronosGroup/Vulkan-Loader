@@ -6672,6 +6672,10 @@ out:
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
                                                                              const char *pLayerName, uint32_t *pPropertyCount,
                                                                              VkExtensionProperties *pProperties) {
+    if (NULL == pPropertyCount) {
+        return VK_INCOMPLETE;
+    }
+
     struct loader_physical_device_term *phys_dev_term;
 
     // Any layer or trampoline wrapping should be removed at this point in time can just cast to the expected
@@ -6721,88 +6725,91 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
         return VK_SUCCESS;
     }
 
-    // This case is during the call down the instance chain with pLayerName == NULL
+    // user is querying driver extensions and has supplied their own storage - just fill it out
+    else if (pProperties) {
+        struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+        uint32_t written_count = *pPropertyCount;
+        VkResult res =
+            icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &written_count, pProperties);
+        if (res != VK_SUCCESS) {
+            return res;
+        }
+
+        // Iterate over active layers, if they are an implicit layer, add their device extensions
+        // After calling into the driver, written_count contains the amount of device extensions written. We can therefore write
+        // layer extensions starting at that point in pProperties
+        for (uint32_t i = 0; i < icd_term->this_instance->expanded_activated_layer_list.count; i++) {
+            struct loader_layer_properties *layer_props = &icd_term->this_instance->expanded_activated_layer_list.list[i];
+            if (0 == (layer_props->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
+                struct loader_device_extension_list *layer_ext_list = &layer_props->device_extension_list;
+                for (uint32_t j = 0; j < layer_ext_list->count; j++) {
+                    struct loader_dev_ext_props *cur_ext_props = &layer_ext_list->list[j];
+                    // look for duplicates
+                    if (has_vk_extension_property_array(&cur_ext_props->props, written_count, pProperties)) {
+                        continue;
+                    }
+
+                    if (*pPropertyCount <= written_count) {
+                        return VK_INCOMPLETE;
+                    }
+
+                    memcpy(&pProperties[written_count], &cur_ext_props->props, sizeof(VkExtensionProperties));
+                    written_count++;
+                }
+            }
+        }
+        // Make sure we update the pPropertyCount with the how many were written
+        *pPropertyCount = written_count;
+        return res;
+    }
+    // Use `goto out;` for rest of this function
+
+    // This case is during the call down the instance chain with pLayerName == NULL and pProperties == NULL
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    uint32_t icd_ext_count = *pPropertyCount;
-    VkExtensionProperties *icd_props_list = pProperties;
-    const struct loader_instance *inst = icd_term->this_instance;
     struct loader_extension_list all_exts = {0};
     VkResult res;
 
-    if (NULL == icd_props_list) {
-        // We need to find the count without duplicates. This requires querying the driver for the names of the extensions.
-        // A small amount of storage is then needed to facilitate the de-duplication.
-        res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &icd_ext_count, NULL);
-        if (res != VK_SUCCESS) {
-            goto out;
-        }
-        if (icd_ext_count > 0) {
-            icd_props_list = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * icd_ext_count,
-                                                        VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-            if (NULL == icd_props_list) {
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-        }
+    // We need to find the count without duplicates. This requires querying the driver for the names of the extensions.
+    res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &all_exts.count, NULL);
+    if (res != VK_SUCCESS) {
+        goto out;
+    }
+    // Then allocate memory to store the physical device extension list + the extensions layers provide
+    // all_exts.count currently is the number of driver extensions
+    all_exts.capacity = sizeof(VkExtensionProperties) * (all_exts.count + 20);
+    all_exts.list = loader_instance_heap_alloc(icd_term->this_instance, all_exts.capacity, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == all_exts.list) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
     }
 
-    // Get the available device extension count, and if pProperties is not NULL, the extensions as well
-    res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &icd_ext_count, icd_props_list);
+    // Get the available device extensions and put them in all_exts.list
+    res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &all_exts.count, all_exts.list);
     if (res != VK_SUCCESS) {
         goto out;
     }
 
-    // Init a list with enough capacity for the device extensions and the implicit layer device extensions
-    res = loader_init_generic_list(inst, (struct loader_generic_list *)&all_exts,
-                                   sizeof(VkExtensionProperties) * (icd_ext_count + 20));
-    if (VK_SUCCESS != res) {
-        goto out;
-    }
-
-    // Copy over the device extensions into all_exts & deduplicate
-    res = loader_add_to_ext_list(inst, &all_exts, icd_ext_count, icd_props_list);
-    if (res != VK_SUCCESS) {
-        goto out;
-    }
-
-    // Iterate over active layers, if they are an implicit layer, add their device extensions
+    // Iterate over active layers, if they are an implicit layer, add their device extensions to all_exts.list
     for (uint32_t i = 0; i < icd_term->this_instance->expanded_activated_layer_list.count; i++) {
         struct loader_layer_properties *layer_props = &icd_term->this_instance->expanded_activated_layer_list.list[i];
         if (0 == (layer_props->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-            for (uint32_t j = 0; j < layer_props->device_extension_list.count; j++) {
-                res = loader_add_to_ext_list(icd_term->this_instance, &all_exts, 1,
-                                             &layer_props->device_extension_list.list[j].props);
+            struct loader_device_extension_list *layer_ext_list = &layer_props->device_extension_list;
+            for (uint32_t j = 0; j < layer_ext_list->count; j++) {
+                res = loader_add_to_ext_list(icd_term->this_instance, &all_exts, 1, &layer_ext_list->list[j].props);
                 if (res != VK_SUCCESS) {
                     goto out;
                 }
             }
         }
     }
-    uint32_t capacity = *pPropertyCount;
-    VkExtensionProperties *props = pProperties;
 
+    // Write out the final de-duplicated count to pPropertyCount
+    *pPropertyCount = all_exts.count;
     res = VK_SUCCESS;
-    if (NULL != pProperties) {
-        for (uint32_t i = 0; i < all_exts.count && i < capacity; i++) {
-            props[i] = all_exts.list[i];
-        }
-
-        // Wasn't enough space for the extensions, we did partial copy now return VK_INCOMPLETE
-        if (capacity < all_exts.count) {
-            res = VK_INCOMPLETE;
-        } else {
-            *pPropertyCount = all_exts.count;
-        }
-    } else {
-        *pPropertyCount = all_exts.count;
-    }
 
 out:
 
     loader_destroy_generic_list(icd_term->this_instance, (struct loader_generic_list *)&all_exts);
-    if (NULL == pProperties && NULL != icd_props_list) {
-        loader_instance_heap_free(icd_term->this_instance, icd_props_list);
-    }
     return res;
 }
 
