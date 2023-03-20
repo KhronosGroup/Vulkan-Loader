@@ -661,6 +661,10 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetPipelineExecutableStatisticsKHR = (PFN_vkGetPipelineExecutableStatisticsKHR)gdpa(dev, "vkGetPipelineExecutableStatisticsKHR");
     table->GetPipelineExecutableInternalRepresentationsKHR = (PFN_vkGetPipelineExecutableInternalRepresentationsKHR)gdpa(dev, "vkGetPipelineExecutableInternalRepresentationsKHR");
 
+    // ---- VK_KHR_map_memory2 extension commands
+    table->MapMemory2KHR = (PFN_vkMapMemory2KHR)gdpa(dev, "vkMapMemory2KHR");
+    table->UnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)gdpa(dev, "vkUnmapMemory2KHR");
+
     // ---- VK_KHR_video_encode_queue extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR)gdpa(dev, "vkCmdEncodeVideoKHR");
@@ -1751,6 +1755,10 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetPipelineExecutablePropertiesKHR")) return (void *)table->GetPipelineExecutablePropertiesKHR;
     if (!strcmp(name, "GetPipelineExecutableStatisticsKHR")) return (void *)table->GetPipelineExecutableStatisticsKHR;
     if (!strcmp(name, "GetPipelineExecutableInternalRepresentationsKHR")) return (void *)table->GetPipelineExecutableInternalRepresentationsKHR;
+
+    // ---- VK_KHR_map_memory2 extension commands
+    if (!strcmp(name, "MapMemory2KHR")) return (void *)table->MapMemory2KHR;
+    if (!strcmp(name, "UnmapMemory2KHR")) return (void *)table->UnmapMemory2KHR;
 
     // ---- VK_KHR_video_encode_queue extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -3638,6 +3646,36 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->GetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
+}
+
+
+// ---- VK_KHR_map_memory2 extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkMapMemory2KHR: Invalid device "
+                   "[VUID-vkMapMemory2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->MapMemory2KHR(device, pMemoryMapInfo, ppData);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkUnmapMemory2KHR: Invalid device "
+                   "[VUID-vkUnmapMemory2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->UnmapMemory2KHR(device, pMemoryUnmapInfo);
 }
 
 
@@ -8588,6 +8626,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetPipelineExecutableInternalRepresentationsKHR", name)) {
         *addr = (void *)GetPipelineExecutableInternalRepresentationsKHR;
+        return true;
+    }
+
+    // ---- VK_KHR_map_memory2 extension commands
+    if (!strcmp("vkMapMemory2KHR", name)) {
+        *addr = (void *)MapMemory2KHR;
+        return true;
+    }
+    if (!strcmp("vkUnmapMemory2KHR", name)) {
+        *addr = (void *)UnmapMemory2KHR;
         return true;
     }
 

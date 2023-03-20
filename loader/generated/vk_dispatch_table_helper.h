@@ -117,6 +117,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubDeferredOperationJoinKHR(VkDevice devi
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPipelineExecutablePropertiesKHR(VkDevice                        device, const VkPipelineInfoKHR*        pPipelineInfo, uint32_t* pExecutableCount, VkPipelineExecutablePropertiesKHR* pProperties) { return VK_SUCCESS; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPipelineExecutableStatisticsKHR(VkDevice                        device, const VkPipelineExecutableInfoKHR*  pExecutableInfo, uint32_t* pStatisticCount, VkPipelineExecutableStatisticKHR* pStatistics) { return VK_SUCCESS; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPipelineExecutableInternalRepresentationsKHR(VkDevice                        device, const VkPipelineExecutableInfoKHR*  pExecutableInfo, uint32_t* pInternalRepresentationCount, VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) { return VK_SUCCESS; }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {  }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -761,6 +763,10 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetPipelineExecutableStatisticsKHR == nullptr) { table->GetPipelineExecutableStatisticsKHR = (PFN_vkGetPipelineExecutableStatisticsKHR)StubGetPipelineExecutableStatisticsKHR; }
     table->GetPipelineExecutableInternalRepresentationsKHR = (PFN_vkGetPipelineExecutableInternalRepresentationsKHR) gpa(device, "vkGetPipelineExecutableInternalRepresentationsKHR");
     if (table->GetPipelineExecutableInternalRepresentationsKHR == nullptr) { table->GetPipelineExecutableInternalRepresentationsKHR = (PFN_vkGetPipelineExecutableInternalRepresentationsKHR)StubGetPipelineExecutableInternalRepresentationsKHR; }
+    table->MapMemory2KHR = (PFN_vkMapMemory2KHR) gpa(device, "vkMapMemory2KHR");
+    if (table->MapMemory2KHR == nullptr) { table->MapMemory2KHR = (PFN_vkMapMemory2KHR)StubMapMemory2KHR; }
+    table->UnmapMemory2KHR = (PFN_vkUnmapMemory2KHR) gpa(device, "vkUnmapMemory2KHR");
+    if (table->UnmapMemory2KHR == nullptr) { table->UnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)StubUnmapMemory2KHR; }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR) gpa(device, "vkCmdEncodeVideoKHR");
     if (table->CmdEncodeVideoKHR == nullptr) { table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR)StubCmdEncodeVideoKHR; }
