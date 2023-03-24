@@ -35,13 +35,13 @@
 // validation.
 
 // Fill in random but valid data into the device properties struct for the current physical device
-static void FillInRandomICDInfo(uint32_t& vendor_id, uint32_t& driver_vers) {
+void FillInRandomICDInfo(uint32_t& vendor_id, uint32_t& driver_vers) {
     vendor_id = VK_MAKE_API_VERSION(0, rand() % 64, rand() % 255, rand() % 255);
     driver_vers = VK_MAKE_API_VERSION(0, rand() % 64, rand() % 255, rand() % 255);
 }
 
 // Fill in random but valid data into the device properties struct for the current physical device
-static void FillInRandomDeviceProps(VkPhysicalDeviceProperties& props, uint32_t api_vers, uint32_t vendor, uint32_t driver_vers) {
+void FillInRandomDeviceProps(VkPhysicalDeviceProperties& props, uint32_t api_vers, uint32_t vendor, uint32_t driver_vers) {
     props.apiVersion = api_vers;
     props.driverVersion = driver_vers;
     props.vendorID = vendor;
@@ -364,7 +364,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Mixed) {
 }
 
 // Fill in random but valid data into the features struct for the current physical device
-static void FillInRandomFeatures(VkPhysicalDeviceFeatures& feats) {
+void FillInRandomFeatures(VkPhysicalDeviceFeatures& feats) {
     feats.robustBufferAccess = (rand() % 2) == 0 ? VK_FALSE : VK_TRUE;
     feats.fullDrawIndexUint32 = (rand() % 2) == 0 ? VK_FALSE : VK_TRUE;
     feats.imageCubeArray = (rand() % 2) == 0 ? VK_FALSE : VK_TRUE;
@@ -423,7 +423,7 @@ static void FillInRandomFeatures(VkPhysicalDeviceFeatures& feats) {
 }
 
 // Compare the contents of the feature structs
-static bool CompareFeatures(const VkPhysicalDeviceFeatures& feats1, const VkPhysicalDeviceFeatures2& feats2) {
+bool CompareFeatures(const VkPhysicalDeviceFeatures& feats1, const VkPhysicalDeviceFeatures2& feats2) {
     return feats1.robustBufferAccess == feats2.features.robustBufferAccess &&
            feats1.fullDrawIndexUint32 == feats2.features.fullDrawIndexUint32 &&
            feats1.imageCubeArray == feats2.features.imageCubeArray && feats1.independentBlend == feats2.features.independentBlend &&
@@ -737,7 +737,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeatsMixed) {
 }
 
 // Fill in random but valid data into the format properties struct for the current physical device
-static void FillInRandomFormatProperties(std::vector<VkFormatProperties>& props) {
+void FillInRandomFormatProperties(std::vector<VkFormatProperties>& props) {
     props.resize(5);
     for (uint8_t form = 0; form < 5; ++form) {
         props[form].bufferFeatures = static_cast<VkFormatFeatureFlags>(rand());
@@ -1031,7 +1031,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatPropsMixed) {
 }
 
 // Fill in random but valid data into the image format data struct for the current physical device
-static void FillInRandomImageFormatData(VkImageFormatProperties& props) {
+void FillInRandomImageFormatData(VkImageFormatProperties& props) {
     props.maxExtent = {static_cast<uint32_t>(rand() % 512), static_cast<uint32_t>(rand() % 512),
                        static_cast<uint32_t>(rand() % 512)};
     props.maxMipLevels = static_cast<uint32_t>(1 << (rand() % 16));
@@ -1455,7 +1455,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryPropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the memory data struct for the current physical device
-static void FillInRandomMemoryData(VkPhysicalDeviceMemoryProperties& props) {
+void FillInRandomMemoryData(VkPhysicalDeviceMemoryProperties& props) {
     props.memoryTypeCount = (rand() % 7) + 1;
     props.memoryHeapCount = (rand() % 7) + 1;
     for (uint32_t i = 0; i < props.memoryHeapCount; ++i) {
@@ -1469,7 +1469,7 @@ static void FillInRandomMemoryData(VkPhysicalDeviceMemoryProperties& props) {
 }
 
 // Compare the memory structs
-static bool CompareMemoryData(const VkPhysicalDeviceMemoryProperties& props1, const VkPhysicalDeviceMemoryProperties2& props2) {
+bool CompareMemoryData(const VkPhysicalDeviceMemoryProperties& props1, const VkPhysicalDeviceMemoryProperties2& props2) {
     bool equal = true;
     equal = equal && props1.memoryTypeCount == props2.memoryProperties.memoryTypeCount;
     equal = equal && props1.memoryHeapCount == props2.memoryProperties.memoryHeapCount;
@@ -1750,7 +1750,7 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyPropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the queue family data struct for the current physical device
-static uint32_t FillInRandomQueueFamilyData(std::vector<MockQueueFamilyProperties>& props) {
+uint32_t FillInRandomQueueFamilyData(std::vector<MockQueueFamilyProperties>& props) {
     props.resize((rand() % 4) + 1);
     for (uint32_t i = 0; i < props.size(); ++i) {
         props[i].properties.queueFlags = (rand() % 30) + 1;
@@ -1765,8 +1765,8 @@ static uint32_t FillInRandomQueueFamilyData(std::vector<MockQueueFamilyPropertie
 }
 
 // Compare the queue family structs
-static bool CompareQueueFamilyData(const std::vector<VkQueueFamilyProperties>& props1,
-                                   const std::vector<VkQueueFamilyProperties2>& props2) {
+bool CompareQueueFamilyData(const std::vector<VkQueueFamilyProperties>& props1,
+                            const std::vector<VkQueueFamilyProperties2>& props2) {
     if (props1.size() != props2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < props1.size(); ++i) {
@@ -2106,7 +2106,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatPropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the sparse image format data struct for the current physical device
-static void FillInRandomSparseImageFormatData(std::vector<VkSparseImageFormatProperties>& props) {
+void FillInRandomSparseImageFormatData(std::vector<VkSparseImageFormatProperties>& props) {
     props.resize((rand() % 4) + 1);
     for (uint32_t i = 0; i < props.size(); ++i) {
         props[i].aspectMask = static_cast<VkImageAspectFlags>((rand() % 0x7FE) + 1);
@@ -2117,8 +2117,8 @@ static void FillInRandomSparseImageFormatData(std::vector<VkSparseImageFormatPro
 }
 
 // Compare the sparse image format structs
-static bool CompareSparseImageFormatData(const std::vector<VkSparseImageFormatProperties>& props1,
-                                         const std::vector<VkSparseImageFormatProperties2>& props2) {
+bool CompareSparseImageFormatData(const std::vector<VkSparseImageFormatProperties>& props1,
+                                  const std::vector<VkSparseImageFormatProperties2>& props2) {
     if (props1.size() != props2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < props1.size(); ++i) {
@@ -2545,15 +2545,15 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufPropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the external memorydata struct for the current physical device
-static void FillInRandomExtMemoryData(VkExternalMemoryProperties& props) {
+void FillInRandomExtMemoryData(VkExternalMemoryProperties& props) {
     props.externalMemoryFeatures = static_cast<VkExternalMemoryFeatureFlags>((rand() % 6) + 1);
     props.exportFromImportedHandleTypes = static_cast<VkExternalMemoryHandleTypeFlags>((rand() % 0x1FFE) + 1);
     props.compatibleHandleTypes = static_cast<VkExternalMemoryHandleTypeFlags>((rand() % 0x1FFE) + 1);
 }
 
 // Compare the external memory data structs
-static bool CompareExtMemoryData(const VkExternalMemoryProperties& props1, const VkExternalMemoryProperties& props2,
-                                 bool supported = true) {
+bool CompareExtMemoryData(const VkExternalMemoryProperties& props1, const VkExternalMemoryProperties& props2,
+                          bool supported = true) {
     bool equal = true;
     if (supported) {
         equal = equal && props1.externalMemoryFeatures == props2.externalMemoryFeatures;
@@ -2810,7 +2810,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemPropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the external semaphore data struct for the current physical device
-static void FillInRandomExtSemData(VkExternalSemaphoreProperties& props) {
+void FillInRandomExtSemData(VkExternalSemaphoreProperties& props) {
     props.sType = VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES;
     props.pNext = nullptr;
     props.exportFromImportedHandleTypes = static_cast<VkExternalSemaphoreHandleTypeFlags>((rand() % 0xFFF) + 1);
@@ -2819,8 +2819,8 @@ static void FillInRandomExtSemData(VkExternalSemaphoreProperties& props) {
 }
 
 // Compare the external semaphore data structs
-static bool CompareExtSemaphoreData(const VkExternalSemaphoreProperties& props1, const VkExternalSemaphoreProperties& props2,
-                                    bool supported = true) {
+bool CompareExtSemaphoreData(const VkExternalSemaphoreProperties& props1, const VkExternalSemaphoreProperties& props2,
+                             bool supported = true) {
     bool equal = true;
     if (supported) {
         equal = equal && props1.externalSemaphoreFeatures == props2.externalSemaphoreFeatures;
@@ -3072,7 +3072,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFencePropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the external fence data struct for the current physical device
-static void FillInRandomExtFenceData(VkExternalFenceProperties& props) {
+void FillInRandomExtFenceData(VkExternalFenceProperties& props) {
     props.sType = VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES;
     props.pNext = nullptr;
     props.exportFromImportedHandleTypes = static_cast<VkExternalFenceHandleTypeFlags>((rand() % 0xFFF) + 1);
@@ -3081,8 +3081,7 @@ static void FillInRandomExtFenceData(VkExternalFenceProperties& props) {
 }
 
 // Compare the external fence data structs
-static bool CompareExtFenceData(const VkExternalFenceProperties& props1, const VkExternalFenceProperties& props2,
-                                bool supported = true) {
+bool CompareExtFenceData(const VkExternalFenceProperties& props1, const VkExternalFenceProperties& props2, bool supported = true) {
     bool equal = true;
     if (supported) {
         equal = equal && props1.externalFenceFeatures == props2.externalFenceFeatures;
@@ -3334,7 +3333,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the surface capability data struct for the current physical device
-static void FillInRandomSurfaceCapsData(VkSurfaceCapabilitiesKHR& props) {
+void FillInRandomSurfaceCapsData(VkSurfaceCapabilitiesKHR& props) {
     props.minImageCount = (rand() % 0xFFF) + 1;
     props.maxImageCount = (rand() % 0xFFF) + 1;
     props.currentExtent.width = (rand() % 0xFFF) + 1;
@@ -3351,8 +3350,7 @@ static void FillInRandomSurfaceCapsData(VkSurfaceCapabilitiesKHR& props) {
 }
 
 // Compare the surface capability data structs
-static bool CompareSurfaceCapsData(const VkSurfaceCapabilitiesKHR& props1, const VkSurfaceCapabilitiesKHR& props2,
-                                   bool supported = true) {
+bool CompareSurfaceCapsData(const VkSurfaceCapabilitiesKHR& props1, const VkSurfaceCapabilitiesKHR& props2, bool supported = true) {
     bool equal = true;
     if (supported) {
         equal = equal && props1.minImageCount == props2.minImageCount;
@@ -3567,7 +3565,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the surface formats data struct for the current physical device
-static void FillInRandomSurfaceFormatsData(std::vector<VkSurfaceFormatKHR>& props) {
+void FillInRandomSurfaceFormatsData(std::vector<VkSurfaceFormatKHR>& props) {
     props.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < props.size(); ++i) {
         props[i].format = static_cast<VkFormat>((rand() % 0xFFF) + 1);
@@ -3576,8 +3574,8 @@ static void FillInRandomSurfaceFormatsData(std::vector<VkSurfaceFormatKHR>& prop
 }
 
 // Compare the surface formats data structs
-static bool CompareSurfaceFormatsData(const std::vector<VkSurfaceFormatKHR>& props1, const std::vector<VkSurfaceFormat2KHR>& props2,
-                                      bool supported = true) {
+bool CompareSurfaceFormatsData(const std::vector<VkSurfaceFormatKHR>& props1, const std::vector<VkSurfaceFormat2KHR>& props2,
+                               bool supported = true) {
     if (props1.size() != props2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < props1.size(); ++i) {
@@ -3802,7 +3800,7 @@ VkDisplayModeKHR CreateRandomDisplayMode() {
 }
 
 // Fill in random but valid data into the display property data struct for the current physical device
-static void FillInRandomDisplayPropData(std::vector<VkDisplayPropertiesKHR>& props) {
+void FillInRandomDisplayPropData(std::vector<VkDisplayPropertiesKHR>& props) {
     props.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < props.size(); ++i) {
         props[i].display = CreateRandomDisplay();
@@ -3817,8 +3815,7 @@ static void FillInRandomDisplayPropData(std::vector<VkDisplayPropertiesKHR>& pro
 }
 
 // Compare the display property data structs
-static bool CompareDisplayPropData(const std::vector<VkDisplayPropertiesKHR>& props1,
-                                   const std::vector<VkDisplayPropertiesKHR>& props2) {
+bool CompareDisplayPropData(const std::vector<VkDisplayPropertiesKHR>& props1, const std::vector<VkDisplayPropertiesKHR>& props2) {
     if (props1.size() != props2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < props1.size(); ++i) {
@@ -4001,7 +3998,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the display plane property data struct for the current physical device
-static void FillInRandomDisplayPlanePropData(std::vector<VkDisplayPlanePropertiesKHR>& props) {
+void FillInRandomDisplayPlanePropData(std::vector<VkDisplayPlanePropertiesKHR>& props) {
     props.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < props.size(); ++i) {
         props[i].currentDisplay = CreateRandomDisplay();
@@ -4010,8 +4007,8 @@ static void FillInRandomDisplayPlanePropData(std::vector<VkDisplayPlanePropertie
 }
 
 // Compare the display plane property data structs
-static bool CompareDisplayPlanePropData(const std::vector<VkDisplayPlanePropertiesKHR>& props1,
-                                        const std::vector<VkDisplayPlanePropertiesKHR>& props2) {
+bool CompareDisplayPlanePropData(const std::vector<VkDisplayPlanePropertiesKHR>& props1,
+                                 const std::vector<VkDisplayPlanePropertiesKHR>& props2) {
     if (props1.size() != props2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < props1.size(); ++i) {
@@ -4189,7 +4186,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the display plane property data struct for the current physical device
-static void GenerateRandomDisplays(std::vector<VkDisplayKHR>& disps) {
+void GenerateRandomDisplays(std::vector<VkDisplayKHR>& disps) {
     disps.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < disps.size(); ++i) {
         disps[i] = CreateRandomDisplay();
@@ -4197,7 +4194,7 @@ static void GenerateRandomDisplays(std::vector<VkDisplayKHR>& disps) {
 }
 
 // Compare the display plane property data structs
-static bool CompareDisplays(const std::vector<VkDisplayKHR>& disps1, const std::vector<VkDisplayKHR>& disps2) {
+bool CompareDisplays(const std::vector<VkDisplayKHR>& disps1, const std::vector<VkDisplayKHR>& disps2) {
     if (disps1.size() != disps2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < disps1.size(); ++i) {
@@ -4374,7 +4371,7 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the display mode properties data struct for the current physical device
-static void GenerateRandomDisplayModeProps(std::vector<VkDisplayModePropertiesKHR>& disps) {
+void GenerateRandomDisplayModeProps(std::vector<VkDisplayModePropertiesKHR>& disps) {
     disps.resize((rand() % 5) + 1);
     for (uint32_t i = 0; i < disps.size(); ++i) {
         disps[i].displayMode = CreateRandomDisplayMode();
@@ -4385,8 +4382,8 @@ static void GenerateRandomDisplayModeProps(std::vector<VkDisplayModePropertiesKH
 }
 
 // Compare the display mode properties data structs
-static bool CompareDisplayModeProps(const std::vector<VkDisplayModePropertiesKHR>& disps1,
-                                    const std::vector<VkDisplayModePropertiesKHR>& disps2) {
+bool CompareDisplayModeProps(const std::vector<VkDisplayModePropertiesKHR>& disps1,
+                             const std::vector<VkDisplayModePropertiesKHR>& disps2) {
     if (disps1.size() != disps2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < disps1.size(); ++i) {
@@ -4566,7 +4563,7 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRNoICDSupport) {
 }
 
 // Compare the display modes
-static bool CompareDisplayModes(const VkDisplayModeKHR& disps1, VkDisplayModeKHR& disps2) { return disps1 == disps2; }
+bool CompareDisplayModes(const VkDisplayModeKHR& disps1, VkDisplayModeKHR& disps2) { return disps1 == disps2; }
 
 // Test vkCreateDisplayModeKHR where instance and ICD supports it, but device does not support it.
 TEST(LoaderInstPhysDevExts, GetDispModesKHRInstanceAndICDSupport) {
@@ -4726,7 +4723,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRNoICDSupport) {
 }
 
 // Fill in random but valid data into the display plane caps for the current physical device
-static void GenerateRandomDisplayPlaneCaps(VkDisplayPlaneCapabilitiesKHR& caps) {
+void GenerateRandomDisplayPlaneCaps(VkDisplayPlaneCapabilitiesKHR& caps) {
     caps.supportedAlpha = static_cast<VkDisplayPlaneAlphaFlagsKHR>((rand() % 0xFFFFFFF) + 1);
     caps.minSrcPosition.x = static_cast<uint32_t>((rand() % 0xFFFFFFF) + 1);
     caps.minSrcPosition.y = static_cast<uint32_t>((rand() % 0xFFFFFFF) + 1);
@@ -4747,8 +4744,8 @@ static void GenerateRandomDisplayPlaneCaps(VkDisplayPlaneCapabilitiesKHR& caps) 
 }
 
 // Compare the display plane caps
-static bool CompareDisplayPlaneCaps(const VkDisplayPlaneCapabilitiesKHR& caps1, VkDisplayPlaneCapabilitiesKHR& caps2,
-                                    bool supported = true) {
+bool CompareDisplayPlaneCaps(const VkDisplayPlaneCapabilitiesKHR& caps1, VkDisplayPlaneCapabilitiesKHR& caps2,
+                             bool supported = true) {
     bool equal = true;
     if (supported) {
         equal = equal && caps1.supportedAlpha == caps2.supportedAlpha;
@@ -4943,8 +4940,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRNoICDSupport) {
 }
 
 // Compare the display property data structs
-static bool CompareDisplayPropData(const std::vector<VkDisplayPropertiesKHR>& props1,
-                                   const std::vector<VkDisplayProperties2KHR>& props2) {
+bool CompareDisplayPropData(const std::vector<VkDisplayPropertiesKHR>& props1, const std::vector<VkDisplayProperties2KHR>& props2) {
     if (props1.size() != props2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < props1.size(); ++i) {
@@ -5123,8 +5119,8 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRNoICDSupport) {
 }
 
 // Compare the display plane property data structs
-static bool CompareDisplayPlanePropData(const std::vector<VkDisplayPlanePropertiesKHR>& props1,
-                                        const std::vector<VkDisplayPlaneProperties2KHR>& props2) {
+bool CompareDisplayPlanePropData(const std::vector<VkDisplayPlanePropertiesKHR>& props1,
+                                 const std::vector<VkDisplayPlaneProperties2KHR>& props2) {
     if (props1.size() != props2.size()) return false;
     bool equal = true;
     for (uint32_t i = 0; i < props1.size(); ++i) {
@@ -5295,8 +5291,8 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRNoICDSupport) {
 }
 
 // Compare the display mode properties data structs
-static bool CompareDisplayModeProps(const std::vector<VkDisplayModePropertiesKHR>& disps1,
-                                    const std::vector<VkDisplayModeProperties2KHR>& disps2) {
+bool CompareDisplayModeProps(const std::vector<VkDisplayModePropertiesKHR>& disps1,
+                             const std::vector<VkDisplayModeProperties2KHR>& disps2) {
     if (disps1.size() != disps2.size()) return false;
 
     bool equal = true;
@@ -5471,7 +5467,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRNoICDSupport) {
 }
 
 // Compare the display plane caps
-static bool CompareDisplayPlaneCaps(const VkDisplayPlaneCapabilitiesKHR& caps1, VkDisplayPlaneCapabilities2KHR& caps2) {
+bool CompareDisplayPlaneCaps(const VkDisplayPlaneCapabilitiesKHR& caps1, VkDisplayPlaneCapabilities2KHR& caps2) {
     bool equal = true;
     equal = equal && caps1.supportedAlpha == caps2.capabilities.supportedAlpha;
     equal = equal && caps1.minSrcPosition.x == caps2.capabilities.minSrcPosition.x;

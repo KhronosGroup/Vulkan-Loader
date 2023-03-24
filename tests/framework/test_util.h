@@ -272,7 +272,7 @@ std::wstring widen(const std::string& utf8);
 
 #if defined(WIN32)
 typedef HMODULE loader_platform_dl_handle;
-static loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
+inline loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
     std::wstring lib_path_utf16 = widen(lib_path);
     // Try loading the library the original way first.
     loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path_utf16.c_str());
@@ -770,7 +770,7 @@ inline bool contains(std::vector<VkLayerProperties> const& vec, const char* name
 #if defined(__linux__)
 
 // find application path + name. Path cannot be longer than 1024, returns NULL if it is greater than that.
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     ssize_t count = readlink("/proc/self/exe", &buffer[0], buffer.size());
@@ -782,7 +782,7 @@ static inline std::string test_platform_executable_path() {
 }
 #elif defined(__APPLE__)  // defined(__linux__)
 #include <libproc.h>
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     pid_t pid = getpid();
@@ -794,7 +794,7 @@ static inline std::string test_platform_executable_path() {
 }
 #elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/sysctl.h>
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     int mib[] = {
         CTL_KERN,
 #if defined(__NetBSD__)
@@ -818,7 +818,7 @@ static inline std::string test_platform_executable_path() {
     return buffer;
 }
 #elif defined(__Fuchsia__) || defined(__OpenBSD__)
-static inline std::string test_platform_executable_path() { return {}; }
+inline std::string test_platform_executable_path() { return {}; }
 #elif defined(__QNXNTO__)
 
 #define SYSCONFDIR "/etc"
@@ -826,7 +826,7 @@ static inline std::string test_platform_executable_path() { return {}; }
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     int fd = open("/proc/self/exefile", O_RDONLY);
@@ -848,7 +848,7 @@ static inline std::string test_platform_executable_path() {
 }
 #endif  // defined (__QNXNTO__)
 #if defined(WIN32)
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     DWORD ret = GetModuleFileName(NULL, static_cast<LPSTR>(&buffer[0]), (DWORD)buffer.size());

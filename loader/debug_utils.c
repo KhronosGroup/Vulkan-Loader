@@ -66,9 +66,10 @@ VkResult util_CreateDebugUtilsMessenger(struct loader_instance *inst, const VkDe
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL
-debug_utils_CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                         const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pMessenger) {
+VKAPI_ATTR VkResult VKAPI_CALL debug_utils_CreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                                        const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkDebugUtilsMessengerEXT *pMessenger) {
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
     VkResult result = inst->disp->layer_inst_disp.CreateDebugUtilsMessengerEXT(inst->instance, pCreateInfo, pAllocator, pMessenger);
@@ -149,16 +150,17 @@ VkResult util_CreateDebugUtilsMessengers(struct loader_instance *inst, const voi
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR void VKAPI_CALL debug_utils_SubmitDebugUtilsMessageEXT(
-    VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData) {
+VKAPI_ATTR void VKAPI_CALL debug_utils_SubmitDebugUtilsMessageEXT(VkInstance instance,
+                                                                  VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                                  VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                                  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData) {
     struct loader_instance *inst = loader_get_instance(instance);
 
     inst->disp->layer_inst_disp.SubmitDebugUtilsMessageEXT(inst->instance, messageSeverity, messageTypes, pCallbackData);
 }
 
-static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                                                            const VkAllocationCallbacks *pAllocator) {
+VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+                                                                     const VkAllocationCallbacks *pAllocator) {
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
 
@@ -308,9 +310,10 @@ VkResult util_CreateDebugReportCallback(struct loader_instance *inst, const VkDe
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL
-debug_utils_CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
-                                         const VkAllocationCallbacks *pAllocator, VkDebugReportCallbackEXT *pCallback) {
+VKAPI_ATTR VkResult VKAPI_CALL debug_utils_CreateDebugReportCallbackEXT(VkInstance instance,
+                                                                        const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkDebugReportCallbackEXT *pCallback) {
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
     VkResult result = inst->disp->layer_inst_disp.CreateDebugReportCallbackEXT(inst->instance, pCreateInfo, pAllocator, pCallback);
@@ -399,8 +402,8 @@ VkResult util_CreateDebugReportCallbacks(struct loader_instance *inst, const voi
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
-                                                                            const VkAllocationCallbacks *pAllocator) {
+VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
+                                                                     const VkAllocationCallbacks *pAllocator) {
     struct loader_instance *inst = loader_get_instance(instance);
     loader_platform_thread_lock_mutex(&loader_lock);
 
@@ -409,10 +412,9 @@ static VKAPI_ATTR void VKAPI_CALL debug_utils_DestroyDebugReportCallbackEXT(VkIn
     loader_platform_thread_unlock_mutex(&loader_lock);
 }
 
-static VKAPI_ATTR void VKAPI_CALL debug_utils_DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
-                                                                    VkDebugReportObjectTypeEXT objType, uint64_t object,
-                                                                    size_t location, int32_t msgCode, const char *pLayerPrefix,
-                                                                    const char *pMsg) {
+VKAPI_ATTR void VKAPI_CALL debug_utils_DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
+                                                             VkDebugReportObjectTypeEXT objType, uint64_t object, size_t location,
+                                                             int32_t msgCode, const char *pLayerPrefix, const char *pMsg) {
     struct loader_instance *inst = loader_get_instance(instance);
 
     inst->disp->layer_inst_disp.DebugReportMessageEXT(inst->instance, flags, objType, object, location, msgCode, pLayerPrefix,
@@ -548,7 +550,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DebugReportMessageEXT(VkInstance instance,
 
 // General utilities
 
-static const VkExtensionProperties debug_utils_extension_info[] = {
+const VkExtensionProperties debug_utils_extension_info[] = {
     {VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_SPEC_VERSION},
     {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_SPEC_VERSION},
 };

@@ -34,9 +34,9 @@
 //
 
 // Prototype declaration for callback so we can use it in class utility methods
-static VkBool32 VKAPI_CALL test_DebugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-                                                    uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix,
-                                                    const char* pMessage, void* pUserData);
+VkBool32 VKAPI_CALL test_DebugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
+                                             size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage,
+                                             void* pUserData);
 
 class DebugReportTest : public ::testing::Test {
    public:
@@ -121,9 +121,9 @@ class DebugReportTest : public ::testing::Test {
 };
 
 // This is the actual callback prototyped above.
-static VkBool32 VKAPI_CALL test_DebugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-                                                    uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix,
-                                                    const char* pMessage, void* pUserData) {
+VkBool32 VKAPI_CALL test_DebugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
+                                             size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage,
+                                             void* pUserData) {
     DebugReportTest* debug_report_test = reinterpret_cast<DebugReportTest*>(pUserData);
     debug_report_test->VerifyExpected(flags, objectType, pMessage);
     return VK_FALSE;
@@ -360,9 +360,9 @@ TEST_F(ManualReport, InfoMessage) {
 //
 
 // Prototype declaration for callback so we can use it in class utility methods
-static VkBool32 VKAPI_CALL test_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                                   VkDebugUtilsMessageTypeFlagsEXT message_types,
-                                                   const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data);
+VkBool32 VKAPI_CALL test_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                            VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                            const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data);
 
 class DebugUtilTest : public ::testing::Test {
    public:
@@ -461,9 +461,9 @@ class DebugUtilTest : public ::testing::Test {
 
 // This is the actual callback prototyped above.
 
-static VkBool32 VKAPI_CALL test_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                                   VkDebugUtilsMessageTypeFlagsEXT message_types,
-                                                   const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
+VkBool32 VKAPI_CALL test_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                            VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                            const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
     DebugUtilTest* debug_util_test = reinterpret_cast<DebugUtilTest*>(user_data);
     debug_util_test->VerifyExpected(message_types, message_severity, callback_data->pMessage, callback_data);
     return VK_FALSE;
