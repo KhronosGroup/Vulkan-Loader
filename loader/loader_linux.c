@@ -35,7 +35,7 @@
 #include "log.h"
 
 // Determine a priority based on device type with the higher value being higher priority.
-static uint32_t determine_priority_type_value(VkPhysicalDeviceType type) {
+uint32_t determine_priority_type_value(VkPhysicalDeviceType type) {
     switch (type) {
         case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
             return 10;
@@ -55,7 +55,7 @@ static uint32_t determine_priority_type_value(VkPhysicalDeviceType type) {
 
 // Compare the two device types.
 // This behaves similar to a qsort compare.
-static int32_t device_type_compare(VkPhysicalDeviceType a, VkPhysicalDeviceType b) {
+int32_t device_type_compare(VkPhysicalDeviceType a, VkPhysicalDeviceType b) {
     uint32_t a_value = determine_priority_type_value(a);
     uint32_t b_value = determine_priority_type_value(b);
     if (a_value > b_value) {
@@ -204,8 +204,8 @@ int32_t compare_device_groups(const void *a, const void *b) {
 }
 
 // Search for the default device using the loader environment variable.
-static void linux_env_var_default_device(struct loader_instance *inst, uint32_t device_count,
-                                         struct LinuxSortedDeviceInfo *sorted_device_info) {
+void linux_env_var_default_device(struct loader_instance *inst, uint32_t device_count,
+                                  struct LinuxSortedDeviceInfo *sorted_device_info) {
     char *selection = loader_getenv("VK_LOADER_DEVICE_SELECT", inst);
     if (NULL != selection) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,

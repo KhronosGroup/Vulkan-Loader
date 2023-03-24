@@ -61,7 +61,7 @@
 #endif
 
 typedef HRESULT(APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory);
-static PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
+PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 
 void windows_initialization(void) {
     char dll_location[MAX_PATH];
@@ -227,8 +227,8 @@ out:
 
 VkResult windows_get_device_registry_files(const struct loader_instance *inst, uint32_t log_target_flag, char **reg_data,
                                            PDWORD reg_data_size, LPCSTR value_name) {
-    static const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
-    static const wchar_t *displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
+    const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
+    const wchar_t *displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
 #ifdef CM_GETIDLIST_FILTER_PRESENT
     const ULONG flags = CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT;
 #else
@@ -348,7 +348,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                                     PDWORD reg_data_size) {
     // This list contains all of the allowed ICDs. This allows us to verify that a device is actually present from the vendor
     // specified. This does disallow other vendors, but any new driver should use the device-specific registries anyway.
-    static const struct {
+    const struct {
         const char *filename;
         unsigned int vendor_id;
     } known_drivers[] = {

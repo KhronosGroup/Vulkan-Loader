@@ -2654,7 +2654,7 @@ TEST(EnumeratePhysicalDeviceGroups, MultipleAddRemoves) {
 }
 
 // Fill in random but valid data into the device properties struct for the current physical device
-static void FillInRandomDeviceProps(VkPhysicalDeviceProperties& props, VkPhysicalDeviceType dev_type, uint32_t api_vers,
+void FillInRandomDeviceProps(VkPhysicalDeviceProperties& props, VkPhysicalDeviceType dev_type, uint32_t api_vers,
                                     uint32_t vendor, uint32_t device) {
     props.apiVersion = api_vers;
     props.vendorID = vendor;

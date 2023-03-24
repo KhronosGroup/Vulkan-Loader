@@ -5453,7 +5453,7 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
     ASSERT_EQ(found_added_count, 3U);
 }
 
-static bool GroupsAreTheSame(VkPhysicalDeviceGroupProperties a, VkPhysicalDeviceGroupProperties b) {
+bool GroupsAreTheSame(VkPhysicalDeviceGroupProperties a, VkPhysicalDeviceGroupProperties b) {
     if (a.physicalDeviceCount != b.physicalDeviceCount) {
         return false;
     }

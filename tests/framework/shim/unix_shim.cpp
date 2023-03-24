@@ -33,7 +33,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
-static PlatformShim platform_shim;
+PlatformShim platform_shim;
 extern "C" {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 PlatformShim* get_platform_shim(std::vector<fs::FolderManager>* folders) {
@@ -104,18 +104,18 @@ using PFN_SEC_GETENV = char* (*)(const char* name);
 #define real__secure_getenv __secure_getenv
 #endif
 #else
-static PFN_OPENDIR real_opendir = nullptr;
-static PFN_READDIR real_readdir = nullptr;
-static PFN_CLOSEDIR real_closedir = nullptr;
-static PFN_ACCESS real_access = nullptr;
-static PFN_FOPEN real_fopen = nullptr;
-static PFN_GETEUID real_geteuid = nullptr;
-static PFN_GETEGID real_getegid = nullptr;
+PFN_OPENDIR real_opendir = nullptr;
+PFN_READDIR real_readdir = nullptr;
+PFN_CLOSEDIR real_closedir = nullptr;
+PFN_ACCESS real_access = nullptr;
+PFN_FOPEN real_fopen = nullptr;
+PFN_GETEUID real_geteuid = nullptr;
+PFN_GETEGID real_getegid = nullptr;
 #if defined(HAVE_SECURE_GETENV)
-static PFN_SEC_GETENV real_secure_getenv = nullptr;
+PFN_SEC_GETENV real_secure_getenv = nullptr;
 #endif
 #if defined(HAVE___SECURE_GETENV)
-static PFN_SEC_GETENV real__secure_getenv = nullptr;
+PFN_SEC_GETENV real__secure_getenv = nullptr;
 #endif
 #endif
 

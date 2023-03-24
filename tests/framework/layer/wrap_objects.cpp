@@ -132,7 +132,7 @@ VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, V
 
 namespace wrap_objects {
 
-static const VkLayerProperties global_layer = {
+const VkLayerProperties global_layer = {
     "VK_LAYER_LUNARG_wrap_objects",
     VK_HEADER_VERSION_COMPLETE,
     1,
