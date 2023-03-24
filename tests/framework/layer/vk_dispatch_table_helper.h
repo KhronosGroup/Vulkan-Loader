@@ -27,7 +27,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_layer.h>
 #include <string.h>
-#include "vk_layer_dispatch_table.h"
+#include "loader/generated/vk_layer_dispatch_table.h"
 
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) { return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL StubDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {  }
