@@ -132,7 +132,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble += '#include <vulkan/vulkan.h>\n'
         preamble += '#include <vulkan/vk_layer.h>\n'
         preamble += '#include <string.h>\n'
-        preamble += '#include "vk_layer_dispatch_table.h"\n'
+        preamble += '#include "loader/generated/vk_layer_dispatch_table.h"\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
