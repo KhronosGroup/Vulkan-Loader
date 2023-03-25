@@ -22,7 +22,7 @@
 
 #pragma once
 
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
 
 #include "loader_common.h"
 

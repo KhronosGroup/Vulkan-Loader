@@ -45,8 +45,10 @@
 #include <sys/types.h>
 #if defined(_WIN32)
 #include "dirent_on_windows.h"
-#else  // _WIN32
+#elif COMMON_UNIX_PLATFORMS
 #include <dirent.h>
+#else
+#warning dirent.h not available on this platform
 #endif  // _WIN32
 
 #include "allocation.h"
@@ -62,7 +64,7 @@
 #if defined(WIN32)
 #include "loader_windows.h"
 #endif
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
 // This header is currently only used when sorting Linux devices, so don't include it otherwise.
 #include "loader_linux.h"
 #endif  // LOADER_ENABLE_LINUX_SORT
@@ -138,15 +140,19 @@ bool loader_check_version_meets_required(loader_api_version required, loader_api
 DIR *loader_opendir(const struct loader_instance *instance, const char *name) {
 #if defined(_WIN32)
     return opendir(instance ? &instance->alloc_callbacks : NULL, name);
-#else   // _WIN32
+#elif COMMON_UNIX_PLATFORMS
     return opendir(name);
+#else
+#warning dirent.h - opendir not available on this platform
 #endif  // _WIN32
 }
 int loader_closedir(const struct loader_instance *instance, DIR *dir) {
 #if defined(_WIN32)
     return closedir(instance ? &instance->alloc_callbacks : NULL, dir);
-#else   // _WIN32
+#elif COMMON_UNIX_PLATFORMS
     return closedir(dir);
+#else
+#warning dirent.h - closedir not available on this platform
 #endif  // _WIN32
 }
 
@@ -1925,8 +1931,10 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
             file = _wfopen(filename_utf16, L"rb");
         }
     }
-#else
+#elif COMMON_UNIX_PLATFORMS
     file = fopen(filename, "rb");
+#else
+#warning fopen not available on this platform
 #endif
 
     if (!file) {
@@ -3013,7 +3021,7 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
     char *next_file;
     char *name;
     char full_path[2048];
-#ifndef _WIN32
+#if !defined(_WIN32)
     char temp_path[2048];
 #endif
 
@@ -3027,9 +3035,9 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
         // Is this a JSON file, then try to open it.
         size_t len = strlen(cur_file);
         if (is_json(cur_file + len - 5, len)) {
-#ifdef _WIN32
+#if defined(_WIN32)
             name = cur_file;
-#else
+#elif COMMON_UNIX_PLATFORMS
             // Only Linux has relative paths, make a copy of location so it isn't modified
             size_t str_len;
             if (NULL != next_file) {
@@ -3043,6 +3051,8 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
             }
             strcpy(temp_path, cur_file);
             name = temp_path;
+#else
+#warning add_data_files must define relative path copy for this platform
 #endif
             loader_get_fullpath(cur_file, name, sizeof(full_path), full_path);
             name = full_path;
@@ -3111,13 +3121,13 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     char *search_path = NULL;
     char *cur_path_ptr = NULL;
     bool use_first_found_manifest = false;
-#ifndef _WIN32
+#if !defined(_WIN32)
     size_t rel_size = 0;  // unused in windows, dont declare so no compiler warnings are generated
 #endif
 
 #if defined(_WIN32)
     char *package_path = NULL;
-#else
+#elif COMMON_UNIX_PLATFORMS
     // Determine how much space is needed to generate the full search path
     // for the current manifest files.
     char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
@@ -3181,7 +3191,9 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     } else {
         home_data_dir = xdg_data_home;
     }
-#endif  // !_WIN32
+#else
+#warning read_data_files_in_search_paths unsupported platform
+#endif
 
     switch (manifest_type) {
         case LOADER_DATA_FILE_MANIFEST_DRIVER:
@@ -3242,7 +3254,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
         if (search_path_size == 2) {
             goto out;
         }
-#else  // !_WIN32
+#elif COMMON_UNIX_PLATFORMS
         }
 
         // Add the general search folders (with the appropriate relative folder added)
@@ -3266,7 +3278,9 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
             }
             search_path_size += determine_data_file_path_size(xdg_data_dirs, rel_size);
         }
-#endif  // !_WIN32
+#else
+#warning read_data_files_in_search_paths unsupported platform
+#endif
     }
 
     // Allocate the required space
@@ -3295,7 +3309,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
         if (NULL != package_path) {
             copy_data_file_info(package_path, NULL, 0, &cur_path_ptr);
         }
-#else
+#elif COMMON_UNIX_PLATFORMS
         if (rel_size > 0) {
 #if defined(__APPLE__)
             // Add the bundle's Resources dir to the beginning of the search path.
@@ -3341,7 +3355,9 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
         assert(cur_path_ptr - search_path < (ptrdiff_t)search_path_size);
         *cur_path_ptr = '\0';
-#endif  // !_WIN32
+#else
+#warning read_data_files_in_search_paths unsupported platform
+#endif
     }
 
     // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
@@ -3427,7 +3443,7 @@ out:
     loader_free_getenv(override_env, inst);
 #if defined(_WIN32)
     loader_instance_heap_free(inst, package_path);
-#else
+#elif COMMON_UNIX_PLATFORMS
     loader_free_getenv(xdg_config_home, inst);
     loader_free_getenv(xdg_config_dirs, inst);
     loader_free_getenv(xdg_data_home, inst);
@@ -3436,6 +3452,8 @@ out:
     loader_free_getenv(home, inst);
     loader_instance_heap_free(inst, default_data_home);
     loader_instance_heap_free(inst, default_config_home);
+#else
+#warning read_data_files_in_search_paths unsupported platform
 #endif
 
     loader_instance_heap_free(inst, search_path);
@@ -3490,7 +3508,7 @@ VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_d
         goto out;
     }
 
-#ifdef _WIN32
+#if defined(_WIN32)
     // Read the registry if the override wasn't active.
     if (!override_active) {
         bool warn_if_not_present = false;
@@ -4990,7 +5008,7 @@ void loader_activate_instance_layer_extensions(struct loader_instance *inst, VkI
                                                   created_inst);
 }
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
                                     struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
@@ -5514,7 +5532,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     //       support a layer, but it would be independent of the actual ICD,
     //       just in the same library.
     uint32_t extension_count = pCreateInfo->enabledExtensionCount;
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
     extension_count += 1;
 #endif  // LOADER_ENABLE_LINUX_SORT
     filtered_extension_names = loader_stack_alloc(extension_count * sizeof(char *));
@@ -5592,7 +5610,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
                 icd_create_info.enabledExtensionCount++;
             }
         }
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
         // Force on "VK_KHR_get_physical_device_properties2" for Linux as we use it for GPU sorting.  This
         // should be done if the API version of either the application or the driver does not natively support
         // the core version of vkGetPhysicalDeviceProperties2 entrypoint.
@@ -5701,19 +5719,19 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
         if (ptr_instance->icd_tramp_list.scanned_list[i].interface_version < 3 &&
             (
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
                 NULL != icd_term->dispatch.CreateXlibSurfaceKHR ||
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
                 NULL != icd_term->dispatch.CreateXcbSurfaceKHR ||
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
                 NULL != icd_term->dispatch.CreateWaylandSurfaceKHR ||
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
                 NULL != icd_term->dispatch.CreateAndroidSurfaceKHR ||
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
                 NULL != icd_term->dispatch.CreateWin32SurfaceKHR ||
 #endif  // VK_USE_PLATFORM_WIN32_KHR
                 NULL != icd_term->dispatch.DestroySurfaceKHR)) {
@@ -6280,7 +6298,7 @@ out:
     return res;
 }
 
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
 bool is_linux_sort_enabled(struct loader_instance *inst) {
     bool sort_items = inst->supports_get_dev_prop_2;
     char *env_value = loader_getenv("VK_LOADER_DISABLE_SELECT", inst);
@@ -6467,7 +6485,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     }
 
     // Now go through the rest of the physical devices and add them to new_phys_devs
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
 
     if (is_linux_sort_enabled(inst)) {
         for (uint32_t dev = new_phys_devs_count; dev < new_phys_devs_capacity; ++dev) {
@@ -6518,7 +6536,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                 }
             }
         }
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
     }
 #endif  // LOADER_ENABLE_LINUX_SORT
 out:
@@ -7193,7 +7211,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             cur_icd_group_count += count_this_time;
         }
 
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
         if (is_linux_sort_enabled(inst)) {
             // Get the physical devices supported by platform sorting mechanism into a separate list
             res = linux_sort_physical_device_groups(inst, total_count, local_phys_dev_groups);

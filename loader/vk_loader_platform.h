@@ -43,8 +43,15 @@
 #include "dlopen_fuchsia.h"
 #endif  // defined(__Fuchsia__)
 
+// Set of platforms with a common set of functionality which is queried throughout the program
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
-    defined(__OpenBSD__)
+    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+#define COMMON_UNIX_PLATFORMS 1
+#else
+#define COMMON_UNIX_PLATFORMS 0
+#endif
+
+#if COMMON_UNIX_PLATFORMS
 #include <unistd.h>
 // Note: The following file is for dynamic loading:
 #include <dlfcn.h>
@@ -52,14 +59,13 @@
 #include <stdlib.h>
 #include <libgen.h>
 
-#elif defined(_WIN32)  // defined(__linux__)
-/* Windows-specific common code: */
+#elif defined(_WIN32)
 // WinBase.h defines CreateSemaphore and synchapi.h defines CreateEvent
 //  undefine them to avoid conflicts with VkLayerDispatchTable struct members.
-#ifdef CreateSemaphore
+#if defined(CreateSemaphore)
 #undef CreateSemaphore
 #endif
-#ifdef CreateEvent
+#if defined(CreateEvent)
 #undef CreateEvent
 #endif
 #include <stdio.h>
@@ -82,7 +88,7 @@
 
 // This is defined in vk_layer.h, but if there's problems we need to create the define
 // here.
-#ifndef MAX_NUM_UNKNOWN_EXTS
+#if !defined(MAX_NUM_UNKNOWN_EXTS)
 #define MAX_NUM_UNKNOWN_EXTS 250
 #endif
 
@@ -110,8 +116,7 @@
 #define LAYERS_PATH_ENV "VK_LAYER_PATH"
 #define ENABLED_LAYERS_ENV "VK_INSTANCE_LAYERS"
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
-    defined(__OpenBSD__)
+#if COMMON_UNIX_PLATFORMS
 /* Linux-specific common code: */
 
 // VK Library Filenames, Paths, etc.:
@@ -157,8 +162,8 @@ typedef pthread_mutex_t loader_platform_thread_mutex;
 
 typedef pthread_cond_t loader_platform_thread_cond;
 
-#elif defined(_WIN32)  // defined(__linux__)
-
+#elif defined(_WIN32)
+/* Windows-specific common code: */
 // VK Library Filenames, Paths, etc.:
 #define PATH_SEPARATOR ';'
 #define DIRECTORY_SYMBOL '\\'
@@ -172,7 +177,7 @@ typedef pthread_cond_t loader_platform_thread_cond;
 #define VK_ELAYERS_INFO_RELATIVE_DIR ""
 #define VK_ILAYERS_INFO_RELATIVE_DIR ""
 
-#ifdef _WIN64
+#if defined(_WIN64)
 #define HKR_VK_DRIVER_NAME API_NAME "DriverName"
 #else
 #define HKR_VK_DRIVER_NAME API_NAME "DriverNameWow"
@@ -198,16 +203,16 @@ typedef CRITICAL_SECTION loader_platform_thread_mutex;
 
 typedef CONDITION_VARIABLE loader_platform_thread_cond;
 
-#else  // defined(_WIN32)
+#else
 
-#error The "vk_loader_platform.h" file must be modified for this OS.
+#warning The "vk_loader_platform.h" file must be modified for this OS.
 
 // NOTE: In order to support another OS, an #elif needs to be added (above the
 // "#else // defined(_WIN32)") for that OS, and OS-specific versions of the
 // contents of this file must be created, or extend one of the existing OS specific
 // sections with the necessary changes.
 
-#endif  // defined(_WIN32)
+#endif
 
 // Returns true if the DIRECTORY_SYMBOL is contained within path
 static inline bool loader_platform_is_path(const char *path) { return strchr(path, DIRECTORY_SYMBOL) != NULL; }
@@ -232,8 +237,7 @@ static inline void loader_platform_thread_once_fn(pthread_once_t *ctl, void (*fu
 
 #endif
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
-    defined(__OpenBSD__)
+#if COMMON_UNIX_PLATFORMS
 
 // File IO
 static inline bool loader_platform_file_exists(const char *path) {
@@ -264,7 +268,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     buffer[count] = '\0';
     return buffer;
 }
-#elif defined(__APPLE__)  // defined(__linux__)
+#elif defined(__APPLE__)
 #include <libproc.h>
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     pid_t pid = getpid();
@@ -323,7 +327,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 #endif  // defined (__QNXNTO__)
 
 // Compatability with compilers that don't support __has_feature
-#ifndef __has_feature
+#if !defined(__has_feature)
 #define __has_feature(x) 0
 #endif
 
@@ -359,7 +363,7 @@ static inline loader_platform_dl_handle loader_platform_open_library(const char 
 #endif
 
 static inline const char *loader_platform_open_library_error(const char *libPath) {
-#ifdef __Fuchsia__
+#if defined(__Fuchsia__)
     return dlerror_fuchsia();
 #else
     return dlerror();
@@ -384,7 +388,7 @@ static inline void loader_platform_thread_lock_mutex(loader_platform_thread_mute
 static inline void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_unlock(pMutex); }
 static inline void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_destroy(pMutex); }
 
-#elif defined(_WIN32)  // defined(__linux__)
+#elif defined(_WIN32)
 
 // Get the key for the plug n play driver registry
 // The string returned by this function should NOT be freed
@@ -534,7 +538,7 @@ static void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pM
 
 #else  // defined(_WIN32)
 
-#error The "vk_loader_platform.h" file must be modified for this OS.
+#warning The "vk_loader_platform.h" file must be modified for this OS.
 
 // NOTE: In order to support another OS, an #elif needs to be added (above the
 // "#else // defined(_WIN32)") for that OS, and OS-specific versions of the

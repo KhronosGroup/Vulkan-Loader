@@ -36,8 +36,10 @@
 #include <stdlib.h>
 #endif
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if COMMON_UNIX_PLATFORMS
 #define loader_stack_alloc(size) alloca(size)
 #elif defined(_WIN32)
 #define loader_stack_alloc(size) _alloca(size)
+#else
+#warning "alloca not available on this platform!"
 #endif  // defined(_WIN32)

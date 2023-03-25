@@ -12,7 +12,7 @@
 
 #include <vulkan/vulkan.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -46,6 +46,6 @@ void rewinddir(DIR *);
 
 */
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

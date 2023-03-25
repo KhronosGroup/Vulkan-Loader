@@ -181,7 +181,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_ReleaseDisplayEXT(VkPhysicalDevice phy
 
 // ---- VK_EXT_acquire_xlib_display extension trampoline/terminators
 
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
 VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display *dpy, VkDisplayKHR display) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
@@ -247,7 +247,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetRandROutputDisplayEXT(VkPhysicalDev
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                                         uint32_t *pPresentModeCount,

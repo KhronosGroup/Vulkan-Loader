@@ -983,7 +983,7 @@ TEST(ImplicitLayers, DuplicateLayers) {
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
 #if defined(WIN32)
     env.platform_shim->add_manifest(ManifestCategory::implicit_layer, env.get_folder(ManifestLocation::override_layer).location());
-#elif defined(__linux__) || defined(__APPLE__)
+#elif COMMON_UNIX_PLATFORMS
     env.platform_shim->redirect_path(fs::path("/etc/vulkan/implicit_layer.d"),
                                      env.get_folder(ManifestLocation::override_layer).location());
 #endif

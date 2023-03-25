@@ -35,8 +35,7 @@
 #include <ctype.h>
 
 // Environment variables
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
-    defined(__OpenBSD__)
+#if COMMON_UNIX_PLATFORMS
 
 bool is_high_integrity() { return geteuid() != getuid() || getegid() != getgid(); }
 
@@ -161,6 +160,9 @@ char *loader_secure_getenv(const char *name, const struct loader_instance *inst)
 void loader_free_getenv(char *val, const struct loader_instance *inst) { loader_instance_heap_free(inst, (void *)val); }
 
 #else
+
+#warning \
+    "This platform does not support environment variables! If this is not intended, please implement the stubs functions loader_getenv and loader_free_getenv"
 
 char *loader_getenv(const char *name, const struct loader_instance *inst) {
     // stub func

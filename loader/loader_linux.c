@@ -22,7 +22,7 @@
 
 // Non-windows and non-apple only header file, guard it so that accidental
 // inclusion doesn't cause unknown header include errors
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
 
 #include <stdio.h>
 #include <stdlib.h>

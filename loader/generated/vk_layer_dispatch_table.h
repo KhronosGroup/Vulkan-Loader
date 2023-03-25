@@ -24,7 +24,7 @@
 
 #pragma once
 
-#ifndef PFN_GetPhysicalDeviceProcAddr
+#if !defined(PFN_GetPhysicalDeviceProcAddr)
 typedef PFN_vkVoidFunction (VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char* pName);
 #endif
 
@@ -88,39 +88,39 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkCreateDisplayPlaneSurfaceKHR CreateDisplayPlaneSurfaceKHR;
 
     // ---- VK_KHR_xlib_surface extension commands
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
     PFN_vkCreateXlibSurfaceKHR CreateXlibSurfaceKHR;
 #endif // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
     PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR GetPhysicalDeviceXlibPresentationSupportKHR;
 #endif // VK_USE_PLATFORM_XLIB_KHR
 
     // ---- VK_KHR_xcb_surface extension commands
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
     PFN_vkCreateXcbSurfaceKHR CreateXcbSurfaceKHR;
 #endif // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
     PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR GetPhysicalDeviceXcbPresentationSupportKHR;
 #endif // VK_USE_PLATFORM_XCB_KHR
 
     // ---- VK_KHR_wayland_surface extension commands
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     PFN_vkCreateWaylandSurfaceKHR CreateWaylandSurfaceKHR;
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR GetPhysicalDeviceWaylandPresentationSupportKHR;
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 
     // ---- VK_KHR_android_surface extension commands
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
     PFN_vkCreateAndroidSurfaceKHR CreateAndroidSurfaceKHR;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
     // ---- VK_KHR_win32_surface extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkCreateWin32SurfaceKHR CreateWin32SurfaceKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR GetPhysicalDeviceWin32PresentationSupportKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -172,7 +172,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkDebugReportMessageEXT DebugReportMessageEXT;
 
     // ---- VK_GGP_stream_descriptor_surface extension commands
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
     PFN_vkCreateStreamDescriptorSurfaceGGP CreateStreamDescriptorSurfaceGGP;
 #endif // VK_USE_PLATFORM_GGP
 
@@ -180,7 +180,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV GetPhysicalDeviceExternalImageFormatPropertiesNV;
 
     // ---- VK_NN_vi_surface extension commands
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
     PFN_vkCreateViSurfaceNN CreateViSurfaceNN;
 #endif // VK_USE_PLATFORM_VI_NN
 
@@ -188,10 +188,10 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkReleaseDisplayEXT ReleaseDisplayEXT;
 
     // ---- VK_EXT_acquire_xlib_display extension commands
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
     PFN_vkAcquireXlibDisplayEXT AcquireXlibDisplayEXT;
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
     PFN_vkGetRandROutputDisplayEXT GetRandROutputDisplayEXT;
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
@@ -199,12 +199,12 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT GetPhysicalDeviceSurfaceCapabilities2EXT;
 
     // ---- VK_MVK_ios_surface extension commands
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
     PFN_vkCreateIOSSurfaceMVK CreateIOSSurfaceMVK;
 #endif // VK_USE_PLATFORM_IOS_MVK
 
     // ---- VK_MVK_macos_surface extension commands
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
     PFN_vkCreateMacOSSurfaceMVK CreateMacOSSurfaceMVK;
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
@@ -220,12 +220,12 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT GetPhysicalDeviceCalibrateableTimeDomainsEXT;
 
     // ---- VK_FUCHSIA_imagepipe_surface extension commands
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkCreateImagePipeSurfaceFUCHSIA CreateImagePipeSurfaceFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
 
     // ---- VK_EXT_metal_surface extension commands
-#ifdef VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
     PFN_vkCreateMetalSurfaceEXT CreateMetalSurfaceEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
@@ -239,7 +239,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV;
 
     // ---- VK_EXT_full_screen_exclusive extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT GetPhysicalDeviceSurfacePresentModes2EXT;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -251,26 +251,26 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT;
 
     // ---- VK_NV_acquire_winrt_display extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkAcquireWinrtDisplayNV AcquireWinrtDisplayNV;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetWinrtDisplayNV GetWinrtDisplayNV;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_EXT_directfb_surface extension commands
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
     PFN_vkCreateDirectFBSurfaceEXT CreateDirectFBSurfaceEXT;
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
     PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT GetPhysicalDeviceDirectFBPresentationSupportEXT;
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
     // ---- VK_QNX_screen_surface extension commands
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
     PFN_vkCreateScreenSurfaceQNX CreateScreenSurfaceQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
     PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScreenPresentationSupportQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -518,10 +518,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkTrimCommandPoolKHR TrimCommandPoolKHR;
 
     // ---- VK_KHR_external_memory_win32 extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetMemoryWin32HandleKHR GetMemoryWin32HandleKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetMemoryWin32HandlePropertiesKHR GetMemoryWin32HandlePropertiesKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -530,10 +530,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetMemoryFdPropertiesKHR GetMemoryFdPropertiesKHR;
 
     // ---- VK_KHR_external_semaphore_win32 extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkImportSemaphoreWin32HandleKHR ImportSemaphoreWin32HandleKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetSemaphoreWin32HandleKHR GetSemaphoreWin32HandleKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -560,10 +560,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetSwapchainStatusKHR GetSwapchainStatusKHR;
 
     // ---- VK_KHR_external_fence_win32 extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkImportFenceWin32HandleKHR ImportFenceWin32HandleKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetFenceWin32HandleKHR GetFenceWin32HandleKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -628,7 +628,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
 
     // ---- VK_KHR_video_encode_queue extension commands
-#ifdef VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -692,7 +692,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetShaderInfoAMD GetShaderInfoAMD;
 
     // ---- VK_NV_external_memory_win32 extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetMemoryWin32HandleNV GetMemoryWin32HandleNV;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -732,10 +732,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
 
     // ---- VK_ANDROID_external_memory_android_hardware_buffer extension commands
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
     PFN_vkGetAndroidHardwareBufferPropertiesANDROID GetAndroidHardwareBufferPropertiesANDROID;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
     PFN_vkGetMemoryAndroidHardwareBufferANDROID GetMemoryAndroidHardwareBufferANDROID;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -811,13 +811,13 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetBufferDeviceAddressEXT GetBufferDeviceAddressEXT;
 
     // ---- VK_EXT_full_screen_exclusive extension commands
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkAcquireFullScreenExclusiveModeEXT AcquireFullScreenExclusiveModeEXT;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkReleaseFullScreenExclusiveModeEXT ReleaseFullScreenExclusiveModeEXT;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vkGetDeviceGroupSurfacePresentModes2EXT GetDeviceGroupSurfacePresentModes2EXT;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -859,7 +859,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
 
     // ---- VK_EXT_metal_objects extension commands
-#ifdef VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
     PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
@@ -889,35 +889,35 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
 
     // ---- VK_FUCHSIA_external_memory extension commands
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkGetMemoryZirconHandleFUCHSIA GetMemoryZirconHandleFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA GetMemoryZirconHandlePropertiesFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
 
     // ---- VK_FUCHSIA_external_semaphore extension commands
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkImportSemaphoreZirconHandleFUCHSIA ImportSemaphoreZirconHandleFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkGetSemaphoreZirconHandleFUCHSIA GetSemaphoreZirconHandleFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
 
     // ---- VK_FUCHSIA_buffer_collection extension commands
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkCreateBufferCollectionFUCHSIA CreateBufferCollectionFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkSetBufferCollectionImageConstraintsFUCHSIA SetBufferCollectionImageConstraintsFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA SetBufferCollectionBufferConstraintsFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkDestroyBufferCollectionFUCHSIA DestroyBufferCollectionFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     PFN_vkGetBufferCollectionPropertiesFUCHSIA GetBufferCollectionPropertiesFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
 

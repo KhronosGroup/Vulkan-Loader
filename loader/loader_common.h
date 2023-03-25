@@ -298,44 +298,44 @@ struct loader_instance {
     bool portability_enumeration_enabled;
 
     bool wsi_surface_enabled;
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     bool wsi_win32_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     bool wsi_wayland_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
     bool wsi_xcb_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
     bool wsi_xlib_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
     bool wsi_directfb_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
     bool wsi_android_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
     bool wsi_macos_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
     bool wsi_ios_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
     bool wsi_ggp_surface_enabled;
 #endif
     bool wsi_headless_surface_enabled;
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     bool wsi_metal_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     bool wsi_imagepipe_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
     bool wsi_screen_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
     bool wsi_vi_surface_enabled;
 #endif
     bool wsi_display_enabled;
@@ -376,7 +376,7 @@ struct loader_physical_device_term {
     VkPhysicalDevice phys_dev;  // object from ICD
 };
 
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
 // Structure for storing the relevent device information for selecting a device.
 // NOTE: Needs to be defined here so we can store this content in the term structrue
 //       for quicker sorting.
@@ -409,7 +409,7 @@ struct loader_physical_device_group_term {
     struct loader_icd_term *this_icd_term;
     uint8_t icd_index;
     VkPhysicalDeviceGroupProperties group_props;
-#ifdef LOADER_ENABLE_LINUX_SORT
+#if defined(LOADER_ENABLE_LINUX_SORT)
     struct LinuxSortedDeviceInfo internal_device_info[VK_MAX_DEVICE_GROUP_SIZE];
 #endif  // LOADER_ENABLE_LINUX_SORT
 };

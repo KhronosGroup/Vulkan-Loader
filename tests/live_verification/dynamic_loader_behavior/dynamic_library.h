@@ -39,15 +39,15 @@ FRAMEWORK_EXPORT void init();
 };
 
 #if defined(WIN32)
-#ifndef LIB_EXT
+#if !defined(LIB_EXT)
 #define LIB_EXT "dll"
 #endif
 #elif defined(__APPLE__)
-#ifndef LIB_EXT
+#if !defined(LIB_EXT)
 #define LIB_EXT "dylib"
 #endif
 #else
-#ifndef LIB_EXT
+#if !defined(LIB_EXT)
 #define LIB_EXT "so"
 #endif
 #endif

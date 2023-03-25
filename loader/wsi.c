@@ -44,61 +44,61 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
             loader_inst->wsi_surface_enabled = true;
             continue;
         }
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_WIN32_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_win32_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_wayland_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_XCB_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_xcb_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_XLIB_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_xlib_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_directfb_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_android_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_MVK_MACOS_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_macos_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_MVK_IOS_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_ios_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_ggp_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_GGP
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_imagepipe_surface_enabled = true;
             continue;
@@ -120,7 +120,7 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
             continue;
         }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NN_VI_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_vi_surface_enabled = true;
             continue;
@@ -147,19 +147,19 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
 // advertises support for a given Linux surface extension but the loader was not
 // built to support the extension.
 bool wsi_unsupported_instance_extension(const VkExtensionProperties *ext_prop) {
-#ifndef VK_USE_PLATFORM_WAYLAND_KHR
+#if !defined(VK_USE_PLATFORM_WAYLAND_KHR)
     if (!strcmp(ext_prop->extensionName, "VK_KHR_wayland_surface")) return true;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifndef VK_USE_PLATFORM_XCB_KHR
+#if !defined(VK_USE_PLATFORM_XCB_KHR)
     if (!strcmp(ext_prop->extensionName, "VK_KHR_xcb_surface")) return true;
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifndef VK_USE_PLATFORM_XLIB_KHR
+#if !defined(VK_USE_PLATFORM_XLIB_KHR)
     if (!strcmp(ext_prop->extensionName, "VK_KHR_xlib_surface")) return true;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifndef VK_USE_PLATFORM_DIRECTFB_EXT
+#if !defined(VK_USE_PLATFORM_DIRECTFB_EXT)
     if (!strcmp(ext_prop->extensionName, "VK_EXT_directfb_surface")) return true;
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifndef VK_USE_PLATFORM_SCREEN_QNX
+#if !defined(VK_USE_PLATFORM_SCREEN_QNX)
     if (!strcmp(ext_prop->extensionName, "VK_QNX_screen_surface")) return true;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -571,7 +571,7 @@ VkIcdSurface *AllocateIcdSurfaceStruct(struct loader_instance *instance, size_t 
     return pIcdSurface;
 }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 
 // Functions for the VK_KHR_win32_surface extension:
 
@@ -693,7 +693,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupp
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 
 // This is the trampoline entrypoint for CreateWaylandSurfaceKHR
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWaylandSurfaceKHR(VkInstance instance,
@@ -814,7 +814,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWaylandPresentationSu
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 
 // Functions for the VK_KHR_xcb_surface extension:
 
@@ -939,7 +939,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXcbPresentationSuppor
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 
 // Functions for the VK_KHR_xlib_surface extension:
 
@@ -1061,7 +1061,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSuppo
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 
 // Functions for the VK_EXT_directfb_surface extension:
 
@@ -1188,7 +1188,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
 
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
 // Functions for the VK_KHR_android_surface extension:
 
@@ -1308,7 +1308,7 @@ out:
     return vkRes;
 }
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
 
 // Functions for the VK_MVK_macos_surface extension:
 
@@ -1388,7 +1388,7 @@ out:
 
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
 
 // Functions for the VK_MVK_ios_surface extension:
 
@@ -1434,7 +1434,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instanc
 
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
 
 // Functions for the VK_GGP_stream_descriptor_surface extension:
 
@@ -1586,7 +1586,7 @@ out:
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 
 // This is the trampoline entrypoint for CreateScreenSurfaceQNX
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance instance,
@@ -1707,7 +1707,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
 
 // Functions for the VK_NN_vi_surface extension:
 
@@ -2481,7 +2481,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhys
                                                              pDisplayPlaneInfo->planeIndex, &pCapabilities->capabilities);
 }
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
 
 // This is the trampoline entrypoint for CreateImagePipeSurfaceFUCHSIA
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateImagePipeSurfaceFUCHSIA(VkInstance instance,
@@ -2832,7 +2832,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 
     // Functions for the VK_KHR_win32_surface extension:
     if (!strcmp("vkCreateWin32SurfaceKHR", name)) {
@@ -2844,7 +2844,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 
     // Functions for the VK_KHR_wayland_surface extension:
     if (!strcmp("vkCreateWaylandSurfaceKHR", name)) {
@@ -2856,7 +2856,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 
     // Functions for the VK_KHR_xcb_surface extension:
     if (!strcmp("vkCreateXcbSurfaceKHR", name)) {
@@ -2868,7 +2868,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 
     // Functions for the VK_KHR_xlib_surface extension:
     if (!strcmp("vkCreateXlibSurfaceKHR", name)) {
@@ -2880,7 +2880,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 
     // Functions for the VK_EXT_directfb_surface extension:
     if (!strcmp("vkCreateDirectFBSurfaceEXT", name)) {
@@ -2892,7 +2892,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
     // Functions for the VK_KHR_android_surface extension:
     if (!strcmp("vkCreateAndroidSurfaceKHR", name)) {
@@ -2901,7 +2901,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
 
     // Functions for the VK_MVK_macos_surface extension:
     if (!strcmp("vkCreateMacOSSurfaceMVK", name)) {
@@ -2909,7 +2909,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
 
     // Functions for the VK_MVK_ios_surface extension:
     if (!strcmp("vkCreateIOSSurfaceMVK", name)) {
@@ -2917,7 +2917,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
 
     // Functions for the VK_GGP_stream_descriptor_surface extension:
     if (!strcmp("vkCreateStreamDescriptorSurfaceGGP", name)) {
@@ -2925,7 +2925,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_GGP
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
 
     // Functions for the VK_FUCHSIA_imagepipe_surface extension:
     if (!strcmp("vkCreateImagePipeSurfaceFUCHSIA", name)) {
@@ -2949,7 +2949,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 
     // Functions for the VK_QNX_screen_surface extension:
     if (!strcmp("vkCreateScreenSurfaceQNX", name)) {
@@ -2962,7 +2962,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
 
     // Functions for the VK_NN_vi_surface extension:
     if (!strcmp("vkCreateViSurfaceNN", name)) {
