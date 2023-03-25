@@ -54,12 +54,16 @@ static const uint32_t PHYS_DEV_OFFSET_PHYS_DEV_TERM = offsetof(struct loader_phy
 static const uint32_t INSTANCE_OFFSET_ICD_TERM = offsetof(struct loader_icd_term, this_instance);
 static const uint32_t DISPATCH_OFFSET_ICD_TERM = offsetof(struct loader_icd_term, phys_dev_ext);
 static const uint32_t EXT_OFFSET_DEVICE_DISPATCH = offsetof(struct loader_dev_dispatch_table, ext_dispatch);
+#else
+#warning asm_offset.c variable declarations need to be defined for this platform
 #endif
 
 #if !defined(_MSC_VER) || (_MSC_VER >= 1900)
 #define SIZE_T_FMT "%-8zu"
-#else
+#elif defined(__GNUC__) || defined(__clang__)
 #define SIZE_T_FMT "%-8lu"
+#else
+#warning asm_offset.c SIZE_T_FMT must be defined for this platform
 #endif
 
 struct ValueInfo {

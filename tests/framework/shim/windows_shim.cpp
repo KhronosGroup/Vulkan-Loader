@@ -26,7 +26,7 @@
  */
 
 // This needs to be defined first, or else we'll get redefinitions on NTSTATUS values
-#ifdef _WIN32
+#if defined(_WIN32)
 #define UMDF_USING_NTSTATUS
 #include <ntstatus.h>
 #endif

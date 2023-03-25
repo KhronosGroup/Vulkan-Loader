@@ -151,7 +151,7 @@ TEST(LoaderHandleValidTests, BadInstCreateDisplayPlaneSurf) {
                  "vkCreateDisplayPlaneSurfaceKHR: Invalid instance \\[VUID-vkCreateDisplayPlaneSurfaceKHR-instance-parameter\\]");
 }
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 TEST(LoaderHandleValidTests, BadInstCreateAndroidSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -174,7 +174,7 @@ TEST(LoaderHandleValidTests, BadInstCreateAndroidSurf) {
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 TEST(LoaderHandleValidTests, BadInstCreateDirectFBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -197,7 +197,7 @@ TEST(LoaderHandleValidTests, BadInstCreateDirectFBSurf) {
 }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
 TEST(LoaderHandleValidTests, BadInstCreateFuchsiaSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -220,7 +220,7 @@ TEST(LoaderHandleValidTests, BadInstCreateFuchsiaSurf) {
 }
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
 TEST(LoaderHandleValidTests, BadInstCreateGGPSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -244,7 +244,7 @@ TEST(LoaderHandleValidTests, BadInstCreateGGPSurf) {
 }
 #endif  // VK_USE_PLATFORM_GGP
 
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
 TEST(LoaderHandleValidTests, BadInstCreateIOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -267,7 +267,7 @@ TEST(LoaderHandleValidTests, BadInstCreateIOSSurf) {
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
 TEST(LoaderHandleValidTests, BadInstCreateMacOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -313,7 +313,7 @@ TEST(LoaderHandleValidTests, BadInstCreateMetalSurf) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 TEST(LoaderHandleValidTests, BadInstCreateQNXSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -337,7 +337,7 @@ TEST(LoaderHandleValidTests, BadInstCreateQNXSurf) {
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
 TEST(LoaderHandleValidTests, BadInstCreateViNNSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -361,7 +361,7 @@ TEST(LoaderHandleValidTests, BadInstCreateViNNSurf) {
 }
 #endif  // VK_USE_PLATFORM_VI_NN
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 TEST(LoaderHandleValidTests, BadInstCreateWaylandSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -385,7 +385,7 @@ TEST(LoaderHandleValidTests, BadInstCreateWaylandSurf) {
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 TEST(LoaderHandleValidTests, BadInstCreateWin32Surf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -409,7 +409,7 @@ TEST(LoaderHandleValidTests, BadInstCreateWin32Surf) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 TEST(LoaderHandleValidTests, BadInstCreateXCBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -433,7 +433,7 @@ TEST(LoaderHandleValidTests, BadInstCreateXCBSurf) {
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 TEST(LoaderHandleValidTests, BadInstCreateXlibSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -943,7 +943,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModesKHR) {
                  "\\[VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-physicalDevice-parameter\\]");
 }
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 TEST(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -963,7 +963,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
 }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 TEST(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -982,7 +982,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1001,7 +1001,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1020,7 +1020,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 TEST(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1040,7 +1040,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 TEST(LoaderHandleValidTests, BadPhysDevGetXlibPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1483,7 +1483,7 @@ TEST(LoaderHandleValidTests, BadPhysDevReleaseDisplayEXT) {
                  "vkReleaseDisplayEXT: Invalid physicalDevice \\[VUID-vkReleaseDisplayEXT-physicalDevice-parameter\\]");
 }
 
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
 TEST(LoaderHandleValidTests, BadPhysDevAcquireXlibDisplayEXT) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1528,7 +1528,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetRandROutputDisplayEXT) {
 }
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModes2EXT) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1570,7 +1570,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevToolPropertiesEXT) {
                  "\\[VUID-vkGetPhysicalDeviceToolPropertiesEXT-physicalDevice-parameter\\]");
 }
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1604,7 +1604,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1638,7 +1638,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
 }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1672,7 +1672,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
 }
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1706,7 +1706,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
 }
 #endif  // VK_USE_PLATFORM_GGP
 
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1740,7 +1740,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1808,7 +1808,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1842,7 +1842,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1876,7 +1876,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
 }
 #endif  // VK_USE_PLATFORM_VI_NN
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1910,7 +1910,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1944,7 +1944,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
@@ -1978,7 +1978,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));

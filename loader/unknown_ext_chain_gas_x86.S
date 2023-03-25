@@ -24,7 +24,7 @@
 # VkPhysicalDevice or a dispatchable object it can unwrap the object, possibly overwriting the wrapped physical device, and then
 # jump to the next function in the call chain
 
-#ifdef HAVE_CET_H
+#if defined(HAVE_CET_H)
 #include <cet.h>
 #else
 #define _CET_ENDBR

@@ -16,7 +16,7 @@
 
 #include "allocation.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -108,7 +108,7 @@ void rewinddir(DIR *dir) {
     }
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

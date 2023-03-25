@@ -27,7 +27,7 @@
 
 #include "loader_common.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -154,6 +154,6 @@ void cJSON_Minify(char *json);
 #define cJSON_SetIntValue(object, val) ((object) ? (object)->valueint = (object)->valuedouble = (val) : (val))
 #define cJSON_SetNumberValue(object, val) ((object) ? (object)->valueint = (object)->valuedouble = (val) : (val))
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

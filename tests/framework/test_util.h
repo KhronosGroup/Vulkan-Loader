@@ -61,11 +61,19 @@
 #include <stdio.h>
 #include <stdint.h>
 
+// Set of platforms with a common set of functionality which is queried throughout the program
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
+    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+#define COMMON_UNIX_PLATFORMS 1
+#else
+#define COMMON_UNIX_PLATFORMS 0
+#endif
+
 #if defined(WIN32)
 #include <direct.h>
 #include <windows.h>
 #include <strsafe.h>
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -136,7 +144,7 @@ struct EnvVarWrapper {
 #if defined(WIN32)
     // Environment variable list separator - not for filesystem paths
     const char OS_ENV_VAR_LIST_SEPARATOR = ';';
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
     // Environment variable list separator - not for filesystem paths
     const char OS_ENV_VAR_LIST_SEPARATOR = ':';
 #endif
@@ -165,7 +173,7 @@ struct path {
    private:
 #if defined(WIN32)
     static const char path_separator = '\\';
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
     static const char path_separator = '/';
 #endif
 
@@ -300,7 +308,7 @@ inline char* loader_platform_get_proc_address_error(const char* name) {
     return errorMsg;
 }
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
 
 typedef void* loader_platform_dl_handle;
 inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
@@ -780,7 +788,7 @@ inline std::string test_platform_executable_path() {
     buffer.resize(count);
     return buffer;
 }
-#elif defined(__APPLE__)  // defined(__linux__)
+#elif defined(__APPLE__)
 #include <libproc.h>
 inline std::string test_platform_executable_path() {
     std::string buffer;

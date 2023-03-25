@@ -96,45 +96,45 @@ void init_vulkan_functions(VulkanFunctions& funcs) {
     funcs.vkGetPhysicalDeviceSurfaceCapabilities2KHR = GPA(vkGetPhysicalDeviceSurfaceCapabilities2KHR);
     funcs.vkGetPhysicalDeviceSurfaceFormats2KHR = GPA(vkGetPhysicalDeviceSurfaceFormats2KHR);
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
     funcs.vkCreateAndroidSurfaceKHR = GPA(vkCreateAndroidSurfaceKHR);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
     funcs.vkCreateDirectFBSurfaceEXT = GPA(vkCreateDirectFBSurfaceEXT);
     funcs.vkGetPhysicalDeviceDirectFBPresentationSupportEXT = GPA(vkGetPhysicalDeviceDirectFBPresentationSupportEXT);
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
     funcs.vkCreateImagePipeSurfaceFUCHSIA = GPA(vkCreateImagePipeSurfaceFUCHSIA);
 #endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
     funcs.vkCreateStreamDescriptorSurfaceGGP = GPA(vkCreateStreamDescriptorSurfaceGGP);
 #endif  // VK_USE_PLATFORM_GGP
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
     funcs.vkCreateIOSSurfaceMVK = GPA(vkCreateIOSSurfaceMVK);
 #endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
     funcs.vkCreateMacOSSurfaceMVK = GPA(vkCreateMacOSSurfaceMVK);
 #endif  // VK_USE_PLATFORM_MACOS_MVK
-#ifdef VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
     funcs.vkCreateMetalSurfaceEXT = GPA(vkCreateMetalSurfaceEXT);
 #endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
     funcs.vkCreateScreenSurfaceQNX = GPA(vkCreateScreenSurfaceQNX);
     funcs.vkGetPhysicalDeviceScreenPresentationSupportQNX = GPA(vkGetPhysicalDeviceScreenPresentationSupportQNX);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     funcs.vkCreateWaylandSurfaceKHR = GPA(vkCreateWaylandSurfaceKHR);
     funcs.vkGetPhysicalDeviceWaylandPresentationSupportKHR = GPA(vkGetPhysicalDeviceWaylandPresentationSupportKHR);
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
     funcs.vkCreateXcbSurfaceKHR = GPA(vkCreateXcbSurfaceKHR);
     funcs.vkGetPhysicalDeviceXcbPresentationSupportKHR = GPA(vkGetPhysicalDeviceXcbPresentationSupportKHR);
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
     funcs.vkCreateXlibSurfaceKHR = GPA(vkCreateXlibSurfaceKHR);
     funcs.vkGetPhysicalDeviceXlibPresentationSupportKHR = GPA(vkGetPhysicalDeviceXlibPresentationSupportKHR);
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     funcs.vkCreateWin32SurfaceKHR = GPA(vkCreateWin32SurfaceKHR);
     funcs.vkGetPhysicalDeviceWin32PresentationSupportKHR = GPA(vkGetPhysicalDeviceWin32PresentationSupportKHR);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
@@ -446,7 +446,7 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
                 platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
             case (ManifestDiscoveryType::null_dir):
                 break;
-#ifdef _WIN32
+#if defined(_WIN32)
             case (ManifestDiscoveryType::windows_app_package):
                 platform_shim->set_app_package_path(folder->location());
                 break;

@@ -30,51 +30,51 @@
 #include "vk_dispatch_table_helper.h"
 
 // export the enumeration functions instance|device+layer|extension
-#ifndef TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS
+#if !defined(TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS)
 #define TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS 0
 #endif
 
 // export test_layer_GetInstanceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_NAMED_GIPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_NAMED_GIPA)
 #define TEST_LAYER_EXPORT_LAYER_NAMED_GIPA 0
 #endif
 
 // export vkGetInstanceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_VK_GIPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_VK_GIPA)
 #define TEST_LAYER_EXPORT_LAYER_VK_GIPA 0
 #endif
 
 // export test_layer_GetDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_NAMED_GDPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_NAMED_GDPA)
 #define TEST_LAYER_EXPORT_LAYER_NAMED_GDPA 0
 #endif
 
 // export vkGetDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_VK_GDPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_VK_GDPA)
 #define TEST_LAYER_EXPORT_LAYER_VK_GDPA 0
 #endif
 
 // export GetInstanceProcAddr
-#ifndef TEST_LAYER_EXPORT_NO_PREFIX_GIPA
+#if !defined(TEST_LAYER_EXPORT_NO_PREFIX_GIPA)
 #define TEST_LAYER_EXPORT_NO_PREFIX_GIPA 0
 #endif
 
 // export GetDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_NO_PREFIX_GDPA
+#if !defined(TEST_LAYER_EXPORT_NO_PREFIX_GDPA)
 #define TEST_LAYER_EXPORT_NO_PREFIX_GDPA 0
 #endif
 
 // export vk_layerGetPhysicalDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
+#if !defined(TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR)
 #define TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR 0
 #endif
 
 // export vkNegotiateLoaderLayerInterfaceVersion
-#ifndef LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION
+#if !defined(LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION)
 #define LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION 0
 #endif
 
-#ifndef TEST_LAYER_NAME
+#if !defined(TEST_LAYER_NAME)
 #define TEST_LAYER_NAME "VkLayer_LunarG_test_layer"
 #endif
 

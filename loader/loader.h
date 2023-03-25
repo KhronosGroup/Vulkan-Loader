@@ -68,7 +68,7 @@ static inline struct loader_instance_dispatch_table *loader_get_instance_dispatc
 }
 
 static inline void loader_init_dispatch(void *obj, const void *data) {
-#ifdef DEBUG
+#if defined(DEBUG)
     assert(valid_loader_magic_value(obj) &&
            "Incompatible ICD, first dword must be initialized to "
            "ICD_LOADER_MAGIC. See loader/README.md for details.");
@@ -187,10 +187,10 @@ loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32
 bool loader_check_version_meets_required(loader_api_version required, loader_api_version version);
 
 // Convenience macros for common versions
-#ifndef LOADER_VERSION_1_0_0
+#if !defined(LOADER_VERSION_1_0_0)
 #define LOADER_VERSION_1_0_0 loader_combine_version(1, 0, 0)
 #endif
 
-#ifndef LOADER_VERSION_1_1_0
+#if !defined(LOADER_VERSION_1_1_0)
 #define LOADER_VERSION_1_1_0 loader_combine_version(1, 1, 0)
 #endif

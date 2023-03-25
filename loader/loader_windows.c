@@ -27,7 +27,7 @@
  *
  */
 // Windows only header file, guard it so that accidental inclusion doesn't cause unknown header include errors
-#ifdef _WIN32
+#if defined(_WIN32)
 
 // This needs to be defined first, or else we'll get redefinitions on NTSTATUS values
 #define UMDF_USING_NTSTATUS
@@ -45,13 +45,13 @@
 #include <devpkey.h>
 #include <winternl.h>
 #include <strsafe.h>
-#ifdef __MINGW32__
+#if defined(__MINGW32__)
 #undef strcpy  // fix error with redfined strcpy when building with MinGW-w64
 #endif
 #include <dxgi1_6.h>
 #include "adapters.h"
 
-#ifndef __MINGW32__
+#if !defined(__MINGW32__)
 // not yet available with MinGW-w64 stable
 #include <appmodel.h>
 #endif
@@ -229,7 +229,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
                                            PDWORD reg_data_size, LPCSTR value_name) {
     const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
     const wchar_t *displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
-#ifdef CM_GETIDLIST_FILTER_PRESENT
+#if defined(CM_GETIDLIST_FILTER_PRESENT)
     const ULONG flags = CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT;
 #else
     const ULONG flags = 0x300;

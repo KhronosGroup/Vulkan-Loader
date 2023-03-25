@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
     vk_loader_debug_env_var.remove_value();
     vk_loader_disable_inst_ext_filter_env_var.remove_value();
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if COMMON_UNIX_PLATFORMS
     // Set only one of the 4 XDG variables to /etc, let everything else be empty
     EnvVarWrapper xdg_config_home_env_var{"XDG_CONFIG_HOME", "/etc"};
     EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", ""};

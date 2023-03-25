@@ -1455,7 +1455,7 @@ TEST(TryLoadWrongBinaries, WrongExplicit) {
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
 
     // Should get an error message for the explicit layer
-#ifndef __APPLE__
+#if !defined(__APPLE__)
     ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" was wrong bit-type!")));
 #else   // __APPLE__
     // Apple only throws a wrong library type of error
@@ -1491,7 +1491,7 @@ TEST(TryLoadWrongBinaries, WrongImplicit) {
     // application asking for them.
     inst.CheckCreate(VK_SUCCESS);
 
-#ifndef __APPLE__
+#if !defined(__APPLE__)
     // Should get an info message for the bad implicit layer
     ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" was wrong bit-type.")));
 #else   // __APPLE__
@@ -1533,7 +1533,7 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     // Explicit layer not found should generate a VK_ERROR_LAYER_NOT_PRESENT error message.
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
 
-#ifndef __APPLE__
+#if !defined(__APPLE__)
     // Should get error messages for both (the explicit is second and we don't want the implicit to return before the explicit
     // triggers a failure during vkCreateInstance)
     ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_0) + std::string("\" was wrong bit-type!")));
@@ -1578,7 +1578,7 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
     // Explicit layer not found should generate a VK_ERROR_LAYER_NOT_PRESENT error message.
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
 
-#ifndef __APPLE__
+#if !defined(__APPLE__)
     // Should not get an error messages for either
     ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name_0) + std::string("\" was wrong bit-type!")));
     ASSERT_FALSE(log.find(std::string("Requested layer \"") + std::string(layer_name_1) + std::string("\" was wrong bit-type.")));
@@ -3903,7 +3903,7 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) 
     }
 }
 
-#ifdef _WIN32
+#if defined(_WIN32)
 TEST(AppPackageDriverDiscovery, AppPackageTest) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::windows_app_package));

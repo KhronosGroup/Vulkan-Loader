@@ -28,28 +28,28 @@
 #include "test_icd.h"
 
 // export vk_icdGetInstanceProcAddr
-#ifndef TEST_ICD_EXPORT_ICD_GIPA
+#if !defined(TEST_ICD_EXPORT_ICD_GIPA)
 #define TEST_ICD_EXPORT_ICD_GIPA 0
 #endif
 
 // export vk_icdNegotiateLoaderICDInterfaceVersion
-#ifndef TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
+#if !defined(TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION)
 #define TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION 0
 #endif
 
 // export vk_icdGetPhysicalDeviceProcAddr
-#ifndef TEST_ICD_EXPORT_ICD_GPDPA
+#if !defined(TEST_ICD_EXPORT_ICD_GPDPA)
 #define TEST_ICD_EXPORT_ICD_GPDPA 0
 #endif
 
 // export vk_icdEnumerateAdapterPhysicalDevices
-#ifndef TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
+#if !defined(TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES)
 #define TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES 0
 #endif
 
 // expose vk_icdNegotiateLoaderICDInterfaceVersion, vk_icdEnumerateAdapterPhysicalDevices, and vk_icdGetPhysicalDeviceProcAddr
 // through vk_icdGetInstanceProcAddr or vkGetInstanceProcAddr
-#ifndef TEST_ICD_EXPOSE_VERSION_7
+#if !defined(TEST_ICD_EXPOSE_VERSION_7)
 #define TEST_ICD_EXPOSE_VERSION_7 0
 #endif
 
@@ -514,7 +514,7 @@ void common_nondispatch_handle_creation(std::vector<uint64_t>& handles, HandleTy
         *pHandle = to_nondispatch_handle<HandleType>(handles.back());
     }
 }
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -523,7 +523,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instanc
 }
 #endif
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
@@ -536,7 +536,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWin32PresentationSupportK
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
@@ -549,7 +549,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWaylandPresentationSuppor
     return VK_TRUE;
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
@@ -564,7 +564,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXcbPresentationSupportKHR
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
@@ -578,7 +578,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXlibPresentationSupportKH
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT(VkInstance instance,
                                                                const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -593,7 +593,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceDirectFBPresentationSuppo
 
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
@@ -601,7 +601,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK(VkInstance instance,
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
@@ -609,7 +609,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK(VkInstance instance, c
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(VkInstance instance,
                                                                        const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
                                                                        const VkAllocationCallbacks* pAllocator,
@@ -627,7 +627,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT(VkInstance instance,
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
@@ -1206,18 +1206,18 @@ PFN_vkVoidFunction get_physical_device_func_wsi(VkInstance instance, const char*
 
 PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName) {
     if (icd.min_icd_interface_version >= 3 && icd.enable_icd_wsi == true) {
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
         if (string_eq(pName, "vkCreateAndroidSurfaceKHR")) {
             icd.is_using_icd_wsi = true;
             return to_vkVoidFunction(test_vkCreateAndroidSurfaceKHR);
         }
 #endif
-#ifdef VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
         if (string_eq(pName, "vkCreateMetalSurfaceEXT")) {
             return to_vkVoidFunction(test_vkCreateMetalSurfaceEXT);
         }
 #endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
         if (string_eq(pName, "vkCreateWaylandSurfaceKHR")) {
             return to_vkVoidFunction(test_vkCreateWaylandSurfaceKHR);
         }
@@ -1225,7 +1225,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return to_vkVoidFunction(test_vkGetPhysicalDeviceWaylandPresentationSupportKHR);
         }
 #endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
         if (string_eq(pName, "vkCreateXcbSurfaceKHR")) {
             return to_vkVoidFunction(test_vkCreateXcbSurfaceKHR);
         }
@@ -1233,7 +1233,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return to_vkVoidFunction(test_vkGetPhysicalDeviceXcbPresentationSupportKHR);
         }
 #endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
         if (string_eq(pName, "vkCreateXlibSurfaceKHR")) {
             return to_vkVoidFunction(test_vkCreateXlibSurfaceKHR);
         }
@@ -1241,7 +1241,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return to_vkVoidFunction(test_vkGetPhysicalDeviceXlibPresentationSupportKHR);
         }
 #endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
         if (string_eq(pName, "vkCreateWin32SurfaceKHR")) {
             return to_vkVoidFunction(test_vkCreateWin32SurfaceKHR);
         }
@@ -1249,7 +1249,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return to_vkVoidFunction(test_vkGetPhysicalDeviceWin32PresentationSupportKHR);
         }
 #endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
         if (string_eq(pName, "vkCreateDirectFBSurfaceEXT")) {
             return to_vkVoidFunction(test_vkCreateDirectFBSurfaceEXT);
         }
@@ -1258,25 +1258,25 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
         }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
         if (string_eq(pName, "vkCreateMacOSSurfaceMVK")) {
             return to_vkVoidFunction(test_vkCreateMacOSSurfaceMVK);
         }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
         if (string_eq(pName, "vkCreateIOSSurfaceMVK")) {
             return to_vkVoidFunction(test_vkCreateIOSSurfaceMVK);
         }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
         if (string_eq(pName, "vkCreateStreamDescriptorSurfaceGGP")) {
             return to_vkVoidFunction(test_vkCreateStreamDescriptorSurfaceGGP);
         }
 #endif  // VK_USE_PLATFORM_GGP
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
         if (string_eq(pName, "vkCreateScreenSurfaceQNX")) {
             return to_vkVoidFunction(test_vkCreateScreenSurfaceQNX);
         }

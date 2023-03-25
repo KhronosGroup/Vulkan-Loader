@@ -42,7 +42,7 @@ std::vector<std::string> parse_env_var_list(std::string const& var) {
     for (size_t i = 0; i < var.size(); i++) {
 #if defined(WIN32)
         if (var[i] == ';') {
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
         if (var[i] == ':') {
 #endif
             if (len != 0) {
@@ -147,7 +147,7 @@ void PlatformShim::add_CM_Device_ID(std::wstring const& id, fs::path const& icd_
 
 void PlatformShim::redirect_category(fs::path const& new_path, ManifestCategory search_category) {}
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
 
 #include <dirent.h>
 #include <unistd.h>
