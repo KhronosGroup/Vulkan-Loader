@@ -131,15 +131,12 @@ struct EnvVarWrapper {
     std::string name;
     std::string cur_value;
 
-#if defined(WIN32)
     void set_env_var();
     void remove_env_var() const;
+#if defined(WIN32)
     // Environment variable list separator - not for filesystem paths
     const char OS_ENV_VAR_LIST_SEPARATOR = ';';
-
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-    void set_env_var();
-    void remove_env_var() const;
     // Environment variable list separator - not for filesystem paths
     const char OS_ENV_VAR_LIST_SEPARATOR = ':';
 #endif
@@ -148,11 +145,7 @@ struct EnvVarWrapper {
 // get_env_var() - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
 //     env-var
 // NOTE: This is only intended for test framework code, all test code MUST use EnvVarWrapper
-#if defined(WIN32)
 std::string get_env_var(std::string const& name, bool report_failure = true);
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-std::string get_env_var(std::string const& name, bool report_failure = true);
-#endif
 
 // Windows specific error handling logic
 #if defined(WIN32)

@@ -160,6 +160,8 @@ struct TestLayer {
         return nullptr;
     }
 
+    // Allows distinguishing different layers (that use the same binary)
+    BUILDER_VALUE(TestLayer, std::string, make_spurious_log_in_create_instance, "")
     BUILDER_VALUE(TestLayer, bool, do_spurious_allocations_in_create_instance, false)
     void* spurious_instance_memory_allocation = nullptr;
     BUILDER_VALUE(TestLayer, bool, do_spurious_allocations_in_create_device, false)

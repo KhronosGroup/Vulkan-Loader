@@ -198,7 +198,6 @@ void InstWrapper::CheckCreateWithInfo(InstanceCreateInfo& create_info, VkResult 
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
 }
 
-
 std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check) {
     uint32_t physical_count = phys_dev_count;
     std::vector<VkPhysicalDevice> physical_devices;
@@ -478,8 +477,7 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             if (layer_details.is_dir) {
                 env_var_vk_layer_paths.add_to_list(fs_ptr->location().str());
             } else {
-                env_var_vk_layer_paths.add_to_list(fs_ptr->location().str());
-                env_var_vk_layer_paths.add_to_list(layer_details.json_name);
+                env_var_vk_layer_paths.add_to_list((fs_ptr->location() / layer_details.json_name).str());
             }
             break;
         case (ManifestDiscoveryType::add_env_var):
@@ -500,11 +498,10 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
     auto& folder = *fs_ptr;
     size_t new_layers_start = layers.size();
     for (auto& layer : layer_details.layer_manifest.layers) {
-        size_t cur_layer_index = layers.size();
         if (!layer.lib_path.str().empty()) {
-            std::string new_layer_name = layer.name + "_" + std::to_string(cur_layer_index) + "_" + layer.lib_path.filename().str();
+            std::string layer_binary_name = layer.lib_path.filename().str() + "_" + std::to_string(layers.size());
 
-            auto new_layer_location = folder.copy_file(layer.lib_path, new_layer_name);
+            auto new_layer_location = folder.copy_file(layer.lib_path, layer_binary_name);
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
@@ -517,8 +514,12 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
         }
     }
     if (layer_details.discovery_type != ManifestDiscoveryType::none) {
+        // Write a manifest file to a folder as long as the discovery type isn't none
         auto layer_loc = folder.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
-        platform_shim->add_manifest(category, layer_loc);
+        // only add the manifest to the registry if its a system location (as if it was installed)
+        if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
+            platform_shim->add_manifest(category, layer_loc);
+        }
         for (size_t i = new_layers_start; i < layers.size(); i++) {
             layers.at(i).manifest_path = layer_loc;
         }

@@ -264,6 +264,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 
     // Prepend layers onto the chain if they implement this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
+        // Skip this layer if it doesn't expose the entry-point
+        if (layers.list[i].pre_instance_functions.enumerate_instance_layer_properties[0] == '\0') {
+            continue;
+        }
+
         loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
         if (layer_lib == NULL) {
             loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
