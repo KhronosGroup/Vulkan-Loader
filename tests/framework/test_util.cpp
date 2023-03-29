@@ -203,10 +203,10 @@ std::string ManifestLayer::get_manifest_str() const {
         out += "\t\"layer\": ";
         out += layers.at(0).get_manifest_str() + "\n";
     } else {
-        out += "\"\tlayers\": [";
+        out += "\t\"layers\": [";
         for (size_t i = 0; i < layers.size(); i++) {
             if (i > 0) out += ",";
-            out += "\n" + layers.at(0).get_manifest_str();
+            out += "\n" + layers.at(i).get_manifest_str();
         }
         out += "\n]";
     }

@@ -210,6 +210,22 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         }
     }
 
+    if (!layer.make_spurious_log_in_create_instance.empty()) {
+        auto* chain = reinterpret_cast<const VkBaseInStructure*>(pCreateInfo->pNext);
+        while (chain) {
+            if (chain->sType == VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT) {
+                auto* debug_messenger = reinterpret_cast<const VkDebugUtilsMessengerCreateInfoEXT*>(chain);
+                VkDebugUtilsMessengerCallbackDataEXT data{};
+                data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
+                data.pMessage = layer.make_spurious_log_in_create_instance.c_str();
+                debug_messenger->pfnUserCallback(VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+                                                 VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &data, debug_messenger->pUserData);
+            }
+
+            chain = chain->pNext;
+        }
+    }
+
     return result;
 }
 
