@@ -497,7 +497,9 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
 
         // If we are supposed to filter through all layers, we need to compare the layer name against the filter.
         // This can override the disable above, so we want to do it second.
-        if (check_name_matches_filter_environment_var(inst, source_prop->info.layerName, enable_filter)) {
+        // Also make sure the layer isn't already in the output_list, skip adding it if it is.
+        if (check_name_matches_filter_environment_var(inst, source_prop->info.layerName, enable_filter) &&
+            !loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
             adding = true;
             // Only way is_substring is true is if there are enable variables.  If that's the case, and we're past the
             // above, we should indicate that it was forced on in this way.
@@ -506,9 +508,11 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
         } else {
             adding = false;
             // If it's not in the enable filter, check the environment variable if it exists
+            // Also make sure the layer isn't already in the output_list, skip adding it if it is.
             if (vk_inst_layer_count > 0) {
                 for (uint32_t cur_layer = 0; cur_layer < vk_inst_layer_count; ++cur_layer) {
-                    if (!strcmp(vk_inst_layers[cur_layer], source_prop->info.layerName)) {
+                    if (!strcmp(vk_inst_layers[cur_layer], source_prop->info.layerName) &&
+                        !loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
                         adding = true;
                         break;
                     }

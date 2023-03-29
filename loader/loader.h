@@ -101,6 +101,7 @@ bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, c
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
 
+bool loader_find_layer_name_in_list(const char *name, const struct loader_layer_list *layer_list);
 VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_layer_list *list,
                                              uint32_t prop_list_count, const struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);

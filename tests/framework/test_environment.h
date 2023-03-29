@@ -470,6 +470,7 @@ struct TestICDDetails {
     }
     BUILDER_VALUE(TestICDDetails, ManifestICD, icd_manifest, {});
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
+    // Uses the json_name without modification - default is to append _1 in the json file to distinguish drivers
     BUILDER_VALUE(TestICDDetails, bool, disable_icd_inc, false);
     BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
