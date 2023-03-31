@@ -123,11 +123,17 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
 #if !defined(__APPLE__)
     if (!real_opendir) real_opendir = (PFN_OPENDIR)dlsym(RTLD_NEXT, "opendir");
 #endif
+    if (platform_shim.is_during_destruction) {
+        return real_opendir(path_name);
+    }
     DIR* dir;
     if (platform_shim.is_fake_path(path_name)) {
         auto fake_path_name = platform_shim.get_fake_path(fs::path(path_name));
         dir = real_opendir(fake_path_name.c_str());
-        platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, false});
+        platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, 0, true});
+    } else if (platform_shim.is_known_path(path_name)) {
+        dir = real_opendir(path_name);
+        platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, 0, false});
     } else {
         dir = real_opendir(path_name);
     }
@@ -139,6 +145,9 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
 #if !defined(__APPLE__)
     if (!real_readdir) real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
 #endif
+    if (platform_shim.is_during_destruction) {
+        return real_readdir(dir_stream);
+    }
     auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
                            [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
 
@@ -157,8 +166,11 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
             folder_contents.push_back(dir_entry);
             dirent_filenames.push_back(&dir_entry->d_name[0]);
         }
-        auto real_path = platform_shim.redirection_map.at(it->folder_path);
-        auto filenames = get_folder_contents(platform_shim.folders, real_path.str());
+        auto real_path = it->folder_path;
+        if (it->is_fake_path) {
+            real_path = platform_shim.redirection_map.at(it->folder_path).str();
+        }
+        auto filenames = get_folder_contents(platform_shim.folders, real_path);
 
         // Add the dirent structures in the order they appear in the FolderManager
         // Ignore anything which wasn't in the FolderManager
@@ -179,6 +191,9 @@ FRAMEWORK_EXPORT int CLOSEDIR_FUNC_NAME(DIR* dir_stream) {
 #if !defined(__APPLE__)
     if (!real_closedir) real_closedir = (PFN_CLOSEDIR)dlsym(RTLD_NEXT, "closedir");
 #endif
+    if (platform_shim.is_during_destruction) {
+        return real_closedir(dir_stream);
+    }
     auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
                            [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
 

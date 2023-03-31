@@ -4453,9 +4453,8 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
     }
 
     // Add any layers specified via environment variable next
-    res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, "VK_INSTANCE_LAYERS", &layers_enable_filter,
-                                        &layers_disable_filter, &inst->app_activated_layer_list,
-                                        &inst->expanded_activated_layer_list, instance_layers);
+    res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, &layers_enable_filter, &layers_disable_filter,
+                                        &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -5346,8 +5345,8 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
     if (res != VK_SUCCESS) {
         goto out;
     }
-    res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, ENABLED_LAYERS_ENV, &layers_enable_filter,
-                                        &layers_disable_filter, &active_layers, &expanded_layers, instance_layers);
+    res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, &layers_enable_filter, &layers_disable_filter,
+                                        &active_layers, &expanded_layers, instance_layers);
     if (res != VK_SUCCESS) {
         goto out;
     }

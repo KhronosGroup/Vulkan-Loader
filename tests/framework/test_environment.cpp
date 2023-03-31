@@ -374,9 +374,9 @@ FrameworkEnvironment::FrameworkEnvironment(bool enable_log, bool set_default_sea
 
     platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
     if (set_default_search_paths) {
-        platform_shim->set_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
-        platform_shim->set_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
-        platform_shim->set_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
+        platform_shim->set_fake_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
+        platform_shim->set_fake_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
+        platform_shim->set_fake_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
     }
 #if defined(__APPLE__)
     // Necessary since bundles look in sub folders for manifests, not the test framework folder itself
@@ -385,6 +385,14 @@ FrameworkEnvironment::FrameworkEnvironment(bool enable_log, bool set_default_sea
     platform_shim->redirect_path(bundle_location / "vulkan/explicit_layer.d", bundle_location);
     platform_shim->redirect_path(bundle_location / "vulkan/implicit_layer.d", bundle_location);
 #endif
+}
+
+FrameworkEnvironment::~FrameworkEnvironment() {
+    // This is necessary to prevent the folder manager from using dead memory during destruction.
+    // What happens is that each folder manager tries to cleanup itself. Except, folders that were never called did not have their
+    // DirEntry array's filled out. So when that folder calls delete_folder, which calls readdir, the shim tries to order the files.
+    // Except, the list of files is in a object that is currently being destroyed.
+    platform_shim->is_during_destruction = true;
 }
 
 TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
@@ -428,9 +436,11 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
                 break;
             case (ManifestDiscoveryType::env_var):
                 env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                platform_shim->add_known_path(folder->location());
                 break;
             case (ManifestDiscoveryType::add_env_var):
                 add_env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                platform_shim->add_known_path(folder->location());
                 break;
             case (ManifestDiscoveryType::macos_bundle):
                 platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
@@ -479,10 +489,16 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             } else {
                 env_var_vk_layer_paths.add_to_list((fs_ptr->location() / layer_details.json_name).str());
             }
+            platform_shim->add_known_path(fs_ptr->location());
             break;
         case (ManifestDiscoveryType::add_env_var):
             fs_ptr = &get_folder(ManifestLocation::explicit_layer_add_env_var);
-            add_env_var_vk_layer_paths.add_to_list(fs_ptr->location().str());
+            if (layer_details.is_dir) {
+                add_env_var_vk_layer_paths.add_to_list(fs_ptr->location().str());
+            } else {
+                add_env_var_vk_layer_paths.add_to_list((fs_ptr->location() / layer_details.json_name).str());
+            }
+            platform_shim->add_known_path(fs_ptr->location());
             break;
         case (ManifestDiscoveryType::override_folder):
             fs_ptr = &get_folder(ManifestLocation::override_layer);

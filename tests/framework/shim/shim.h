@@ -29,6 +29,7 @@
 
 #include "test_util.h"
 
+#include <unordered_set>
 #include <stdlib.h>
 
 #if defined(WIN32)
@@ -116,7 +117,8 @@ struct DirEntry {
     DIR* directory;
     std::string folder_path;
     std::vector<struct dirent*> contents;
-    size_t current_index;
+    size_t current_index;  // the current item being read by an app (incremented by readdir, reset to zero by opendir & closedir)
+    bool is_fake_path;     // true when this entry is for folder redirection
 };
 
 #endif
@@ -138,7 +140,12 @@ struct PlatformShim {
     void redirect_all_paths(fs::path const& path);
     void redirect_category(fs::path const& new_path, ManifestCategory category);
 
-    void set_path(ManifestCategory category, fs::path const& path);
+    // fake paths are paths that the loader normally looks in but actually point to locations inside the test framework
+    void set_fake_path(ManifestCategory category, fs::path const& path);
+
+    // known paths are real paths but since the test framework guarantee's the order files are found in, files in these paths need
+    // to be ordered correctly
+    void add_known_path(fs::path const& path);
 
     void add_manifest(ManifestCategory category, fs::path const& path);
 
@@ -188,17 +195,22 @@ struct PlatformShim {
     void redirect_path(fs::path const& path, fs::path const& new_path);
     void remove_redirect(fs::path const& path);
 
+    bool is_known_path(fs::path const& path);
+    void remove_known_path(fs::path const& path);
+
     std::unordered_map<std::string, fs::path> redirection_map;
+    std::unordered_set<std::string> known_path_set;
 
     void set_elevated_privilege(bool elev) { use_fake_elevation = elev; }
     bool use_fake_elevation = false;
 
     std::vector<DirEntry> dir_entries;
 
-    #if defined(__APPLE__)
+#if defined(__APPLE__)
     std::string bundle_contents;
-    #endif
 #endif
+#endif
+    bool is_during_destruction = false;
 };
 
 std::vector<std::string> parse_env_var_list(std::string const& var);
