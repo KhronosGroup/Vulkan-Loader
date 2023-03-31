@@ -3991,7 +3991,7 @@ TEST(ManifestDiscovery, ValidSymlink) {
     int res = symlink(driver_path.c_str(), symlink_path.c_str());
     ASSERT_EQ(res, 0);
 
-    env.platform_shim->set_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
+    env.platform_shim->set_fake_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -4025,7 +4025,7 @@ TEST(ManifestDiscovery, InvalidSymlink) {
     ASSERT_EQ(res, 0);
     env.get_folder(ManifestLocation::driver).add_existing_file(symlink_name);
 
-    env.platform_shim->set_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
+    env.platform_shim->set_fake_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
