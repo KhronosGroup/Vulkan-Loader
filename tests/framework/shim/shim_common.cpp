@@ -103,7 +103,8 @@ void PlatformShim::reset() {
     hkey_local_machine_drivers.clear();
 }
 
-void PlatformShim::set_path(ManifestCategory category, fs::path const& path) {}
+void PlatformShim::set_fake_path(ManifestCategory category, fs::path const& path) {}
+void PlatformShim::add_known_path(fs::path const& path) {}
 
 void PlatformShim::add_manifest(ManifestCategory category, fs::path const& path) {
     if (category == ManifestCategory::implicit_layer)
@@ -161,10 +162,14 @@ std::string category_path_name(ManifestCategory category) {
 
 void PlatformShim::reset() { redirection_map.clear(); }
 
-void PlatformShim::redirect_path(fs::path const& path, fs::path const& new_path) { redirection_map[path.str()] = new_path; }
-void PlatformShim::remove_redirect(fs::path const& path) { redirection_map.erase(path.str()); }
 bool PlatformShim::is_fake_path(fs::path const& path) { return redirection_map.count(path.str()) > 0; }
 fs::path const& PlatformShim::get_fake_path(fs::path const& path) { return redirection_map.at(path.str()); }
+void PlatformShim::redirect_path(fs::path const& path, fs::path const& new_path) { redirection_map[path.str()] = new_path; }
+void PlatformShim::remove_redirect(fs::path const& path) { redirection_map.erase(path.str()); }
+
+bool PlatformShim::is_known_path(fs::path const& path) { return known_path_set.count(path.str()) > 0; }
+void PlatformShim::add_known_path(fs::path const& path) { known_path_set.insert(path.str()); }
+void PlatformShim::remove_known_path(fs::path const& path) { known_path_set.erase(path.str()); }
 
 void PlatformShim::add_manifest(ManifestCategory category, fs::path const& path) {}
 
@@ -215,7 +220,7 @@ void PlatformShim::redirect_category(fs::path const& new_path, ManifestCategory 
     }
 }
 
-void PlatformShim::set_path(ManifestCategory category, fs::path const& path) {
+void PlatformShim::set_fake_path(ManifestCategory category, fs::path const& path) {
     // use /etc as the 'redirection path' by default since its always searched
     redirect_path(fs::path(SYSCONFDIR) / "vulkan" / category_path_name(category), path);
 }
