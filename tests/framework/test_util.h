@@ -514,6 +514,8 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
             return os << "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
         case (VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR):
             return os << "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
+        case (VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT):
+            return os << "VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT";
     }
     return os << static_cast<int32_t>(result);
 }
