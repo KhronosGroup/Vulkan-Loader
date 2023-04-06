@@ -35,7 +35,7 @@ jobs:
                 cc: [ gcc, clang ]
                 cxx: [ g++, clang++ ]
                 config: [ Debug, Release ]
-                os: [ ubuntu-18.04, ubuntu-20.04 ]
+                os: [ ubuntu-20.04, ubuntu-22.04 ]
                 exclude:
                     - cc: gcc
                       cxx: clang++
@@ -84,7 +84,7 @@ jobs:
                 cc: [ gcc, clang ]
                 cxx: [ g++, clang++ ]
                 config: [ Debug, Release ]
-                os: [ ubuntu-18.04, ubuntu-20.04 ]
+                os: [ ubuntu-20.04, ubuntu-22.04 ]
                 exclude:
                     - cc: gcc
                       cxx: clang++
@@ -103,7 +103,7 @@ jobs:
               run: |-
                 sudo dpkg --add-architecture i386
                 sudo apt-get update
-                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6-dev-i386 pkg-config-i686-linux-gnu libwayland-dev:i386 libxrandr-dev:i386
+                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6-dev-i386 libwayland-dev:i386 libxrandr-dev:i386
             - name: Generate build files
               run: cmake -S. -B build -D CMAKE_BUILD_TYPE=${{matrix.config}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON
               env:
