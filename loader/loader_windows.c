@@ -418,7 +418,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
     }
 
     while (*loc) {
-        next = loader_get_next_list_item(loc, PATH_SEPARATOR);
+        next = loader_get_next_list_item(loc);
         access_flags = KEY_QUERY_VALUE;
         rtn_value = RegOpenKeyEx(hive, loc, 0, access_flags, &key);
         if (ERROR_SUCCESS == rtn_value) {

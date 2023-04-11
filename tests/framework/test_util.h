@@ -174,22 +174,22 @@ struct path {
     path(std::string const& in) : contents(make_native(in)) {}
     path(const char* in) : contents(make_native(std::string(in))) {}
 
-    // concat paths without directoryseperator
+    // concat paths without directory separator
     path& operator+=(path const& in);
     path& operator+=(std::string const& in);
     path& operator+=(const char* in);
 
-    // append paths with directoryseperator
+    // append paths with directory separator
     path& operator/=(path const& in);
     path& operator/=(std::string const& in);
     path& operator/=(const char* in);
 
-    // concat paths without directory seperator
+    // concat paths without directory separator
     path operator+(path const& in) const;
     path operator+(std::string const& in) const;
     path operator+(const char* in) const;
 
-    // append paths with directory seperator
+    // append paths with directory separator
     path operator/(path const& in) const;
     path operator/(std::string const& in) const;
     path operator/(const char* in) const;

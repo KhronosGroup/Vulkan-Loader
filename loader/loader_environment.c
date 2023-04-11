@@ -581,7 +581,7 @@ VkResult read_env_var_path(const struct loader_instance *inst, uint32_t log_msg_
 }
 
 // Determine how many actual items are listed in a in_list string
-uint32_t get_list_count(char *in_list, char separator) {
+uint32_t get_list_count(char *in_list) {
     uint32_t count = 0;
     if (in_list == NULL) {
         return 0;
@@ -591,7 +591,7 @@ uint32_t get_list_count(char *in_list, char separator) {
     char *next_item = in_list;
     while (NULL != next_item && *next_item != '\0') {
         cur_path = next_item;
-        next_item = loader_get_next_list_item(cur_path, separator);
+        next_item = loader_get_next_list_item(cur_path);
 
         // Is this a JSON file, then try to open it.
         size_t len = strlen(cur_path);
@@ -604,14 +604,14 @@ uint32_t get_list_count(char *in_list, char separator) {
 
 // Extract each individual item listed in a in_list string and place it in a item_array for
 // easier use.
-VkResult add_list_items_to_array(const struct loader_instance *inst, uint32_t log_msg_flag, char *in_list, char separator,
-                                 char **item_array, uint32_t *start_index) {
+VkResult add_list_items_to_array(const struct loader_instance *inst, uint32_t log_msg_flag, char *in_list, char **item_array,
+                                 uint32_t *start_index) {
     // Now, parse the paths
     char *cur_item;
     char *next_item = in_list;
     while (NULL != next_item && *next_item != '\0') {
         cur_item = next_item;
-        next_item = loader_get_next_list_item(cur_item, separator);
+        next_item = loader_get_next_list_item(cur_item);
 
         // Is this a JSON file, then try to open it.
         size_t len = strlen(cur_item);
@@ -635,8 +635,8 @@ VkResult add_list_items_to_array(const struct loader_instance *inst, uint32_t lo
     return VK_SUCCESS;
 }
 
-VkResult read_env_var_list(struct loader_instance *inst, const char *env_var, const char separator,
-                           enum vulkan_loader_debug_flags log_flag, uint32_t *count, char ***item_array) {
+VkResult read_env_var_list(struct loader_instance *inst, const char *env_var, enum vulkan_loader_debug_flags log_flag,
+                           uint32_t *count, char ***item_array) {
     VkResult res = VK_SUCCESS;
 
     char *env = loader_getenv(env_var, inst);
@@ -659,7 +659,7 @@ VkResult read_env_var_list(struct loader_instance *inst, const char *env_var, co
             cur_mod_ptr = modifiable_list;
             strncpy(cur_mod_ptr, env, cur_len);
             cur_mod_ptr[cur_len] = '\0';
-            item_count = get_list_count(cur_mod_ptr, separator);
+            item_count = get_list_count(cur_mod_ptr);
             if (item_count != 0) {
                 *item_array = loader_instance_heap_calloc(inst, sizeof(char *) * item_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                 if (*item_array == NULL) {
@@ -674,7 +674,7 @@ VkResult read_env_var_list(struct loader_instance *inst, const char *env_var, co
                 cur_mod_ptr = modifiable_list;
                 strncpy(cur_mod_ptr, env, cur_len);
                 cur_mod_ptr[cur_len] = '\0';
-                res = add_list_items_to_array(inst, log_flag, cur_mod_ptr, separator, *item_array, &cur_item_index);
+                res = add_list_items_to_array(inst, log_flag, cur_mod_ptr, *item_array, &cur_item_index);
                 if (res != VK_SUCCESS) {
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_flag, 0, "Failed copying item content from `%s`", env_var);
                     failed = true;
@@ -758,7 +758,7 @@ VkResult generate_complete_search_list(const struct loader_instance *inst, enum 
             cur_mod_ptr = modifiable_path;
             strncpy(cur_mod_ptr, override_path, cur_len);
             cur_mod_ptr[cur_len] = '\0';
-            path_count = get_list_count(cur_mod_ptr, PATH_SEPARATOR);
+            path_count = get_list_count(cur_mod_ptr);
             path_array = loader_instance_heap_calloc(inst, sizeof(char *) * path_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (path_array == NULL) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0, "Failed alloc space for %s override path search array",
@@ -771,7 +771,7 @@ VkResult generate_complete_search_list(const struct loader_instance *inst, enum 
             cur_mod_ptr = modifiable_path;
             strncpy(cur_mod_ptr, override_path, cur_len);
             cur_mod_ptr[cur_len] = '\0';
-            res = add_list_items_to_array(inst, log_msg_flag, cur_mod_ptr, PATH_SEPARATOR, path_array, &cur_path_index);
+            res = add_list_items_to_array(inst, log_msg_flag, cur_mod_ptr, path_array, &cur_path_index);
             if (res != VK_SUCCESS) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
                            "Failed copying paths from %s override path into search array", message_str[message_index]);
@@ -795,13 +795,13 @@ VkResult generate_complete_search_list(const struct loader_instance *inst, enum 
                 cur_mod_ptr = modifiable_path;
                 strncpy(cur_mod_ptr, add_path, add_len);
                 cur_mod_ptr[add_len] = '\0';
-                path_count += get_list_count(cur_mod_ptr, PATH_SEPARATOR);
+                path_count += get_list_count(cur_mod_ptr);
             }
             if (default_path != NULL) {
                 cur_mod_ptr = modifiable_path;
                 strncpy(cur_mod_ptr, default_path, default_len);
                 cur_mod_ptr[default_len] = '\0';
-                path_count += get_list_count(cur_mod_ptr, PATH_SEPARATOR);
+                path_count += get_list_count(cur_mod_ptr);
             }
             path_array = loader_instance_heap_calloc(inst, sizeof(char *) * path_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (path_array == NULL) {
@@ -815,7 +815,7 @@ VkResult generate_complete_search_list(const struct loader_instance *inst, enum 
             cur_mod_ptr = modifiable_path;
             strncpy(cur_mod_ptr, add_path, add_len);
             cur_mod_ptr[add_len] = '\0';
-            res = add_list_items_to_array(inst, log_msg_flag, cur_mod_ptr, PATH_SEPARATOR, path_array, &cur_path_index);
+            res = add_list_items_to_array(inst, log_msg_flag, cur_mod_ptr, path_array, &cur_path_index);
             if (res != VK_SUCCESS) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
                            "Failed copying paths from additional %s path into search array", message_str[message_index]);
@@ -826,7 +826,7 @@ VkResult generate_complete_search_list(const struct loader_instance *inst, enum 
             cur_mod_ptr = modifiable_path;
             strncpy(cur_mod_ptr, default_path, default_len);
             cur_mod_ptr[default_len] = '\0';
-            res = add_list_items_to_array(inst, log_msg_flag, cur_mod_ptr, PATH_SEPARATOR, path_array, &cur_path_index);
+            res = add_list_items_to_array(inst, log_msg_flag, cur_mod_ptr, path_array, &cur_path_index);
             if (res != VK_SUCCESS) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_msg_flag, 0,
                            "Failed copying paths from default %s path into search array", message_str[message_index]);
@@ -977,8 +977,8 @@ VkResult parse_env_layer_settings(struct loader_instance *inst, struct loader_la
     }
     loader_free_getenv(env, inst);
 
-    res = read_env_var_list(inst, ENABLED_LAYERS_ENV, PATH_SEPARATOR, VULKAN_LOADER_LAYER_BIT,
-                            &layer_settings->forced_on_layers_count, &layer_settings->forced_on_layers);
+    res = read_env_var_list(inst, ENABLED_LAYERS_ENV, VULKAN_LOADER_LAYER_BIT, &layer_settings->forced_on_layers_count,
+                            &layer_settings->forced_on_layers);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -1554,13 +1554,6 @@ void free_settings_struct(struct loader_instance *inst, struct loader_settings *
 // file.
 VkResult generate_settings_struct(struct loader_instance *inst, struct loader_settings **set_struct) {
     VkResult result = VK_SUCCESS;
-    if (set_struct == NULL) {
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
-    if (*set_struct != NULL) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_SETTING_BIT, 0,
-                   "Passed in pointer for creating settings struct not NULL");
-    }
     *set_struct = NULL;
 
     // Search paths, these are eventually used to fill in the final search paths

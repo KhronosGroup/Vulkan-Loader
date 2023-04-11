@@ -180,7 +180,7 @@ VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance *inst, uint32
                                             VkPhysicalDeviceGroupProperties *groups);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
-char *loader_get_next_list_item(char *path, char separator);
+char *loader_get_next_list_item(char *path);
 VkResult add_data_files(const struct loader_instance *inst, uint32_t search_path_count, char **search_path_array,
                         struct loader_data_files *out_files, bool use_first_found_manifest);
 
