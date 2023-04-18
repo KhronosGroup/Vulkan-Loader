@@ -4768,6 +4768,93 @@ TEST(TestLayers, EnvironVkInstanceLayersAndDisableFilters) {
     ASSERT_TRUE(env.debug_log.find_prefix_then_postfix(explicit_layer_name_2, "disabled because name matches filter of env var"));
 }
 
+// Verify that layers enabled through VK_INSTANCE_LAYERS which were not found get the proper error message
+TEST(TestLayers, NonExistantLayerInVK_INSTANCE_LAYERS) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    const char* layer_name = "VK_LAYER_test_layer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
+
+    EnvVarWrapper layers_enable_env_var{"VK_INSTANCE_LAYERS", "VK_LAYER_I_dont_exist"};
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+
+        ASSERT_TRUE(
+            env.debug_log.find("Layer \"VK_LAYER_I_dont_exist\" was not found but was requested by env var VK_INSTANCE_LAYERS!"));
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 1;
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr));
+        ASSERT_EQ(0U, count);
+    }
+    // Make sure layers that do exist are loaded
+    env.debug_log.clear();
+    layers_enable_env_var.add_to_list(layer_name);
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(
+            env.debug_log.find("Layer \"VK_LAYER_I_dont_exist\" was not found but was requested by env var VK_INSTANCE_LAYERS!"));
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 1;
+        VkLayerProperties enabled_layer_prop{};
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop));
+        ASSERT_EQ(1U, count);
+        ASSERT_TRUE(string_eq(enabled_layer_prop.layerName, layer_name));
+    }
+    // Make sure that if the layer appears twice in the env-var nothing bad happens
+    env.debug_log.clear();
+    layers_enable_env_var.add_to_list("VK_LAYER_I_dont_exist");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(
+            env.debug_log.find("Layer \"VK_LAYER_I_dont_exist\" was not found but was requested by env var VK_INSTANCE_LAYERS!"));
+        auto phys_dev = inst.GetPhysDev();
+        uint32_t count = 1;
+        VkLayerProperties enabled_layer_prop{};
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop));
+        ASSERT_EQ(1U, count);
+        ASSERT_TRUE(string_eq(enabled_layer_prop.layerName, layer_name));
+    }
+}
+
+// Verify that if the same layer appears twice in VK_INSTANCE_LAYERS nothing bad happens
+TEST(TestLayers, DuplicatesInEnvironVK_INSTANCE_LAYERS) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    const char* layer_name = "VK_LAYER_test_layer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer.json");
+
+    EnvVarWrapper layers_enable_env_var{"VK_INSTANCE_LAYERS"};
+
+    layers_enable_env_var.add_to_list(layer_name);
+    layers_enable_env_var.add_to_list(layer_name);
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    auto phys_dev = inst.GetPhysDev();
+    uint32_t count = 1;
+    VkLayerProperties enabled_layer_prop{};
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop));
+    ASSERT_EQ(1U, count);
+    ASSERT_TRUE(string_eq(enabled_layer_prop.layerName, layer_name));
+}
+
 TEST(TestLayers, AppEnabledExplicitLayerFails) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 2, 0)));

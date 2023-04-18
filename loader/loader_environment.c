@@ -439,23 +439,31 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
                 char *next = loader_get_next_path(name);
 
                 if (strlen(name) > 0) {
+                    bool found = false;
                     for (uint32_t i = 0; i < source_list->count; i++) {
                         struct loader_layer_properties *source_prop = &source_list->list[i];
 
-                        if (0 == strcmp(name, source_prop->info.layerName) &&
-                            !loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
-                            if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                                res = loader_add_layer_properties_to_list(inst, target_list, 1, source_prop);
-                                if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-                                res = loader_add_layer_properties_to_list(inst, expanded_target_list, 1, source_prop);
-                                if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-                            } else {
-                                res = loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list,
-                                                            expanded_target_list, source_list, NULL);
-                                if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+                        if (0 == strcmp(name, source_prop->info.layerName)) {
+                            found = true;
+                            // Only add it if it doesn't already appear in the layer list
+                            if (!loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
+                                if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
+                                    res = loader_add_layer_properties_to_list(inst, target_list, 1, source_prop);
+                                    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+                                    res = loader_add_layer_properties_to_list(inst, expanded_target_list, 1, source_prop);
+                                    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+                                } else {
+                                    res = loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list,
+                                                                expanded_target_list, source_list, NULL);
+                                    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+                                }
+                                break;
                             }
-                            break;
                         }
+                    }
+                    if (!found) {
+                        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                                   "Layer \"%s\" was not found but was requested by env var VK_INSTANCE_LAYERS!", name);
                     }
                 }
                 name = next;
