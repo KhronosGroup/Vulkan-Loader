@@ -63,13 +63,16 @@
 typedef HRESULT(APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory);
 PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 
+// Empty function just so windows_initialization can find the current module location
+void function_for_finding_the_current_module(void) {}
+
 void windows_initialization(void) {
     char dll_location[MAX_PATH];
     HMODULE module_handle = NULL;
 
     // Get a module handle to a static function inside of this source
     if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          (LPCSTR)&loader_debug_init, &module_handle) != 0 &&
+                          (LPCSTR)&function_for_finding_the_current_module, &module_handle) != 0 &&
         GetModuleFileName(module_handle, dll_location, sizeof(dll_location)) != 0) {
         loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Using Vulkan Loader %s", dll_location);
     }
