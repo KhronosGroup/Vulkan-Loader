@@ -16,6 +16,9 @@
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
 
+# prevents /W3 from being added to MSVC builds by default
+cmake_policy(SET CMP0092 NEW)
+
 project(VULKAN_LOADER VERSION 1.3.248)
 
 add_subdirectory(scripts)
