@@ -292,3 +292,25 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     }
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
 }
+
+// Verify that the various ways to get vkGetDeviceProcAddr return the same value
+TEST(GetProcAddr, PreserveLayerGettingVkCreateDeviceWithNullInstance) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name("VK_LAYER_technically_buggy_layer")
+                                                                          .set_description("actually_layer_1")
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("if_you_can")),
+                                            "buggy_layer_1.json"));
+    env.get_test_layer().set_buggy_query_of_vkCreateDevice(true);
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    DeviceWrapper dev{inst};
+    dev.CheckCreate(phys_dev);
+}
