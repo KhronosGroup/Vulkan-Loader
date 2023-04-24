@@ -174,6 +174,9 @@ struct TestLayer {
     // By default query GPDPA from GIPA, don't use value given from pNext
     BUILDER_VALUE(TestLayer, bool, use_gipa_GetPhysicalDeviceProcAddr, true)
 
+    // Have a layer query for vkCreateDevice with a NULL instance handle
+    BUILDER_VALUE(TestLayer, bool, buggy_query_of_vkCreateDevice, false)
+
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;
