@@ -886,19 +886,10 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
     VkSwapchainKHR swapchain{};
     ASSERT_EQ(VK_SUCCESS, dev_funcs.vkCreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain));
 
-    // Debug marker
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
     DebugMarkerSetObjectTagEXT = use_GIPA ? inst.load("vkDebugMarkerSetObjectTagEXT") : dev.load("vkDebugMarkerSetObjectTagEXT");
     PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
     DebugMarkerSetObjectNameEXT = use_GIPA ? inst.load("vkDebugMarkerSetObjectNameEXT") : dev.load("vkDebugMarkerSetObjectNameEXT");
-    PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT =
-        use_GIPA ? inst.load("vkCmdDebugMarkerBeginEXT") : dev.load("vkCmdDebugMarkerBeginEXT");
-    PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT =
-        use_GIPA ? inst.load("vkCmdDebugMarkerEndEXT") : dev.load("vkCmdDebugMarkerEndEXT");
-    PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT =
-        use_GIPA ? inst.load("vkCmdDebugMarkerInsertEXT") : dev.load("vkCmdDebugMarkerInsertEXT");
-
-    // Debug utils
     PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
     SetDebugUtilsObjectNameEXT = use_GIPA ? inst.load("vkSetDebugUtilsObjectNameEXT") : dev.load("vkSetDebugUtilsObjectNameEXT");
     PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT;
@@ -918,31 +909,33 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
     PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
     CmdInsertDebugUtilsLabelEXT = use_GIPA ? inst.load("vkCmdInsertDebugUtilsLabelEXT") : dev.load("vkCmdInsertDebugUtilsLabelEXT");
 
-    // Debug marker functions - should always be found when using GIPA but when using GDPA found only when the extension is enabled
     if (use_GIPA) {
+        // When querying from GIPA, these functions should always be found
         ASSERT_TRUE(nullptr != DebugMarkerSetObjectTagEXT);
         ASSERT_TRUE(nullptr != DebugMarkerSetObjectNameEXT);
-        ASSERT_TRUE(nullptr != CmdDebugMarkerBeginEXT);
-        ASSERT_TRUE(nullptr != CmdDebugMarkerEndEXT);
-        ASSERT_TRUE(nullptr != CmdDebugMarkerInsertEXT);
+        // When querying from GIPA, these functions are found only if the extensions were enabled
+        ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectNameEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectTagEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != QueueBeginDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != QueueEndDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != QueueInsertDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != CmdBeginDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != CmdEndDebugUtilsLabelEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != CmdInsertDebugUtilsLabelEXT);
     } else {
+        // When querying from GDPA, these functions are found only if the extensions were enabled
         ASSERT_EQ(enable_debug_extensions, nullptr != DebugMarkerSetObjectTagEXT);
         ASSERT_EQ(enable_debug_extensions, nullptr != DebugMarkerSetObjectNameEXT);
-        ASSERT_EQ(enable_debug_extensions, nullptr != CmdDebugMarkerBeginEXT);
-        ASSERT_EQ(enable_debug_extensions, nullptr != CmdDebugMarkerEndEXT);
-        ASSERT_EQ(enable_debug_extensions, nullptr != CmdDebugMarkerInsertEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectNameEXT);
+        ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectTagEXT);
+        // When querying from GDPA, these functions should always be found
+        ASSERT_TRUE(nullptr != QueueBeginDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != QueueEndDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != QueueInsertDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != CmdBeginDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != CmdEndDebugUtilsLabelEXT);
+        ASSERT_TRUE(nullptr != CmdInsertDebugUtilsLabelEXT);
     }
-
-    // Debug utils functions - should only be found if the extension was enabled (because its instance level)
-    ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectNameEXT);
-    ASSERT_EQ(enable_debug_extensions, nullptr != SetDebugUtilsObjectTagEXT);
-    ASSERT_EQ(enable_debug_extensions, nullptr != QueueBeginDebugUtilsLabelEXT);
-    ASSERT_EQ(enable_debug_extensions, nullptr != QueueEndDebugUtilsLabelEXT);
-    ASSERT_EQ(enable_debug_extensions, nullptr != QueueInsertDebugUtilsLabelEXT);
-    ASSERT_EQ(enable_debug_extensions, nullptr != CmdBeginDebugUtilsLabelEXT);
-    ASSERT_EQ(enable_debug_extensions, nullptr != CmdEndDebugUtilsLabelEXT);
-    ASSERT_EQ(enable_debug_extensions, nullptr != CmdInsertDebugUtilsLabelEXT);
-
     if (SetDebugUtilsObjectNameEXT) {
         VkDebugUtilsObjectNameInfoEXT obj_name_info{};
         obj_name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;

@@ -4248,7 +4248,6 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator(VkInst
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstance inst, const char *pName) {
-    // Global functions - Do not need a valid instance handle to query
     if (!strcmp(pName, "vkGetInstanceProcAddr")) {
         return (PFN_vkVoidFunction)loader_gpa_instance_terminator;
     }
@@ -4258,59 +4257,46 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
     if (!strcmp(pName, "vkCreateInstance")) {
         return (PFN_vkVoidFunction)terminator_CreateInstance;
     }
-
-    // inst is not wrapped
-    if (inst == VK_NULL_HANDLE) {
-        return NULL;
-    }
-    struct loader_instance *loader_inst = loader_get_instance(inst);
-
-    VkLayerInstanceDispatchTable *disp_table = *(VkLayerInstanceDispatchTable **)inst;
-    void *addr;
-
-    if (disp_table == NULL) return NULL;
-
     if (!strcmp(pName, "vkCreateDevice")) {
         return (PFN_vkVoidFunction)terminator_CreateDevice;
     }
 
     // The VK_EXT_debug_utils functions need a special case here so the terminators can still be found from
     // vkGetInstanceProcAddr This is because VK_EXT_debug_utils is an instance level extension with device level functions, and
-    // is 'supported' by the loader.
-    // These functions need a terminator to handle the case of a driver not supporting VK_EXT_debug_utils when there are layers
-    // present which not check for NULL before calling the function.
+    // is 'supported' by the loader. There needs to be a terminator in case a driver doesn't support VK_EXT_debug_utils.
     if (!strcmp(pName, "vkSetDebugUtilsObjectNameEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectNameEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectNameEXT;
     }
     if (!strcmp(pName, "vkSetDebugUtilsObjectTagEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectTagEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectTagEXT;
     }
     if (!strcmp(pName, "vkQueueBeginDebugUtilsLabelEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_QueueBeginDebugUtilsLabelEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_QueueBeginDebugUtilsLabelEXT;
     }
     if (!strcmp(pName, "vkQueueEndDebugUtilsLabelEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_QueueEndDebugUtilsLabelEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_QueueEndDebugUtilsLabelEXT;
     }
     if (!strcmp(pName, "vkQueueInsertDebugUtilsLabelEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_QueueInsertDebugUtilsLabelEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_QueueInsertDebugUtilsLabelEXT;
     }
     if (!strcmp(pName, "vkCmdBeginDebugUtilsLabelEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_CmdBeginDebugUtilsLabelEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_CmdBeginDebugUtilsLabelEXT;
     }
     if (!strcmp(pName, "vkCmdEndDebugUtilsLabelEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_CmdEndDebugUtilsLabelEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_CmdEndDebugUtilsLabelEXT;
     }
     if (!strcmp(pName, "vkCmdInsertDebugUtilsLabelEXT")) {
-        return loader_inst->enabled_known_extensions.ext_debug_utils ? (PFN_vkVoidFunction)terminator_CmdInsertDebugUtilsLabelEXT
-                                                                     : NULL;
+        return (PFN_vkVoidFunction)terminator_CmdInsertDebugUtilsLabelEXT;
     }
+
+    // inst is not wrapped
+    if (inst == VK_NULL_HANDLE) {
+        return NULL;
+    }
+    VkLayerInstanceDispatchTable *disp_table = *(VkLayerInstanceDispatchTable **)inst;
+    void *addr;
+
+    if (disp_table == NULL) return NULL;
 
     bool found_name;
     addr = loader_lookup_instance_dispatch_table(disp_table, pName, &found_name);
