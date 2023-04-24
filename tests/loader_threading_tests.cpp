@@ -93,7 +93,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkCmdDraw(VkCommandBuffer cmd_buf, uint32_t vert
 TEST(Threading, InstanceCreateDestroyLoop) {
     const auto processor_count = std::thread::hardware_concurrency();
 
-    FrameworkEnvironment env{false};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t num_loops_create_destroy_instance = 500;
     uint32_t num_loops_try_get_instance_proc_addr = 5;
@@ -119,7 +119,7 @@ TEST(Threading, InstanceCreateDestroyLoop) {
 TEST(Threading, DeviceCreateDestroyLoop) {
     const auto processor_count = std::thread::hardware_concurrency();
 
-    FrameworkEnvironment env{false};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
 
     uint32_t num_loops_create_destroy_device = 1000;
