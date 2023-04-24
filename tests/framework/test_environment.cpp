@@ -300,7 +300,7 @@ bool FindPrefixPostfixStringOnLine(DebugUtilsLogger const& env_log, const char* 
     return env_log.find_prefix_then_postfix(prefix, postfix);
 }
 
-PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders, bool enable_log) noexcept
+PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders, const char* log_filter) noexcept
     : loader_logging{"VK_LOADER_DEBUG"} {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
@@ -312,8 +312,8 @@ PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders
 #endif
     platform_shim->reset();
 
-    if (enable_log) {
-        loader_logging.set_new_value("all");
+    if (log_filter) {
+        loader_logging.set_new_value(log_filter);
     }
 }
 
@@ -351,10 +351,9 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
 fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
 
-FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(true, true) {}
-FrameworkEnvironment::FrameworkEnvironment(bool enable_log) noexcept : FrameworkEnvironment(enable_log, true) {}
-FrameworkEnvironment::FrameworkEnvironment(bool enable_log, bool set_default_search_paths) noexcept
-    : platform_shim(&folders, enable_log),
+FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
+FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
+    : platform_shim(&folders, settings.log_filter),
       vulkan_functions(),
       env_var_vk_icd_filenames("VK_DRIVER_FILES"),
       add_env_var_vk_icd_filenames("VK_ADD_DRIVER_FILES"),
@@ -373,7 +372,7 @@ FrameworkEnvironment::FrameworkEnvironment(bool enable_log, bool set_default_sea
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("macos_bundle"));
 
     platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
-    if (set_default_search_paths) {
+    if (settings.enable_default_search_paths) {
         platform_shim->set_fake_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
         platform_shim->set_fake_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
         platform_shim->set_fake_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());

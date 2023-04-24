@@ -409,7 +409,7 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
 struct FrameworkEnvironment;  // forward declaration
 
 struct PlatformShimWrapper {
-    PlatformShimWrapper(std::vector<fs::FolderManager>* folders, bool enable_log) noexcept;
+    PlatformShimWrapper(std::vector<fs::FolderManager>* folders, const char* log_filter) noexcept;
     ~PlatformShimWrapper() noexcept;
     PlatformShimWrapper(PlatformShimWrapper const&) = delete;
     PlatformShimWrapper& operator=(PlatformShimWrapper const&) = delete;
@@ -499,10 +499,14 @@ enum class ManifestLocation {
     macos_bundle = 9,
 };
 
+struct FrameworkSettings {
+    BUILDER_VALUE(FrameworkSettings, const char*, log_filter, "all");
+    BUILDER_VALUE(FrameworkSettings, bool, enable_default_search_paths, true);
+};
+
 struct FrameworkEnvironment {
     FrameworkEnvironment() noexcept;  // default is to enable VK_LOADER_DEBUG=all and enable the default search paths
-    FrameworkEnvironment(bool enable_log) noexcept;
-    FrameworkEnvironment(bool enable_log, bool enable_default_search_paths) noexcept;
+    FrameworkEnvironment(const FrameworkSettings& settings) noexcept;
     ~FrameworkEnvironment();
 
     TestICDHandle& add_icd(TestICDDetails icd_details) noexcept;

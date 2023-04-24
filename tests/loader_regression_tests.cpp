@@ -3960,7 +3960,7 @@ TEST(DuplicateRegistryEntries, Drivers) {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 // Check that valid symlinks do not cause the loader to crash when directly in an XDG env-var
 TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
-    FrameworkEnvironment env{true, false};
+    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
     env.add_icd(
         TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder));
     env.get_test_icd().physical_devices.push_back({});
@@ -3979,7 +3979,7 @@ TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
 
 // Check that valid symlinks do not cause the loader to crash
 TEST(ManifestDiscovery, ValidSymlink) {
-    FrameworkEnvironment env{true, false};
+    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
     env.add_icd(
         TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder));
     env.get_test_icd().physical_devices.push_back({});
@@ -4000,7 +4000,7 @@ TEST(ManifestDiscovery, ValidSymlink) {
 
 // Check that invalid symlinks do not cause the loader to crash when directly in an XDG env-var
 TEST(ManifestDiscovery, InvalidSymlinkXDGEnvVar) {
-    FrameworkEnvironment env{true, false};
+    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
     std::string symlink_name = "symlink_to_nothing.json";
     fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
     fs::path invalid_driver_path = env.get_folder(ManifestLocation::driver).location() / "nothing_here.json";
@@ -4017,7 +4017,7 @@ TEST(ManifestDiscovery, InvalidSymlinkXDGEnvVar) {
 
 // Check that invalid symlinks do not cause the loader to crash
 TEST(ManifestDiscovery, InvalidSymlink) {
-    FrameworkEnvironment env{true, false};
+    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
     std::string symlink_name = "symlink_to_nothing.json";
     fs::path symlink_path = env.get_folder(ManifestLocation::driver).location() / symlink_name;
     fs::path invalid_driver_path = env.get_folder(ManifestLocation::driver_env_var).location() / "nothing_here.json";
