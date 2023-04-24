@@ -4259,6 +4259,15 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
         return (PFN_vkVoidFunction)terminator_CreateInstance;
     }
 
+    // While the spec is very clear that quering vkCreateDevice requires a valid VkInstance, because the loader allowed querying
+    // with a NULL VkInstance handle for a long enough time, it is impractical to fix this bug in the loader
+
+    // As such, this is a bug to maintain compatibility for the RTSS layer (Riva Tuner Statistics Server) but may
+    // be dependend upon by other layers out in the wild.
+    if (!strcmp(pName, "vkCreateDevice")) {
+        return (PFN_vkVoidFunction)terminator_CreateDevice;
+    }
+
     // inst is not wrapped
     if (inst == VK_NULL_HANDLE) {
         return NULL;
@@ -4269,10 +4278,6 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
     void *addr;
 
     if (disp_table == NULL) return NULL;
-
-    if (!strcmp(pName, "vkCreateDevice")) {
-        return (PFN_vkVoidFunction)terminator_CreateDevice;
-    }
 
     // The VK_EXT_debug_utils functions need a special case here so the terminators can still be found from
     // vkGetInstanceProcAddr This is because VK_EXT_debug_utils is an instance level extension with device level functions, and
