@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "loader_common.h"
+typedef struct VkAllocationCallbacks VkAllocationCallbacks;
 
 #if defined(__cplusplus)
 extern "C" {
@@ -157,3 +157,10 @@ void cJSON_Minify(char *json);
 #if defined(__cplusplus)
 }
 #endif
+
+// Helper functions to using JSON
+
+struct loader_instance;
+typedef enum VkResult VkResult;
+
+VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json);
