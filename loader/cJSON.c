@@ -37,6 +37,8 @@
 #include "cJSON.h"
 
 #include "allocation.h"
+#include "loader_common.h"
+#include "log.h"
 
 void *cJSON_malloc(const VkAllocationCallbacks *pAllocator, size_t size) {
     return loader_alloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
@@ -1214,4 +1216,82 @@ void cJSON_Minify(char *json) {
             *into++ = *json++; /* All other characters. */
     }
     *into = 0; /* and null-terminate. */
+}
+
+// Read a JSON file into a buffer.
+//
+// @return -  A pointer to a cJSON object representing the JSON parse tree.
+//            This returned buffer should be freed by caller.
+VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json) {
+    FILE *file = NULL;
+    char *json_buf = NULL;
+    size_t len;
+    VkResult res = VK_SUCCESS;
+
+    assert(json != NULL);
+
+    *json = NULL;
+
+#if defined(_WIN32)
+    int filename_utf16_size = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+    if (filename_utf16_size > 0) {
+        wchar_t *filename_utf16 = (wchar_t *)loader_stack_alloc(filename_utf16_size * sizeof(wchar_t));
+        if (MultiByteToWideChar(CP_UTF8, 0, filename, -1, filename_utf16, filename_utf16_size) == filename_utf16_size) {
+            file = _wfopen(filename_utf16, L"rb");
+        }
+    }
+#elif COMMON_UNIX_PLATFORMS
+    file = fopen(filename, "rb");
+#else
+#warning fopen not available on this platform
+#endif
+
+    if (!file) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+    // NOTE: We can't just use fseek(file, 0, SEEK_END) because that isn't guaranteed to be supported on all systems
+    size_t fread_ret_count = 0;
+    do {
+        char buffer[256];
+        fread_ret_count = fread(buffer, 1, 256, file);
+    } while (fread_ret_count == 256 && !feof(file));
+    len = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    json_buf = (char *)loader_instance_heap_alloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (json_buf == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "loader_get_json: Failed to allocate space for JSON file %s buffer of length %d", filename, len);
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    if (fread(json_buf, sizeof(char), len, file) != len) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read JSON file %s.", filename);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+    json_buf[len] = '\0';
+
+    // Can't be a valid json if the string is of length zero
+    if (len == 0) {
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+    // Parse text from file
+    *json = cJSON_Parse(inst ? &inst->alloc_callbacks : NULL, json_buf);
+    if (*json == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "loader_get_json: Failed to parse JSON file %s, this is usually because something ran out of memory.", filename);
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+out:
+    loader_instance_heap_free(inst, json_buf);
+    if (NULL != file) {
+        fclose(file);
+    }
+
+    return res;
 }
