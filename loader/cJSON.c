@@ -345,17 +345,18 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
     for (ptr = str; *ptr; ptr++) flag |= ((*ptr > 0 && *ptr < 32) || (*ptr == '\"') || (*ptr == '\\')) ? 1 : 0;
     if (!flag) {
         len = ptr - str;
-        out_buf_size = len + 3;
+        out_buf_size = len + 1;
+        // out_buf_size = len + 3; // Modified to not put quotes around the string
         if (p)
             out = ensure(pAllocator, p, out_buf_size);
         else
             out = (char *)cJSON_malloc(pAllocator, out_buf_size);
         if (!out) return 0;
         ptr2 = out;
-        *ptr2++ = '\"';
+        // *ptr2++ = '\"'; // Modified to not put quotes around the string
         strcpy(ptr2, str);
-        ptr2[len] = '\"';
-        ptr2[len + 1] = 0;
+        // ptr2[len] = '\"'; // Modified to not put quotes around the string
+        ptr2[len] = 0;  // ptr2[len + 1] = 0; // Modified to not put quotes around the string
         return out;
     }
 
@@ -380,7 +381,8 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         token = *ptr;
     }
 
-    out_buf_size = len + 3;
+    out_buf_size = len + 1;
+    // out_buf_size = len + 3; // Modified to not put quotes around the string
     if (p)
         out = ensure(pAllocator, p, out_buf_size);
     else
@@ -389,7 +391,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
 
     ptr2 = out;
     ptr = str;
-    *ptr2++ = '\"';
+    // *ptr2++ = '\"'; // Modified to not put quotes around the string
     while (*ptr) {
         if ((unsigned char)*ptr > 31 && *ptr != '\"' && *ptr != '\\')
             *ptr2++ = *ptr++;
@@ -423,7 +425,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
             }
         }
     }
-    *ptr2++ = '\"';
+    // *ptr2++ = '\"'; // Modified to not put quotes around the string
     *ptr2++ = 0;
     return out;
 }

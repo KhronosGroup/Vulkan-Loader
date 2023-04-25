@@ -2173,9 +2173,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             result = VK_ERROR_OUT_OF_HOST_MEMORY;                              \
             goto out;                                                          \
         }                                                                      \
-        temp[strlen(temp) - 1] = '\0';                                         \
         var = loader_stack_alloc(strlen(temp) + 1);                            \
-        strcpy(var, &temp[1]);                                                 \
+        strcpy(var, &temp[0]);                                                 \
         loader_instance_heap_free(inst, temp);                                 \
     }
     GET_JSON_ITEM(inst, layer_node, name)
@@ -2236,9 +2235,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
-        temp[strlen(temp) - 1] = '\0';
         library_path_str = loader_stack_alloc(strlen(temp) + 1);
-        strcpy(library_path_str, &temp[1]);
+        strcpy(library_path_str, &temp[0]);
         loader_instance_heap_free(inst, temp);
 
         strncpy(props->manifest_file_name, filename, MAX_STRING_SIZE);
@@ -2281,8 +2279,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
-                temp[strlen(temp) - 1] = '\0';
-                strncpy(props->component_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
+                strncpy(props->component_layer_names[i], temp, MAX_STRING_SIZE - 1);
                 props->component_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
                 loader_instance_heap_free(inst, temp);
             }
@@ -2332,8 +2329,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                         result = VK_ERROR_OUT_OF_HOST_MEMORY;
                         goto out;
                     }
-                    temp[strlen(temp) - 1] = '\0';
-                    strncpy(props->blacklist_layer_names[i], temp + 1, MAX_STRING_SIZE - 1);
+                    strncpy(props->blacklist_layer_names[i], temp, MAX_STRING_SIZE - 1);
                     props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
                     loader_instance_heap_free(inst, temp);
                 }
@@ -2367,8 +2363,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                         result = VK_ERROR_OUT_OF_HOST_MEMORY;
                         goto out;
                     }
-                    temp[strlen(temp) - 1] = '\0';
-                    strncpy(props->override_paths[i], temp + 1, MAX_STRING_SIZE - 1);
+                    strncpy(props->override_paths[i], temp, MAX_STRING_SIZE - 1);
                     props->override_paths[i][MAX_STRING_SIZE - 1] = '\0';
                     loader_instance_heap_free(inst, temp);
                 }
@@ -2428,9 +2423,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         if (item != NULL) {                                 \
             temp = cJSON_Print(item);                       \
             if (temp != NULL) {                             \
-                temp[strlen(temp) - 1] = '\0';              \
                 var = loader_stack_alloc(strlen(temp) + 1); \
-                strcpy(var, &temp[1]);                      \
+                strcpy(var, &temp[0]);                      \
                 loader_instance_heap_free(inst, temp);      \
             } else {                                        \
                 result = VK_ERROR_OUT_OF_HOST_MEMORY;       \
@@ -2560,9 +2554,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                         result = VK_ERROR_OUT_OF_HOST_MEMORY;
                         goto out;
                     }
-                    temp[strlen(temp) - 1] = '\0';
                     entry_array[j] = loader_stack_alloc(strlen(temp) + 1);
-                    strcpy(entry_array[j], &temp[1]);
+                    strcpy(entry_array[j], &temp[0]);
                     loader_instance_heap_free(inst, temp);
                 }
             }
@@ -2603,8 +2596,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
-                size_t len = strlen(inst_ext_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 3 : strlen(inst_ext_name) - 2;
-                strncpy(props->pre_instance_functions.enumerate_instance_extension_properties, inst_ext_name + 1, len);
+                size_t len = strlen(inst_ext_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 1 : strlen(inst_ext_name) + 1;
+                strncpy(props->pre_instance_functions.enumerate_instance_extension_properties, inst_ext_name, len);
                 props->pre_instance_functions.enumerate_instance_extension_properties[len] = '\0';
                 loader_instance_heap_free(inst, inst_ext_name);
             }
@@ -2616,8 +2609,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
-                size_t len = strlen(inst_layer_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 3 : strlen(inst_layer_name) - 2;
-                strncpy(props->pre_instance_functions.enumerate_instance_layer_properties, inst_layer_name + 1, len);
+                size_t len = strlen(inst_layer_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 1 : strlen(inst_layer_name) + 1;
+                strncpy(props->pre_instance_functions.enumerate_instance_layer_properties, inst_layer_name, len);
                 props->pre_instance_functions.enumerate_instance_layer_properties[len] = '\0';
                 loader_instance_heap_free(inst, inst_layer_name);
             }
@@ -2629,8 +2622,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
-                size_t len = strlen(inst_version_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 3 : strlen(inst_version_name) - 2;
-                strncpy(props->pre_instance_functions.enumerate_instance_version, inst_version_name + 1, len);
+                size_t len = strlen(inst_version_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 1 : strlen(inst_version_name) + 1;
+                strncpy(props->pre_instance_functions.enumerate_instance_version, inst_version_name, len);
                 props->pre_instance_functions.enumerate_instance_version[len] = '\0';
                 loader_instance_heap_free(inst, inst_version_name);
             }
@@ -2668,8 +2661,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                     result = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
-                temp[strlen(temp) - 1] = '\0';
-                strncpy(props->app_key_paths[i], temp + 1, MAX_STRING_SIZE - 1);
+                strncpy(props->app_key_paths[i], temp, MAX_STRING_SIZE - 1);
                 props->app_key_paths[i][MAX_STRING_SIZE - 1] = '\0';
                 loader_instance_heap_free(inst, temp);
             }
@@ -3570,18 +3562,12 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
     library_path = cJSON_Print(item);
-    if (!library_path || strlen(library_path) == 0) {
+    if (!library_path) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'library_path\' field. Skipping ICD JSON.", file_str);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    size_t library_path_len = strlen(library_path);
-    // cJSON prints everything with quotes so they need to be removed.
-    // move every char forward one, so the leading quote is replaced.
-    memmove(library_path, &library_path[1], library_path_len - 2);
-    // replace end quote with null terminator
-    library_path[library_path_len - 2] = '\0';
 
     if (strlen(library_path) == 0) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
@@ -3651,8 +3637,8 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         library_arch_str = cJSON_Print(item);
         if (NULL != library_arch_str) {
             // cJSON includes the quotes by default, so we need to look for those here
-            if ((strncmp(library_arch_str, "\"32\"", 4) == 0 && sizeof(void *) != 4) ||
-                (strncmp(library_arch_str, "\"64\"", 4) == 0 && sizeof(void *) != 8)) {
+            if ((strncmp(library_arch_str, "32", 4) == 0 && sizeof(void *) != 4) ||
+                (strncmp(library_arch_str, "64", 4) == 0 && sizeof(void *) != 8)) {
                 loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                            "loader_parse_icd_manifest: Driver library architecture doesn't match the current running "
                            "architecture, skipping this driver");
