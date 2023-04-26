@@ -1800,7 +1800,7 @@ void loader_initialize(void) {
     loader_platform_thread_create_mutex(&loader_global_instance_list_lock);
 
     // initialize logging
-    loader_debug_init();
+    loader_init_global_debug_level();
 #if defined(_WIN32)
     windows_initialization();
 #endif
@@ -2012,7 +2012,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                    prop->num_component_layers);
 
         // If layer logging is on, list the internals included in the meta-layer
-        if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
             for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names[comp_layer]);
             }
@@ -2534,7 +2534,6 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             } else {
                 ext_prop.specVersion = 0;
             }
-            // entrypoints = cJSON_GetObjectItem(ext_item, "entrypoints");
             GET_JSON_OBJECT(ext_item, entrypoints)
             int entry_count;
             if (entrypoints == NULL) {
@@ -4908,7 +4907,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
-        if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "vkCreateInstance layer callstack setup to:");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Application>");
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
@@ -5174,13 +5173,13 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
         uint32_t layer_driver_bits = VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT;
-        if ((loader_get_debug_level() & layer_driver_bits) != 0) {
+        if ((loader_get_global_debug_level() & layer_driver_bits) != 0) {
             loader_log(inst, layer_driver_bits, 0, "vkCreateDevice layer callstack setup to:");
             loader_log(inst, layer_driver_bits, 0, "   <Application>");
             loader_log(inst, layer_driver_bits, 0, "     ||");
             loader_log(inst, layer_driver_bits, 0, "   <Loader>");
             loader_log(inst, layer_driver_bits, 0, "     ||");
-            if ((loader_get_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
+            if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
                 for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
                     uint32_t index = num_activated_layers - cur_layer - 1;
                     loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);

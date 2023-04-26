@@ -41,10 +41,10 @@ enum vulkan_loader_debug_flags {
 
 // Checks for the environment variable VK_LOADER_DEBUG and sets up the current debug level accordingly
 // This should be called before any Vulkan API calls, eg in the initialization of the .dll or .so
-void loader_debug_init(void);
+void loader_init_global_debug_level(void);
 
 // Returns a bitmask that indicates the current flags that should be output
-uint32_t loader_get_debug_level(void);
+uint32_t loader_get_global_debug_level(void);
 
 // Logs a message to stderr
 // May output to DebugUtils if the instance isn't null and the extension is enabled.
