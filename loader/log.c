@@ -87,14 +87,10 @@ uint32_t loader_get_global_debug_level(void) { return g_loader_debug; }
 
 void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
     char msg[512];
-    char cmd_line_msg[512];
-    size_t cmd_line_size = sizeof(cmd_line_msg);
-    size_t num_used = 0;
-    va_list ap;
-    int ret;
 
+    va_list ap;
     va_start(ap, format);
-    ret = vsnprintf(msg, sizeof(msg), format, ap);
+    int ret = vsnprintf(msg, sizeof(msg), format, ap);
     if ((ret >= (int)sizeof(msg)) || ret < 0) {
         msg[sizeof(msg) - 1] = '\0';
     }
@@ -155,79 +151,74 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
         return;
     }
 
+    // Only need enough space to create the filter description header for log messages
+    // Also use the same header for all output
+    char cmd_line_msg[64];
+    size_t cmd_line_size = sizeof(cmd_line_msg);
+    size_t num_used = 1;
+
     cmd_line_msg[0] = '\0';
-    cmd_line_size -= 1;
-    num_used = 1;
+
+// Helper macro which strncat's the given string literal, then updates num_used & cmd_line_end
+// Assumes that we haven't used the entire buffer - must manually check this when adding new filter types
+// We concat at the end of cmd_line_msg, so that strncat isn't a victim of Schlemiel the Painter
+// We write to the end - 1 of cmd_line_msg, as the end is actually a null terminator
+#define STRNCAT_TO_BUFFER(string_literal_to_cat)                                             \
+    strncat(cmd_line_msg + (num_used - 1), string_literal_to_cat, cmd_line_size - num_used); \
+    num_used += sizeof(string_literal_to_cat) - 1;  // subtract one to remove the null terminator in the string literal
 
     if ((msg_type & VULKAN_LOADER_ERROR_BIT) != 0) {
-        strncat(cmd_line_msg, "ERROR", cmd_line_size - num_used);
-        num_used += 5;
+        STRNCAT_TO_BUFFER("ERROR");
     } else if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {
-        strncat(cmd_line_msg, "WARNING", cmd_line_size - num_used);
-        num_used += 7;
+        STRNCAT_TO_BUFFER("WARNING");
     } else if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0) {
-        strncat(cmd_line_msg, "INFO", cmd_line_size - num_used);
-        num_used += 4;
+        STRNCAT_TO_BUFFER("INFO");
     } else if ((msg_type & VULKAN_LOADER_DEBUG_BIT) != 0) {
-        strncat(cmd_line_msg, "DEBUG", cmd_line_size - num_used);
-        num_used += 5;
-    }
-    // For the remaining messages, we only want to add any tags that are
-    // explicitly enabled by the tools.
-    if ((filtered_msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
-        if (num_used > 1) {
-            strncat(cmd_line_msg, " | ", cmd_line_size - num_used);
-            num_used += 3;
-        }
-        strncat(cmd_line_msg, "PERF", cmd_line_size - num_used);
-        num_used += 4;
-    }
-    if ((filtered_msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
-        if (num_used > 1) {
-            strncat(cmd_line_msg, " | ", cmd_line_size - num_used);
-            num_used += 3;
-        }
-        strncat(cmd_line_msg, "DRIVER", cmd_line_size - num_used);
-        num_used += 6;
-    }
-    if ((filtered_msg_type & VULKAN_LOADER_LAYER_BIT) != 0) {
-        if (num_used > 1) {
-            strncat(cmd_line_msg, " | ", cmd_line_size - num_used);
-            num_used += 3;
-        }
-        strncat(cmd_line_msg, "LAYER", cmd_line_size - num_used);
-        num_used += 5;
-    }
-    // Add any preceeding spaces so we can have clean output
-    if (num_used > 1) {
-        strncat(cmd_line_msg, ": ", cmd_line_size - num_used);
-        num_used += 2;
-    }
-    while (num_used < 19) {
-        strncat(cmd_line_msg, " ", cmd_line_size - num_used);
-        num_used++;
+        STRNCAT_TO_BUFFER("DEBUG");
     }
 
-    size_t available_space = cmd_line_size - num_used;
-    if (available_space > 0) {
-        // If the message is too long, trim it down
-        if (strlen(msg) > available_space) {
-            msg[available_space - 1] = '\0';
+    if ((msg_type & VULKAN_LOADER_PERF_BIT) != 0) {
+        if (num_used > 1) {
+            STRNCAT_TO_BUFFER(" | ");
         }
-        strncat(cmd_line_msg, msg, cmd_line_size);
+        STRNCAT_TO_BUFFER("PERF");
+    }
+    if ((msg_type & VULKAN_LOADER_DRIVER_BIT) != 0) {
+        if (num_used > 1) {
+            STRNCAT_TO_BUFFER(" | ");
+        }
+        STRNCAT_TO_BUFFER("DRIVER");
+    }
+    if ((msg_type & VULKAN_LOADER_LAYER_BIT) != 0) {
+        if (num_used > 1) {
+            STRNCAT_TO_BUFFER(" | ");
+        }
+        STRNCAT_TO_BUFFER("LAYER");
+    }
 
+    // Add a ": " to separate the filters from the message
+    STRNCAT_TO_BUFFER(": ");
+#undef STRNCAT_TO_BUFFER
+
+    // Justifies the output to at least 19 spaces
+    if (num_used < 19) {
+        const char *space_buffer = "                   ";
+        // Only write (19 - num_used) spaces
+        strncat(cmd_line_msg + (num_used - 1), space_buffer, 19 - num_used);
+        num_used += sizeof(space_buffer) - (num_used - 1);
+    }
+    // Assert that we didn't write more than what is available in cmd_line_msg
+    assert(cmd_line_size > num_used);
+
+    fputs(cmd_line_msg, stderr);
+    fputs(msg, stderr);
+    fputc('\n', stderr);
 #if defined(WIN32)
-        OutputDebugString(cmd_line_msg);
-        OutputDebugString("\n");
+    OutputDebugString(cmd_line_msg);
+    OutputDebugString(msg);
+    OutputDebugString("\n");
 #endif
 
-        fputs(cmd_line_msg, stderr);
-        fputc('\n', stderr);
-    } else {
-        // Shouldn't get here, but check to make sure if we've already overrun
-        // the string boundary
-        assert(false);
-    }
 }
 
 void loader_log_asm_function_not_supported(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code,
