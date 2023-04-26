@@ -36,7 +36,7 @@
 
 uint32_t g_loader_debug = 0;
 
-void loader_debug_init(void) {
+void loader_init_global_debug_level(void) {
     char *env, *orig;
 
     if (g_loader_debug > 0) return;
@@ -83,7 +83,7 @@ void loader_debug_init(void) {
     loader_free_getenv(orig, NULL);
 }
 
-uint32_t loader_get_debug_level(void) { return g_loader_debug; }
+uint32_t loader_get_global_debug_level(void) { return g_loader_debug; }
 
 void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
     char msg[512];

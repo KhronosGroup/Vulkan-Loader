@@ -437,7 +437,7 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
     // Sort device groups by PCI info
     qsort(sorted_group_term, group_count, sizeof(struct loader_physical_device_group_term), compare_device_groups);
 
-    if (loader_get_debug_level() & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT)) {
+    if (loader_get_global_debug_level() & (VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT)) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Sorted order:");
         for (uint32_t group = 0; group < group_count; ++group) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           Group %u", group);
