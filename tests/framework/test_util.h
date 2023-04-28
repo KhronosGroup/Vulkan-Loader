@@ -110,9 +110,9 @@
 
 // Wrapper to set & remove env-vars automatically
 struct EnvVarWrapper {
-    // Constructor which does NOT set the env-var
-    EnvVarWrapper(std::string const& name) noexcept : name(name) {}
-    // Constructor which DOES set the env-var
+    // Constructor which unsets the env-var
+    EnvVarWrapper(std::string const& name) noexcept : name(name) { remove_env_var(); }
+    // Constructor which set the env-var to the specified value
     EnvVarWrapper(std::string const& name, std::string const& value) noexcept : name(name), cur_value(value) { set_env_var(); }
     ~EnvVarWrapper() noexcept { remove_env_var(); }
 
