@@ -1220,10 +1220,6 @@ void cJSON_Minify(char *json) {
     *into = 0; /* and null-terminate. */
 }
 
-// Read a JSON file into a buffer.
-//
-// @return -  A pointer to a cJSON object representing the JSON parse tree.
-//            This returned buffer should be freed by caller.
 VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json) {
     FILE *file = NULL;
     char *json_buf = NULL;
@@ -1296,4 +1292,42 @@ out:
     }
 
     return res;
+}
+
+VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *object, const char *key, char **out_string) {
+    cJSON *item = cJSON_GetObjectItem(object, key);
+    if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
+
+    char *str = cJSON_Print(item);
+    if (str == NULL) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    *out_string = str;
+    return VK_SUCCESS;
+}
+VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key, uint32_t *out_count,
+                                            char ***out_array_of_strings) {
+    cJSON *item = cJSON_GetObjectItem(object, key);
+    if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
+
+    uint32_t count = cJSON_GetArraySize(item);
+    if (count == 0) {
+        *out_count = 0;
+        *out_array_of_strings = NULL;
+        return VK_SUCCESS;
+    }
+    *out_count = count;
+
+    char **out_data = loader_instance_heap_alloc(inst, sizeof(char *) * (count), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (out_data == NULL) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    for (uint32_t i = 0; i < count; i++) {
+        cJSON *element = cJSON_GetArrayItem(item, i);
+        if (element == NULL) {
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+        out_data[i] = cJSON_Print(element);
+        if (out_data[i] == NULL) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+    }
+    *out_array_of_strings = out_data;
+    return VK_SUCCESS;
 }
