@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 typedef struct VkAllocationCallbacks VkAllocationCallbacks;
 
 #if defined(__cplusplus)
@@ -163,4 +165,17 @@ void cJSON_Minify(char *json);
 struct loader_instance;
 typedef enum VkResult VkResult;
 
+// Read a JSON file into a buffer.
+//
+// @return -  A pointer to a cJSON object representing the JSON parse tree.
+//            This returned buffer should be freed by caller.
 VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json);
+
+// Given a cJSON object, find the string associated with the key and puts an allocated string into out_string.
+// It is the callers responsibility to free out_string.
+VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *object, const char *key, char **out_string);
+
+// Given a cJSON object, find the array of strings assocated with they key and writes the count into out_count and data into
+// out_array_of_strings. It is the callers responsibility to free out_array_of_strings.
+VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key, uint32_t *out_count,
+                                            char ***out_array_of_strings);
