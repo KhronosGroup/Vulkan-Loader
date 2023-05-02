@@ -225,15 +225,38 @@ VkPhysicalDevice InstWrapper::GetPhysDev(VkResult result_to_check) {
     return physical_device;
 }
 
-std::vector<VkExtensionProperties> EnumerateDeviceExtensions(InstWrapper const& inst, VkPhysicalDevice physical_device) {
-    uint32_t ext_count = 1;
-    VkResult res = inst.functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);
+std::vector<VkLayerProperties> InstWrapper::GetActiveLayers(VkPhysicalDevice phys_dev) {
+    uint32_t count = 0;
+    VkResult res = functions->vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
     EXPECT_EQ(VK_SUCCESS, res);
-    std::vector<VkExtensionProperties> extensions;
-    extensions.resize(ext_count);
-    res = inst.functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, extensions.data());
+    std::vector<VkLayerProperties> layer_props{count};
+    res = functions->vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
     EXPECT_EQ(VK_SUCCESS, res);
-    extensions.resize(ext_count);
+    return layer_props;
+}
+
+std::vector<VkLayerProperties> InstWrapper::GetActiveLayers(VkPhysicalDevice phys_dev, uint32_t expected_count) {
+    uint32_t count = 0;
+    VkResult res = functions->vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    std::vector<VkLayerProperties> layer_props{count};
+    res = functions->vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    return layer_props;
+}
+
+std::vector<VkExtensionProperties> InstWrapper::EnumerateDeviceExtensions(VkPhysicalDevice physical_device,
+                                                                          uint32_t expected_count) {
+    uint32_t count = 0;
+    VkResult res = functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &count, nullptr);
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    std::vector<VkExtensionProperties> extensions{count};
+    res = functions->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &count, extensions.data());
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
     return extensions;
 }
 

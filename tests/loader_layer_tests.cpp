@@ -1012,15 +1012,10 @@ TEST(ImplicitLayers, DuplicateLayers) {
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    auto phys_dev = inst.GetPhysDev();
 
-    env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-    ASSERT_EQ(1U, count);
-    VkLayerProperties enabled_layer_prop{};
-    env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop);
-    ASSERT_EQ(1U, count);
-    ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_prop.layerName));
-    ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_prop.description));
+    auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
     ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
     ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
 }
@@ -1116,22 +1111,13 @@ TEST(MetaLayers, ExplicitMetaLayer) {
     {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate(VK_SUCCESS);
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(count, 0U);
+        inst.GetActiveLayers(inst.GetPhysDev(), 0);
     }
     {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_layer(meta_layer_name);
         inst.CheckCreate(VK_SUCCESS);
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(count, 2U);
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(count, 2U);
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
     }
 }
@@ -1395,15 +1381,7 @@ TEST(OverrideMetaLayer, OlderVersionThanInstance) {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.api_version = VK_API_VERSION_1_1;
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
         ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
@@ -1412,15 +1390,8 @@ TEST(OverrideMetaLayer, OlderVersionThanInstance) {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.api_version = VK_API_VERSION_1_3;
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
 
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(2U, count);
         ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
         ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
@@ -1463,15 +1434,8 @@ TEST(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
 
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(2U, count);
         ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
         ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
@@ -1481,15 +1445,7 @@ TEST(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 3, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
         ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
@@ -1534,17 +1490,10 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
         // Newer component is allowed now
         EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        EXPECT_EQ(2U, count);
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
 
@@ -1554,17 +1503,11 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.set_api_version(1, 3, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
         // Newer component is allowed now
         EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
 
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        EXPECT_EQ(2U, count);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
 }
@@ -1607,17 +1550,11 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
         EXPECT_TRUE(
             env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 has API "
                                "version 1.0 that is lower.  Skipping this layer."));
         env.debug_log.clear();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(0U, count);
+        inst.GetActiveLayers(inst.GetPhysDev(), 0);
     }
 
     {
@@ -1626,17 +1563,11 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
         ASSERT_TRUE(
             env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 has API "
                                "version 1.0 that is lower.  Skipping this layer."));
         env.debug_log.clear();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(0U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(0U, count);
+        inst.GetActiveLayers(inst.GetPhysDev(), 0);
     }
 }
 
@@ -1690,17 +1621,11 @@ TEST(OverrideMetaLayer, ApplicationEnabledLayerInBlacklist) {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
         ASSERT_TRUE(env.debug_log.find(std::string("loader_remove_layers_in_blacklist: Override layer is active and layer ") +
                                        manual_regular_layer_name +
                                        " is in the blacklist inside of it. Removing that layer from current layer list."));
         env.debug_log.clear();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(check_permutation({automatic_regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
 }
@@ -1948,14 +1873,7 @@ TEST(OverrideMetaLayer, AppKeysDoesContainCurrentApplication) {
         // instance
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        EXPECT_EQ(2U, count);
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
 }
@@ -1996,14 +1914,7 @@ TEST(OverrideMetaLayer, AppKeysDoesNotContainCurrentApplication) {
         // instance
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(0U, count);
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-        EXPECT_EQ(0U, count);
+        inst.GetActiveLayers(inst.GetPhysDev(), 0);
     }
 }
 
@@ -2199,14 +2110,8 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         InstWrapper inst(env.vulkan_functions);
         inst.create_info.add_layer(regular_layer_name_1);
         inst.CheckCreate(VK_SUCCESS);
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(count, 1U);
-
-        VkLayerProperties layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name_1));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name_1));
     }
     {
         // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
@@ -2230,13 +2135,7 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         inst.create_info.add_layer(regular_layer_name_1);
         inst.create_info.add_layer(regular_layer_name_2);
         inst.CheckCreate(VK_SUCCESS);
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
     }
     {
@@ -2259,13 +2158,7 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
         inst.create_info.add_layer(regular_layer_name_1);
         inst.create_info.add_layer(regular_layer_name_2);
         inst.CheckCreate(VK_SUCCESS);
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
     }
 }
@@ -2316,15 +2209,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
         inst.create_info.add_layer(same_layer_name_1);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(1U, count);
-        VkLayerProperties enabled_layer_prop{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop);
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_prop.layerName));
-        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_prop.description));
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
         ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
         ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
     }
@@ -2335,15 +2222,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(1U, count);
-        VkLayerProperties enabled_layer_prop{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop);
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_prop.layerName));
-        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_prop.description));
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
         ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
         ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
     }
@@ -2354,15 +2235,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(1U, count);
-        VkLayerProperties enabled_layer_prop{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop);
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_prop.layerName));
-        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_prop.description));
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
         ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
         ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
     }
@@ -2415,15 +2290,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
         inst.create_info.add_layer(same_layer_name_1);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(1U, count);
-        VkLayerProperties enabled_layer_prop{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop);
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_prop.layerName));
-        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_prop.description));
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
         ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
         ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
     }
@@ -2434,15 +2303,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(1U, count);
-        VkLayerProperties enabled_layer_prop{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop);
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_prop.layerName));
-        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_prop.description));
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
         ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
         ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
     }
@@ -2453,15 +2316,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
-
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(1U, count);
-        VkLayerProperties enabled_layer_prop{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop);
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_prop.layerName));
-        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_prop.description));
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
         ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
         ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
     }
@@ -2514,14 +2371,9 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayers) {
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
 
         // Expect the env-var layer to be first
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> enabled_layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, enabled_layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[0].description));
         ASSERT_TRUE(string_eq(layer2.description.c_str(), enabled_layer_props[1].description));
         ASSERT_TRUE(string_eq(layer_name_1, enabled_layer_props[0].layerName));
@@ -2535,14 +2387,9 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayers) {
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
 
         // Expect the env-var layer to be first
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> enabled_layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, enabled_layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer2.description.c_str(), enabled_layer_props[0].description));
         ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[1].description));
         ASSERT_TRUE(string_eq(layer_name_2, enabled_layer_props[0].layerName));
@@ -2592,14 +2439,7 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayersFromSystemLocations) {
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
-
-        // Expect the env-var layer to be first
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> enabled_layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, enabled_layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[0].description));
         ASSERT_TRUE(string_eq(layer2.description.c_str(), enabled_layer_props[1].description));
         ASSERT_TRUE(string_eq(layer_name_1, enabled_layer_props[0].layerName));
@@ -2613,14 +2453,9 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayersFromSystemLocations) {
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
 
         // Expect the env-var layer to be first
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> enabled_layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, enabled_layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer2.description.c_str(), enabled_layer_props[0].description));
         ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[1].description));
         ASSERT_TRUE(string_eq(layer_name_2, enabled_layer_props[0].layerName));
@@ -2672,14 +2507,9 @@ TEST(ExplicitLayers, CorrectOrderOfApplicationEnabledLayers) {
         inst.create_info.add_layer(layer_name_2);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
 
         // Expect the env-var layer to be first
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> enabled_layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, enabled_layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[0].description));
         ASSERT_TRUE(string_eq(layer2.description.c_str(), enabled_layer_props[1].description));
         ASSERT_TRUE(string_eq(layer_name_1, enabled_layer_props[0].layerName));
@@ -2692,14 +2522,9 @@ TEST(ExplicitLayers, CorrectOrderOfApplicationEnabledLayers) {
         inst.create_info.add_layer(layer_name_1);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        auto phys_dev = inst.GetPhysDev();
 
         // Expect the env-var layer to be first
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(2U, count);
-        std::array<VkLayerProperties, 2> enabled_layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, enabled_layer_props.data());
-        ASSERT_EQ(2U, count);
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layer2.description.c_str(), enabled_layer_props[0].description));
         ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[1].description));
         ASSERT_TRUE(string_eq(layer_name_2, enabled_layer_props[0].layerName));
@@ -3802,29 +3627,15 @@ TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
         inst.create_info.add_layer(regular_layer_name);
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
     {  // 1.2 instance
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_layer(regular_layer_name);
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        ASSERT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        ASSERT_EQ(1U, count);
+        inst.GetActiveLayers(inst.GetPhysDev(), 1);
     }
 }
 
@@ -3861,15 +3672,8 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
         inst.CheckCreate();
         EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
     {  // 1.2 instance -- instance layer should be found
         InstWrapper inst{env.vulkan_functions};
@@ -3879,14 +3683,8 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
         EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
         env.debug_log.clear();
 
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
 }
 
@@ -3924,15 +3722,8 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
         EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
     {  // 1.1 instance
         DebugUtilsLogger log;
@@ -3941,14 +3732,8 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
         EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
     {  // 1.2 instance
         DebugUtilsLogger log;
@@ -3956,15 +3741,9 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         inst.create_info.set_api_version(1, 2, 0);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
         EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
     {  // application doesn't state its API version
         DebugUtilsLogger log;
@@ -3973,15 +3752,8 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
         EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        VkPhysicalDevice phys_dev = inst.GetPhysDev();
-
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-        EXPECT_EQ(1U, count);
-        VkLayerProperties layer_props{};
-        env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &layer_props);
-        EXPECT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.layerName));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
 }
 
@@ -4788,10 +4560,7 @@ TEST(TestLayers, NonExistantLayerInVK_INSTANCE_LAYERS) {
 
         ASSERT_TRUE(
             env.debug_log.find("Layer \"VK_LAYER_I_dont_exist\" was not found but was requested by env var VK_INSTANCE_LAYERS!"));
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 1;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr));
-        ASSERT_EQ(0U, count);
+        inst.GetActiveLayers(inst.GetPhysDev(), 0);
     }
     // Make sure layers that do exist are loaded
     env.debug_log.clear();
@@ -4802,12 +4571,8 @@ TEST(TestLayers, NonExistantLayerInVK_INSTANCE_LAYERS) {
         inst.CheckCreate();
         ASSERT_TRUE(
             env.debug_log.find("Layer \"VK_LAYER_I_dont_exist\" was not found but was requested by env var VK_INSTANCE_LAYERS!"));
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 1;
-        VkLayerProperties enabled_layer_prop{};
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop));
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(enabled_layer_prop.layerName, layer_name));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
     }
     // Make sure that if the layer appears twice in the env-var nothing bad happens
     env.debug_log.clear();
@@ -4818,12 +4583,8 @@ TEST(TestLayers, NonExistantLayerInVK_INSTANCE_LAYERS) {
         inst.CheckCreate();
         ASSERT_TRUE(
             env.debug_log.find("Layer \"VK_LAYER_I_dont_exist\" was not found but was requested by env var VK_INSTANCE_LAYERS!"));
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t count = 1;
-        VkLayerProperties enabled_layer_prop{};
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop));
-        ASSERT_EQ(1U, count);
-        ASSERT_TRUE(string_eq(enabled_layer_prop.layerName, layer_name));
+        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
     }
 }
 
@@ -4847,12 +4608,8 @@ TEST(TestLayers, DuplicatesInEnvironVK_INSTANCE_LAYERS) {
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    auto phys_dev = inst.GetPhysDev();
-    uint32_t count = 1;
-    VkLayerProperties enabled_layer_prop{};
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &count, &enabled_layer_prop));
-    ASSERT_EQ(1U, count);
-    ASSERT_TRUE(string_eq(enabled_layer_prop.layerName, layer_name));
+    auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
 }
 
 TEST(TestLayers, AppEnabledExplicitLayerFails) {

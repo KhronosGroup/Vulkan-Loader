@@ -311,14 +311,8 @@ TEST(EnumerateDeviceLayerProperties, LayersMatch) {
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
     {  // LayersMatch
-
-        uint32_t layer_count = 0;
-        ASSERT_EQ(env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, nullptr), VK_SUCCESS);
-        ASSERT_EQ(layer_count, 1U);
-        VkLayerProperties layer_props;
-        ASSERT_EQ(env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props), VK_SUCCESS);
-        ASSERT_EQ(layer_count, 1U);
-        ASSERT_TRUE(string_eq(layer_props.layerName, layer_name));
+        auto layer_props = inst.GetActiveLayers(phys_dev, 1);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
     }
     {  // Property count less than available
         VkLayerProperties layer_props;
@@ -3886,14 +3880,8 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) 
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
     {  // LayersMatch
-
-        uint32_t layer_count = 0;
-        ASSERT_EQ(env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, nullptr), VK_SUCCESS);
-        ASSERT_EQ(layer_count, 1U);
-        VkLayerProperties layer_props;
-        ASSERT_EQ(env.vulkan_functions.vkEnumerateDeviceLayerProperties(phys_dev, &layer_count, &layer_props), VK_SUCCESS);
-        ASSERT_EQ(layer_count, 1U);
-        ASSERT_TRUE(string_eq(layer_props.layerName, layer_name));
+        auto layer_props = inst.GetActiveLayers(phys_dev, 1);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
     }
     {  // Property count less than available
         VkLayerProperties layer_props;
