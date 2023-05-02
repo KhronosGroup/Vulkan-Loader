@@ -40,7 +40,17 @@ int main() {
     auto phys_devs = inst.GetPhysDevs();
 
     for (const auto& phys_dev : phys_devs) {
-        auto extensions = EnumerateDeviceExtensions(inst, phys_dev);
+        uint32_t count = 0;
+        VkResult res = vk_funcs.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &count, nullptr);
+        if (res != VK_SUCCESS) {
+            std::cout << "Failed to query device extension count\n";
+        }
+        std::vector<VkExtensionProperties> extensions{count};
+        res = vk_funcs.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &count, extensions.data());
+        if (res != VK_SUCCESS) {
+            std::cout << "Failed to query device extensions\n";
+        }
+
         bool has_dynamic_rendering = false;
         for (const auto& ext : extensions) {
             if (string_eq("VK_KHR_dynamic_rendering", ext.extensionName)) {
@@ -68,7 +78,7 @@ int main() {
                 reinterpret_cast<PFN_vkBeginCommandBuffer>(vk_funcs.vkGetInstanceProcAddr(inst.inst, "vkBeginCommandBuffer"));
             VkCommandBufferBeginInfo begin_info{};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            VkResult res = vkBeginCommandBuffer(command_buffer, &begin_info);
+            res = vkBeginCommandBuffer(command_buffer, &begin_info);
             if (res != VK_SUCCESS) {
                 std::cout << "Failed to begin command buffer\n";
             }

@@ -287,13 +287,20 @@ struct InstWrapper {
     // Enumerate a single physical device using googletest to assert if it succeeded
     VkPhysicalDevice GetPhysDev(VkResult result_to_check = VK_SUCCESS);
 
+    // Get all the list of active layers through vkEnumerateDeviceLayerProperties
+    // Use count to specify an expected count
+    std::vector<VkLayerProperties> GetActiveLayers(VkPhysicalDevice phys_dev);
+    std::vector<VkLayerProperties> GetActiveLayers(VkPhysicalDevice phys_dev, uint32_t count);
+
+    // Get list of device extensions associated with a VkPhysicalDevice
+    // Use count to specify an expected count
+    std::vector<VkExtensionProperties> EnumerateDeviceExtensions(VkPhysicalDevice physical_device, uint32_t count);
+
     VulkanFunctions* functions = nullptr;
     VkInstance inst = VK_NULL_HANDLE;
     VkAllocationCallbacks* callbacks = nullptr;
     InstanceCreateInfo create_info{};
 };
-
-std::vector<VkExtensionProperties> EnumerateDeviceExtensions(InstWrapper const& inst, VkPhysicalDevice physical_device);
 
 struct DeviceWrapper {
     DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks = nullptr) noexcept;
