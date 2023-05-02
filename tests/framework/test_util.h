@@ -102,6 +102,8 @@
 #define FRAMEWORK_EXPORT
 #endif
 
+#include "json_writer.h"
+
 /*
  * Wrapper around Environment Variables with common operations
  * Since Environment Variables leak between tests, there needs to be RAII code to remove them during test cleanup
@@ -574,8 +576,7 @@ struct ManifestVersion {
     ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
 
     std::string get_version_str() const noexcept {
-        return std::string("\"file_format_version\": \"") + std::to_string(major) + "." + std::to_string(minor) + "." +
-               std::to_string(patch) + "\",";
+        return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
     }
 };
 
@@ -605,7 +606,7 @@ struct ManifestLayer {
             BUILDER_VALUE(FunctionOverride, std::string, vk_func, {})
             BUILDER_VALUE(FunctionOverride, std::string, override_name, {})
 
-            std::string get_manifest_str() const { return std::string("\"") + vk_func + "\":\"" + override_name + "\""; }
+            void get_manifest_str(JsonWriter& writer) const { writer.AddKeyedString(vk_func, override_name); }
         };
         struct Extension {
             Extension() noexcept {}
@@ -614,7 +615,7 @@ struct ManifestLayer {
             std::string name;
             uint32_t spec_version = 0;
             std::vector<std::string> entrypoints;
-            std::string get_manifest_str() const;
+            void get_manifest_str(JsonWriter& writer) const;
         };
         BUILDER_VALUE(LayerDescription, std::string, name, {})
         BUILDER_VALUE(LayerDescription, Type, type, Type::INSTANCE)
@@ -634,7 +635,7 @@ struct ManifestLayer {
         BUILDER_VECTOR(LayerDescription, std::string, app_keys, app_key)
         BUILDER_VALUE(LayerDescription, std::string, library_arch, "")
 
-        std::string get_manifest_str() const;
+        void get_manifest_str(JsonWriter& writer) const;
         VkLayerProperties get_layer_properties() const;
     };
     BUILDER_VALUE(ManifestLayer, ManifestVersion, file_format_version, {})
