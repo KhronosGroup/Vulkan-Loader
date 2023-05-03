@@ -252,7 +252,7 @@ on/off options currently supported by this repository:
 | BUILD_STATIC_LOADER                      | macOS         | `OFF`   | This allows the loader to be built as a static library on macOS. Not tested, use at your own risk.                                                                                |
 | LOADER_ENABLE_ADDRESS_SANITIZER          | Linux & macOS | `OFF`   | Enables Address Sanitizer in the loader and tests.                                                                                                                                |
 | LOADER_ENABLE_THREAD_SANITIZER           | Linux & macOS | `OFF`   | Enables Thread Sanitizer in the loader and tests.                                                                                                                                 |
-| LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING | Linux & macOS | `OFF`   | Causes the loader to not unload dynamic libraries. Only works when LOADER_ENABLE_ADDRESS_SANITIZER is enabled. This option allows leak sanitizer to have full stack traces.       |
+| LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING | All           | `OFF`   | Causes the loader to not unload dynamic libraries. Example use case. This option allows leak sanitizers to have full stack traces.       |
 
 The following is a table of all string options currently supported by this repository:
 
