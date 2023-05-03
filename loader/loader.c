@@ -1803,6 +1803,10 @@ void loader_initialize(void) {
 #if defined(GIT_BRANCH_NAME) && defined(GIT_TAG_INFO)
     loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "[Vulkan Loader Git - Tag: " GIT_BRANCH_NAME ", Branch/Commit: " GIT_TAG_INFO "]");
 #endif
+
+#if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
+    loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: library unloading is disabled");
+#endif
 }
 
 void loader_release() {
