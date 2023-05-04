@@ -376,12 +376,7 @@ fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_p
 
 FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
 FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
-    : platform_shim(&folders, settings.log_filter),
-      vulkan_functions(),
-      env_var_vk_icd_filenames("VK_DRIVER_FILES"),
-      add_env_var_vk_icd_filenames("VK_ADD_DRIVER_FILES"),
-      env_var_vk_layer_paths("VK_LAYER_PATH"),
-      add_env_var_vk_layer_paths("VK_ADD_LAYER_PATH") {
+    : platform_shim(&folders, settings.log_filter) {
     // This order is important, it matches the enum ManifestLocation, used to index the folders vector
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("null_dir"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("icd_manifests"));
@@ -393,12 +388,20 @@ FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) no
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("override_layer_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("app_package_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("macos_bundle"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("unsecured_location"));
 
     platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
     if (settings.enable_default_search_paths) {
         platform_shim->set_fake_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
         platform_shim->set_fake_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
         platform_shim->set_fake_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
+#if COMMON_UNIX_PLATFORMS
+        auto home = get_env_var("HOME");
+        auto unsecured_location = get_folder(ManifestLocation::unsecured_location).location();
+        platform_shim->redirect_path(home + "/.local/share/vulkan/icd.d", unsecured_location);
+        platform_shim->redirect_path(home + "/.local/share/vulkan/implicit_layer.d", unsecured_location);
+        platform_shim->redirect_path(home + "/.local/share/vulkan/explicit_layer.d", unsecured_location);
+#endif
     }
 #if defined(__APPLE__)
     // Necessary since bundles look in sub folders for manifests, not the test framework folder itself
@@ -429,6 +432,9 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
     }
     if (icd_details.discovery_type == ManifestDiscoveryType::macos_bundle) {
         folder = &get_folder(ManifestLocation::macos_bundle);
+    }
+    if (icd_details.discovery_type == ManifestDiscoveryType::unsecured_generic) {
+        folder = &get_folder(ManifestLocation::unsecured_location);
     }
     if (icd_details.discovery_type == ManifestDiscoveryType::null_dir ||
         icd_details.discovery_type == ManifestDiscoveryType::none) {
@@ -466,6 +472,10 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
                 break;
             case (ManifestDiscoveryType::macos_bundle):
                 platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
+                break;
+            case (ManifestDiscoveryType::unsecured_generic):
+                platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path, false);
+                break;
             case (ManifestDiscoveryType::null_dir):
                 break;
 #if defined(_WIN32)
@@ -528,6 +538,9 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
         case (ManifestDiscoveryType::macos_bundle):
             fs_ptr = &(get_folder(ManifestLocation::macos_bundle));
             break;
+        case (ManifestDiscoveryType::unsecured_generic):
+            fs_ptr = &(get_folder(ManifestLocation::unsecured_location));
+            break;
         case (ManifestDiscoveryType::none):
         case (ManifestDiscoveryType::null_dir):
             fs_ptr = &(get_folder(ManifestLocation::null));
@@ -555,9 +568,12 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
     if (layer_details.discovery_type != ManifestDiscoveryType::none) {
         // Write a manifest file to a folder as long as the discovery type isn't none
         auto layer_loc = folder.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
-        // only add the manifest to the registry if its a system location (as if it was installed)
+        // only add the manifest to the registry if its a generic location (as if it was installed) - both system and user local
         if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
             platform_shim->add_manifest(category, layer_loc);
+        }
+        if (layer_details.discovery_type == ManifestDiscoveryType::unsecured_generic) {
+            platform_shim->add_manifest(category, layer_loc, false);
         }
         for (size_t i = new_layers_start; i < layers.size(); i++) {
             layers.at(i).manifest_path = layer_loc;

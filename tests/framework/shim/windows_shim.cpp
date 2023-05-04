@@ -317,6 +317,7 @@ LSTATUS __stdcall ShimRegOpenKeyExA(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions,
         hive = "HKEY_LOCAL_MACHINE";
     else if (HKEY_CURRENT_USER == hKey)
         hive = "HKEY_CURRENT_USER";
+    if (hive == "") return ERROR_ACCESS_DENIED;
 
     platform_shim.created_keys.emplace_back(platform_shim.created_key_count++, hive + "\\" + lpSubKey);
     *phkResult = platform_shim.created_keys.back().get();

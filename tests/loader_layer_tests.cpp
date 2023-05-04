@@ -1918,6 +1918,142 @@ TEST(OverrideMetaLayer, AppKeysDoesNotContainCurrentApplication) {
     }
 }
 
+TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(regular_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}
+                                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                                .add_layer(ManifestLayer::LayerDescription{}
+                                                               .set_name(lunarg_meta_layer_name)
+                                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                               .add_component_layer(regular_layer_name)
+                                                               .set_disable_environment("DisableMeIfYouCan")
+                                                               .add_override_path(override_folder_location)),
+                                            "meta_test_layer.json"});
+
+    {  // try with no elevated privileges
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 2U);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 1, 0);
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+        env.debug_log.clear();
+    }
+
+    env.platform_shim->set_elevated_privilege(true);
+
+    {  // try with elevated privileges
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 2U);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 1, 0);
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, active_layer_props));
+    }
+}
+
+// Override layer should not be found and thus not loaded when running with elevated privileges
+TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.get_test_icd().add_physical_device({});
+
+    fs::FolderManager override_layer_folder{FRAMEWORK_BUILD_DIRECTORY, "override_layer_folder"};
+
+    const char* regular_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(regular_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}
+                                                .set_file_format_version(ManifestVersion(1, 2, 0))
+                                                .add_layer(ManifestLayer::LayerDescription{}
+                                                               .set_name(lunarg_meta_layer_name)
+                                                               .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                               .add_component_layer(regular_layer_name)
+                                                               .set_disable_environment("DisableMeIfYouCan")
+                                                               .add_override_path(override_folder_location)),
+                                            "meta_test_layer.json"}
+                               .set_discovery_type(ManifestDiscoveryType::unsecured_generic));
+
+    {  // try with no elevated privileges
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 2U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 2U);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 1, 0);
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+        env.debug_log.clear();
+        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, active_layer_props));
+    }
+
+    env.platform_shim->set_elevated_privilege(true);
+
+    {  // try with no elevated privileges
+        uint32_t layer_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+        EXPECT_EQ(layer_count, 0U);
+
+        std::array<VkLayerProperties, 2> layer_props;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
+        EXPECT_EQ(layer_count, 0U);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 1, 0);
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+    }
+}
+
 // This test makes sure that any layer calling GetPhysicalDeviceProperties2 inside of CreateInstance
 // succeeds and doesn't crash.
 TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {
