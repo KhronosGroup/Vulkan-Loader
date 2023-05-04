@@ -225,16 +225,6 @@ VkPhysicalDevice InstWrapper::GetPhysDev(VkResult result_to_check) {
     return physical_device;
 }
 
-std::vector<VkLayerProperties> InstWrapper::GetActiveLayers(VkPhysicalDevice phys_dev) {
-    uint32_t count = 0;
-    VkResult res = functions->vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
-    EXPECT_EQ(VK_SUCCESS, res);
-    std::vector<VkLayerProperties> layer_props{count};
-    res = functions->vkEnumerateDeviceLayerProperties(phys_dev, &count, layer_props.data());
-    EXPECT_EQ(VK_SUCCESS, res);
-    return layer_props;
-}
-
 std::vector<VkLayerProperties> InstWrapper::GetActiveLayers(VkPhysicalDevice phys_dev, uint32_t expected_count) {
     uint32_t count = 0;
     VkResult res = functions->vkEnumerateDeviceLayerProperties(phys_dev, &count, nullptr);
@@ -600,6 +590,30 @@ void FrameworkEnvironment::setup_macos_bundle() noexcept {
     platform_shim->bundle_contents = get_folder(ManifestLocation::macos_bundle).location().str();
 }
 #endif
+
+std::vector<VkExtensionProperties> FrameworkEnvironment::GetInstanceExtensions(uint32_t expected_count, const char* layer_name) {
+    uint32_t count = 0;
+    VkResult res = vulkan_functions.vkEnumerateInstanceExtensionProperties(layer_name, &count, nullptr);
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    std::vector<VkExtensionProperties> extension_props{count};
+    res = vulkan_functions.vkEnumerateInstanceExtensionProperties(layer_name, &count, extension_props.data());
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    return extension_props;
+}
+std::vector<VkLayerProperties> FrameworkEnvironment::GetLayerProperties(uint32_t expected_count) {
+    uint32_t count = 0;
+    VkResult res = vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    std::vector<VkLayerProperties> layer_props{count};
+    res = vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data());
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    return layer_props;
+}
+
 const char* get_platform_wsi_extension(const char* api_selection) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     return "VK_KHR_android_surface";

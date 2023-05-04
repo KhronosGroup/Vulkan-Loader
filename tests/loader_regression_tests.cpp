@@ -158,6 +158,7 @@ TEST(EnumerateInstanceLayerProperties, UsageChecks) {
         uint32_t layer_count = 2;
         ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props));
         ASSERT_EQ(layer_count, 2U);
+        auto layers = env.GetLayerProperties(2);
         ASSERT_TRUE(string_eq(layer_name_1, layer_props[0].layerName));
         ASSERT_TRUE(string_eq(layer_name_2, layer_props[1].layerName));
     }
@@ -195,28 +196,22 @@ TEST(EnumerateInstanceExtensionProperties, UsageChecks) {
                   env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
         ASSERT_EQ(extension_count, 6U);  // default extensions + our two extensions
 
-        // loader always adds the debug report & debug utils extensions
-        ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
-        ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
-        ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
-        ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
-        ASSERT_TRUE(string_eq("VK_KHR_portability_enumeration", extensions[4].extensionName));
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, first_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(1).extensionName, second_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(4).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(5).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
     }
     {  // Two Pass
-        uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 6> extensions;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 6U);  // return default extensions + our extension
-
-        ASSERT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 6U);
+        auto extensions = env.GetInstanceExtensions(6);
         // loader always adds the debug report & debug utils extensions
-        ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
-        ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
-        ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
-        ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
-        ASSERT_TRUE(string_eq("VK_KHR_portability_enumeration", extensions[4].extensionName));
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, first_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(1).extensionName, second_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(4).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(5).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
     }
 }
 
@@ -258,37 +253,23 @@ TEST(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
     Extension second_ext{"SecondTestExtension"};
     env.reset_icd().add_instance_extensions({first_ext, second_ext});
     {
-        uint32_t extension_count = 0;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
-
-        std::array<VkExtensionProperties, 4> extensions;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
+        auto extensions = env.GetInstanceExtensions(4);
         // loader always adds the debug report & debug utils extensions
-        ASSERT_TRUE(string_eq(extensions[0].extensionName, "VK_EXT_debug_report"));
-        ASSERT_TRUE(string_eq(extensions[1].extensionName, "VK_EXT_debug_utils"));
-        ASSERT_TRUE(string_eq(extensions[2].extensionName, "VK_KHR_portability_enumeration"));
-        ASSERT_TRUE(string_eq(extensions[3].extensionName, "VK_LUNARG_direct_driver_loading"));
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
     }
     {  // Disable unknown instance extension filtering
         EnvVarWrapper disable_inst_ext_filter_env_var{"VK_LOADER_DISABLE_INST_EXT_FILTER", "1"};
 
-        uint32_t extension_count = 0;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, nullptr));
-        ASSERT_EQ(extension_count, 6U);
-
-        std::array<VkExtensionProperties, 6> extensions;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties("", &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 6U);
-
-        ASSERT_EQ(extensions[0], first_ext.get());
-        ASSERT_EQ(extensions[1], second_ext.get());
-        // Loader always adds these two extensions
-        ASSERT_TRUE(string_eq(extensions[2].extensionName, "VK_EXT_debug_report"));
-        ASSERT_TRUE(string_eq(extensions[3].extensionName, "VK_EXT_debug_utils"));
-        ASSERT_TRUE(string_eq(extensions[4].extensionName, "VK_KHR_portability_enumeration"));
-        ASSERT_TRUE(string_eq(extensions[5].extensionName, "VK_LUNARG_direct_driver_loading"));
+        auto extensions = env.GetInstanceExtensions(6);
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, first_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(1).extensionName, second_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(4).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(5).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
     }
 }
 
@@ -1432,13 +1413,8 @@ TEST(TryLoadWrongBinaries, WrongExplicit) {
             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
         "dummy_test_layer.json");
 
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
-
-    std::array<VkLayerProperties, 2> layer_props;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
+    auto layer_props = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1469,13 +1445,8 @@ TEST(TryLoadWrongBinaries, WrongImplicit) {
                                                               .set_disable_environment("DISABLE_ENV")),
                                 "dummy_test_layer.json");
 
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
-
-    std::array<VkLayerProperties, 1> layer_props;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
+    auto layer_props = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1511,13 +1482,8 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
                                                               .set_disable_environment("DISABLE_ENV")),
                                 "dummy_test_layer_1.json");
 
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 2U);
-
-    std::array<VkLayerProperties, 2> layer_props;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
+    ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1556,13 +1522,8 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
                                                               .set_disable_environment("DISABLE_ENV")),
                                 "dummy_test_layer_1.json");
 
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 2U);
-
-    std::array<VkLayerProperties, 2> layer_props;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
+    ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1594,13 +1555,8 @@ TEST(TryLoadWrongBinaries, BadExplicit) {
             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)),
         "dummy_test_layer.json");
 
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
-
-    std::array<VkLayerProperties, 2> layer_props;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
+    auto layer_props = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1626,13 +1582,8 @@ TEST(TryLoadWrongBinaries, BadImplicit) {
                                                               .set_disable_environment("DISABLE_ENV")),
                                 "dummy_test_layer.json");
 
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
-
-    std::array<VkLayerProperties, 1> layer_props;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 1U);
+    auto layer_props = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1663,13 +1614,8 @@ TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
                                                               .set_disable_environment("DISABLE_ENV")),
                                 "dummy_test_layer_1.json");
 
-    uint32_t layer_count = 0;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 2U);
-
-    std::array<VkLayerProperties, 2> layer_props;
-    ASSERT_EQ(env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()), VK_SUCCESS);
-    ASSERT_EQ(layer_count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
+    ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -3850,22 +3796,13 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) 
     driver1.max_icd_interface_version = 1;
     {
         // check that enumerating instance extensions work with a portability driver present
-        uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 6> extensions;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        // loader always adds the debug report, debug utils extensions, portability enumeration, direct driver loading
-        ASSERT_EQ(extension_count, 6U);
-
-        ASSERT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        ASSERT_EQ(extension_count, 6U);
-        // loader always adds the debug report, debug utils extensions, portability enumeration, direct driver loading
-        ASSERT_TRUE(first_ext.extensionName == extensions[0].extensionName);
-        ASSERT_TRUE(second_ext.extensionName == extensions[1].extensionName);
-        ASSERT_TRUE(string_eq("VK_EXT_debug_report", extensions[2].extensionName));
-        ASSERT_TRUE(string_eq("VK_EXT_debug_utils", extensions[3].extensionName));
-        ASSERT_TRUE(string_eq("VK_KHR_portability_enumeration", extensions[4].extensionName));
-        ASSERT_TRUE(string_eq("VK_LUNARG_direct_driver_loading", extensions[5].extensionName));
+        auto extensions = env.GetInstanceExtensions(6);
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, first_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(1).extensionName, second_ext.extensionName.c_str()));
+        EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(4).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(5).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
     }
 
     const char* layer_name = "TestLayer";

@@ -288,8 +288,7 @@ struct InstWrapper {
     VkPhysicalDevice GetPhysDev(VkResult result_to_check = VK_SUCCESS);
 
     // Get all the list of active layers through vkEnumerateDeviceLayerProperties
-    // Use count to specify an expected count
-    std::vector<VkLayerProperties> GetActiveLayers(VkPhysicalDevice phys_dev);
+    // Use count to specify the expected count
     std::vector<VkLayerProperties> GetActiveLayers(VkPhysicalDevice phys_dev, uint32_t count);
 
     // Get list of device extensions associated with a VkPhysicalDevice
@@ -546,6 +545,12 @@ struct FrameworkEnvironment {
     // Set the path of the app bundle to the appropriate test framework bundle
     void setup_macos_bundle() noexcept;
 #endif
+    // Query the global extensions
+    // Optional: use layer_name to query the extensions of a specific layer
+    std::vector<VkExtensionProperties> GetInstanceExtensions(uint32_t count, const char* layer_name = nullptr);
+    // Query the available layers
+    std::vector<VkLayerProperties> GetLayerProperties(uint32_t count);
+
     PlatformShimWrapper platform_shim;
     std::vector<fs::FolderManager> folders;
 
