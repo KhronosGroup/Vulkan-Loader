@@ -75,7 +75,7 @@ jobs:
               run: ctest --output-on-failure
 
             - name: Verify generated source files
-              run: python scripts/generate_source.py --verify external/Vulkan-Headers/registry
+              run: python scripts/generate_source.py --verify external/${{matrix.config}}/Vulkan-Headers/registry
 
             - name: Verify code formatting with clang-format
               run: ./scripts/check_code_format.sh
@@ -126,14 +126,12 @@ jobs:
               working-directory: ./build
               run: ctest --output-on-failure
 
-    windows:
-        runs-on: ${{matrix.os}}
-
+    windows_vs:
+        runs-on: windows-latest
         strategy:
             matrix:
                 arch: [ Win32, x64 ]
                 config: [ Debug, Release ]
-                os: [ windows-latest ]
 
         steps:
             - uses: actions/checkout@v3
@@ -142,17 +140,48 @@ jobs:
                 python-version: '3.7'
 
             - name: Generate build files
-              run: cmake -S. -Bbuild -A${{matrix.arch}} -DBUILD_TESTS=ON -DUPDATE_DEPS=ON
+              run: cmake -S. -B build -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -A ${{ matrix.arch }}
 
             - name: Build the loader
               run: cmake --build ./build --config ${{matrix.config}}
 
             - name: Run regression tests
               working-directory: ./build
-              run: ctest --output-on-failure
+              run: ctest --output-on-failure -C ${{matrix.config}}
 
-            - name: Verify generated source files
-              run: python scripts/generate_source.py --verify external/Vulkan-Headers/registry
+    # Something about Github Actions + Windows + Ninja + Unicode doesn't play nicely together.
+    # https://github.com/KhronosGroup/Vulkan-Loader/pull/1188#issuecomment-1536659318
+    #
+    # Disable testing explicitly for Ninja. But still ensure it builds properly.
+    windows_ninja:
+      runs-on: windows-2019
+      strategy:
+        matrix:
+            arch: [ Win32, x64 ]
+            config: [ Debug, Release ]
+            exclude:
+              - arch: Win32
+                config: release
+              - arch: x64
+                config: debug
+
+      steps:
+          - uses: actions/checkout@v3
+          - uses: actions/setup-python@v3
+            with:
+              python-version: '3.7'
+          - uses: ilammy/msvc-dev-cmd@v1
+            with:
+              arch: ${{ matrix.arch }}
+
+          - name: Configure
+            run: cmake -S. -B build -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -G "Ninja"
+
+          - name: Build
+            run: cmake --build ./build
+
+          - name: Verify generated source files
+            run: python scripts/generate_source.py --verify external/${{matrix.config}}/Vulkan-Headers/registry
 
     mac:
         runs-on: ${{matrix.os}}

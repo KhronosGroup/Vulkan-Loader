@@ -279,10 +279,6 @@ if(WIN32)
 
     target_link_libraries(vulkan PRIVATE loader_specific_options loader-opt)
 
-    if (UPDATE_DEPS)
-        add_dependencies(vulkan vl_update_deps)
-    endif()
-
     # when adding the suffix the import and runtime library names must be consistent
     # mingw: libvulkan-1.dll.a / vulkan-1.dll
     # msvc: vulkan-1.lib / vulkan-1.dll
