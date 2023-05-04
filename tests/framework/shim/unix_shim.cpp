@@ -128,8 +128,8 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
     }
     DIR* dir;
     if (platform_shim.is_fake_path(path_name)) {
-        auto fake_path_name = platform_shim.get_fake_path(fs::path(path_name));
-        dir = real_opendir(fake_path_name.c_str());
+        auto real_path_name = platform_shim.get_real_path_from_fake_path(fs::path(path_name));
+        dir = real_opendir(real_path_name.c_str());
         platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, 0, true});
     } else if (platform_shim.is_known_path(path_name)) {
         dir = real_opendir(path_name);
@@ -214,9 +214,9 @@ FRAMEWORK_EXPORT int ACCESS_FUNC_NAME(const char* in_pathname, int mode) {
     }
 
     if (platform_shim.is_fake_path(path.parent_path())) {
-        fs::path fake_path = platform_shim.get_fake_path(path.parent_path());
-        fake_path /= path.filename();
-        return real_access(fake_path.c_str(), mode);
+        fs::path real_path = platform_shim.get_real_path_from_fake_path(path.parent_path());
+        real_path /= path.filename();
+        return real_access(real_path.c_str(), mode);
     }
     return real_access(in_pathname, mode);
 }
@@ -232,8 +232,8 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
 
     FILE* f_ptr;
     if (platform_shim.is_fake_path(path.parent_path())) {
-        auto fake_path = platform_shim.get_fake_path(path.parent_path()) / path.filename();
-        f_ptr = real_fopen(fake_path.c_str(), mode);
+        auto real_path = platform_shim.get_real_path_from_fake_path(path.parent_path()) / path.filename();
+        f_ptr = real_fopen(real_path.c_str(), mode);
     } else {
         f_ptr = real_fopen(in_filename, mode);
     }

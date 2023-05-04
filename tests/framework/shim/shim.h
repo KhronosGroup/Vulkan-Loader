@@ -143,18 +143,16 @@ struct PlatformShim {
     // fake paths are paths that the loader normally looks in but actually point to locations inside the test framework
     void set_fake_path(ManifestCategory category, fs::path const& path);
 
-    // known paths are real paths but since the test framework guarantee's the order files are found in, files in these paths need
-    // to be ordered correctly
+    // known paths are real paths but since the test framework guarantee's the order files are found in, files in these paths
+    // need to be ordered correctly
     void add_known_path(fs::path const& path);
 
-    void add_manifest(ManifestCategory category, fs::path const& path);
+    void add_manifest(ManifestCategory category, fs::path const& path, bool use_local_machine = true);
 
 // platform specific shim interface
 #if defined(WIN32)
     // Control Platform Elevation Level
-    void set_elevated_privilege(bool elev) {
-        (elev) ? elevation_level = SECURITY_MANDATORY_HIGH_RID : elevation_level = SECURITY_MANDATORY_LOW_RID;
-    }
+    void set_elevated_privilege(bool elev) { elevation_level = (elev) ? SECURITY_MANDATORY_HIGH_RID : SECURITY_MANDATORY_LOW_RID; }
     unsigned long elevation_level = SECURITY_MANDATORY_LOW_RID;
 
     void add_dxgi_adapter(GpuType gpu_preference, DXGI_ADAPTER_DESC1 desc1);
@@ -190,7 +188,7 @@ struct PlatformShim {
 
 #elif COMMON_UNIX_PLATFORMS
     bool is_fake_path(fs::path const& path);
-    fs::path const& get_fake_path(fs::path const& path);
+    fs::path const& get_real_path_from_fake_path(fs::path const& path);
 
     void redirect_path(fs::path const& path, fs::path const& new_path);
     void remove_redirect(fs::path const& path);

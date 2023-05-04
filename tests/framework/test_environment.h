@@ -461,6 +461,7 @@ struct TestLayerHandle {
 // Controls whether to create a manifest and where to put it
 enum class ManifestDiscoveryType {
     generic,              // put the manifest in the regular locations
+    unsecured_generic,    // put the manifest in a user folder rather than system
     none,                 // Do not write the manifest anywhere (for Direct Driver Loading)
     null_dir,             // put the manifest in the 'null_dir' which the loader does not search in (D3DKMT for instance)
     env_var,              // use the corresponding env-var for it
@@ -493,6 +494,8 @@ struct TestLayerDetails {
     BUILDER_VALUE(TestLayerDetails, bool, is_dir, true);
 };
 
+// Locations manifests can go in the test framework
+// If this enum is added to - the contructor of FrameworkEnvironment also needs to be updated with the new enum value
 enum class ManifestLocation {
     null = 0,
     driver = 1,
@@ -504,6 +507,7 @@ enum class ManifestLocation {
     override_layer = 7,
     windows_app_package = 8,
     macos_bundle = 9,
+    unsecured_location = 10,
 };
 
 struct FrameworkSettings {
@@ -515,6 +519,9 @@ struct FrameworkEnvironment {
     FrameworkEnvironment() noexcept;  // default is to enable VK_LOADER_DEBUG=all and enable the default search paths
     FrameworkEnvironment(const FrameworkSettings& settings) noexcept;
     ~FrameworkEnvironment();
+    // Delete copy constructors - this class should never move after being created
+    FrameworkEnvironment(const FrameworkEnvironment&) = delete;
+    FrameworkEnvironment& operator=(const FrameworkEnvironment&) = delete;
 
     TestICDHandle& add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
@@ -548,11 +555,10 @@ struct FrameworkEnvironment {
     std::vector<TestICDHandle> icds;
     std::vector<TestLayerHandle> layers;
 
-    EnvVarWrapper env_var_vk_icd_filenames;      //"VK_DRIVER_FILES"
-    EnvVarWrapper add_env_var_vk_icd_filenames;  //"VK_ADD_DRIVER_FILES"
-
-    EnvVarWrapper env_var_vk_layer_paths;      //"VK_LAYER_PATH"
-    EnvVarWrapper add_env_var_vk_layer_paths;  //"VK_ADD_LAYER_PATH"
+    EnvVarWrapper env_var_vk_icd_filenames{"VK_DRIVER_FILES"};
+    EnvVarWrapper add_env_var_vk_icd_filenames{"VK_ADD_DRIVER_FILES"};
+    EnvVarWrapper env_var_vk_layer_paths{"VK_LAYER_PATH"};
+    EnvVarWrapper add_env_var_vk_layer_paths{"VK_ADD_LAYER_PATH"};
 
    private:
     void add_layer_impl(TestLayerDetails layer_details, ManifestCategory category);
