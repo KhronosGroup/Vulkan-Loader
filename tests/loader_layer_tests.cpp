@@ -58,9 +58,8 @@ TEST(ImplicitLayers, WithEnableAndDisableEnvVar) {
                                                          .set_enable_environment(enable_env_var.get())),
                            "implicit_test_layer.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // didn't set enable env-var, layer should not load
     CheckLogForLayerString(env, implicit_layer_name, false);
@@ -102,9 +101,8 @@ TEST(ImplicitLayers, OnlyDisableEnvVar) {
                                                          .set_disable_environment(disable_env_var.get())),
                            "implicit_test_layer.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // don't set disable env-var, layer should load
     CheckLogForLayerString(env, implicit_layer_name, true);
@@ -998,12 +996,7 @@ TEST(ImplicitLayers, DuplicateLayers) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 2U);
-    std::array<VkLayerProperties, 2> layer_props{};
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data()));
-    ASSERT_EQ(count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
@@ -1044,23 +1037,14 @@ TEST(MetaLayers, InvalidComponentLayer) {
         "regular_test_layer.json");
 
     // should find 1, the 'regular' layer
-    uint32_t layer_count = 1;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 1U);
+    auto layer_props = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
 
-    VkLayerProperties layer_props;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, &layer_props));
-    EXPECT_EQ(layer_count, 1U);
-    EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
-
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 4> extensions;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
-
-    EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -1089,29 +1073,20 @@ TEST(MetaLayers, ExplicitMetaLayer) {
         "regular_test_layer.json");
 
     {  // global functions
-        // should find 1, the 'regular' layer
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+       // should find 1, the 'regular' layer
+        auto layer_props = env.GetLayerProperties(2);
         EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
 
-        uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 4> extensions;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-        EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
-
-        EXPECT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-        EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
+        auto extensions = env.GetInstanceExtensions(4);
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+        EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
     }
     {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate(VK_SUCCESS);
-        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
     {
         InstWrapper inst{env.vulkan_functions};
@@ -1144,23 +1119,14 @@ TEST(MetaLayers, MetaLayerNameInComponentLayers) {
         "regular_test_layer.json");
 
     // should find 1, the 'regular' layer
-    uint32_t layer_count = 1;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 1U);
+    auto layer_props = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
 
-    VkLayerProperties layer_props;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, &layer_props));
-    EXPECT_EQ(layer_count, 1U);
-    EXPECT_TRUE(string_eq(layer_props.layerName, regular_layer_name));
-
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 4> extensions;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration
-
-    EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -1193,23 +1159,14 @@ TEST(MetaLayers, MetaLayerWhichAddsMetaLayer) {
                                               .add_component_layers({meta_layer_name, regular_layer_name})),
                            "meta_meta_test_layer.json");
 
-    uint32_t layer_count = 3;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 3U);
-
-    std::array<VkLayerProperties, 3> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 3U);
+    auto layer_props = env.GetLayerProperties(3);
     EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name, meta_meta_layer_name}, layer_props));
 
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 4> extensions;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
-
-    EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(meta_layer_name);
@@ -1237,14 +1194,7 @@ TEST(MetaLayers, InstanceExtensionInComponentLayer) {
             .add_layer(ManifestLayer::LayerDescription{}.set_name(meta_layer_name).add_component_layers({regular_layer_name})),
         "meta_test_layer.json");
 
-    uint32_t extension_count = 0;
-    std::array<VkExtensionProperties, 1> extensions;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, nullptr));
-    EXPECT_EQ(extension_count, 1U);  // return instance_ext_name
-
-    EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, extensions.data()));
-    EXPECT_EQ(extension_count, 1U);
+    auto extensions = env.GetInstanceExtensions(1, meta_layer_name);
     EXPECT_TRUE(string_eq(extensions[0].extensionName, instance_ext_name));
 }
 
@@ -1265,12 +1215,9 @@ TEST(MetaLayers, DeviceExtensionInComponentLayer) {
             .set_file_format_version(ManifestVersion(1, 1, 2))
             .add_layer(ManifestLayer::LayerDescription{}.set_name(meta_layer_name).add_component_layers({regular_layer_name})),
         "meta_test_layer.json");
-    {
-        uint32_t extension_count = 0;
-        EXPECT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(meta_layer_name, &extension_count, nullptr));
-        EXPECT_EQ(extension_count, 0U);
-    }
+
+    ASSERT_NO_FATAL_FAILURE(env.GetInstanceExtensions(0, meta_layer_name));
+
     {  // layer is not enabled
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1333,13 +1280,7 @@ TEST(OverrideMetaLayer, InvalidDisableEnvironment) {
                                               .add_component_layers({regular_layer_name})),
                            "meta_test_layer.json");
 
-    uint32_t layer_count = 0;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    EXPECT_EQ(layer_count, 1U);
-
-    std::array<VkLayerProperties, 1> layer_props;
-    EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-    EXPECT_EQ(layer_count, 1U);
+    auto layer_props = env.GetLayerProperties(1);
     EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
 
     InstWrapper inst{env.vulkan_functions};
@@ -1368,13 +1309,7 @@ TEST(OverrideMetaLayer, OlderVersionThanInstance) {
                                               .add_component_layers({regular_layer_name})),
                            "meta_test_layer.json");
     {  // global functions
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
     {  // 1.1 instance
@@ -1420,13 +1355,7 @@ TEST(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
                                               .set_disable_environment("DisableMeIfYouCan")),
                            "meta_test_layer.json");
     {  // global functions
-        uint32_t layer_count = 2;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
     {
@@ -1435,7 +1364,6 @@ TEST(OverrideMetaLayer, OlderMetaLayerWithNewerInstanceVersion) {
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
         auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-
         ASSERT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
         ASSERT_TRUE(string_eq(layer_props[1].layerName, lunarg_meta_layer_name));
     }
@@ -1474,13 +1402,7 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
                                               .set_disable_environment("DisableMeIfYouCan")),
                            "meta_test_layer.json");
     {  // global functions
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         // Expect the explicit layer to still be found
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
@@ -1535,13 +1457,7 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
                                               .set_disable_environment("DisableMeIfYouCan")),
                            "meta_test_layer.json");
     {  // global functions
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 1U);
-
-        std::array<VkLayerProperties, 1> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 1U);
+        auto layer_props = env.GetLayerProperties(1);
         EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
     }
     {
@@ -1554,7 +1470,7 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
             env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 has API "
                                "version 1.0 that is lower.  Skipping this layer."));
         env.debug_log.clear();
-        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
 
     {
@@ -1567,7 +1483,7 @@ TEST(OverrideMetaLayer, OlderComponentLayerInMetaLayer) {
             env.debug_log.find("verify_meta_layer_component_layers: Meta-layer uses API version 1.1, but component layer 0 has API "
                                "version 1.0 that is lower.  Skipping this layer."));
         env.debug_log.clear();
-        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
 }
 
@@ -1598,12 +1514,7 @@ TEST(OverrideMetaLayer, ApplicationEnabledLayerInBlacklist) {
                                               .set_disable_environment("DisableMeIfYouCan")),
                            "meta_test_layer.json");
     {  // Check that enumerating the layers returns only the non-blacklisted layers + override layer
-        uint32_t count = 0;
-        env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
-        ASSERT_EQ(count, 2U);
-        std::vector<VkLayerProperties> layer_props{2, VkLayerProperties{}};
-        env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data());
-        ASSERT_EQ(count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         ASSERT_TRUE(check_permutation({automatic_regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
     {
@@ -1860,13 +1771,7 @@ TEST(OverrideMetaLayer, AppKeysDoesContainCurrentApplication) {
                                               .add_app_key(cur_path)),
                            "meta_test_layer.json");
     {  // global functions
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
     {
@@ -1901,20 +1806,14 @@ TEST(OverrideMetaLayer, AppKeysDoesNotContainCurrentApplication) {
                                               .add_app_keys({"/Hello", "Hi", "./../Uh-oh", "C:/Windows/Only"})),
                            "meta_test_layer.json");
     {  // global functions
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 1U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 1U);
+        auto layer_props = env.GetLayerProperties(1);
         EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
     }
     {
         // instance
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
-        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
 }
 
@@ -1945,13 +1844,7 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
                                             "meta_test_layer.json"});
 
     {  // try with no elevated privileges
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
 
         InstWrapper inst{env.vulkan_functions};
@@ -1967,13 +1860,7 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
     env.platform_shim->set_elevated_privilege(true);
 
     {  // try with elevated privileges
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
 
         InstWrapper inst{env.vulkan_functions};
@@ -2015,13 +1902,7 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
                                .set_discovery_type(ManifestDiscoveryType::unsecured_generic));
 
     {  // try with no elevated privileges
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 2U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 2U);
+        auto layer_props = env.GetLayerProperties(2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
 
         InstWrapper inst{env.vulkan_functions};
@@ -2037,20 +1918,14 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
     env.platform_shim->set_elevated_privilege(true);
 
     {  // try with no elevated privileges
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 0U);
-
-        std::array<VkLayerProperties, 2> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 0U);
+        ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
 
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
 }
 
@@ -2150,11 +2025,7 @@ TEST(ExplicitLayers, MultipleLayersInSingleManifest) {
                 ManifestLayer::LayerDescription{}.set_name(regular_layer_name_3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "multi_layer_manifest.json"));
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 3U);
-    std::array<VkLayerProperties, 3> layer_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data()));
+    auto layer_props = env.GetLayerProperties(3);
     ASSERT_TRUE(string_eq(regular_layer_name_1, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(regular_layer_name_2, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(regular_layer_name_3, layer_props[2].layerName));
@@ -2330,12 +2201,7 @@ TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 2U);
-    std::array<VkLayerProperties, 2> layer_props{};
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data()));
-    ASSERT_EQ(count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
@@ -2411,12 +2277,7 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 2U);
-    std::array<VkLayerProperties, 2> layer_props{};
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data()));
-    ASSERT_EQ(count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
@@ -2489,12 +2350,7 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayers) {
     auto& layer2 = env.get_test_layer(1);
     layer2.set_description("actually_layer_2");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 2U);
-    std::array<VkLayerProperties, 2> layer_props{};
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data()));
-    ASSERT_EQ(count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(layer_name_1, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(layer_name_2, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
@@ -2557,12 +2413,7 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayersFromSystemLocations) {
     auto& layer2 = env.get_test_layer(1);
     layer2.set_description("actually_layer_2");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 2U);
-    std::array<VkLayerProperties, 2> layer_props{};
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data()));
-    ASSERT_EQ(count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(layer_name_1, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(layer_name_2, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
@@ -2625,12 +2476,7 @@ TEST(ExplicitLayers, CorrectOrderOfApplicationEnabledLayers) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 2U);
-    std::array<VkLayerProperties, 2> layer_props{};
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layer_props.data()));
-    ASSERT_EQ(count, 2U);
+    auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(layer_name_1, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(layer_name_2, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
@@ -2688,26 +2534,22 @@ TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
                                                          .set_enable_environment(enable_env_var)),
                            "implicit_wrap_layer_no_ext.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 4U);  // debug_utils, debug_report, portability enumeration, direct driver loading
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     // Make sure the extensions that are implemented only in the test layers is not present.
-    ASSERT_FALSE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-    ASSERT_FALSE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
+    ASSERT_FALSE(contains(extensions, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+    ASSERT_FALSE(contains(extensions, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -2740,27 +2582,22 @@ TEST(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
                 .add_instance_extension({VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, 1, {"vkReleaseDisplayEXT"}})),
         "implicit_wrap_layer_dir_disp_mode.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count,
-              5U);  // the instance extension, debug_utils, debug_report, portability enumeration, direct driver loading
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 5U);
+    auto extensions = env.GetInstanceExtensions(5);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(4).extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
 
     // Make sure the extensions that are implemented only in the test layers is not present.
-    ASSERT_TRUE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-    ASSERT_FALSE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
+    ASSERT_FALSE(contains(extensions, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
@@ -2794,27 +2631,19 @@ TEST(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
                                                                                   {"vkGetPhysicalDeviceSurfaceCapabilities2EXT"}})),
                            "implicit_wrap_layer_disp_surf_count.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count,
-              5U);  // the instance extension, debug_utils, debug_report, portability enumeration, direct driver loading
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 5U);
-
-    // Make sure the extensions that are implemented only in the test layers is not present.
-    ASSERT_FALSE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-    ASSERT_TRUE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
+    auto extensions = env.GetInstanceExtensions(5);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(4).extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -2850,27 +2679,20 @@ TEST(LayerExtensions, ImplicitBothInstanceExtensions) {
                     {VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, 1, {"vkGetPhysicalDeviceSurfaceCapabilities2EXT"}})),
         "implicit_wrap_layer_both_inst.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
     CheckLogForLayerString(env, implicit_layer_name, true);
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count,
-              6U);  // the two instance extension plus debug_utils, debug_report, portability enumeration, direct driver loading
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 6U);
-
-    // Make sure the extensions that are implemented only in the test layers is not present.
-    ASSERT_TRUE(contains(extension_props, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-    ASSERT_TRUE(contains(extension_props, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
+    auto extensions = env.GetInstanceExtensions(6);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(4).extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(5).extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)
@@ -2897,31 +2719,17 @@ TEST(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
             ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
         "explicit_wrap_layer_no_ext.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 4U);  // debug utils, debug report, portability enumeration, direct driver loading
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 4U);  // debug report, debug utils, portability enumeration, direct driver loading
-
-    // Make sure the extensions are not present
-    for (const auto& ext : extension_props) {
-        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-    }
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 0U);
+    ASSERT_NO_FATAL_FAILURE(env.GetInstanceExtensions(0, explicit_layer_name));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -2949,43 +2757,18 @@ TEST(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
                 .add_instance_extension({VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, 1, {"vkReleaseDisplayEXT"}})),
         "explicit_wrap_layer_dir_disp_mode.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 4U);  // debug utils, debug report, portability enumeration
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-    ASSERT_EQ(extension_count, 4U);
-    // Make sure the extensions are not present
-    for (const auto& ext : extension_props) {
-        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-        ASSERT_FALSE(string_eq(ext.extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-    }
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 1U);
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count,
-                                                                                      extension_props.data()));
-
-    // Make sure the extensions still aren't present in this layer
-    bool found = false;
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)) {
-            found = true;
-        }
-        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-    }
-    ASSERT_EQ(true, found);
+    auto layer_extensions = env.GetInstanceExtensions(1, explicit_layer_name);
+    EXPECT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
 
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
@@ -3022,44 +2805,18 @@ TEST(LayerExtensions, ExplicitDispSurfCountInstanceExtension) {
                                                                                   {"vkGetPhysicalDeviceSurfaceCapabilities2EXT"}})),
                            "explicit_wrap_layer_disp_surf_count.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-        }
-    }
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 1U);
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count,
-                                                                                      extension_props.data()));
-
-    // Make sure the extensions still aren't present in this layer
-    bool found = false;
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)) {
-            found = true;
-        }
-        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-    }
-    ASSERT_EQ(true, found);
+    auto layer_extensions = env.GetInstanceExtensions(1, explicit_layer_name);
+    EXPECT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -3098,48 +2855,19 @@ TEST(LayerExtensions, ExplicitBothInstanceExtensions) {
                     {VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, 1, {"vkGetPhysicalDeviceSurfaceCapabilities2EXT"}})),
         "explicit_wrap_layer_both_inst.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_props.data()));
-
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
-        }
-    }
-
-    // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 2U);
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(explicit_layer_name, &extension_count,
-                                                                                      extension_props.data()));
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
 
     // Make sure the extensions still aren't present in this layer
-    bool found[2] = {false, false};
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)) {
-            found[0] = true;
-        }
-        if (!strcmp(extension_props[ext].extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)) {
-            found[1] = true;
-        }
-    }
-    for (uint32_t ext = 0; ext < 2; ++ext) {
-        ASSERT_EQ(true, found[ext]);
-    }
+    auto layer_extensions = env.GetInstanceExtensions(2, explicit_layer_name);
+    EXPECT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(layer_extensions.at(1).extensionName, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME));
 
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_extension(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)
@@ -3193,9 +2921,8 @@ TEST(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
                                                          .set_enable_environment(enable_env_var)),
                            "implicit_wrap_layer_no_ext.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
@@ -3278,9 +3005,8 @@ TEST(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
                                                          .set_enable_environment(enable_env_var)),
                            "implicit_wrap_layer_maint.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
@@ -3337,9 +3063,8 @@ TEST(LayerExtensions, ImplicitPresentImageDeviceExtension) {
                                                          .set_enable_environment(enable_env_var)),
                            "implicit_wrap_layer_pres.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
@@ -3397,9 +3122,8 @@ TEST(LayerExtensions, ImplicitBothDeviceExtensions) {
                                                          .set_enable_environment(enable_env_var)),
                            "implicit_wrap_layer_both_dev.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
 
     // set enable env-var, layer should load
     EnvVarWrapper wrap_enable_env_var{enable_env_var, "1"};
@@ -3457,9 +3181,8 @@ TEST(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
             ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
         "explicit_wrap_layer_no_ext.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(explicit_layer_name);
@@ -3526,9 +3249,8 @@ TEST(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
                                       .add_device_extension({VK_KHR_MAINTENANCE1_EXTENSION_NAME, 1, {"vkTrimCommandPoolKHR"}})),
         "explicit_wrap_layer_maint.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(explicit_layer_name);
@@ -3598,9 +3320,8 @@ TEST(LayerExtensions, ExplicitPresentImageDeviceExtension) {
                 .add_device_extension({VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, 1, {"vkGetSwapchainStatusKHR"}})),
         "explicit_wrap_layer_pres.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(explicit_layer_name);
@@ -3672,9 +3393,8 @@ TEST(LayerExtensions, ExplicitBothDeviceExtensions) {
                 .add_device_extension({VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, 1, {"vkGetSwapchainStatusKHR"}})),
         "explicit_wrap_layer_both_dev.json");
 
-    uint32_t count = 0;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
-    ASSERT_EQ(count, 1U);
+    auto layers = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layers[0].layerName, explicit_layer_name));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(explicit_layer_name);
@@ -3792,13 +3512,7 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
                                                          .set_disable_environment("DisableMeIfYouCan")),
                            "regular_test_layer.json");
     {  // global functions
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 1U);
-
-        std::array<VkLayerProperties, 1> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 1U);
+        auto layer_props = env.GetLayerProperties(1);
         EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
     }
     {  // 1.1 instance - should find the implicit layer
@@ -3841,14 +3555,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
                                                          .set_disable_environment("DisableMeIfYouCan")),
                            "regular_test_layer.json");
     {  // global functions
-
-        uint32_t layer_count = 0;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-        EXPECT_EQ(layer_count, 1U);
-
-        std::array<VkLayerProperties, 1> layer_props;
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, layer_props.data()));
-        EXPECT_EQ(layer_count, 1U);
+        auto layer_props = env.GetLayerProperties(1);
         EXPECT_TRUE(string_eq(layer_props[0].layerName, regular_layer_name));
     }
     {  // 1.0 instance
@@ -4696,7 +4403,7 @@ TEST(TestLayers, NonExistantLayerInVK_INSTANCE_LAYERS) {
 
         ASSERT_TRUE(
             env.debug_log.find("Layer \"VK_LAYER_I_dont_exist\" was not found but was requested by env var VK_INSTANCE_LAYERS!"));
-        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
     // Make sure layers that do exist are loaded
     env.debug_log.clear();
@@ -4764,13 +4471,7 @@ TEST(TestLayers, AppEnabledExplicitLayerFails) {
     env.debug_log.clear();
     EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1};
 
-    uint32_t count = 0;
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
-    EXPECT_EQ(count, 0U);
-    std::vector<VkLayerProperties> layers;
-    layers.resize(1);
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layers.data());
-    EXPECT_EQ(count, 0U);
+    ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
 
     InstWrapper inst3{env.vulkan_functions};
     inst3.create_info.add_layer(explicit_layer_name_1);
@@ -4807,14 +4508,8 @@ TEST(TestLayers, OverrideEnabledExplicitLayerWithDisableFilter) {
     env.debug_log.clear();
     EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE", explicit_layer_name_1};
 
-    uint32_t count = 0;
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
-    EXPECT_EQ(count, 1U);
-    std::vector<VkLayerProperties> layers;
-    layers.resize(1);
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layers.data());
-    EXPECT_EQ(count, 1U);
-    EXPECT_TRUE(string_eq(lunarg_meta_layer_name, &layers[0].layerName[0]));
+    auto layers = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(lunarg_meta_layer_name, layers[0].layerName));
 
     {  // both override layer and Disable env var
         InstWrapper inst{env.vulkan_functions};
@@ -4864,14 +4559,8 @@ TEST(TestLayers, OverrideEnabledExplicitLayerWithDisableFilterForOverrideLayer) 
     env.debug_log.clear();
     EnvVarWrapper layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE", lunarg_meta_layer_name};
 
-    uint32_t count = 0;
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
-    EXPECT_EQ(count, 1U);
-    std::vector<VkLayerProperties> layers;
-    layers.resize(1);
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layers.data());
-    EXPECT_EQ(count, 1U);
-    EXPECT_TRUE(string_eq(explicit_layer_name_1, &layers[0].layerName[0]));
+    auto layers = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(explicit_layer_name_1, layers[0].layerName));
 
     {  // both override layer and Disable env var
         InstWrapper inst{env.vulkan_functions};
@@ -4921,14 +4610,8 @@ TEST(TestLayers, OverrideBlacklistedLayerWithEnableFilter) {
     env.debug_log.clear();
     EnvVarWrapper layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE", explicit_layer_name_1};
 
-    uint32_t count = 0;
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
-    EXPECT_EQ(count, 1U);
-    std::vector<VkLayerProperties> layers;
-    layers.resize(1);
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layers.data());
-    EXPECT_EQ(count, 1U);
-    EXPECT_TRUE(string_eq(explicit_layer_name_1, &layers[0].layerName[0]));
+    auto layers = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(explicit_layer_name_1, layers[0].layerName));
     {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
