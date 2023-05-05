@@ -394,7 +394,7 @@ TEST(Allocation, DeviceButNotInstance) {
 // Test failure during vkCreateInstance to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceIntentionalAllocFail) {
-    FrameworkEnvironment env{};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     const char* layer_name = "VkLayerImplicit0";
@@ -424,7 +424,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
 // Test failure during vkCreateInstance to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
-    FrameworkEnvironment env{};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::env_var));
 
     const char* layer_name = "VkLayerImplicit0";
@@ -457,7 +457,7 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
 // Use 2 physical devices so that anything which copies a list of devices item by item
 // may fail.
 TEST(Allocation, CreateDeviceIntentionalAllocFail) {
-    FrameworkEnvironment env{};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     auto& driver = env.get_test_icd();
@@ -523,7 +523,7 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
 // leak memory if one of the out-of-memory conditions trigger.
 // Includes drivers with several instance extensions, drivers that will fail to load, directly loaded drivers
 TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
-    FrameworkEnvironment env{};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     uint32_t num_physical_devices = 4;
     uint32_t num_implicit_layers = 3;
     for (uint32_t i = 0; i < num_physical_devices; i++) {
@@ -649,7 +649,7 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 // to make sure the loader uses the valid ICD and doesn't report incompatible driver just because
 // an incompatible driver exists
 TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
-    FrameworkEnvironment env{};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
 
@@ -681,7 +681,7 @@ TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
 // Test failure during vkCreateInstance and vkCreateDevice to make sure we don't
 // leak memory if one of the out-of-memory conditions trigger.
 TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
-    FrameworkEnvironment env{};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     const char* layer_name = "VkLayerImplicit0";
@@ -789,7 +789,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
 // Test failure during vkCreateInstance and vkCreateDevice to make sure we don't
 // leak memory if one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
-    FrameworkEnvironment env{};
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_discovery_type(ManifestDiscoveryType::null_dir));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
