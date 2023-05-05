@@ -46,9 +46,7 @@ AddSharedLibrary(test_icd_version_7_with_additional_exports DEF_FILE test_icd_7_
     SOURCES test_icd.cpp
     DEFINITIONS TEST_ICD_EXPOSE_VERSION_7=1 TEST_ICD_EXPORT_ICD_GPDPA=1
     TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES=1 ${TEST_ICD_VERSION_2_DEFINES})
-
-add_custom_command(TARGET test_icd_version_2 POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-        "$<TARGET_FILE:test_icd_version_2>"
-        "$<TARGET_FILE_DIR:test_icd_version_2>/🌋${CMAKE_SHARED_LIBRARY_SUFFIX}"
-)
+AddSharedLibrary(test_unicode DEF_FILE test_icd_2
+    SOURCES test_icd.cpp
+    DEFINITIONS ${TEST_ICD_VERSION_2_DEFINES})
+set_target_properties(test_unicode PROPERTIES OUTPUT_NAME "🌋") # Test unicode library
