@@ -18,6 +18,13 @@
 
 name: CI Build
 
+# https://docs.github.com/en/actions/using-jobs/using-concurrency
+concurrency:
+  # github.head_ref is only defined on pull_request
+  # Fallback to the run ID, which is guaranteed to be both unique and defined for the run.
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id  }}
+  cancel-in-progress: true
+
 on:
     push:
     pull_request:
