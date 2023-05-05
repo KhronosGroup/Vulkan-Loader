@@ -556,7 +556,8 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
     }
 
     if (!found && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
-        loader_log(inst, log_target_flag, 0, "Found no registry files in %s", location);
+        loader_log(inst, log_target_flag, 0, "Found no registry files in %s\\%s",
+                   (hive == DEFAULT_VK_REGISTRY_HIVE) ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR, location);
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
     }
 
@@ -708,10 +709,12 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
 
     if (data_file_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
         log_target_flag = VULKAN_LOADER_DRIVER_BIT;
-        loader_log(inst, log_target_flag, 0, "Checking for Driver Manifest files in Registry at %s", registry_location);
+        loader_log(inst, log_target_flag, 0, "Checking for Driver Manifest files in Registry at %s\\%s",
+                   DEFAULT_VK_REGISTRY_HIVE_STR, registry_location);
     } else {
         log_target_flag = VULKAN_LOADER_LAYER_BIT;
-        loader_log(inst, log_target_flag, 0, "Checking for Layer Manifest files in Registry at %s", registry_location);
+        loader_log(inst, log_target_flag, 0, "Checking for Layer Manifest files in Registry at %s\\%s",
+                   DEFAULT_VK_REGISTRY_HIVE_STR, registry_location);
     }
 
     // These calls look at the PNP/Device section of the registry.
