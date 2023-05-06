@@ -164,7 +164,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
 
-    res = loader_scan_for_implicit_layers(NULL, &layers, &libs);
+    res = loader_scan_for_implicit_layers(NULL, &layers);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+
+    res = loader_init_library_list(&layers, &libs);
     if (VK_SUCCESS != res) {
         return res;
     }
@@ -257,7 +262,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
 
-    res = loader_scan_for_implicit_layers(NULL, &layers, &libs);
+    res = loader_scan_for_implicit_layers(NULL, &layers);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+
+    res = loader_init_library_list(&layers, &libs);
     if (VK_SUCCESS != res) {
         return res;
     }
@@ -357,7 +367,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
 
-    res = loader_scan_for_implicit_layers(NULL, &layers, &libs);
+    res = loader_scan_for_implicit_layers(NULL, &layers);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+
+    res = loader_init_library_list(&layers, &libs);
     if (VK_SUCCESS != res) {
         return res;
     }
