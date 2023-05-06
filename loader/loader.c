@@ -3822,7 +3822,6 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     cJSON *json = NULL;
     bool override_layer_valid = false;
     char *override_paths = NULL;
-    uint32_t total_count = 0;
     struct loader_envvar_filter enable_filter;
     struct loader_envvar_disable_layers_filter disable_filter;
 
@@ -3852,7 +3851,6 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     }
 
     if (manifest_files.count != 0) {
-        total_count += manifest_files.count;
         for (uint32_t i = 0; i < manifest_files.count; i++) {
             file_str = manifest_files.filename_list[i];
             if (file_str == NULL) {
@@ -3917,7 +3915,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     }
 
     // Make sure we have at least one layer, if not, go ahead and return
-    if (manifest_files.count == 0 && total_count == 0) {
+    if (manifest_files.count == 0) {
         goto out;
     } else {
         for (uint32_t i = 0; i < manifest_files.count; i++) {
