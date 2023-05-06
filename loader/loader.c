@@ -236,6 +236,16 @@ void loader_free_layer_properties(const struct loader_instance *inst, struct loa
     memset(layer_properties, 0, sizeof(struct loader_layer_properties));
 }
 
+VkResult loader_init_library_list(struct loader_layer_list *instance_layers, loader_platform_dl_handle **libs) {
+    if (instance_layers->count > 0) {
+        *libs = loader_calloc(NULL, sizeof(loader_platform_dl_handle) * instance_layers->count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (*libs == NULL) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+    }
+    return VK_SUCCESS;
+}
+
 // Combine path elements, separating each element with the platform-specific
 // directory separator, and save the combined string to a destination buffer,
 // not exceeding the given length. Path elements are given as variable args,
@@ -3968,8 +3978,7 @@ out:
     return res;
 }
 
-VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
-                                         loader_platform_dl_handle **libs) {
+VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
     struct loader_envvar_filter enable_filter;
     struct loader_envvar_disable_layers_filter disable_filter;
     char *file_str;
@@ -4118,15 +4127,6 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
         if (!loader_implicit_layer_is_enabled(inst, &enable_filter, &disable_filter, &instance_layers->list[i])) {
             loader_remove_layer_in_list(inst, instance_layers, i);
             i--;
-        }
-    }
-
-    // We'll need to save the dl handles so we can close them later
-    if (instance_layers->count > 0 && NULL != libs) {
-        *libs = loader_calloc(NULL, sizeof(loader_platform_dl_handle) * instance_layers->count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (*libs == NULL) {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
         }
     }
 
@@ -6887,7 +6887,7 @@ terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensi
         loader_scanned_icd_clear(NULL, &icd_tramp_list);
 
         // Append enabled implicit layers.
-        res = loader_scan_for_implicit_layers(NULL, &instance_layers, NULL);
+        res = loader_scan_for_implicit_layers(NULL, &instance_layers);
         if (VK_SUCCESS != res) {
             goto out;
         }

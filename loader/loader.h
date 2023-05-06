@@ -97,6 +97,8 @@ void loader_initialize(void);
 void loader_release(void);
 void loader_preload_icds(void);
 void loader_unload_preloaded_icds(void);
+VkResult loader_init_library_list(struct loader_layer_list *instance_layers, loader_platform_dl_handle **libs);
+
 bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, const uint32_t count,
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
@@ -130,8 +132,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
                         const VkAllocationCallbacks *pAllocator);
 VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);
-VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
-                                         loader_platform_dl_handle **libs);
+VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);
 VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                                                    struct loader_extension_list *inst_exts);
 struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index);
