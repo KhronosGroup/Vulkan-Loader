@@ -95,7 +95,8 @@ cJSON *cJSON_GetObjectItem(cJSON *object, const char *string);
 /* For analysing failed parses. This returns a pointer to the parse error.
  * You'll probably need to look a few chars back to make sense of it. Defined
  * when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
-const char *cJSON_GetErrorPtr(void);
+// commented out as its unused and required external locks to work correctly
+// const char *cJSON_GetErrorPtr(void);
 
 /* These calls create a cJSON item of the appropriate type. */
 cJSON *cJSON_CreateNull(const VkAllocationCallbacks *pAllocator);
