@@ -3830,9 +3830,6 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         goto out;
     }
 
-    // Cleanup any previously scanned libraries
-    loader_delete_layer_list_and_properties(inst, instance_layers);
-
     // Get a list of manifest files for any implicit layers
     res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, &manifest_files);
     if (VK_SUCCESS != res) {
@@ -3963,15 +3960,15 @@ out:
 }
 
 VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
-    struct loader_envvar_filter enable_filter;
-    struct loader_envvar_disable_layers_filter disable_filter;
+    VkResult res = VK_SUCCESS;
     char *file_str;
     struct loader_data_files manifest_files;
     cJSON *json = NULL;
     bool override_layer_valid = false;
     char *override_paths = NULL;
     bool implicit_metalayer_present = false;
-    VkResult res = VK_SUCCESS;
+    struct loader_envvar_filter enable_filter;
+    struct loader_envvar_disable_layers_filter disable_filter;
 
     // Before we begin anything, init manifest_files to avoid a delete of garbage memory if
     // a failure occurs before allocating the manifest filename_list.
@@ -3991,9 +3988,6 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     if (VK_SUCCESS != res || manifest_files.count == 0) {
         goto out;
     }
-
-    // Cleanup any previously scanned libraries
-    loader_delete_layer_list_and_properties(inst, instance_layers);
 
     for (uint32_t i = 0; i < manifest_files.count; i++) {
         file_str = manifest_files.filename_list[i];
