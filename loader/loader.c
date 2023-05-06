@@ -3831,11 +3831,11 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     memset(&manifest_files, 0, sizeof(struct loader_data_files));
 
     // Parse the filter environment variables to determine if we have any special behavior
-    res = parse_generic_filter_environment_var(NULL, VK_LAYERS_ENABLE_ENV_VAR, &enable_filter);
+    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &enable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
-    res = parse_layers_disable_filter_environment_var(NULL, &disable_filter);
+    res = parse_layers_disable_filter_environment_var(inst, &disable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
