@@ -3806,19 +3806,91 @@ out:
     return res;
 }
 
+// Gets the layer data files corresponding to manifest_type & path_override, then parses the resulting json objects
+// into instance_layers
+// Manifest type must be either implicit or explicit
+VkResult loader_parse_instance_layers(struct loader_instance *inst, enum loader_data_files_type manifest_type,
+                                      const char *path_override, struct loader_layer_list *instance_layers) {
+    assert(manifest_type == LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER || manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER);
+    VkResult res = VK_SUCCESS;
+    struct loader_data_files manifest_files = {0};
+
+    res = loader_get_data_files(inst, manifest_type, path_override, &manifest_files);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
+
+    for (uint32_t i = 0; i < manifest_files.count; i++) {
+        char *file_str = manifest_files.filename_list[i];
+        if (file_str == NULL) {
+            continue;
+        }
+
+        // Parse file into JSON struct
+        cJSON *json = NULL;
+        VkResult local_res = loader_get_json(inst, file_str, &json);
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        } else if (VK_SUCCESS != local_res || NULL == json) {
+            continue;
+        }
+
+        local_res = loader_add_layer_properties(inst, instance_layers, json,
+                                                manifest_type == LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, file_str);
+        cJSON_Delete(json);
+
+        // If the error is anything other than out of memory we still want to try to load the other layers
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+    }
+out:
+    if (NULL != manifest_files.filename_list) {
+        for (uint32_t i = 0; i < manifest_files.count; i++) {
+            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
+        }
+        loader_instance_heap_free(inst, manifest_files.filename_list);
+    }
+
+    return res;
+}
+
+// Given a loader_layer_properties struct that is a valid override layer, concatenate the properties override paths and put them
+// into the output parameter override_paths
+VkResult get_override_layer_override_paths(struct loader_instance *inst, struct loader_layer_properties *prop,
+                                           char **override_paths) {
+    if (prop->num_override_paths > 0) {
+        char *cur_write_ptr = NULL;
+        size_t override_path_size = 0;
+        for (uint32_t j = 0; j < prop->num_override_paths; j++) {
+            override_path_size += determine_data_file_path_size(prop->override_paths[j], 0);
+        }
+        *override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (override_paths == NULL) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        cur_write_ptr = &(*override_paths)[0];
+        for (uint32_t j = 0; j < prop->num_override_paths; j++) {
+            copy_data_file_info(prop->override_paths[j], NULL, 0, &cur_write_ptr);
+        }
+        // Remove the last path separator
+        --cur_write_ptr;
+        assert(cur_write_ptr - (*override_paths) < (ptrdiff_t)override_path_size);
+        *cur_write_ptr = '\0';
+        loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override paths set to %s",
+                   override_paths);
+    }
+    return VK_SUCCESS;
+}
+
 VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
     VkResult res = VK_SUCCESS;
-    char *file_str;
-    struct loader_data_files manifest_files;
-    cJSON *json = NULL;
     bool override_layer_valid = false;
     char *override_paths = NULL;
     struct loader_envvar_filter enable_filter;
     struct loader_envvar_disable_layers_filter disable_filter;
-
-    // Before we begin anything, init manifest_files to avoid a delete of garbage memory if
-    // a failure occurs before allocating the manifest filename_list.
-    memset(&manifest_files, 0, sizeof(struct loader_data_files));
 
     // Parse the filter environment variables to determine if we have any special behavior
     res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &enable_filter);
@@ -3830,35 +3902,9 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         goto out;
     }
 
-    // Get a list of manifest files for any implicit layers
-    res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, &manifest_files);
+    res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, instance_layers);
     if (VK_SUCCESS != res) {
         goto out;
-    }
-
-    for (uint32_t i = 0; i < manifest_files.count; i++) {
-        file_str = manifest_files.filename_list[i];
-        if (file_str == NULL) {
-            continue;
-        }
-
-        // Parse file into JSON struct
-        VkResult local_res = loader_get_json(inst, file_str, &json);
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        } else if (VK_SUCCESS != local_res || NULL == json) {
-            continue;
-        }
-
-        local_res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
-        cJSON_Delete(json);
-
-        // If the error is anything other than out of memory we still want to try to load the other layers
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
     }
 
     // Remove any extraneous override layers.
@@ -3869,63 +3915,18 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         struct loader_layer_properties *prop = &instance_layers->list[i];
         if (prop->is_override && loader_implicit_layer_is_enabled(inst, &enable_filter, &disable_filter, prop) &&
             prop->num_override_paths > 0) {
-            char *cur_write_ptr = NULL;
-            size_t override_path_size = 0;
-            for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-                override_path_size += determine_data_file_path_size(prop->override_paths[j], 0);
-            }
-            override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-            if (override_paths == NULL) {
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            res = get_override_layer_override_paths(inst, prop, &override_paths);
+            if (VK_SUCCESS != res) {
                 goto out;
             }
-            cur_write_ptr = &override_paths[0];
-            for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-                copy_data_file_info(prop->override_paths[j], NULL, 0, &cur_write_ptr);
-            }
-            // Remove the last path separator
-            --cur_write_ptr;
-            assert(cur_write_ptr - override_paths < (ptrdiff_t)override_path_size);
-            *cur_write_ptr = '\0';
-            loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override paths set to %s",
-                       override_paths);
+            break;
         }
     }
 
     // Get a list of manifest files for explicit layers
-    res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, &manifest_files);
+    res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, instance_layers);
     if (VK_SUCCESS != res) {
         goto out;
-    }
-
-    // Make sure we have at least one layer, if not, go ahead and return
-    if (manifest_files.count == 0) {
-        goto out;
-    } else {
-        for (uint32_t i = 0; i < manifest_files.count; i++) {
-            file_str = manifest_files.filename_list[i];
-            if (file_str == NULL) {
-                continue;
-            }
-
-            // Parse file into JSON struct
-            VkResult local_res = loader_get_json(inst, file_str, &json);
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            } else if (VK_SUCCESS != local_res || NULL == json) {
-                continue;
-            }
-
-            local_res = loader_add_layer_properties(inst, instance_layers, json, false, file_str);
-            cJSON_Delete(json);
-
-            // If the error is anything other than out of memory we still want to try to load the other layers
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
-                res = local_res;
-                goto out;
-            }
-        }
     }
 
     // Verify any meta-layers in the list are valid and all the component layers are
@@ -3950,29 +3951,16 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
 out:
 
     loader_instance_heap_free(inst, override_paths);
-    if (NULL != manifest_files.filename_list) {
-        for (uint32_t i = 0; i < manifest_files.count; i++) {
-            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
-        }
-        loader_instance_heap_free(inst, manifest_files.filename_list);
-    }
     return res;
 }
 
 VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
     VkResult res = VK_SUCCESS;
-    char *file_str;
-    struct loader_data_files manifest_files;
-    cJSON *json = NULL;
     bool override_layer_valid = false;
     char *override_paths = NULL;
     bool implicit_metalayer_present = false;
     struct loader_envvar_filter enable_filter;
     struct loader_envvar_disable_layers_filter disable_filter;
-
-    // Before we begin anything, init manifest_files to avoid a delete of garbage memory if
-    // a failure occurs before allocating the manifest filename_list.
-    memset(&manifest_files, 0, sizeof(struct loader_data_files));
 
     // Parse the filter environment variables to determine if we have any special behavior
     res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &enable_filter);
@@ -3984,36 +3972,9 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
         goto out;
     }
 
-    res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, &manifest_files);
-    if (VK_SUCCESS != res || manifest_files.count == 0) {
+    res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, instance_layers);
+    if (VK_SUCCESS != res) {
         goto out;
-    }
-
-    for (uint32_t i = 0; i < manifest_files.count; i++) {
-        file_str = manifest_files.filename_list[i];
-        if (file_str == NULL) {
-            continue;
-        }
-
-        // parse file into JSON struct
-        VkResult temp_res = loader_get_json(inst, file_str, &json);
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == temp_res) {
-            res = temp_res;
-            goto out;
-        } else if (VK_SUCCESS != temp_res || NULL == json) {
-            continue;
-        }
-
-        temp_res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
-
-        loader_instance_heap_free(inst, file_str);
-        manifest_files.filename_list[i] = NULL;
-        cJSON_Delete(json);
-
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == temp_res) {
-            res = temp_res;
-            goto out;
-        }
     }
 
     // Remove any extraneous override layers.
@@ -4025,26 +3986,9 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
         struct loader_layer_properties *prop = &instance_layers->list[i];
         if (prop->is_override && loader_implicit_layer_is_enabled(inst, &enable_filter, &disable_filter, prop)) {
             override_layer_valid = true;
-            if (prop->num_override_paths > 0) {
-                char *cur_write_ptr = NULL;
-                size_t override_path_size = 0;
-                for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-                    override_path_size += determine_data_file_path_size(prop->override_paths[j], 0);
-                }
-                override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                if (override_paths == NULL) {
-                    goto out;
-                }
-                cur_write_ptr = &override_paths[0];
-                for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-                    copy_data_file_info(prop->override_paths[j], NULL, 0, &cur_write_ptr);
-                }
-                // Remove the last path separator
-                --cur_write_ptr;
-                assert(cur_write_ptr - override_paths < (ptrdiff_t)override_path_size);
-                *cur_write_ptr = '\0';
-                loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override paths set to %s",
-                           override_paths);
+            res = get_override_layer_override_paths(inst, prop, &override_paths);
+            if (VK_SUCCESS != res) {
+                goto out;
             }
         } else if (!prop->is_override && prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
             implicit_metalayer_present = true;
@@ -4055,33 +3999,9 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     // explicit layer info as well.  Not to worry, though, all explicit layers not included
     // in the override layer will be removed below in loader_remove_layers_in_blacklist().
     if (override_layer_valid || implicit_metalayer_present) {
-        if (VK_SUCCESS != loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, &manifest_files)) {
+        res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, instance_layers);
+        if (VK_SUCCESS != res) {
             goto out;
-        }
-
-        for (uint32_t i = 0; i < manifest_files.count; i++) {
-            file_str = manifest_files.filename_list[i];
-            if (file_str == NULL) {
-                continue;
-            }
-
-            // parse file into JSON struct
-            res = loader_get_json(inst, file_str, &json);
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-                goto out;
-            } else if (VK_SUCCESS != res || NULL == json) {
-                continue;
-            }
-
-            VkResult temp_res = loader_add_layer_properties(inst, instance_layers, json, false, file_str);
-            loader_instance_heap_free(inst, file_str);
-            manifest_files.filename_list[i] = NULL;
-            cJSON_Delete(json);
-
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == temp_res) {
-                res = temp_res;
-                goto out;
-            }
         }
     }
 
@@ -4107,11 +4027,6 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
 out:
 
     loader_instance_heap_free(inst, override_paths);
-    for (uint32_t i = 0; i < manifest_files.count; i++) {
-        loader_instance_heap_free(inst, manifest_files.filename_list[i]);
-    }
-    loader_instance_heap_free(inst, manifest_files.filename_list);
-
     return res;
 }
 
