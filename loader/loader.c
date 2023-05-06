@@ -86,7 +86,6 @@ struct activated_layer_info {
 // all entrypoints on the instance chain need to be locked except GPA
 // additionally CreateDevice and DestroyDevice needs to be locked
 loader_platform_thread_mutex loader_lock;
-loader_platform_thread_mutex loader_json_lock;
 loader_platform_thread_mutex loader_preload_icd_lock;
 loader_platform_thread_mutex loader_global_instance_list_lock;
 
@@ -1805,7 +1804,6 @@ out:
 void loader_initialize(void) {
     // initialize mutexes
     loader_platform_thread_create_mutex(&loader_lock);
-    loader_platform_thread_create_mutex(&loader_json_lock);
     loader_platform_thread_create_mutex(&loader_preload_icd_lock);
     loader_platform_thread_create_mutex(&loader_global_instance_list_lock);
 
@@ -1837,7 +1835,6 @@ void loader_release() {
 
     // release mutexes
     loader_platform_thread_delete_mutex(&loader_lock);
-    loader_platform_thread_delete_mutex(&loader_json_lock);
     loader_platform_thread_delete_mutex(&loader_preload_icd_lock);
     loader_platform_thread_delete_mutex(&loader_global_instance_list_lock);
 }
@@ -3686,7 +3683,6 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                          const VkInstanceCreateInfo *pCreateInfo, bool *skipped_portability_drivers) {
     struct loader_data_files manifest_files;
     VkResult res = VK_SUCCESS;
-    bool lockedMutex = false;
     struct loader_envvar_filter select_filter;
     struct loader_envvar_filter disable_filter;
 
@@ -3727,8 +3723,6 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         goto out;
     }
 
-    loader_platform_thread_lock_mutex(&loader_json_lock);
-    lockedMutex = true;
     for (uint32_t i = 0; i < manifest_files.count; i++) {
         VkResult icd_res = VK_SUCCESS;
         struct ICDManifestInfo icd;
@@ -3808,9 +3802,6 @@ out:
         }
         loader_instance_heap_free(inst, manifest_files.filename_list);
     }
-    if (lockedMutex) {
-        loader_platform_thread_unlock_mutex(&loader_json_lock);
-    }
 
     return res;
 }
@@ -3841,8 +3832,6 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
 
     // Cleanup any previously scanned libraries
     loader_delete_layer_list_and_properties(inst, instance_layers);
-
-    loader_platform_thread_lock_mutex(&loader_json_lock);
 
     // Get a list of manifest files for any implicit layers
     res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, &manifest_files);
@@ -3970,7 +3959,6 @@ out:
         }
         loader_instance_heap_free(inst, manifest_files.filename_list);
     }
-    loader_platform_thread_unlock_mutex(&loader_json_lock);
     return res;
 }
 
@@ -3983,7 +3971,6 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     bool override_layer_valid = false;
     char *override_paths = NULL;
     bool implicit_metalayer_present = false;
-    bool have_json_lock = false;
     VkResult res = VK_SUCCESS;
 
     // Before we begin anything, init manifest_files to avoid a delete of garbage memory if
@@ -4007,9 +3994,6 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
 
     // Cleanup any previously scanned libraries
     loader_delete_layer_list_and_properties(inst, instance_layers);
-
-    loader_platform_thread_lock_mutex(&loader_json_lock);
-    have_json_lock = true;
 
     for (uint32_t i = 0; i < manifest_files.count; i++) {
         file_str = manifest_files.filename_list[i];
@@ -4133,10 +4117,6 @@ out:
         loader_instance_heap_free(inst, manifest_files.filename_list[i]);
     }
     loader_instance_heap_free(inst, manifest_files.filename_list);
-
-    if (have_json_lock) {
-        loader_platform_thread_unlock_mutex(&loader_json_lock);
-    }
 
     return res;
 }

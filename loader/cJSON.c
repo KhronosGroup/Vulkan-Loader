@@ -46,9 +46,12 @@ void *cJSON_malloc(const VkAllocationCallbacks *pAllocator, size_t size) {
 
 void cJSON_Free(const VkAllocationCallbacks *pAllocator, void *pMemory) { loader_free(pAllocator, pMemory); }
 
+/*
+// commented out as it is unused - static error code channel requires external locks to be used.
 static const char *ep;
 
 const char *cJSON_GetErrorPtr(void) { return ep; }
+*/
 
 char *cJSON_strdup(const VkAllocationCallbacks *pAllocator, const char *str) {
     size_t len;
@@ -253,7 +256,7 @@ const char *parse_string(cJSON *item, const char *str) {
     int len = 0;
     unsigned uc, uc2;
     if (*str != '\"') {
-        ep = str;
+        // ep = str; // commented out as it is unused
         return 0;
     } /* not a string! */
 
@@ -451,7 +454,7 @@ cJSON *cJSON_ParseWithOpts(const VkAllocationCallbacks *pAllocator, const char *
                            int require_null_terminated) {
     const char *end = 0;
     cJSON *c = cJSON_New_Item(pAllocator);
-    ep = 0;
+    // ep = 0; // commented out as it is unused
     if (!c) return 0; /* memory fail */
 
     end = parse_value(c, skip(value));
@@ -466,7 +469,7 @@ cJSON *cJSON_ParseWithOpts(const VkAllocationCallbacks *pAllocator, const char *
         end = skip(end);
         if (*end) {
             cJSON_Delete(c);
-            ep = end;
+            // ep = end; // commented out as it is unused
             return 0;
         }
     }
@@ -519,7 +522,7 @@ const char *parse_value(cJSON *item, const char *value) {
         return parse_object(item, value);
     }
 
-    ep = value;
+    // ep = value; // commented out as it is unused
     return 0; /* failure. */
 }
 
@@ -589,7 +592,7 @@ char *print_value(cJSON *item, int depth, int fmt, printbuffer *p) {
 const char *parse_array(cJSON *item, const char *value) {
     cJSON *child;
     if (*value != '[') {
-        ep = value;
+        // ep = value; // commented out as it is unused
         return 0;
     } /* not an array! */
 
@@ -614,7 +617,7 @@ const char *parse_array(cJSON *item, const char *value) {
     }
 
     if (*value == ']') return value + 1; /* end of array */
-    ep = value;
+    // ep = value; // commented out as it is unused
     return 0; /* malformed. */
 }
 
@@ -722,7 +725,7 @@ char *print_array(cJSON *item, int depth, int fmt, printbuffer *p) {
 const char *parse_object(cJSON *item, const char *value) {
     cJSON *child;
     if (*value != '{') {
-        ep = value;
+        // ep = value; // commented out as it is unused
         return 0;
     } /* not an object! */
 
@@ -737,7 +740,7 @@ const char *parse_object(cJSON *item, const char *value) {
     child->string = child->valuestring;
     child->valuestring = 0;
     if (*value != ':') {
-        ep = value;
+        // ep = value; // commented out as it is unused
         return 0;
     }                                                  /* fail! */
     value = skip(parse_value(child, skip(value + 1))); /* skip any spacing, get the value. */
@@ -755,7 +758,7 @@ const char *parse_object(cJSON *item, const char *value) {
         child->string = child->valuestring;
         child->valuestring = 0;
         if (*value != ':') {
-            ep = value;
+            // ep = value; // commented out as it is unused
             return 0;
         }                                                  /* fail! */
         value = skip(parse_value(child, skip(value + 1))); /* skip any spacing, get the value. */
@@ -763,7 +766,7 @@ const char *parse_object(cJSON *item, const char *value) {
     }
 
     if (*value == '}') return value + 1; /* end of array */
-    ep = value;
+    // ep = value; // commented out as it is unused
     return 0; /* malformed. */
 }
 
