@@ -32,6 +32,7 @@
 #include "gpa_helper.h"
 #include "loader.h"
 #include "log.h"
+#include "settings.h"
 #include "vk_loader_extensions.h"
 #include "vk_loader_platform.h"
 #include "wsi.h"
@@ -144,6 +145,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
                                                                                     VkExtensionProperties *pProperties) {
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
+    update_global_loader_settings();
+
     // We know we need to call at least the terminator
     VkResult res = VK_SUCCESS;
     VkEnumerateInstanceExtensionPropertiesChain chain_tail = {
@@ -242,6 +245,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
                                                                                 VkLayerProperties *pProperties) {
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
+    update_global_loader_settings();
+
     // We know we need to call at least the terminator
     VkResult res = VK_SUCCESS;
     VkEnumerateInstanceLayerPropertiesChain chain_tail = {
@@ -338,6 +343,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t *pApiVersion) {
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
+
+    update_global_loader_settings();
 
     if (NULL == pApiVersion) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -444,6 +451,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     struct loader_instance *ptr_instance = NULL;
     VkInstance created_instance = VK_NULL_HANDLE;
     VkResult res = VK_ERROR_INITIALIZATION_FAILED;
+    VkInstanceCreateInfo ici = *pCreateInfo;
 
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
@@ -460,8 +468,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
 
     ptr_instance =
         (struct loader_instance *)loader_calloc(pAllocator, sizeof(struct loader_instance), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-
-    VkInstanceCreateInfo ici = *pCreateInfo;
 
     if (ptr_instance == NULL) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -498,6 +504,15 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
         // Failure of setting up one or more of the callback.
         goto out;
+    }
+
+    VkResult settings_file_res = get_loader_settings(ptr_instance, &ptr_instance->settings);
+    if (settings_file_res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        res = settings_file_res;
+        goto out;
+    }
+    if (ptr_instance->settings.settings_active) {
+        log_settings(ptr_instance, &ptr_instance->settings);
     }
 
     // Check the VkInstanceCreateInfoFlags wether to allow the portability enumeration flag
@@ -632,6 +647,8 @@ out:
             }
             loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
 
+            free_loader_settings(ptr_instance, &ptr_instance->settings);
+
             loader_instance_heap_free(ptr_instance, ptr_instance->disp);
             // Remove any created VK_EXT_debug_report or VK_EXT_debug_utils items
             destroy_debug_callbacks_chain(ptr_instance, pAllocator);
@@ -704,6 +721,8 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
 
     disp = loader_get_instance_layer_dispatch(instance);
     disp->DestroyInstance(ptr_instance->instance, pAllocator);
+
+    free_loader_settings(ptr_instance, &ptr_instance->settings);
 
     loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->expanded_activated_layer_list);
     loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->app_activated_layer_list);

@@ -32,6 +32,7 @@ add_executable(
         loader_layer_tests.cpp
         loader_regression_tests.cpp
         loader_phys_dev_inst_ext_tests.cpp
+        loader_settings_tests.cpp
         loader_version_tests.cpp
         loader_unknown_ext_tests.cpp
         loader_wsi_tests.cpp)

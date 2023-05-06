@@ -112,6 +112,8 @@ set(NORMAL_LOADER_SRCS
     loader.h
     log.c
     log.h
+    settings.c
+    settings.h
     terminator.c
     trampoline.c
     unknown_function_handling.c
