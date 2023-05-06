@@ -115,6 +115,9 @@
 // Override layer information
 #define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
 
+// Loader Settings filename
+#define VK_LOADER_SETTINGS_FILENAME "vk_loader_settings.json"
+
 #define LAYERS_PATH_ENV "VK_LAYER_PATH"
 #define ENABLED_LAYERS_ENV "VK_INSTANCE_LAYERS"
 

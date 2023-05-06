@@ -30,6 +30,7 @@
 #pragma once
 
 #include "loader_common.h"
+#include "cJSON.h"
 
 // Declare the once_init variable
 LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(once_init)
@@ -115,14 +116,22 @@ VkResult copy_str_to_string_list(const struct loader_instance *inst, struct load
 // Free any string inside of loader_string_list and then free the list itself
 void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list);
 
+VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
 bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, const uint32_t count,
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
-
+// This function takes ownership of layer_property in the case that allocation fails
+VkResult loader_append_layer_property(const struct loader_instance *inst, struct loader_layer_list *layer_list,
+                                      struct loader_layer_properties *layer_property);
+VkResult loader_add_layer_properties(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list, cJSON *json,
+                                     bool is_implicit, char *filename);
 bool loader_find_layer_name_in_list(const char *name, const struct loader_pointer_layer_list *layer_list);
 VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_pointer_layer_list *list,
                                              struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
+bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
+                                      const struct loader_envvar_disable_layers_filter *disable_filter,
+                                      const struct loader_layer_properties *prop);
 VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
                                const struct loader_envvar_disable_layers_filter *disable_filter,
                                struct loader_layer_properties *prop, struct loader_pointer_layer_list *target_list,
@@ -138,6 +147,8 @@ VkResult loader_init_generic_list(const struct loader_instance *inst, struct loa
 void loader_destroy_generic_list(const struct loader_instance *inst, struct loader_generic_list *list);
 void loader_destroy_pointer_layer_list(const struct loader_instance *inst, struct loader_pointer_layer_list *layer_list);
 void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list);
+void loader_remove_layer_in_list(const struct loader_instance *inst, struct loader_layer_list *layer_list,
+                                 uint32_t layer_to_remove);
 VkResult loader_scanned_icd_init(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,

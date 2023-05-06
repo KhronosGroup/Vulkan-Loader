@@ -412,6 +412,41 @@ VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
 
+struct LoaderSettingsLayerConfiguration {
+    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, name, {})
+    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, path, {})
+    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, control, {})
+    BUILDER_VALUE(LoaderSettingsLayerConfiguration, bool, treat_as_implicit_manifest, false)
+};
+inline bool operator==(LoaderSettingsLayerConfiguration const& a, LoaderSettingsLayerConfiguration const& b) {
+    return a.name == b.name && a.path == b.path && a.control == b.control &&
+           a.treat_as_implicit_manifest == b.treat_as_implicit_manifest;
+}
+inline bool operator!=(LoaderSettingsLayerConfiguration const& a, LoaderSettingsLayerConfiguration const& b) { return !(a == b); }
+inline bool operator<(LoaderSettingsLayerConfiguration const& a, LoaderSettingsLayerConfiguration const& b) {
+    return a.name < b.name;
+}
+inline bool operator>(LoaderSettingsLayerConfiguration const& a, LoaderSettingsLayerConfiguration const& b) { return (b < a); }
+inline bool operator<=(LoaderSettingsLayerConfiguration const& a, LoaderSettingsLayerConfiguration const& b) { return !(b < a); }
+inline bool operator>=(LoaderSettingsLayerConfiguration const& a, LoaderSettingsLayerConfiguration const& b) { return !(a < b); }
+
+// Log files and their associated filter
+struct LoaderLogConfiguration {
+    BUILDER_VECTOR(LoaderLogConfiguration, std::string, destinations, destination)
+    BUILDER_VECTOR(LoaderLogConfiguration, std::string, filters, filter)
+};
+struct AppSpecificSettings {
+    BUILDER_VECTOR(AppSpecificSettings, std::string, app_keys, app_key)
+    BUILDER_VECTOR(AppSpecificSettings, LoaderSettingsLayerConfiguration, layer_configurations, layer_configuration)
+    BUILDER_VECTOR(AppSpecificSettings, std::string, stderr_log, stderr_log_filter)
+    BUILDER_VECTOR(AppSpecificSettings, LoaderLogConfiguration, log_configurations, log_configuration)
+};
+
+struct LoaderSettings {
+    BUILDER_VALUE(LoaderSettings, ManifestVersion, file_format_version, ManifestVersion())
+    BUILDER_VECTOR(LoaderSettings, AppSpecificSettings, app_specific_settings, app_specific_setting);
+};
+
 struct FrameworkEnvironment;  // forward declaration
 
 struct PlatformShimWrapper {
@@ -435,12 +470,14 @@ struct TestICDHandle {
     TestICD& get_test_icd() noexcept;
     fs::path get_icd_full_path() noexcept;
     fs::path get_icd_manifest_path() noexcept;
+    fs::path get_shimmed_manifest_path() noexcept;
 
     // Must use statically
     LibraryWrapper icd_library;
     GetTestICDFunc proc_addr_get_test_icd = nullptr;
     GetNewTestICDFunc proc_addr_reset_icd = nullptr;
-    fs::path manifest_path;
+    fs::path manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
+    fs::path shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
 };
 struct TestLayerHandle {
     TestLayerHandle() noexcept;
@@ -449,12 +486,14 @@ struct TestLayerHandle {
     TestLayer& get_test_layer() noexcept;
     fs::path get_layer_full_path() noexcept;
     fs::path get_layer_manifest_path() noexcept;
+    fs::path get_shimmed_manifest_path() noexcept;
 
     // Must use statically
     LibraryWrapper layer_library;
     GetTestLayerFunc proc_addr_get_test_layer = nullptr;
     GetNewTestLayerFunc proc_addr_reset_layer = nullptr;
-    fs::path manifest_path;
+    fs::path manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
+    fs::path shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
 };
 
 // Controls whether to create a manifest and where to put it
@@ -512,11 +551,14 @@ enum class ManifestLocation {
     windows_app_package = 8,
     macos_bundle = 9,
     unsecured_location = 10,
+    settings_location = 11,
 };
 
 struct FrameworkSettings {
     BUILDER_VALUE(FrameworkSettings, const char*, log_filter, "all");
     BUILDER_VALUE(FrameworkSettings, bool, enable_default_search_paths, true);
+    BUILDER_VALUE(FrameworkSettings, LoaderSettings, loader_settings, {});
+    BUILDER_VALUE(FrameworkSettings, bool, secure_loader_settings, false);
 };
 
 struct FrameworkEnvironment {
@@ -535,21 +577,32 @@ struct FrameworkEnvironment {
     void add_fake_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
 
+    // resets the current settings with the values contained in loader_settings
+    void write_settings_file(std::string const& file_contents);
+    // apply any changes made to FrameworkEnvironment's loader_settings member
+    void update_loader_settings(const LoaderSettings& loader_settings) noexcept;
+
     TestICD& get_test_icd(size_t index = 0) noexcept;
     TestICD& reset_icd(size_t index = 0) noexcept;
     fs::path get_test_icd_path(size_t index = 0) noexcept;
     fs::path get_icd_manifest_path(size_t index = 0) noexcept;
+    fs::path get_shimmed_icd_manifest_path(size_t index = 0) noexcept;
 
     TestLayer& get_test_layer(size_t index = 0) noexcept;
     TestLayer& reset_layer(size_t index = 0) noexcept;
     fs::path get_test_layer_path(size_t index = 0) noexcept;
     fs::path get_layer_manifest_path(size_t index = 0) noexcept;
+    fs::path get_shimmed_layer_manifest_path(size_t index = 0) noexcept;
 
     fs::FolderManager& get_folder(ManifestLocation location) noexcept;
+    fs::FolderManager const& get_folder(ManifestLocation location) const noexcept;
 #if defined(__APPLE__)
     // Set the path of the app bundle to the appropriate test framework bundle
     void setup_macos_bundle() noexcept;
 #endif
+
+    FrameworkSettings settings;
+
     // Query the global extensions
     // Optional: use layer_name to query the extensions of a specific layer
     std::vector<VkExtensionProperties> GetInstanceExtensions(uint32_t count, const char* layer_name = nullptr);
@@ -570,6 +623,7 @@ struct FrameworkEnvironment {
     EnvVarWrapper env_var_vk_layer_paths{"VK_LAYER_PATH"};
     EnvVarWrapper add_env_var_vk_layer_paths{"VK_ADD_LAYER_PATH"};
 
+    LoaderSettings loader_settings;  // the current settings written to disk
    private:
     void add_layer_impl(TestLayerDetails layer_details, ManifestCategory category);
 };

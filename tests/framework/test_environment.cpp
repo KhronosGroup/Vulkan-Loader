@@ -347,6 +347,7 @@ TestICD& TestICDHandle::reset_icd() noexcept {
 }
 fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
 fs::path TestICDHandle::get_icd_manifest_path() noexcept { return manifest_path; }
+fs::path TestICDHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
 TestLayerHandle::TestLayerHandle() noexcept {}
 TestLayerHandle::TestLayerHandle(fs::path const& layer_path) noexcept : layer_library(layer_path) {
@@ -363,10 +364,11 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
 }
 fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
 fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
+fs::path TestLayerHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
 FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
 FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
-    : platform_shim(&folders, settings.log_filter) {
+    : settings(settings), platform_shim(&folders, settings.log_filter) {
     // This order is important, it matches the enum ManifestLocation, used to index the folders vector
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("null_dir"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("icd_manifests"));
@@ -379,6 +381,7 @@ FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) no
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("app_package_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("macos_bundle"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("unsecured_location"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("settings_location"));
 
     platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
     if (settings.enable_default_search_paths) {
@@ -393,6 +396,15 @@ FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) no
         platform_shim->redirect_path(home + "/.local/share/vulkan/explicit_layer.d", unsecured_location);
 #endif
     }
+#if COMMON_UNIX_PLATFORMS
+    if (settings.secure_loader_settings) {
+        platform_shim->redirect_path("/etc/vulkan/settings.d", get_folder(ManifestLocation::settings_location).location());
+    } else {
+        platform_shim->redirect_path(get_env_var("HOME") + "/.local/share/vulkan/settings.d",
+                                     get_folder(ManifestLocation::settings_location).location());
+    }
+#endif
+
 #if defined(__APPLE__)
     // Necessary since bundles look in sub folders for manifests, not the test framework folder itself
     auto bundle_location = get_folder(ManifestLocation::macos_bundle).location();
@@ -400,6 +412,10 @@ FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) no
     platform_shim->redirect_path(bundle_location / "vulkan/explicit_layer.d", bundle_location);
     platform_shim->redirect_path(bundle_location / "vulkan/implicit_layer.d", bundle_location);
 #endif
+    // only set the settings file if there are elements in the app_specific_settings vector
+    if (!settings.loader_settings.app_specific_settings.empty()) {
+        update_loader_settings(settings.loader_settings);
+    }
 }
 
 FrameworkEnvironment::~FrameworkEnvironment() {
@@ -459,10 +475,15 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
         }
         full_json_name += ".json";
         icds.back().manifest_path = folder->write_manifest(full_json_name, icd_details.icd_manifest.get_manifest_str());
+        icds.back().shimmed_manifest_path = icds.back().manifest_path;
         switch (icd_details.discovery_type) {
             default:
             case (ManifestDiscoveryType::generic):
                 platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
+#if COMMON_UNIX_PLATFORMS
+                icds.back().shimmed_manifest_path =
+                    platform_shim->query_default_redirect_path(ManifestCategory::icd) / full_json_name;
+#endif
                 break;
             case (ManifestDiscoveryType::env_var):
                 env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
@@ -476,7 +497,7 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
                 platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
                 break;
             case (ManifestDiscoveryType::unsecured_generic):
-                platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path, false);
+                platform_shim->add_unsecured_manifest(ManifestCategory::icd, icds.back().manifest_path);
                 break;
             case (ManifestDiscoveryType::null_dir):
                 break;
@@ -581,32 +602,130 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
     }
     if (layer_details.discovery_type != ManifestDiscoveryType::none) {
         // Write a manifest file to a folder as long as the discovery type isn't none
-        auto layer_loc = folder.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
+        auto layer_manifest_loc = folder.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
         // only add the manifest to the registry if its a generic location (as if it was installed) - both system and user local
         if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
-            platform_shim->add_manifest(category, layer_loc);
+            platform_shim->add_manifest(category, layer_manifest_loc);
         }
         if (layer_details.discovery_type == ManifestDiscoveryType::unsecured_generic) {
-            platform_shim->add_manifest(category, layer_loc, false);
+            platform_shim->add_unsecured_manifest(category, layer_manifest_loc);
         }
         for (size_t i = new_layers_start; i < layers.size(); i++) {
-            layers.at(i).manifest_path = layer_loc;
+            layers.at(i).manifest_path = layer_manifest_loc;
+            layers.at(i).shimmed_manifest_path = layer_manifest_loc;
+#if COMMON_UNIX_PLATFORMS
+            if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
+                layers.at(i).shimmed_manifest_path = platform_shim->query_default_redirect_path(category) / layer_details.json_name;
+            }
+#endif
         }
     }
+}
+
+std::string get_loader_settings_file_contents(const LoaderSettings& loader_settings) noexcept {
+    JsonWriter writer;
+    writer.StartObject();
+    writer.AddKeyedString("file_format_version", loader_settings.file_format_version.get_version_str());
+    bool one_setting_file = true;
+    if (loader_settings.app_specific_settings.size() > 1) {
+        writer.StartKeyedArray("settings_array");
+        one_setting_file = false;
+    }
+    for (const auto& setting : loader_settings.app_specific_settings) {
+        if (one_setting_file) {
+            writer.StartKeyedObject("settings");
+        } else {
+            writer.StartObject();
+        }
+        if (!setting.app_keys.empty()) {
+            writer.StartKeyedArray("app_keys");
+            for (const auto& app_key : setting.app_keys) {
+                writer.AddString(app_key);
+            }
+            writer.EndArray();
+        }
+        if (!setting.layer_configurations.empty()) {
+            writer.StartKeyedArray("layers");
+            for (const auto& config : setting.layer_configurations) {
+                writer.StartObject();
+                writer.AddKeyedString("name", config.name);
+                writer.AddKeyedString("path", fs::fixup_backslashes_in_path(config.path));
+                writer.AddKeyedString("control", config.control);
+                writer.AddKeyedBool("treat_as_implicit_manifest", config.treat_as_implicit_manifest);
+                writer.EndObject();
+            }
+            writer.EndArray();
+        }
+        if (!setting.stderr_log.empty()) {
+            writer.StartKeyedArray("stderr_log");
+            for (const auto& filter : setting.stderr_log) {
+                writer.AddString(filter);
+            }
+            writer.EndArray();
+        }
+        if (!setting.log_configurations.empty()) {
+            writer.StartKeyedArray("log_locations");
+            for (const auto& config : setting.log_configurations) {
+                writer.StartObject();
+                writer.StartKeyedArray("destinations");
+                for (const auto& dest : config.destinations) {
+                    writer.AddString(dest);
+                }
+                writer.EndArray();
+                writer.StartKeyedArray("filter");
+                for (const auto& filter : config.filters) {
+                    writer.AddString(filter);
+                }
+                writer.EndArray();
+                writer.EndObject();
+            }
+            writer.EndArray();
+        }
+        writer.EndObject();
+    }
+    if (!one_setting_file) {
+        writer.EndArray();
+    }
+
+    writer.EndObject();
+    return writer.output;
+}
+void FrameworkEnvironment::write_settings_file(std::string const& file_contents) {
+    auto out_path = get_folder(ManifestLocation::settings_location).write_manifest("vk_loader_settings.json", file_contents);
+#if defined(WIN32)
+    platform_shim->hkey_current_user_settings.clear();
+    platform_shim->hkey_local_machine_settings.clear();
+#endif
+    if (settings.secure_loader_settings)
+        platform_shim->add_manifest(ManifestCategory::settings, out_path);
+    else
+        platform_shim->add_unsecured_manifest(ManifestCategory::settings, out_path);
+}
+void FrameworkEnvironment::update_loader_settings(const LoaderSettings& settings) noexcept {
+    write_settings_file(get_loader_settings_file_contents(settings));
 }
 
 TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
 TestICD& FrameworkEnvironment::reset_icd(size_t index) noexcept { return icds[index].reset_icd(); }
 fs::path FrameworkEnvironment::get_test_icd_path(size_t index) noexcept { return icds[index].get_icd_full_path(); }
 fs::path FrameworkEnvironment::get_icd_manifest_path(size_t index) noexcept { return icds[index].get_icd_manifest_path(); }
+fs::path FrameworkEnvironment::get_shimmed_icd_manifest_path(size_t index) noexcept {
+    return icds[index].get_shimmed_manifest_path();
+}
 
 TestLayer& FrameworkEnvironment::get_test_layer(size_t index) noexcept { return layers[index].get_test_layer(); }
 TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return layers[index].reset_layer(); }
 fs::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept { return layers[index].get_layer_full_path(); }
 fs::path FrameworkEnvironment::get_layer_manifest_path(size_t index) noexcept { return layers[index].get_layer_manifest_path(); }
+fs::path FrameworkEnvironment::get_shimmed_layer_manifest_path(size_t index) noexcept {
+    return layers[index].get_shimmed_manifest_path();
+}
 
 fs::FolderManager& FrameworkEnvironment::get_folder(ManifestLocation location) noexcept {
     // index it directly using the enum location since they will always be in that order
+    return folders.at(static_cast<size_t>(location));
+}
+fs::FolderManager const& FrameworkEnvironment::get_folder(ManifestLocation location) const noexcept {
     return folders.at(static_cast<size_t>(location));
 }
 #if defined(__APPLE__)

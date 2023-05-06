@@ -1264,7 +1264,7 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
     } while (fread_ret_count == 256 && !feof(file));
     len = ftell(file);
     fseek(file, 0, SEEK_SET);
-    json_buf = (char *)loader_instance_heap_alloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    json_buf = (char *)loader_instance_heap_calloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (json_buf == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "loader_get_json: Failed to allocate space for JSON file %s buffer of length %d", filename, len);

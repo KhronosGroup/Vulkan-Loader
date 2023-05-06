@@ -421,6 +421,141 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
     }
 }
 
+// Test failure during vkCreateInstance & surface creation to make sure we don't leak memory if
+// one of the out-of-memory conditions trigger.
+TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    setup_WSI_in_ICD(env.get_test_icd());
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+
+    size_t fail_index = 0;
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+
+        VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
+        setup_WSI_in_create_instance(inst_create_info);
+        result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            ASSERT_TRUE(tracker.empty());
+            fail_index++;
+            continue;
+        }
+
+        VkSurfaceKHR surface{};
+        result = create_surface(&env.vulkan_functions, instance, surface);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+            ASSERT_TRUE(tracker.empty());
+            fail_index++;
+            continue;
+        }
+        env.vulkan_functions.vkDestroySurfaceKHR(instance, surface, tracker.get());
+
+        env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+        ASSERT_TRUE(tracker.empty());
+        fail_index++;
+    }
+}
+
+// Test failure during vkCreateInstance to make sure we don't leak memory if
+// one of the out-of-memory conditions trigger.
+TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("auto")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str()))));
+
+    size_t fail_index = 0;
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+
+        VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
+        result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        if (result == VK_SUCCESS) {
+            env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+        }
+        ASSERT_TRUE(tracker.empty());
+        fail_index++;
+    }
+}
+
+// Test failure during vkCreateInstance & surface creation to make sure we don't leak memory if
+// one of the out-of-memory conditions trigger.
+TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    setup_WSI_in_ICD(env.get_test_icd());
+
+    const char* layer_name = "VkLayerImplicit0";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")),
+                           "test_layer.json");
+    env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("auto")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str()))));
+
+    size_t fail_index = 0;
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
+        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+
+        VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
+        setup_WSI_in_create_instance(inst_create_info);
+        result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            ASSERT_TRUE(tracker.empty());
+            fail_index++;
+            continue;
+        }
+
+        VkSurfaceKHR surface{};
+        result = create_surface(&env.vulkan_functions, instance, surface);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+            ASSERT_TRUE(tracker.empty());
+            fail_index++;
+            continue;
+        }
+        env.vulkan_functions.vkDestroySurfaceKHR(instance, surface, tracker.get());
+
+        env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+        ASSERT_TRUE(tracker.empty());
+        fail_index++;
+    }
+}
+
 // Test failure during vkCreateInstance to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, DriverEnvVarIntentionalAllocFail) {

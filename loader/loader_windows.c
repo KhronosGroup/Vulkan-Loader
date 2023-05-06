@@ -1069,4 +1069,96 @@ cleanup:
     loader_instance_heap_free(inst, packages);
     return ret;
 }
+
+VkResult get_settings_path_if_exists_in_registry_key(const struct loader_instance *inst, char **out_path, HKEY key) {
+    VkResult result = VK_ERROR_INITIALIZATION_FAILED;
+
+    char name[MAX_STRING_SIZE] = {0};
+    DWORD name_size = sizeof(name);
+
+    *out_path = NULL;
+
+    LONG rtn_value = ERROR_SUCCESS;
+    for (DWORD idx = 0; rtn_value == ERROR_SUCCESS; idx++) {
+        DWORD value = 0;
+        DWORD value_size = sizeof(value);
+        rtn_value = RegEnumValue(key, idx, name, &name_size, NULL, NULL, (LPBYTE)&value, &value_size);
+
+        if (ERROR_SUCCESS != rtn_value) {
+            break;
+        }
+
+        uint32_t start_of_path_filename = 0;
+        for (uint32_t last_char = name_size; last_char > 0; last_char--) {
+            if (name[last_char] == '\\') {
+                start_of_path_filename = last_char + 1;
+                break;
+            }
+        }
+
+        // Make sure the path exists first
+        if (*out_path && !loader_platform_file_exists(name)) {
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        if (strcmp(VK_LOADER_SETTINGS_FILENAME, &(name[start_of_path_filename])) == 0) {
+            *out_path = loader_instance_heap_alloc(inst, name_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            if (*out_path == NULL) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+            strcpy(*out_path, name);
+            result = VK_SUCCESS;
+            break;
+        }
+    }
+
+    return result;
+}
+
+VkResult windows_get_loader_settings_file_path(const struct loader_instance *inst, char **out_path) {
+    VkResult result = VK_SUCCESS;
+    DWORD access_flags = KEY_QUERY_VALUE;
+    HKEY key = NULL;
+
+    *out_path = NULL;
+
+    // if we are running with admin privileges, only check HKEY_LOCAL_MACHINE.
+    // Otherwise check HKEY_CURRENT_USER, and if nothing is there, look in HKEY_LOCAL_MACHINE
+
+    if (is_high_integrity()) {
+        LONG rtn_value = RegOpenKeyEx(HKEY_LOCAL_MACHINE, VK_SETTINGS_INFO_REGISTRY_LOC, 0, access_flags, &key);
+        if (ERROR_SUCCESS != rtn_value) {
+            goto out;
+        }
+        result = get_settings_path_if_exists_in_registry_key(inst, out_path, key);
+    } else {
+        LONG rtn_value = RegOpenKeyEx(HKEY_CURRENT_USER, VK_SETTINGS_INFO_REGISTRY_LOC, 0, access_flags, &key);
+        if (ERROR_SUCCESS == rtn_value) {
+            result = get_settings_path_if_exists_in_registry_key(inst, out_path, key);
+            RegCloseKey(key);
+            // Either we got OOM and *must* exit or we successfully found the settings file and can exit
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY || result == VK_SUCCESS) {
+                goto out;
+            }
+        }
+
+        rtn_value = RegOpenKeyEx(HKEY_LOCAL_MACHINE, VK_SETTINGS_INFO_REGISTRY_LOC, 0, access_flags, &key);
+        if (ERROR_SUCCESS != rtn_value) {
+            goto out;
+        }
+
+        result = get_settings_path_if_exists_in_registry_key(inst, out_path, key);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            goto out;
+        }
+    }
+
+out:
+    if (NULL != key) {
+        RegCloseKey(key);
+    }
+
+    return result;
+}
+
 #endif  // _WIN32
