@@ -3850,30 +3850,28 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         goto out;
     }
 
-    if (manifest_files.count != 0) {
-        for (uint32_t i = 0; i < manifest_files.count; i++) {
-            file_str = manifest_files.filename_list[i];
-            if (file_str == NULL) {
-                continue;
-            }
+    for (uint32_t i = 0; i < manifest_files.count; i++) {
+        file_str = manifest_files.filename_list[i];
+        if (file_str == NULL) {
+            continue;
+        }
 
-            // Parse file into JSON struct
-            VkResult local_res = loader_get_json(inst, file_str, &json);
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            } else if (VK_SUCCESS != local_res || NULL == json) {
-                continue;
-            }
+        // Parse file into JSON struct
+        VkResult local_res = loader_get_json(inst, file_str, &json);
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        } else if (VK_SUCCESS != local_res || NULL == json) {
+            continue;
+        }
 
-            local_res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
-            cJSON_Delete(json);
+        local_res = loader_add_layer_properties(inst, instance_layers, json, true, file_str);
+        cJSON_Delete(json);
 
-            // If the error is anything other than out of memory we still want to try to load the other layers
-            if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
+        // If the error is anything other than out of memory we still want to try to load the other layers
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
         }
     }
 
