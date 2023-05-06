@@ -31,6 +31,11 @@
 class ThrowListener : public testing::EmptyTestEventListener {
     void OnTestPartResult(const testing::TestPartResult& result) override {
         if (result.type() == testing::TestPartResult::kFatalFailure) {
+            // We need to make sure an exception wasn't already thrown so we dont throw another exception at the same time
+            std::exception_ptr ex = std::current_exception();
+            if (ex) {
+                return;
+            }
             throw testing::AssertionException(result);
         }
     }
