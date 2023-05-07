@@ -3592,12 +3592,8 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         rel_base = loader_platform_dirname(name_copy);
         loader_expand_path(library_path, rel_base, MAX_STRING_SIZE, &icd->full_library_path[0]);
     } else {
-// a filename which is assumed in a system directory
-#if defined(DEFAULT_VK_DRIVERS_PATH)
-        loader_get_fullpath(library_path, DEFAULT_VK_DRIVERS_PATH, MAX_STRING_SIZE, &icd->full_library_path[0]);
-#else
+        // a filename which is assumed in a system directory
         loader_get_fullpath(library_path, "", MAX_STRING_SIZE, &icd->full_library_path[0]);
-#endif
     }
 
     item = cJSON_GetObjectItem(itemICD, "api_version");
