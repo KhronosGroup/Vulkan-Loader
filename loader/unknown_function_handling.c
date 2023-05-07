@@ -93,8 +93,8 @@ bool loader_check_layer_list_for_dev_ext_address(struct loader_instance *inst, c
         for (uint32_t extension = 0; extension < extensions->count; ++extension) {
             // Iterate over the entry points.
             const struct loader_dev_ext_props *const property = &(extensions->list[extension]);
-            for (uint32_t entry = 0; entry < property->entrypoint_count; ++entry) {
-                if (strcmp(property->entrypoints[entry], funcName) == 0) {
+            for (uint32_t entry = 0; entry < property->entrypoints.count; ++entry) {
+                if (strcmp(property->entrypoints.list[entry], funcName) == 0) {
                     return true;
                 }
             }
