@@ -37,7 +37,7 @@
 #include "cJSON.h"
 
 #include "allocation.h"
-#include "loader_common.h"
+#include "loader.h"
 #include "log.h"
 
 void *cJSON_malloc(const VkAllocationCallbacks *pAllocator, size_t size) {
@@ -1297,6 +1297,19 @@ out:
     return res;
 }
 
+VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *inst, cJSON *object, const char *key,
+                                                  size_t out_str_len, char *out_string) {
+    cJSON *item = cJSON_GetObjectItem(object, key);
+    if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
+
+    char *str = cJSON_Print(item);
+    if (str == NULL) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    strncpy(out_string, str, out_str_len);
+    out_string[out_str_len - 1] = '\0';
+    loader_instance_heap_free(inst, str);
+    return VK_SUCCESS;
+}
+
 VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *object, const char *key, char **out_string) {
     cJSON *item = cJSON_GetObjectItem(object, key);
     if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
@@ -1306,31 +1319,36 @@ VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *obj
     *out_string = str;
     return VK_SUCCESS;
 }
-VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key, uint32_t *out_count,
-                                            char ***out_array_of_strings) {
+VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key,
+                                            struct loader_string_list *string_list) {
+    VkResult res = VK_SUCCESS;
     cJSON *item = cJSON_GetObjectItem(object, key);
     if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
 
     uint32_t count = cJSON_GetArraySize(item);
     if (count == 0) {
-        *out_count = 0;
-        *out_array_of_strings = NULL;
         return VK_SUCCESS;
     }
-    *out_count = count;
 
-    char **out_data = loader_instance_heap_alloc(inst, sizeof(char *) * (count), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (out_data == NULL) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    res = create_string_list(inst, count, string_list);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
     for (uint32_t i = 0; i < count; i++) {
         cJSON *element = cJSON_GetArrayItem(item, i);
         if (element == NULL) {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
-        out_data[i] = cJSON_Print(element);
-        if (out_data[i] == NULL) {
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        char *out_data = cJSON_Print(element);
+        if (out_data == NULL) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
         }
+        res = append_str_to_string_list(inst, string_list, out_data);
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
     }
-    *out_array_of_strings = out_data;
-    return VK_SUCCESS;
+out:
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY && NULL != string_list->list) {
+        free_string_list(inst, string_list);
+    }
+
+    return res;
 }

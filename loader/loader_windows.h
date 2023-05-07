@@ -97,7 +97,7 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
 // Look for data files in the registry.
 VkResult windows_read_data_files_in_registry(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
                                              bool warn_if_not_present, char *registry_location,
-                                             struct loader_data_files *out_files);
+                                             struct loader_string_list *out_files);
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
 VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *sorted_devices_count,

@@ -702,7 +702,7 @@ out:
 // Look for data files in the registry.
 VkResult windows_read_data_files_in_registry(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
                                              bool warn_if_not_present, char *registry_location,
-                                             struct loader_data_files *out_files) {
+                                             struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char *search_path = NULL;
     uint32_t log_target_flag = 0;

@@ -159,7 +159,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     VkEnumerateInstanceExtensionPropertiesChain *chain_head = &chain_tail;
 
     // Get the implicit layers
-    struct loader_layer_list layers;
+    struct loader_layer_list layers = {0};
     loader_platform_dl_handle *libs = NULL;
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
@@ -177,7 +177,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     // Prepend layers onto the chain if they implement this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
         // Skip this layer if it doesn't expose the entry-point
-        if (layers.list[i].pre_instance_functions.enumerate_instance_extension_properties[0] == '\0') {
+        if (NULL == layers.list[i].pre_instance_functions.enumerate_instance_extension_properties) {
             continue;
         }
 
@@ -275,7 +275,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     // Prepend layers onto the chain if they implement this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
         // Skip this layer if it doesn't expose the entry-point
-        if (layers.list[i].pre_instance_functions.enumerate_instance_layer_properties[0] == '\0') {
+        if (NULL == layers.list[i].pre_instance_functions.enumerate_instance_layer_properties) {
             continue;
         }
 
@@ -380,7 +380,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     // Prepend layers onto the chain if they implement this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
         // Skip this layer if it doesn't expose the entry-point
-        if (layers.list[i].pre_instance_functions.enumerate_instance_version[0] == '\0') {
+        if (NULL == layers.list[i].pre_instance_functions.enumerate_instance_version) {
             continue;
         }
 
@@ -659,14 +659,7 @@ out:
                 loader_icd_destroy(ptr_instance, icd_term, pAllocator);
             }
 
-            for (uint32_t i = 0, n = ptr_instance->enabled_layer_count; i < n; ++i) {
-                loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names[i]);
-            }
-
-            if (ptr_instance->enabled_layer_count > 0) {
-                loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names);
-                memset(&ptr_instance->enabled_layer_names, 0, sizeof(ptr_instance->enabled_layer_names));
-            }
+            free_string_list(ptr_instance, &ptr_instance->enabled_layer_names);
 
             loader_instance_heap_free(ptr_instance, ptr_instance);
         } else {
@@ -716,6 +709,8 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->app_activated_layer_list);
 
     loader_delete_layer_list_and_properties(ptr_instance, &ptr_instance->instance_layer_list);
+
+    free_string_list(ptr_instance, &ptr_instance->enabled_layer_names);
 
     if (ptr_instance->phys_devs_tramp) {
         for (uint32_t i = 0; i < ptr_instance->phys_dev_count_tramp; i++) {

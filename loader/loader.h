@@ -98,6 +98,23 @@ void loader_preload_icds(void);
 void loader_unload_preloaded_icds(void);
 VkResult loader_init_library_list(struct loader_layer_list *instance_layers, loader_platform_dl_handle **libs);
 
+// Allocate a new string able to hold source_str and place it in dest_str
+VkResult loader_copy_to_new_str(const struct loader_instance *inst, const char *source_str, char **dest_str);
+
+// Allocate a loader_string_list with enough space for allocated_count strings inside of it
+VkResult create_string_list(const struct loader_instance *inst, uint32_t allocated_count, struct loader_string_list *string_list);
+// Resize if there isn't enough space, then add the string str to the end of the loader_string_list
+// This function takes ownership of the str passed in - but only when it succeeds
+VkResult append_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str);
+// Resize if there isn't enough space, then copy the string str to a new string the end of the loader_string_list
+// This function does not take ownership of the string, it merely copies it.
+// This function appends a null terminator to the string automatically
+VkResult copy_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, const char *str,
+                                 size_t str_len);
+
+// Free any string inside of loader_string_list and then free the list itself
+void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list);
+
 bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, const uint32_t count,
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
@@ -113,8 +130,6 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
                                bool *out_found_all_component_layers);
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props);
-VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct loader_device_extension_list *ext_list,
-                                    const VkExtensionProperties *props, uint32_t entry_count, char **entrys);
 VkResult loader_add_device_extensions(const struct loader_instance *inst,
                                       PFN_vkEnumerateDeviceExtensionProperties fpEnumerateDeviceExtensionProperties,
                                       VkPhysicalDevice physical_device, const char *lib_name,
@@ -175,7 +190,7 @@ VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance *inst, uint32
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 char *loader_get_next_path(char *path);
-VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_data_files *out_files,
+VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files,
                         bool use_first_found_manifest);
 
 loader_api_version loader_make_version(uint32_t version);

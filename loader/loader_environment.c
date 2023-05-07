@@ -40,6 +40,7 @@
 bool is_high_integrity() { return geteuid() != getuid() || getegid() != getgid(); }
 
 char *loader_getenv(const char *name, const struct loader_instance *inst) {
+    if (NULL == name) return NULL;
     // No allocation of memory necessary for Linux, but we should at least touch
     // the inst pointer to get rid of compiler warnings.
     (void)inst;
@@ -146,6 +147,7 @@ char *loader_getenv(const char *name, const struct loader_instance *inst) {
 }
 
 char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
+    if (NULL == name) return NULL;
 #if !defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     if (is_high_integrity()) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,

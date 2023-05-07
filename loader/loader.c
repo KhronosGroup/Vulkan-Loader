@@ -211,25 +211,29 @@ VKAPI_ATTR VkResult VKAPI_CALL vkSetDeviceDispatch(VkDevice device, void *object
 }
 
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties) {
-    loader_instance_heap_free(inst, layer_properties->component_layer_names);
-    loader_instance_heap_free(inst, layer_properties->override_paths);
-    loader_instance_heap_free(inst, layer_properties->blacklist_layer_names);
-    loader_instance_heap_free(inst, layer_properties->app_key_paths);
-
+    loader_instance_heap_free(inst, layer_properties->manifest_file_name);
+    loader_instance_heap_free(inst, layer_properties->lib_name);
+    loader_instance_heap_free(inst, layer_properties->functions.str_gipa);
+    loader_instance_heap_free(inst, layer_properties->functions.str_gdpa);
+    loader_instance_heap_free(inst, layer_properties->functions.str_negotiate_interface);
     loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_properties->instance_extension_list);
-
     if (layer_properties->device_extension_list.capacity > 0 && NULL != layer_properties->device_extension_list.list) {
         for (uint32_t i = 0; i < layer_properties->device_extension_list.count; i++) {
-            struct loader_dev_ext_props *ext_props = &layer_properties->device_extension_list.list[i];
-            if (ext_props->entrypoint_count > 0) {
-                for (uint32_t j = 0; j < ext_props->entrypoint_count; j++) {
-                    loader_instance_heap_free(inst, ext_props->entrypoints[j]);
-                }
-                loader_instance_heap_free(inst, ext_props->entrypoints);
-            }
+            free_string_list(inst, &layer_properties->device_extension_list.list[i].entrypoints);
         }
     }
     loader_destroy_generic_list(inst, (struct loader_generic_list *)&layer_properties->device_extension_list);
+    loader_instance_heap_free(inst, layer_properties->disable_env_var.name);
+    loader_instance_heap_free(inst, layer_properties->disable_env_var.value);
+    loader_instance_heap_free(inst, layer_properties->enable_env_var.name);
+    loader_instance_heap_free(inst, layer_properties->enable_env_var.value);
+    free_string_list(inst, &layer_properties->component_layer_names);
+    loader_instance_heap_free(inst, layer_properties->pre_instance_functions.enumerate_instance_extension_properties);
+    loader_instance_heap_free(inst, layer_properties->pre_instance_functions.enumerate_instance_layer_properties);
+    loader_instance_heap_free(inst, layer_properties->pre_instance_functions.enumerate_instance_version);
+    free_string_list(inst, &layer_properties->override_paths);
+    free_string_list(inst, &layer_properties->blacklist_layer_names);
+    free_string_list(inst, &layer_properties->app_key_paths);
 
     // Make sure to clear out the removed layer, in case new layers are added in the previous location
     memset(layer_properties, 0, sizeof(struct loader_layer_properties));
@@ -243,6 +247,80 @@ VkResult loader_init_library_list(struct loader_layer_list *instance_layers, loa
         }
     }
     return VK_SUCCESS;
+}
+
+VkResult loader_copy_to_new_str(const struct loader_instance *inst, const char *source_str, char **dest_str) {
+    assert(source_str && dest_str);
+    size_t str_len = strlen(source_str);
+    *dest_str = loader_instance_heap_calloc(inst, str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == *dest_str) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    strncpy(*dest_str, source_str, str_len);
+    (*dest_str)[str_len] = 0;
+    return VK_SUCCESS;
+}
+
+VkResult create_string_list(const struct loader_instance *inst, uint32_t allocated_count, struct loader_string_list *string_list) {
+    assert(string_list);
+    string_list->list = loader_instance_heap_calloc(inst, sizeof(char *) * allocated_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == string_list->list) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    string_list->allocated_count = allocated_count;
+    string_list->count = 0;
+    return VK_SUCCESS;
+}
+
+VkResult append_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str) {
+    assert(string_list && str);
+    if (string_list->allocated_count == 0) {
+        string_list->allocated_count = 32;
+        string_list->list =
+            loader_instance_heap_calloc(inst, sizeof(char *) * string_list->allocated_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == string_list->list) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+    } else if (string_list->count + 1 > string_list->allocated_count) {
+        uint32_t new_allocated_count = string_list->allocated_count * 2;
+        string_list->list = loader_instance_heap_realloc(inst, string_list->list, sizeof(char *) * string_list->allocated_count,
+                                                         sizeof(char *) * new_allocated_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == string_list->list) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        string_list->allocated_count *= 2;
+    }
+    string_list->list[string_list->count++] = str;
+    return VK_SUCCESS;
+}
+
+VkResult copy_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, const char *str,
+                                 size_t str_len) {
+    assert(string_list && str);
+    char *new_str = loader_instance_heap_calloc(inst, sizeof(char *) * str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == new_str) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    strncpy(new_str, str, str_len);
+    new_str[str_len] = '\0';
+    VkResult res = append_str_to_string_list(inst, string_list, new_str);
+    if (res != VK_SUCCESS) {
+        // Cleanup new_str if the append failed - as append_str_to_string_list takes ownership but not if the function fails
+        loader_instance_heap_free(inst, new_str);
+    }
+    return res;
+}
+
+void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list) {
+    assert(string_list);
+    if (string_list->list) {
+        for (uint32_t i = 0; i < string_list->count; i++) {
+            loader_instance_heap_free(inst, string_list->list[i]);
+            string_list->list[i] = NULL;
+        }
+        loader_instance_heap_free(inst, string_list->list);
+        string_list->list = NULL;
+    }
+    string_list->count = 0;
+    string_list->allocated_count = 0;
 }
 
 // Combine path elements, separating each element with the platform-specific
@@ -417,12 +495,12 @@ bool loader_find_layer_name_in_list(const char *name, const struct loader_pointe
 // Search the given meta-layer's component list for a layer matching the given layer name
 bool loader_find_layer_name_in_meta_layer(const struct loader_instance *inst, const char *layer_name,
                                           struct loader_layer_list *layer_list, struct loader_layer_properties *meta_layer_props) {
-    for (uint32_t comp_layer = 0; comp_layer < meta_layer_props->num_component_layers; comp_layer++) {
-        if (!strcmp(meta_layer_props->component_layer_names[comp_layer], layer_name)) {
+    for (uint32_t comp_layer = 0; comp_layer < meta_layer_props->component_layer_names.count; comp_layer++) {
+        if (!strcmp(meta_layer_props->component_layer_names.list[comp_layer], layer_name)) {
             return true;
         }
         struct loader_layer_properties *comp_layer_props =
-            loader_find_layer_property(meta_layer_props->component_layer_names[comp_layer], layer_list);
+            loader_find_layer_property(meta_layer_props->component_layer_names.list[comp_layer], layer_list);
         if (comp_layer_props->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
             return loader_find_layer_name_in_meta_layer(inst, layer_name, layer_list, comp_layer_props);
         }
@@ -433,8 +511,8 @@ bool loader_find_layer_name_in_meta_layer(const struct loader_instance *inst, co
 // Search the override layer's blacklist for a layer matching the given layer name
 bool loader_find_layer_name_in_blacklist(const struct loader_instance *inst, const char *layer_name,
                                          struct loader_layer_list *layer_list, struct loader_layer_properties *meta_layer_props) {
-    for (uint32_t black_layer = 0; black_layer < meta_layer_props->num_blacklist_layers; ++black_layer) {
-        if (!strcmp(meta_layer_props->blacklist_layer_names[black_layer], layer_name)) {
+    for (uint32_t black_layer = 0; black_layer < meta_layer_props->blacklist_layer_names.count; ++black_layer) {
+        if (!strcmp(meta_layer_props->blacklist_layer_names.list[black_layer], layer_name)) {
             return true;
         }
     }
@@ -721,23 +799,25 @@ VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loade
 
 // Append one extension property defined in props with entrypoints defined in entries to the given
 // ext_list. Do not append if a duplicate.
+// If this is a duplicate, this function free's the passed in entries - as in it takes ownership over that list (if it is not NULL)
 // Return - Vk_SUCCESS on success
 VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct loader_device_extension_list *ext_list,
-                                    const VkExtensionProperties *props, uint32_t entry_count, char **entrys) {
-    uint32_t idx;
+                                    const VkExtensionProperties *props, struct loader_string_list *entrys) {
+    VkResult res = VK_SUCCESS;
+    bool should_free_entrys = true;
     if (ext_list->list == NULL || ext_list->capacity == 0) {
-        VkResult res = loader_init_generic_list(inst, (struct loader_generic_list *)ext_list, sizeof(struct loader_dev_ext_props));
+        res = loader_init_generic_list(inst, (struct loader_generic_list *)ext_list, sizeof(struct loader_dev_ext_props));
         if (VK_SUCCESS != res) {
-            return res;
+            goto out;
         }
     }
 
     // look for duplicates
     if (has_vk_dev_ext_property(props, ext_list)) {
-        return VK_SUCCESS;
+        goto out;
     }
 
-    idx = ext_list->count;
+    uint32_t idx = ext_list->count;
     // add to list at end
     // check for enough capacity
     if (idx * sizeof(struct loader_dev_ext_props) >= ext_list->capacity) {
@@ -747,7 +827,8 @@ VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct l
         if (NULL == new_ptr) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "loader_add_to_dev_ext_list: Failed to reallocate space for device extension list");
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
         }
         ext_list->list = new_ptr;
 
@@ -756,38 +837,16 @@ VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct l
     }
 
     memcpy(&ext_list->list[idx].props, props, sizeof(*props));
-    ext_list->list[idx].entrypoint_count = entry_count;
-    if (entry_count == 0) {
-        ext_list->list[idx].entrypoints = NULL;
-    } else {
-        ext_list->list[idx].entrypoints =
-            loader_instance_heap_alloc(inst, sizeof(char *) * entry_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (ext_list->list[idx].entrypoints == NULL) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_add_to_dev_ext_list: Failed to allocate space for device extension entrypoint list in list %d", idx);
-            ext_list->list[idx].entrypoint_count = 0;
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
-        for (uint32_t i = 0; i < entry_count; i++) {
-            ext_list->list[idx].entrypoints[i] =
-                loader_instance_heap_alloc(inst, strlen(entrys[i]) + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (ext_list->list[idx].entrypoints[i] == NULL) {
-                for (uint32_t j = 0; j < i; j++) {
-                    loader_instance_heap_free(inst, ext_list->list[idx].entrypoints[j]);
-                }
-                loader_instance_heap_free(inst, ext_list->list[idx].entrypoints);
-                ext_list->list[idx].entrypoint_count = 0;
-                ext_list->list[idx].entrypoints = NULL;
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "loader_add_to_dev_ext_list: Failed to allocate space for device extension entrypoint %d name", i);
-                return VK_ERROR_OUT_OF_HOST_MEMORY;
-            }
-            strcpy(ext_list->list[idx].entrypoints[i], entrys[i]);
-        }
+    if (entrys) {
+        ext_list->list[idx].entrypoints = *entrys;
+        should_free_entrys = false;
     }
     ext_list->count++;
-
-    return VK_SUCCESS;
+out:
+    if (NULL != entrys && should_free_entrys) {
+        free_string_list(inst, entrys);
+    }
+    return res;
 }
 
 // Create storage for pointers to loader_layer_properties
@@ -923,7 +982,6 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
     bool enable = false;
     bool forced_disabled = false;
     bool forced_enabled = false;
-    char *env_value = NULL;
 
     if ((NULL != disable_filter &&
          (disable_filter->disable_all || disable_filter->disable_all_implicit ||
@@ -935,10 +993,10 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
     }
 
     // If no enable_environment variable is specified, this implicit layer is always be enabled by default.
-    if (prop->enable_env_var.name[0] == 0) {
+    if (NULL == prop->enable_env_var.name) {
         enable = true;
     } else {
-        env_value = loader_getenv(prop->enable_env_var.name, inst);
+        char *env_value = loader_getenv(prop->enable_env_var.name, inst);
         if (env_value && !strcmp(prop->enable_env_var.value, env_value)) {
             enable = true;
         }
@@ -967,11 +1025,16 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
 
     // The disable_environment has priority over everything else.  If it is defined, the layer is always
     // disabled.
-    env_value = loader_getenv(prop->disable_env_var.name, inst);
-    if (NULL != env_value) {
-        enable = false;
+    if (NULL != prop->disable_env_var.name) {
+        char *env_value = loader_getenv(prop->disable_env_var.name, inst);
+        if (NULL != env_value) {
+            enable = false;
+        }
+        loader_free_getenv(env_value, inst);
+    } else if ((prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER) == 0) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                   "Implicit layer \"%s\" missing disabled environment variable!", prop->info.layerName, VK_LAYERS_DISABLE_ENV_VAR);
     }
-    loader_free_getenv(env_value, inst);
 
     // Enable this layer if it is included in the override layer
     if (inst != NULL && inst->override_layer_present) {
@@ -983,8 +1046,8 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
             }
         }
         if (override != NULL) {
-            for (uint32_t i = 0; i < override->num_component_layers; ++i) {
-                if (strcmp(override->component_layer_names[i], prop->info.layerName) == 0) {
+            for (uint32_t i = 0; i < override->component_layer_names.count; ++i) {
+                if (strcmp(override->component_layer_names.list[i], prop->info.layerName) == 0) {
                     enable = true;
                     break;
                 }
@@ -1035,9 +1098,9 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
 
     // We need to add all the individual component layers
     loader_api_version meta_layer_api_version = loader_make_version(prop->info.specVersion);
-    for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
+    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
         struct loader_layer_properties *search_prop =
-            loader_find_layer_property(prop->component_layer_names[comp_layer], source_list);
+            loader_find_layer_property(prop->component_layer_names.list[comp_layer], source_list);
         if (search_prop != NULL) {
             loader_api_version search_prop_version = loader_make_version(prop->info.specVersion);
             if (!loader_check_version_meets_required(meta_layer_api_version, search_prop_version)) {
@@ -1080,7 +1143,7 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
         } else {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Failed to find layer name \"%s\" component layer \"%s\" to activate (Policy #LLP_LAYER_7)",
-                       prop->component_layer_names[comp_layer], prop->component_layer_names[comp_layer]);
+                       prop->component_layer_names.list[comp_layer], prop->component_layer_names.list[comp_layer]);
             found_all_component_layers = false;
         }
     }
@@ -1604,7 +1667,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     PFN_vk_icdEnumerateAdapterPhysicalDevices fp_enum_dxgi_adapter_phys_devs = NULL;
 #endif
-    struct loader_scanned_icd *new_scanned_icd;
+    struct loader_scanned_icd *new_scanned_icd = NULL;
     uint32_t interface_vers;
     VkResult res = VK_SUCCESS;
 
@@ -1617,8 +1680,8 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
         goto out;
     }
 
-    // TODO implement smarter opening/closing of libraries. For now this
-    // function leaves libraries open and the scanned_icd_clear closes them
+// TODO implement smarter opening/closing of libraries. For now this
+// function leaves libraries open and the scanned_icd_clear closes them
 #if defined(__Fuchsia__)
     handle = loader_platform_open_driver(filename);
 #else
@@ -1785,13 +1848,11 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
 #endif
     new_scanned_icd->interface_version = interface_vers;
 
-    new_scanned_icd->lib_name = (char *)loader_instance_heap_alloc(inst, strlen(filename) + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-    if (NULL == new_scanned_icd->lib_name) {
+    res = loader_copy_to_new_str(inst, filename, &new_scanned_icd->lib_name);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_scanned_icd_add: Out of memory can't add ICD %s", filename);
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    strcpy(new_scanned_icd->lib_name, filename);
     icd_tramp_list->count++;
 
 out:
@@ -1890,18 +1951,68 @@ char *loader_get_next_path(char *path) {
     return next;
 }
 
-// Given a path which is absolute or relative, expand the path if relative or
-// leave the path unmodified if absolute. The base path to prepend to relative
-// paths is given in rel_base.
-//
-// @return - A string in out_fullpath of the full absolute path
-void loader_expand_path(const char *path, const char *rel_base, size_t out_size, char *out_fullpath) {
-    if (loader_platform_is_path_absolute(path)) {
-        // do not prepend a base to an absolute path
-        rel_base = "";
+/* Processes a json manifest's library_path and the location of the json manifest to create the path of the library
+ * The output is stored in out_fullpath by allocating a string - so its the caller's repsonsibility to free it
+ * The output is the combination of the base path of manifest_file_path concatenated with library path
+ * If library_path is an absolute path, we do not prepend the base path of manifest_file_path
+ *
+ * This function takes ownership of library_path - caller does not need to worry about freeing it.
+ */
+VkResult combine_manifest_directory_and_library_path(const struct loader_instance *inst, char *library_path,
+                                                     const char *manifest_file_path, char **out_fullpath) {
+    assert(library_path && manifest_file_path && out_fullpath);
+    if (loader_platform_is_path_absolute(library_path)) {
+        *out_fullpath = library_path;
+        return VK_SUCCESS;
     }
+    VkResult res = VK_SUCCESS;
 
-    loader_platform_combine_path(out_fullpath, out_size, rel_base, path, NULL);
+    size_t library_path_len = strlen(library_path);
+    size_t manifest_file_path_str_len = strlen(manifest_file_path);
+    bool library_path_contains_directory_symbol = false;
+    for (size_t i = 0; i < library_path_len; i++) {
+        if (library_path[i] == DIRECTORY_SYMBOL) {
+            library_path_contains_directory_symbol = true;
+            break;
+        }
+    }
+    // Means that the library_path is neither absolute nor relative - thus we should not modify it at all
+    if (!library_path_contains_directory_symbol) {
+        *out_fullpath = library_path;
+        return VK_SUCCESS;
+    }
+    // must include both a directory symbol and the null terminator
+    size_t new_str_len = library_path_len + manifest_file_path_str_len + 1 + 1;
+
+    *out_fullpath = loader_instance_heap_calloc(inst, new_str_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == *out_fullpath) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    size_t cur_loc_in_out_fullpath = 0;
+    // look for the last occurance of DIRECTORY_SYMBOL in manifest_file_path
+    size_t last_directory_symbol = 0;
+    bool found_directory_symbol = false;
+    for (size_t i = 0; i < manifest_file_path_str_len; i++) {
+        if (manifest_file_path[i] == DIRECTORY_SYMBOL) {
+            last_directory_symbol = i + 1;  // we want to include the symbol
+            found_directory_symbol = true;
+            // dont break because we want to find the last occurance
+        }
+    }
+    // Add manifest_file_path up to the last directory symbol
+    if (found_directory_symbol) {
+        strncpy(*out_fullpath, manifest_file_path, last_directory_symbol);
+        cur_loc_in_out_fullpath += last_directory_symbol;
+    }
+    strncpy(&(*out_fullpath)[cur_loc_in_out_fullpath], library_path, library_path_len);
+    cur_loc_in_out_fullpath += library_path_len + 1;
+    (*out_fullpath)[cur_loc_in_out_fullpath] = '\0';
+
+out:
+    loader_instance_heap_free(inst, library_path);
+
+    return res;
 }
 
 // Given a filename (file)  and a list of paths (dir), try to find an existing
@@ -1936,14 +2047,14 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
     bool success = true;
     loader_api_version meta_layer_version = loader_make_version(prop->info.specVersion);
 
-    for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
+    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
         struct loader_layer_properties *comp_prop =
-            loader_find_layer_property(prop->component_layer_names[comp_layer], instance_layers);
+            loader_find_layer_property(prop->component_layer_names.list[comp_layer], instance_layers);
         if (comp_prop == NULL) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "verify_meta_layer_component_layers: Meta-layer %s can't find component layer %s at index %d."
                        "  Skipping this layer.",
-                       prop->info.layerName, prop->component_layer_names[comp_layer], comp_layer);
+                       prop->info.layerName, prop->component_layer_names.list[comp_layer], comp_layer);
 
             success = false;
             break;
@@ -1963,7 +2074,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
         }
 
         // Make sure the layer isn't using it's own name
-        if (!strcmp(prop->info.layerName, prop->component_layer_names[comp_layer])) {
+        if (!strcmp(prop->info.layerName, prop->component_layer_names.list[comp_layer])) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "verify_meta_layer_component_layers: Meta-layer %s lists itself in its component layer "
                        "list at index %d.  Skipping this layer.",
@@ -1982,7 +2093,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                 loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                            "Meta-layer %s component layer %s can not find all component layers."
                            "  Skipping this layer.",
-                           prop->info.layerName, prop->component_layer_names[comp_layer]);
+                           prop->info.layerName, prop->component_layer_names.list[comp_layer]);
                 success = false;
                 break;
             }
@@ -1992,7 +2103,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
         // list, so that anyone querying extensions will only need to look at the meta-layer
         for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding instance extension %s",
-                       prop->info.layerName, prop->component_layer_names[comp_layer],
+                       prop->info.layerName, prop->component_layer_names.list[comp_layer],
                        comp_prop->instance_extension_list.list[ext].extensionName);
 
             if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
@@ -2002,11 +2113,11 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
 
         for (uint32_t ext = 0; ext < comp_prop->device_extension_list.count; ext++) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding device extension %s",
-                       prop->info.layerName, prop->component_layer_names[comp_layer],
+                       prop->info.layerName, prop->component_layer_names.list[comp_layer],
                        comp_prop->device_extension_list.list[ext].props.extensionName);
 
             if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
-                loader_add_to_dev_ext_list(inst, &prop->device_extension_list, &comp_prop->device_extension_list.list[ext].props, 0,
+                loader_add_to_dev_ext_list(inst, &prop->device_extension_list, &comp_prop->device_extension_list.list[ext].props,
                                            NULL);
             }
         }
@@ -2014,12 +2125,12 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
     if (success) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                    "Meta-layer \"%s\" all %d component layers appear to be valid.", prop->info.layerName,
-                   prop->num_component_layers);
+                   prop->component_layer_names.count);
 
         // If layer logging is on, list the internals included in the meta-layer
         if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
-            for (uint32_t comp_layer = 0; comp_layer < prop->num_component_layers; comp_layer++) {
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names[comp_layer]);
+            for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names.list[comp_layer]);
             }
         }
     }
@@ -2072,9 +2183,9 @@ void remove_all_non_valid_override_layers(struct loader_instance *inst, struct l
     for (uint32_t i = 0; i < instance_layers->count; i++) {
         struct loader_layer_properties *props = &instance_layers->list[i];
         if (strcmp(props->info.layerName, VK_OVERRIDE_LAYER_NAME) == 0) {
-            if (props->num_app_key_paths > 0) {  // not the global layer
-                for (uint32_t j = 0; j < props->num_app_key_paths; j++) {
-                    if (strcmp(props->app_key_paths[j], cur_path) == 0) {
+            if (props->app_key_paths.count > 0) {  // not the global layer
+                for (uint32_t j = 0; j < props->app_key_paths.count; j++) {
+                    if (strcmp(props->app_key_paths.list[j], cur_path) == 0) {
                         if (!found_active_override_layer) {
                             found_active_override_layer = true;
                         } else {
@@ -2123,370 +2234,263 @@ void remove_all_non_valid_override_layers(struct loader_instance *inst, struct l
     }
 }
 
+/* The following are required in the "layer" object:
+ * "name"
+ * "type"
+ * (for non-meta layers) "library_path"
+ * (for meta layers) "component_layers"
+ * "api_version"
+ * "implementation_version"
+ * "description"
+ * (for implicit layers) "disable_environment"
+ */
+
 VkResult loader_read_layer_json(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
                                 cJSON *layer_node, loader_api_version version, cJSON *item, bool is_implicit, char *filename) {
-    char *temp;
-    char *name, *type, *library_path_str, *api_version;
-    char *implementation_version, *description;
-    cJSON *ext_item;
-    cJSON *library_path;
-    cJSON *component_layers;
-    cJSON *override_paths;
-    cJSON *blacklisted_layers;
-    cJSON *disable_environment = NULL;
-    VkExtensionProperties ext_prop;
-    VkResult result = VK_ERROR_INITIALIZATION_FAILED;
-    struct loader_layer_properties *props = NULL;
-    uint32_t props_index = 0;
-    int i, j;
+    assert(layer_instance_list);
+    char *type = NULL;
+    char *api_version = NULL;
+    char *implementation_version = NULL;
+    VkResult result = VK_SUCCESS;
+    struct loader_layer_properties props = {0};
 
-// The following are required in the "layer" object:
-// (required) "name"
-// (required) "type"
-// (required) "library_path"
-// (required) "api_version"
-// (required) "implementation_version"
-// (required) "description"
-// (required for implicit layers) "disable_environment"
-#define GET_JSON_OBJECT(node, var)                                         \
-    {                                                                      \
-        var = cJSON_GetObjectItem(node, #var);                             \
-        if (var == NULL) {                                                 \
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,                    \
-                       "Didn't find required layer object %s in manifest " \
-                       "JSON file, skipping this layer",                   \
-                       #var);                                              \
-            goto out;                                                      \
-        }                                                                  \
-    }
-#define GET_JSON_ITEM(inst, node, var)                                         \
-    {                                                                          \
-        item = cJSON_GetObjectItem(node, #var);                                \
-        if (item == NULL) {                                                    \
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,                        \
-                       "Didn't find required layer value %s in manifest JSON " \
-                       "file, skipping this layer",                            \
-                       #var);                                                  \
-            goto out;                                                          \
-        }                                                                      \
-        temp = cJSON_Print(item);                                              \
-        if (temp == NULL) {                                                    \
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,                        \
-                       "Problem accessing layer value %s in manifest JSON "    \
-                       "file, skipping this layer",                            \
-                       #var);                                                  \
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;                              \
-            goto out;                                                          \
-        }                                                                      \
-        var = loader_stack_alloc(strlen(temp) + 1);                            \
-        strcpy(var, &temp[0]);                                                 \
-        loader_instance_heap_free(inst, temp);                                 \
-    }
-    GET_JSON_ITEM(inst, layer_node, name)
-    GET_JSON_ITEM(inst, layer_node, type)
-    GET_JSON_ITEM(inst, layer_node, api_version)
-    GET_JSON_ITEM(inst, layer_node, implementation_version)
-    GET_JSON_ITEM(inst, layer_node, description)
+    // Parse name
 
-    // Add list entry
-    if (!strcmp(type, "DEVICE")) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Device layers are deprecated. Skipping this layer");
-        goto out;
-    }
-
-    // Allow either GLOBAL or INSTANCE type interchangeably to handle
-    // layers that must work with older loaders
-    if (!strcmp(type, "INSTANCE") || !strcmp(type, "GLOBAL")) {
-        if (layer_instance_list == NULL) {
-            goto out;
-        }
-        props = loader_get_next_layer_property_slot(inst, layer_instance_list);
-        if (NULL == props) {
-            // Error already triggered in loader_get_next_layer_property_slot.
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-        props_index = layer_instance_list->count - 1;
-        props->type_flags = VK_LAYER_TYPE_FLAG_INSTANCE_LAYER;
-        if (!is_implicit) {
-            props->type_flags |= VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER;
-        }
-    } else {
+    result = loader_parse_json_string_to_existing_str(inst, layer_node, "name", VK_MAX_EXTENSION_NAME_SIZE, props.info.layerName);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
+    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "Layer located at %s didn't find required layer value \"name\" in manifest JSON file, skipping this layer",
+                   filename);
         goto out;
     }
 
     // Check if this layer's name matches the override layer name, set is_override to true if so.
-    if (!strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
-        props->is_override = true;
+    if (!strcmp(props.info.layerName, VK_OVERRIDE_LAYER_NAME)) {
+        props.is_override = true;
     }
 
+    if (0 != strncmp(props.info.layerName, "VK_LAYER_", 9)) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Layer name %s does not conform to naming standard (Policy #LLP_LAYER_3)",
+                   props.info.layerName);
+    }
+
+    // Parse type
+
+    result = loader_parse_json_string(inst, layer_node, "type", &type);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
+    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "Layer located at %s didn't find required layer value \"type\" in manifest JSON file, skipping this layer",
+                   filename);
+        goto out;
+    }
+
+    // Add list entry
+    if (!strcmp(type, "DEVICE")) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Device layers are deprecated. Skipping this layer");
+        result = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    // Allow either GLOBAL or INSTANCE type interchangeably to handle layers that must work with older loaders
+    if (!strcmp(type, "INSTANCE") || !strcmp(type, "GLOBAL")) {
+        props.type_flags = VK_LAYER_TYPE_FLAG_INSTANCE_LAYER;
+        if (!is_implicit) {
+            props.type_flags |= VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER;
+        }
+    } else {
+        result = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    // Parse api_version
+
+    result = loader_parse_json_string(inst, layer_node, "api_version", &api_version);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
+    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+        loader_log(
+            inst, VULKAN_LOADER_WARN_BIT, 0,
+            "Layer located at %s didn't find required layer value \"api_version\" in manifest JSON file, skipping this layer",
+            filename);
+        goto out;
+    }
+
+    props.info.specVersion = loader_parse_version_string(api_version);
+
+    // Make sure the layer's manifest doesn't contain a non zero variant value
+    if (VK_API_VERSION_VARIANT(props.info.specVersion) != 0) {
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                   "Layer \"%s\" has an \'api_version\' field which contains a non-zero variant value of %d. "
+                   " Skipping Layer.",
+                   props.info.layerName, VK_API_VERSION_VARIANT(props.info.specVersion));
+        result = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    // Parse implementation_version
+
+    result = loader_parse_json_string(inst, layer_node, "implementation_version", &implementation_version);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
+    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "Layer located at %s didn't find required layer value \"implementation_version\" in manifest JSON file, "
+                   "skipping this layer",
+                   filename);
+        goto out;
+    }
+    props.info.implementationVersion = atoi(implementation_version);
+
+    // Parse description
+
+    result = loader_parse_json_string_to_existing_str(inst, layer_node, "description", VK_MAX_EXTENSION_NAME_SIZE,
+                                                      props.info.description);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
+    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+        loader_log(
+            inst, VULKAN_LOADER_WARN_BIT, 0,
+            "Layer located at %s didn't find required layer value \"description\" in manifest JSON file, skipping this layer",
+            filename);
+        goto out;
+    }
+
+    // Parse library_path
+
     // Library path no longer required unless component_layers is also not defined
-    library_path = cJSON_GetObjectItem(layer_node, "library_path");
-    component_layers = cJSON_GetObjectItem(layer_node, "component_layers");
+    cJSON *library_path = cJSON_GetObjectItem(layer_node, "library_path");
+
     if (NULL != library_path) {
-        if (NULL != component_layers) {
+        if (NULL != cJSON_GetObjectItem(layer_node, "component_layers")) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific component_layers, but also defining layer library path.  Both are not "
                        "compatible, so skipping this layer");
+            result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
-        props->num_component_layers = 0;
-        props->component_layer_names = NULL;
 
-        temp = cJSON_Print(library_path);
-        if (NULL == temp) {
+        result = loader_copy_to_new_str(inst, filename, &props.manifest_file_name);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+
+        char *library_path_str = cJSON_Print(library_path);
+        if (NULL == library_path_str) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Problem accessing layer value library_path in manifest JSON file, skipping this layer");
+                       "Skipping layer due to problem accessing the library_path value in manifest JSON file %s", filename);
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
-        library_path_str = loader_stack_alloc(strlen(temp) + 1);
-        strcpy(library_path_str, &temp[0]);
-        loader_instance_heap_free(inst, temp);
 
-        strncpy(props->manifest_file_name, filename, MAX_STRING_SIZE);
-        char *fullpath = props->lib_name;
-        char *rel_base;
-        if (NULL != library_path_str) {
-            if (loader_platform_is_path(library_path_str)) {
-                // A relative or absolute path
-                char *name_copy = loader_stack_alloc(strlen(filename) + 1);
-                strcpy(name_copy, filename);
-                rel_base = loader_platform_dirname(name_copy);
-                loader_expand_path(library_path_str, rel_base, MAX_STRING_SIZE, fullpath);
-            } else {
-                // A filename which is assumed in a system directory
-                loader_get_fullpath(library_path_str, "", MAX_STRING_SIZE, fullpath);
-            }
-        }
-    } else if (NULL != component_layers) {
+        // This function takes ownership of library_path_str - so we don't need to clean it up
+        result = combine_manifest_directory_and_library_path(inst, library_path_str, filename, &props.lib_name);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+    }
+
+    // Parse component_layers
+
+    if (NULL == library_path) {
         if (!loader_check_version_meets_required(LOADER_VERSION_1_1_0, version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Indicating meta-layer-specific component_layers, but using older JSON file version.");
         }
-        int count = cJSON_GetArraySize(component_layers);
-        props->num_component_layers = count;
 
-        // Allocate buffer for layer names
-        props->component_layer_names =
-            loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == props->component_layer_names && count > 0) {
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        result = loader_parse_json_array_of_strings(inst, layer_node, "component_layers", &(props.component_layer_names));
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == result) {
+            goto out;
+        }
+        if (VK_ERROR_INITIALIZATION_FAILED == result) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "Layer missing both library_path and component_layers fields.  One or the other MUST be defined.  Skipping "
+                       "this layer");
+            goto out;
+        }
+        // This is now, officially, a meta-layer
+        props.type_flags |= VK_LAYER_TYPE_FLAG_META_LAYER;
+        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Encountered meta-layer \"%s\"",
+                   props.info.layerName);
+    }
+
+    // Parse blacklisted_layers
+
+    if (props.is_override) {
+        result = loader_parse_json_array_of_strings(inst, layer_node, "blacklisted_layers", &(props.blacklist_layer_names));
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == result) {
+            goto out;
+        }
+    }
+
+    // Parse override_paths
+
+    result = loader_parse_json_array_of_strings(inst, layer_node, "override_paths", &(props.override_paths));
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) {
+        goto out;
+    }
+    if (NULL != props.override_paths.list && !loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "Indicating meta-layer-specific override paths, but using older JSON file version.");
+    }
+
+    // Parse disable_environment
+
+    if (is_implicit) {
+        cJSON *disable_environment = cJSON_GetObjectItem(layer_node, "disable_environment");
+        if (disable_environment == NULL) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "Didn't find required layer object disable_environment in manifest JSON file, skipping this layer");
+            result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
 
-        // Copy the component layers into the array
-        for (i = 0; i < count; i++) {
-            cJSON *comp_layer = cJSON_GetArrayItem(component_layers, i);
-            if (NULL != comp_layer) {
-                temp = cJSON_Print(comp_layer);
-                if (NULL == temp) {
-                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                strncpy(props->component_layer_names[i], temp, MAX_STRING_SIZE - 1);
-                props->component_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
-                loader_instance_heap_free(inst, temp);
-            }
-        }
-
-        // This is now, officially, a meta-layer
-        props->type_flags |= VK_LAYER_TYPE_FLAG_META_LAYER;
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Encountered meta-layer \"%s\"", name);
-
-        // Make sure we set up other things so we head down the correct branches below
-        library_path_str = NULL;
-    } else {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "Layer missing both library_path and component_layers fields.  One or the other MUST be defined.  Skipping "
-                   "this layer");
-        goto out;
-    }
-
-    props->num_blacklist_layers = 0;
-    props->blacklist_layer_names = NULL;
-    blacklisted_layers = cJSON_GetObjectItem(layer_node, "blacklisted_layers");
-    if (blacklisted_layers != NULL) {
-        if (strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Layer \"%s\" contains a blacklist, but a blacklist can only be provided by the override metalayer. This "
-                       "blacklist will be ignored.",
-                       name);
-        } else {
-            props->num_blacklist_layers = cJSON_GetArraySize(blacklisted_layers);
-            if (props->num_blacklist_layers > 0) {
-                // Allocate the blacklist array
-                props->blacklist_layer_names = loader_instance_heap_alloc(
-                    inst, sizeof(char[MAX_STRING_SIZE]) * props->num_blacklist_layers, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-                if (props->blacklist_layer_names == NULL && props->num_blacklist_layers > 0) {
-                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-
-                // Copy the blacklisted layers into the array
-                for (i = 0; i < (int)props->num_blacklist_layers; ++i) {
-                    cJSON *black_layer = cJSON_GetArrayItem(blacklisted_layers, i);
-                    if (black_layer == NULL) {
-                        continue;
-                    }
-                    temp = cJSON_Print(black_layer);
-                    if (temp == NULL) {
-                        result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    }
-                    strncpy(props->blacklist_layer_names[i], temp, MAX_STRING_SIZE - 1);
-                    props->blacklist_layer_names[i][MAX_STRING_SIZE - 1] = '\0';
-                    loader_instance_heap_free(inst, temp);
-                }
-            }
-        }
-    }
-
-    override_paths = cJSON_GetObjectItem(layer_node, "override_paths");
-    if (NULL != override_paths) {
-        if (!loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Indicating meta-layer-specific override paths, but using older JSON file version.");
-        }
-        int count = cJSON_GetArraySize(override_paths);
-        props->num_override_paths = count;
-        if (count > 0) {
-            // Allocate buffer for override paths
-            props->override_paths =
-                loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (NULL == props->override_paths && count > 0) {
-                result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-
-            // Copy the override paths into the array
-            for (i = 0; i < count; i++) {
-                cJSON *override_path = cJSON_GetArrayItem(override_paths, i);
-                if (NULL != override_path) {
-                    temp = cJSON_Print(override_path);
-                    if (NULL == temp) {
-                        result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    }
-                    strncpy(props->override_paths[i], temp, MAX_STRING_SIZE - 1);
-                    props->override_paths[i][MAX_STRING_SIZE - 1] = '\0';
-                    loader_instance_heap_free(inst, temp);
-                }
-            }
-        }
-    }
-
-    if (is_implicit) {
-        GET_JSON_OBJECT(layer_node, disable_environment)
-    }
-#undef GET_JSON_ITEM
-#undef GET_JSON_OBJECT
-
-    strncpy(props->info.layerName, name, sizeof(props->info.layerName));
-    props->info.layerName[sizeof(props->info.layerName) - 1] = '\0';
-    if (0 != strncmp(props->info.layerName, "VK_LAYER_", 9)) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Layer name %s does not conform to naming standard (Policy #LLP_LAYER_3)",
-                   props->info.layerName);
-    }
-    props->info.specVersion = loader_parse_version_string(api_version);
-    props->info.implementationVersion = atoi(implementation_version);
-    strncpy((char *)props->info.description, description, sizeof(props->info.description));
-    props->info.description[sizeof(props->info.description) - 1] = '\0';
-    if (is_implicit) {
-        if (!disable_environment || !disable_environment->child) {
+        if (!disable_environment->child || disable_environment->child->type != cJSON_String) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Didn't find required layer child value disable_environment in manifest JSON file, skipping this layer "
                        "(Policy #LLP_LAYER_9)");
+            result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
-        strncpy(props->disable_env_var.name, disable_environment->child->string, sizeof(props->disable_env_var.name));
-        props->disable_env_var.name[sizeof(props->disable_env_var.name) - 1] = '\0';
-        strncpy(props->disable_env_var.value, disable_environment->child->valuestring, sizeof(props->disable_env_var.value));
-        props->disable_env_var.value[sizeof(props->disable_env_var.value) - 1] = '\0';
+        result = loader_copy_to_new_str(inst, disable_environment->child->string, &(props.disable_env_var.name));
+        if (VK_SUCCESS != result) goto out;
+        result = loader_copy_to_new_str(inst, disable_environment->child->valuestring, &(props.disable_env_var.value));
+        if (VK_SUCCESS != result) goto out;
     }
 
-    // Make sure the layer's manifest doesn't contain a non zero variant value
-    if (VK_API_VERSION_VARIANT(props->info.specVersion) != 0) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                   "Layer \"%s\" has an \'api_version\' field which contains a non-zero variant value of %d. "
-                   " Skipping Layer.",
-                   props->info.layerName, VK_API_VERSION_VARIANT(props->info.specVersion));
-        goto out;
-    }
-
-// Now get all optional items and objects and put in list:
-// functions
-// instance_extensions
-// device_extensions
-// enable_environment (implicit layers only)
-// library_arch
-#define GET_JSON_OBJECT(node, var) \
-    { var = cJSON_GetObjectItem(node, #var); }
-#define GET_JSON_ITEM(inst, node, var)                      \
-    {                                                       \
-        item = cJSON_GetObjectItem(node, #var);             \
-        if (item != NULL) {                                 \
-            temp = cJSON_Print(item);                       \
-            if (temp != NULL) {                             \
-                var = loader_stack_alloc(strlen(temp) + 1); \
-                strcpy(var, &temp[0]);                      \
-                loader_instance_heap_free(inst, temp);      \
-            } else {                                        \
-                result = VK_ERROR_OUT_OF_HOST_MEMORY;       \
-                goto out;                                   \
-            }                                               \
-        }                                                   \
-    }
-
-    cJSON *instance_extensions, *device_extensions, *functions, *enable_environment;
-    cJSON *entrypoints = NULL;
-    char *vkGetInstanceProcAddr = NULL;
-    char *vkGetDeviceProcAddr = NULL;
-    char *vkNegotiateLoaderLayerInterfaceVersion = NULL;
-    char *spec_version = NULL;
-    char **entry_array = NULL;
-    char *library_arch = NULL;
-    cJSON *app_keys = NULL;
+    // Now get all optional items and objects and put in list:
+    // functions
+    // instance_extensions
+    // device_extensions
+    // enable_environment (implicit layers only)
+    // library_arch
 
     // Layer interface functions
     //    vkGetInstanceProcAddr
     //    vkGetDeviceProcAddr
     //    vkNegotiateLoaderLayerInterfaceVersion (starting with JSON file 1.1.0)
-    GET_JSON_OBJECT(layer_node, functions)
+    cJSON *functions = cJSON_GetObjectItem(layer_node, "functions");
     if (functions != NULL) {
         if (loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
-            GET_JSON_ITEM(inst, functions, vkNegotiateLoaderLayerInterfaceVersion)
-            if (vkNegotiateLoaderLayerInterfaceVersion != NULL)
-                strncpy(props->functions.str_negotiate_interface, vkNegotiateLoaderLayerInterfaceVersion,
-                        sizeof(props->functions.str_negotiate_interface));
-            props->functions.str_negotiate_interface[sizeof(props->functions.str_negotiate_interface) - 1] = '\0';
-        } else {
-            props->functions.str_negotiate_interface[0] = '\0';
+            result = loader_parse_json_string(inst, functions, "vkNegotiateLoaderLayerInterfaceVersion",
+                                              &props.functions.str_negotiate_interface);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
-        GET_JSON_ITEM(inst, functions, vkGetInstanceProcAddr)
-        GET_JSON_ITEM(inst, functions, vkGetDeviceProcAddr)
-        if (vkGetInstanceProcAddr != NULL) {
-            strncpy(props->functions.str_gipa, vkGetInstanceProcAddr, sizeof(props->functions.str_gipa));
-            if (loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                           "Layer \"%s\" using deprecated \'vkGetInstanceProcAddr\' tag which was deprecated starting with JSON "
-                           "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
-                           "compatibility reasons it may be desirable to continue using the deprecated tag.",
-                           name);
-            }
+        result = loader_parse_json_string(inst, functions, "vkGetInstanceProcAddr", &props.functions.str_gipa);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+
+        if (props.functions.str_gipa && loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "Layer \"%s\" using deprecated \'vkGetInstanceProcAddr\' tag which was deprecated starting with JSON "
+                       "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
+                       "compatibility reasons it may be desirable to continue using the deprecated tag.",
+                       props.info.layerName);
         }
-        props->functions.str_gipa[sizeof(props->functions.str_gipa) - 1] = '\0';
-        if (vkGetDeviceProcAddr != NULL) {
-            strncpy(props->functions.str_gdpa, vkGetDeviceProcAddr, sizeof(props->functions.str_gdpa));
-            if (loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                           "Layer \"%s\" using deprecated \'vkGetDeviceProcAddr\' tag which was deprecated starting with JSON "
-                           "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
-                           "compatibility reasons it may be desirable to continue using the deprecated tag.",
-                           name);
-            }
+
+        result = loader_parse_json_string(inst, functions, "vkGetDeviceProcAddr", &props.functions.str_gdpa);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+
+        if (props.functions.str_gdpa && loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "Layer \"%s\" using deprecated \'vkGetDeviceProcAddr\' tag which was deprecated starting with JSON "
+                       "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
+                       "compatibility reasons it may be desirable to continue using the deprecated tag.",
+                       props.info.layerName);
         }
-        props->functions.str_gdpa[sizeof(props->functions.str_gdpa) - 1] = '\0';
     }
 
     // instance_extensions
@@ -2494,25 +2498,27 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     //     name
     //     spec_version
     //   }
-    GET_JSON_OBJECT(layer_node, instance_extensions)
+
+    cJSON *instance_extensions = cJSON_GetObjectItem(layer_node, "instance_extensions");
     if (instance_extensions != NULL) {
         int count = cJSON_GetArraySize(instance_extensions);
-        for (i = 0; i < count; i++) {
-            ext_item = cJSON_GetArrayItem(instance_extensions, i);
-            GET_JSON_ITEM(inst, ext_item, name)
-            if (name != NULL) {
-                strncpy(ext_prop.extensionName, name, sizeof(ext_prop.extensionName));
-                ext_prop.extensionName[sizeof(ext_prop.extensionName) - 1] = '\0';
-            }
-            GET_JSON_ITEM(inst, ext_item, spec_version)
+        for (int i = 0; i < count; i++) {
+            VkExtensionProperties ext_prop = {0};
+            cJSON *ext_item = cJSON_GetArrayItem(instance_extensions, i);
+            result = loader_parse_json_string_to_existing_str(inst, ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE,
+                                                              ext_prop.extensionName);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+            if (result == VK_ERROR_INITIALIZATION_FAILED) continue;
+            char *spec_version = NULL;
+            result = loader_parse_json_string(inst, ext_item, "spec_version", &spec_version);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (NULL != spec_version) {
                 ext_prop.specVersion = atoi(spec_version);
-            } else {
-                ext_prop.specVersion = 0;
             }
+            loader_instance_heap_free(inst, spec_version);
             bool ext_unsupported = wsi_unsupported_instance_extension(&ext_prop);
             if (!ext_unsupported) {
-                loader_add_to_ext_list(inst, &props->instance_extension_list, 1, &ext_prop);
+                loader_add_to_ext_list(inst, &props.instance_extension_list, 1, &ext_prop);
             }
         }
     }
@@ -2523,58 +2529,49 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     //     spec_version
     //     entrypoints
     //   }
-    GET_JSON_OBJECT(layer_node, device_extensions)
+    cJSON *device_extensions = cJSON_GetObjectItem(layer_node, "device_extensions");
     if (device_extensions != NULL) {
         int count = cJSON_GetArraySize(device_extensions);
-        for (i = 0; i < count; i++) {
-            ext_item = cJSON_GetArrayItem(device_extensions, i);
-            GET_JSON_ITEM(inst, ext_item, name)
-            GET_JSON_ITEM(inst, ext_item, spec_version)
-            if (name != NULL) {
-                strncpy(ext_prop.extensionName, name, sizeof(ext_prop.extensionName));
-                ext_prop.extensionName[sizeof(ext_prop.extensionName) - 1] = '\0';
-            }
+        for (int i = 0; i < count; i++) {
+            VkExtensionProperties ext_prop = {0};
+
+            cJSON *ext_item = cJSON_GetArrayItem(device_extensions, i);
+
+            result = loader_parse_json_string_to_existing_str(inst, ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE,
+                                                              ext_prop.extensionName);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+
+            char *spec_version = NULL;
+            result = loader_parse_json_string(inst, ext_item, "spec_version", &spec_version);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (NULL != spec_version) {
                 ext_prop.specVersion = atoi(spec_version);
-            } else {
-                ext_prop.specVersion = 0;
             }
-            GET_JSON_OBJECT(ext_item, entrypoints)
-            int entry_count;
+            loader_instance_heap_free(inst, spec_version);
+
+            cJSON *entrypoints = cJSON_GetObjectItem(ext_item, "entrypoints");
             if (entrypoints == NULL) {
-                loader_add_to_dev_ext_list(inst, &props->device_extension_list, &ext_prop, 0, NULL);
+                result = loader_add_to_dev_ext_list(inst, &props.device_extension_list, &ext_prop, NULL);
+                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                 continue;
             }
-            entry_count = cJSON_GetArraySize(entrypoints);
-            if (entry_count) {
-                entry_array = (char **)loader_stack_alloc(sizeof(char *) * entry_count);
-            }
-            for (j = 0; j < entry_count; j++) {
-                ext_item = cJSON_GetArrayItem(entrypoints, j);
-                if (ext_item != NULL) {
-                    temp = cJSON_Print(ext_item);
-                    if (NULL == temp) {
-                        entry_array[j] = NULL;
-                        result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    }
-                    entry_array[j] = loader_stack_alloc(strlen(temp) + 1);
-                    strcpy(entry_array[j], &temp[0]);
-                    loader_instance_heap_free(inst, temp);
-                }
-            }
-            loader_add_to_dev_ext_list(inst, &props->device_extension_list, &ext_prop, entry_count, entry_array);
+
+            struct loader_string_list entrys = {0};
+            result = loader_parse_json_array_of_strings(inst, ext_item, "entrypoints", &entrys);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+            result = loader_add_to_dev_ext_list(inst, &props.device_extension_list, &ext_prop, &entrys);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
     }
     if (is_implicit) {
-        GET_JSON_OBJECT(layer_node, enable_environment)
+        cJSON *enable_environment = cJSON_GetObjectItem(layer_node, "enable_environment");
 
         // enable_environment is optional
-        if (enable_environment) {
-            strncpy(props->enable_env_var.name, enable_environment->child->string, sizeof(props->enable_env_var.name));
-            props->enable_env_var.name[sizeof(props->enable_env_var.name) - 1] = '\0';
-            strncpy(props->enable_env_var.value, enable_environment->child->valuestring, sizeof(props->enable_env_var.value));
-            props->enable_env_var.value[sizeof(props->enable_env_var.value) - 1] = '\0';
+        if (enable_environment && enable_environment->child && enable_environment->child->type == cJSON_String) {
+            result = loader_copy_to_new_str(inst, enable_environment->child->string, &(props.enable_env_var.name));
+            if (VK_SUCCESS != result) goto out;
+            result = loader_copy_to_new_str(inst, enable_environment->child->valuestring, &(props.enable_env_var.value));
+            if (VK_SUCCESS != result) goto out;
         }
     }
 
@@ -2593,106 +2590,66 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                        "layers. The section will be ignored",
                        filename);
         } else {
-            cJSON *inst_ext_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceExtensionProperties");
-            if (NULL != inst_ext_json) {
-                char *inst_ext_name = cJSON_Print(inst_ext_json);
-                if (NULL == inst_ext_name) {
-                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                size_t len = strlen(inst_ext_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 1 : strlen(inst_ext_name) + 1;
-                strncpy(props->pre_instance_functions.enumerate_instance_extension_properties, inst_ext_name, len);
-                props->pre_instance_functions.enumerate_instance_extension_properties[len] = '\0';
-                loader_instance_heap_free(inst, inst_ext_name);
-            }
+            result = loader_parse_json_string(inst, pre_instance, "vkEnumerateInstanceExtensionProperties",
+                                              &props.pre_instance_functions.enumerate_instance_extension_properties);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
-            cJSON *inst_layer_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceLayerProperties");
-            if (NULL != inst_layer_json) {
-                char *inst_layer_name = cJSON_Print(inst_layer_json);
-                if (NULL == inst_layer_name) {
-                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                size_t len = strlen(inst_layer_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 1 : strlen(inst_layer_name) + 1;
-                strncpy(props->pre_instance_functions.enumerate_instance_layer_properties, inst_layer_name, len);
-                props->pre_instance_functions.enumerate_instance_layer_properties[len] = '\0';
-                loader_instance_heap_free(inst, inst_layer_name);
-            }
+            result = loader_parse_json_string(inst, pre_instance, "vkEnumerateInstanceLayerProperties",
+                                              &props.pre_instance_functions.enumerate_instance_layer_properties);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
-            cJSON *inst_version_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceVersion");
-            if (NULL != inst_version_json) {
-                char *inst_version_name = cJSON_Print(inst_version_json);
-                if (NULL == inst_version_name) {
-                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                size_t len = strlen(inst_version_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 1 : strlen(inst_version_name) + 1;
-                strncpy(props->pre_instance_functions.enumerate_instance_version, inst_version_name, len);
-                props->pre_instance_functions.enumerate_instance_version[len] = '\0';
-                loader_instance_heap_free(inst, inst_version_name);
-            }
+            result = loader_parse_json_string(inst, pre_instance, "vkEnumerateInstanceVersion",
+                                              &props.pre_instance_functions.enumerate_instance_version);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
     }
 
-    props->num_app_key_paths = 0;
-    props->app_key_paths = NULL;
-    app_keys = cJSON_GetObjectItem(layer_node, "app_keys");
-    if (app_keys != NULL) {
-        if (strcmp(name, VK_OVERRIDE_LAYER_NAME)) {
+    if (cJSON_GetObjectItem(layer_node, "app_keys")) {
+        if (!props.is_override) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Layer %s contains app_keys, but any app_keys can only be provided by the override metalayer. "
                        "These will be ignored.",
-                       name);
-        } else {
-            props->num_app_key_paths = cJSON_GetArraySize(app_keys);
-
-            // Allocate the blacklist array
-            props->app_key_paths = loader_instance_heap_alloc(inst, sizeof(char[MAX_STRING_SIZE]) * props->num_app_key_paths,
-                                                              VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            if (props->app_key_paths == NULL) {
-                result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-
-            // Copy the app_key_paths into the array
-            for (i = 0; i < (int)props->num_app_key_paths; ++i) {
-                cJSON *app_key_path = cJSON_GetArrayItem(app_keys, i);
-                if (app_key_path == NULL) {
-                    continue;
-                }
-                temp = cJSON_Print(app_key_path);
-                if (temp == NULL) {
-                    result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                strncpy(props->app_key_paths[i], temp, MAX_STRING_SIZE - 1);
-                props->app_key_paths[i][MAX_STRING_SIZE - 1] = '\0';
-                loader_instance_heap_free(inst, temp);
-            }
+                       props.info.layerName);
         }
+
+        result = loader_parse_json_array_of_strings(inst, layer_node, "app_keys", &props.app_key_paths);
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
     }
 
-    GET_JSON_ITEM(inst, layer_node, library_arch)
+    char *library_arch = NULL;
+    result = loader_parse_json_string(inst, layer_node, "library_arch", &library_arch);
+    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
     if (library_arch != NULL) {
         if ((strncmp(library_arch, "32", 2) == 0 && sizeof(void *) != 4) ||
             (strncmp(library_arch, "64", 2) == 0 && sizeof(void *) != 8)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "Layer library architecture doesn't match the current running architecture, skipping this layer");
+            loader_instance_heap_free(inst, library_arch);
+            result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
+        loader_instance_heap_free(inst, library_arch);
     }
 
     result = VK_SUCCESS;
 
 out:
-#undef GET_JSON_ITEM
-#undef GET_JSON_OBJECT
 
-    if (VK_SUCCESS != result && NULL != props) {
-        // Make sure to free anything that was allocated
-        loader_remove_layer_in_list(inst, layer_instance_list, props_index);
+    if (VK_SUCCESS == result) {
+        struct loader_layer_properties *dest_props = loader_get_next_layer_property_slot(inst, layer_instance_list);
+        if (NULL == dest_props) {
+            // Error already triggered in loader_get_next_layer_property_slot.
+            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            loader_free_layer_properties(inst, &props);
+        } else {
+            *dest_props = props;
+        }
+    } else {
+        loader_free_layer_properties(inst, &props);
     }
-
+    loader_instance_heap_free(inst, type);
+    loader_instance_heap_free(inst, api_version);
+    loader_instance_heap_free(inst, implementation_version);
     return result;
 }
 
@@ -2870,59 +2827,8 @@ void copy_data_file_info(const char *cur_path, const char *relative_path, size_t
     }
 }
 
-// Check to see if there's enough space in the data file list.  If not, add some.
-VkResult check_and_adjust_data_file_list(const struct loader_instance *inst, struct loader_data_files *out_files) {
-    if (out_files->count == 0) {
-        out_files->filename_list = loader_instance_heap_alloc(inst, 64 * sizeof(char *), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (NULL == out_files->filename_list) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "check_and_adjust_data_file_list: Failed to allocate space for manifest file name list");
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
-        out_files->alloc_count = 64;
-    } else if (out_files->count == out_files->alloc_count) {
-        size_t new_size = out_files->alloc_count * sizeof(char *) * 2;
-        void *new_ptr = loader_instance_heap_realloc(inst, out_files->filename_list, out_files->alloc_count * sizeof(char *),
-                                                     new_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (NULL == new_ptr) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "check_and_adjust_data_file_list: Failed to reallocate space for manifest file name list");
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
-        out_files->filename_list = new_ptr;
-        out_files->alloc_count *= 2;
-    }
-
-    return VK_SUCCESS;
-}
-
-// add file_name to the out_files manifest list. Assumes its a valid manifest file name
-VkResult add_manifest_file(const struct loader_instance *inst, const char *file_name, struct loader_data_files *out_files) {
-    VkResult vk_result = VK_SUCCESS;
-
-    // Check and allocate space in the manifest list if necessary
-    vk_result = check_and_adjust_data_file_list(inst, out_files);
-    if (VK_SUCCESS != vk_result) {
-        goto out;
-    }
-
-    out_files->filename_list[out_files->count] =
-        loader_instance_heap_alloc(inst, strlen(file_name) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (out_files->filename_list[out_files->count] == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "add_manifest_file: Failed to allocate space for manifest file %d list",
-                   out_files->count);
-        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-
-    strcpy(out_files->filename_list[out_files->count++], file_name);
-
-out:
-    return vk_result;
-}
-
 // If the file found is a manifest file name, add it to the out_files manifest list.
-VkResult add_if_manifest_file(const struct loader_instance *inst, const char *file_name, struct loader_data_files *out_files) {
+VkResult add_if_manifest_file(const struct loader_instance *inst, const char *file_name, struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
 
     assert(NULL != file_name && "add_if_manifest_file: Received NULL pointer for file_name");
@@ -2937,7 +2843,7 @@ VkResult add_if_manifest_file(const struct loader_instance *inst, const char *fi
         goto out;
     }
 
-    vk_result = add_manifest_file(inst, file_name, out_files);
+    vk_result = copy_str_to_string_list(inst, out_files, file_name, name_len);
 
 out:
 
@@ -2946,7 +2852,7 @@ out:
 
 // Add any files found in the search_path.  If any path in the search path points to a specific JSON, attempt to
 // only open that one JSON.  Otherwise, if the path is a folder, search the folder for JSON files.
-VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_data_files *out_files,
+VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files,
                         bool use_first_found_manifest) {
     VkResult vk_result = VK_SUCCESS;
     DIR *dir_stream = NULL;
@@ -3045,7 +2951,7 @@ out:
 // Look for data files in the provided paths, but first check the environment override to determine if we should use that
 // instead.
 VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enum loader_data_files_type manifest_type,
-                                         const char *path_override, bool *override_active, struct loader_data_files *out_files) {
+                                         const char *path_override, bool *override_active, struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char *override_env = NULL;
     const char *override_path = NULL;
@@ -3359,7 +3265,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     if (log_flags != 0 && out_files->count > 0) {
         loader_log(inst, log_flags, 0, "   Found the following files:");
         for (uint32_t cur_file = 0; cur_file < out_files->count; ++cur_file) {
-            loader_log(inst, log_flags, 0, "      %s", out_files->filename_list[cur_file]);
+            loader_log(inst, log_flags, 0, "      %s", out_files->list[cur_file]);
         }
     } else {
         loader_log(inst, log_flags, 0, "   Found no files");
@@ -3419,23 +3325,12 @@ out:
 // Linux Layer| dirs     | dirs
 
 VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_data_files_type manifest_type,
-                               const char *path_override, struct loader_data_files *out_files) {
+                               const char *path_override, struct loader_string_list *out_files) {
     VkResult res = VK_SUCCESS;
     bool override_active = false;
 
     // Free and init the out_files information so there's no false data left from uninitialized variables.
-    if (out_files->filename_list != NULL) {
-        for (uint32_t i = 0; i < out_files->count; i++) {
-            if (NULL != out_files->filename_list[i]) {
-                loader_instance_heap_free(inst, out_files->filename_list[i]);
-                out_files->filename_list[i] = NULL;
-            }
-        }
-        loader_instance_heap_free(inst, out_files->filename_list);
-    }
-    out_files->count = 0;
-    out_files->alloc_count = 0;
-    out_files->filename_list = NULL;
+    free_string_list(inst, out_files);
 
     res = read_data_files_in_search_paths(inst, manifest_type, path_override, &override_active, out_files);
     if (VK_SUCCESS != res) {
@@ -3475,21 +3370,15 @@ VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_d
 
 out:
 
-    if (VK_SUCCESS != res && NULL != out_files->filename_list) {
-        for (uint32_t remove = 0; remove < out_files->count; remove++) {
-            loader_instance_heap_free(inst, out_files->filename_list[remove]);
-        }
-        loader_instance_heap_free(inst, out_files->filename_list);
-        out_files->count = 0;
-        out_files->alloc_count = 0;
-        out_files->filename_list = NULL;
+    if (VK_SUCCESS != res) {
+        free_string_list(inst, out_files);
     }
 
     return res;
 }
 
 struct ICDManifestInfo {
-    char full_library_path[MAX_STRING_SIZE];
+    char *full_library_path;
     uint32_t version;
 };
 
@@ -3499,10 +3388,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
                                    bool *skipped_portability_drivers) {
     VkResult res = VK_SUCCESS;
     cJSON *json = NULL;
-    cJSON *item = NULL, *itemICD = NULL;
-
     char *file_vers_str = NULL;
-    char *library_path = NULL;
     char *library_arch_str = NULL;
     char *version_str = NULL;
 
@@ -3519,7 +3405,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    item = cJSON_GetObjectItem(json, "file_format_version");
+    cJSON *item = cJSON_GetObjectItem(json, "file_format_version");
     if (item == NULL) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: ICD JSON %s does not have a \'file_format_version\' field. Skipping ICD JSON.",
@@ -3549,7 +3435,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
                    json_file_version.major, json_file_version.minor, json_file_version.patch);
     }
 
-    itemICD = cJSON_GetObjectItem(json, "ICD");
+    cJSON *itemICD = cJSON_GetObjectItem(json, "ICD");
     if (itemICD == NULL) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Can not find \'ICD\' object in ICD JSON file %s. Skipping ICD JSON", file_str);
@@ -3565,7 +3451,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
-    library_path = cJSON_Print(item);
+    char *library_path = cJSON_Print(item);
     if (!library_path) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'library_path\' field. Skipping ICD JSON.", file_str);
@@ -3582,16 +3468,10 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 
     // Print out the paths being searched if debugging is enabled
     loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "Searching for ICD drivers named %s", library_path);
-    if (loader_platform_is_path(library_path)) {
-        // a relative or absolute path
-        char *name_copy = loader_stack_alloc(strlen(file_str) + 1);
-        char *rel_base;
-        strcpy(name_copy, file_str);
-        rel_base = loader_platform_dirname(name_copy);
-        loader_expand_path(library_path, rel_base, MAX_STRING_SIZE, &icd->full_library_path[0]);
-    } else {
-        // a filename which is assumed in a system directory
-        loader_get_fullpath(library_path, "", MAX_STRING_SIZE, &icd->full_library_path[0]);
+    // This function takes ownership of library_path - so we don't need to clean it up
+    res = combine_manifest_directory_and_library_path(inst, library_path, file_str, &icd->full_library_path);
+    if (VK_SUCCESS != res) {
+        goto out;
     }
 
     item = cJSON_GetObjectItem(itemICD, "api_version");
@@ -3653,7 +3533,6 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 out:
     cJSON_Delete(json);
     loader_instance_heap_free(inst, file_vers_str);
-    loader_instance_heap_free(inst, library_path);
     loader_instance_heap_free(inst, version_str);
     loader_instance_heap_free(inst, library_arch_str);
     return res;
@@ -3675,14 +3554,11 @@ out:
 // (on result == VK_SUCCESS) a list of icds that were discovered
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                          const VkInstanceCreateInfo *pCreateInfo, bool *skipped_portability_drivers) {
-    struct loader_data_files manifest_files;
     VkResult res = VK_SUCCESS;
+    struct loader_string_list manifest_files = {0};
     struct loader_envvar_filter select_filter;
     struct loader_envvar_filter disable_filter;
-
-    // Before we begin anything, init manifest_files to avoid a delete of garbage memory if
-    // a failure occurs before allocating the manifest filename_list.
-    memset(&manifest_files, 0, sizeof(struct loader_data_files));
+    struct ICDManifestInfo *icd_details = NULL;
 
     // Set up the ICD Trampoline list so elements can be written into it.
     res = loader_scanned_icd_init(inst, icd_tramp_list);
@@ -3717,11 +3593,17 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         goto out;
     }
 
+    icd_details = loader_stack_alloc(sizeof(struct ICDManifestInfo) * manifest_files.count);
+    if (NULL == icd_details) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    memset(icd_details, 0, sizeof(struct ICDManifestInfo) * manifest_files.count);
+
     for (uint32_t i = 0; i < manifest_files.count; i++) {
         VkResult icd_res = VK_SUCCESS;
-        struct ICDManifestInfo icd;
-        memset(&icd, 0, sizeof(struct ICDManifestInfo));
-        icd_res = loader_parse_icd_manifest(inst, manifest_files.filename_list[i], &icd, skipped_portability_drivers);
+
+        icd_res = loader_parse_icd_manifest(inst, manifest_files.list[i], &icd_details[i], skipped_portability_drivers);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_res) {
             res = icd_res;
             goto out;
@@ -3731,11 +3613,11 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
 
         if (select_filter.count > 0 || disable_filter.count > 0) {
             // Get only the filename for comparing to the filters
-            char *just_filename_str = strrchr(manifest_files.filename_list[i], DIRECTORY_SYMBOL);
+            char *just_filename_str = strrchr(manifest_files.list[i], DIRECTORY_SYMBOL);
 
             // No directory symbol, just the filename
             if (NULL == just_filename_str) {
-                just_filename_str = manifest_files.filename_list[i];
+                just_filename_str = manifest_files.list[i];
             } else {
                 just_filename_str++;
             }
@@ -3760,7 +3642,8 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         }
 
         enum loader_layer_library_status lib_status;
-        icd_res = loader_scanned_icd_add(inst, icd_tramp_list, icd.full_library_path, icd.version, &lib_status);
+        icd_res =
+            loader_scanned_icd_add(inst, icd_tramp_list, icd_details[i].full_library_path, icd_details[i].version, &lib_status);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_res) {
             res = icd_res;
             goto out;
@@ -3770,11 +3653,11 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                 case LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD:
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: Failed loading library associated with ICD JSON %s. Ignoring this JSON",
-                               icd.full_library_path);
+                               icd_details[i].full_library_path);
                     break;
                 case LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE: {
                     loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Requested layer %s was wrong bit-type. Ignoring this JSON",
-                               icd.full_library_path);
+                               icd_details[i].full_library_path);
                     break;
                 }
                 case LOADER_LAYER_LIB_SUCCESS_LOADED:
@@ -3783,20 +3666,17 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                     loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "Shouldn't reach this. A valid version of requested ICD %s was loaded but something bad "
                                "happened afterwards.",
-                               icd.full_library_path);
+                               icd_details[i].full_library_path);
                     break;
             }
         }
     }
 
 out:
-    if (NULL != manifest_files.filename_list) {
-        for (uint32_t i = 0; i < manifest_files.count; i++) {
-            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
-        }
-        loader_instance_heap_free(inst, manifest_files.filename_list);
+    for (uint32_t i = 0; i < manifest_files.count; i++) {
+        loader_instance_heap_free(inst, icd_details[i].full_library_path);
     }
-
+    free_string_list(inst, &manifest_files);
     return res;
 }
 
@@ -3807,7 +3687,7 @@ VkResult loader_parse_instance_layers(struct loader_instance *inst, enum loader_
                                       const char *path_override, struct loader_layer_list *instance_layers) {
     assert(manifest_type == LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER || manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER);
     VkResult res = VK_SUCCESS;
-    struct loader_data_files manifest_files = {0};
+    struct loader_string_list manifest_files = {0};
 
     res = loader_get_data_files(inst, manifest_type, path_override, &manifest_files);
     if (VK_SUCCESS != res) {
@@ -3815,7 +3695,7 @@ VkResult loader_parse_instance_layers(struct loader_instance *inst, enum loader_
     }
 
     for (uint32_t i = 0; i < manifest_files.count; i++) {
-        char *file_str = manifest_files.filename_list[i];
+        char *file_str = manifest_files.list[i];
         if (file_str == NULL) {
             continue;
         }
@@ -3841,12 +3721,7 @@ VkResult loader_parse_instance_layers(struct loader_instance *inst, enum loader_
         }
     }
 out:
-    if (NULL != manifest_files.filename_list) {
-        for (uint32_t i = 0; i < manifest_files.count; i++) {
-            loader_instance_heap_free(inst, manifest_files.filename_list[i]);
-        }
-        loader_instance_heap_free(inst, manifest_files.filename_list);
-    }
+    free_string_list(inst, &manifest_files);
 
     return res;
 }
@@ -3855,19 +3730,19 @@ out:
 // into the output parameter override_paths
 VkResult get_override_layer_override_paths(struct loader_instance *inst, struct loader_layer_properties *prop,
                                            char **override_paths) {
-    if (prop->num_override_paths > 0) {
+    if (prop->override_paths.count > 0) {
         char *cur_write_ptr = NULL;
         size_t override_path_size = 0;
-        for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-            override_path_size += determine_data_file_path_size(prop->override_paths[j], 0);
+        for (uint32_t j = 0; j < prop->override_paths.count; j++) {
+            override_path_size += determine_data_file_path_size(prop->override_paths.list[j], 0);
         }
         *override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (override_paths == NULL) {
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
         cur_write_ptr = &(*override_paths)[0];
-        for (uint32_t j = 0; j < prop->num_override_paths; j++) {
-            copy_data_file_info(prop->override_paths[j], NULL, 0, &cur_write_ptr);
+        for (uint32_t j = 0; j < prop->override_paths.count; j++) {
+            copy_data_file_info(prop->override_paths.list[j], NULL, 0, &cur_write_ptr);
         }
         // Remove the last path separator
         --cur_write_ptr;
@@ -3908,7 +3783,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     for (int32_t i = 0; i < (int32_t)instance_layers->count; i++) {
         struct loader_layer_properties *prop = &instance_layers->list[i];
         if (prop->is_override && loader_implicit_layer_is_enabled(inst, &enable_filter, &disable_filter, prop) &&
-            prop->num_override_paths > 0) {
+            prop->override_paths.count > 0) {
             res = get_override_layer_override_paths(inst, prop, &override_paths);
             if (VK_SUCCESS != res) {
                 goto out;
@@ -4355,7 +4230,7 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
     }
 
     // Get the physical device (ICD) extensions
-    struct loader_extension_list icd_exts;
+    struct loader_extension_list icd_exts = {0};
     icd_exts.list = NULL;
     res = loader_init_generic_list(inst, (struct loader_generic_list *)&icd_exts, sizeof(VkExtensionProperties));
     if (VK_SUCCESS != res) {
@@ -4540,7 +4415,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             if (NULL == layer_prop->functions.negotiate_layer_interface) {
                 PFN_vkNegotiateLoaderLayerInterfaceVersion negotiate_interface = NULL;
                 bool functions_in_interface = false;
-                if (strlen(layer_prop->functions.str_negotiate_interface) == 0) {
+                if (!layer_prop->functions.str_negotiate_interface || strlen(layer_prop->functions.str_negotiate_interface) == 0) {
                     negotiate_interface = (PFN_vkNegotiateLoaderLayerInterfaceVersion)loader_platform_get_proc_address(
                         lib_handle, "vkNegotiateLoaderLayerInterfaceVersion");
                 } else {
@@ -4764,16 +4639,15 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     }
 
     if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
-        inst->enabled_layer_count = pCreateInfo->enabledLayerCount;
+        res = create_string_list(inst, pCreateInfo->enabledLayerCount, &inst->enabled_layer_names);
+        if (res != VK_SUCCESS) {
+            return res;
+        }
 
-        inst->enabled_layer_names = (char **)loader_instance_heap_calloc(inst, sizeof(char *) * pCreateInfo->enabledLayerCount,
-                                                                         VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-
-        for (uint32_t i = 0, n = inst->enabled_layer_count; i < n; ++i) {
-            size_t size = strlen(pCreateInfo->ppEnabledLayerNames[i]) + 1;
-            inst->enabled_layer_names[i] =
-                (char *)loader_instance_heap_calloc(inst, sizeof(char) * size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-            strncpy(inst->enabled_layer_names[i], pCreateInfo->ppEnabledLayerNames[i], strlen(pCreateInfo->ppEnabledLayerNames[i]));
+        for (uint32_t i = 0; i < pCreateInfo->enabledLayerCount; ++i) {
+            res = copy_str_to_string_list(inst, &inst->enabled_layer_names, pCreateInfo->ppEnabledLayerNames[i],
+                                          strlen(pCreateInfo->ppEnabledLayerNames[i]));
+            if (res != VK_SUCCESS) return res;
         }
     }
 
@@ -4812,17 +4686,17 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
     if (loader_create_info.enabledLayerCount > 0 && loader_create_info.ppEnabledLayerNames != NULL) {
         bool invalid_device_layer_usage = false;
 
-        if (loader_create_info.enabledLayerCount != inst->enabled_layer_count && loader_create_info.enabledLayerCount > 0) {
+        if (loader_create_info.enabledLayerCount != inst->enabled_layer_names.count && loader_create_info.enabledLayerCount > 0) {
             invalid_device_layer_usage = true;
         } else if (loader_create_info.enabledLayerCount > 0 && loader_create_info.ppEnabledLayerNames == NULL) {
             invalid_device_layer_usage = true;
         } else if (loader_create_info.enabledLayerCount == 0 && loader_create_info.ppEnabledLayerNames != NULL) {
             invalid_device_layer_usage = true;
-        } else if (inst->enabled_layer_names != NULL) {
+        } else if (inst->enabled_layer_names.list != NULL) {
             for (uint32_t i = 0; i < loader_create_info.enabledLayerCount; i++) {
                 const char *device_layer_names = loader_create_info.ppEnabledLayerNames[i];
 
-                if (strcmp(device_layer_names, inst->enabled_layer_names[i]) != 0) {
+                if (strcmp(device_layer_names, inst->enabled_layer_names.list[i]) != 0) {
                     invalid_device_layer_usage = true;
                     break;
                 }
@@ -5343,7 +5217,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         // Make sure that we reset the pApplicationInfo so we don't get an old pointer
         icd_create_info.pApplicationInfo = pCreateInfo->pApplicationInfo;
         icd_create_info.enabledExtensionCount = 0;
-        struct loader_extension_list icd_exts;
+        struct loader_extension_list icd_exts = {0};
 
         // traverse scanned icd list adding non-duplicate extensions to the list
         res = loader_init_generic_list(ptr_instance, (struct loader_generic_list *)&icd_exts, sizeof(VkExtensionProperties));
@@ -5637,14 +5511,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     loader_free_dev_ext_table(ptr_instance);
     loader_free_phys_dev_ext_table(ptr_instance);
 
-    for (uint32_t i = 0, n = ptr_instance->enabled_layer_count; i < n; ++i) {
-        loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names[i]);
-    }
-
-    if (ptr_instance->enabled_layer_count > 0) {
-        loader_instance_heap_free(ptr_instance, ptr_instance->enabled_layer_names);
-        memset(&ptr_instance->enabled_layer_names, 0, sizeof(ptr_instance->enabled_layer_names));
-    }
+    free_string_list(ptr_instance, &ptr_instance->enabled_layer_names);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
@@ -6255,7 +6122,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
         }
     }
 
-    // Now go through the rest of the physical devices and add them to new_phys_devs
+// Now go through the rest of the physical devices and add them to new_phys_devs
 #if defined(LOADER_ENABLE_LINUX_SORT)
 
     if (is_linux_sort_enabled(inst)) {
