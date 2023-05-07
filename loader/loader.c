@@ -1239,8 +1239,6 @@ void loader_destroy_logical_device(const struct loader_instance *inst, struct lo
     if (pAllocator) {
         dev->alloc_callbacks = *pAllocator;
     }
-    loader_destroy_layer_list(inst, dev, &dev->expanded_activated_layer_list);
-    loader_destroy_layer_list(inst, dev, &dev->app_activated_layer_list);
     loader_device_heap_free(dev, dev);
 }
 
@@ -4409,48 +4407,6 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
         goto out;
     }
 
-    // Copy the application enabled instance layer list into the device
-    if (NULL != inst->app_activated_layer_list.list) {
-        dev->app_activated_layer_list.capacity = inst->app_activated_layer_list.capacity;
-        dev->app_activated_layer_list.count = inst->app_activated_layer_list.count;
-        dev->app_activated_layer_list.list =
-            loader_device_heap_alloc(dev, inst->app_activated_layer_list.capacity, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-        if (dev->app_activated_layer_list.list == NULL) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "vkCreateDevice: Failed to allocate application activated layer list of size %d.",
-                       inst->app_activated_layer_list.capacity);
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-        memcpy(dev->app_activated_layer_list.list, inst->app_activated_layer_list.list,
-               sizeof(*dev->app_activated_layer_list.list) * dev->app_activated_layer_list.count);
-    } else {
-        dev->app_activated_layer_list.capacity = 0;
-        dev->app_activated_layer_list.count = 0;
-        dev->app_activated_layer_list.list = NULL;
-    }
-
-    // Copy the expanded enabled instance layer list into the device
-    if (NULL != inst->expanded_activated_layer_list.list) {
-        dev->expanded_activated_layer_list.capacity = inst->expanded_activated_layer_list.capacity;
-        dev->expanded_activated_layer_list.count = inst->expanded_activated_layer_list.count;
-        dev->expanded_activated_layer_list.list =
-            loader_device_heap_alloc(dev, inst->expanded_activated_layer_list.capacity, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-        if (dev->expanded_activated_layer_list.list == NULL) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "vkCreateDevice: Failed to allocate expanded activated layer list of size %d.",
-                       inst->expanded_activated_layer_list.capacity);
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-        memcpy(dev->expanded_activated_layer_list.list, inst->expanded_activated_layer_list.list,
-               sizeof(*dev->expanded_activated_layer_list.list) * dev->expanded_activated_layer_list.count);
-    } else {
-        dev->expanded_activated_layer_list.capacity = 0;
-        dev->expanded_activated_layer_list.count = 0;
-        dev->expanded_activated_layer_list.list = NULL;
-    }
-
     res = loader_create_device_chain(internal_device, pCreateInfo, pAllocator, inst, dev, layerGIPA, nextGDPA);
     if (res != VK_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "vkCreateDevice:  Failed to create device chain.");
@@ -4942,8 +4898,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             pNext = pNext->pNext;
         }
     }
-    if (dev->expanded_activated_layer_list.count > 0) {
-        layer_device_link_info = loader_stack_alloc(sizeof(VkLayerDeviceLink) * dev->expanded_activated_layer_list.count);
+    if (inst->expanded_activated_layer_list.count > 0) {
+        layer_device_link_info = loader_stack_alloc(sizeof(VkLayerDeviceLink) * inst->expanded_activated_layer_list.count);
         if (!layer_device_link_info) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "loader_create_device_chain: Failed to alloc Device objects for layer. Skipping Layer.");
@@ -4964,8 +4920,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         loader_create_info.pNext = &chain_info;
 
         // Create instance chain of enabled layers
-        for (int32_t i = dev->expanded_activated_layer_list.count - 1; i >= 0; i--) {
-            struct loader_layer_properties *layer_prop = &dev->expanded_activated_layer_list.list[i];
+        for (int32_t i = inst->expanded_activated_layer_list.count - 1; i >= 0; i--) {
+            struct loader_layer_properties *layer_prop = &inst->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle = layer_prop->lib_handle;
 
             // Skip it if a Layer with the same name has been already successfully activated

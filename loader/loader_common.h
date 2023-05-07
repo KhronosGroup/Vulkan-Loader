@@ -173,14 +173,6 @@ struct loader_device {
     VkDevice icd_device;    // device object from the icd
     struct loader_physical_device_term *phys_dev_term;
 
-    // List of activated layers.
-    //  app_      is the version based on exactly what the application asked for.
-    //            This is what must be returned to the application on Enumerate calls.
-    //  expanded_ is the version based on expanding meta-layers into their
-    //            individual component layers.  This is what is used internally.
-    struct loader_layer_list app_activated_layer_list;
-    struct loader_layer_list expanded_activated_layer_list;
-
     VkAllocationCallbacks alloc_callbacks;
 
     // List of activated device extensions that have terminators implemented in the loader
