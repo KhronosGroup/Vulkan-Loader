@@ -422,7 +422,8 @@ bool check_name_matches_filter_environment_var(const struct loader_instance *ins
 VkResult loader_add_environment_layers(struct loader_instance *inst, const enum layer_type_flags type_flags,
                                        const struct loader_envvar_filter *enable_filter,
                                        const struct loader_envvar_disable_layers_filter *disable_filter,
-                                       struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
+                                       struct loader_pointer_layer_list *target_list,
+                                       struct loader_pointer_layer_list *expanded_target_list,
                                        const struct loader_layer_list *source_list) {
     VkResult res = VK_SUCCESS;
     char *layer_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
@@ -450,9 +451,9 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
                             // Only add it if it doesn't already appear in the layer list
                             if (!loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
                                 if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                                    res = loader_add_layer_properties_to_list(inst, target_list, 1, source_prop);
+                                    res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-                                    res = loader_add_layer_properties_to_list(inst, expanded_target_list, 1, source_prop);
+                                    res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                 } else {
                                     res = loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list,
@@ -516,9 +517,9 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
 
         // If not a meta-layer, simply add it.
         if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            res = loader_add_layer_properties_to_list(inst, target_list, 1, source_prop);
+            res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-            res = loader_add_layer_properties_to_list(inst, expanded_target_list, 1, source_prop);
+            res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         } else {
             res = loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list, expanded_target_list,

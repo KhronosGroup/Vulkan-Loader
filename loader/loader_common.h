@@ -152,10 +152,19 @@ struct loader_layer_properties {
     char (*app_key_paths)[MAX_STRING_SIZE];
 };
 
+// Stores a list of loader_layer_properties
 struct loader_layer_list {
     size_t capacity;
     uint32_t count;
     struct loader_layer_properties *list;
+};
+
+// Stores a list of pointers to loader_layer_properties
+// Used for app_activated_layer_list and expanded_activated_layer_list
+struct loader_pointer_layer_list {
+    size_t capacity;
+    uint32_t count;
+    struct loader_layer_properties **list;
 };
 
 typedef VkResult(VKAPI_PTR *PFN_vkDevExt)(VkDevice device);
@@ -272,8 +281,8 @@ struct loader_instance {
     //            This is what must be returned to the application on Enumerate calls.
     //  expanded_ is the version based on expanding meta-layers into their
     //            individual component layers.  This is what is used internally.
-    struct loader_layer_list app_activated_layer_list;
-    struct loader_layer_list expanded_activated_layer_list;
+    struct loader_pointer_layer_list app_activated_layer_list;
+    struct loader_pointer_layer_list expanded_activated_layer_list;
 
     VkInstance instance;  // layers/ICD instance returned to trampoline
 

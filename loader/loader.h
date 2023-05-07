@@ -102,14 +102,14 @@ bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, c
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
 
-bool loader_find_layer_name_in_list(const char *name, const struct loader_layer_list *layer_list);
-VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_layer_list *list,
-                                             uint32_t prop_list_count, const struct loader_layer_properties *props);
+bool loader_find_layer_name_in_list(const char *name, const struct loader_pointer_layer_list *layer_list);
+VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_pointer_layer_list *list,
+                                             struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
 VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
                                const struct loader_envvar_disable_layers_filter *disable_filter,
-                               const struct loader_layer_properties *prop, struct loader_layer_list *target_list,
-                               struct loader_layer_list *expanded_target_list, const struct loader_layer_list *source_list,
+                               struct loader_layer_properties *prop, struct loader_pointer_layer_list *target_list,
+                               struct loader_pointer_layer_list *expanded_target_list, const struct loader_layer_list *source_list,
                                bool *out_found_all_component_layers);
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props);
@@ -121,8 +121,7 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
                                       struct loader_extension_list *ext_list);
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
 void loader_destroy_generic_list(const struct loader_instance *inst, struct loader_generic_list *list);
-void loader_destroy_layer_list(const struct loader_instance *inst, struct loader_device *device,
-                               struct loader_layer_list *layer_list);
+void loader_destroy_pointer_layer_list(const struct loader_instance *inst, struct loader_pointer_layer_list *layer_list);
 void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list);
 VkResult loader_scanned_icd_init(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
@@ -136,7 +135,6 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
                                                    struct loader_extension_list *inst_exts);
 struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index);
 struct loader_instance *loader_get_instance(const VkInstance instance);
-void loader_deactivate_layers(const struct loader_instance *instance, struct loader_device *device, struct loader_layer_list *list);
 struct loader_device *loader_create_logical_device(const struct loader_instance *inst, const VkAllocationCallbacks *pAllocator);
 void loader_add_logical_device(const struct loader_instance *inst, struct loader_icd_term *icd_term,
                                struct loader_device *found_dev);
@@ -168,7 +166,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
                                     PFN_vkGetDeviceProcAddr *layerNextGDPA);
 
 VkResult loader_validate_device_extensions(struct loader_instance *this_instance,
-                                           const struct loader_layer_list *activated_device_layers,
+                                           const struct loader_pointer_layer_list *activated_device_layers,
                                            const struct loader_extension_list *icd_exts, const VkDeviceCreateInfo *pCreateInfo);
 
 VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phys_dev_count, VkPhysicalDevice *phys_devs);
