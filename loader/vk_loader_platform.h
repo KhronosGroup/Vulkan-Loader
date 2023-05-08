@@ -363,9 +363,11 @@ static inline const char *loader_platform_open_library_error(const char *libPath
 }
 static inline void loader_platform_close_library(loader_platform_dl_handle library) {
 #if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
+    (void)library;
     return;
-#endif
+#else
     dlclose(library);
+#endif
 }
 static inline void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);
@@ -512,9 +514,11 @@ static const char *loader_platform_open_library_error(const char *libPath) {
 }
 static void loader_platform_close_library(loader_platform_dl_handle library) {
 #if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
+    (void)library;
     return;
-#endif
+#else
     FreeLibrary(library);
+#endif
 }
 static void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);
