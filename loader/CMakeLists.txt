@@ -258,11 +258,6 @@ else() # i.e.: Linux
     endif()
 endif()
 
-option(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING "Causes the loader to not unload dynamic libraries.")
-if (LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
-    target_compile_definitions(vulkan PRIVATE LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
-endif()
-
 if(WIN32)
     add_library(loader-opt STATIC ${OPT_LOADER_SRCS})
     target_link_libraries(loader-opt PUBLIC loader_specific_options)
@@ -370,6 +365,11 @@ else()
         )
 # cmake-format: on
     endif()
+endif()
+
+option(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING "Causes the loader to not unload dynamic libraries.")
+if (LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
+    target_compile_definitions(vulkan PRIVATE LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
 endif()
 
 # common attributes of the vulkan library
