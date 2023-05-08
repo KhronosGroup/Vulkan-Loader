@@ -175,7 +175,7 @@ jobs:
               arch: ${{ matrix.arch }}
 
           - name: Configure
-            run: cmake -S. -B build -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -G "Ninja"
+            run: cmake -S. -B build -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -G "Ninja" -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON
 
           - name: Build
             run: cmake --build ./build
