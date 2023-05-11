@@ -172,7 +172,6 @@ namespace fs {
 std::string make_native(std::string const&);
 
 struct path {
-   private:
 #if defined(WIN32)
     static const char path_separator = '\\';
 #elif COMMON_UNIX_PLATFORMS
@@ -867,4 +866,13 @@ inline std::string test_platform_executable_path() {
     buffer[ret] = '\0';
     return buffer;
 }
+
+inline std::wstring conver_str_to_wstr(std::string const& input) {
+    std::wstring output{};
+    output.resize(input.size());
+    size_t characters_converted = 0;
+    mbstowcs_s(&characters_converted, &output[0], output.size() + 1, input.c_str(), input.size());
+    return output;
+}
+
 #endif

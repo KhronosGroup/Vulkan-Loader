@@ -472,8 +472,8 @@ enum class ManifestDiscoveryType {
 
 struct TestICDDetails {
     TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
-    TestICDDetails(fs::path icd_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
-        icd_manifest.set_lib_path(icd_path.str()).set_api_version(api_version);
+    TestICDDetails(fs::path icd_binary_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
+        icd_manifest.set_lib_path(icd_binary_path.str()).set_api_version(api_version);
     }
     BUILDER_VALUE(TestICDDetails, ManifestICD, icd_manifest, {});
     BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
@@ -481,6 +481,8 @@ struct TestICDDetails {
     BUILDER_VALUE(TestICDDetails, bool, disable_icd_inc, false);
     BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
+    // Dont add any path information to the library_path - force the use of the default search paths
+    BUILDER_VALUE(TestICDDetails, bool, use_dynamic_library_default_search_paths, false);
 };
 
 struct TestLayerDetails {
@@ -490,7 +492,10 @@ struct TestLayerDetails {
     BUILDER_VALUE(TestLayerDetails, std::string, json_name, "test_layer");
     BUILDER_VALUE(TestLayerDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
+    // If discovery type is env-var, is_dir controls whether the env-var has the full name to the manifest or just the folder
     BUILDER_VALUE(TestLayerDetails, bool, is_dir, true);
+    // Dont add any path information to the library_path - force the use of the default search paths
+    BUILDER_VALUE(TestLayerDetails, bool, use_dynamic_library_default_search_paths, false);
 };
 
 // Locations manifests can go in the test framework

@@ -54,6 +54,7 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #define CLOSEDIR_FUNC_NAME closedir
 #define ACCESS_FUNC_NAME access
 #define FOPEN_FUNC_NAME fopen
+#define DLOPEN_FUNC_NAME dlopen
 #define GETEUID_FUNC_NAME geteuid
 #define GETEGID_FUNC_NAME getegid
 #if defined(HAVE_SECURE_GETENV)
@@ -68,6 +69,7 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #define CLOSEDIR_FUNC_NAME my_closedir
 #define ACCESS_FUNC_NAME my_access
 #define FOPEN_FUNC_NAME my_fopen
+#define DLOPEN_FUNC_NAME my_dlopen
 #define GETEUID_FUNC_NAME my_geteuid
 #define GETEGID_FUNC_NAME my_getegid
 #if defined(HAVE_SECURE_GETENV)
@@ -83,6 +85,7 @@ using PFN_READDIR = struct dirent* (*)(DIR* dir_stream);
 using PFN_CLOSEDIR = int (*)(DIR* dir_stream);
 using PFN_ACCESS = int (*)(const char* pathname, int mode);
 using PFN_FOPEN = FILE* (*)(const char* filename, const char* mode);
+using PFN_DLOPEN = void* (*)(const char* in_filename, int flags);
 using PFN_GETEUID = uid_t (*)(void);
 using PFN_GETEGID = gid_t (*)(void);
 #if defined(HAVE_SECURE_GETENV) || defined(HAVE___SECURE_GETENV)
@@ -95,6 +98,7 @@ using PFN_SEC_GETENV = char* (*)(const char* name);
 #define real_closedir closedir
 #define real_access access
 #define real_fopen fopen
+#define real_dlopen dlopen
 #define real_geteuid geteuid
 #define real_getegid getegid
 #if defined(HAVE_SECURE_GETENV)
@@ -109,6 +113,7 @@ PFN_READDIR real_readdir = nullptr;
 PFN_CLOSEDIR real_closedir = nullptr;
 PFN_ACCESS real_access = nullptr;
 PFN_FOPEN real_fopen = nullptr;
+PFN_DLOPEN real_dlopen = nullptr;
 PFN_GETEUID real_geteuid = nullptr;
 PFN_GETEGID real_getegid = nullptr;
 #if defined(HAVE_SECURE_GETENV)
@@ -241,6 +246,17 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
     return f_ptr;
 }
 
+FRAMEWORK_EXPORT void* DLOPEN_FUNC_NAME(const char* in_filename, int flags) {
+#if !defined(__APPLE__)
+    if (!real_dlopen) real_dlopen = (PFN_DLOPEN)dlsym(RTLD_NEXT, "dlopen");
+#endif
+
+    if (platform_shim.is_dlopen_redirect_name(in_filename)) {
+        return real_dlopen(platform_shim.dlopen_redirection_map[in_filename].c_str(), flags);
+    }
+    return real_dlopen(in_filename, flags);
+}
+
 FRAMEWORK_EXPORT uid_t GETEUID_FUNC_NAME(void) {
 #if !defined(__APPLE__)
     if (!real_geteuid) real_geteuid = (PFN_GETEUID)dlsym(RTLD_NEXT, "geteuid");
@@ -333,6 +349,7 @@ __attribute__((used)) static Interposer _interpose_opendir MACOS_ATTRIB = {VOIDP
 __attribute__((used)) static Interposer _interpose_closedir MACOS_ATTRIB = {VOIDP_CAST(my_closedir), VOIDP_CAST(closedir)};
 __attribute__((used)) static Interposer _interpose_access MACOS_ATTRIB = {VOIDP_CAST(my_access), VOIDP_CAST(access)};
 __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_CAST(my_fopen), VOIDP_CAST(fopen)};
+__attribute__((used)) static Interposer _interpose_dlopen MACOS_ATTRIB = {VOIDP_CAST(my_dlopen), VOIDP_CAST(dlopen)};
 __attribute__((used)) static Interposer _interpose_euid MACOS_ATTRIB = {VOIDP_CAST(my_geteuid), VOIDP_CAST(geteuid)};
 __attribute__((used)) static Interposer _interpose_egid MACOS_ATTRIB = {VOIDP_CAST(my_getegid), VOIDP_CAST(getegid)};
 #if defined(HAVE_SECURE_GETENV)

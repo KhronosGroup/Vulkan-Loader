@@ -436,9 +436,21 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
 
         auto new_driver_location = folder->copy_file(icd_details.icd_manifest.lib_path, new_driver_name.str());
 
+#if COMMON_UNIX_PLATFORMS
+        if (icd_details.use_dynamic_library_default_search_paths) {
+            platform_shim->redirect_dlopen_name(new_driver_name, new_driver_location);
+        }
+#endif
+#if defined(WIN32)
+        if (icd_details.use_dynamic_library_default_search_paths) {
+            SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
+            AddDllDirectory(conver_str_to_wstr(new_driver_location.parent_path().str()).c_str());
+        }
+#endif
         icds.push_back(TestICDHandle(new_driver_location));
         icds.back().reset_icd();
-        icd_details.icd_manifest.lib_path = new_driver_location.str();
+        icd_details.icd_manifest.lib_path =
+            icd_details.use_dynamic_library_default_search_paths ? new_driver_name.str() : new_driver_location.str();
     }
     if (icd_details.discovery_type != ManifestDiscoveryType::none) {
         std::string full_json_name = icd_details.json_name;
@@ -545,6 +557,18 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
 
             auto new_layer_location = folder.copy_file(layer.lib_path, layer_binary_name.str());
 
+#if COMMON_UNIX_PLATFORMS
+            if (layer_details.use_dynamic_library_default_search_paths) {
+                platform_shim->redirect_dlopen_name(layer_binary_name, new_layer_location);
+            }
+#endif
+#if defined(WIN32)
+            if (layer_details.use_dynamic_library_default_search_paths) {
+                SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
+                AddDllDirectory(conver_str_to_wstr(new_layer_location.parent_path().str()).c_str());
+            }
+#endif
+
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
             if (!layer_details.is_fake &&
@@ -552,7 +576,7 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset_layer();
             }
-            layer.lib_path = new_layer_location;
+            layer.lib_path = layer_details.use_dynamic_library_default_search_paths ? layer_binary_name : new_layer_location;
         }
     }
     if (layer_details.discovery_type != ManifestDiscoveryType::none) {
