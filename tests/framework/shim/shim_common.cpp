@@ -229,4 +229,10 @@ void PlatformShim::set_fake_path(ManifestCategory category, fs::path const& path
     redirect_path(fs::path(SYSCONFDIR) / "vulkan" / category_path_name(category), path);
 }
 
+void PlatformShim::redirect_dlopen_name(fs::path const& filename, fs::path const& actual_path) {
+    dlopen_redirection_map[filename.str()] = actual_path;
+}
+
+bool PlatformShim::is_dlopen_redirect_name(fs::path const& filename) { return dlopen_redirection_map.count(filename.str()) == 1; }
+
 #endif

@@ -3882,6 +3882,40 @@ TEST(DuplicateRegistryEntries, Drivers) {
 }
 #endif
 
+TEST(LibraryLoading, SystemLocations) {
+    FrameworkEnvironment env{};
+    EnvVarWrapper ld_library_path("LD_LIBRARY_PATH", env.get_folder(ManifestLocation::driver).location().str());
+    ld_library_path.add_to_list(env.get_folder(ManifestLocation::explicit_layer).location().str());
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_use_dynamic_library_default_search_paths(true));
+    env.get_test_icd().physical_devices.push_back({});
+    const char* fake_ext_name = "VK_FAKE_extension";
+    env.get_test_icd().physical_devices.back().add_extension(fake_ext_name);
+
+    const char* layer_name = "TestLayer";
+    env.add_explicit_layer(
+        TestLayerDetails{ManifestLayer{}.add_layer(
+                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                         "test_layer.json"}
+            .set_use_dynamic_library_default_search_paths(true));
+
+    auto props = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(props.at(0).layerName, layer_name));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(layer_name);
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+
+    auto phys_dev = inst.GetPhysDev();
+
+    auto active_props = inst.GetActiveLayers(phys_dev, 1);
+    ASSERT_TRUE(string_eq(active_props.at(0).layerName, layer_name));
+
+    auto device_extensions = inst.EnumerateDeviceExtensions(phys_dev, 1);
+    ASSERT_TRUE(string_eq(device_extensions.at(0).extensionName, fake_ext_name));
+}
+
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 // Check that valid symlinks do not cause the loader to crash when directly in an XDG env-var
 TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {

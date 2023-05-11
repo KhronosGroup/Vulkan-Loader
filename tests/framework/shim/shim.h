@@ -196,7 +196,11 @@ struct PlatformShim {
     bool is_known_path(fs::path const& path);
     void remove_known_path(fs::path const& path);
 
+    void redirect_dlopen_name(fs::path const& filename, fs::path const& actual_path);
+    bool is_dlopen_redirect_name(fs::path const& filename);
+
     std::unordered_map<std::string, fs::path> redirection_map;
+    std::unordered_map<std::string, fs::path> dlopen_redirection_map;
     std::unordered_set<std::string> known_path_set;
 
     void set_elevated_privilege(bool elev) { use_fake_elevation = elev; }
