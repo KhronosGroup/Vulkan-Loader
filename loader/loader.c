@@ -1068,7 +1068,8 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
                                                    expanded_target_list, source_list, &found_layers_in_component_meta_layer);
                     if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
                     if (!found_layers_in_component_meta_layer) found_all_component_layers = false;
-                } else {
+                } else if (!loader_find_layer_name_in_list(&search_prop->info.layerName[0], target_list)) {
+                    // Make sure the layer isn't already in the output_list, skip adding it if it is.
                     result = loader_add_layer_properties_to_list(inst, target_list, 1, search_prop);
                     if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
                     if (NULL != expanded_target_list) {
