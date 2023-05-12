@@ -29,10 +29,6 @@
 
 #include <vulkan/vulkan_core.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /* cJSON Types: */
 #define cJSON_False 0
 #define cJSON_True 1
@@ -156,10 +152,6 @@ void cJSON_Minify(char *json);
  * too. */
 #define cJSON_SetIntValue(object, val) ((object) ? (object)->valueint = (object)->valuedouble = (val) : (val))
 #define cJSON_SetNumberValue(object, val) ((object) ? (object)->valueint = (object)->valuedouble = (val) : (val))
-
-#if defined(__cplusplus)
-}
-#endif
 
 // Helper functions to using JSON
 
