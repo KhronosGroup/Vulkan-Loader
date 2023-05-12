@@ -1308,10 +1308,14 @@ out:
 VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *inst, cJSON *object, const char *key,
                                                   size_t out_str_len, char *out_string) {
     cJSON *item = cJSON_GetObjectItem(object, key);
-    if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
+    if (NULL == item) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
 
     char *str = cJSON_Print(item);
-    if (str == NULL) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    if (str == NULL) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
     strncpy(out_string, str, out_str_len);
     out_string[out_str_len - 1] = '\0';
     loader_instance_heap_free(inst, str);
@@ -1320,10 +1324,14 @@ VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *
 
 VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *object, const char *key, char **out_string) {
     cJSON *item = cJSON_GetObjectItem(object, key);
-    if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
+    if (NULL == item) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
 
     char *str = cJSON_Print(item);
-    if (str == NULL) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    if (str == NULL) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
     *out_string = str;
     return VK_SUCCESS;
 }
@@ -1331,7 +1339,9 @@ VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, 
                                             struct loader_string_list *string_list) {
     VkResult res = VK_SUCCESS;
     cJSON *item = cJSON_GetObjectItem(object, key);
-    if (NULL == item) return VK_ERROR_INITIALIZATION_FAILED;
+    if (NULL == item) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
 
     uint32_t count = cJSON_GetArraySize(item);
     if (count == 0) {
@@ -1351,7 +1361,9 @@ VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, 
             goto out;
         }
         res = append_str_to_string_list(inst, string_list, out_data);
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+            goto out;
+        }
     }
 out:
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY && NULL != string_list->list) {
