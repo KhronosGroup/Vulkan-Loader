@@ -97,17 +97,27 @@ endif()
 
 set(NORMAL_LOADER_SRCS
     allocation.c
+    allocation.h
     cJSON.c
+    cJSON.h
     debug_utils.c
+    debug_utils.h
     extension_manual.c
+    extension_manual.h
     loader_environment.c
+    loader_environment.h
     gpa_helper.c
+    gpa_helper.h
     loader.c
+    loader.h
     log.c
+    log.h
     terminator.c
     trampoline.c
     unknown_function_handling.c
+    unknown_function_handling.h
     wsi.c
+    wsi.h
     )
 
 if(WIN32)
