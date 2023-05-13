@@ -544,7 +544,7 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
     ASSERT_EQ(physical_count, returned_physical_count);
 
     VkSurfaceKHR surface{};
-    create_surface(inst, surface);
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
     for (const auto& handle : physical_device_handles) {
         handle_assert_has_value(handle);
 

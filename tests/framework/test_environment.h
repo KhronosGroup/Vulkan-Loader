@@ -582,9 +582,13 @@ const char* get_platform_wsi_extension(const char* api_selection = nullptr);
 // By default they use whatever the set VK_USE_PLATFORM_XXX macros define
 void setup_WSI_in_ICD(TestICD& icd, const char* api_selection = nullptr);
 void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection = nullptr);
+void setup_WSI_in_create_instance(InstanceCreateInfo& inst_create_info, const char* api_selection = nullptr);
 
 // Create a surface using a platform specific API
 // api_selection: optionally provide a VK_USE_PLATFORM_XXX string to select which API to create a surface with.
 //    defaults to Metal on macOS and XCB on linux if not provided
-// Returns an assertion failure if the surface failed to be created
-testing::AssertionResult create_surface(InstWrapper& inst, VkSurfaceKHR& out_surface, const char* api_selection = nullptr);
+// Returns an VkResult with the result of surface creation
+// returns VK_ERROR_EXTENSION_NOT_PRESENT if it fails to load the surface creation function
+VkResult create_surface(InstWrapper& inst, VkSurfaceKHR& out_surface, const char* api_selection = nullptr);
+// Alternate parameter list for allocation callback tests
+VkResult create_surface(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface, const char* api_selection = nullptr);

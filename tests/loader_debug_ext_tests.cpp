@@ -877,7 +877,7 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
     DeviceFunctions dev_funcs{env.vulkan_functions, dev};
 
     VkSurfaceKHR surface{};
-    ASSERT_NO_FATAL_FAILURE(create_surface(inst, surface));
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
 
     VkSwapchainCreateInfoKHR info{};
     info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

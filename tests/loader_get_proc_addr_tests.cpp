@@ -201,7 +201,7 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
     VkSurfaceKHR surface{};
-    ASSERT_NO_FATAL_FAILURE(create_surface(inst, surface));
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
 
     DebugUtilsWrapper log{inst};
     ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));

@@ -794,7 +794,7 @@ TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
     VkSurfaceKHR surface{};
-    ASSERT_FALSE(create_surface(inst, surface));
+    ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, create_surface(inst, surface));
 }
 
 TEST(WsiTests, SwapchainFunctional) {
@@ -812,7 +812,7 @@ TEST(WsiTests, SwapchainFunctional) {
     setup_WSI_in_create_instance(inst);
     inst.CheckCreate();
     VkSurfaceKHR surface{};
-    create_surface(inst, surface);
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
     {  // Use GDPA to get functions
