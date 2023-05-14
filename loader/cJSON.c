@@ -44,6 +44,10 @@ void *cJSON_malloc(const VkAllocationCallbacks *pAllocator, size_t size) {
     return loader_alloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
 }
 
+void *cJSON_malloc_instance_scope(const VkAllocationCallbacks *pAllocator, size_t size) {
+    return loader_alloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+}
+
 void cJSON_Free(const VkAllocationCallbacks *pAllocator, void *pMemory) { loader_free(pAllocator, pMemory); }
 
 /*
@@ -353,7 +357,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         if (p)
             out = ensure(pAllocator, p, out_buf_size);
         else
-            out = (char *)cJSON_malloc(pAllocator, out_buf_size);
+            out = (char *)cJSON_malloc_instance_scope(pAllocator, out_buf_size);
         if (!out) return 0;
         ptr2 = out;
         // *ptr2++ = '\"'; // Modified to not put quotes around the string
@@ -368,7 +372,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         if (p)
             out = ensure(pAllocator, p, out_buf_size);
         else
-            out = (char *)cJSON_malloc(pAllocator, out_buf_size);
+            out = (char *)cJSON_malloc_instance_scope(pAllocator, out_buf_size);
         if (!out) return 0;
         strcpy(out, "\"\"");
         return out;
@@ -389,7 +393,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
     if (p)
         out = ensure(pAllocator, p, out_buf_size);
     else
-        out = (char *)cJSON_malloc(pAllocator, out_buf_size);
+        out = (char *)cJSON_malloc_instance_scope(pAllocator, out_buf_size);
     if (!out) return 0;
 
     ptr2 = out;
@@ -1292,6 +1296,10 @@ out:
     loader_instance_heap_free(inst, json_buf);
     if (NULL != file) {
         fclose(file);
+    }
+    if (res != VK_SUCCESS && *json != NULL) {
+        cJSON_Delete(*json);
+        *json = NULL;
     }
 
     return res;
