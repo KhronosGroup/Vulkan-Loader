@@ -62,6 +62,9 @@ config("vulkan_internal_config") {
       "FALLBACK_DATA_DIRS=\"/usr/local/share:/usr/share\"",
     ]
   }
+  if (!vulkan_loader_shared) {
+    defines += [ "BUILD_STATIC_LOADER" ]
+  }
 }
 
 # Vulkan loader
