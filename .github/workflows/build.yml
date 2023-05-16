@@ -106,11 +106,17 @@ jobs:
             - uses: lukka/get-cmake@latest
               with:
                 cmakeVersion: 3.17.2
-            - name: Install Dependencies
+
+            - name: Enable 32 bit
               run: |-
                 sudo dpkg --add-architecture i386
+            - name: Update packages
+              run: |-
                 sudo apt-get update
-                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6-dev-i386 libwayland-dev:i386 libxrandr-dev:i386
+            - name: Install Dependencies
+              run: |-
+                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 libwayland-dev:i386 libxrandr-dev:i386
+
             - name: Generate build files
               run: cmake -S. -B build -D CMAKE_BUILD_TYPE=${{matrix.config}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON
               env:
