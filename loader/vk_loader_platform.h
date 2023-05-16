@@ -76,7 +76,9 @@
 
 #include "stack_allocation.h"
 
-#if defined(__GNUC__) && __GNUC__ >= 4
+#if defined(BUILD_STATIC_LOADER)
+#define LOADER_EXPORT
+#elif defined(__GNUC__) && __GNUC__ >= 4
 #define LOADER_EXPORT __attribute__((visibility("default")))
 #elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590)
 #define LOADER_EXPORT __attribute__((visibility("default")))
