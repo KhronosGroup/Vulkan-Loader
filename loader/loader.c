@@ -1238,6 +1238,8 @@ struct loader_device *loader_create_logical_device(const struct loader_instance 
         return NULL;
     }
 
+    new_dev->loader_dispatch.core_dispatch.magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;
+
     if (pAllocator) {
         new_dev->alloc_callbacks = *pAllocator;
     }

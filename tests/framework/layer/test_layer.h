@@ -177,6 +177,10 @@ struct TestLayer {
     // Have a layer query for vkCreateDevice with a NULL instance handle
     BUILDER_VALUE(TestLayer, bool, buggy_query_of_vkCreateDevice, false)
 
+    // Makes the layer try to create a device using the loader provided function in the layer chain
+    BUILDER_VALUE(TestLayer, bool, call_create_device_while_create_device_is_called, false)
+    BUILDER_VALUE(TestLayer, uint32_t, physical_device_index_to_use_during_create_device, 0)
+
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;
@@ -189,6 +193,12 @@ struct TestLayer {
         VkLayerDispatchTable dispatch_table{};
     };
     std::vector<Device> created_devices;
+
+    // Stores the callback that allows layers to create devices on their own
+    PFN_vkLayerCreateDevice callback_vkCreateDevice{};
+    PFN_vkLayerDestroyDevice callback_vkDestroyDevice{};
+    std::vector<VkPhysicalDevice> queried_physical_devices;
+    Device second_device_created_during_create_device{};
 };
 
 using GetTestLayerFunc = TestLayer* (*)();

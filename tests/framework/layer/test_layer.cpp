@@ -87,6 +87,8 @@ FRAMEWORK_EXPORT TestLayer* reset_layer_func() {
 }
 }
 
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName);
+
 VkLayerInstanceCreateInfo* get_chain_info(const VkInstanceCreateInfo* pCreateInfo, VkLayerFunction func) {
     VkLayerInstanceCreateInfo* chain_info = (VkLayerInstanceCreateInfo*)pCreateInfo->pNext;
     while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
@@ -150,6 +152,12 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
     if (fpCreateInstance == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    if (layer.call_create_device_while_create_device_is_called) {
+        auto* createDeviceCallback = get_chain_info(pCreateInfo, VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK);
+        layer.callback_vkCreateDevice = createDeviceCallback->u.layerDevice.pfnLayerCreateDevice;
+        layer.callback_vkDestroyDevice = createDeviceCallback->u.layerDevice.pfnLayerDestroyDevice;
     }
 
     // Advance the link info for the next element of the chain
@@ -231,6 +239,20 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
             reinterpret_cast<PFN_vkCreateDevice>(fpGetInstanceProcAddr(nullptr, "vkCreateDevice"));
     }
 
+    if (layer.call_create_device_while_create_device_is_called) {
+        uint32_t phys_dev_count = 0;
+        result = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, nullptr);
+        if (result != VK_SUCCESS) {
+            return result;
+        }
+        layer.queried_physical_devices.resize(phys_dev_count);
+        result = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count,
+                                                                        layer.queried_physical_devices.data());
+        if (result != VK_SUCCESS) {
+            return result;
+        }
+    }
+
     return result;
 }
 
@@ -294,6 +316,20 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
         } else {
             layer.spurious_device_memory_allocations.push_back({allocation, device.device_handle});
         }
+    }
+
+    if (layer.call_create_device_while_create_device_is_called) {
+        PFN_vkGetDeviceProcAddr next_gdpa = layer.next_vkGetDeviceProcAddr;
+        result = layer.callback_vkCreateDevice(
+            instance_to_use, layer.queried_physical_devices.at(layer.physical_device_index_to_use_during_create_device),
+            pCreateInfo, pAllocator, &layer.second_device_created_during_create_device.device_handle, get_instance_func,
+            &next_gdpa);
+        if (result != VK_SUCCESS) {
+            return result;
+        }
+        // initialize the other device's dispatch table
+        layer_init_device_dispatch_table(layer.second_device_created_during_create_device.device_handle,
+                                         &layer.second_device_created_during_create_device.dispatch_table, next_gdpa);
     }
 
     return result;
@@ -495,6 +531,11 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
         } else {
             i++;
         }
+    }
+
+    if (layer.call_create_device_while_create_device_is_called) {
+        layer.callback_vkDestroyDevice(layer.second_device_created_during_create_device.device_handle, pAllocator,
+                                       layer.second_device_created_during_create_device.dispatch_table.DestroyDevice);
     }
 
     for (auto& created_device : layer.created_devices) {

@@ -780,7 +780,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 tables += 'VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_dispatch_table *dev_table, PFN_vkGetDeviceProcAddr gpa,\n'
                 tables += '                                                             VkDevice dev) {\n'
                 tables += '    VkLayerDispatchTable *table = &dev_table->core_dispatch;\n'
-                tables += '    table->magic = DEVICE_DISP_TABLE_MAGIC_NUMBER;\n'
+                tables += '    assert(table->magic == DEVICE_DISP_TABLE_MAGIC_NUMBER);\n'
                 tables += '    for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch[i] = (PFN_vkDevExt)vkDevExtError;\n'
 
             elif x == 1:

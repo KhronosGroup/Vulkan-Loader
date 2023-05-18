@@ -2654,8 +2654,8 @@ TEST(EnumeratePhysicalDeviceGroups, MultipleAddRemoves) {
 }
 
 // Fill in random but valid data into the device properties struct for the current physical device
-void FillInRandomDeviceProps(VkPhysicalDeviceProperties& props, VkPhysicalDeviceType dev_type, uint32_t api_vers,
-                                    uint32_t vendor, uint32_t device) {
+void FillInRandomDeviceProps(VkPhysicalDeviceProperties& props, VkPhysicalDeviceType dev_type, uint32_t api_vers, uint32_t vendor,
+                             uint32_t device) {
     props.apiVersion = api_vers;
     props.vendorID = vendor;
     props.deviceID = device;
@@ -4078,3 +4078,68 @@ TEST(ManifestDiscovery, AppleBundlesEnvVarActive) {
     ASSERT_EQ(env.get_test_icd(1).physical_devices.at(0).properties.deviceID, props.deviceID);
 }
 #endif
+
+TEST(LayerCreatesDevice, Basic) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd().add_physical_device({});
+    env.get_test_icd().physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer.json");
+    env.get_test_layer().set_call_create_device_while_create_device_is_called(true);
+    env.get_test_layer().set_physical_device_index_to_use_during_create_device(0);
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name2")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer2.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(inst.GetPhysDev());
+}
+
+TEST(LayerCreatesDevice, DifferentPhysicalDevice) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd(0).physical_devices.emplace_back("Device0");
+    env.get_test_icd(0).physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd(1).physical_devices.emplace_back("Device1");
+    env.get_test_icd(1).physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer.json");
+    env.get_test_layer().set_call_create_device_while_create_device_is_called(true);
+    env.get_test_layer().set_physical_device_index_to_use_during_create_device(1);
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name2")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer2.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    auto phys_devs = inst.GetPhysDevs();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_devs.at(0));
+
+    uint32_t familyCount = 0;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_devs.at(0), &familyCount, nullptr);
+    ASSERT_EQ(familyCount, 1U);
+}
