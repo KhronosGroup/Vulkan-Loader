@@ -1195,16 +1195,21 @@ out:
 }
 
 struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index) {
+    VkLayerDispatchTable *dispatch_table_device = loader_get_dispatch(device);
+    if (NULL == dispatch_table_device) {
+        *found_dev = NULL;
+        return NULL;
+    }
     loader_platform_thread_lock_mutex(&loader_global_instance_list_lock);
     *found_dev = NULL;
+
     for (struct loader_instance *inst = loader.instances; inst; inst = inst->next) {
         uint32_t index = 0;
         for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
-            for (struct loader_device *dev = icd_term->logical_device_list; dev; dev = dev->next)
+            for (struct loader_device *dev = icd_term->logical_device_list; dev; dev = dev->next) {
                 // Value comparison of device prevents object wrapping by layers
-                if (loader_get_dispatch(dev->icd_device) == loader_get_dispatch(device) ||
-                    (dev->chain_device != VK_NULL_HANDLE &&
-                     loader_get_dispatch(dev->chain_device) == loader_get_dispatch(device))) {
+                if (loader_get_dispatch(dev->icd_device) == dispatch_table_device ||
+                    (dev->chain_device != VK_NULL_HANDLE && loader_get_dispatch(dev->chain_device) == dispatch_table_device)) {
                     *found_dev = dev;
                     if (NULL != icd_index) {
                         *icd_index = index;
@@ -1212,6 +1217,7 @@ struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loa
                     loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
                     return icd_term;
                 }
+            }
             index++;
         }
     }
@@ -4373,6 +4379,10 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_device_terminator(VkDevice d
         if (found_name) {
             return addr;
         }
+    }
+
+    if (icd_term == NULL) {
+        return NULL;
     }
 
     return icd_term->dispatch.GetDeviceProcAddr(device, pName);
