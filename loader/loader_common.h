@@ -235,6 +235,9 @@ struct loader_instance {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
     uint64_t magic;                               // Should be LOADER_MAGIC_NUMBER
 
+    // Store all the terminators for instance functions in case a layer queries one *after* vkCreateInstance
+    VkLayerInstanceDispatchTable terminator_dispatch;
+
     // Vulkan API version the app is intending to use.
     loader_api_version app_api_version;
 
@@ -294,6 +297,9 @@ struct loader_instance {
     VkLayerDbgFunctionNode *InstanceCreationDeletionDebugFunctionHead;
 
     VkAllocationCallbacks alloc_callbacks;
+
+    // Set to true after vkCreateInstance has returned - necessary for loader_gpa_instance_terminator()
+    bool instance_finished_creation;
 
     bool portability_enumeration_enabled;
 
