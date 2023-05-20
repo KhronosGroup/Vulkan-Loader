@@ -4239,13 +4239,19 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpdpa_instance_terminator(VkInst
     if (inst == VK_NULL_HANDLE) {
         return NULL;
     }
+
     VkLayerInstanceDispatchTable *disp_table = *(VkLayerInstanceDispatchTable **)inst;
-    void *addr;
 
     if (disp_table == NULL) return NULL;
 
+    struct loader_instance *loader_inst = loader_get_instance(inst);
+
+    if (loader_inst->instance_finished_creation) {
+        disp_table = &loader_inst->terminator_dispatch;
+    }
+
     bool found_name;
-    addr = loader_lookup_instance_dispatch_table(disp_table, pName, &found_name);
+    void *addr = loader_lookup_instance_dispatch_table(disp_table, pName, &found_name);
     if (found_name) {
         return addr;
     }
@@ -4284,12 +4290,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
     if (inst == VK_NULL_HANDLE) {
         return NULL;
     }
-    struct loader_instance *loader_inst = loader_get_instance(inst);
-
     VkLayerInstanceDispatchTable *disp_table = *(VkLayerInstanceDispatchTable **)inst;
-    void *addr;
 
     if (disp_table == NULL) return NULL;
+
+    struct loader_instance *loader_inst = loader_get_instance(inst);
 
     // The VK_EXT_debug_utils functions need a special case here so the terminators can still be found from
     // vkGetInstanceProcAddr This is because VK_EXT_debug_utils is an instance level extension with device level functions, and
@@ -4329,8 +4334,12 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
                                                                      : NULL;
     }
 
+    if (loader_inst->instance_finished_creation) {
+        disp_table = &loader_inst->terminator_dispatch;
+    }
+
     bool found_name;
-    addr = loader_lookup_instance_dispatch_table(disp_table, pName, &found_name);
+    void *addr = loader_lookup_instance_dispatch_table(disp_table, pName, &found_name);
     if (found_name) {
         return addr;
     }
@@ -5017,6 +5026,9 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     }
 
     if (res == VK_SUCCESS) {
+        // Copy the current disp table into the terminator_dispatch table so we can use it in loader_gpa_instance_terminator()
+        memcpy(&inst->terminator_dispatch, &inst->disp->layer_inst_disp, sizeof(VkLayerInstanceDispatchTable));
+
         loader_init_instance_core_dispatch_table(&inst->disp->layer_inst_disp, next_gipa, *created_instance);
         inst->instance = *created_instance;
     }

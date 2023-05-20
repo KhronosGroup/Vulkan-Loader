@@ -170,7 +170,7 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateInstance(const VkInstanceCreateInfo 
         inst->pfn_inst_init = NULL;
         inst->loader_disp = *(reinterpret_cast<VkLayerInstanceDispatchTable **>(inst->obj));
     }
-    layer_init_instance_dispatch_table(*pInstance, &inst->layer_disp, fpGetInstanceProcAddr);
+    layer_init_instance_dispatch_table(inst->obj, &inst->layer_disp, fpGetInstanceProcAddr);
     bool found = false;
     for (uint32_t layer = 0; layer < pCreateInfo->enabledLayerCount; ++layer) {
         std::string layer_name = pCreateInfo->ppEnabledLayerNames[layer];
