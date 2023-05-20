@@ -4143,3 +4143,30 @@ TEST(LayerCreatesDevice, DifferentPhysicalDevice) {
     inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_devs.at(0), &familyCount, nullptr);
     ASSERT_EQ(familyCount, 1U);
 }
+
+TEST(Layer, pfnNextGetInstanceProcAddr_should_not_return_layers_own_functions) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.get_test_icd(0).physical_devices.emplace_back("Device0");
+    env.get_test_icd(0).physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer.json");
+    env.get_test_layer(0).set_check_if_EnumDevExtProps_is_same_as_queried_function(true);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    auto phys_devs = inst.GetPhysDevs();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.CheckCreate(phys_devs.at(0));
+
+    uint32_t familyCount = 0;
+    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_devs.at(0), &familyCount, nullptr);
+    ASSERT_EQ(familyCount, 1U);
+}

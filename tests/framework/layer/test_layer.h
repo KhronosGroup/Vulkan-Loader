@@ -181,6 +181,8 @@ struct TestLayer {
     BUILDER_VALUE(TestLayer, bool, call_create_device_while_create_device_is_called, false)
     BUILDER_VALUE(TestLayer, uint32_t, physical_device_index_to_use_during_create_device, 0)
 
+    BUILDER_VALUE(TestLayer, bool, check_if_EnumDevExtProps_is_same_as_queried_function, false)
+
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;
