@@ -253,6 +253,14 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         }
     }
 
+    if (layer.check_if_EnumDevExtProps_is_same_as_queried_function) {
+        auto chain_info_EnumDeviceExtProps = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(
+            fpGetInstanceProcAddr(layer.instance_handle, "vkEnumerateDeviceExtensionProperties"));
+        if (chain_info_EnumDeviceExtProps != layer.instance_dispatch_table.EnumerateDeviceExtensionProperties) {
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+    }
+
     return result;
 }
 
@@ -284,6 +292,13 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
     layer.next_vkGetDeviceProcAddr = fpGetDeviceProcAddr;
 
+    if (layer.check_if_EnumDevExtProps_is_same_as_queried_function) {
+        auto chain_info_EnumDeviceExtProps = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(
+            fpGetInstanceProcAddr(layer.instance_handle, "vkEnumerateDeviceExtensionProperties"));
+        if (chain_info_EnumDeviceExtProps != layer.instance_dispatch_table.EnumerateDeviceExtensionProperties) {
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+    }
     // Advance the link info for the next element on the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
