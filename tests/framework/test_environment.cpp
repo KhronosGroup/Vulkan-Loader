@@ -515,9 +515,10 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
     size_t new_layers_start = layers.size();
     for (auto& layer : layer_details.layer_manifest.layers) {
         if (!layer.lib_path.str().empty()) {
-            std::string layer_binary_name = layer.lib_path.filename().str() + "_" + std::to_string(layers.size());
+            fs::path layer_binary_name =
+                layer.lib_path.filename().stem() + "_" + std::to_string(layers.size()) + layer.lib_path.filename().extension();
 
-            auto new_layer_location = folder.copy_file(layer.lib_path, layer_binary_name);
+            auto new_layer_location = folder.copy_file(layer.lib_path, layer_binary_name.str());
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
