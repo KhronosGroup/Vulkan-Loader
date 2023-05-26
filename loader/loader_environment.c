@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2014-2022 The Khronos Group Inc.
- * Copyright (c) 2014-2022 Valve Corporation
- * Copyright (c) 2014-2022 LunarG, Inc.
+ * Copyright (c) 2014-2023 The Khronos Group Inc.
+ * Copyright (c) 2014-2023 Valve Corporation
+ * Copyright (c) 2014-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,15 +61,15 @@ char *loader_secure_getenv(const char *name, const struct loader_instance *inst)
 #else
     // Linux
     char *out;
-#if defined(HAVE_SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
+#if defined(HAVE_SECURE_GETENV) && !defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     (void)inst;
     out = secure_getenv(name);
-#elif defined(HAVE___SECURE_GETENV) && !defined(USE_UNSAFE_FILE_SEARCH)
+#elif defined(HAVE___SECURE_GETENV) && !defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     (void)inst;
     out = __secure_getenv(name);
 #else
     out = loader_getenv(name, inst);
-#if !defined(USE_UNSAFE_FILE_SEARCH)
+#if !defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Loader is using non-secure environment variable lookup for %s", name);
 #endif
 #endif
@@ -146,7 +146,7 @@ char *loader_getenv(const char *name, const struct loader_instance *inst) {
 }
 
 char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
-#if !defined(USE_UNSAFE_FILE_SEARCH)
+#if !defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     if (is_high_integrity()) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                    "Loader is running with elevated permissions. Environment variable %s will be ignored", name);

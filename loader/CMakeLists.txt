@@ -367,6 +367,11 @@ else()
     endif()
 endif()
 
+option(LOADER_USE_UNSAFE_FILE_SEARCH "Allows the loader to search in unsafe locations")
+if (LOADER_USE_UNSAFE_FILE_SEARCH)
+    target_compile_definitions(vulkan PRIVATE LOADER_USE_UNSAFE_FILE_SEARCH)
+endif()
+
 option(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING "Causes the loader to not unload dynamic libraries.")
 if (LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
     target_compile_definitions(vulkan PRIVATE LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)

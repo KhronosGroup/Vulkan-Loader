@@ -253,6 +253,9 @@ on/off options currently supported by this repository:
 | LOADER_ENABLE_ADDRESS_SANITIZER          | Linux & macOS | `OFF`   | Enables Address Sanitizer in the loader and tests.                                                                                                                                |
 | LOADER_ENABLE_THREAD_SANITIZER           | Linux & macOS | `OFF`   | Enables Thread Sanitizer in the loader and tests.                                                                                                                                 |
 | LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING | All           | `OFF`   | Causes the loader to not unload dynamic libraries. Example use case. This option allows leak sanitizers to have full stack traces.       |
+| LOADER_USE_UNSAFE_FILE_SEARCH            | All           | `OFF`   | Disables security policies that prevent unsecure locations from being used when running with elevated permissions.  |
+
+NOTE: `LOADER_USE_UNSAFE_FILE_SEARCH` should NOT be enabled except in very specific contexts (like isolated test environments)!
 
 The following is a table of all string options currently supported by this repository:
 
@@ -263,26 +266,6 @@ The following is a table of all string options currently supported by this repos
 | BUILD_DLL_VERSIONINFO | Windows     | `""` (empty string)           | Allows setting the Windows specific version information for the Loader DLL. Format is "major.minor.patch.build".                                     |
 
 These variables should be set using the `-D` option when invoking CMake to generate the native platform files.
-
-### CCACHE
-
-There are 2 methods to enable CCACHE:
-
-1.) Set environment variables
-
-```bash
-# Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html)
-export CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache
-export CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
-```
-
-2.) Pass in cache variables
-
-```
-cmake ... -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
-```
-
-
 
 ## Building On Windows
 
