@@ -1815,6 +1815,10 @@ void loader_initialize(void) {
 #if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
     loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: library unloading is disabled");
 #endif
+
+#if defined(LOADER_USE_UNSAFE_FILE_SEARCH)
+    loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: unsafe searching is enabled");
+#endif
 }
 
 void loader_release() {

@@ -135,7 +135,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
 }
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-// Make sure the loader reports the correct message based on if USE_UNSAFE_FILE_SEARCH is set or not
+// Make sure the loader reports the correct message based on if LOADER_USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
@@ -146,7 +146,7 @@ TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {
     FillDebugUtilsCreateDetails(inst.create_info, log);
     inst.CheckCreate();
 
-#if !defined(USE_UNSAFE_FILE_SEARCH)
+#if !defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     ASSERT_FALSE(log.find("Loader is using non-secure environment variable lookup for"));
 #else
     ASSERT_TRUE(log.find("Loader is using non-secure environment variable lookup for"));
