@@ -70,6 +70,12 @@ jobs:
             - name: Build the loader
               run: cmake --build build
 
+            - name: Install the loader
+              run: cmake --install build --prefix build/install
+
+            - name: Validate pkg-config
+              run: pkg-config --validate ./build/install/lib/pkgconfig/vulkan.pc
+
             - name: Run regression tests
               working-directory: ./build
               run: ctest --output-on-failure
@@ -128,6 +134,12 @@ jobs:
             - name: Build the loader
               run: cmake --build build
 
+            - name: Install the loader
+              run: cmake --install build --prefix build/install
+
+            - name: Validate pkg-config
+              run: pkg-config --validate ./build/install/lib/pkgconfig/vulkan.pc
+
             - name: Run regression tests
               working-directory: ./build
               run: ctest --output-on-failure
@@ -150,6 +162,9 @@ jobs:
 
             - name: Build the loader
               run: cmake --build ./build --config ${{matrix.config}}
+
+            - name: Install the loader
+              run: cmake --install build --prefix build/install --config ${{matrix.config}}
 
             - name: Run regression tests
               working-directory: ./build
@@ -186,6 +201,9 @@ jobs:
           - name: Build
             run: cmake --build ./build
 
+          - name: Install the loader
+            run: cmake --install build --prefix build/install
+
           - name: Verify generated source files
             run: python scripts/generate_source.py --verify external/${{matrix.config}}/Vulkan-Headers/registry
 
@@ -219,6 +237,9 @@ jobs:
 
             - name: Build the loader
               run: cmake --build build
+
+            - name: Install the loader
+              run: cmake --install build --prefix build/install
 
             - name: Run regression tests
               working-directory: ./build
