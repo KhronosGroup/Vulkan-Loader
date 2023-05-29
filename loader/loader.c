@@ -2052,7 +2052,6 @@ void loader_get_fullpath(const char *file, const char *in_dirs, size_t out_size,
 // Verify that all component layers in a meta-layer are valid.
 bool verify_meta_layer_component_layers(const struct loader_instance *inst, struct loader_layer_properties *prop,
                                         struct loader_layer_list *instance_layers) {
-    bool success = true;
     loader_api_version meta_layer_version = loader_make_version(prop->info.specVersion);
 
     for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
@@ -2064,8 +2063,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                        "  Skipping this layer.",
                        prop->info.layerName, prop->component_layer_names.list[comp_layer], comp_layer);
 
-            success = false;
-            break;
+            return false;
         }
 
         // Check the version of each layer, they need to be at least MAJOR and MINOR
@@ -2077,8 +2075,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                        meta_layer_version.major, meta_layer_version.minor, comp_layer, comp_prop_version.major,
                        comp_prop_version.minor);
 
-            success = false;
-            break;
+            return false;
         }
 
         // Make sure the layer isn't using it's own name
@@ -2088,8 +2085,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                        "list at index %d.  Skipping this layer.",
                        prop->info.layerName, comp_layer);
 
-            success = false;
-            break;
+            return false;
         }
         if (comp_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
@@ -2102,20 +2098,44 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                            "Meta-layer %s component layer %s can not find all component layers."
                            "  Skipping this layer.",
                            prop->info.layerName, prop->component_layer_names.list[comp_layer]);
-                success = false;
-                break;
+                return false;
             }
         }
+    }
+    // Didn't exit early so that means it passed all checks
+    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+               "Meta-layer \"%s\" all %d component layers appear to be valid.", prop->info.layerName,
+               prop->component_layer_names.count);
 
-        // Add any instance and device extensions from component layers to this layer
-        // list, so that anyone querying extensions will only need to look at the meta-layer
+    // If layer logging is on, list the internals included in the meta-layer
+    if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
+        for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names.list[comp_layer]);
+        }
+    }
+    return true;
+}
+
+// Add any instance and device extensions from component layers to this layer
+// list, so that anyone querying extensions will only need to look at the meta-layer
+bool update_meta_layer_extensions_from_component_layers(const struct loader_instance *inst, struct loader_layer_properties *prop,
+                                                        struct loader_layer_list *instance_layers) {
+    VkResult res = VK_SUCCESS;
+    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
+        struct loader_layer_properties *comp_prop =
+            loader_find_layer_property(prop->component_layer_names.list[comp_layer], instance_layers);
+
         for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding instance extension %s",
                        prop->info.layerName, prop->component_layer_names.list[comp_layer],
                        comp_prop->instance_extension_list.list[ext].extensionName);
 
             if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
-                loader_add_to_ext_list(inst, &prop->instance_extension_list, 1, &comp_prop->instance_extension_list.list[ext]);
+                res =
+                    loader_add_to_ext_list(inst, &prop->instance_extension_list, 1, &comp_prop->instance_extension_list.list[ext]);
+                if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                    return res;
+                }
             }
         }
 
@@ -2127,45 +2147,45 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
             if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
                 loader_add_to_dev_ext_list(inst, &prop->device_extension_list, &comp_prop->device_extension_list.list[ext].props,
                                            NULL);
+                if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                    return res;
+                }
             }
         }
     }
-    if (success) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                   "Meta-layer \"%s\" all %d component layers appear to be valid.", prop->info.layerName,
-                   prop->component_layer_names.count);
-
-        // If layer logging is on, list the internals included in the meta-layer
-        if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
-            for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names.list[comp_layer]);
-            }
-        }
-    }
-    return success;
+    return res;
 }
 
 // Verify that all meta-layers in a layer list are valid.
-void verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                            const struct loader_envvar_disable_layers_filter *disable_filter,
-                            struct loader_layer_list *instance_layers, bool *override_layer_present) {
+VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
+                                const struct loader_envvar_disable_layers_filter *disable_filter,
+                                struct loader_layer_list *instance_layers, bool *override_layer_present) {
+    VkResult res = VK_SUCCESS;
     *override_layer_present = false;
     for (int32_t i = 0; i < (int32_t)instance_layers->count; i++) {
         struct loader_layer_properties *prop = &instance_layers->list[i];
 
         // If this is a meta-layer, make sure it is valid
-        if ((prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
-            !verify_meta_layer_component_layers(inst, prop, instance_layers)) {
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                       "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
+        if (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            if (verify_meta_layer_component_layers(inst, prop, instance_layers)) {
+                // If any meta layer is valid, update its extension list to include the extensions from its component layers.
+                res = update_meta_layer_extensions_from_component_layers(inst, prop, instance_layers);
+                if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                    return res;
+                }
+                if (prop->is_override && loader_implicit_layer_is_enabled(inst, enable_filter, disable_filter, prop)) {
+                    *override_layer_present = true;
+                }
+            } else {
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                           "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
 
-            loader_remove_layer_in_list(inst, instance_layers, i);
-            i--;
-
-        } else if (prop->is_override && loader_implicit_layer_is_enabled(inst, enable_filter, disable_filter, prop)) {
-            *override_layer_present = true;
+                loader_remove_layer_in_list(inst, instance_layers, i);
+                i--;
+            }
         }
     }
+    return res;
 }
 
 // If the current working directory matches any app_key_path of the layers, remove all other override layers.
@@ -3816,7 +3836,10 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
 
     // Verify any meta-layers in the list are valid and all the component layers are
     // actually present in the available layer list
-    verify_all_meta_layers(inst, &enable_filter, &disable_filter, &regular_instance_layers, &override_layer_valid);
+    res = verify_all_meta_layers(inst, &enable_filter, &disable_filter, &regular_instance_layers, &override_layer_valid);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+        return res;
+    }
 
     if (override_layer_valid) {
         loader_remove_layers_in_blacklist(inst, &regular_instance_layers);
@@ -3913,7 +3936,10 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
 
     // Verify any meta-layers in the list are valid and all the component layers are
     // actually present in the available layer list
-    verify_all_meta_layers(inst, &enable_filter, &disable_filter, &regular_instance_layers, &override_layer_valid);
+    res = verify_all_meta_layers(inst, &enable_filter, &disable_filter, &regular_instance_layers, &override_layer_valid);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+        return res;
+    }
 
     if (override_layer_valid || implicit_metalayer_present) {
         loader_remove_layers_not_in_implicit_meta_layers(inst, &regular_instance_layers);
