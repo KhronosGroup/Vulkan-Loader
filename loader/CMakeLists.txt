@@ -161,13 +161,13 @@ if(WIN32)
             # Force off optimization so that the output assembly includes all the necessary info - optimizer would get rid of it otherwise.
             target_compile_options(asm_offset PRIVATE /Od)
 
-            find_package(PythonInterp REQUIRED)
+            find_package(Python3 REQUIRED QUIET)
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
             add_custom_command(TARGET asm_offset POST_BUILD
-                COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
+                COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
                     "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "MASM" "${CMAKE_CXX_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
                 BYPRODUCTS gen_defines.asm
-                )
+            )
         endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
@@ -238,13 +238,13 @@ else() # i.e.: Linux
                 set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.s")
             endif()
 
-            find_package(PythonInterp REQUIRED)
+            find_package(Python3 REQUIRED QUIET)
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
             add_custom_command(TARGET asm_offset POST_BUILD
-                COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm"
+                COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm"
                     "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_CXX_COMPILER_ID}" "${ASM_OFFSET_SYSTEM_PROCESSOR}"
                 BYPRODUCTS gen_defines.asm
-                )
+            )
         endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
     else()

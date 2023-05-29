@@ -20,8 +20,6 @@ project(VULKAN_LOADER VERSION 1.3.250)
 
 add_subdirectory(scripts)
 
-find_package(PythonInterp 3 QUIET)
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
@@ -229,15 +227,13 @@ if(NOT MSVC AND NOT (HAVE_SECURE_GETENV OR HAVE___SECURE_GETENV))
     message(WARNING "Using non-secure environmental lookups. This loader will not properly disable environent variables when run with elevated permissions.")
 endif()
 
-# Optional codegen target
-if(PYTHONINTERP_FOUND)
-    add_custom_target(VulkanLoader_generated_source
-                      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VULKAN_HEADERS_REGISTRY_DIRECTORY}
-                              --generated-version ${VulkanHeaders_VERSION}
-                              --incremental)
-else()
-    message(WARNING "VulkanLoader_generated_source target requires python 3")
+option(LOADER_CODEGEN "Enable vulkan loader code generation")
+if(LOADER_CODEGEN)
+    find_package(Python3 REQUIRED)
+    add_custom_target(loader_codegen
+        COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/generate_source.py ${VULKAN_HEADERS_REGISTRY_DIRECTORY}
+                --generated-version ${VulkanHeaders_VERSION} --incremental
+    )
 endif()
 
 if(UNIX)
