@@ -23,7 +23,6 @@ Instructions for building this repository on Linux, Windows, and MacOS.
         - [Notes About the Automatic Option](#notes-about-the-automatic-option)
     - [Generated source code](#generated-source-code)
     - [Build Options](#build-options)
-    - [CCACHE](#ccache)
   - [Building On Windows](#building-on-windows)
     - [Windows Development Environment Requirements](#windows-development-environment-requirements)
     - [Windows Build - Microsoft Visual Studio](#windows-build---microsoft-visual-studio)
@@ -103,8 +102,7 @@ This repository attempts to resolve some of its dependencies by using
 components found from the following places, in this order:
 
 1. CMake or Environment variable overrides (e.g., -DVULKAN_HEADERS_INSTALL_DIR)
-1. LunarG Vulkan SDK, located by the `VULKAN_SDK` environment variable
-1. System-installed packages, mostly applicable on Linux
+2. System-installed packages, mostly applicable on Linux
 
 Dependencies that cannot be resolved by the SDK or installed packages must be
 resolved with the "install directory" override and are listed below. The
@@ -222,14 +220,17 @@ heavy-lifting, you may just trigger the following CMake commands:
 This repository contains generated source code in the `loader/generated`
 directory which is not intended to be modified directly. Instead, changes should be
 made to the corresponding generator in the `scripts` directory. The source files can
-then be regenerated using `scripts/generate_source.py`:
+then be regenerated using `scripts/generate_source.py`.
 
-    python3 scripts/generate_source.py PATH_TO_VULKAN_HEADERS_REGISTRY_DIR
+Run `python scripts/generate_source.py --help` to see how to invoke it.
 
-A helper CMake target `VulkanLoader_generated_source` is also provided to simplify
-the invocation of `scripts/generate_source.py` from the build directory:
+A helper CMake target `loader_codegen` is also provided to simplify the invocation of `scripts/generate_source.py`.
 
-    cmake --build . --target VulkanLoader_generated_source
+```
+# Note by default this helper target is disabled
+cmake -S . -B build -D LOADER_CODEGEN=ON
+cmake --build . --target loader_codegen
+```
 
 ### Build Options
 
@@ -254,6 +255,7 @@ on/off options currently supported by this repository:
 | LOADER_ENABLE_THREAD_SANITIZER           | Linux & macOS | `OFF`   | Enables Thread Sanitizer in the loader and tests.                                                                                                                                 |
 | LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING | All           | `OFF`   | Causes the loader to not unload dynamic libraries. Example use case. This option allows leak sanitizers to have full stack traces.       |
 | LOADER_USE_UNSAFE_FILE_SEARCH            | All           | `OFF`   | Disables security policies that prevent unsecure locations from being used when running with elevated permissions.  |
+| LOADER_CODEGEN                           | All           | `OFF`   | Creates a helper CMake target to generate code. |
 
 NOTE: `LOADER_USE_UNSAFE_FILE_SEARCH` should NOT be enabled except in very specific contexts (like isolated test environments)!
 
