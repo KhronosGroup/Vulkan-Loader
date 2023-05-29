@@ -1316,8 +1316,12 @@ VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *
     if (str == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    strncpy(out_string, str, out_str_len);
-    out_string[out_str_len - 1] = '\0';
+    if (NULL != out_string) {
+        strncpy(out_string, str, out_str_len);
+        if (out_str_len > 0) {
+            out_string[out_str_len - 1] = '\0';
+        }
+    }
     loader_instance_heap_free(inst, str);
     return VK_SUCCESS;
 }
@@ -1332,7 +1336,9 @@ VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *obj
     if (str == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    *out_string = str;
+    if (NULL != out_string) {
+        *out_string = str;
+    }
     return VK_SUCCESS;
 }
 VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key,
@@ -1349,7 +1355,9 @@ VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, 
     }
 
     res = create_string_list(inst, count, string_list);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+        goto out;
+    }
     for (uint32_t i = 0; i < count; i++) {
         cJSON *element = cJSON_GetArrayItem(item, i);
         if (element == NULL) {
