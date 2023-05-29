@@ -182,7 +182,7 @@ char *print_number(cJSON *item, printbuffer *p) {
             str = ensure(item->pAllocator, p, str_buf_size);
         else
             str = (char *)cJSON_malloc(item->pAllocator, str_buf_size);
-        if (str) strcpy(str, "0");
+        if (str) strncpy(str, "0", str_buf_size);
     } else if (fabs(((double)item->valueint) - d) <= DBL_EPSILON && d <= INT_MAX && d >= INT_MIN) {
         str_buf_size = 21; /* 2^64+1 can be represented in 21 chars. */
         if (p)
@@ -361,7 +361,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         if (!out) return 0;
         ptr2 = out;
         // *ptr2++ = '\"'; // Modified to not put quotes around the string
-        strcpy(ptr2, str);
+        strncpy(ptr2, str, out_buf_size);
         // ptr2[len] = '\"'; // Modified to not put quotes around the string
         ptr2[len] = 0;  // ptr2[len + 1] = 0; // Modified to not put quotes around the string
         return out;
@@ -374,7 +374,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         else
             out = (char *)cJSON_malloc_instance_scope(pAllocator, out_buf_size);
         if (!out) return 0;
-        strcpy(out, "\"\"");
+        strncpy(out, "\"\"", out_buf_size);
         return out;
     }
     ptr = str;
@@ -538,17 +538,17 @@ char *print_value(cJSON *item, int depth, int fmt, printbuffer *p) {
         switch ((item->type) & 255) {
             case cJSON_NULL: {
                 out = ensure(item->pAllocator, p, 5);
-                if (out) strcpy(out, "null");
+                if (out) strncpy(out, "null", 5);
                 break;
             }
             case cJSON_False: {
                 out = ensure(item->pAllocator, p, 6);
-                if (out) strcpy(out, "false");
+                if (out) strncpy(out, "false", 6);
                 break;
             }
             case cJSON_True: {
                 out = ensure(item->pAllocator, p, 5);
-                if (out) strcpy(out, "true");
+                if (out) strncpy(out, "true", 5);
                 break;
             }
             case cJSON_Number:
@@ -642,7 +642,7 @@ char *print_array(cJSON *item, int depth, int fmt, printbuffer *p) {
             out = ensure(item->pAllocator, p, 3);
         else
             out = (char *)cJSON_malloc(item->pAllocator, 3);
-        if (out) strcpy(out, "[]");
+        if (out) strncpy(out, "[]", 3);
         return out;
     }
 

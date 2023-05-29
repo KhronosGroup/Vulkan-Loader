@@ -208,12 +208,13 @@ VkResult check_if_settings_path_exists(const struct loader_instance* inst, char*
     if (NULL == base || NULL == suffix) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+
     *settings_file_path = loader_instance_heap_calloc(inst, strlen(base) + strlen(suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == *settings_file_path) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    strcpy(*settings_file_path, base);
-    strcat(*settings_file_path, suffix);
+    strncpy(*settings_file_path, base, strlen(base));
+    strncat(*settings_file_path, suffix, strlen(suffix));
 
     if (!loader_platform_file_exists(*settings_file_path)) {
         loader_instance_heap_free(inst, *settings_file_path);
@@ -743,9 +744,10 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         }
 
         if (!enable_layer && vk_instance_layers_env) {
-            char* name = loader_stack_alloc(strlen(vk_instance_layers_env) + 1);
+            size_t vk_instance_layers_env_len = strlen(vk_instance_layers_env) + 1;
+            char* name = loader_stack_alloc(vk_instance_layers_env_len);
             if (name != NULL) {
-                strcpy(name, vk_instance_layers_env);
+                strncpy(name, vk_instance_layers_env, vk_instance_layers_env_len);
                 // First look for the old-fashion layers forced on with VK_INSTANCE_LAYERS
                 while (name && *name) {
                     char* next = loader_get_next_path(name);

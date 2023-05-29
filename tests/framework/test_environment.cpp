@@ -210,6 +210,7 @@ std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, 
 std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(VkResult result_to_check) {
     uint32_t physical_count = 0;
     VkResult res = functions->vkEnumeratePhysicalDevices(inst, &physical_count, nullptr);
+    EXPECT_EQ(result_to_check, res);
     std::vector<VkPhysicalDevice> physical_devices;
     physical_devices.resize(physical_count);
     res = functions->vkEnumeratePhysicalDevices(inst, &physical_count, physical_devices.data());
