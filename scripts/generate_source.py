@@ -54,7 +54,7 @@ def main(argv):
     # get directory where generators will run
     if args.verify or args.incremental:
         # generate in temp directory so we can compare or copy later
-        temp_obj = tempfile.TemporaryDirectory(prefix='VulkanLoader_generated_source_')
+        temp_obj = tempfile.TemporaryDirectory(prefix='loader_codegen_')
         temp_dir = temp_obj.name
         gen_dir = temp_dir
     else:
