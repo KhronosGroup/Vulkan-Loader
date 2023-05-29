@@ -281,7 +281,6 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
         new_function_index = inst->phys_dev_ext_disp_function_count;
         // increment the count so that the subsequent logic includes the newly added entry point when searching for functions
         inst->phys_dev_ext_disp_function_count++;
-        has_found = true;
     }
 
     // Setup the ICD function pointers

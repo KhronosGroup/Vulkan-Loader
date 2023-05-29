@@ -1024,7 +1024,7 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                    "Implicit layer \"%s\" forced disabled because name matches filter of env var \'%s\'.", prop->info.layerName,
                    VK_LAYERS_DISABLE_ENV_VAR);
-        return false;
+        return enable;
     }
 
     // The disable_environment has priority over everything else.  If it is defined, the layer is always
@@ -1428,7 +1428,7 @@ bool loader_get_icd_interface_version(PFN_vkNegotiateLoaderICDInterfaceVersion f
 }
 
 void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list) {
-    if (0 != icd_tramp_list->capacity) {
+    if (0 != icd_tramp_list->capacity && icd_tramp_list->scanned_list) {
         for (uint32_t i = 0; i < icd_tramp_list->count; i++) {
             if (icd_tramp_list->scanned_list[i].handle) {
                 loader_platform_close_library(icd_tramp_list->scanned_list[i].handle);
@@ -2038,8 +2038,9 @@ out:
 // @return - A string in out_fullpath of either the full path or file.
 void loader_get_fullpath(const char *file, const char *in_dirs, size_t out_size, char *out_fullpath) {
     if (!loader_platform_is_path(file) && *in_dirs) {
-        char *dirs_copy = loader_stack_alloc(strlen(in_dirs) + 1);
-        strcpy(dirs_copy, in_dirs);
+        size_t dirs_copy_len = strlen(in_dirs) + 1;
+        char *dirs_copy = loader_stack_alloc(dirs_copy_len);
+        strncpy(dirs_copy, in_dirs, dirs_copy_len);
 
         // find if file exists after prepending paths in given list
         // for (dir = dirs_copy; *dir && (next_dir = loader_get_next_path(dir)); dir = next_dir) {
@@ -2134,30 +2135,33 @@ bool update_meta_layer_extensions_from_component_layers(const struct loader_inst
         struct loader_layer_properties *comp_prop =
             loader_find_layer_property(prop->component_layer_names.list[comp_layer], instance_layers);
 
-        for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding instance extension %s",
-                       prop->info.layerName, prop->component_layer_names.list[comp_layer],
-                       comp_prop->instance_extension_list.list[ext].extensionName);
+        if (NULL != comp_prop->instance_extension_list.list) {
+            for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding instance extension %s",
+                           prop->info.layerName, prop->component_layer_names.list[comp_layer],
+                           comp_prop->instance_extension_list.list[ext].extensionName);
 
-            if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
-                res =
-                    loader_add_to_ext_list(inst, &prop->instance_extension_list, 1, &comp_prop->instance_extension_list.list[ext]);
-                if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-                    return res;
+                if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
+                    res = loader_add_to_ext_list(inst, &prop->instance_extension_list, 1,
+                                                 &comp_prop->instance_extension_list.list[ext]);
+                    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                        return res;
+                    }
                 }
             }
         }
+        if (NULL != comp_prop->device_extension_list.list) {
+            for (uint32_t ext = 0; ext < comp_prop->device_extension_list.count; ext++) {
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding device extension %s",
+                           prop->info.layerName, prop->component_layer_names.list[comp_layer],
+                           comp_prop->device_extension_list.list[ext].props.extensionName);
 
-        for (uint32_t ext = 0; ext < comp_prop->device_extension_list.count; ext++) {
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding device extension %s",
-                       prop->info.layerName, prop->component_layer_names.list[comp_layer],
-                       comp_prop->device_extension_list.list[ext].props.extensionName);
-
-            if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
-                loader_add_to_dev_ext_list(inst, &prop->device_extension_list, &comp_prop->device_extension_list.list[ext].props,
-                                           NULL);
-                if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-                    return res;
+                if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
+                    loader_add_to_dev_ext_list(inst, &prop->device_extension_list,
+                                               &comp_prop->device_extension_list.list[ext].props, NULL);
+                    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                        return res;
+                    }
                 }
             }
         }
@@ -2918,7 +2922,7 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
                 loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files: Path to %s too long", cur_file);
                 continue;
             }
-            strcpy(temp_path, cur_file);
+            strncpy(temp_path, cur_file, str_len);
             name = temp_path;
 #else
 #warning add_data_files must define relative path copy for this platform
@@ -3028,25 +3032,25 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     if (home != NULL) {
         if (NULL == xdg_config_home || '\0' == xdg_config_home[0]) {
             const char config_suffix[] = "/.config";
-            default_config_home =
-                loader_instance_heap_alloc(inst, strlen(home) + strlen(config_suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            size_t default_config_home_len = strlen(home) + sizeof(config_suffix) + 1;
+            default_config_home = loader_instance_heap_calloc(inst, default_config_home_len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
             if (default_config_home == NULL) {
                 vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
-            strcpy(default_config_home, home);
-            strcat(default_config_home, config_suffix);
+            strncpy(default_config_home, home, default_config_home_len);
+            strncat(default_config_home, config_suffix, default_config_home_len);
         }
         if (NULL == xdg_data_home || '\0' == xdg_data_home[0]) {
             const char data_suffix[] = "/.local/share";
-            default_data_home =
-                loader_instance_heap_alloc(inst, strlen(home) + strlen(data_suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            size_t default_data_home_len = strlen(home) + sizeof(data_suffix) + 1;
+            default_data_home = loader_instance_heap_calloc(inst, default_data_home_len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
             if (default_data_home == NULL) {
                 vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
-            strcpy(default_data_home, home);
-            strcat(default_data_home, data_suffix);
+            strncpy(default_data_home, home, default_data_home_len);
+            strncat(default_data_home, data_suffix, default_data_home_len);
         }
     }
 
@@ -3166,7 +3170,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
     // Add the remaining paths to the list
     if (NULL != override_path) {
-        strcpy(cur_path_ptr, override_path);
+        strncpy(cur_path_ptr, override_path, search_path_size);
         cur_path_ptr += strlen(override_path);
     } else {
         // Add any additional search paths defined in the additive environment variable
@@ -3702,8 +3706,11 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
     }
 
 out:
-    for (uint32_t i = 0; i < manifest_files.count; i++) {
-        loader_instance_heap_free(inst, icd_details[i].full_library_path);
+    if (NULL != icd_details) {
+        // Successfully got the icd_details structure, which means we need to free the paths contained within
+        for (uint32_t i = 0; i < manifest_files.count; i++) {
+            loader_instance_heap_free(inst, icd_details[i].full_library_path);
+        }
     }
     free_string_list(inst, &manifest_files);
     return res;
