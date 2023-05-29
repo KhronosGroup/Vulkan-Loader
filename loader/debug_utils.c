@@ -565,8 +565,8 @@ void destroy_debug_callbacks_chain(struct loader_instance *inst, const VkAllocat
     inst->DbgFunctionHead = NULL;
 }
 
-void add_debug_extensions_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list) {
-    loader_add_to_ext_list(inst, ext_list, sizeof(debug_utils_extension_info) / sizeof(VkExtensionProperties),
+VkResult add_debug_extensions_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list) {
+    return loader_add_to_ext_list(inst, ext_list, sizeof(debug_utils_extension_info) / sizeof(VkExtensionProperties),
                            debug_utils_extension_info);
 }
 
