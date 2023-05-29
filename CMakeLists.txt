@@ -266,6 +266,7 @@ if(BUILD_TESTS)
         set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
         set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically" FORCE)
         set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+        set(INSTALL_GTEST OFF CACHE BOOL "Don't install gtest")
         # The googletest directory exists, so enable it as a target.
         message(STATUS "Vulkan-Loader/external: " "googletest found - configuring it for tests")
         add_subdirectory("${GOOGLETEST_INSTALL_DIR}")
