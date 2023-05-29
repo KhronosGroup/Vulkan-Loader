@@ -1252,21 +1252,30 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
     };
 
     // Traverse loader's extensions, adding non-duplicate extensions to the list
-    add_debug_extensions_to_ext_list(inst, inst_exts);
-
+    res = add_debug_extensions_to_ext_list(inst, inst_exts);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
     const VkExtensionProperties portability_enumeration_extension_info[] = {
         {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, VK_KHR_PORTABILITY_ENUMERATION_SPEC_VERSION}};
 
     // Add VK_KHR_portability_subset
-    loader_add_to_ext_list(inst, inst_exts, sizeof(portability_enumeration_extension_info) / sizeof(VkExtensionProperties),
-                           portability_enumeration_extension_info);
+    res = loader_add_to_ext_list(inst, inst_exts, sizeof(portability_enumeration_extension_info) / sizeof(VkExtensionProperties),
+                                 portability_enumeration_extension_info);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
 
     const VkExtensionProperties direct_driver_loading_extension_info[] = {
         {VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME, VK_LUNARG_DIRECT_DRIVER_LOADING_SPEC_VERSION}};
 
     // Add VK_LUNARG_direct_driver_loading
-    loader_add_to_ext_list(inst, inst_exts, sizeof(direct_driver_loading_extension_info) / sizeof(VkExtensionProperties),
-                           direct_driver_loading_extension_info);
+    res = loader_add_to_ext_list(inst, inst_exts, sizeof(direct_driver_loading_extension_info) / sizeof(VkExtensionProperties),
+                                 direct_driver_loading_extension_info);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
+
 out:
     return res;
 }
@@ -2156,7 +2165,7 @@ bool update_meta_layer_extensions_from_component_layers(const struct loader_inst
     return res;
 }
 
-// Verify that all meta-layers in a layer list are valid.
+// Verify that all meta-layers in a layer verify_meta_layer_component_layerslist are valid.
 VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
                                 const struct loader_envvar_disable_layers_filter *disable_filter,
                                 struct loader_layer_list *instance_layers, bool *override_layer_present) {

@@ -28,7 +28,7 @@
 
 // General utilities
 
-void add_debug_extensions_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list);
+VkResult add_debug_extensions_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list);
 void check_for_enabled_debug_extensions(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo);
 bool debug_extensions_InstanceGpa(struct loader_instance *ptr_instance, const char *name, void **addr);
 bool debug_utils_ReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, bool default_flag_is_spec,
