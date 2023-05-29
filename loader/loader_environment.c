@@ -432,9 +432,10 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
 
     // If the layer environment variable is present (i.e. VK_INSTANCE_LAYERS), we will always add it to the layer list.
     if (layer_env != NULL) {
-        char *name = loader_stack_alloc(strlen(layer_env) + 1);
+        size_t layer_env_len = strlen(layer_env) + 1;
+        char *name = loader_stack_alloc(layer_env_len);
         if (name != NULL) {
-            strcpy(name, layer_env);
+            strncpy(name, layer_env, layer_env_len);
 
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers \"%s\"",
                        ENABLED_LAYERS_ENV, name);
