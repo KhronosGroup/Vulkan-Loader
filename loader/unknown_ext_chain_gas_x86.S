@@ -1,7 +1,7 @@
 #
-# Copyright (c) 2017-2021 The Khronos Group Inc.
-# Copyright (c) 2017-2021 Valve Corporation
-# Copyright (c) 2017-2021 LunarG, Inc.
+# Copyright (c) 2017-2023 The Khronos Group Inc.
+# Copyright (c) 2017-2023 Valve Corporation
+# Copyright (c) 2017-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 # VkPhysicalDevice or a dispatchable object it can unwrap the object, possibly overwriting the wrapped physical device, and then
 # jump to the next function in the call chain
 
+# The .hidden directive is only supported in ELF executables so in APPLE builds, the directive is removed
+
 #if defined(HAVE_CET_H)
 #include <cet.h>
 #else
@@ -37,7 +39,9 @@
 
 .macro PhysDevExtTramp num
 .global vkPhysDevExtTramp\num
+#if defined(__ELF__)
 .hidden vkPhysDevExtTramp\num
+#endif
 vkPhysDevExtTramp\num:
     _CET_ENDBR
     mov     rax, [rdi]
@@ -47,7 +51,9 @@ vkPhysDevExtTramp\num:
 
 .macro PhysDevExtTermin num
 .global vkPhysDevExtTermin\num
+#if defined(__ELF__)
 .hidden vkPhysDevExtTermin\num
+#endif
 vkPhysDevExtTermin\num:
     _CET_ENDBR
     mov     rax, [rdi + ICD_TERM_OFFSET_PHYS_DEV_TERM]                          # Store the loader_icd_term* in rax
@@ -60,7 +66,7 @@ terminError\num:
     mov     rdi, [rax + INSTANCE_OFFSET_ICD_TERM]                               # Load the loader_instance into rdi (first arg)
     lea     rsi, [VULKAN_LOADER_ERROR_BIT]                                      # Write the error logging bit to rsi (second arg)
     xor     rdx, rdx                                                            # Set rdx to zero (third arg)
-    lea     rcx, [rip + termin_error_string]                                   # Load the error string into rcx (fourth arg)
+    lea     rcx, [rip + termin_error_string]                                    # Load the error string into rcx (fourth arg)
     mov     r8, [rdi + (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num))]     # Load the func name into r8 (fifth arg)
     call    loader_log                                                          # Log the error message before we crash
     add     rsp, 56                                                             # Clean up the stack frame
@@ -70,7 +76,9 @@ terminError\num:
 
 .macro DevExtTramp num
 .global vkdev_ext\num
+#if defined(__ELF__)
 .hidden vkdev_ext\num
+#endif
 vkdev_ext\num:
     _CET_ENDBR
     mov     rax, [rdi]                                                          # Dereference the handle to get the dispatch table
@@ -81,7 +89,9 @@ vkdev_ext\num:
 
 .macro PhysDevExtTramp num
 .global vkPhysDevExtTramp\num
+#if defined(__ELF__)
 .hidden vkPhysDevExtTramp\num
+#endif
 vkPhysDevExtTramp\num:
     _CET_ENDBR
     mov     eax, [esp + 4]                              # Load the wrapped VkPhysicalDevice into eax
@@ -93,7 +103,9 @@ vkPhysDevExtTramp\num:
 
 .macro PhysDevExtTermin num
 .global vkPhysDevExtTermin\num
+#if defined(__ELF__)
 .hidden vkPhysDevExtTermin\num
+#endif
 vkPhysDevExtTermin\num:
     _CET_ENDBR
     mov     ecx, [esp + 4]                                                      # Move the wrapped VkPhysicalDevice into ecx
@@ -117,7 +129,9 @@ terminError\num:
 
 .macro DevExtTramp num
 .global vkdev_ext\num
+#if defined(__ELF__)
 .hidden vkdev_ext\num
+#endif
 vkdev_ext\num:
     _CET_ENDBR
     mov     eax, dword ptr [esp + 4]                                            # Dereference the handle to get the dispatch table

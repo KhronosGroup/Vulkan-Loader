@@ -56,11 +56,21 @@ void loader_set_global_debug_level(uint32_t new_loader_debug);
 // Returns a bitmask that indicates the current flags that should be output
 uint32_t loader_get_global_debug_level(void);
 
+// The asm declaration prevents name mangling which is necessary for macOS
+#if defined(__GNUC__) && defined(__clang__)
+#define ASM_NAME(name) __asm(name)
+#else
+#define ASM_NAME(name)
+#endif
+
 // Logs a message to stderr
 // May output to DebugUtils if the instance isn't null and the extension is enabled.
-void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...);
+void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...)
+    ASM_NAME("loader_log");
 
 // Used for the assembly code to emit an specific error message
 // This is a work around for linux 32 bit error handling not passing relocatable strings correctly
 void loader_log_asm_function_not_supported(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code,
-                                           const char *func_name);
+                                           const char *func_name) ASM_NAME("loader_log_asm_function_not_supported");
+
+#undef ASM_NAME

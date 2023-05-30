@@ -27,7 +27,11 @@
 
 .macro PhysDevExtTramp num
 .global vkPhysDevExtTramp\num
-.hidden vkPhysDevExtTramp\num
+#if defined(__ELF__)
+ .hidden vkPhysDevExtTramp\num
+#endif
+.balign 4
+
 vkPhysDevExtTramp\num:
     ldr     x9, [x0]                                                 // Load the loader_instance_dispatch_table* into x9
     ldr     x0, [x0, PHYS_DEV_OFFSET_PHYS_DEV_TRAMP]                 // Load the unwrapped VkPhysicalDevice into x0
@@ -38,7 +42,10 @@ vkPhysDevExtTramp\num:
 
 .macro PhysDevExtTermin num
 .global vkPhysDevExtTermin\num
-.hidden vkPhysDevExtTermin\num
+#if defined(__ELF__)
+ .hidden vkPhysDevExtTermin\num
+#endif
+.balign 4
 vkPhysDevExtTermin\num:
     ldr     x9, [x0, ICD_TERM_OFFSET_PHYS_DEV_TERM]             // Load the loader_icd_term* in x9
     mov     x11, (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num)) // Put the offset into the dispatch table in x11
@@ -48,21 +55,22 @@ vkPhysDevExtTermin\num:
     br      x10                                                 // Jump to the next function in the chain
 terminError\num:
     mov     x10, (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num)) // Offset of the function name string in the instance
-    ldr     x11, [x9, INSTANCE_OFFSET_ICD_TERM] // Load the instance pointer
-    mov     x0, x11                             // Vulkan instance pointer (first arg)
-    mov     x1, VULKAN_LOADER_ERROR_BIT         // The error logging bit (second arg)
-    mov     x2, #0                              // Zero (third arg)
-    adrp    x9, termin_error_string
-    add     x3, x9, #:lo12:termin_error_string  // The error string (fourth arg)
-    ldr     x4, [x11, x10]                      // The function name (fifth arg)
-    bl      loader_log                          // Log the error message before we crash
+    ldr     x11, [x9, INSTANCE_OFFSET_ICD_TERM]   // Load the instance pointer
+    mov     x0, x11                               // Vulkan instance pointer (first arg)
+    mov     x1, VULKAN_LOADER_ERROR_BIT           // The error logging bit (second arg)
+    mov     x2, #0                                // Zero (third arg)
+    ldr     x3, [x11, x10]                        // The function name (fourth arg)
+    bl      loader_log_asm_function_not_supported // Log the error message before we crash
     mov     x0, #0
-    br      x0                                  // Crash intentionally by jumping to address zero
+    br      x0                                    // Crash intentionally by jumping to address zero
 .endm
 
 .macro DevExtTramp num
 .global vkdev_ext\num
-.hidden vkdev_ext\num
+#if defined(__ELF__)
+ .hidden vkdev_ext\num
+#endif
+.balign 4
 vkdev_ext\num:
     ldr     x9, [x0]                                              // Load the loader_instance_dispatch_table* into x9
     mov     x10, (EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * \num)) // Offset of the desired function in the dispatch table
