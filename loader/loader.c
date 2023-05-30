@@ -2988,14 +2988,14 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     VkResult vk_result = VK_SUCCESS;
     char *override_env = NULL;
     const char *override_path = NULL;
-    char *relative_location = NULL;
     char *additional_env = NULL;
     size_t search_path_size = 0;
     char *search_path = NULL;
     char *cur_path_ptr = NULL;
     bool use_first_found_manifest = false;
-#if !defined(_WIN32)
-    size_t rel_size = 0;  // unused in windows, dont declare so no compiler warnings are generated
+#if COMMON_UNIX_PLATFORMS
+    char *relative_location = NULL;  // Only used on unix platforms
+    size_t rel_size = 0;             // unused in windows, dont declare so no compiler warnings are generated
 #endif
 
 #if defined(_WIN32)
@@ -3076,18 +3076,24 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
                 override_env = loader_secure_getenv(VK_ICD_FILENAMES_ENV_VAR, inst);
             }
             additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
+#if COMMON_UNIX_PLATFORMS
             relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
+#endif
 #if defined(_WIN32)
             package_path = windows_get_app_package_manifest_path(inst);
 #endif
             break;
         case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
+#if COMMON_UNIX_PLATFORMS
             relative_location = VK_ILAYERS_INFO_RELATIVE_DIR;
+#endif
             break;
         case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
             override_env = loader_secure_getenv(VK_LAYER_PATH_ENV_VAR, inst);
             additional_env = loader_secure_getenv(VK_ADDITIONAL_LAYER_PATH_ENV_VAR, inst);
+#if COMMON_UNIX_PLATFORMS
             relative_location = VK_ELAYERS_INFO_RELATIVE_DIR;
+#endif
             break;
         default:
             assert(false && "Shouldn't get here!");
