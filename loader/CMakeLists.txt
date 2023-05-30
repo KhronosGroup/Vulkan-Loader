@@ -195,12 +195,7 @@ if(WIN32)
         target_link_libraries(loader-unknown-chain loader_specific_options)
         set_target_properties(loader-unknown-chain PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
     endif()
-elseif(APPLE)
-    # For MacOS, use the C code and force the compiler's tail-call optimization instead of using assembly code.
-    set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
-    set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
-    add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
-else() # i.e.: Linux
+elseif(UNIX) # i.e.: Linux & Apple
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
         enable_language(ASM)
@@ -208,7 +203,7 @@ else() # i.e.: Linux
         set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
         set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-        if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+        if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64" OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")
             try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S)
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
@@ -268,6 +263,11 @@ else() # i.e.: Linux
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
         add_custom_target(loader_asm_gen_files)
     endif()
+else()
+    # For other platforms, use the C code and force the compiler's tail-call optimization instead of using assembly code.
+    set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
+    set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
+    add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
 endif()
 
 if(WIN32)
