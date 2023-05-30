@@ -28,9 +28,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "vulkan/vulkan_core.h"
+
 #include "log.h"
 
-typedef enum VkResult VkResult;
 struct loader_instance;
 struct loader_layer_list;
 struct loader_pointer_layer_list;

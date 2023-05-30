@@ -31,8 +31,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "vulkan/vulkan_core.h"
+
 struct loader_instance;
-typedef uint32_t VkFlags;
 
 enum vulkan_loader_debug_flags {
     VULKAN_LOADER_INFO_BIT = 0x01,
