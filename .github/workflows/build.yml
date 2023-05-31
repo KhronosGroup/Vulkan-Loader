@@ -207,6 +207,36 @@ jobs:
           - name: Verify generated source files
             run: python scripts/generate_source.py --verify external/${{matrix.config}}/Vulkan-Headers/registry
 
+    # Make sure clang-cl builds still succeed - used by the chromium project
+    windows_clang_cl:
+      runs-on: windows-2022
+      strategy:
+        matrix:
+            arch: [ x64 ]
+            config: [ Release ]
+
+      steps:
+          - uses: actions/checkout@v3
+          - uses: actions/setup-python@v3
+            with:
+              python-version: '3.7'
+          - uses: ilammy/msvc-dev-cmd@v1
+            with:
+              arch: ${{ matrix.arch }}
+
+          - name: Configure
+            run: cmake -S. -B build -D UPDATE_DEPS=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -T "ClangCL"
+
+          - name: Build
+            run: cmake --build ./build --config ${{matrix.config}}
+
+          - name: Install the loader
+            run: cmake --install build --prefix build/install --config ${{matrix.config}}
+
+          - name: Run regression tests
+            working-directory: ./build
+            run: ctest --output-on-failure -C ${{matrix.config}}
+
     mac:
         runs-on: ${{matrix.os}}
 
