@@ -1940,9 +1940,9 @@ void loader_unload_preloaded_icds(void) {
 }
 
 #if !defined(_WIN32)
-__attribute__((constructor)) void loader_init_library() { loader_initialize(); }
+__attribute__((constructor)) void loader_init_library(void) { loader_initialize(); }
 
-__attribute__((destructor)) void loader_free_library() { loader_release(); }
+__attribute__((destructor)) void loader_free_library(void) { loader_release(); }
 #endif
 
 // Get next file or dirname given a string list or registry key path
