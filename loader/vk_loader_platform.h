@@ -29,11 +29,6 @@
 #include <sys/select.h>
 #endif
 
-#if defined(_WIN32)
-// WinSock2.h must be included *BEFORE* windows.h
-#include <winsock2.h>
-#endif  // _WIN32
-
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
