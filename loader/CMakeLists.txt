@@ -189,11 +189,8 @@ if(WIN32)
         target_include_directories(loader-unknown-chain PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
         add_dependencies(loader-unknown-chain loader_asm_gen_files)
     else()
+        set(USE_ASSEMBLY_FALLBACK ON)
         message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
-        add_custom_target(loader_asm_gen_files)
-        add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
-        target_link_libraries(loader-unknown-chain loader_specific_options)
-        set_target_properties(loader-unknown-chain PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
     endif()
 elseif(UNIX) # i.e.: Linux & Apple
     option(USE_GAS "Use GAS" ON)
@@ -254,20 +251,30 @@ elseif(UNIX) # i.e.: Linux & Apple
             )
         endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
+
+        if (APPLE)
+            set(MODIFY_UNKNOWN_FUNCTION_DECLS ON)
+        endif()
     else()
+        set(USE_ASSEMBLY_FALLBACK ON)
         if(USE_GAS)
             message(WARNING "Could not find working ${ASM_OFFSET_SYSTEM_PROCESSOR} GAS assembler\n${ASM_FAILURE_MSG}")
         else()
             message(WARNING "Assembly sources have been disabled\n${ASM_FAILURE_MSG}")
         endif()
-        set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
-        add_custom_target(loader_asm_gen_files)
     endif()
-else()
-    # For other platforms, use the C code and force the compiler's tail-call optimization instead of using assembly code.
-    set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
-    set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
-    add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
+endif()
+
+if(USE_ASSEMBLY_FALLBACK)
+    add_custom_target(loader_asm_gen_files)
+    if (MSVC)
+        add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
+        target_link_libraries(loader-unknown-chain loader_specific_options)
+        set_target_properties(loader-unknown-chain PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
+    else()
+        set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
+        set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
+    endif()
 endif()
 
 if(WIN32)
@@ -282,10 +289,16 @@ if(WIN32)
         set(RC_FILE_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
     endif()
 
+    if (MSVC)
+        set(LOADER_UNKNOWN_CHAIN_LIBRARY $<TARGET_OBJECTS:loader-unknown-chain>)
+    else()
+        set(LOADER_UNKNOWN_CHAIN_LIBRARY "")
+    endif()
+
     add_library(vulkan
                 SHARED
                 ${NORMAL_LOADER_SRCS}
-                $<TARGET_OBJECTS:loader-unknown-chain>
+                ${LOADER_UNKNOWN_CHAIN_LIBRARY}
                 ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
                 ${RC_FILE_LOCATION})
 
@@ -355,6 +368,13 @@ else()
         add_dependencies(vulkan-framework loader_asm_gen_files)
         target_link_libraries(vulkan-framework ${CMAKE_DL_LIBS} Threads::Threads -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework loader_specific_options)
+
+        if (MODIFY_UNKNOWN_FUNCTION_DECLS)
+            # Modifies the names of functions as they appearin the assembly code so that the
+            # unknown function handling will work
+            target_compile_definitions(vulkan PRIVATE MODIFY_UNKNOWN_FUNCTION_DECLS)
+            target_compile_definitions(vulkan-framework PRIVATE MODIFY_UNKNOWN_FUNCTION_DECLS)
+        endif()
 
         # The FRAMEWORK_VERSION needs to be "A" here so that Xcode code-signing works when a user adds their framework to an Xcode
         # project and does "Sign on Copy". It would have been nicer to use "1" to denote Vulkan 1. Although Apple docs say that a

@@ -57,7 +57,7 @@ void loader_set_global_debug_level(uint32_t new_loader_debug);
 uint32_t loader_get_global_debug_level(void);
 
 // The asm declaration prevents name mangling which is necessary for macOS
-#if defined(__GNUC__) && defined(__clang__)
+#if defined(MODIFY_UNKNOWN_FUNCTION_DECLS)
 #define ASM_NAME(name) __asm(name)
 #else
 #define ASM_NAME(name)

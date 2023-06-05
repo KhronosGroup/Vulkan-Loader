@@ -25,7 +25,7 @@
 #endif
 
 // The asm declaration prevents name mangling which is necessary for macOS
-#if defined(__GNUC__) && defined(__clang__)
+#if defined(MODIFY_UNKNOWN_FUNCTION_DECLS)
 #define ASM_NAME(name) __asm(name)
 #else
 #define ASM_NAME(name)
