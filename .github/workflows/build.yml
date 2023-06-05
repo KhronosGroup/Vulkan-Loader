@@ -89,6 +89,34 @@ jobs:
             - name: Verify commit message formatting
               run: ./scripts/check_commit_message_format.sh
 
+    linux-no-asm:
+        runs-on: ubuntu-22.04
+
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-python@v3
+              with:
+                python-version: '3.7'
+            - uses: lukka/get-cmake@latest
+              with:
+                cmakeVersion: 3.17.2
+            - run: sudo apt update
+            - name: Install Dependencies
+              run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+
+            - name: Generate build files
+              run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -DUSE_GAS=OFF
+              env:
+                CC: clang
+                CXX: clang++
+
+            - name: Build the loader
+              run: cmake --build build
+
+            - name: Run regression tests
+              working-directory: ./build
+              run: ctest --output-on-failure -E UnknownFunction
+
     linux-32:
         runs-on: ${{matrix.os}}
 
@@ -144,6 +172,42 @@ jobs:
               working-directory: ./build
               run: ctest --output-on-failure
 
+    linux-32-no-asm:
+        runs-on: ubuntu-20.04
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-python@v3
+              with:
+                python-version: '3.7'
+            - uses: lukka/get-cmake@latest
+              with:
+                cmakeVersion: 3.17.2
+
+            - name: Enable 32 bit
+              run: |-
+                sudo dpkg --add-architecture i386
+            - name: Update packages
+              run: |-
+                sudo apt-get update
+            - name: Install Dependencies
+              run: |-
+                sudo apt install --yes --no-install-recommends gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 libwayland-dev:i386 libxrandr-dev:i386
+
+            - name: Generate build files
+              run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -D USE_GAS=OFF
+              env:
+                CFLAGS: -m32
+                CXXFLAGS: -m32
+                LDFLAGS: -m32
+                ASFLAGS: --32
+
+            - name: Build the loader
+              run: cmake --build build
+
+            - name: Run regression tests
+              working-directory: ./build
+              run: ctest --output-on-failure -E UnknownFunction
+
     windows_vs:
         runs-on: windows-latest
         strategy:
@@ -169,6 +233,28 @@ jobs:
             - name: Run regression tests
               working-directory: ./build
               run: ctest --output-on-failure -C ${{matrix.config}}
+
+    windows_vs-no-asm:
+        runs-on: windows-latest
+        strategy:
+            matrix:
+                arch: [ Win32, x64 ]
+
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-python@v3
+              with:
+                python-version: '3.7'
+
+            - name: Generate build files
+              run: cmake -S. -B build -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -A ${{ matrix.arch }} -USE_MASM=OFF
+
+            - name: Build the loader
+              run: cmake --build ./build --config Release
+
+            - name: Run regression tests
+              working-directory: ./build
+              run: ctest --output-on-failure -C Release -E UnknownFunction
 
     # Something about Github Actions + Windows + Ninja + Unicode doesn't play nicely together.
     # https://github.com/KhronosGroup/Vulkan-Loader/pull/1188#issuecomment-1536659318
@@ -275,6 +361,34 @@ jobs:
               working-directory: ./build
               run: ctest --output-on-failure
 
+    mac-no-asm:
+        runs-on: macos-latest
+
+        strategy:
+            matrix:
+                static_build: [ BUILD_STATIC_LOADER=ON, BUILD_STATIC_LOADER=OFF ]
+
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-python@v3
+              with:
+                python-version: '3.7'
+            - uses: lukka/get-cmake@latest
+            - name: Generate build files
+              run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D ${{matrix.static_build}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -D USE_GAS=OFF -G "Ninja"
+              env:
+                # Specify the minimum version of macOS on which the target binaries are to be deployed.
+                # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
+                MACOSX_DEPLOYMENT_TARGET: 10.12
+
+            - name: Build the loader
+              run: cmake --build build
+
+            - name: Run regression tests
+              working-directory: ./build
+              run: ctest --output-on-failure -E UnknownFunction
+
+
     gn:
         runs-on: ubuntu-20.04
 
@@ -322,6 +436,37 @@ jobs:
           run: gcc --version # If this fails MINGW is not setup correctly
         - name: Configure
           run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
+          env:
+            LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
+            CMAKE_C_COMPILER_LAUNCHER: ccache
+            CMAKE_CXX_COMPILER_LAUNCHER: ccache
+            CMAKE_GENERATOR: Ninja
+        - name: Build
+          run: cmake --build build -- --quiet
+        - name: Install
+          run: cmake --install build --prefix build/install
+        - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
+          run: ccache --show-stats
+
+    mingw-no-asm:
+      runs-on: windows-2022
+      defaults:
+        run:
+          shell: bash
+      steps:
+        - uses: actions/checkout@v3
+        - name: Setup ccache
+          uses: hendrikmuhs/ccache-action@v1.2
+          with:
+            key: mingw-ccache
+        - uses: actions/setup-python@v4
+          with:
+            python-version: '3.8'
+        - uses: lukka/get-cmake@latest
+        - name: GCC Version
+          run: gcc --version # If this fails MINGW is not setup correctly
+        - name: Configure
+          run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -D USE_MASM=OFF
           env:
             LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
             CMAKE_C_COMPILER_LAUNCHER: ccache
