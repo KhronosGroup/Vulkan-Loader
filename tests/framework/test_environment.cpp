@@ -399,9 +399,9 @@ FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) no
     }
 #if COMMON_UNIX_PLATFORMS
     if (settings.secure_loader_settings) {
-        platform_shim->redirect_path("/etc/vulkan/settings.d", get_folder(ManifestLocation::settings_location).location());
+        platform_shim->redirect_path("/etc/vulkan/loader_settings.d", get_folder(ManifestLocation::settings_location).location());
     } else {
-        platform_shim->redirect_path(get_env_var("HOME") + "/.local/share/vulkan/settings.d",
+        platform_shim->redirect_path(get_env_var("HOME") + "/.local/share/vulkan/loader_settings.d",
                                      get_folder(ManifestLocation::settings_location).location());
     }
 #endif

@@ -33,9 +33,9 @@ std::string get_settings_location_log_message(FrameworkEnvironment const& env, b
     return s + env.get_folder(ManifestLocation::settings_location).location().str() + "\\vk_loader_settings.json";
 #elif COMMON_UNIX_PLATFORMS
     if (use_secure)
-        return s + "/etc/vulkan/settings.d/vk_loader_settings.json";
+        return s + "/etc/vulkan/loader_settings.d/vk_loader_settings.json";
     else
-        return s + "/home/fake_home/.local/share/vulkan/settings.d/vk_loader_settings.json";
+        return s + "/home/fake_home/.local/share/vulkan/loader_settings.d/vk_loader_settings.json";
 #endif
 }
 

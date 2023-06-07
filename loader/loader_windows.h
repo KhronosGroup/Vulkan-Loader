@@ -118,8 +118,8 @@ VkLoaderFeatureFlags windows_initialize_dxgi(void);
 char *windows_get_app_package_manifest_path(const struct loader_instance *inst);
 
 // Gets the path to the loader settings file, if it exists. If it doesn't exists, writes NULL to out_path.
-// The path is located through the registry as an entry in HKEY_CURRENT_USER/SOFTWARE/Khronos/Vulkan/Settings
-// and if nothing is there, will try to look in HKEY_LOCAL_MACHINE/SOFTWARE/Khronos/Vulkan/Settings.
+// The path is located through the registry as an entry in HKEY_CURRENT_USER/SOFTWARE/Khronos/Vulkan/LoaderSettings
+// and if nothing is there, will try to look in HKEY_LOCAL_MACHINE/SOFTWARE/Khronos/Vulkan/LoaderSettings.
 // If running with elevated privileges, this function only looks in HKEY_LOCAL_MACHINE.
 VkResult windows_get_loader_settings_file_path(const struct loader_instance *inst, char **out_path);
 #endif  // WIN32
