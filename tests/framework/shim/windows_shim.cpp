@@ -341,8 +341,8 @@ std::vector<RegistryEntry> *get_registry_vector(std::string const &path) {
         return &platform_shim.hkey_current_user_explicit_layers;
     if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers")
         return &platform_shim.hkey_current_user_implicit_layers;
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\Settings") return &platform_shim.hkey_local_machine_settings;
-    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\Settings") return &platform_shim.hkey_current_user_settings;
+    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\LoaderSettings") return &platform_shim.hkey_local_machine_settings;
+    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\LoaderSettings") return &platform_shim.hkey_current_user_settings;
     return nullptr;
 }
 LSTATUS __stdcall ShimRegQueryValueExA(HKEY hKey, LPCSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData,
