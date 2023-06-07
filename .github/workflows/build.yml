@@ -247,7 +247,7 @@ jobs:
                 python-version: '3.7'
 
             - name: Generate build files
-              run: cmake -S. -B build -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -A ${{ matrix.arch }} -USE_MASM=OFF
+              run: cmake -S. -B build -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -D USE_MASM=OFF -D CMAKE_BUILD_TYPE=Release -A ${{ matrix.arch }}
 
             - name: Build the loader
               run: cmake --build ./build --config Release
