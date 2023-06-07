@@ -85,7 +85,8 @@ void windows_initialization(void) {
     GetSystemDirectoryW(systemPath, MAX_PATH);
     StringCchCatW(systemPath, MAX_PATH, L"\\dxgi.dll");
     HMODULE dxgi_module = LoadLibraryW(systemPath);
-    fpCreateDXGIFactory1 = dxgi_module == NULL ? NULL : (PFN_CreateDXGIFactory1)GetProcAddress(dxgi_module, "CreateDXGIFactory1");
+    fpCreateDXGIFactory1 =
+        dxgi_module == NULL ? NULL : (PFN_CreateDXGIFactory1)(void *)GetProcAddress(dxgi_module, "CreateDXGIFactory1");
 
 #if !defined(NDEBUG)
     _set_error_mode(_OUT_TO_STDERR);
@@ -585,9 +586,10 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
         goto out;
     }
 
-    PFN_LoaderEnumAdapters2 fpLoaderEnumAdapters2 = (PFN_LoaderEnumAdapters2)GetProcAddress(gdi32_dll, "D3DKMTEnumAdapters2");
+    PFN_LoaderEnumAdapters2 fpLoaderEnumAdapters2 =
+        (PFN_LoaderEnumAdapters2)(void *)GetProcAddress(gdi32_dll, "D3DKMTEnumAdapters2");
     PFN_LoaderQueryAdapterInfo fpLoaderQueryAdapterInfo =
-        (PFN_LoaderQueryAdapterInfo)GetProcAddress(gdi32_dll, "D3DKMTQueryAdapterInfo");
+        (PFN_LoaderQueryAdapterInfo)(void *)GetProcAddress(gdi32_dll, "D3DKMTQueryAdapterInfo");
     if (fpLoaderEnumAdapters2 == NULL || fpLoaderQueryAdapterInfo == NULL) {
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
@@ -999,13 +1001,13 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
     // These functions are only available on Windows 8 and above, load them dynamically for compatibility with Windows 7
     typedef LONG(WINAPI * PFN_GetPackagesByPackageFamily)(PCWSTR, UINT32 *, PWSTR *, UINT32 *, WCHAR *);
     PFN_GetPackagesByPackageFamily fpGetPackagesByPackageFamily =
-        (PFN_GetPackagesByPackageFamily)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagesByPackageFamily");
+        (PFN_GetPackagesByPackageFamily)(void *)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagesByPackageFamily");
     if (!fpGetPackagesByPackageFamily) {
         return NULL;
     }
     typedef LONG(WINAPI * PFN_GetPackagePathByFullName)(PCWSTR, UINT32 *, PWSTR);
     PFN_GetPackagePathByFullName fpGetPackagePathByFullName =
-        (PFN_GetPackagePathByFullName)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagePathByFullName");
+        (PFN_GetPackagePathByFullName)(void *)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagePathByFullName");
     if (!fpGetPackagePathByFullName) {
         return NULL;
     }
