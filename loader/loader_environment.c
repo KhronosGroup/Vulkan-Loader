@@ -244,47 +244,52 @@ VkResult parse_generic_filter_environment_var(const struct loader_instance *inst
                                               struct loader_envvar_filter *filter_struct) {
     VkResult result = VK_SUCCESS;
     memset(filter_struct, 0, sizeof(struct loader_envvar_filter));
+    char *parsing_string = NULL;
     char *env_var_value = loader_secure_getenv(env_var_name, inst);
     if (NULL == env_var_value) {
         return result;
     }
-    if (strlen(env_var_value) > 0) {
-        const size_t env_var_len = strlen(env_var_value);
-        // Allocate a separate string since strtok modifies the original string
-        char *parsing_string = loader_instance_heap_calloc(inst, env_var_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL != parsing_string) {
-            const char tokenizer[3] = ",";
-
-            for (uint32_t iii = 0; iii < env_var_len; ++iii) {
-                parsing_string[iii] = (char)tolower(env_var_value[iii]);
-            }
-            parsing_string[env_var_len] = '\0';
-
-            char *token = strtok(parsing_string, tokenizer);
-            while (NULL != token) {
-                enum loader_filter_string_type cur_filter_type;
-                const char *actual_start;
-                size_t actual_len;
-                determine_filter_type(token, &cur_filter_type, &actual_start, &actual_len);
-                if (actual_len > VK_MAX_EXTENSION_NAME_SIZE) {
-                    strncpy(filter_struct->filters[filter_struct->count].value, actual_start, VK_MAX_EXTENSION_NAME_SIZE);
-                } else {
-                    strncpy(filter_struct->filters[filter_struct->count].value, actual_start, actual_len);
-                }
-                filter_struct->filters[filter_struct->count].length = actual_len;
-                filter_struct->filters[filter_struct->count++].type = cur_filter_type;
-                if (filter_struct->count >= MAX_ADDITIONAL_FILTERS) {
-                    break;
-                }
-                token = strtok(NULL, tokenizer);
-            }
-            loader_instance_heap_free(inst, parsing_string);
-        } else {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "parse_generic_filter_environment_var: Failed to allocate space for parsing env var \'%s\'", env_var_name);
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
+    const size_t env_var_len = strlen(env_var_value);
+    if (env_var_len == 0) {
+        goto out;
     }
+    // Allocate a separate string since scan_for_next_comma modifies the original string
+    parsing_string = loader_instance_heap_calloc(inst, env_var_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == parsing_string) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "parse_generic_filter_environment_var: Failed to allocate space for parsing env var \'%s\'", env_var_name);
+        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    for (uint32_t iii = 0; iii < env_var_len; ++iii) {
+        parsing_string[iii] = (char)tolower(env_var_value[iii]);
+    }
+    parsing_string[env_var_len] = '\0';
+
+    char *context = NULL;
+    char *token = thread_safe_strtok(parsing_string, ",", &context);
+    while (NULL != token) {
+        enum loader_filter_string_type cur_filter_type;
+        const char *actual_start;
+        size_t actual_len;
+        determine_filter_type(token, &cur_filter_type, &actual_start, &actual_len);
+        if (actual_len > VK_MAX_EXTENSION_NAME_SIZE) {
+            strncpy(filter_struct->filters[filter_struct->count].value, actual_start, VK_MAX_EXTENSION_NAME_SIZE);
+        } else {
+            strncpy(filter_struct->filters[filter_struct->count].value, actual_start, actual_len);
+        }
+        filter_struct->filters[filter_struct->count].length = actual_len;
+        filter_struct->filters[filter_struct->count++].type = cur_filter_type;
+        if (filter_struct->count >= MAX_ADDITIONAL_FILTERS) {
+            break;
+        }
+        token = thread_safe_strtok(NULL, ",", &context);
+    }
+
+out:
+
+    loader_instance_heap_free(inst, parsing_string);
     loader_free_getenv(env_var_value, inst);
     return result;
 }
@@ -296,64 +301,65 @@ VkResult parse_layers_disable_filter_environment_var(const struct loader_instanc
                                                      struct loader_envvar_disable_layers_filter *disable_struct) {
     VkResult result = VK_SUCCESS;
     memset(disable_struct, 0, sizeof(struct loader_envvar_disable_layers_filter));
+    char *parsing_string = NULL;
     char *env_var_value = loader_secure_getenv(VK_LAYERS_DISABLE_ENV_VAR, inst);
     if (NULL == env_var_value) {
         goto out;
     }
-    if (strlen(env_var_value) > 0) {
-        const size_t env_var_len = strlen(env_var_value);
-        // Allocate a separate string since strtok modifies the original string
-        char *parsing_string = loader_instance_heap_calloc(inst, env_var_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL != parsing_string) {
-            const char tokenizer[3] = ",";
-
-            for (uint32_t iii = 0; iii < env_var_len; ++iii) {
-                parsing_string[iii] = (char)tolower(env_var_value[iii]);
-            }
-            parsing_string[env_var_len] = '\0';
-
-            char *token = strtok(parsing_string, tokenizer);
-            while (NULL != token) {
-                uint32_t cur_count = disable_struct->additional_filters.count;
-                enum loader_filter_string_type cur_filter_type;
-                const char *actual_start;
-                size_t actual_len;
-                determine_filter_type(token, &cur_filter_type, &actual_start, &actual_len);
-                if (cur_filter_type == FILTER_STRING_SPECIAL) {
-                    if (!strcmp(VK_LOADER_DISABLE_ALL_LAYERS_VAR_1, token) || !strcmp(VK_LOADER_DISABLE_ALL_LAYERS_VAR_2, token) ||
-                        !strcmp(VK_LOADER_DISABLE_ALL_LAYERS_VAR_3, token)) {
-                        disable_struct->disable_all = true;
-                    } else if (!strcmp(VK_LOADER_DISABLE_IMPLICIT_LAYERS_VAR, token)) {
-                        disable_struct->disable_all_implicit = true;
-                    } else if (!strcmp(VK_LOADER_DISABLE_EXPLICIT_LAYERS_VAR, token)) {
-                        disable_struct->disable_all_explicit = true;
-                    }
-                } else {
-                    if (actual_len > VK_MAX_EXTENSION_NAME_SIZE) {
-                        strncpy(disable_struct->additional_filters.filters[cur_count].value, actual_start,
-                                VK_MAX_EXTENSION_NAME_SIZE);
-                    } else {
-                        strncpy(disable_struct->additional_filters.filters[cur_count].value, actual_start, actual_len);
-                    }
-                    disable_struct->additional_filters.filters[cur_count].length = actual_len;
-                    disable_struct->additional_filters.filters[cur_count].type = cur_filter_type;
-                    disable_struct->additional_filters.count++;
-                    if (disable_struct->additional_filters.count >= MAX_ADDITIONAL_FILTERS) {
-                        break;
-                    }
-                }
-                token = strtok(NULL, tokenizer);
-            }
-            loader_instance_heap_free(inst, parsing_string);
-        } else {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "parse_layers_disable_filter_environment_var: Failed to allocate space for parsing env var "
-                       "\'VK_LAYERS_DISABLE_ENV_VAR\'");
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
+    const size_t env_var_len = strlen(env_var_value);
+    if (env_var_len == 0) {
+        goto out;
     }
-    loader_free_getenv(env_var_value, inst);
+    // Allocate a separate string since scan_for_next_comma modifies the original string
+    parsing_string = loader_instance_heap_calloc(inst, env_var_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == parsing_string) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "parse_layers_disable_filter_environment_var: Failed to allocate space for parsing env var "
+                   "\'VK_LAYERS_DISABLE_ENV_VAR\'");
+        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+
+    for (uint32_t iii = 0; iii < env_var_len; ++iii) {
+        parsing_string[iii] = (char)tolower(env_var_value[iii]);
+    }
+    parsing_string[env_var_len] = '\0';
+
+    char *context = NULL;
+    char *token = thread_safe_strtok(parsing_string, ",", &context);
+    while (NULL != token) {
+        uint32_t cur_count = disable_struct->additional_filters.count;
+        enum loader_filter_string_type cur_filter_type;
+        const char *actual_start;
+        size_t actual_len;
+        determine_filter_type(token, &cur_filter_type, &actual_start, &actual_len);
+        if (cur_filter_type == FILTER_STRING_SPECIAL) {
+            if (!strcmp(VK_LOADER_DISABLE_ALL_LAYERS_VAR_1, token) || !strcmp(VK_LOADER_DISABLE_ALL_LAYERS_VAR_2, token) ||
+                !strcmp(VK_LOADER_DISABLE_ALL_LAYERS_VAR_3, token)) {
+                disable_struct->disable_all = true;
+            } else if (!strcmp(VK_LOADER_DISABLE_IMPLICIT_LAYERS_VAR, token)) {
+                disable_struct->disable_all_implicit = true;
+            } else if (!strcmp(VK_LOADER_DISABLE_EXPLICIT_LAYERS_VAR, token)) {
+                disable_struct->disable_all_explicit = true;
+            }
+        } else {
+            if (actual_len > VK_MAX_EXTENSION_NAME_SIZE) {
+                strncpy(disable_struct->additional_filters.filters[cur_count].value, actual_start, VK_MAX_EXTENSION_NAME_SIZE);
+            } else {
+                strncpy(disable_struct->additional_filters.filters[cur_count].value, actual_start, actual_len);
+            }
+            disable_struct->additional_filters.filters[cur_count].length = actual_len;
+            disable_struct->additional_filters.filters[cur_count].type = cur_filter_type;
+            disable_struct->additional_filters.count++;
+            if (disable_struct->additional_filters.count >= MAX_ADDITIONAL_FILTERS) {
+                break;
+            }
+        }
+        token = thread_safe_strtok(NULL, ",", &context);
+    }
 out:
+    loader_instance_heap_free(inst, parsing_string);
+    loader_free_getenv(env_var_value, inst);
     return result;
 }
 

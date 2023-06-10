@@ -375,21 +375,21 @@ size_t loader_platform_combine_path(char *dest, size_t len, ...) {
 uint32_t loader_parse_version_string(char *vers_str) {
     uint32_t variant = 0, major = 0, minor = 0, patch = 0;
     char *vers_tok;
-
+    char *context = NULL;
     if (!vers_str) {
         return 0;
     }
 
-    vers_tok = strtok(vers_str, ".\"\n\r");
+    vers_tok = thread_safe_strtok(vers_str, ".\"\n\r", &context);
     if (NULL != vers_tok) {
         major = (uint16_t)atoi(vers_tok);
-        vers_tok = strtok(NULL, ".\"\n\r");
+        vers_tok = thread_safe_strtok(NULL, ".\"\n\r", &context);
         if (NULL != vers_tok) {
             minor = (uint16_t)atoi(vers_tok);
-            vers_tok = strtok(NULL, ".\"\n\r");
+            vers_tok = thread_safe_strtok(NULL, ".\"\n\r", &context);
             if (NULL != vers_tok) {
                 patch = (uint16_t)atoi(vers_tok);
-                vers_tok = strtok(NULL, ".\"\n\r");
+                vers_tok = thread_safe_strtok(NULL, ".\"\n\r", &context);
                 // check that we are using a 4 part version string
                 if (NULL != vers_tok) {
                     // if we are, move the values over into the correct place
