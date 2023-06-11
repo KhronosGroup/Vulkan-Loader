@@ -80,18 +80,6 @@ int main(int argc, char** argv) {
     EnvVarWrapper vk_loader_layers_disable_env_var{"VK_LOADER_LAYERS_DISABLE"};
     EnvVarWrapper vk_loader_debug_env_var{"VK_LOADER_DEBUG"};
     EnvVarWrapper vk_loader_disable_inst_ext_filter_env_var{"VK_LOADER_DISABLE_INST_EXT_FILTER"};
-    vk_icd_filenames_env_var.remove_value();
-    vk_driver_files_env_var.remove_value();
-    vk_add_driver_files_env_var.remove_value();
-    vk_layer_path_env_var.remove_value();
-    vk_add_layer_path_env_var.remove_value();
-    vk_instance_layers_env_var.remove_value();
-    vk_loader_drivers_select_env_var.remove_value();
-    vk_loader_drivers_disable_env_var.remove_value();
-    vk_loader_layers_enable_env_var.remove_value();
-    vk_loader_layers_disable_env_var.remove_value();
-    vk_loader_debug_env_var.remove_value();
-    vk_loader_disable_inst_ext_filter_env_var.remove_value();
 
 #if COMMON_UNIX_PLATFORMS
     // Set only one of the 4 XDG variables to /etc, let everything else be empty
