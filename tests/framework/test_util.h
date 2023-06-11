@@ -104,6 +104,11 @@
 
 #include "json_writer.h"
 
+// get_env_var() - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
+//     env-var
+// NOTE: This is only intended for test framework code, all test code MUST use EnvVarWrapper
+std::string get_env_var(std::string const& name, bool report_failure = true);
+
 /*
  * Wrapper around Environment Variables with common operations
  * Since Environment Variables leak between tests, there needs to be RAII code to remove them during test cleanup
@@ -113,10 +118,21 @@
 // Wrapper to set & remove env-vars automatically
 struct EnvVarWrapper {
     // Constructor which unsets the env-var
-    EnvVarWrapper(std::string const& name) noexcept : name(name) { remove_env_var(); }
+    EnvVarWrapper(std::string const& name) noexcept : name(name) {
+        initial_value = get_env_var(name, false);
+        remove_env_var();
+    }
     // Constructor which set the env-var to the specified value
-    EnvVarWrapper(std::string const& name, std::string const& value) noexcept : name(name), cur_value(value) { set_env_var(); }
-    ~EnvVarWrapper() noexcept { remove_env_var(); }
+    EnvVarWrapper(std::string const& name, std::string const& value) noexcept : name(name), cur_value(value) {
+        initial_value = get_env_var(name, false);
+        set_env_var();
+    }
+    ~EnvVarWrapper() noexcept {
+        remove_env_var();
+        if (!initial_value.empty()) {
+            set_new_value(initial_value);
+        }
+    }
 
     // delete copy operators
     EnvVarWrapper(const EnvVarWrapper&) = delete;
@@ -140,6 +156,7 @@ struct EnvVarWrapper {
    private:
     std::string name;
     std::string cur_value;
+    std::string initial_value;
 
     void set_env_var();
     void remove_env_var() const;
@@ -151,11 +168,6 @@ struct EnvVarWrapper {
     const char OS_ENV_VAR_LIST_SEPARATOR = ':';
 #endif
 };
-
-// get_env_var() - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
-//     env-var
-// NOTE: This is only intended for test framework code, all test code MUST use EnvVarWrapper
-std::string get_env_var(std::string const& name, bool report_failure = true);
 
 // Windows specific error handling logic
 #if defined(WIN32)
