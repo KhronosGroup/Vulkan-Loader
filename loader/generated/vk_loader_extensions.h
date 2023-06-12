@@ -340,6 +340,11 @@ struct loader_icd_term_dispatch {
     // ---- VK_KHR_fragment_shading_rate extension commands
     PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
 
+    // ---- VK_KHR_video_encode_queue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
     // ---- VK_EXT_debug_report extension commands
     PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
     PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;

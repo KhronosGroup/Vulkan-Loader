@@ -188,6 +188,11 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
     // ---- VK_KHR_fragment_shading_rate extension commands
     LOOKUP_GIPA(GetPhysicalDeviceFragmentShadingRatesKHR, false);
 
+    // ---- VK_KHR_video_encode_queue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    LOOKUP_GIPA(GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR, false);
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
     // ---- VK_EXT_debug_report extension commands
     LOOKUP_GIPA(CreateDebugReportCallbackEXT, false);
     LOOKUP_GIPA(DestroyDebugReportCallbackEXT, false);
@@ -666,6 +671,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->UnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)gdpa(dev, "vkUnmapMemory2KHR");
 
     // ---- VK_KHR_video_encode_queue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->GetEncodedVideoSessionParametersKHR = (PFN_vkGetEncodedVideoSessionParametersKHR)gdpa(dev, "vkGetEncodedVideoSessionParametersKHR");
+#endif // VK_ENABLE_BETA_EXTENSIONS
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR)gdpa(dev, "vkCmdEncodeVideoKHR");
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -1246,6 +1254,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
     // ---- VK_KHR_fragment_shading_rate extension commands
     table->GetPhysicalDeviceFragmentShadingRatesKHR = (PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR)gpa(inst, "vkGetPhysicalDeviceFragmentShadingRatesKHR");
 
+    // ---- VK_KHR_video_encode_queue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = (PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR)gpa(inst, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
     // ---- VK_EXT_debug_report extension commands
     table->CreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)gpa(inst, "vkCreateDebugReportCallbackEXT");
     table->DestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)gpa(inst, "vkDestroyDebugReportCallbackEXT");
@@ -1770,6 +1783,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "UnmapMemory2KHR")) return (void *)table->UnmapMemory2KHR;
 
     // ---- VK_KHR_video_encode_queue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "GetEncodedVideoSessionParametersKHR")) return (void *)table->GetEncodedVideoSessionParametersKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "CmdEncodeVideoKHR")) return (void *)table->CmdEncodeVideoKHR;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2353,6 +2369,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_KHR_fragment_shading_rate extension commands
     if (!strcmp(name, "GetPhysicalDeviceFragmentShadingRatesKHR")) return (void *)table->GetPhysicalDeviceFragmentShadingRatesKHR;
+
+    // ---- VK_KHR_video_encode_queue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR")) return (void *)table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_debug_report extension commands
     if (!strcmp(name, "CreateDebugReportCallbackEXT")) return (void *)table->CreateDebugReportCallbackEXT;
@@ -3699,6 +3720,56 @@ VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(
 
 // ---- VK_KHR_video_encode_queue extension trampoline/terminators
 
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(unwrapped_phys_dev, pQualityLevelInfo, pQualityLevelProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(phys_dev_term->phys_dev, pQualityLevelInfo, pQualityLevelProperties);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR VkResult VKAPI_CALL GetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetEncodedVideoSessionParametersKHR: Invalid device "
+                   "[VUID-vkGetEncodedVideoSessionParametersKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize, pData);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
@@ -8738,6 +8809,18 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
 
     // ---- VK_KHR_video_encode_queue extension commands
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR", name)) {
+        *addr = (void *)GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkGetEncodedVideoSessionParametersKHR", name)) {
+        *addr = (void *)GetEncodedVideoSessionParametersKHR;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkCmdEncodeVideoKHR", name)) {
         *addr = (void *)CmdEncodeVideoKHR;
         return true;
@@ -10372,6 +10455,11 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_KHR_fragment_shading_rate extension commands
     .GetPhysicalDeviceFragmentShadingRatesKHR = terminator_GetPhysicalDeviceFragmentShadingRatesKHR,
+
+    // ---- VK_KHR_video_encode_queue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    .GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = terminator_GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR,
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_debug_report extension commands
     .CreateDebugReportCallbackEXT = terminator_CreateDebugReportCallbackEXT,
