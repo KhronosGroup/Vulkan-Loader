@@ -1130,6 +1130,7 @@ VkResult windows_get_loader_settings_file_path(const struct loader_instance *ins
     if (is_high_integrity()) {
         LONG rtn_value = RegOpenKeyEx(HKEY_LOCAL_MACHINE, VK_SETTINGS_INFO_REGISTRY_LOC, 0, access_flags, &key);
         if (ERROR_SUCCESS != rtn_value) {
+            result = VK_ERROR_FEATURE_NOT_PRESENT;
             goto out;
         }
         result = get_settings_path_if_exists_in_registry_key(inst, out_path, key);
@@ -1146,6 +1147,7 @@ VkResult windows_get_loader_settings_file_path(const struct loader_instance *ins
 
         rtn_value = RegOpenKeyEx(HKEY_LOCAL_MACHINE, VK_SETTINGS_INFO_REGISTRY_LOC, 0, access_flags, &key);
         if (ERROR_SUCCESS != rtn_value) {
+            result = VK_ERROR_FEATURE_NOT_PRESENT;
             goto out;
         }
 
