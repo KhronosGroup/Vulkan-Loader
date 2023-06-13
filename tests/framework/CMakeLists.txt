@@ -17,7 +17,7 @@
 
 add_library(testing_framework_util STATIC test_util.cpp)
 target_link_libraries(testing_framework_util PUBLIC loader_common_options Vulkan::Headers)
-set_target_properties(testing_framework_util ${LOADER_STANDARD_CXX_PROPERTIES})
+set_target_properties(testing_framework_util PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES})
 
 if(UNIX OR APPLE)
     target_link_libraries(testing_framework_util PUBLIC ${CMAKE_DL_LIBS})
@@ -56,7 +56,7 @@ function(AddSharedLibrary LIBRARY_NAME)
     add_library(${LIBRARY_NAME} SHARED ${PARSED_ARGS_SOURCES})
     target_link_libraries(${LIBRARY_NAME} PUBLIC testing_framework_util)
     target_compile_definitions(${LIBRARY_NAME} PRIVATE ${PARSED_ARGS_DEFINITIONS} VK_NO_PROTOTYPES)
-    set_target_properties(${LIBRARY_NAME} ${LOADER_STANDARD_CXX_PROPERTIES})
+    set_target_properties(${LIBRARY_NAME} PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES})
     # Windows requires export definitions for these libraries
     if(WIN32)
         target_sources(${LIBRARY_NAME} PRIVATE export_definitions/${PARSED_ARGS_DEF_FILE}.def)
@@ -93,7 +93,7 @@ target_link_libraries(testing_dependencies
     PUBLIC gtest Vulkan::Headers testing_framework_util shim-library)
 target_include_directories(testing_dependencies PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(testing_dependencies PUBLIC "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-set_target_properties(testing_dependencies ${LOADER_STANDARD_CXX_PROPERTIES})
+set_target_properties(testing_dependencies PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES})
 if (APPLE AND BUILD_STATIC_LOADER)
     target_compile_definitions(testing_dependencies PUBLIC "BUILD_STATIC_LOADER=1")
     target_link_libraries(testing_dependencies PUBLIC vulkan)
