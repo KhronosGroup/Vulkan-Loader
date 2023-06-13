@@ -22,27 +22,6 @@ target_link_libraries(loader_specific_options INTERFACE loader_common_options Vu
 target_include_directories(loader_specific_options INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${CMAKE_CURRENT_BINARY_DIR})
 
 if(WIN32)
-    if(MSVC)
-        # Use static MSVCRT libraries
-        foreach(configuration
-                in
-                CMAKE_C_FLAGS_DEBUG
-                CMAKE_C_FLAGS_MINSIZEREL
-                CMAKE_C_FLAGS_RELEASE
-                CMAKE_C_FLAGS_RELWITHDEBINFO
-                CMAKE_CXX_FLAGS_DEBUG
-                CMAKE_CXX_FLAGS_MINSIZEREL
-                CMAKE_CXX_FLAGS_RELEASE
-                CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-            if(${configuration} MATCHES "/MD")
-                string(REGEX
-                    REPLACE "/MD"
-                            "/MT"
-                            ${configuration}
-                            "${${configuration}}")
-            endif()
-        endforeach()
-    endif()
 
     if(ENABLE_WIN10_ONECORE)
         # Note: When linking your app or driver to OneCore.lib, be sure to remove any links to non-umbrella libs (such as

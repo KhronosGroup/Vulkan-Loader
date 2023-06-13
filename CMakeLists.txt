@@ -149,6 +149,11 @@ target_compile_features(loader_common_options INTERFACE cxx_std_11)
 set(LOADER_STANDARD_C_PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS OFF)
 set(LOADER_STANDARD_CXX_PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
 
+set(TESTS_STANDARD_CXX_PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES} MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+
+# Force the use of the multithreaded, static version of the C runtime.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 option(ENABLE_WERROR "Enable warnings as errors" ON)
 
 # Set warnings as errors and the main diagnostic flags
@@ -274,6 +279,11 @@ if(BUILD_TESTS)
         message(SEND_ERROR "Could not find googletest directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of googletest")
         set(BUILD_TESTS OFF)
     endif()
+
+    # make sure gtest uses the dynamic runtime instead
+    set_target_properties(gtest PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
+    set_target_properties(gtest_main PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
+
     if (WIN32)
         if(TARGET detours)
             # Already enabled as a target (perhaps by a project enclosing this one)
@@ -346,7 +356,7 @@ if(BUILD_TESTS)
 
             if(MSVC)
                 target_compile_definitions(detours PUBLIC  "_CRT_SECURE_NO_WARNINGS=1")
-                set_target_properties(detours PROPERTIES COMPILE_FLAGS /EHsc)
+                set_target_properties(detours PROPERTIES COMPILE_FLAGS /EHsc ${TESTS_STANDARD_CXX_PROPERTIES})
             endif()
 
             # Silence errors found in clang-cl
