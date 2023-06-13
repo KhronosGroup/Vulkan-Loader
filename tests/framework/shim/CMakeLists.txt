@@ -18,7 +18,7 @@
 add_library(shim-common STATIC shim_common.cpp)
 target_link_libraries(shim-common PUBLIC testing_framework_util)
 target_include_directories(shim-common PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-set_target_properties(shim-common PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES})
+set_target_properties(shim-common PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
 
 if (WIN32)
     # need adapters.h which is in the loader folder
@@ -27,15 +27,17 @@ if (WIN32)
 
     add_library(shim-library SHARED windows_shim.cpp)
     target_link_libraries(shim-library PRIVATE detours cfgmgr32)
+    set_target_properties(shim-library PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
 
 elseif(UNIX)
     if(APPLE)
         add_library(shim-library SHARED unix_shim.cpp)
         target_link_libraries(shim-library PRIVATE "-framework CoreFoundation")
+        set_target_properties(shim-library PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
     else()
         add_library(shim-library STATIC unix_shim.cpp)
     endif()
 endif()
 #common attributes
 target_link_libraries(shim-library PUBLIC shim-common)
-set_target_properties(shim-library PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES})
+set_target_properties(shim-library PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
