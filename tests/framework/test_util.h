@@ -327,14 +327,20 @@ typedef void* loader_platform_dl_handle;
 inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
 }
-inline const char* loader_platform_open_library_error(const char* libPath) { return dlerror(); }
+inline const char* loader_platform_open_library_error(const char* libPath) {
+    (void)libPath;
+    return dlerror();
+}
 inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
 inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return dlsym(library, name);
 }
-inline const char* loader_platform_get_proc_address_error(const char* name) { return dlerror(); }
+inline const char* loader_platform_get_proc_address_error(const char* name) {
+    (void)name;
+    return dlerror();
+}
 #endif
 
 class FromVoidStarFunc {

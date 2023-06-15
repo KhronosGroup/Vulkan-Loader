@@ -133,11 +133,17 @@ class MemoryTracker {
     }
     void impl_internal_allocation_notification(size_t size, VkInternalAllocationType allocationType,
                                                VkSystemAllocationScope allocationScope) noexcept {
+        (void)size;
+        (void)allocationType;
+        (void)allocationScope;
         std::lock_guard<std::mutex> lg(main_mutex);
         // TODO?
     }
     void impl_internal_free(size_t size, VkInternalAllocationType allocationType,
                             VkSystemAllocationScope allocationScope) noexcept {
+        (void)size;
+        (void)allocationType;
+        (void)allocationScope;
         std::lock_guard<std::mutex> lg(main_mutex);
         // TODO?
     }

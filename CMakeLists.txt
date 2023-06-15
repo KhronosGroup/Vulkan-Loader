@@ -173,7 +173,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "C
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(loader_common_options INTERFACE -Wno-unused-parameter -Wno-unused-function -Wno-missing-field-initializers)
+    target_compile_options(loader_common_options INTERFACE -Wno-missing-field-initializers)
 
     # need to prepend /clang: to compiler arguments when using clang-cl
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC")
@@ -199,10 +199,9 @@ endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC"))
     # /GR-: Disable RTTI
     # /guard:cf: Enable control flow guard
-    # /wd4100: Disable warning on unreferenced formal parameter
     # /wd4152: Disable warning on conversion of a function pointer to a data pointer
     # /wd4201: Disable warning on anonymous struct/unions
-    target_compile_options(loader_common_options INTERFACE /GR- /guard:cf /wd4100 /wd4152 /wd4201)
+    target_compile_options(loader_common_options INTERFACE /GR- /guard:cf /wd4152 /wd4201)
 
     # Enable control flow guard
     target_link_options(loader_common_options INTERFACE "LINKER:/guard:cf")

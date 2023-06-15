@@ -113,6 +113,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                          VkLayerProperties *pProperties) {
+    (void)pPropertyCount;
+    (void)pProperties;
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,

@@ -333,6 +333,8 @@ struct DebugUtilsLogger {
                                                                 VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                                 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                                 void* pUserData) {
+        (void)messageSeverity;
+        (void)messageTypes;
         DebugUtilsLogger* debug = reinterpret_cast<DebugUtilsLogger*>(pUserData);
         debug->returned_output += pCallbackData->pMessage;
         debug->returned_output += '\n';

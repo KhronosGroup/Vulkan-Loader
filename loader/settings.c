@@ -110,7 +110,7 @@ uint32_t parse_log_filters_from_strings(struct loader_string_list* log_filters) 
 
 bool parse_json_enable_disable_option(const struct loader_instance* inst, cJSON* object, const char* key) {
     char* str = NULL;
-    VkResult res = loader_parse_json_string(inst, object, key, &str);
+    VkResult res = loader_parse_json_string(object, key, &str);
     if (res != VK_SUCCESS || NULL == str) {
         return false;
     }
@@ -125,7 +125,7 @@ bool parse_json_enable_disable_option(const struct loader_instance* inst, cJSON*
 VkResult parse_layer_configuration(const struct loader_instance* inst, cJSON* layer_configuration_json,
                                    loader_settings_layer_configuration* layer_configuration) {
     char* control_string = NULL;
-    VkResult res = loader_parse_json_string(inst, layer_configuration_json, "control", &control_string);
+    VkResult res = loader_parse_json_string(layer_configuration_json, "control", &control_string);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -137,12 +137,12 @@ VkResult parse_layer_configuration(const struct loader_instance* inst, cJSON* la
         goto out;
     }
 
-    res = loader_parse_json_string(inst, layer_configuration_json, "name", &(layer_configuration->name));
+    res = loader_parse_json_string(layer_configuration_json, "name", &(layer_configuration->name));
     if (res != VK_SUCCESS) {
         goto out;
     }
 
-    res = loader_parse_json_string(inst, layer_configuration_json, "path", &(layer_configuration->path));
+    res = loader_parse_json_string(layer_configuration_json, "path", &(layer_configuration->path));
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -316,7 +316,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
         goto out;
     }
 
-    res = loader_parse_json_string(inst, json, "file_format_version", &file_format_version_string);
+    res = loader_parse_json_string(json, "file_format_version", &file_format_version_string);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -735,12 +735,12 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         // Check if disable filter needs to skip the layer
         if (NULL != disable_filter &&
             (disable_filter->disable_all || disable_filter->disable_all_implicit ||
-             check_name_matches_filter_environment_var(inst, props->info.layerName, &disable_filter->additional_filters))) {
+             check_name_matches_filter_environment_var(props->info.layerName, &disable_filter->additional_filters))) {
             continue;
         }
         // Check the enable filter
         if (!enable_layer && NULL != enable_filter &&
-            check_name_matches_filter_environment_var(inst, props->info.layerName, enable_filter)) {
+            check_name_matches_filter_environment_var(props->info.layerName, enable_filter)) {
             enable_layer = true;
         }
 

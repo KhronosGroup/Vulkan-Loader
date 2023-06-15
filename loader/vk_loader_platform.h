@@ -355,6 +355,7 @@ static inline loader_platform_dl_handle loader_platform_open_library(const char 
 #endif
 
 static inline const char *loader_platform_open_library_error(const char *libPath) {
+    (void)libPath;
 #if defined(__Fuchsia__)
     return dlerror_fuchsia();
 #else
@@ -374,7 +375,10 @@ static inline void *loader_platform_get_proc_address(loader_platform_dl_handle l
     assert(name);
     return dlsym(library, name);
 }
-static inline const char *loader_platform_get_proc_address_error(const char *name) { return dlerror(); }
+static inline const char *loader_platform_get_proc_address_error(const char *name) {
+    (void)name;
+    return dlerror();
+}
 
 // Thread mutex:
 static inline void loader_platform_thread_create_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_init(pMutex, NULL); }
@@ -426,7 +430,7 @@ static inline const wchar_t *LoaderPnpILayerRegistryWide() {
 }
 
 // File IO
-static bool loader_platform_file_exists(const char *path) {
+static inline bool loader_platform_file_exists(const char *path) {
     int path_utf16_size = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
     if (path_utf16_size <= 0) {
         return false;
@@ -443,7 +447,7 @@ static bool loader_platform_file_exists(const char *path) {
 
 // Returns true if the given string appears to be a relative or absolute
 // path, as opposed to a bare filename.
-static bool loader_platform_is_path_absolute(const char *path) {
+static inline bool loader_platform_is_path_absolute(const char *path) {
     if (!path || !*path) {
         return false;
     }
@@ -492,7 +496,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 }
 
 // Dynamic Loading:
-static loader_platform_dl_handle loader_platform_open_library(const char *lib_path) {
+static inline loader_platform_dl_handle loader_platform_open_library(const char *lib_path) {
     int lib_path_utf16_size = MultiByteToWideChar(CP_UTF8, 0, lib_path, -1, NULL, 0);
     if (lib_path_utf16_size <= 0) {
         return NULL;
@@ -509,12 +513,12 @@ static loader_platform_dl_handle loader_platform_open_library(const char *lib_pa
     }
     return lib_handle;
 }
-static const char *loader_platform_open_library_error(const char *libPath) {
+static inline const char *loader_platform_open_library_error(const char *libPath) {
     static char errorMsg[512];
     (void)snprintf(errorMsg, 511, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
     return errorMsg;
 }
-static void loader_platform_close_library(loader_platform_dl_handle library) {
+static inline void loader_platform_close_library(loader_platform_dl_handle library) {
 #if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
     (void)library;
     return;
@@ -522,22 +526,22 @@ static void loader_platform_close_library(loader_platform_dl_handle library) {
     FreeLibrary(library);
 #endif
 }
-static void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
+static inline void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);
     assert(name);
     return (void *)GetProcAddress(library, name);
 }
-static const char *loader_platform_get_proc_address_error(const char *name) {
+static inline const char *loader_platform_get_proc_address_error(const char *name) {
     static char errorMsg[120];
     (void)snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
     return errorMsg;
 }
 
 // Thread mutex:
-static void loader_platform_thread_create_mutex(loader_platform_thread_mutex *pMutex) { InitializeCriticalSection(pMutex); }
-static void loader_platform_thread_lock_mutex(loader_platform_thread_mutex *pMutex) { EnterCriticalSection(pMutex); }
-static void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex) { LeaveCriticalSection(pMutex); }
-static void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex) { DeleteCriticalSection(pMutex); }
+static inline void loader_platform_thread_create_mutex(loader_platform_thread_mutex *pMutex) { InitializeCriticalSection(pMutex); }
+static inline void loader_platform_thread_lock_mutex(loader_platform_thread_mutex *pMutex) { EnterCriticalSection(pMutex); }
+static inline void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex) { LeaveCriticalSection(pMutex); }
+static inline void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex) { DeleteCriticalSection(pMutex); }
 
 static inline void *thread_safe_strtok(char *str, const char *delimiters, char **context) {
     return strtok_s(str, delimiters, context);

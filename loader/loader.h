@@ -162,14 +162,12 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
 struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index);
 struct loader_instance *loader_get_instance(const VkInstance instance);
 struct loader_device *loader_create_logical_device(const struct loader_instance *inst, const VkAllocationCallbacks *pAllocator);
-void loader_add_logical_device(const struct loader_instance *inst, struct loader_icd_term *icd_term,
-                               struct loader_device *found_dev);
-void loader_remove_logical_device(const struct loader_instance *inst, struct loader_icd_term *icd_term,
-                                  struct loader_device *found_dev, const VkAllocationCallbacks *pAllocator);
+void loader_add_logical_device(struct loader_icd_term *icd_term, struct loader_device *found_dev);
+void loader_remove_logical_device(struct loader_icd_term *icd_term, struct loader_device *found_dev,
+                                  const VkAllocationCallbacks *pAllocator);
 // NOTE: Outside of loader, this entry-point is only provided for error
 // cleanup.
-void loader_destroy_logical_device(const struct loader_instance *inst, struct loader_device *dev,
-                                   const VkAllocationCallbacks *pAllocator);
+void loader_destroy_logical_device(struct loader_device *dev, const VkAllocationCallbacks *pAllocator);
 
 VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
                                        const struct loader_layer_list *instance_layers);

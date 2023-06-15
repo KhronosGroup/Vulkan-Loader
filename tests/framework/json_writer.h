@@ -63,7 +63,7 @@ struct JsonWriter {
         output += "\"" + key + "\": [";
         stack.push(false);
     }
-    void StartArray(std::string key) {
+    void StartArray() {
         CommaAndNewLine();
         Indent();
         output += "[";

@@ -96,6 +96,7 @@ void windows_initialization(void) {
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
+    (void)hinst;
     switch (reason) {
         case DLL_PROCESS_ATTACH:
             loader_initialize();

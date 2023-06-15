@@ -525,12 +525,9 @@ VKAPI_ATTR void VKAPI_CALL wrap_vkDestroyDevice(VkDevice device, const VkAllocat
 }
 
 // Fake instance extension support
-VKAPI_ATTR VkResult VKAPI_CALL wrap_vkReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
-    return VK_SUCCESS;
-}
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkReleaseDisplayEXT(VkPhysicalDevice, VkDisplayKHR) { return VK_SUCCESS; }
 
-VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
-                                                                               VkSurfaceKHR surface,
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice, VkSurfaceKHR,
                                                                                VkSurfaceCapabilities2EXT *pSurfaceCapabilities) {
     if (nullptr != pSurfaceCapabilities) {
         pSurfaceCapabilities->minImageCount = 7;
@@ -541,12 +538,10 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetPhysicalDeviceSurfaceCapabilities2EXT(V
 }
 
 // Fake device extension support
-VKAPI_ATTR void VKAPI_CALL wrap_vkTrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {}
+VKAPI_ATTR void VKAPI_CALL wrap_vkTrimCommandPoolKHR(VkDevice, VkCommandPool, VkCommandPoolTrimFlags) {}
 
 // Return an odd error so we can verify that this actually got called
-VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) {
-    return VK_ERROR_NATIVE_WINDOW_IN_USE_KHR;
-}
+VKAPI_ATTR VkResult VKAPI_CALL wrap_vkGetSwapchainStatusKHR(VkDevice, VkSwapchainKHR) { return VK_ERROR_NATIVE_WINDOW_IN_USE_KHR; }
 
 PFN_vkVoidFunction layer_intercept_device_proc(wrapped_dev_obj *dev, const char *name) {
     if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
@@ -696,14 +691,13 @@ VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkD
     return wrap_objects::wrap_vkGetDeviceProcAddr(device, funcName);
 }
 
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
-                                                                                      VkExtensionProperties *pProperties) {
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *, uint32_t *,
+                                                                                      VkExtensionProperties *) {
     assert(0);  // TODO return wrap_objects::EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
     return VK_SUCCESS;
 }
 
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *pCount,
-                                                                                  VkLayerProperties *pProperties) {
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *, VkLayerProperties *) {
     assert(0);  // TODO return wrap_objects::EnumerateInstanceLayerProperties(pCount, pProperties);
     return VK_SUCCESS;
 }
@@ -712,6 +706,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionPropert
                                                                                     const char *pLayerName, uint32_t *pCount,
                                                                                     VkExtensionProperties *pProperties) {
     // the layer command handles VK_NULL_HANDLE just fine internally
+    (void)physicalDevice;
     assert(physicalDevice == VK_NULL_HANDLE);
     return wrap_objects::wrap_vkEnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
 }
