@@ -48,14 +48,14 @@ bool has_flag(std::vector<TestConfig> const& flags, TestConfig config) {
 */
 template <typename DispatchableHandleType>
 struct custom_functions {
-    static VKAPI_ATTR uint32_t VKAPI_CALL func_zero(DispatchableHandleType handle, uint32_t foo) { return foo; };
-    static VKAPI_ATTR uint32_t VKAPI_CALL func_one(DispatchableHandleType handle, uint32_t foo, uint32_t bar) { return foo + bar; };
-    static VKAPI_ATTR float VKAPI_CALL func_two(DispatchableHandleType handle, uint32_t foo, uint32_t bar, float baz) {
+    static VKAPI_ATTR uint32_t VKAPI_CALL func_zero(DispatchableHandleType, uint32_t foo) { return foo; };
+    static VKAPI_ATTR uint32_t VKAPI_CALL func_one(DispatchableHandleType, uint32_t foo, uint32_t bar) { return foo + bar; };
+    static VKAPI_ATTR float VKAPI_CALL func_two(DispatchableHandleType, uint32_t foo, uint32_t bar, float baz) {
         return baz + foo + bar;
     };
-    static VKAPI_ATTR int VKAPI_CALL func_three(DispatchableHandleType handle, int* ptr_a, int* ptr_b) { return *ptr_a + *ptr_b; };
-    static VKAPI_ATTR float VKAPI_CALL func_four(DispatchableHandleType handle, int* ptr_a, int* ptr_b, int foo, int bar, float k,
-                                                 float l, char a, char b, char c) {
+    static VKAPI_ATTR int VKAPI_CALL func_three(DispatchableHandleType, int* ptr_a, int* ptr_b) { return *ptr_a + *ptr_b; };
+    static VKAPI_ATTR float VKAPI_CALL func_four(DispatchableHandleType, int* ptr_a, int* ptr_b, int foo, int bar, float k, float l,
+                                                 char a, char b, char c) {
         return *ptr_a + *ptr_b + foo + bar + k + l + static_cast<int>(a) + static_cast<int>(b) + static_cast<int>(c);
     };
 };
@@ -102,7 +102,7 @@ struct layer_intercept_functions {
         return func(handle, layer, name, ptr_a, ptr_b);
     };
     static VKAPI_ATTR float VKAPI_CALL func_four(DispatchableHandleType handle, TestLayer* layer, const char* name, int* ptr_a,
-                                                 int* ptr_b, int foo, int bar, float k, float l, char a, char b, char c) {
+                                                 int* ptr_b, int foo, int bar, float k, float l, char, char, char) {
         auto func = reinterpret_cast<decltype(&func_four)>(find_custom_func(layer, name));
         if (func == nullptr) return -1337.f;
         return func(handle, layer, name, ptr_a, ptr_b, foo + 4, bar + 5, k + 1, l + 2, 'd', 'e', 'f');
@@ -111,23 +111,19 @@ struct layer_intercept_functions {
 
 template <typename DispatchableHandleType>
 struct layer_implementation_functions {
-    static VKAPI_ATTR uint32_t VKAPI_CALL func_zero(DispatchableHandleType device, TestLayer* layer, const char* name, uint32_t i) {
-        return i * 3;
-    }
-    static VKAPI_ATTR uint32_t VKAPI_CALL func_one(DispatchableHandleType device, TestLayer* layer, const char* name, uint32_t i,
-                                                   float f) {
+    static VKAPI_ATTR uint32_t VKAPI_CALL func_zero(DispatchableHandleType, TestLayer*, const char*, uint32_t i) { return i * 3; }
+    static VKAPI_ATTR uint32_t VKAPI_CALL func_one(DispatchableHandleType, TestLayer*, const char*, uint32_t i, float f) {
         return static_cast<int>(i * 3 + f * 10.f);
     }
-    static VKAPI_ATTR float VKAPI_CALL func_two(DispatchableHandleType handle, TestLayer* layer, const char* name, uint32_t foo,
-                                                uint32_t bar, float baz) {
+    static VKAPI_ATTR float VKAPI_CALL func_two(DispatchableHandleType, TestLayer*, const char*, uint32_t foo, uint32_t bar,
+                                                float baz) {
         return baz + foo + bar;
     };
-    static VKAPI_ATTR int VKAPI_CALL func_three(DispatchableHandleType handle, TestLayer* layer, const char* name, int* ptr_a,
-                                                int* ptr_b) {
+    static VKAPI_ATTR int VKAPI_CALL func_three(DispatchableHandleType, TestLayer*, const char*, int* ptr_a, int* ptr_b) {
         return *ptr_a + *ptr_b;
     };
-    static VKAPI_ATTR float VKAPI_CALL func_four(DispatchableHandleType handle, TestLayer* layer, const char* name, int* ptr_a,
-                                                 int* ptr_b, int foo, int bar, float k, float l, char a, char b, char c) {
+    static VKAPI_ATTR float VKAPI_CALL func_four(DispatchableHandleType, TestLayer*, const char*, int* ptr_a, int* ptr_b, int foo,
+                                                 int bar, float k, float l, char a, char b, char c) {
         return *ptr_a + *ptr_b + foo + bar + k + l + static_cast<int>(a) + static_cast<int>(b) + static_cast<int>(c);
     };
 };
@@ -186,7 +182,7 @@ void fill_phys_dev_intercept_functions(TestLayer& layer, std::vector<std::string
 }
 
 template <typename FunctionLoader, typename ParentType, typename DispatchableHandleType, typename FunctionStruct>
-void check_custom_functions(FunctionLoader& loader, ParentType parent, DispatchableHandleType handle, FunctionStruct const& s,
+void check_custom_functions(FunctionLoader& loader, ParentType parent, DispatchableHandleType handle, FunctionStruct const&,
                             std::vector<std::string>& func_names, uint32_t function_count, uint32_t function_start = 0) {
     for (uint32_t i = function_start; i < function_start + function_count;) {
         decltype(FunctionStruct::func_zero)* returned_func_i = loader.load(parent, func_names.at(i++).c_str());
@@ -218,7 +214,7 @@ void check_custom_functions(FunctionLoader& loader, ParentType parent, Dispatcha
 
 template <typename FunctionLoader, typename ParentType, typename DispatchableHandleType, typename FunctionStruct>
 void check_layer_custom_functions(FunctionLoader& loader, ParentType parent, DispatchableHandleType handle, TestLayer& layer,
-                                  FunctionStruct const& s, std::vector<std::string>& func_names, uint32_t function_count,
+                                  FunctionStruct const&, std::vector<std::string>& func_names, uint32_t function_count,
                                   uint32_t function_start = 0) {
     for (uint32_t i = function_start; i < function_start + function_count;) {
         decltype(FunctionStruct::func_zero)* returned_func_i = loader.load(parent, func_names.at(i).c_str());
@@ -258,7 +254,7 @@ void check_layer_custom_functions(FunctionLoader& loader, ParentType parent, Dis
 
 template <typename FunctionLoader, typename ParentType, typename DispatchableHandleType, typename FunctionStruct>
 void check_layer_custom_functions_no_implementation(FunctionLoader& loader, ParentType parent, DispatchableHandleType handle,
-                                                    TestLayer& layer, FunctionStruct const& s, std::vector<std::string>& func_names,
+                                                    TestLayer& layer, FunctionStruct const&, std::vector<std::string>& func_names,
                                                     uint32_t function_count, uint32_t function_start = 0) {
     for (uint32_t i = function_start; i < function_start + function_count;) {
         decltype(FunctionStruct::func_zero)* returned_func_i = loader.load(parent, func_names.at(i).c_str());
@@ -296,7 +292,7 @@ void check_layer_custom_functions_no_implementation(FunctionLoader& loader, Pare
 
 template <typename FunctionLoader, typename ParentType, typename DispatchableHandleType, typename FunctionStruct>
 void check_layer_custom_functions_no_interception(FunctionLoader& loader, ParentType parent, DispatchableHandleType handle,
-                                                  TestLayer& layer, FunctionStruct const& s, std::vector<std::string>& func_names,
+                                                  TestLayer& layer, FunctionStruct const&, std::vector<std::string>& func_names,
                                                   uint32_t function_count, uint32_t function_start = 0) {
     for (uint32_t i = function_start; i < function_start + function_count;) {
         decltype(FunctionStruct::func_zero)* returned_func_i = loader.load(parent, func_names.at(i).c_str());
@@ -613,11 +609,11 @@ template <typename ParentType>
 ParentType get_parent_type(InstWrapper const& inst, DeviceWrapper const& dev);
 
 template <>
-VkInstance get_parent_type<VkInstance>(InstWrapper const& inst, DeviceWrapper const& dev) {
+VkInstance get_parent_type<VkInstance>(InstWrapper const& inst, DeviceWrapper const&) {
     return inst.inst;
 }
 template <>
-VkDevice get_parent_type<VkDevice>(InstWrapper const& inst, DeviceWrapper const& dev) {
+VkDevice get_parent_type<VkDevice>(InstWrapper const&, DeviceWrapper const& dev) {
     return dev.dev;
 }
 
@@ -626,13 +622,13 @@ DispatchableHandleType get_dispatch_handle(FrameworkEnvironment& env, DeviceWrap
                                            std::vector<TestConfig> const& flags);
 
 template <>
-VkDevice get_dispatch_handle<VkDevice>(FrameworkEnvironment& env, DeviceWrapper const& dev, std::vector<TestConfig> const& flags) {
+VkDevice get_dispatch_handle<VkDevice>(FrameworkEnvironment&, DeviceWrapper const& dev, std::vector<TestConfig> const&) {
     return dev.dev;
 }
 
 template <>
 VkCommandBuffer get_dispatch_handle<VkCommandBuffer>(FrameworkEnvironment& env, DeviceWrapper const& dev,
-                                                     std::vector<TestConfig> const& flags) {
+                                                     std::vector<TestConfig> const&) {
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info{};
     DeviceFunctions funcs{env.vulkan_functions, dev};
@@ -646,7 +642,7 @@ VkCommandBuffer get_dispatch_handle<VkCommandBuffer>(FrameworkEnvironment& env, 
 }
 
 template <>
-VkQueue get_dispatch_handle<VkQueue>(FrameworkEnvironment& env, DeviceWrapper const& dev, std::vector<TestConfig> const& flags) {
+VkQueue get_dispatch_handle<VkQueue>(FrameworkEnvironment& env, DeviceWrapper const& dev, std::vector<TestConfig> const&) {
     DeviceFunctions funcs{env.vulkan_functions, dev.dev};
     VkQueue queue;
     funcs.vkGetDeviceQueue(dev, 0, 0, &queue);
@@ -834,7 +830,7 @@ const char* LayerInterceptData<UniqueType>::name = nullptr;
 
 template <typename DispatchableHandle>
 struct FunctionZero {
-    static VKAPI_ATTR uint32_t VKAPI_CALL implementation(DispatchableHandle handle, uint32_t a, uint32_t b) { return a + b; }
+    static VKAPI_ATTR uint32_t VKAPI_CALL implementation(DispatchableHandle, uint32_t a, uint32_t b) { return a + b; }
 
     template <typename LayerType>
     static VKAPI_ATTR uint32_t VKAPI_CALL intercept(DispatchableHandle handle, uint32_t a, uint32_t b) {
@@ -862,9 +858,7 @@ struct FunctionZero {
 
 template <typename DispatchableHandle>
 struct FunctionOne {
-    static VKAPI_ATTR uint32_t VKAPI_CALL implementation(DispatchableHandle handle, uint32_t a, uint32_t b, char c) {
-        return a + b + c;
-    }
+    static VKAPI_ATTR uint32_t VKAPI_CALL implementation(DispatchableHandle, uint32_t a, uint32_t b, char c) { return a + b + c; }
 
     template <typename LayerType>
     static VKAPI_ATTR uint32_t VKAPI_CALL intercept(DispatchableHandle handle, uint32_t a, uint32_t b, char c) {
@@ -893,7 +887,7 @@ struct FunctionOne {
 
 template <typename DispatchableHandle>
 struct FunctionTwo {
-    static VKAPI_ATTR float VKAPI_CALL implementation(DispatchableHandle handle, int* ptr_a, int* ptr_b) {
+    static VKAPI_ATTR float VKAPI_CALL implementation(DispatchableHandle, int* ptr_a, int* ptr_b) {
         return 0.123f + *ptr_a + *ptr_b;
     }
 
@@ -928,7 +922,7 @@ struct FunctionTwo {
 
 template <typename DispatchableHandle>
 struct FunctionThree {
-    static VKAPI_ATTR float VKAPI_CALL implementation(DispatchableHandle handle, int* ptr_a, float* ptr_b, uint32_t c) {
+    static VKAPI_ATTR float VKAPI_CALL implementation(DispatchableHandle, int* ptr_a, float* ptr_b, uint32_t c) {
         return 0.456f + *ptr_a + *ptr_b + c;
     }
 
@@ -966,7 +960,7 @@ struct FunctionThree {
 
 template <typename DispatchableHandle>
 struct FunctionFour {
-    static VKAPI_ATTR VkResult VKAPI_CALL implementation(DispatchableHandle handle, VkPhysicalDeviceLimits* limits, uint32_t* count,
+    static VKAPI_ATTR VkResult VKAPI_CALL implementation(DispatchableHandle, VkPhysicalDeviceLimits* limits, uint32_t* count,
                                                          VkExtensionProperties* props) {
         limits->nonCoherentAtomSize = 0x0000ABCD0000FEDCU;
         if (props == nullptr) {
@@ -1064,7 +1058,7 @@ struct UnknownFunctionInfo {
     }
 
     template <typename LayerStruct>
-    static void add_to_layer(UnknownFunction& func, TestLayer& layer, LayerStruct intercept_struct) {
+    static void add_to_layer(UnknownFunction& func, TestLayer& layer, LayerStruct) {
         LayerInterceptData<LayerStruct>::layer = &layer;
         LayerInterceptData<LayerStruct>::name = func.name.c_str();
         layer.add_custom_device_interception_function(
@@ -1091,7 +1085,7 @@ struct UnknownFunctionInfo<FunctionType, VkPhysicalDevice> {
     }
 
     template <typename LayerStruct>
-    static void add_to_layer(UnknownFunction& func, TestLayer& layer, LayerStruct intercept_struct) {
+    static void add_to_layer(UnknownFunction& func, TestLayer& layer, LayerStruct) {
         LayerInterceptData<LayerStruct>::layer = &layer;
         LayerInterceptData<LayerStruct>::name = func.name.c_str();
         layer.add_custom_physical_device_intercept_function(

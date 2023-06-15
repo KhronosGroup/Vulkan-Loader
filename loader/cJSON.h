@@ -172,7 +172,7 @@ VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *
 
 // Given a cJSON object, find the string associated with the key and puts an allocated string into out_string.
 // It is the callers responsibility to free out_string.
-VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *object, const char *key, char **out_string);
+VkResult loader_parse_json_string(cJSON *object, const char *key, char **out_string);
 
 // Given a cJSON object, find the array of strings assocated with they key and writes the count into out_count and data into
 // out_array_of_strings. It is the callers responsibility to free out_array_of_strings.

@@ -1326,7 +1326,7 @@ VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *
     return VK_SUCCESS;
 }
 
-VkResult loader_parse_json_string(const struct loader_instance *inst, cJSON *object, const char *key, char **out_string) {
+VkResult loader_parse_json_string(cJSON *object, const char *key, char **out_string) {
     cJSON *item = cJSON_GetObjectItem(object, key);
     if (NULL == item) {
         return VK_ERROR_INITIALIZATION_FAILED;

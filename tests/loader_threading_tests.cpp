@@ -78,18 +78,12 @@ void create_destroy_device_loop(FrameworkEnvironment* env, uint32_t num_loops_cr
         }
     }
 }
-VKAPI_ATTR void VKAPI_CALL test_vkCmdBindPipeline(VkCommandBuffer cmd_buf, VkPipelineBindPoint pipelineBindPoint,
-                                                  VkPipeline pipeline) {}
-VKAPI_ATTR void VKAPI_CALL test_vkCmdBindDescriptorSets(VkCommandBuffer cmd_buf, VkPipelineBindPoint pipelineBindPoint,
-                                                        VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                        const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                        const uint32_t* pDynamicOffsets) {}
-VKAPI_ATTR void VKAPI_CALL test_vkCmdBindVertexBuffers(VkCommandBuffer cmd_buf, uint32_t firstBinding, uint32_t bindingCount,
-                                                       const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {}
-VKAPI_ATTR void VKAPI_CALL test_vkCmdBindIndexBuffer(VkCommandBuffer cmd_buf, uint32_t firstBinding, uint32_t bindingCount,
-                                                     const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {}
-VKAPI_ATTR void VKAPI_CALL test_vkCmdDraw(VkCommandBuffer cmd_buf, uint32_t vertexCount, uint32_t instanceCount,
-                                          uint32_t firstVertex, uint32_t firstInstance) {}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdBindPipeline(VkCommandBuffer, VkPipelineBindPoint, VkPipeline) {}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdBindDescriptorSets(VkCommandBuffer, VkPipelineBindPoint, VkPipelineLayout, uint32_t, uint32_t,
+                                                        const VkDescriptorSet*, uint32_t, const uint32_t*) {}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdBindVertexBuffers(VkCommandBuffer, uint32_t, uint32_t, const VkBuffer*, const VkDeviceSize*) {}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdBindIndexBuffer(VkCommandBuffer, uint32_t, uint32_t, const VkBuffer*, const VkDeviceSize*) {}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdDraw(VkCommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t) {}
 TEST(Threading, InstanceCreateDestroyLoop) {
     const auto processor_count = std::thread::hardware_concurrency();
 

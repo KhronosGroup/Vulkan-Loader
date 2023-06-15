@@ -140,6 +140,7 @@ DIR *loader_opendir(const struct loader_instance *instance, const char *name) {
 #if defined(_WIN32)
     return opendir(instance ? &instance->alloc_callbacks : NULL, name);
 #elif COMMON_UNIX_PLATFORMS
+    (void)instance;
     return opendir(name);
 #else
 #warning dirent.h - opendir not available on this platform
@@ -149,6 +150,7 @@ int loader_closedir(const struct loader_instance *instance, DIR *dir) {
 #if defined(_WIN32)
     return closedir(instance ? &instance->alloc_callbacks : NULL, dir);
 #elif COMMON_UNIX_PLATFORMS
+    (void)instance;
     return closedir(dir);
 #else
 #warning dirent.h - closedir not available on this platform
@@ -513,8 +515,7 @@ bool loader_find_layer_name_in_meta_layer(const struct loader_instance *inst, co
 }
 
 // Search the override layer's blacklist for a layer matching the given layer name
-bool loader_find_layer_name_in_blacklist(const struct loader_instance *inst, const char *layer_name,
-                                         struct loader_layer_list *layer_list, struct loader_layer_properties *meta_layer_props) {
+bool loader_find_layer_name_in_blacklist(const char *layer_name, struct loader_layer_properties *meta_layer_props) {
     for (uint32_t black_layer = 0; black_layer < meta_layer_props->blacklist_layer_names.count; ++black_layer) {
         if (!strcmp(meta_layer_props->blacklist_layer_names.list[black_layer], layer_name)) {
             return true;
@@ -580,7 +581,7 @@ void loader_remove_layers_in_blacklist(const struct loader_instance *inst, struc
         }
 
         // If found in the override layer's blacklist, remove it
-        if (loader_find_layer_name_in_blacklist(inst, cur_layer_name, layer_list, override_prop)) {
+        if (loader_find_layer_name_in_blacklist(cur_layer_name, override_prop)) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                        "loader_remove_layers_in_blacklist: Override layer is active and layer %s is in the blacklist inside of it. "
                        "Removing that layer from current layer list.",
@@ -918,11 +919,11 @@ bool loader_layer_is_available(const struct loader_instance *inst, const struct 
         bool is_implicit = (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
         bool disabled_by_type = (is_implicit) ? (disable_filter->disable_all_implicit) : (disable_filter->disable_all_explicit);
         if (disable_filter->disable_all || disabled_by_type ||
-            check_name_matches_filter_environment_var(inst, prop->info.layerName, &disable_filter->additional_filters)) {
+            check_name_matches_filter_environment_var(prop->info.layerName, &disable_filter->additional_filters)) {
             available = false;
         }
     }
-    if (NULL != enable_filter && check_name_matches_filter_environment_var(inst, prop->info.layerName, enable_filter)) {
+    if (NULL != enable_filter && check_name_matches_filter_environment_var(prop->info.layerName, enable_filter)) {
         available = true;
     } else if (!available) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -989,10 +990,10 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
 
     if ((NULL != disable_filter &&
          (disable_filter->disable_all || disable_filter->disable_all_implicit ||
-          check_name_matches_filter_environment_var(inst, prop->info.layerName, &disable_filter->additional_filters)))) {
+          check_name_matches_filter_environment_var(prop->info.layerName, &disable_filter->additional_filters)))) {
         forced_disabled = true;
     }
-    if (NULL != enable_filter && check_name_matches_filter_environment_var(inst, prop->info.layerName, enable_filter)) {
+    if (NULL != enable_filter && check_name_matches_filter_environment_var(prop->info.layerName, enable_filter)) {
         forced_enabled = true;
     }
 
@@ -1311,8 +1312,7 @@ struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loa
     return NULL;
 }
 
-void loader_destroy_logical_device(const struct loader_instance *inst, struct loader_device *dev,
-                                   const VkAllocationCallbacks *pAllocator) {
+void loader_destroy_logical_device(struct loader_device *dev, const VkAllocationCallbacks *pAllocator) {
     if (pAllocator) {
         dev->alloc_callbacks = *pAllocator;
     }
@@ -1337,13 +1337,13 @@ struct loader_device *loader_create_logical_device(const struct loader_instance 
     return new_dev;
 }
 
-void loader_add_logical_device(const struct loader_instance *inst, struct loader_icd_term *icd_term, struct loader_device *dev) {
+void loader_add_logical_device(struct loader_icd_term *icd_term, struct loader_device *dev) {
     dev->next = icd_term->logical_device_list;
     icd_term->logical_device_list = dev;
 }
 
-void loader_remove_logical_device(const struct loader_instance *inst, struct loader_icd_term *icd_term,
-                                  struct loader_device *found_dev, const VkAllocationCallbacks *pAllocator) {
+void loader_remove_logical_device(struct loader_icd_term *icd_term, struct loader_device *found_dev,
+                                  const VkAllocationCallbacks *pAllocator) {
     struct loader_device *dev, *prev_dev;
 
     if (!icd_term || !found_dev) return;
@@ -1359,7 +1359,7 @@ void loader_remove_logical_device(const struct loader_instance *inst, struct loa
         prev_dev->next = found_dev->next;
     else
         icd_term->logical_device_list = found_dev->next;
-    loader_destroy_logical_device(inst, found_dev, pAllocator);
+    loader_destroy_logical_device(found_dev, pAllocator);
 }
 
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
@@ -1367,7 +1367,7 @@ void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term
     ptr_inst->total_icd_count--;
     for (struct loader_device *dev = icd_term->logical_device_list; dev;) {
         struct loader_device *next_dev = dev->next;
-        loader_destroy_logical_device(ptr_inst, dev, pAllocator);
+        loader_destroy_logical_device(dev, pAllocator);
         dev = next_dev;
     }
 
@@ -2284,7 +2284,7 @@ void remove_all_non_valid_override_layers(struct loader_instance *inst, struct l
  */
 
 VkResult loader_read_layer_json(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
-                                cJSON *layer_node, loader_api_version version, cJSON *item, bool is_implicit, char *filename) {
+                                cJSON *layer_node, loader_api_version version, bool is_implicit, char *filename) {
     assert(layer_instance_list);
     char *type = NULL;
     char *api_version = NULL;
@@ -2315,7 +2315,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     // Parse type
 
-    result = loader_parse_json_string(inst, layer_node, "type", &type);
+    result = loader_parse_json_string(layer_node, "type", &type);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
@@ -2344,7 +2344,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     // Parse api_version
 
-    result = loader_parse_json_string(inst, layer_node, "api_version", &api_version);
+    result = loader_parse_json_string(layer_node, "api_version", &api_version);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(
@@ -2368,7 +2368,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     // Parse implementation_version
 
-    result = loader_parse_json_string(inst, layer_node, "implementation_version", &implementation_version);
+    result = loader_parse_json_string(layer_node, "implementation_version", &implementation_version);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
@@ -2504,11 +2504,11 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     cJSON *functions = cJSON_GetObjectItem(layer_node, "functions");
     if (functions != NULL) {
         if (loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
-            result = loader_parse_json_string(inst, functions, "vkNegotiateLoaderLayerInterfaceVersion",
+            result = loader_parse_json_string(functions, "vkNegotiateLoaderLayerInterfaceVersion",
                                               &props.functions.str_negotiate_interface);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
-        result = loader_parse_json_string(inst, functions, "vkGetInstanceProcAddr", &props.functions.str_gipa);
+        result = loader_parse_json_string(functions, "vkGetInstanceProcAddr", &props.functions.str_gipa);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
         if (props.functions.str_gipa && loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
@@ -2519,7 +2519,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                        props.info.layerName);
         }
 
-        result = loader_parse_json_string(inst, functions, "vkGetDeviceProcAddr", &props.functions.str_gdpa);
+        result = loader_parse_json_string(functions, "vkGetDeviceProcAddr", &props.functions.str_gdpa);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
         if (props.functions.str_gdpa && loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
@@ -2548,7 +2548,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (result == VK_ERROR_INITIALIZATION_FAILED) continue;
             char *spec_version = NULL;
-            result = loader_parse_json_string(inst, ext_item, "spec_version", &spec_version);
+            result = loader_parse_json_string(ext_item, "spec_version", &spec_version);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (NULL != spec_version) {
                 ext_prop.specVersion = atoi(spec_version);
@@ -2580,7 +2580,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
             char *spec_version = NULL;
-            result = loader_parse_json_string(inst, ext_item, "spec_version", &spec_version);
+            result = loader_parse_json_string(ext_item, "spec_version", &spec_version);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (NULL != spec_version) {
                 ext_prop.specVersion = atoi(spec_version);
@@ -2628,15 +2628,15 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                        "layers. The section will be ignored",
                        filename);
         } else {
-            result = loader_parse_json_string(inst, pre_instance, "vkEnumerateInstanceExtensionProperties",
+            result = loader_parse_json_string(pre_instance, "vkEnumerateInstanceExtensionProperties",
                                               &props.pre_instance_functions.enumerate_instance_extension_properties);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
-            result = loader_parse_json_string(inst, pre_instance, "vkEnumerateInstanceLayerProperties",
+            result = loader_parse_json_string(pre_instance, "vkEnumerateInstanceLayerProperties",
                                               &props.pre_instance_functions.enumerate_instance_layer_properties);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
-            result = loader_parse_json_string(inst, pre_instance, "vkEnumerateInstanceVersion",
+            result = loader_parse_json_string(pre_instance, "vkEnumerateInstanceVersion",
                                               &props.pre_instance_functions.enumerate_instance_version);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
@@ -2655,7 +2655,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     }
 
     char *library_arch = NULL;
-    result = loader_parse_json_string(inst, layer_node, "library_arch", &library_arch);
+    result = loader_parse_json_string(layer_node, "library_arch", &library_arch);
     if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
     if (library_arch != NULL) {
         if ((strncmp(library_arch, "32", 2) == 0 && sizeof(void *) != 4) ||
@@ -2758,7 +2758,7 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
                            curLayer, filename);
                 goto out;
             }
-            result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, item, is_implicit, filename);
+            result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, is_implicit, filename);
         }
     } else {
         // Otherwise, try to read in individual layers
@@ -2788,7 +2788,7 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
                        filename);
         } else {
             do {
-                result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, item, is_implicit, filename);
+                result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, is_implicit, filename);
                 layer_node = layer_node->next;
             } while (layer_node != NULL);
         }
@@ -3662,9 +3662,9 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             }
 
             bool name_matches_select =
-                (select_filter.count > 0 && check_name_matches_filter_environment_var(inst, just_filename_str, &select_filter));
+                (select_filter.count > 0 && check_name_matches_filter_environment_var(just_filename_str, &select_filter));
             bool name_matches_disable =
-                (disable_filter.count > 0 && check_name_matches_filter_environment_var(inst, just_filename_str, &disable_filter));
+                (disable_filter.count > 0 && check_name_matches_filter_environment_var(just_filename_str, &disable_filter));
 
             if (name_matches_disable && !name_matches_select) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
@@ -4413,7 +4413,7 @@ out:
                 icd_term = icd_term->next;
             }
             // Now destroy the device and the allocations associated with it.
-            loader_destroy_logical_device(inst, dev, pAllocator);
+            loader_destroy_logical_device(dev, pAllocator);
         }
     }
 
@@ -4432,13 +4432,12 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
     }
 
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, NULL);
-    const struct loader_instance *inst = icd_term->this_instance;
 
     destroyFunction(device, pAllocator);
     if (NULL != dev) {
         dev->chain_device = NULL;
         dev->icd_device = NULL;
-        loader_remove_logical_device(inst, icd_term, dev, pAllocator);
+        loader_remove_logical_device(icd_term, dev, pAllocator);
     }
 }
 
@@ -5855,7 +5854,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     }
 
     *pDevice = dev->icd_device;
-    loader_add_logical_device(icd_term->this_instance, icd_term, dev);
+    loader_add_logical_device(icd_term, dev);
 
     // Init dispatch pointer in new device object
     loader_init_dispatch(*pDevice, &dev->loader_dispatch);
@@ -6627,6 +6626,7 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain,
                                                                    uint32_t *pApiVersion) {
+    (void)chain;
     // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
     // prefers us crashing.
     *pApiVersion = VK_HEADER_VERSION_COMPLETE;
@@ -6636,6 +6636,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnume
 VKAPI_ATTR VkResult VKAPI_CALL
 terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensionPropertiesChain *chain, const char *pLayerName,
                                                 uint32_t *pPropertyCount, VkExtensionProperties *pProperties) {
+    (void)chain;
     struct loader_extension_list *global_ext_list = NULL;
     struct loader_layer_list instance_layers;
     struct loader_extension_list local_ext_list;
@@ -6727,6 +6728,7 @@ out:
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(const VkEnumerateInstanceLayerPropertiesChain *chain,
                                                                            uint32_t *pPropertyCount,
                                                                            VkLayerProperties *pProperties) {
+    (void)chain;
     VkResult result = VK_SUCCESS;
     struct loader_layer_list instance_layer_list;
 

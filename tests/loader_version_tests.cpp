@@ -560,60 +560,47 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
 
 // shim function pointers for 1.3
 // Should use autogen for this - it generates 'shim' functions for validation layers, maybe that could be used here.
-void test_vkCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                              VkSubpassContents contents) {}
-void test_vkCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                  const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
-                                  const VkDeviceSize* pStrides) {}
-void test_vkCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {}
-void test_vkCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {}
-void test_vkCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {}
-void test_vkCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {}
-void test_vkCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {}
-void test_vkCmdEndRendering(VkCommandBuffer commandBuffer) {}
-void test_vkCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {}
-void test_vkCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {}
-void test_vkCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {}
-void test_vkCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {}
-void test_vkCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {}
-void test_vkCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {}
-void test_vkCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {}
-void test_vkCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {}
-void test_vkCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {}
-void test_vkCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {}
-void test_vkCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {}
-void test_vkCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {}
-void test_vkCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {}
-void test_vkCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {}
-void test_vkCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {}
-void test_vkCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp,
-                            VkStencilOp depthFailOp, VkCompareOp compareOp) {}
-void test_vkCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {}
-void test_vkCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) {}
-void test_vkCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                           const VkDependencyInfo* pDependencyInfos) {}
-void test_vkCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool, uint32_t query) {}
-VkResult test_vkCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
+void test_vkCmdBeginRendering(VkCommandBuffer, const VkRenderPassBeginInfo*, VkSubpassContents) {}
+void test_vkCmdBindVertexBuffers2(VkCommandBuffer, uint32_t, uint32_t, const VkBuffer*, const VkDeviceSize*, const VkDeviceSize*,
+                                  const VkDeviceSize*) {}
+void test_vkCmdBlitImage2(VkCommandBuffer, const VkBlitImageInfo2*) {}
+void test_vkCmdCopyBuffer2(VkCommandBuffer, const VkCopyBufferInfo2*) {}
+void test_vkCmdCopyBufferToImage2(VkCommandBuffer, const VkCopyBufferToImageInfo2*) {}
+void test_vkCmdCopyImage2(VkCommandBuffer, const VkCopyImageInfo2*) {}
+void test_vkCmdCopyImageToBuffer2(VkCommandBuffer, const VkCopyImageToBufferInfo2*) {}
+void test_vkCmdEndRendering(VkCommandBuffer) {}
+void test_vkCmdPipelineBarrier2(VkCommandBuffer, const VkDependencyInfo*) {}
+void test_vkCmdResetEvent2(VkCommandBuffer, VkEvent, VkPipelineStageFlags2) {}
+void test_vkCmdResolveImage2(VkCommandBuffer, const VkResolveImageInfo2*) {}
+void test_vkCmdSetCullMode(VkCommandBuffer, VkCullModeFlags) {}
+void test_vkCmdSetDepthBiasEnable(VkCommandBuffer, VkBool32) {}
+void test_vkCmdSetDepthBoundsTestEnable(VkCommandBuffer, VkBool32) {}
+void test_vkCmdSetDepthCompareOp(VkCommandBuffer, VkCompareOp) {}
+void test_vkCmdSetDepthTestEnable(VkCommandBuffer, VkBool32) {}
+void test_vkCmdSetDepthWriteEnable(VkCommandBuffer, VkBool32) {}
+void test_vkCmdSetEvent2(VkCommandBuffer, VkEvent, const VkDependencyInfo*) {}
+void test_vkCmdSetFrontFace(VkCommandBuffer, VkFrontFace) {}
+void test_vkCmdSetPrimitiveRestartEnable(VkCommandBuffer, VkBool32) {}
+void test_vkCmdSetPrimitiveTopology(VkCommandBuffer, VkPrimitiveTopology) {}
+void test_vkCmdSetRasterizerDiscardEnable(VkCommandBuffer, VkBool32) {}
+void test_vkCmdSetScissorWithCount(VkCommandBuffer, uint32_t, const VkRect2D*) {}
+void test_vkCmdSetStencilOp(VkCommandBuffer, VkStencilFaceFlags, VkStencilOp, VkStencilOp, VkStencilOp, VkCompareOp) {}
+void test_vkCmdSetStencilTestEnable(VkCommandBuffer, VkBool32) {}
+void test_vkCmdSetViewportWithCount(VkCommandBuffer, uint32_t, const VkViewport*) {}
+void test_vkCmdWaitEvents2(VkCommandBuffer, uint32_t, const VkEvent*, const VkDependencyInfo*) {}
+void test_vkCmdWriteTimestamp2(VkCommandBuffer, VkPipelineStageFlags2, VkQueryPool, uint32_t) {}
+VkResult test_vkCreatePrivateDataSlot(VkDevice, const VkPrivateDataSlotCreateInfo*, const VkAllocationCallbacks*,
+                                      VkPrivateDataSlot*) {
     return VK_SUCCESS;
 }
-void test_vkDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) {}
-void test_vkGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                              VkMemoryRequirements2* pMemoryRequirements) {}
-void test_vkGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                             VkMemoryRequirements2* pMemoryRequirements) {}
-void test_vkGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                   uint32_t* pSparseMemoryRequirementCount,
-                                                   VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {}
-void test_vkGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
-                           uint64_t* pData) {}
-VkResult test_vkQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
-    return VK_SUCCESS;
-}
-VkResult test_vkSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
-                               uint64_t data) {
-    return VK_SUCCESS;
-}
+void test_vkDestroyPrivateDataSlot(VkDevice, VkPrivateDataSlot, const VkAllocationCallbacks*) {}
+void test_vkGetDeviceBufferMemoryRequirements(VkDevice, const VkDeviceBufferMemoryRequirements*, VkMemoryRequirements2*) {}
+void test_vkGetDeviceImageMemoryRequirements(VkDevice, const VkDeviceImageMemoryRequirements*, VkMemoryRequirements2*) {}
+void test_vkGetDeviceImageSparseMemoryRequirements(VkDevice, const VkDeviceImageMemoryRequirements*, uint32_t*,
+                                                   VkSparseImageMemoryRequirements2*) {}
+void test_vkGetPrivateData(VkDevice, VkObjectType, uint64_t, VkPrivateDataSlot, uint64_t*) {}
+VkResult test_vkQueueSubmit2(VkQueue, uint32_t, const VkSubmitInfo2*, VkFence) { return VK_SUCCESS; }
+VkResult test_vkSetPrivateData(VkDevice, VkObjectType, uint64_t, VkPrivateDataSlot, uint64_t) { return VK_SUCCESS; }
 
 TEST(MinorVersionUpdate, Version1_3) {
     FrameworkEnvironment env{};

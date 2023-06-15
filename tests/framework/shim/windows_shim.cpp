@@ -44,7 +44,7 @@ static LibraryWrapper gdi32_dll;
 using PFN_GetSidSubAuthority = PDWORD(__stdcall *)(PSID pSid, DWORD nSubAuthority);
 static PFN_GetSidSubAuthority fpGetSidSubAuthority = GetSidSubAuthority;
 
-PDWORD __stdcall ShimGetSidSubAuthority(PSID pSid, DWORD nSubAuthority) { return &platform_shim.elevation_level; }
+PDWORD __stdcall ShimGetSidSubAuthority(PSID, DWORD) { return &platform_shim.elevation_level; }
 
 static PFN_LoaderEnumAdapters2 fpEnumAdapters2 = nullptr;
 static PFN_LoaderQueryAdapterInfo fpQueryAdapterInfo = nullptr;
@@ -129,6 +129,8 @@ static CONFIGRET(WINAPI *REAL_CM_Get_Sibling)(PDEVINST pdnDevInst, DEVINST dnDev
 // clang-format on
 
 CONFIGRET WINAPI SHIM_CM_Get_Device_ID_List_SizeW(PULONG pulLen, PCWSTR pszFilter, ULONG ulFlags) {
+    (void)pszFilter;
+    (void)ulFlags;
     if (pulLen == nullptr) {
         return CR_INVALID_POINTER;
     }
@@ -136,6 +138,8 @@ CONFIGRET WINAPI SHIM_CM_Get_Device_ID_List_SizeW(PULONG pulLen, PCWSTR pszFilte
     return CR_SUCCESS;
 }
 CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW(PCWSTR pszFilter, PZZWSTR Buffer, ULONG BufferLen, ULONG ulFlags) {
+    (void)pszFilter;
+    (void)ulFlags;
     if (Buffer != NULL) {
         if (BufferLen < platform_shim.CM_device_ID_list.size()) return CR_BUFFER_SMALL;
         for (size_t i = 0; i < BufferLen; i++) {
@@ -145,22 +149,17 @@ CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW(PCWSTR pszFilter, PZZWSTR Buffer, U
     return CR_SUCCESS;
 }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Locate_DevNodeW(PDEVINST pdnDevInst, DEVINSTID_W pDeviceID, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Locate_DevNodeW(PDEVINST, DEVINSTID_W, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_DevNode_Status(PULONG pulStatus, PULONG pulProblemNumber, DEVINST dnDevInst, ULONG ulFlags) {
-    return CR_FAILURE;
-}
+CONFIGRET WINAPI SHIM_CM_Get_DevNode_Status(PULONG, PULONG, DEVINST, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_Device_IDW(DEVINST dnDevInst, PWSTR Buffer, ULONG BufferLen, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Get_Device_IDW(DEVINST, PWSTR, ULONG, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_Child(PDEVINST pdnDevInst, DEVINST dnDevInst, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Get_Child(PDEVINST, DEVINST, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_DevNode_Registry_PropertyW(DEVINST dnDevInst, ULONG ulProperty, PULONG pulRegDataType, PVOID Buffer,
-                                                        PULONG pulLength, ULONG ulFlags) {
-    return CR_FAILURE;
-}
+CONFIGRET WINAPI SHIM_CM_Get_DevNode_Registry_PropertyW(DEVINST, ULONG, PULONG, PVOID, PULONG, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_Sibling(PDEVINST pdnDevInst, DEVINST dnDevInst, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Get_Sibling(PDEVINST, DEVINST, ULONG) { return CR_FAILURE; }
 
 static LibraryWrapper dxgi_module;
 typedef HRESULT(APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory);
@@ -220,6 +219,7 @@ HRESULT __stdcall ShimEnumAdapters1_1(IDXGIFactory1 *This,
                                       /* [in] */ UINT Adapter,
                                       /* [annotation][out] */
                                       _COM_Outptr_ IDXGIAdapter1 **ppAdapter) {
+    (void)This;
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_INVALID_CALL;
     }
@@ -235,6 +235,7 @@ HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
                                       /* [in] */ UINT Adapter,
                                       /* [annotation][out] */
                                       _COM_Outptr_ IDXGIAdapter1 **ppAdapter) {
+    (void)This;
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_INVALID_CALL;
     }
@@ -248,6 +249,9 @@ HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
 
 HRESULT __stdcall ShimEnumAdapterByGpuPreference(IDXGIFactory6 *This, _In_ UINT Adapter, _In_ DXGI_GPU_PREFERENCE GpuPreference,
                                                  _In_ REFIID riid, _COM_Outptr_ void **ppvAdapter) {
+    (void)This;
+    (void)GpuPreference;
+    (void)riid;
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_NOT_FOUND;
     }
@@ -311,6 +315,8 @@ using PFN_RegCloseKey = LSTATUS(__stdcall *)(HKEY hKey);
 static PFN_RegCloseKey fpRegCloseKey = RegCloseKey;
 
 LSTATUS __stdcall ShimRegOpenKeyExA(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult) {
+    (void)ulOptions;
+    (void)samDesired;
     if (HKEY_LOCAL_MACHINE != hKey && HKEY_CURRENT_USER != hKey) return ERROR_BADKEY;
     std::string hive = "";
     if (HKEY_LOCAL_MACHINE == hKey)
@@ -345,13 +351,14 @@ std::vector<RegistryEntry> *get_registry_vector(std::string const &path) {
     if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\LoaderSettings") return &platform_shim.hkey_current_user_settings;
     return nullptr;
 }
-LSTATUS __stdcall ShimRegQueryValueExA(HKEY hKey, LPCSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData,
-                                       LPDWORD lpcbData) {
+LSTATUS __stdcall ShimRegQueryValueExA(HKEY, LPCSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD) {
     // TODO:
     return ERROR_SUCCESS;
 }
 LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName, LPDWORD lpReserved,
                                     LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData) {
+    (void)lpReserved;
+    (void)lpType;
     const std::string *path = get_path_of_created_key(hKey);
     if (path == nullptr) return ERROR_NO_MORE_ITEMS;
 
@@ -509,6 +516,8 @@ void DetachFunctions() {
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
+    (void)hinst;
+    (void)reserved;
     if (DetourIsHelperProcess()) {
         return TRUE;
     }
