@@ -382,7 +382,7 @@ static inline void loader_platform_thread_lock_mutex(loader_platform_thread_mute
 static inline void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_unlock(pMutex); }
 static inline void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_destroy(pMutex); }
 
-static void *thread_safe_strtok(char *str, const char *delim, char **saveptr) { return strtok_r(str, delim, saveptr); }
+static inline void *thread_safe_strtok(char *str, const char *delim, char **saveptr) { return strtok_r(str, delim, saveptr); }
 
 #elif defined(_WIN32)
 
@@ -539,7 +539,9 @@ static void loader_platform_thread_lock_mutex(loader_platform_thread_mutex *pMut
 static void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex) { LeaveCriticalSection(pMutex); }
 static void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex) { DeleteCriticalSection(pMutex); }
 
-static void *thread_safe_strtok(char *str, const char *delimiters, char **context) { return strtok_s(str, delimiters, context); }
+static inline void *thread_safe_strtok(char *str, const char *delimiters, char **context) {
+    return strtok_s(str, delimiters, context);
+}
 
 #else  // defined(_WIN32)
 
