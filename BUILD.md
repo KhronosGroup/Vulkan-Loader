@@ -86,7 +86,7 @@ indicated by *install_dir*:
 
 ### Test Requirements
 
-1. `C++11` capable compiler
+1. `C++17` capable compiler
 
 ## Repository Set-Up
 
