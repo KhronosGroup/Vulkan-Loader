@@ -898,6 +898,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CreateIndirectCommandsLayoutNV = (PFN_vkCreateIndirectCommandsLayoutNV)gdpa(dev, "vkCreateIndirectCommandsLayoutNV");
     table->DestroyIndirectCommandsLayoutNV = (PFN_vkDestroyIndirectCommandsLayoutNV)gdpa(dev, "vkDestroyIndirectCommandsLayoutNV");
 
+    // ---- VK_EXT_depth_bias_control extension commands
+    table->CmdSetDepthBias2EXT = (PFN_vkCmdSetDepthBias2EXT)gdpa(dev, "vkCmdSetDepthBias2EXT");
+
     // ---- VK_EXT_private_data extension commands
     table->CreatePrivateDataSlotEXT = (PFN_vkCreatePrivateDataSlotEXT)gdpa(dev, "vkCreatePrivateDataSlotEXT");
     table->DestroyPrivateDataSlotEXT = (PFN_vkDestroyPrivateDataSlotEXT)gdpa(dev, "vkDestroyPrivateDataSlotEXT");
@@ -1084,6 +1087,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension commands
     table->CmdSetAttachmentFeedbackLoopEnableEXT = (PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT)gdpa(dev, "vkCmdSetAttachmentFeedbackLoopEnableEXT");
+
+    // ---- VK_QNX_external_memory_screen_buffer extension commands
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+    table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)gdpa(dev, "vkGetScreenBufferPropertiesQNX");
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
@@ -2010,6 +2018,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CreateIndirectCommandsLayoutNV")) return (void *)table->CreateIndirectCommandsLayoutNV;
     if (!strcmp(name, "DestroyIndirectCommandsLayoutNV")) return (void *)table->DestroyIndirectCommandsLayoutNV;
 
+    // ---- VK_EXT_depth_bias_control extension commands
+    if (!strcmp(name, "CmdSetDepthBias2EXT")) return (void *)table->CmdSetDepthBias2EXT;
+
     // ---- VK_EXT_private_data extension commands
     if (!strcmp(name, "CreatePrivateDataSlotEXT")) return (void *)table->CreatePrivateDataSlotEXT;
     if (!strcmp(name, "DestroyPrivateDataSlotEXT")) return (void *)table->DestroyPrivateDataSlotEXT;
@@ -2196,6 +2207,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension commands
     if (!strcmp(name, "CmdSetAttachmentFeedbackLoopEnableEXT")) return (void *)table->CmdSetAttachmentFeedbackLoopEnableEXT;
+
+    // ---- VK_QNX_external_memory_screen_buffer extension commands
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+    if (!strcmp(name, "GetScreenBufferPropertiesQNX")) return (void *)table->GetScreenBufferPropertiesQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -6158,6 +6174,22 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(
 }
 
 
+// ---- VK_EXT_depth_bias_control extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthBias2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthBias2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+}
+
+
 // ---- VK_EXT_acquire_drm_display extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(
@@ -7970,6 +8002,25 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(
 }
 
 
+// ---- VK_QNX_external_memory_screen_buffer extension trampoline/terminators
+
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetScreenBufferPropertiesQNX: Invalid device "
+                   "[VUID-vkGetScreenBufferPropertiesQNX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetScreenBufferPropertiesQNX(device, buffer, pProperties);
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -9527,6 +9578,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_depth_bias_control extension commands
+    if (!strcmp("vkCmdSetDepthBias2EXT", name)) {
+        *addr = (void *)CmdSetDepthBias2EXT;
+        return true;
+    }
+
     // ---- VK_EXT_acquire_drm_display extension commands
     if (!strcmp("vkAcquireDrmDisplayEXT", name)) {
         *addr = (ptr_instance->enabled_known_extensions.ext_acquire_drm_display == 1)
@@ -10072,6 +10129,14 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)CmdSetAttachmentFeedbackLoopEnableEXT;
         return true;
     }
+
+    // ---- VK_QNX_external_memory_screen_buffer extension commands
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+    if (!strcmp("vkGetScreenBufferPropertiesQNX", name)) {
+        *addr = (void *)GetScreenBufferPropertiesQNX;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {
