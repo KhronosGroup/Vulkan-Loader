@@ -145,9 +145,9 @@ target_link_libraries(loader_common_options INTERFACE platform_wsi)
 target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)
 
 target_compile_features(loader_common_options INTERFACE c_std_99)
-target_compile_features(loader_common_options INTERFACE cxx_std_11)
+target_compile_features(loader_common_options INTERFACE cxx_std_17)
 set(LOADER_STANDARD_C_PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS OFF)
-set(LOADER_STANDARD_CXX_PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
+set(LOADER_STANDARD_CXX_PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
 
 set(TESTS_STANDARD_CXX_PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES} MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
