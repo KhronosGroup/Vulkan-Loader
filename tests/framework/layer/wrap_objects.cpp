@@ -418,7 +418,7 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkEnumerateDeviceExtensionProperties(VkPhysi
 #endif
         if (pPropertyCount) {
             if (pProperties) {
-                uint32_t count = ext_count;
+                [[maybe_unused]] uint32_t count = ext_count;
                 if (count > *pPropertyCount) {
                     count = *pPropertyCount;
                     result = VK_INCOMPLETE;
@@ -657,7 +657,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL wrap_vkGetInstanceProcAddr(VkInstance i
     }
 
     wrapped_inst_obj *inst;
-    (void)unwrap_instance(instance, &inst);
+    unwrap_instance(instance, &inst);
 
     addr = layer_intercept_instance_proc(inst, funcName);
     if (addr) return addr;
@@ -672,7 +672,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
     assert(instance);
 
     wrapped_inst_obj *inst;
-    (void)unwrap_instance(instance, &inst);
+    unwrap_instance(instance, &inst);
     VkLayerInstanceDispatchTable *pTable = &inst->layer_disp;
 
     if (pTable->GetPhysicalDeviceProcAddr == NULL) return NULL;
@@ -702,11 +702,10 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerPropertie
     return VK_SUCCESS;
 }
 
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
-                                                                                    const char *pLayerName, uint32_t *pCount,
-                                                                                    VkExtensionProperties *pProperties) {
+VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+vkEnumerateDeviceExtensionProperties([[maybe_unused]] VkPhysicalDevice physicalDevice, const char *pLayerName, uint32_t *pCount,
+                                     VkExtensionProperties *pProperties) {
     // the layer command handles VK_NULL_HANDLE just fine internally
-    (void)physicalDevice;
     assert(physicalDevice == VK_NULL_HANDLE);
     return wrap_objects::wrap_vkEnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
 }

@@ -2018,14 +2018,11 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
-VKAPI_ATTR VkBool32 VKAPI_CALL JunkDebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                      VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                      const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+VKAPI_ATTR VkBool32 VKAPI_CALL JunkDebugUtilsCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                      [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                      [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                      [[maybe_unused]] void* pUserData) {
     // This is just a stub callback in case the loader or any other layer triggers it.
-    (void)messageSeverity;
-    (void)messageTypes;
-    (void)pCallbackData;
-    (void)pUserData;
     return VK_FALSE;
 }
 

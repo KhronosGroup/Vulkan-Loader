@@ -179,8 +179,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVer
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
-    (void)pAllocator;
+                                                     [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                     VkInstance* pInstance) {
     if (pCreateInfo == nullptr || pCreateInfo->pApplicationInfo == nullptr) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -206,15 +206,12 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
-    (void)instance;
-    (void)pAllocator;
-}
+VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance([[maybe_unused]] VkInstance instance,
+                                                  [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {}
 
 // VK_SUCCESS,VK_INCOMPLETE
-VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
+VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices([[maybe_unused]] VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                                VkPhysicalDevice* pPhysicalDevices) {
-    (void)instance;
     if (pPhysicalDevices == nullptr) {
         *pPhysicalDeviceCount = static_cast<uint32_t>(icd.physical_devices.size());
     } else {
@@ -234,9 +231,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices(VkInstance instan
 }
 
 // VK_SUCCESS,VK_INCOMPLETE, VK_ERROR_INITIALIZATION_FAILED
-VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
-    (void)instance;
+VKAPI_ATTR VkResult VKAPI_CALL
+test_vkEnumeratePhysicalDeviceGroups([[maybe_unused]] VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                     VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
     VkResult result = VK_SUCCESS;
 
     if (pPhysicalDeviceGroupProperties == nullptr) {
@@ -306,13 +303,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(VkInstance instance,
-                                                                   const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                                   const VkAllocationCallbacks* pAllocator,
-                                                                   VkDebugUtilsMessengerEXT* pMessenger) {
-    (void)instance;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(
+    [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+    [[maybe_unused]] const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger) {
     if (nullptr != pMessenger) {
         uint64_t fake_msgr_handle = reinterpret_cast<uint64_t>(new uint8_t);
         icd.messenger_handles.push_back(fake_msgr_handle);
@@ -326,10 +319,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(VkInstance in
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                                                const VkAllocationCallbacks* pAllocator) {
-    (void)instance;
-    (void)pAllocator;
+VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT([[maybe_unused]] VkInstance instance,
+                                                                VkDebugUtilsMessengerEXT messenger,
+                                                                [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {
     if (messenger != VK_NULL_HANDLE) {
         uint64_t fake_msgr_handle = (uint64_t)(messenger);
         auto found_iter = std::find(icd.messenger_handles.begin(), icd.messenger_handles.end(), fake_msgr_handle);
@@ -441,8 +433,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties(VkPhysi
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
-    (void)pAllocator;
+                                                   [[maybe_unused]] const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
     // VK_SUCCESS
     auto found = std::find_if(icd.physical_devices.begin(), icd.physical_devices.end(), [physicalDevice](PhysicalDevice& phys_dev) {
         return phys_dev.vk_physical_device.handle == physicalDevice;
@@ -460,8 +451,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
-    (void)pAllocator;
+VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {
     auto found = std::find(icd.device_handles.begin(), icd.device_handles.end(), device);
     if (found != icd.device_handles.end()) icd.device_handles.erase(found);
     auto fd = icd.lookup_device(device);
@@ -471,9 +461,8 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
     phys_dev.device_create_infos.erase(phys_dev.device_create_infos.begin() + fd.dev_index);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL generic_tool_props_function(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+VKAPI_ATTR VkResult VKAPI_CALL generic_tool_props_function([[maybe_unused]] VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                            VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
-    (void)physicalDevice;
     if (icd.tooling_properties.size() == 0) {
         return VK_SUCCESS;
     }
@@ -541,11 +530,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instanc
 #endif
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
-                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    (void)instance;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR([[maybe_unused]] VkInstance instance,
+                                                            [[maybe_unused]] const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
+                                                            [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                            VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -554,11 +542,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWin32PresentationSupportK
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
-                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    (void)instance;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR([[maybe_unused]] VkInstance instance,
+                                                              [[maybe_unused]] const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
+                                                              [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                              VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -569,11 +556,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceWaylandPresentationSuppor
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
-                                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    (void)instance;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR([[maybe_unused]] VkInstance instance,
+                                                          [[maybe_unused]] const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
+                                                          [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                          VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -585,11 +571,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXcbPresentationSupportKHR
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
-                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    (void)instance;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR([[maybe_unused]] VkInstance instance,
+                                                           [[maybe_unused]] const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
+                                                           [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                           VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -662,20 +647,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceScreenPresentationSupport
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateHeadlessSurfaceEXT(VkInstance instance,
-                                                               const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
-                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-    (void)instance;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateHeadlessSurfaceEXT([[maybe_unused]] VkInstance instance,
+                                                               [[maybe_unused]] const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
+                                                               [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                               VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
-                                                    const VkAllocationCallbacks* pAllocator) {
-    (void)instance;
-    (void)pAllocator;
+VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR([[maybe_unused]] VkInstance instance, VkSurfaceKHR surface,
+                                                    [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {
     if (surface != VK_NULL_HANDLE) {
         uint64_t fake_surf_handle = from_nondispatch_handle(surface);
         auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
@@ -688,19 +669,17 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfa
     }
 }
 // VK_KHR_swapchain
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                                         const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
-    (void)device;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSwapchainKHR([[maybe_unused]] VkDevice device,
+                                                         [[maybe_unused]] const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                                         [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                         VkSwapchainKHR* pSwapchain) {
     common_nondispatch_handle_creation(icd.swapchain_handles, pSwapchain);
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetSwapchainImagesKHR([[maybe_unused]] VkDevice device,
+                                                            [[maybe_unused]] VkSwapchainKHR swapchain,
                                                             uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
-    (void)device;
-    (void)swapchain;
     std::vector<uint64_t> handles{123, 234, 345, 345, 456};
     if (pSwapchainImages == nullptr) {
         if (pSwapchainImageCount) *pSwapchainImageCount = static_cast<uint32_t>(handles.size());
@@ -713,10 +692,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetSwapchainImagesKHR(VkDevice device, VkS
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                      const VkAllocationCallbacks* pAllocator) {
-    (void)device;
-    (void)pAllocator;
+VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR([[maybe_unused]] VkDevice device, VkSwapchainKHR swapchain,
+                                                      [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {
     if (swapchain != VK_NULL_HANDLE) {
         uint64_t fake_swapchain_handle = from_nondispatch_handle(swapchain);
         auto found_iter = icd.swapchain_handles.erase(
@@ -728,10 +705,9 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapcha
     }
 }
 // VK_KHR_swapchain with 1.1
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDeviceGroupSurfacePresentModesKHR([[maybe_unused]] VkDevice device,
+                                                                           [[maybe_unused]] VkSurfaceKHR surface,
                                                                            VkDeviceGroupPresentModeFlagsKHR* pModes) {
-    (void)device;
-    (void)surface;
     if (!pModes) return VK_ERROR_INITIALIZATION_FAILED;
     *pModes = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_MULTI_DEVICE_BIT_KHR;
     return VK_SUCCESS;
@@ -810,47 +786,39 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceDisplayPlanePropertiesKHR
     FillCountPtr(icd.GetPhysDevice(physicalDevice).display_plane_properties, pPropertyCount, pProperties);
     return VK_SUCCESS;
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice,
+                                                                          [[maybe_unused]] uint32_t planeIndex,
                                                                           uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
-    (void)planeIndex;
     FillCountPtr(icd.GetPhysDevice(physicalDevice).displays, pDisplayCount, pDisplays);
     return VK_SUCCESS;
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                                  uint32_t* pPropertyCount,
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                  [[maybe_unused]] VkDisplayKHR display, uint32_t* pPropertyCount,
                                                                   VkDisplayModePropertiesKHR* pProperties) {
-    (void)display;
     FillCountPtr(icd.GetPhysDevice(physicalDevice).display_mode_properties, pPropertyCount, pProperties);
     return VK_SUCCESS;
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                           const VkDisplayModeCreateInfoKHR* pCreateInfo,
-                                                           const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode) {
-    (void)display;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, [[maybe_unused]] VkDisplayKHR display,
+                                                           [[maybe_unused]] const VkDisplayModeCreateInfoKHR* pCreateInfo,
+                                                           [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                           VkDisplayModeKHR* pMode) {
     if (nullptr != pMode) {
         *pMode = icd.GetPhysDevice(physicalDevice).display_mode;
     }
     return VK_SUCCESS;
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
-                                                                     uint32_t planeIndex,
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice,
+                                                                     [[maybe_unused]] VkDisplayModeKHR mode,
+                                                                     [[maybe_unused]] uint32_t planeIndex,
                                                                      VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
-    (void)mode;
-    (void)planeIndex;
     if (nullptr != pCapabilities) {
         *pCapabilities = icd.GetPhysDevice(physicalDevice).display_plane_capabilities;
     }
     return VK_SUCCESS;
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayPlaneSurfaceKHR(VkInstance instance,
-                                                                   const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
-                                                                   const VkAllocationCallbacks* pAllocator,
-                                                                   VkSurfaceKHR* pSurface) {
-    (void)instance;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayPlaneSurfaceKHR(
+    [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
+    [[maybe_unused]] const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (nullptr != pSurface) {
         uint64_t fake_surf_handle = reinterpret_cast<uint64_t>(new uint8_t);
         icd.surface_handles.push_back(fake_surf_handle);
@@ -892,11 +860,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormats2KHR(VkPhys
     return VK_SUCCESS;
 }
 // VK_KHR_display_swapchain
-VkResult test_vkCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount, const VkSwapchainCreateInfoKHR* pCreateInfos,
-                                          const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
-    (void)device;
-    (void)pCreateInfos;
-    (void)pAllocator;
+VkResult test_vkCreateSharedSwapchainsKHR([[maybe_unused]] VkDevice device, uint32_t swapchainCount,
+                                          [[maybe_unused]] const VkSwapchainCreateInfoKHR* pCreateInfos,
+                                          [[maybe_unused]] const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
     for (uint32_t i = 0; i < swapchainCount; i++) {
         common_nondispatch_handle_creation(icd.swapchain_handles, &pSwapchains[i]);
     }
@@ -904,11 +870,10 @@ VkResult test_vkCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCou
 }
 
 //// misc
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                                        const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
-    (void)device;
-    (void)pCreateInfo;
-    (void)pAllocator;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateCommandPool([[maybe_unused]] VkDevice device,
+                                                        [[maybe_unused]] const VkCommandPoolCreateInfo* pCreateInfo,
+                                                        [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                        VkCommandPool* pCommandPool) {
     if (pCommandPool != nullptr) {
         pCommandPool = reinterpret_cast<VkCommandPool*>(0xdeadbeefdeadbeef);
     }
@@ -918,9 +883,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateCommandPool(VkDevice device, const V
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyCommandPool(VkDevice, VkCommandPool, const VkAllocationCallbacks*) {
     // do nothing, leak memory for now
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers([[maybe_unused]] VkDevice device,
+                                                             const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                              VkCommandBuffer* pCommandBuffers) {
-    (void)device;
     if (pAllocateInfo != nullptr && pCommandBuffers != nullptr) {
         for (size_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
             icd.allocated_command_buffers.push_back({});
@@ -930,19 +895,16 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers(VkDevice device, co
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL test_vkGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
-    (void)device;
-    (void)queueFamilyIndex;
+VKAPI_ATTR void VKAPI_CALL test_vkGetDeviceQueue([[maybe_unused]] VkDevice device, [[maybe_unused]] uint32_t queueFamilyIndex,
+                                                 uint32_t queueIndex, VkQueue* pQueue) {
     *pQueue = icd.physical_devices.back().queue_handles[queueIndex].handle;
 }
 
 // VK_EXT_acquire_drm_display
 VKAPI_ATTR VkResult VKAPI_CALL test_vkAcquireDrmDisplayEXT(VkPhysicalDevice, int32_t, VkDisplayKHR) { return VK_SUCCESS; }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
-                                                       VkDisplayKHR* display) {
-    (void)drmFd;
-    (void)connectorId;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, [[maybe_unused]] int32_t drmFd,
+                                                       [[maybe_unused]] uint32_t connectorId, VkDisplayKHR* display) {
     if (nullptr != display && icd.GetPhysDevice(physicalDevice).displays.size() > 0) {
         *display = icd.GetPhysDevice(physicalDevice).displays[0];
     }
@@ -973,16 +935,10 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties(VkPhysicalDe
         memcpy(pMemoryProperties, &icd.GetPhysDevice(physicalDevice).memory_properties, sizeof(VkPhysicalDeviceMemoryProperties));
     }
 }
-VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                               VkImageType type, VkSampleCountFlagBits samples,
-                                                                               VkImageUsageFlags usage, VkImageTiling tiling,
-                                                                               uint32_t* pPropertyCount,
-                                                                               VkSparseImageFormatProperties* pProperties) {
-    (void)format;
-    (void)type;
-    (void)samples;
-    (void)usage;
-    (void)tiling;
+VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties(
+    VkPhysicalDevice physicalDevice, [[maybe_unused]] VkFormat format, [[maybe_unused]] VkImageType type,
+    [[maybe_unused]] VkSampleCountFlagBits samples, [[maybe_unused]] VkImageUsageFlags usage, [[maybe_unused]] VkImageTiling tiling,
+    uint32_t* pPropertyCount, VkSparseImageFormatProperties* pProperties) {
     FillCountPtr(icd.GetPhysDevice(physicalDevice).sparse_image_format_properties, pPropertyCount, pProperties);
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
@@ -992,15 +948,10 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties(VkPhysicalDe
                sizeof(VkFormatProperties));
     }
 }
-VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                             VkImageType type, VkImageTiling tiling,
-                                                                             VkImageUsageFlags usage, VkImageCreateFlags flags,
-                                                                             VkImageFormatProperties* pImageFormatProperties) {
-    (void)format;
-    (void)type;
-    (void)tiling;
-    (void)usage;
-    (void)flags;
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties(
+    VkPhysicalDevice physicalDevice, [[maybe_unused]] VkFormat format, [[maybe_unused]] VkImageType type,
+    [[maybe_unused]] VkImageTiling tiling, [[maybe_unused]] VkImageUsageFlags usage, [[maybe_unused]] VkImageCreateFlags flags,
+    VkImageFormatProperties* pImageFormatProperties) {
     if (nullptr != pImageFormatProperties) {
         memcpy(pImageFormatProperties, &icd.GetPhysDevice(physicalDevice).image_format_properties, sizeof(VkImageFormatProperties));
     }
@@ -1091,9 +1042,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties2(
     return VK_SUCCESS;
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalBufferProperties(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+    VkPhysicalDevice physicalDevice, [[maybe_unused]] const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
     VkExternalBufferProperties* pExternalBufferProperties) {
-    (void)pExternalBufferInfo;
     if (nullptr != pExternalBufferProperties) {
         auto& phys_dev = icd.GetPhysDevice(physicalDevice);
         memcpy(&pExternalBufferProperties->externalMemoryProperties, &phys_dev.external_memory_properties,
@@ -1101,18 +1051,16 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalBufferProperties(
     }
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalSemaphoreProperties(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+    VkPhysicalDevice physicalDevice, [[maybe_unused]] const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
-    (void)pExternalSemaphoreInfo;
     if (nullptr != pExternalSemaphoreProperties) {
         auto& phys_dev = icd.GetPhysDevice(physicalDevice);
         memcpy(pExternalSemaphoreProperties, &phys_dev.external_semaphore_properties, sizeof(VkExternalSemaphoreProperties));
     }
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalFenceProperties(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+    VkPhysicalDevice physicalDevice, [[maybe_unused]] const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
     VkExternalFenceProperties* pExternalFenceProperties) {
-    (void)pExternalFenceInfo;
     if (nullptr != pExternalFenceProperties) {
         auto& phys_dev = icd.GetPhysDevice(physicalDevice);
         memcpy(pExternalFenceProperties, &phys_dev.external_fence_properties, sizeof(VkExternalFenceProperties));
@@ -1208,8 +1156,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDe
 
 //// trampolines
 
-PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pName) {
-    (void)instance;
+PFN_vkVoidFunction get_instance_func_ver_1_1([[maybe_unused]] VkInstance instance, const char* pName) {
     if (icd.icd_api_version >= VK_API_VERSION_1_1) {
         if (string_eq(pName, "test_vkEnumerateInstanceVersion")) {
             return to_vkVoidFunction(test_vkEnumerateInstanceVersion);
@@ -1220,17 +1167,8 @@ PFN_vkVoidFunction get_instance_func_ver_1_1(VkInstance instance, const char* pN
     }
     return nullptr;
 }
-PFN_vkVoidFunction get_instance_func_ver_1_2(VkInstance instance, const char* pName) {
-    (void)instance;
-    (void)pName;
-    if (icd.icd_api_version >= VK_API_VERSION_1_2) {
-        return nullptr;
-    }
-    return nullptr;
-}
 
-PFN_vkVoidFunction get_physical_device_func_wsi(VkInstance instance, const char* pName) {
-    (void)instance;
+PFN_vkVoidFunction get_physical_device_func_wsi([[maybe_unused]] VkInstance instance, const char* pName) {
     if (IsInstanceExtensionEnabled("VK_KHR_surface")) {
         if (string_eq(pName, "vkGetPhysicalDeviceSurfaceSupportKHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfaceSupportKHR);
@@ -1369,8 +1307,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
     if (ret_phys_dev_wsi != nullptr) return ret_phys_dev_wsi;
     return nullptr;
 }
-PFN_vkVoidFunction get_physical_device_func(VkInstance instance, const char* pName) {
-    (void)instance;
+PFN_vkVoidFunction get_physical_device_func([[maybe_unused]] VkInstance instance, const char* pName) {
     if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
     if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
         return to_vkVoidFunction(test_vkEnumerateDeviceExtensionProperties);
@@ -1496,9 +1433,6 @@ PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
 
     PFN_vkVoidFunction ret_1_1 = get_instance_func_ver_1_1(instance, pName);
     if (ret_1_1 != nullptr) return ret_1_1;
-
-    PFN_vkVoidFunction ret_1_2 = get_instance_func_ver_1_2(instance, pName);
-    if (ret_1_2 != nullptr) return ret_1_2;
 
     PFN_vkVoidFunction ret_wsi = get_instance_func_wsi(instance, pName);
     if (ret_wsi != nullptr) return ret_wsi;

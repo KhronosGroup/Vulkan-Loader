@@ -27,9 +27,8 @@
 
 #include "test_environment.h"
 
-std::string get_settings_location_log_message(FrameworkEnvironment const& env, bool use_secure = false) {
-    (void)env;
-    (void)use_secure;
+std::string get_settings_location_log_message([[maybe_unused]] FrameworkEnvironment const& env,
+                                              [[maybe_unused]] bool use_secure = false) {
     std::string s = "Using layer configurations found in loader settings from ";
 #if defined(WIN32)
     return s + env.get_folder(ManifestLocation::settings_location).location().str() + "\\vk_loader_settings.json";
