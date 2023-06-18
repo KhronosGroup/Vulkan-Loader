@@ -508,6 +508,49 @@ path FolderManager::copy_file(path const& file, std::string const& new_name) {
 }
 }  // namespace fs
 
+const char* get_platform_wsi_extension([[maybe_unused]] const char* api_selection) {
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    return "VK_KHR_android_surface";
+#elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
+    return "VK_EXT_directfb_surface";
+#elif defined(VK_USE_PLATFORM_FUCHSIA)
+    return "VK_FUCHSIA_imagepipe_surface";
+#elif defined(VK_USE_PLATFORM_GGP)
+    return "VK_GGP_stream_descriptor_surface";
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    return "VK_MVK_ios_surface";
+#elif defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
+    if (string_eq(api_selection, "VK_USE_PLATFORM_MACOS_MVK")) return "VK_MVK_macos_surface";
+#endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (string_eq(api_selection, "VK_USE_PLATFORM_METAL_EXT")) return "VK_EXT_metal_surface";
+    return "VK_EXT_metal_surface";
+#endif
+#elif defined(VK_USE_PLATFORM_SCREEN_QNX)
+    return "VK_QNX_screen_surface";
+#elif defined(VK_USE_PLATFORM_VI_NN)
+    return "VK_NN_vi_surface";
+#elif defined(VK_USE_PLATFORM_XCB_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    if (string_eq(api_selection, "VK_USE_PLATFORM_XCB_KHR")) return "VK_KHR_xcb_surface";
+#endif
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    if (string_eq(api_selection, "VK_USE_PLATFORM_XLIB_KHR")) return "VK_KHR_xlib_surface";
+#endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    if (string_eq(api_selection, "VK_USE_PLATFORM_WAYLAND_KHR")) return "VK_KHR_wayland_surface";
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    return "VK_KHR_xcb_surface";
+#endif
+#elif defined(VK_USE_PLATFORM_WIN32_KHR)
+    return "VK_KHR_win32_surface";
+#else
+    return "VK_KHR_display";
+#endif
+}
+
 bool string_eq(const char* a, const char* b) noexcept { return a && b && strcmp(a, b) == 0; }
 bool string_eq(const char* a, const char* b, size_t len) noexcept { return a && b && strncmp(a, b, len) == 0; }
 
@@ -534,6 +577,10 @@ VkInstanceCreateInfo* InstanceCreateInfo::get() noexcept {
 }
 InstanceCreateInfo& InstanceCreateInfo::set_api_version(uint32_t major, uint32_t minor, uint32_t patch) {
     this->api_version = VK_MAKE_API_VERSION(0, major, minor, patch);
+    return *this;
+}
+InstanceCreateInfo& InstanceCreateInfo::setup_WSI(const char* api_selection) {
+    add_extensions({"VK_KHR_surface", get_platform_wsi_extension(api_selection)});
     return *this;
 }
 

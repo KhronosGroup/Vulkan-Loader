@@ -534,6 +534,8 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
     return os << static_cast<int32_t>(result);
 }
 
+const char* get_platform_wsi_extension([[maybe_unused]] const char* api_selection);
+
 bool string_eq(const char* a, const char* b) noexcept;
 bool string_eq(const char* a, const char* b, size_t len) noexcept;
 
@@ -696,6 +698,8 @@ struct InstanceCreateInfo {
     VkInstanceCreateInfo* get() noexcept;
 
     InstanceCreateInfo& set_api_version(uint32_t major, uint32_t minor, uint32_t patch);
+
+    InstanceCreateInfo& setup_WSI(const char* api_selection = nullptr);
 };
 
 struct DeviceQueueCreateInfo {

@@ -98,6 +98,13 @@ struct TestICD {
     BUILDER_VALUE(TestICD, bool, enable_icd_wsi, false);
     bool is_using_icd_wsi = false;
 
+    TestICD& setup_WSI(const char* api_selection = nullptr) {
+        enable_icd_wsi = true;
+        add_instance_extensions({"VK_KHR_surface", get_platform_wsi_extension(api_selection)});
+        min_icd_interface_version = (3U < min_icd_interface_version) ? min_icd_interface_version : 3U;
+        return *this;
+    }
+
     BUILDER_VALUE(TestICD, uint32_t, icd_api_version, VK_API_VERSION_1_0)
     BUILDER_VECTOR(TestICD, LayerDefinition, instance_layers, instance_layer)
     BUILDER_VECTOR(TestICD, Extension, instance_extensions, instance_extension)

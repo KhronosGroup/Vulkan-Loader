@@ -856,7 +856,7 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
     if (enable_debug_extensions) {
         inst.create_info.add_extension("VK_EXT_debug_utils");
     }
-    setup_WSI_in_create_instance(inst);
+    inst.create_info.setup_WSI();
     ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
     auto phys_dev = inst.GetPhysDev();
@@ -1050,7 +1050,7 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
 TEST(GetDeviceProcAddr, DebugFuncsWithTerminator) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    setup_WSI_in_ICD(env.get_test_icd());
+    env.get_test_icd().setup_WSI();
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
     env.get_test_icd().physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
     // Hardware doesn't support the debug extensions

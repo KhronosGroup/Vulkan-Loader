@@ -156,11 +156,11 @@ TEST(LoaderHandleValidTests, BadInstCreateAndroidSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -179,11 +179,11 @@ TEST(LoaderHandleValidTests, BadInstCreateDirectFBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -202,11 +202,11 @@ TEST(LoaderHandleValidTests, BadInstCreateFuchsiaSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -225,11 +225,11 @@ TEST(LoaderHandleValidTests, BadInstCreateGGPSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -249,11 +249,11 @@ TEST(LoaderHandleValidTests, BadInstCreateIOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -272,11 +272,11 @@ TEST(LoaderHandleValidTests, BadInstCreateMacOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -295,11 +295,11 @@ TEST(LoaderHandleValidTests, BadInstCreateMetalSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -318,11 +318,11 @@ TEST(LoaderHandleValidTests, BadInstCreateQNXSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -342,11 +342,11 @@ TEST(LoaderHandleValidTests, BadInstCreateViNNSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -366,11 +366,11 @@ TEST(LoaderHandleValidTests, BadInstCreateWaylandSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -390,11 +390,11 @@ TEST(LoaderHandleValidTests, BadInstCreateWin32Surf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -414,11 +414,11 @@ TEST(LoaderHandleValidTests, BadInstCreateXCBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -438,11 +438,11 @@ TEST(LoaderHandleValidTests, BadInstCreateXlibSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_instance = get_bad_handle<VkInstance>();
@@ -948,11 +948,11 @@ TEST(LoaderHandleValidTests, BadPhysDevGetDirectFBPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
@@ -968,11 +968,11 @@ TEST(LoaderHandleValidTests, BadPhysDevGetQNXPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
@@ -987,11 +987,11 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWaylandPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
@@ -1006,11 +1006,11 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevWin32PresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
@@ -1025,11 +1025,11 @@ TEST(LoaderHandleValidTests, BadPhysDevGetXCBPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
@@ -1045,11 +1045,11 @@ TEST(LoaderHandleValidTests, BadPhysDevGetXlibPresentSupportKHR) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.CheckCreate();
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
@@ -1533,7 +1533,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevSurfacePresentModes2EXT) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper instance(env.vulkan_functions);
@@ -1575,7 +1575,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1587,7 +1587,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1609,7 +1609,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1621,7 +1621,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1643,7 +1643,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1655,7 +1655,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1677,7 +1677,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1689,7 +1689,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1711,7 +1711,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1723,7 +1723,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1745,7 +1745,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_MACOS_MVK");
+    driver.setup_WSI("VK_USE_PLATFORM_MACOS_MVK");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1757,7 +1757,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_MACOS_MVK");
+    instance.create_info.setup_WSI("VK_USE_PLATFORM_MACOS_MVK");
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1779,7 +1779,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_METAL_EXT");
+    driver.setup_WSI("VK_USE_PLATFORM_METAL_EXT");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1791,7 +1791,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_METAL_EXT");
+    instance.create_info.setup_WSI("VK_USE_PLATFORM_METAL_EXT");
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1813,7 +1813,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1825,7 +1825,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1847,7 +1847,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1859,7 +1859,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1881,7 +1881,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_WAYLAND_KHR");
+    driver.setup_WSI("VK_USE_PLATFORM_WAYLAND_KHR");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1893,7 +1893,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_WAYLAND_KHR");
+    instance.create_info.setup_WSI("VK_USE_PLATFORM_WAYLAND_KHR");
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1915,7 +1915,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1927,7 +1927,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1949,7 +1949,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(
@@ -1961,7 +1961,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance);
+    instance.create_info.setup_WSI();
     instance.create_info.add_layer(wrap_objects_name);
     instance.CheckCreate();
 
@@ -1983,7 +1983,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver, "VK_USE_PLATFORM_XLIB_KHR");
+    driver.setup_WSI("VK_USE_PLATFORM_XLIB_KHR");
     for (auto& ext : driver.instance_extensions) {
         std::cout << ext.extensionName << "\n";
     }
@@ -1997,7 +1997,7 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
-    setup_WSI_in_create_instance(instance, "VK_USE_PLATFORM_XLIB_KHR");
+    instance.create_info.setup_WSI("VK_USE_PLATFORM_XLIB_KHR");
     //
     for (auto& ext : instance.create_info.enabled_extensions) {
         std::cout << ext << "\n";

@@ -782,7 +782,7 @@ TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
     driver.physical_devices.emplace_back("physical_device_0");
@@ -801,7 +801,7 @@ TEST(WsiTests, SwapchainFunctional) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-    setup_WSI_in_ICD(driver);
+    driver.setup_WSI();
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
     driver.physical_devices.emplace_back("physical_device_0");
@@ -809,7 +809,7 @@ TEST(WsiTests, SwapchainFunctional) {
     driver.physical_devices.back().add_extension("VK_KHR_swapchain");
 
     InstWrapper inst{env.vulkan_functions};
-    setup_WSI_in_create_instance(inst);
+    inst.create_info.setup_WSI();
     inst.CheckCreate();
     VkSurfaceKHR surface{};
     ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));

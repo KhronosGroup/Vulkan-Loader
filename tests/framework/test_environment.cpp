@@ -758,61 +758,6 @@ std::vector<VkLayerProperties> FrameworkEnvironment::GetLayerProperties(uint32_t
     return layer_props;
 }
 
-const char* get_platform_wsi_extension([[maybe_unused]] const char* api_selection) {
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    return "VK_KHR_android_surface";
-#elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-    return "VK_EXT_directfb_surface";
-#elif defined(VK_USE_PLATFORM_FUCHSIA)
-    return "VK_FUCHSIA_imagepipe_surface";
-#elif defined(VK_USE_PLATFORM_GGP)
-    return "VK_GGP_stream_descriptor_surface";
-#elif defined(VK_USE_PLATFORM_IOS_MVK)
-    return "VK_MVK_ios_surface";
-#elif defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)
-#if defined(VK_USE_PLATFORM_MACOS_MVK)
-    if (string_eq(api_selection, "VK_USE_PLATFORM_MACOS_MVK")) return "VK_MVK_macos_surface";
-#endif
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    if (string_eq(api_selection, "VK_USE_PLATFORM_METAL_EXT")) return "VK_EXT_metal_surface";
-    return "VK_EXT_metal_surface";
-#endif
-#elif defined(VK_USE_PLATFORM_SCREEN_QNX)
-    return "VK_QNX_screen_surface";
-#elif defined(VK_USE_PLATFORM_VI_NN)
-    return "VK_NN_vi_surface";
-#elif defined(VK_USE_PLATFORM_XCB_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_WAYLAND_KHR)
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (string_eq(api_selection, "VK_USE_PLATFORM_XCB_KHR")) return "VK_KHR_xcb_surface";
-#endif
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-    if (string_eq(api_selection, "VK_USE_PLATFORM_XLIB_KHR")) return "VK_KHR_xlib_surface";
-#endif
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    if (string_eq(api_selection, "VK_USE_PLATFORM_WAYLAND_KHR")) return "VK_KHR_wayland_surface";
-#endif
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-    return "VK_KHR_xcb_surface";
-#endif
-#elif defined(VK_USE_PLATFORM_WIN32_KHR)
-    return "VK_KHR_win32_surface";
-#else
-    return "VK_KHR_display";
-#endif
-}
-
-void setup_WSI_in_ICD(TestICD& icd, const char* api_selection) {
-    icd.enable_icd_wsi = true;
-    icd.add_instance_extensions({"VK_KHR_surface", get_platform_wsi_extension(api_selection)});
-    icd.min_icd_interface_version = std::max(icd.min_icd_interface_version, 3U);
-}
-void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection) {
-    inst.create_info.add_extensions({"VK_KHR_surface", get_platform_wsi_extension(api_selection)});
-}
-void setup_WSI_in_create_instance(InstanceCreateInfo& inst_create_info, const char* api_selection) {
-    inst_create_info.add_extensions({"VK_KHR_surface", get_platform_wsi_extension(api_selection)});
-}
-
 template <typename CreationFunc, typename CreateInfo>
 VkResult create_surface_helper(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface, const char* load_func_name) {
     CreationFunc pfn_CreateSurface = functions->load(inst, load_func_name);

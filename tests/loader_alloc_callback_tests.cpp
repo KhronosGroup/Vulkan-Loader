@@ -420,7 +420,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
 TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    setup_WSI_in_ICD(env.get_test_icd());
+    env.get_test_icd().setup_WSI();
 
     const char* layer_name = "VkLayerImplicit0";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -437,7 +437,7 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
-        setup_WSI_in_create_instance(inst_create_info);
+        inst_create_info.setup_WSI();
         result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             ASSERT_TRUE(tracker.empty());
@@ -503,7 +503,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
 TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    setup_WSI_in_ICD(env.get_test_icd());
+    env.get_test_icd().setup_WSI();
 
     const char* layer_name = "VkLayerImplicit0";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -526,7 +526,7 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
-        setup_WSI_in_create_instance(inst_create_info);
+        inst_create_info.setup_WSI();
         result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             ASSERT_TRUE(tracker.empty());
