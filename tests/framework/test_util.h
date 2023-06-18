@@ -589,8 +589,6 @@ struct ManifestVersion {
     BUILDER_VALUE(ManifestVersion, uint32_t, major, 1)
     BUILDER_VALUE(ManifestVersion, uint32_t, minor, 0)
     BUILDER_VALUE(ManifestVersion, uint32_t, patch, 0)
-    ManifestVersion() noexcept {};
-    ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
 
     std::string get_version_str() const noexcept {
         return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
@@ -599,7 +597,7 @@ struct ManifestVersion {
 
 // ManifestICD builder
 struct ManifestICD {
-    BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, ManifestVersion())
+    BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, {})
     BUILDER_VALUE(ManifestICD, uint32_t, api_version, 0)
     BUILDER_VALUE(ManifestICD, std::string, lib_path, {})
     BUILDER_VALUE(ManifestICD, bool, is_portability_driver, false)
@@ -682,11 +680,6 @@ struct MockQueueFamilyProperties {
     BUILDER_VALUE(MockQueueFamilyProperties, VkQueueFamilyProperties, properties, {})
     BUILDER_VALUE(MockQueueFamilyProperties, bool, support_present, false)
 
-    MockQueueFamilyProperties() {}
-
-    MockQueueFamilyProperties(VkQueueFamilyProperties properties, bool support_present = false)
-        : properties(properties), support_present(support_present) {}
-
     VkQueueFamilyProperties get() const noexcept { return properties; }
 };
 
@@ -760,7 +753,7 @@ inline bool operator!=(const VkExtensionProperties& a, const VkExtensionProperti
 
 struct VulkanFunction {
     std::string name;
-    PFN_vkVoidFunction function;
+    PFN_vkVoidFunction function = nullptr;
 };
 
 template <typename T, size_t U>

@@ -36,15 +36,6 @@ struct LayerDefinition {
     BUILDER_VALUE(LayerDefinition, std::string, description, {})
     BUILDER_VECTOR(LayerDefinition, Extension, extensions, extension)
 
-    LayerDefinition(std::string layerName, uint32_t specVersion = VK_API_VERSION_1_0,
-                    uint32_t implementationVersion = VK_API_VERSION_1_0, std::string description = "",
-                    std::vector<Extension> extensions = {})
-        : layerName(layerName),
-          specVersion(specVersion),
-          implementationVersion(implementationVersion),
-          description(description),
-          extensions(extensions) {}
-
     VkLayerProperties get() const noexcept {
         VkLayerProperties props{};
         copy_string_to_char_array(layerName, &props.layerName[0], VK_MAX_EXTENSION_NAME_SIZE);

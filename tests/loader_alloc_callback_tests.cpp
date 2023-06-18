@@ -30,13 +30,6 @@
 #include <mutex>
 
 struct MemoryTrackerSettings {
-    MemoryTrackerSettings() = default;
-    MemoryTrackerSettings(bool should_fail_on_allocation, size_t fail_after_allocations, bool should_fail_after_set_number_of_calls,
-                          size_t fail_after_calls)
-        : should_fail_on_allocation(should_fail_on_allocation),
-          fail_after_allocations(fail_after_allocations),
-          should_fail_after_set_number_of_calls(should_fail_after_set_number_of_calls),
-          fail_after_calls(fail_after_calls) {}
     bool should_fail_on_allocation = false;
     size_t fail_after_allocations = 0;  // fail after this number of allocations in total
     bool should_fail_after_set_number_of_calls = false;
@@ -414,7 +407,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
@@ -445,7 +438,7 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
@@ -497,7 +490,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
@@ -534,7 +527,7 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
@@ -580,7 +573,7 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
@@ -642,7 +635,7 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
 
         DeviceCreateInfo dev_create_info;
         DeviceQueueCreateInfo queue_info;
@@ -719,7 +712,7 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker{MemoryTrackerSettings{false, 0, true, fail_index}};
+        MemoryTracker tracker{{false, 0, true, fail_index}};
         fail_index++;  // applies to the next loop
 
         VkInstance instance;
@@ -805,7 +798,7 @@ TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
 
         VkInstance instance;
         InstanceCreateInfo inst_create_info{};
@@ -846,7 +839,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
             driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
             driver.physical_devices[i].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
         }
-        MemoryTracker tracker{MemoryTrackerSettings{false, 0, true, fail_index}};
+        MemoryTracker tracker{{false, 0, true, fail_index}};
         InstanceCreateInfo inst_create_info;
         VkInstance instance;
         result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
@@ -960,7 +953,7 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
-        MemoryTracker tracker(MemoryTrackerSettings{false, 0, true, fail_index});
+        MemoryTracker tracker({false, 0, true, fail_index});
         fail_index++;  // applies to the next loop
 
         VkInstance instance;
