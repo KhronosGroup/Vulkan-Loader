@@ -258,13 +258,13 @@ struct DeviceFunctions {
     }
 };
 
-// InstWrapper & DeviceWrapper - used to make creating instances & devices easier test writing
+// InstWrapper & DeviceWrapper - used to make creating instances & devices easier when writing tests
 struct InstWrapper {
     InstWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks = nullptr) noexcept;
     InstWrapper(VulkanFunctions& functions, VkInstance inst, VkAllocationCallbacks* callbacks = nullptr) noexcept;
     ~InstWrapper() noexcept;
 
-    // Move-nly object
+    // Move-only object
     InstWrapper(InstWrapper const&) = delete;
     InstWrapper& operator=(InstWrapper const&) = delete;
     InstWrapper(InstWrapper&& other) noexcept;
@@ -445,7 +445,7 @@ struct AppSpecificSettings {
 };
 
 struct LoaderSettings {
-    BUILDER_VALUE(LoaderSettings, ManifestVersion, file_format_version, ManifestVersion())
+    BUILDER_VALUE(LoaderSettings, ManifestVersion, file_format_version, {})
     BUILDER_VECTOR(LoaderSettings, AppSpecificSettings, app_specific_settings, app_specific_setting);
 };
 
@@ -461,7 +461,7 @@ struct PlatformShimWrapper {
     PlatformShim* operator->() { return platform_shim; }
 
     LibraryWrapper shim_library;
-    PlatformShim* platform_shim;
+    PlatformShim* platform_shim = nullptr;
     EnvVarWrapper loader_logging;
 };
 

@@ -771,24 +771,22 @@ TEST(SettingsFile, MetaLayerAlsoActivates) {
                                             "component_test_layer2.json"));
 
     const char* meta_layer_name1 = "VK_LAYER_meta_layer1";
-    env.add_implicit_layer(ManifestLayer{}
-                               .set_file_format_version(ManifestVersion(1, 1, 2))
-                               .add_layer(ManifestLayer::LayerDescription{}
-                                              .set_name(meta_layer_name1)
-                                              .add_component_layer(component_explicit_layer_name2)
-                                              .add_component_layer(component_explicit_layer_name1)
-                                              .set_disable_environment("NotGonnaWork")),
-                           "meta_test_layer.json");
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(meta_layer_name1)
+                                                                         .add_component_layer(component_explicit_layer_name2)
+                                                                         .add_component_layer(component_explicit_layer_name1)
+                                                                         .set_disable_environment("NotGonnaWork")),
+        "meta_test_layer.json");
 
     const char* meta_layer_name2 = "VK_LAYER_meta_layer2";
-    env.add_implicit_layer(ManifestLayer{}
-                               .set_file_format_version(ManifestVersion(1, 1, 2))
-                               .add_layer(ManifestLayer::LayerDescription{}
-                                              .set_name(meta_layer_name2)
-                                              .add_component_layer(component_explicit_layer_name1)
-                                              .set_disable_environment("ILikeTrains")
-                                              .set_enable_environment("BakedBeans")),
-                           "not_automatic_meta_test_layer.json");
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(meta_layer_name2)
+                                                                         .add_component_layer(component_explicit_layer_name1)
+                                                                         .set_disable_environment("ILikeTrains")
+                                                                         .set_enable_environment("BakedBeans")),
+        "not_automatic_meta_test_layer.json");
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -1293,21 +1291,20 @@ TEST(SettingsFile, PreInstanceFunctions) {
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
     env.add_implicit_layer(
-        ManifestLayer{}
-            .set_file_format_version(ManifestVersion(1, 1, 2))
-            .add_layer(ManifestLayer::LayerDescription{}
-                           .set_name(implicit_layer_name)
-                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                           .set_disable_environment("DISABLE_ME")
-                           .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                                          .set_vk_func("vkEnumerateInstanceLayerProperties")
-                                                          .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))
-                           .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                                          .set_vk_func("vkEnumerateInstanceExtensionProperties")
-                                                          .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))
-                           .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                                          .set_vk_func("vkEnumerateInstanceVersion")
-                                                          .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(implicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .set_disable_environment("DISABLE_ME")
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceVersion")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
         "implicit_test_layer.json");
 
     env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(

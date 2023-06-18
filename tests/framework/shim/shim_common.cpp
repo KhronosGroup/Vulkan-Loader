@@ -134,7 +134,7 @@ void PlatformShim::add_unsecured_manifest(ManifestCategory category, fs::path co
 }
 
 void PlatformShim::add_dxgi_adapter(GpuType gpu_preference, DXGI_ADAPTER_DESC1 desc1) {
-    dxgi_adapters.push_back(DXGIAdapter(gpu_preference, desc1, next_adapter_handle++));
+    dxgi_adapters.push_back({gpu_preference, desc1, next_adapter_handle++});
 }
 
 void PlatformShim::add_d3dkmt_adapter(D3DKMT_Adapter const& adapter) { d3dkmt_adapters.push_back(adapter); }

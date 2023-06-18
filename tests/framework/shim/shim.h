@@ -72,8 +72,8 @@ static const char* pnp_registry_path = "SYSTEM\\CurrentControlSet\\Control\\Clas
 
 // Needed for DXGI mocking
 struct KnownDriverData {
-    const char* filename;
-    int vendor_id;
+    const char* filename = nullptr;
+    int vendor_id = 0;
 };
 static std::array<KnownDriverData, 4> known_driver_list = {
 #if defined(_WIN64)
@@ -86,17 +86,12 @@ static std::array<KnownDriverData, 4> known_driver_list = {
 };
 
 struct DXGIAdapter {
-    DXGIAdapter(GpuType gpu_preference, DXGI_ADAPTER_DESC1 desc1, uint32_t adapter_index)
-        : gpu_preference(gpu_preference), desc1(desc1), adapter_index(adapter_index) {}
     GpuType gpu_preference = GpuType::unspecified;
     DXGI_ADAPTER_DESC1 desc1{};
     uint32_t adapter_index = 0;
 };
 
 struct D3DKMT_Adapter {
-    D3DKMT_Adapter() = default;
-    D3DKMT_Adapter(UINT hAdapter, LUID adapter_luid) noexcept : hAdapter(hAdapter), adapter_luid(adapter_luid) {}
-
     D3DKMT_Adapter& add_driver_manifest_path(fs::path const& src);
     D3DKMT_Adapter& add_implicit_layer_manifest_path(fs::path const& src);
     D3DKMT_Adapter& add_explicit_layer_manifest_path(fs::path const& src);
@@ -114,11 +109,12 @@ struct D3DKMT_Adapter {
 #elif COMMON_UNIX_PLATFORMS
 
 struct DirEntry {
-    DIR* directory;
+    DIR* directory = nullptr;
     std::string folder_path;
     std::vector<struct dirent*> contents;
-    size_t current_index;  // the current item being read by an app (incremented by readdir, reset to zero by opendir & closedir)
-    bool is_fake_path;     // true when this entry is for folder redirection
+    // the current item being read by an app (incremented by readdir, reset to zero by opendir & closedir)
+    size_t current_index = 0;
+    bool is_fake_path = false;  // true when this entry is for folder redirection
 };
 
 #endif
