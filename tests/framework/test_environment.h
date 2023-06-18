@@ -628,16 +628,6 @@ struct FrameworkEnvironment {
     void add_layer_impl(TestLayerDetails layer_details, ManifestCategory category);
 };
 
-// helper function which return a valid WSI platform extension
-// const char* api_selection: use this to select an extension on platforms that support multiple extensions
-const char* get_platform_wsi_extension(const char* api_selection = nullptr);
-
-// The following helpers setup an icd with the required extensions and setting to use with WSI
-// By default they use whatever the set VK_USE_PLATFORM_XXX macros define
-void setup_WSI_in_ICD(TestICD& icd, const char* api_selection = nullptr);
-void setup_WSI_in_create_instance(InstWrapper& inst, const char* api_selection = nullptr);
-void setup_WSI_in_create_instance(InstanceCreateInfo& inst_create_info, const char* api_selection = nullptr);
-
 // Create a surface using a platform specific API
 // api_selection: optionally provide a VK_USE_PLATFORM_XXX string to select which API to create a surface with.
 //    defaults to Metal on macOS and XCB on linux if not provided

@@ -192,12 +192,12 @@ TEST(GetProcAddr, GlobalFunctions) {
 TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    setup_WSI_in_ICD(env.get_test_icd());
+    env.get_test_icd().setup_WSI();
     env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     InstWrapper inst(env.vulkan_functions);
     inst.create_info.add_extension("VK_EXT_debug_utils");
-    setup_WSI_in_create_instance(inst);
+    inst.create_info.setup_WSI();
     ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
     VkSurfaceKHR surface{};

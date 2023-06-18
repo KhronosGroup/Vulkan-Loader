@@ -502,7 +502,7 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
         auto& driver_5 = env.get_test_icd(i * 2 + 1);
         driver_5.set_max_icd_interface_version(5);
         driver_5.set_min_icd_interface_version(5);
-        setup_WSI_in_ICD(driver_5);
+        driver_5.setup_WSI();
         driver_5.physical_devices.push_back({});
         driver_5.physical_devices.back().queue_family_properties.push_back(family_props);
         driver_5.physical_devices.push_back({});
@@ -512,7 +512,7 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
         physical_count += static_cast<uint32_t>(driver_5.physical_devices.size());
 
         auto& driver_6 = env.get_test_icd(i * 2);
-        setup_WSI_in_ICD(driver_6);
+        driver_6.setup_WSI();
         driver_6.physical_devices.emplace_back("physical_device_0");
         driver_6.physical_devices.back().queue_family_properties.push_back(family_props);
         driver_6.physical_devices.emplace_back("physical_device_1");
@@ -533,7 +533,7 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
     }
     uint32_t returned_physical_count = 0;
     InstWrapper inst{env.vulkan_functions};
-    setup_WSI_in_create_instance(inst);
+    inst.create_info.setup_WSI();
     inst.CheckCreate();
 
     ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
