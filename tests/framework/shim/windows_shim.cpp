@@ -128,18 +128,16 @@ static CONFIGRET(WINAPI *REAL_CM_Get_DevNode_Registry_PropertyW)(DEVINST dnDevIn
 static CONFIGRET(WINAPI *REAL_CM_Get_Sibling)(PDEVINST pdnDevInst, DEVINST dnDevInst, ULONG ulFlags) = CM_Get_Sibling;
 // clang-format on
 
-CONFIGRET WINAPI SHIM_CM_Get_Device_ID_List_SizeW(PULONG pulLen, PCWSTR pszFilter, ULONG ulFlags) {
-    (void)pszFilter;
-    (void)ulFlags;
+CONFIGRET WINAPI SHIM_CM_Get_Device_ID_List_SizeW(PULONG pulLen, [[maybe_unused]] PCWSTR pszFilter,
+                                                  [[maybe_unused]] ULONG ulFlags) {
     if (pulLen == nullptr) {
         return CR_INVALID_POINTER;
     }
     *pulLen = static_cast<ULONG>(platform_shim.CM_device_ID_list.size());
     return CR_SUCCESS;
 }
-CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW(PCWSTR pszFilter, PZZWSTR Buffer, ULONG BufferLen, ULONG ulFlags) {
-    (void)pszFilter;
-    (void)ulFlags;
+CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW([[maybe_unused]] PCWSTR pszFilter, PZZWSTR Buffer, ULONG BufferLen,
+                                             [[maybe_unused]] ULONG ulFlags) {
     if (Buffer != NULL) {
         if (BufferLen < platform_shim.CM_device_ID_list.size()) return CR_BUFFER_SMALL;
         for (size_t i = 0; i < BufferLen; i++) {
@@ -215,11 +213,10 @@ IDXGIAdapter1 *create_IDXGIAdapter1() {
     return adapter;
 }
 
-HRESULT __stdcall ShimEnumAdapters1_1(IDXGIFactory1 *This,
+HRESULT __stdcall ShimEnumAdapters1_1([[maybe_unused]] IDXGIFactory1 *This,
                                       /* [in] */ UINT Adapter,
                                       /* [annotation][out] */
                                       _COM_Outptr_ IDXGIAdapter1 **ppAdapter) {
-    (void)This;
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_INVALID_CALL;
     }
@@ -231,11 +228,10 @@ HRESULT __stdcall ShimEnumAdapters1_1(IDXGIFactory1 *This,
     return S_OK;
 }
 
-HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
+HRESULT __stdcall ShimEnumAdapters1_6([[maybe_unused]] IDXGIFactory6 *This,
                                       /* [in] */ UINT Adapter,
                                       /* [annotation][out] */
                                       _COM_Outptr_ IDXGIAdapter1 **ppAdapter) {
-    (void)This;
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_INVALID_CALL;
     }
@@ -247,11 +243,9 @@ HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
     return S_OK;
 }
 
-HRESULT __stdcall ShimEnumAdapterByGpuPreference(IDXGIFactory6 *This, _In_ UINT Adapter, _In_ DXGI_GPU_PREFERENCE GpuPreference,
-                                                 _In_ REFIID riid, _COM_Outptr_ void **ppvAdapter) {
-    (void)This;
-    (void)GpuPreference;
-    (void)riid;
+HRESULT __stdcall ShimEnumAdapterByGpuPreference([[maybe_unused]] IDXGIFactory6 *This, _In_ UINT Adapter,
+                                                 [[maybe_unused]] _In_ DXGI_GPU_PREFERENCE GpuPreference,
+                                                 [[maybe_unused]] _In_ REFIID riid, _COM_Outptr_ void **ppvAdapter) {
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_NOT_FOUND;
     }
@@ -314,9 +308,8 @@ static PFN_RegEnumValueA fpRegEnumValueA = RegEnumValueA;
 using PFN_RegCloseKey = LSTATUS(__stdcall *)(HKEY hKey);
 static PFN_RegCloseKey fpRegCloseKey = RegCloseKey;
 
-LSTATUS __stdcall ShimRegOpenKeyExA(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult) {
-    (void)ulOptions;
-    (void)samDesired;
+LSTATUS __stdcall ShimRegOpenKeyExA(HKEY hKey, LPCSTR lpSubKey, [[maybe_unused]] DWORD ulOptions,
+                                    [[maybe_unused]] REGSAM samDesired, PHKEY phkResult) {
     if (HKEY_LOCAL_MACHINE != hKey && HKEY_CURRENT_USER != hKey) return ERROR_BADKEY;
     std::string hive = "";
     if (HKEY_LOCAL_MACHINE == hKey)
@@ -355,10 +348,9 @@ LSTATUS __stdcall ShimRegQueryValueExA(HKEY, LPCSTR, LPDWORD, LPDWORD, LPBYTE, L
     // TODO:
     return ERROR_SUCCESS;
 }
-LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName, LPDWORD lpReserved,
-                                    LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData) {
-    (void)lpReserved;
-    (void)lpType;
+LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName,
+                                    [[maybe_unused]] LPDWORD lpReserved, [[maybe_unused]] LPDWORD lpType, LPBYTE lpData,
+                                    LPDWORD lpcbData) {
     const std::string *path = get_path_of_created_key(hKey);
     if (path == nullptr) return ERROR_NO_MORE_ITEMS;
 
@@ -515,9 +507,7 @@ void DetachFunctions() {
     DetourTransactionCommit();
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
-    (void)hinst;
-    (void)reserved;
+BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE hinst, DWORD dwReason, [[maybe_unused]] LPVOID reserved) {
     if (DetourIsHelperProcess()) {
         return TRUE;
     }

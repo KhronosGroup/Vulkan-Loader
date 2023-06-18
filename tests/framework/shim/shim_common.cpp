@@ -105,11 +105,8 @@ void PlatformShim::reset() {
     hkey_current_user_settings.clear();
 }
 
-void PlatformShim::set_fake_path(ManifestCategory category, fs::path const& path) {
-    (void)category;
-    (void)path;
-}
-void PlatformShim::add_known_path(fs::path const& path) { (void)path; }
+void PlatformShim::set_fake_path([[maybe_unused]] ManifestCategory category, [[maybe_unused]] fs::path const& path) {}
+void PlatformShim::add_known_path([[maybe_unused]] fs::path const& path) {}
 
 void PlatformShim::add_manifest(ManifestCategory category, fs::path const& path) {
     if (category == ManifestCategory::settings) {
@@ -145,10 +142,8 @@ void PlatformShim::set_app_package_path(fs::path const& path) {
 }
 
 // TODO:
-void PlatformShim::add_CM_Device_ID(std::wstring const& id, fs::path const& icd_path, fs::path const& layer_path) {
-    (void)id;
-    (void)icd_path;
-    (void)layer_path;
+void PlatformShim::add_CM_Device_ID([[maybe_unused]] std::wstring const& id, [[maybe_unused]] fs::path const& icd_path,
+                                    [[maybe_unused]] fs::path const& layer_path) {
     //     // append a null byte as separator if there is already id's in the list
     //     if (CM_device_ID_list.size() != 0) {
     //         CM_device_ID_list += L'\0';  // I'm sure this wont cause issues with std::string down the line... /s
@@ -194,14 +189,8 @@ bool PlatformShim::is_known_path(fs::path const& path) { return known_path_set.c
 void PlatformShim::add_known_path(fs::path const& path) { known_path_set.insert(path.str()); }
 void PlatformShim::remove_known_path(fs::path const& path) { known_path_set.erase(path.str()); }
 
-void PlatformShim::add_manifest(ManifestCategory category, fs::path const& path) {
-    (void)category;
-    (void)path;
-}
-void PlatformShim::add_unsecured_manifest(ManifestCategory category, fs::path const& path) {
-    (void)category;
-    (void)path;
-}
+void PlatformShim::add_manifest([[maybe_unused]] ManifestCategory category, [[maybe_unused]] fs::path const& path) {}
+void PlatformShim::add_unsecured_manifest([[maybe_unused]] ManifestCategory category, [[maybe_unused]] fs::path const& path) {}
 
 void parse_and_add_env_var_override(std::vector<std::string>& paths, std::string env_var_contents) {
     auto parsed_paths = parse_env_var_list(env_var_contents);

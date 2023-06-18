@@ -124,19 +124,14 @@ class MemoryTracker {
         std::lock_guard<std::mutex> lg(main_mutex);
         free(pMemory);
     }
-    void impl_internal_allocation_notification(size_t size, VkInternalAllocationType allocationType,
-                                               VkSystemAllocationScope allocationScope) noexcept {
-        (void)size;
-        (void)allocationType;
-        (void)allocationScope;
+    void impl_internal_allocation_notification([[maybe_unused]] size_t size,
+                                               [[maybe_unused]] VkInternalAllocationType allocationType,
+                                               [[maybe_unused]] VkSystemAllocationScope allocationScope) noexcept {
         std::lock_guard<std::mutex> lg(main_mutex);
         // TODO?
     }
-    void impl_internal_free(size_t size, VkInternalAllocationType allocationType,
-                            VkSystemAllocationScope allocationScope) noexcept {
-        (void)size;
-        (void)allocationType;
-        (void)allocationScope;
+    void impl_internal_free([[maybe_unused]] size_t size, [[maybe_unused]] VkInternalAllocationType allocationType,
+                            [[maybe_unused]] VkSystemAllocationScope allocationScope) noexcept {
         std::lock_guard<std::mutex> lg(main_mutex);
         // TODO?
     }

@@ -121,13 +121,10 @@ class DebugReportTest : public ::testing::Test {
 };
 
 // This is the actual callback prototyped above.
-VkBool32 VKAPI_CALL test_DebugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
-                                             size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage,
-                                             void* pUserData) {
-    (void)object;
-    (void)location;
-    (void)messageCode;
-    (void)pLayerPrefix;
+VkBool32 VKAPI_CALL test_DebugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
+                                             [[maybe_unused]] uint64_t object, [[maybe_unused]] size_t location,
+                                             [[maybe_unused]] int32_t messageCode, [[maybe_unused]] const char* pLayerPrefix,
+                                             const char* pMessage, void* pUserData) {
     DebugReportTest* debug_report_test = reinterpret_cast<DebugReportTest*>(pUserData);
     debug_report_test->VerifyExpected(flags, objectType, pMessage);
     return VK_FALSE;

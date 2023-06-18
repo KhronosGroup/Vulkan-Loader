@@ -758,8 +758,7 @@ std::vector<VkLayerProperties> FrameworkEnvironment::GetLayerProperties(uint32_t
     return layer_props;
 }
 
-const char* get_platform_wsi_extension(const char* api_selection) {
-    (void)api_selection;
+const char* get_platform_wsi_extension([[maybe_unused]] const char* api_selection) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     return "VK_KHR_android_surface";
 #elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
@@ -821,8 +820,8 @@ VkResult create_surface_helper(VulkanFunctions* functions, VkInstance inst, VkSu
     CreateInfo surf_create_info{};
     return pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface);
 }
-VkResult create_surface(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface, const char* api_selection) {
-    (void)api_selection;
+VkResult create_surface(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface,
+                        [[maybe_unused]] const char* api_selection) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     return create_surface_helper<PFN_vkCreateAndroidSurfaceKHR, VkAndroidSurfaceCreateInfoKHR>(functions, inst, surface,
                                                                                                "vkCreateAndroidSurfaceKHR");

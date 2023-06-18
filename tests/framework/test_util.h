@@ -306,7 +306,7 @@ inline loader_platform_dl_handle loader_platform_open_library(const char* lib_pa
 }
 inline char* loader_platform_open_library_error(const char* libPath) {
     static char errorMsg[164];
-    (void)snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
+    snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
     return errorMsg;
 }
 inline void loader_platform_close_library(loader_platform_dl_handle library) { FreeLibrary(library); }
@@ -317,7 +317,7 @@ inline void* loader_platform_get_proc_address(loader_platform_dl_handle library,
 }
 inline char* loader_platform_get_proc_address_error(const char* name) {
     static char errorMsg[120];
-    (void)snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
+    snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
     return errorMsg;
 }
 
@@ -327,20 +327,14 @@ typedef void* loader_platform_dl_handle;
 inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
 }
-inline const char* loader_platform_open_library_error(const char* libPath) {
-    (void)libPath;
-    return dlerror();
-}
+inline const char* loader_platform_open_library_error([[maybe_unused]] const char* libPath) { return dlerror(); }
 inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
 inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return dlsym(library, name);
 }
-inline const char* loader_platform_get_proc_address_error(const char* name) {
-    (void)name;
-    return dlerror();
-}
+inline const char* loader_platform_get_proc_address_error([[maybe_unused]] const char* name) { return dlerror(); }
 #endif
 
 class FromVoidStarFunc {

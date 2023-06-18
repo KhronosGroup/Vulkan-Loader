@@ -566,8 +566,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDev
 
 // trampolines
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName);
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl(VkDevice device, const char* pName) {
-    (void)device;
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl([[maybe_unused]] VkDevice device, const char* pName) {
     if (string_eq(pName, "vkGetDeviceProcAddr")) return to_vkVoidFunction(get_device_func);
     if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
 
@@ -586,16 +585,14 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl(VkDevice device, c
     return nullptr;
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName) {
-    (void)device;
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func([[maybe_unused]] VkDevice device, const char* pName) {
     PFN_vkVoidFunction ret_dev = get_device_func_impl(device, pName);
     if (ret_dev != nullptr) return ret_dev;
 
     return layer.next_vkGetDeviceProcAddr(device, pName);
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance instance, const char* pName) {
-    (void)instance;
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func([[maybe_unused]] VkInstance instance, const char* pName) {
     if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
     if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
         return to_vkVoidFunction(test_vkEnumerateDeviceExtensionProperties);
