@@ -655,8 +655,7 @@ TEST(MinorVersionUpdate, Version1_3) {
 
     auto phys_dev = inst.GetPhysDev();
 
-    auto GetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolProperties"));
+    PFN_vkGetPhysicalDeviceToolProperties GetPhysicalDeviceToolProperties = inst.load("vkGetPhysicalDeviceToolProperties");
     uint32_t tool_count = 0;
     ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceToolProperties(phys_dev, &tool_count, nullptr));
     ASSERT_EQ(tool_count, 0U);
@@ -666,12 +665,9 @@ TEST(MinorVersionUpdate, Version1_3) {
     DeviceWrapper device{inst};
     device.CheckCreate(phys_dev);
 
-    auto CreateCommandPool =
-        reinterpret_cast<PFN_vkCreateCommandPool>(inst.functions->vkGetDeviceProcAddr(device, "vkCreateCommandPool"));
-    auto AllocateCommandBuffers =
-        reinterpret_cast<PFN_vkAllocateCommandBuffers>(inst.functions->vkGetDeviceProcAddr(device, "vkAllocateCommandBuffers"));
-    auto DestroyCommandPool =
-        reinterpret_cast<PFN_vkDestroyCommandPool>(inst.functions->vkGetDeviceProcAddr(device, "vkDestroyCommandPool"));
+    PFN_vkCreateCommandPool CreateCommandPool = device.load("vkCreateCommandPool");
+    PFN_vkAllocateCommandBuffers AllocateCommandBuffers = device.load("vkAllocateCommandBuffers");
+    PFN_vkDestroyCommandPool DestroyCommandPool = device.load("vkDestroyCommandPool");
     VkCommandPool command_pool{};
     VkCommandPoolCreateInfo pool_create_info{};
     pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -684,140 +680,115 @@ TEST(MinorVersionUpdate, Version1_3) {
     ASSERT_EQ(VK_SUCCESS, AllocateCommandBuffers(device, &buffer_allocate_info, &command_buffer));
     DestroyCommandPool(device, command_pool, nullptr);
 
-    auto CmdBeginRendering =
-        reinterpret_cast<PFN_vkCmdBeginRendering>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdBeginRendering"));
+    PFN_vkCmdBeginRendering CmdBeginRendering = device.load("vkCmdBeginRendering");
     VkRenderingInfoKHR rendering_info{};
     CmdBeginRendering(command_buffer, &rendering_info);
 
-    auto CmdBindVertexBuffers2 =
-        reinterpret_cast<PFN_vkCmdBindVertexBuffers2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdBindVertexBuffers2"));
+    PFN_vkCmdBindVertexBuffers2 CmdBindVertexBuffers2 = device.load("vkCmdBindVertexBuffers2");
     CmdBindVertexBuffers2(command_buffer, 0, 0, nullptr, nullptr, nullptr, nullptr);
 
-    auto CmdBlitImage2 = reinterpret_cast<PFN_vkCmdBlitImage2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdBlitImage2"));
+    PFN_vkCmdBlitImage2 CmdBlitImage2 = device.load("vkCmdBlitImage2");
     VkBlitImageInfo2 image_info{};
     CmdBlitImage2(command_buffer, &image_info);
 
-    auto CmdCopyBuffer2 = reinterpret_cast<PFN_vkCmdCopyBuffer2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdCopyBuffer2"));
+    PFN_vkCmdCopyBuffer2 CmdCopyBuffer2 = device.load("vkCmdCopyBuffer2");
     VkCopyBufferInfo2 copy_info{};
     CmdCopyBuffer2(command_buffer, &copy_info);
 
-    auto CmdCopyBufferToImage2 =
-        reinterpret_cast<PFN_vkCmdCopyBufferToImage2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdCopyBufferToImage2"));
+    PFN_vkCmdCopyBufferToImage2 CmdCopyBufferToImage2 = device.load("vkCmdCopyBufferToImage2");
     VkCopyBufferToImageInfo2 copy_buf_image{};
     CmdCopyBufferToImage2(command_buffer, &copy_buf_image);
 
-    auto CmdCopyImage2 = reinterpret_cast<PFN_vkCmdCopyImage2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdCopyImage2"));
+    PFN_vkCmdCopyImage2 CmdCopyImage2 = device.load("vkCmdCopyImage2");
     VkCopyImageInfo2 copy_image_info{};
     CmdCopyImage2(command_buffer, &copy_image_info);
 
-    auto CmdCopyImageToBuffer2 =
-        reinterpret_cast<PFN_vkCmdCopyImageToBuffer2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdCopyImageToBuffer2"));
+    PFN_vkCmdCopyImageToBuffer2 CmdCopyImageToBuffer2 = device.load("vkCmdCopyImageToBuffer2");
     VkCopyImageToBufferInfo2 copy_image_buf;
     CmdCopyImageToBuffer2(command_buffer, &copy_image_buf);
 
-    auto CmdEndRendering =
-        reinterpret_cast<PFN_vkCmdEndRendering>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdEndRendering"));
+    PFN_vkCmdEndRendering CmdEndRendering = device.load("vkCmdEndRendering");
     CmdEndRendering(command_buffer);
 
-    auto CmdPipelineBarrier2 =
-        reinterpret_cast<PFN_vkCmdPipelineBarrier2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdPipelineBarrier2"));
+    PFN_vkCmdPipelineBarrier2 CmdPipelineBarrier2 = device.load("vkCmdPipelineBarrier2");
     VkDependencyInfo deps_info;
     CmdPipelineBarrier2(command_buffer, &deps_info);
 
-    auto CmdResetEvent2 = reinterpret_cast<PFN_vkCmdResetEvent2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdResetEvent2"));
+    PFN_vkCmdResetEvent2 CmdResetEvent2 = device.load("vkCmdResetEvent2");
     CmdResetEvent2(command_buffer, {}, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
 
-    auto CmdResolveImage2 =
-        reinterpret_cast<PFN_vkCmdResolveImage2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdResolveImage2"));
+    PFN_vkCmdResolveImage2 CmdResolveImage2 = device.load("vkCmdResolveImage2");
     VkResolveImageInfo2 resolve_image{};
     CmdResolveImage2(command_buffer, &resolve_image);
 
-    auto CmdSetCullMode = reinterpret_cast<PFN_vkCmdSetCullMode>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetCullMode"));
+    PFN_vkCmdSetCullMode CmdSetCullMode = device.load("vkCmdSetCullMode");
     CmdSetCullMode(command_buffer, VK_CULL_MODE_BACK_BIT);
 
-    auto CmdSetDepthBiasEnable =
-        reinterpret_cast<PFN_vkCmdSetDepthBiasEnable>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetDepthBiasEnable"));
+    PFN_vkCmdSetDepthBiasEnable CmdSetDepthBiasEnable = device.load("vkCmdSetDepthBiasEnable");
     CmdSetDepthBiasEnable(command_buffer, true);
 
-    auto CmdSetDepthBoundsTestEnable = reinterpret_cast<PFN_vkCmdSetDepthBoundsTestEnable>(
-        inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetDepthBoundsTestEnable"));
+    PFN_vkCmdSetDepthBoundsTestEnable CmdSetDepthBoundsTestEnable = device.load("vkCmdSetDepthBoundsTestEnable");
     CmdSetDepthBoundsTestEnable(command_buffer, true);
 
-    auto CmdSetDepthCompareOp =
-        reinterpret_cast<PFN_vkCmdSetDepthCompareOp>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetDepthCompareOp"));
+    PFN_vkCmdSetDepthCompareOp CmdSetDepthCompareOp = device.load("vkCmdSetDepthCompareOp");
     CmdSetDepthCompareOp(command_buffer, VK_COMPARE_OP_ALWAYS);
 
-    auto CmdSetDepthTestEnable =
-        reinterpret_cast<PFN_vkCmdSetDepthTestEnable>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetDepthTestEnable"));
+    PFN_vkCmdSetDepthTestEnable CmdSetDepthTestEnable = device.load("vkCmdSetDepthTestEnable");
     CmdSetDepthTestEnable(command_buffer, true);
 
-    auto CmdSetDepthWriteEnable =
-        reinterpret_cast<PFN_vkCmdSetDepthWriteEnable>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetDepthWriteEnable"));
+    PFN_vkCmdSetDepthWriteEnable CmdSetDepthWriteEnable = device.load("vkCmdSetDepthWriteEnable");
     CmdSetDepthWriteEnable(command_buffer, true);
 
-    auto CmdSetEvent2 = reinterpret_cast<PFN_vkCmdSetEvent2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetEvent2"));
+    PFN_vkCmdSetEvent2 CmdSetEvent2 = device.load("vkCmdSetEvent2");
     CmdSetEvent2(command_buffer, {}, &deps_info);
 
-    auto CmdSetFrontFace =
-        reinterpret_cast<PFN_vkCmdSetFrontFace>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetFrontFace"));
+    PFN_vkCmdSetFrontFace CmdSetFrontFace = device.load("vkCmdSetFrontFace");
     CmdSetFrontFace(command_buffer, VK_FRONT_FACE_CLOCKWISE);
 
-    auto CmdSetPrimitiveRestartEnable = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartEnable>(
-        inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetPrimitiveRestartEnable"));
+    PFN_vkCmdSetPrimitiveRestartEnable CmdSetPrimitiveRestartEnable = device.load("vkCmdSetPrimitiveRestartEnable");
     CmdSetPrimitiveRestartEnable(command_buffer, true);
 
-    auto CmdSetPrimitiveTopology =
-        reinterpret_cast<PFN_vkCmdSetPrimitiveTopology>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetPrimitiveTopology"));
+    PFN_vkCmdSetPrimitiveTopology CmdSetPrimitiveTopology = device.load("vkCmdSetPrimitiveTopology");
     CmdSetPrimitiveTopology(command_buffer, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
 
-    auto CmdSetRasterizerDiscardEnable = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnable>(
-        inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetRasterizerDiscardEnable"));
+    PFN_vkCmdSetRasterizerDiscardEnable CmdSetRasterizerDiscardEnable = device.load("vkCmdSetRasterizerDiscardEnable");
     CmdSetRasterizerDiscardEnable(command_buffer, true);
 
-    auto CmdSetScissorWithCount =
-        reinterpret_cast<PFN_vkCmdSetScissorWithCount>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetScissorWithCount"));
+    PFN_vkCmdSetScissorWithCount CmdSetScissorWithCount = device.load("vkCmdSetScissorWithCount");
     CmdSetScissorWithCount(command_buffer, 0, nullptr);
 
-    auto CmdSetStencilOp =
-        reinterpret_cast<PFN_vkCmdSetStencilOp>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetStencilOp"));
+    PFN_vkCmdSetStencilOp CmdSetStencilOp = device.load("vkCmdSetStencilOp");
     CmdSetStencilOp(command_buffer, VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_DECREMENT_AND_WRAP, VK_STENCIL_OP_DECREMENT_AND_CLAMP,
                     VK_STENCIL_OP_DECREMENT_AND_WRAP, VK_COMPARE_OP_ALWAYS);
 
-    auto CmdSetStencilTestEnable =
-        reinterpret_cast<PFN_vkCmdSetStencilTestEnable>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetStencilTestEnable"));
+    PFN_vkCmdSetStencilTestEnable CmdSetStencilTestEnable = device.load("vkCmdSetStencilTestEnable");
     CmdSetStencilTestEnable(command_buffer, true);
 
-    auto CmdSetViewportWithCount =
-        reinterpret_cast<PFN_vkCmdSetViewportWithCount>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdSetViewportWithCount"));
+    PFN_vkCmdSetViewportWithCount CmdSetViewportWithCount = device.load("vkCmdSetViewportWithCount");
     CmdSetViewportWithCount(command_buffer, 0, nullptr);
 
-    auto CmdWaitEvents2 = reinterpret_cast<PFN_vkCmdWaitEvents2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdWaitEvents2"));
+    PFN_vkCmdWaitEvents2 CmdWaitEvents2 = device.load("vkCmdWaitEvents2");
     CmdWaitEvents2(command_buffer, 0, nullptr, &deps_info);
 
-    auto CmdWriteTimestamp2 =
-        reinterpret_cast<PFN_vkCmdWriteTimestamp2>(inst.functions->vkGetDeviceProcAddr(device, "vkCmdWriteTimestamp2"));
+    PFN_vkCmdWriteTimestamp2 CmdWriteTimestamp2 = device.load("vkCmdWriteTimestamp2");
     CmdWriteTimestamp2(command_buffer, VK_PIPELINE_STAGE_2_BLIT_BIT, {}, 0);
 
-    auto CreatePrivateDataSlot =
-        reinterpret_cast<PFN_vkCreatePrivateDataSlot>(inst.functions->vkGetDeviceProcAddr(device, "vkCreatePrivateDataSlot"));
+    PFN_vkCreatePrivateDataSlot CreatePrivateDataSlot = device.load("vkCreatePrivateDataSlot");
     CreatePrivateDataSlot(device, nullptr, nullptr, nullptr);
-    auto DestroyPrivateDataSlot =
-        reinterpret_cast<PFN_vkDestroyPrivateDataSlot>(inst.functions->vkGetDeviceProcAddr(device, "vkDestroyPrivateDataSlot"));
+    PFN_vkDestroyPrivateDataSlot DestroyPrivateDataSlot = device.load("vkDestroyPrivateDataSlot");
     DestroyPrivateDataSlot(device, VK_NULL_HANDLE, nullptr);
-    auto GetDeviceBufferMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceBufferMemoryRequirements>(
-        inst.functions->vkGetDeviceProcAddr(device, "vkGetDeviceBufferMemoryRequirements"));
+    PFN_vkGetDeviceBufferMemoryRequirements GetDeviceBufferMemoryRequirements = device.load("vkGetDeviceBufferMemoryRequirements");
     GetDeviceBufferMemoryRequirements(device, nullptr, nullptr);
-    auto GetDeviceImageMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirements>(
-        inst.functions->vkGetDeviceProcAddr(device, "vkGetDeviceImageMemoryRequirements"));
+    PFN_vkGetDeviceImageMemoryRequirements GetDeviceImageMemoryRequirements = device.load("vkGetDeviceImageMemoryRequirements");
     GetDeviceImageMemoryRequirements(device, nullptr, nullptr);
-    auto GetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(
-        inst.functions->vkGetDeviceProcAddr(device, "vkGetDeviceImageSparseMemoryRequirements"));
+    PFN_vkGetDeviceImageSparseMemoryRequirements GetDeviceImageSparseMemoryRequirements =
+        device.load("vkGetDeviceImageSparseMemoryRequirements");
     GetDeviceImageSparseMemoryRequirements(device, nullptr, nullptr, nullptr);
-    auto GetPrivateData = reinterpret_cast<PFN_vkGetPrivateData>(inst.functions->vkGetDeviceProcAddr(device, "vkGetPrivateData"));
+    PFN_vkGetPrivateData GetPrivateData = device.load("vkGetPrivateData");
     GetPrivateData(device, VK_OBJECT_TYPE_UNKNOWN, 0, {}, nullptr);
-    auto QueueSubmit2 = reinterpret_cast<PFN_vkQueueSubmit2>(inst.functions->vkGetDeviceProcAddr(device, "vkQueueSubmit2"));
+    PFN_vkQueueSubmit2 QueueSubmit2 = device.load("vkQueueSubmit2");
     QueueSubmit2(nullptr, 0, nullptr, VK_NULL_HANDLE);
-    auto SetPrivateData = reinterpret_cast<PFN_vkSetPrivateData>(inst.functions->vkGetDeviceProcAddr(device, "vkSetPrivateData"));
+    PFN_vkSetPrivateData SetPrivateData = device.load("vkSetPrivateData");
     SetPrivateData(device, VK_OBJECT_TYPE_UNKNOWN, 0, {}, 0);
 }
 
