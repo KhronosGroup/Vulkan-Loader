@@ -1754,8 +1754,7 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
         inst.create_info.add_extension(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
         inst.CheckCreate();
 
-        auto vkEnumeratePhysicalDeviceGroupsKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroupsKHR>(
-            env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkEnumeratePhysicalDeviceGroupsKHR"));
+        PFN_vkEnumeratePhysicalDeviceGroupsKHR vkEnumeratePhysicalDeviceGroupsKHR = inst.load("vkEnumeratePhysicalDeviceGroupsKHR");
 
         auto physical_devices = std::vector<VkPhysicalDevice>(max_physical_device_count);
         uint32_t returned_phys_dev_count = max_physical_device_count;
@@ -1875,8 +1874,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_phys_dev_count, physical_devices.data()));
         handle_assert_has_values(physical_devices);
 
-        auto vkEnumeratePhysicalDeviceGroupsKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroupsKHR>(
-            env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkEnumeratePhysicalDeviceGroupsKHR"));
+        PFN_vkEnumeratePhysicalDeviceGroupsKHR vkEnumeratePhysicalDeviceGroupsKHR = inst.load("vkEnumeratePhysicalDeviceGroupsKHR");
 
         uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = 0;
@@ -1985,8 +1983,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         inst.create_info.add_extension("VK_KHR_device_group_creation");
         inst.CheckCreate();
 
-        auto vkEnumeratePhysicalDeviceGroupsKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroupsKHR>(
-            env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkEnumeratePhysicalDeviceGroupsKHR"));
+        PFN_vkEnumeratePhysicalDeviceGroupsKHR vkEnumeratePhysicalDeviceGroupsKHR = inst.load("vkEnumeratePhysicalDeviceGroupsKHR");
 
         uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = 0;
@@ -2076,8 +2073,7 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, core_group_props.data()));
     ASSERT_EQ(core_group_count, returned_group_count);
 
-    auto vkEnumeratePhysicalDeviceGroupsKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroupsKHR>(
-        env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkEnumeratePhysicalDeviceGroupsKHR"));
+    PFN_vkEnumeratePhysicalDeviceGroupsKHR vkEnumeratePhysicalDeviceGroupsKHR = inst.load("vkEnumeratePhysicalDeviceGroupsKHR");
 
     ext_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
     returned_group_count = 0;
@@ -2667,8 +2663,7 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
     inst.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceProperties2"));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = inst.load("vkGetPhysicalDeviceProperties2");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
     // NOTE: This is a fake struct to make sure the pNext chain is properly passed down to the ICD
@@ -2718,8 +2713,7 @@ TEST(ExtensionManual, ToolingProperties) {
 
         auto phys_dev = inst.GetPhysDev();
 
-        auto getToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
-            inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolPropertiesEXT"));
+        PFN_vkGetPhysicalDeviceToolPropertiesEXT getToolProperties = inst.load("vkGetPhysicalDeviceToolPropertiesEXT");
         handle_assert_has_value(getToolProperties);
 
         uint32_t tool_count = 0;
@@ -2739,8 +2733,7 @@ TEST(ExtensionManual, ToolingProperties) {
 
         auto phys_dev = inst.GetPhysDev();
 
-        auto getToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
-            inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolPropertiesEXT"));
+        PFN_vkGetPhysicalDeviceToolPropertiesEXT getToolProperties = inst.load("vkGetPhysicalDeviceToolPropertiesEXT");
         handle_assert_has_value(getToolProperties);
         uint32_t tool_count = 0;
         ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, nullptr));
@@ -2763,8 +2756,7 @@ TEST(ExtensionManual, ToolingProperties) {
 
         auto phys_dev = inst.GetPhysDev();
 
-        auto getToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(
-            inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceToolProperties"));
+        PFN_vkGetPhysicalDeviceToolProperties getToolProperties = inst.load("vkGetPhysicalDeviceToolProperties");
         handle_assert_has_value(getToolProperties);
         uint32_t tool_count = 0;
         ASSERT_EQ(VK_SUCCESS, getToolProperties(phys_dev, &tool_count, nullptr));
@@ -2954,8 +2946,7 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled10AppExt) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
+    PFN_vkGetPhysicalDeviceProperties2KHR GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2KHR");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
     const uint32_t max_phys_devs = 6;
@@ -3081,8 +3072,7 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled11) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
     const uint32_t max_phys_devs = 6;
@@ -3353,8 +3343,7 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
     inst.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceProperties2"));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = inst.load("vkGetPhysicalDeviceProperties2");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
     const uint32_t max_phys_devs = 8;
@@ -3539,8 +3528,7 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
     inst.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceProperties2"));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = inst.load("vkGetPhysicalDeviceProperties2");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
     const uint32_t max_phys_devs = 8;

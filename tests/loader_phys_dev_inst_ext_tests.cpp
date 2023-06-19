@@ -65,8 +65,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
+    PFN_vkGetPhysicalDeviceProperties2KHR GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2KHR");
     ASSERT_EQ(GetPhysDevProps2, nullptr);
 }
 
@@ -80,8 +79,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
+    PFN_vkGetPhysicalDeviceProperties2KHR GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2KHR");
     ASSERT_EQ(GetPhysDevProps2, nullptr);
 }
 
@@ -97,8 +95,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
+    PFN_vkGetPhysicalDeviceProperties2KHR GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2KHR");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
     uint32_t driver_count = 1;
@@ -136,8 +133,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+        PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2");
         ASSERT_NE(GetPhysDevProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -166,8 +162,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+        PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2");
         ASSERT_NE(GetPhysDevProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -202,8 +197,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+        PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2");
         ASSERT_NE(GetPhysDevProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -245,12 +239,10 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRInstanceSupports11) {
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
-    auto GetPhysDevProps2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2KHR = instance.load("vkGetPhysicalDeviceProperties2KHR");
     ASSERT_NE(GetPhysDevProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
@@ -338,8 +330,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Mixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = instance.load("vkGetPhysicalDeviceProperties2");
     ASSERT_NE(GetPhysDevProps2, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -482,9 +473,8 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR"));
-    ASSERT_EQ(GetPhysDevFeats2, nullptr);
+    PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysDevFeats2KHR = instance.load("vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_EQ(GetPhysDevFeats2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceFeatures2KHR where instance supports it, but nothing else.
@@ -497,9 +487,8 @@ TEST(LoaderInstPhysDevExts, PhysDevFeatsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR"));
-    ASSERT_EQ(GetPhysDevFeats2, nullptr);
+    PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysDevFeats2KHR = instance.load("vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_EQ(GetPhysDevFeats2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceFeatures2KHR where instance and ICD supports it, but device does not support it.
@@ -514,9 +503,8 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR"));
-    ASSERT_NE(GetPhysDevFeats2, nullptr);
+    PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysDevFeats2KHR = instance.load("vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_NE(GetPhysDevFeats2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -526,7 +514,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceAndICDSupport) {
     VkPhysicalDeviceFeatures feats{};
     instance->vkGetPhysicalDeviceFeatures(physical_device, &feats);
     VkPhysicalDeviceFeatures2 feats2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR};
-    GetPhysDevFeats2(physical_device, &feats2);
+    GetPhysDevFeats2KHR(physical_device, &feats2);
     ASSERT_TRUE(CompareFeatures(feats, feats2));
 }
 
@@ -546,8 +534,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+        PFN_vkGetPhysicalDeviceFeatures2 GetPhysDevFeats2 = instance.load("vkGetPhysicalDeviceFeatures2");
         ASSERT_NE(GetPhysDevFeats2, nullptr);
 
         uint32_t driver_count = 1;
@@ -568,8 +555,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+        PFN_vkGetPhysicalDeviceFeatures2 GetPhysDevFeats2 = instance.load("vkGetPhysicalDeviceFeatures2");
         ASSERT_NE(GetPhysDevFeats2, nullptr);
 
         uint32_t driver_count = 1;
@@ -598,8 +584,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+        PFN_vkGetPhysicalDeviceFeatures2 GetPhysDevFeats2 = instance.load("vkGetPhysicalDeviceFeatures2");
         ASSERT_NE(GetPhysDevFeats2, nullptr);
 
         uint32_t driver_count = 1;
@@ -635,12 +620,10 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceSupports11) {
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevFeats2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR"));
+    PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysDevFeats2KHR = instance.load("vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_NE(GetPhysDevFeats2KHR, nullptr);
 
-    auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+    PFN_vkGetPhysicalDeviceFeatures2 GetPhysDevFeats2 = instance.load("vkGetPhysicalDeviceFeatures2");
     ASSERT_NE(GetPhysDevFeats2, nullptr);
 
     uint32_t driver_count = 1;
@@ -718,8 +701,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeatsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevFeats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+    PFN_vkGetPhysicalDeviceFeatures2 GetPhysDevFeats2 = instance.load("vkGetPhysicalDeviceFeatures2");
     ASSERT_NE(GetPhysDevFeats2, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -755,9 +737,9 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2KHR"));
-    ASSERT_EQ(GetPhysDevFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceFormatProperties2KHR GetPhysDevFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceFormatProperties2KHR");
+    ASSERT_EQ(GetPhysDevFormatProps2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceFormatProperties2KHR where instance supports it, but nothing else.
@@ -770,9 +752,9 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2KHR"));
-    ASSERT_EQ(GetPhysDevFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceFormatProperties2KHR GetPhysDevFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceFormatProperties2KHR");
+    ASSERT_EQ(GetPhysDevFormatProps2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceFormatProperties2KHR where instance and ICD supports it, but device does not support it.
@@ -790,9 +772,9 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceAndICDSupport) {
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2KHR"));
-    ASSERT_NE(GetPhysDevFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceFormatProperties2KHR GetPhysDevFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceFormatProperties2KHR");
+    ASSERT_NE(GetPhysDevFormatProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -802,7 +784,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceAndICDSupport) {
     VkFormatProperties props{};
     instance->vkGetPhysicalDeviceFormatProperties(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props);
     VkFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
-    GetPhysDevFormatProps2(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props2);
+    GetPhysDevFormatProps2KHR(physical_device, VK_FORMAT_R4G4_UNORM_PACK8, &props2);
 
     ASSERT_EQ(props.bufferFeatures, props2.formatProperties.bufferFeatures);
     ASSERT_EQ(props.linearTilingFeatures, props2.formatProperties.linearTilingFeatures);
@@ -825,8 +807,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+        PFN_vkGetPhysicalDeviceFormatProperties2 GetPhysDevFormatProps2 = instance.load("vkGetPhysicalDeviceFormatProperties2");
         ASSERT_NE(GetPhysDevFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -850,8 +831,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+        PFN_vkGetPhysicalDeviceFormatProperties2 GetPhysDevFormatProps2 = instance.load("vkGetPhysicalDeviceFormatProperties2");
         ASSERT_NE(GetPhysDevFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -882,8 +862,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+        PFN_vkGetPhysicalDeviceFormatProperties2 GetPhysDevFormatProps2 = instance.load("vkGetPhysicalDeviceFormatProperties2");
         ASSERT_NE(GetPhysDevFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -920,12 +899,11 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceSupports11) {
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+    PFN_vkGetPhysicalDeviceFormatProperties2 GetPhysDevFormatProps2 = instance.load("vkGetPhysicalDeviceFormatProperties2");
     ASSERT_NE(GetPhysDevFormatProps2, nullptr);
 
-    auto GetPhysDevFormatProps2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2KHR"));
+    PFN_vkGetPhysicalDeviceFormatProperties2KHR GetPhysDevFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceFormatProperties2KHR");
     ASSERT_NE(GetPhysDevFormatProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
@@ -1008,8 +986,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatPropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties2"));
+    PFN_vkGetPhysicalDeviceFormatProperties2 GetPhysDevFormatProps2 = instance.load("vkGetPhysicalDeviceFormatProperties2");
     ASSERT_NE(GetPhysDevFormatProps2, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -1049,8 +1026,8 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2KHR"));
+    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPhysDevImageFormatProps2 =
+        instance.load("vkGetPhysicalDeviceImageFormatProperties2KHR");
     ASSERT_EQ(GetPhysDevImageFormatProps2, nullptr);
 }
 
@@ -1064,9 +1041,9 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2KHR"));
-    ASSERT_EQ(GetPhysDevImageFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPhysDevImageFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceImageFormatProperties2KHR");
+    ASSERT_EQ(GetPhysDevImageFormatProps2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceImageFormatProperties2KHR where instance and ICD supports it, but device does not support it.
@@ -1081,9 +1058,9 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2KHR"));
-    ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPhysDevImageFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceImageFormatProperties2KHR");
+    ASSERT_NE(GetPhysDevImageFormatProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -1105,7 +1082,7 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRInstanceAndICDSupport) {
         0,                                                      // flags
     };
     VkImageFormatProperties2 props2{VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
-    ASSERT_EQ(VK_SUCCESS, GetPhysDevImageFormatProps2(physical_device, &info2, &props2));
+    ASSERT_EQ(VK_SUCCESS, GetPhysDevImageFormatProps2KHR(physical_device, &info2, &props2));
 
     ASSERT_EQ(props.maxExtent.width, props2.imageFormatProperties.maxExtent.width);
     ASSERT_EQ(props.maxExtent.height, props2.imageFormatProperties.maxExtent.height);
@@ -1132,8 +1109,8 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+        PFN_vkGetPhysicalDeviceImageFormatProperties2 GetPhysDevImageFormatProps2 =
+            instance.load("vkGetPhysicalDeviceImageFormatProperties2");
         ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1174,8 +1151,8 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+        PFN_vkGetPhysicalDeviceImageFormatProperties2 GetPhysDevImageFormatProps2 =
+            instance.load("vkGetPhysicalDeviceImageFormatProperties2");
         ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1223,8 +1200,8 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+        PFN_vkGetPhysicalDeviceImageFormatProperties2 GetPhysDevImageFormatProps2 =
+            instance.load("vkGetPhysicalDeviceImageFormatProperties2");
         ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1279,12 +1256,12 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2KHRInstanceSupports11) {
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+    PFN_vkGetPhysicalDeviceImageFormatProperties2 GetPhysDevImageFormatProps2 =
+        instance.load("vkGetPhysicalDeviceImageFormatProperties2");
     ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
 
-    auto GetPhysDevImageFormatProps2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2KHR"));
+    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPhysDevImageFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceImageFormatProperties2KHR");
     ASSERT_NE(GetPhysDevImageFormatProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
@@ -1388,8 +1365,8 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatPropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties2"));
+    PFN_vkGetPhysicalDeviceImageFormatProperties2 GetPhysDevImageFormatProps2 =
+        instance.load("vkGetPhysicalDeviceImageFormatProperties2");
     ASSERT_NE(GetPhysDevImageFormatProps2, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -1434,9 +1411,9 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2KHR"));
-    ASSERT_EQ(GetPhysDevMemoryProps2, nullptr);
+    PFN_vkGetPhysicalDeviceMemoryProperties2KHR GetPhysDevMemoryProps2KHR =
+        instance.load("vkGetPhysicalDeviceMemoryProperties2KHR");
+    ASSERT_EQ(GetPhysDevMemoryProps2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceMemoryProperties2KHR where instance supports it, but nothing else.
@@ -1449,9 +1426,9 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2KHR"));
-    ASSERT_EQ(GetPhysDevMemoryProps2, nullptr);
+    PFN_vkGetPhysicalDeviceMemoryProperties2KHR GetPhysDevMemoryProps2KHR =
+        instance.load("vkGetPhysicalDeviceMemoryProperties2KHR");
+    ASSERT_EQ(GetPhysDevMemoryProps2KHR, nullptr);
 }
 
 // Fill in random but valid data into the memory data struct for the current physical device
@@ -1496,9 +1473,9 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2KHR"));
-    ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
+    PFN_vkGetPhysicalDeviceMemoryProperties2KHR GetPhysDevMemoryProps2KHR =
+        instance.load("vkGetPhysicalDeviceMemoryProperties2KHR");
+    ASSERT_NE(GetPhysDevMemoryProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -1509,7 +1486,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRInstanceAndICDSupport) {
     instance->vkGetPhysicalDeviceMemoryProperties(physical_device, &props);
 
     VkPhysicalDeviceMemoryProperties2 props2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
-    GetPhysDevMemoryProps2(physical_device, &props2);
+    GetPhysDevMemoryProps2KHR(physical_device, &props2);
     ASSERT_TRUE(CompareMemoryData(props, props2));
 }
 
@@ -1529,8 +1506,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+        PFN_vkGetPhysicalDeviceMemoryProperties2 GetPhysDevMemoryProps2 = instance.load("vkGetPhysicalDeviceMemoryProperties2");
         ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1552,8 +1528,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+        PFN_vkGetPhysicalDeviceMemoryProperties2 GetPhysDevMemoryProps2 = instance.load("vkGetPhysicalDeviceMemoryProperties2");
         ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1582,8 +1557,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+        PFN_vkGetPhysicalDeviceMemoryProperties2 GetPhysDevMemoryProps2 = instance.load("vkGetPhysicalDeviceMemoryProperties2");
         ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1619,12 +1593,11 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2KHRInstanceSupports11) {
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+    PFN_vkGetPhysicalDeviceMemoryProperties2 GetPhysDevMemoryProps2 = instance.load("vkGetPhysicalDeviceMemoryProperties2");
     ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
 
-    auto GetPhysDevMemoryProps2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2KHR"));
+    PFN_vkGetPhysicalDeviceMemoryProperties2KHR GetPhysDevMemoryProps2KHR =
+        instance.load("vkGetPhysicalDeviceMemoryProperties2KHR");
     ASSERT_NE(GetPhysDevMemoryProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
@@ -1701,8 +1674,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryPropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevMemoryProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties2"));
+    PFN_vkGetPhysicalDeviceMemoryProperties2 GetPhysDevMemoryProps2 = instance.load("vkGetPhysicalDeviceMemoryProperties2");
     ASSERT_NE(GetPhysDevMemoryProps2, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -1729,9 +1701,9 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"));
-    ASSERT_EQ(GetPhysDevQueueFamilyProps2, nullptr);
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR GetPhysDevQueueFamilyProps2KHR =
+        instance.load("vkGetPhysicalDeviceQueueFamilyProperties2KHR");
+    ASSERT_EQ(GetPhysDevQueueFamilyProps2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceQueueFamilyProperties2KHR where instance supports it, but nothing else.
@@ -1744,9 +1716,9 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"));
-    ASSERT_EQ(GetPhysDevQueueFamilyProps2, nullptr);
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR GetPhysDevQueueFamilyProps2KHR =
+        instance.load("vkGetPhysicalDeviceQueueFamilyProperties2KHR");
+    ASSERT_EQ(GetPhysDevQueueFamilyProps2KHR, nullptr);
 }
 
 // Fill in random but valid data into the queue family data struct for the current physical device
@@ -1795,9 +1767,9 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"));
-    ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR GetPhysDevQueueFamilyProps2KHR =
+        instance.load("vkGetPhysicalDeviceQueueFamilyProperties2KHR");
+    ASSERT_NE(GetPhysDevQueueFamilyProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -1814,10 +1786,10 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRInstanceAndICDSupport) {
 
     std::vector<VkQueueFamilyProperties2> props2{};
     uint32_t ret_fam_2 = 0;
-    GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, nullptr);
+    GetPhysDevQueueFamilyProps2KHR(physical_device, &ret_fam_2, nullptr);
     ASSERT_EQ(ret_fam_1, ret_fam_2);
     props2.resize(ret_fam_2, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
-    GetPhysDevQueueFamilyProps2(physical_device, &ret_fam_2, props2.data());
+    GetPhysDevQueueFamilyProps2KHR(physical_device, &ret_fam_2, props2.data());
     ASSERT_TRUE(CompareQueueFamilyData(props, props2));
 }
 
@@ -1837,8 +1809,8 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+        PFN_vkGetPhysicalDeviceQueueFamilyProperties2 GetPhysDevQueueFamilyProps2 =
+            instance.load("vkGetPhysicalDeviceQueueFamilyProperties2");
         ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1869,8 +1841,8 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+        PFN_vkGetPhysicalDeviceQueueFamilyProperties2 GetPhysDevQueueFamilyProps2 =
+            instance.load("vkGetPhysicalDeviceQueueFamilyProperties2");
         ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1908,8 +1880,8 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+        PFN_vkGetPhysicalDeviceQueueFamilyProperties2 GetPhysDevQueueFamilyProps2 =
+            instance.load("vkGetPhysicalDeviceQueueFamilyProperties2");
         ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -1954,12 +1926,12 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2KHRInstanceSupports11) {
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2 GetPhysDevQueueFamilyProps2 =
+        instance.load("vkGetPhysicalDeviceQueueFamilyProperties2");
     ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
 
-    auto GetPhysDevQueueFamilyProps2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2KHR"));
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR GetPhysDevQueueFamilyProps2KHR =
+        instance.load("vkGetPhysicalDeviceQueueFamilyProperties2KHR");
     ASSERT_NE(GetPhysDevQueueFamilyProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
@@ -2050,8 +2022,8 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyPropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevQueueFamilyProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties2"));
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2 GetPhysDevQueueFamilyProps2 =
+        instance.load("vkGetPhysicalDeviceQueueFamilyProperties2");
     ASSERT_NE(GetPhysDevQueueFamilyProps2, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -2085,9 +2057,9 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"));
-    ASSERT_EQ(GetPhysDevSparseImageFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR GetPhysDevSparseImageFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2KHR");
+    ASSERT_EQ(GetPhysDevSparseImageFormatProps2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceSparseImageFormatProperties2KHR where instance supports it, but nothing else.
@@ -2100,9 +2072,9 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"));
-    ASSERT_EQ(GetPhysDevSparseImageFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR GetPhysDevSparseImageFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2KHR");
+    ASSERT_EQ(GetPhysDevSparseImageFormatProps2KHR, nullptr);
 }
 
 // Fill in random but valid data into the sparse image format data struct for the current physical device
@@ -2143,9 +2115,9 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRInstanceAndICDSuppo
     instance.create_info.add_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"));
-    ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
+    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR GetPhysDevSparseImageFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2KHR");
+    ASSERT_NE(GetPhysDevSparseImageFormatProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -2175,10 +2147,10 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRInstanceAndICDSuppo
     };
     std::vector<VkSparseImageFormatProperties2> props2{};
     uint32_t sparse_count_2 = 0;
-    GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, nullptr);
+    GetPhysDevSparseImageFormatProps2KHR(physical_device, &info2, &sparse_count_2, nullptr);
     ASSERT_EQ(sparse_count_1, sparse_count_2);
     props2.resize(sparse_count_2, VkSparseImageFormatProperties2{VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2});
-    GetPhysDevSparseImageFormatProps2(physical_device, &info2, &sparse_count_2, props2.data());
+    GetPhysDevSparseImageFormatProps2KHR(physical_device, &info2, &sparse_count_2, props2.data());
     ASSERT_EQ(sparse_count_1, sparse_count_2);
     ASSERT_TRUE(CompareSparseImageFormatData(props, props2));
 }
@@ -2199,8 +2171,8 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+        PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 GetPhysDevSparseImageFormatProps2 =
+            instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2");
         ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -2245,8 +2217,8 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+        PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 GetPhysDevSparseImageFormatProps2 =
+            instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2");
         ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -2298,8 +2270,8 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+        PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 GetPhysDevSparseImageFormatProps2 =
+            instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2");
         ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
 
         uint32_t driver_count = 1;
@@ -2358,12 +2330,12 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2KHRInstanceSupports11)
     DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     CreateDebugUtilsMessenger(log);
 
-    auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 GetPhysDevSparseImageFormatProps2 =
+        instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2");
     ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
 
-    auto GetPhysDevSparseImageFormatProps2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR"));
+    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR GetPhysDevSparseImageFormatProps2KHR =
+        instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2KHR");
     ASSERT_NE(GetPhysDevSparseImageFormatProps2KHR, nullptr);
 
     uint32_t driver_count = 1;
@@ -2469,8 +2441,8 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatPropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysDevSparseImageFormatProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
+    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 GetPhysDevSparseImageFormatProps2 =
+        instance.load("vkGetPhysicalDeviceSparseImageFormatProperties2");
     ASSERT_NE(GetPhysDevSparseImageFormatProps2, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -2524,9 +2496,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufPropsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceExternalBufferProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR GetPhysicalDeviceExternalBufferPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceExternalBufferPropertiesKHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceExternalBufferPropertiesKHR where instance supports it, but nothing else.
@@ -2539,9 +2511,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceExternalBufferProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR GetPhysicalDeviceExternalBufferPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceExternalBufferPropertiesKHR, nullptr);
 }
 
 // Fill in random but valid data into the external memorydata struct for the current physical device
@@ -2579,9 +2551,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR GetPhysicalDeviceExternalBufferPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceExternalBufferPropertiesKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -2590,7 +2562,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2KHRInstanceAndICDSupport) {
 
     VkPhysicalDeviceExternalBufferInfoKHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR};
     VkExternalBufferPropertiesKHR props{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR};
-    GetPhysicalDeviceExternalBufferProperties(physical_device, &info, &props);
+    GetPhysicalDeviceExternalBufferPropertiesKHR(physical_device, &info, &props);
     ASSERT_TRUE(CompareExtMemoryData(env.get_test_icd(0).physical_devices.back().external_memory_properties,
                                      props.externalMemoryProperties));
 }
@@ -2611,8 +2583,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
+        PFN_vkGetPhysicalDeviceExternalBufferProperties GetPhysicalDeviceExternalBufferProperties =
+            instance.load("vkGetPhysicalDeviceExternalBufferProperties");
         ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -2633,8 +2605,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
+        PFN_vkGetPhysicalDeviceExternalBufferProperties GetPhysicalDeviceExternalBufferProperties =
+            instance.load("vkGetPhysicalDeviceExternalBufferProperties");
         ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -2662,8 +2634,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
+        PFN_vkGetPhysicalDeviceExternalBufferProperties GetPhysicalDeviceExternalBufferProperties =
+            instance.load("vkGetPhysicalDeviceExternalBufferProperties");
         ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -2736,8 +2708,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufPropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalBufferProperties"));
+    PFN_vkGetPhysicalDeviceExternalBufferProperties GetPhysicalDeviceExternalBufferProperties =
+        instance.load("vkGetPhysicalDeviceExternalBufferProperties");
     ASSERT_NE(GetPhysicalDeviceExternalBufferProperties, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -2789,9 +2761,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemPropsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR GetPhysicalDeviceExternalSemaphorePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceExternalSemaphorePropertiesKHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceExternalSemaphorePropertiesKHR where instance supports it, but nothing else.
@@ -2804,9 +2776,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR GetPhysicalDeviceExternalSemaphorePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceExternalSemaphorePropertiesKHR, nullptr);
 }
 
 // Fill in random but valid data into the external semaphore data struct for the current physical device
@@ -2846,9 +2818,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR GetPhysicalDeviceExternalSemaphorePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceExternalSemaphorePropertiesKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -2857,7 +2829,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2KHRInstanceAndICDSupport) {
 
     VkPhysicalDeviceExternalSemaphoreInfoKHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR};
     VkExternalSemaphorePropertiesKHR props{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES_KHR};
-    GetPhysicalDeviceExternalSemaphoreProperties(physical_device, &info, &props);
+    GetPhysicalDeviceExternalSemaphorePropertiesKHR(physical_device, &info, &props);
     ASSERT_TRUE(CompareExtSemaphoreData(env.get_test_icd(0).physical_devices.back().external_semaphore_properties, props));
 }
 
@@ -2877,8 +2849,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+        PFN_vkGetPhysicalDeviceExternalSemaphoreProperties GetPhysicalDeviceExternalSemaphoreProperties =
+            instance.load("vkGetPhysicalDeviceExternalSemaphoreProperties");
         ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -2897,8 +2869,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2Simple) {
         instance.CheckCreate();
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
-        auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+        PFN_vkGetPhysicalDeviceExternalSemaphoreProperties GetPhysicalDeviceExternalSemaphoreProperties =
+            instance.load("vkGetPhysicalDeviceExternalSemaphoreProperties");
         ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -2925,8 +2897,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2Simple) {
         instance.CheckCreate();
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
-        auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+        PFN_vkGetPhysicalDeviceExternalSemaphoreProperties GetPhysicalDeviceExternalSemaphoreProperties =
+            instance.load("vkGetPhysicalDeviceExternalSemaphoreProperties");
         ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -2998,8 +2970,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemPropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+    PFN_vkGetPhysicalDeviceExternalSemaphoreProperties GetPhysicalDeviceExternalSemaphoreProperties =
+        instance.load("vkGetPhysicalDeviceExternalSemaphoreProperties");
     ASSERT_NE(GetPhysicalDeviceExternalSemaphoreProperties, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -3051,9 +3023,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFencePropsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFencePropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceExternalFenceProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR GetPhysicalDeviceExternalFencePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalFencePropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceExternalFencePropertiesKHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceExternalFencePropertiesKHR where instance supports it, but nothing else.
@@ -3066,9 +3038,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFencePropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFencePropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceExternalFenceProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR GetPhysicalDeviceExternalFencePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalFencePropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceExternalFencePropertiesKHR, nullptr);
 }
 
 // Fill in random but valid data into the external fence data struct for the current physical device
@@ -3107,9 +3079,9 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extension(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFencePropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
+    PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR GetPhysicalDeviceExternalFencePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceExternalFencePropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceExternalFencePropertiesKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -3118,7 +3090,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2KHRInstanceAndICDSupport) {
 
     VkPhysicalDeviceExternalFenceInfoKHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO_KHR};
     VkExternalFencePropertiesKHR props{VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES_KHR};
-    GetPhysicalDeviceExternalFenceProperties(physical_device, &info, &props);
+    GetPhysicalDeviceExternalFencePropertiesKHR(physical_device, &info, &props);
     ASSERT_TRUE(CompareExtFenceData(env.get_test_icd(0).physical_devices.back().external_fence_properties, props));
 }
 
@@ -3138,8 +3110,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2Simple) {
         instance.create_info.set_api_version(VK_API_VERSION_1_1);
         instance.CheckCreate();
 
-        auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
+        PFN_vkGetPhysicalDeviceExternalFenceProperties GetPhysicalDeviceExternalFenceProperties =
+            instance.load("vkGetPhysicalDeviceExternalFenceProperties");
         ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -3159,8 +3131,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2Simple) {
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
 
-        auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
+        PFN_vkGetPhysicalDeviceExternalFenceProperties GetPhysicalDeviceExternalFenceProperties =
+            instance.load("vkGetPhysicalDeviceExternalFenceProperties");
         ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -3187,8 +3159,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2Simple) {
         instance.CheckCreate();
         DebugUtilsWrapper log{instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
         CreateDebugUtilsMessenger(log);
-        auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
-            instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
+        PFN_vkGetPhysicalDeviceExternalFenceProperties GetPhysicalDeviceExternalFenceProperties =
+            instance.load("vkGetPhysicalDeviceExternalFenceProperties");
         ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
 
         uint32_t driver_count = 1;
@@ -3259,8 +3231,8 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFencePropsMixed) {
     instance.create_info.set_api_version(VK_API_VERSION_1_1);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalFenceProperties"));
+    PFN_vkGetPhysicalDeviceExternalFenceProperties GetPhysicalDeviceExternalFenceProperties =
+        instance.load("vkGetPhysicalDeviceExternalFenceProperties");
     ASSERT_NE(GetPhysicalDeviceExternalFenceProperties, nullptr);
 
     uint32_t device_count = max_phys_devs;
@@ -3312,9 +3284,9 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceSurfaceCapabilities2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceSurfaceCapabilities2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR GetPhysicalDeviceSurfaceCapabilities2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+    ASSERT_EQ(GetPhysicalDeviceSurfaceCapabilities2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceSurfaceCapabilities2KHR where instance supports it, but nothing else.
@@ -3327,9 +3299,9 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceSurfaceCapabilities2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceSurfaceCapabilities2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR GetPhysicalDeviceSurfaceCapabilities2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+    ASSERT_EQ(GetPhysicalDeviceSurfaceCapabilities2KHR, nullptr);
 }
 
 // Fill in random but valid data into the surface capability data struct for the current physical device
@@ -3403,18 +3375,16 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRInstanceAndICDSupport) {
         {VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceSurfaceCapabilities = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilities, nullptr);
-    auto CreateHeadlessSurfaceEXT = reinterpret_cast<PFN_vkCreateHeadlessSurfaceEXT>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkCreateHeadlessSurfaceEXT"));
+    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR =
+        instance.load("vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilitiesKHR, nullptr);
+    PFN_vkCreateHeadlessSurfaceEXT CreateHeadlessSurfaceEXT = instance.load("vkCreateHeadlessSurfaceEXT");
     ASSERT_NE(CreateHeadlessSurfaceEXT, nullptr);
-    auto DestroySurfaceKHR =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR DestroySurfaceKHR = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(DestroySurfaceKHR, nullptr);
-    auto GetPhysicalDeviceSurfaceCapabilities2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilities2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR GetPhysicalDeviceSurfaceCapabilities2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilities2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -3426,11 +3396,11 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRInstanceAndICDSupport) {
     ASSERT_EQ(VK_SUCCESS, CreateHeadlessSurfaceEXT(instance.inst, &create_info, nullptr, &surface));
 
     VkSurfaceCapabilitiesKHR props{};
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilities(physical_device, surface, &props));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &props));
 
     VkPhysicalDeviceSurfaceInfo2KHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface};
     VkSurfaceCapabilities2KHR props2{VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilities2(physical_device, &info, &props2));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilities2KHR(physical_device, &info, &props2));
     ASSERT_TRUE(CompareSurfaceCapsData(props, props2.surfaceCapabilities));
 
     DestroySurfaceKHR(instance.inst, surface, nullptr);
@@ -3500,18 +3470,16 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRMixed) {
         {VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceSurfaceCapabilities = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilities, nullptr);
-    auto CreateHeadlessSurfaceEXT = reinterpret_cast<PFN_vkCreateHeadlessSurfaceEXT>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkCreateHeadlessSurfaceEXT"));
+    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR =
+        instance.load("vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilitiesKHR, nullptr);
+    PFN_vkCreateHeadlessSurfaceEXT CreateHeadlessSurfaceEXT = instance.load("vkCreateHeadlessSurfaceEXT");
     ASSERT_NE(CreateHeadlessSurfaceEXT, nullptr);
-    auto DestroySurfaceKHR =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR DestroySurfaceKHR = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(DestroySurfaceKHR, nullptr);
-    auto GetPhysicalDeviceSurfaceCapabilities2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilities2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR GetPhysicalDeviceSurfaceCapabilities2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceCapabilities2KHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -3524,11 +3492,11 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRMixed) {
 
     for (uint32_t dev = 0; dev < device_count; ++dev) {
         VkSurfaceCapabilitiesKHR props{};
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilities(physical_devices[dev], surface, &props));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilitiesKHR(physical_devices[dev], surface, &props));
 
         VkPhysicalDeviceSurfaceInfo2KHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface};
         VkSurfaceCapabilities2KHR props2{VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilities2(physical_devices[dev], &info, &props2));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceCapabilities2KHR(physical_devices[dev], &info, &props2));
         ASSERT_TRUE(CompareSurfaceCapsData(props, props2.surfaceCapabilities));
     }
 
@@ -3544,9 +3512,9 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceSurfaceFormats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormats2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormats2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceSurfaceFormats2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR GetPhysicalDeviceSurfaceFormats2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceFormats2KHR");
+    ASSERT_EQ(GetPhysicalDeviceSurfaceFormats2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceSurfaceFormats2KHR where instance supports it, but nothing else.
@@ -3559,9 +3527,9 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceSurfaceFormats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormats2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormats2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceSurfaceFormats2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR GetPhysicalDeviceSurfaceFormats2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceFormats2KHR");
+    ASSERT_EQ(GetPhysicalDeviceSurfaceFormats2KHR, nullptr);
 }
 
 // Fill in random but valid data into the surface formats data struct for the current physical device
@@ -3609,18 +3577,16 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRInstanceAndICDSupport) {
         {VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceSurfaceFormats = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormatsKHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceFormats, nullptr);
-    auto CreateHeadlessSurfaceEXT = reinterpret_cast<PFN_vkCreateHeadlessSurfaceEXT>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkCreateHeadlessSurfaceEXT"));
+    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR GetPhysicalDeviceSurfaceFormatsKHR =
+        instance.load("vkGetPhysicalDeviceSurfaceFormatsKHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceFormatsKHR, nullptr);
+    PFN_vkCreateHeadlessSurfaceEXT CreateHeadlessSurfaceEXT = instance.load("vkCreateHeadlessSurfaceEXT");
     ASSERT_NE(CreateHeadlessSurfaceEXT, nullptr);
-    auto DestroySurfaceKHR =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR DestroySurfaceKHR = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(DestroySurfaceKHR, nullptr);
-    auto GetPhysicalDeviceSurfaceFormats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormats2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormats2KHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceFormats2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR GetPhysicalDeviceSurfaceFormats2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceFormats2KHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceFormats2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -3633,19 +3599,19 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRInstanceAndICDSupport) {
 
     std::vector<VkSurfaceFormatKHR> props{};
     uint32_t count_1 = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats(physical_device, surface, &count_1, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count_1, nullptr));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().surface_formats.size(), count_1);
     props.resize(count_1);
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats(physical_device, surface, &count_1, props.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count_1, props.data()));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().surface_formats.size(), count_1);
 
     VkPhysicalDeviceSurfaceInfo2KHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface};
     std::vector<VkSurfaceFormat2KHR> props2{};
     uint32_t count_2 = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2(physical_device, &info, &count_2, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2KHR(physical_device, &info, &count_2, nullptr));
     ASSERT_EQ(count_1, count_2);
     props2.resize(count_2, VkSurfaceFormat2KHR{VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR});
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2(physical_device, &info, &count_2, props2.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2KHR(physical_device, &info, &count_2, props2.data()));
     ASSERT_TRUE(CompareSurfaceFormatsData(props, props2));
 
     DestroySurfaceKHR(instance.inst, surface, nullptr);
@@ -3715,18 +3681,16 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRMixed) {
         {VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceSurfaceFormats = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormatsKHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceFormats, nullptr);
-    auto CreateHeadlessSurfaceEXT = reinterpret_cast<PFN_vkCreateHeadlessSurfaceEXT>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkCreateHeadlessSurfaceEXT"));
+    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR GetPhysicalDeviceSurfaceFormatsKHR =
+        instance.load("vkGetPhysicalDeviceSurfaceFormatsKHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceFormatsKHR, nullptr);
+    PFN_vkCreateHeadlessSurfaceEXT CreateHeadlessSurfaceEXT = instance.load("vkCreateHeadlessSurfaceEXT");
     ASSERT_NE(CreateHeadlessSurfaceEXT, nullptr);
-    auto DestroySurfaceKHR =
-        reinterpret_cast<PFN_vkDestroySurfaceKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR"));
+    PFN_vkDestroySurfaceKHR DestroySurfaceKHR = instance.load("vkDestroySurfaceKHR");
     ASSERT_NE(DestroySurfaceKHR, nullptr);
-    auto GetPhysicalDeviceSurfaceFormats2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormats2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormats2KHR"));
-    ASSERT_NE(GetPhysicalDeviceSurfaceFormats2, nullptr);
+    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR GetPhysicalDeviceSurfaceFormats2KHR =
+        instance.load("vkGetPhysicalDeviceSurfaceFormats2KHR");
+    ASSERT_NE(GetPhysicalDeviceSurfaceFormats2KHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -3740,19 +3704,19 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRMixed) {
     for (uint32_t dev = 0; dev < device_count; ++dev) {
         std::vector<VkSurfaceFormatKHR> props{};
         uint32_t count_1 = 0;
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats(physical_devices[dev], surface, &count_1, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormatsKHR(physical_devices[dev], surface, &count_1, nullptr));
         ASSERT_NE(0U, count_1);
         props.resize(count_1);
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats(physical_devices[dev], surface, &count_1, props.data()));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormatsKHR(physical_devices[dev], surface, &count_1, props.data()));
         ASSERT_NE(0U, count_1);
 
         VkPhysicalDeviceSurfaceInfo2KHR info{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface};
         std::vector<VkSurfaceFormat2KHR> props2{};
         uint32_t count_2 = 0;
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2(physical_devices[dev], &info, &count_2, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2KHR(physical_devices[dev], &info, &count_2, nullptr));
         ASSERT_EQ(count_1, count_2);
         props2.resize(count_2, VkSurfaceFormat2KHR{VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR});
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2(physical_devices[dev], &info, &count_2, props2.data()));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceFormats2KHR(physical_devices[dev], &info, &count_2, props2.data()));
         ASSERT_EQ(count_1, count_2);
         ASSERT_TRUE(CompareSurfaceFormatsData(props, props2));
     }
@@ -3773,9 +3737,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR GetPhysicalDeviceDisplayPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayPropertiesKHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceDisplayPropertiesKHR where instance supports it, but nothing else.
@@ -3788,9 +3752,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceDisplayProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR GetPhysicalDeviceDisplayPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayPropertiesKHR, nullptr);
 }
 
 VkDisplayKHR CreateRandomDisplay() { return (VkDisplayKHR)(((rand() % 0xFFFFFFFBull) << 12) * (rand() % 0xFFFFFFFull) + 1); }
@@ -3843,9 +3807,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRInstanceAndICDSupport) {
     instance.create_info.add_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR GetPhysicalDeviceDisplayPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPropertiesKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -3854,10 +3818,10 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRInstanceAndICDSupport) {
 
     std::vector<VkDisplayPropertiesKHR> props{};
     uint32_t prop_count = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_device, &prop_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPropertiesKHR(physical_device, &prop_count, nullptr));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().display_properties.size(), prop_count);
     props.resize(prop_count);
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_device, &prop_count, props.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPropertiesKHR(physical_device, &prop_count, props.data()));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().display_properties.size(), prop_count);
 
     ASSERT_TRUE(CompareDisplayPropData(props, env.get_test_icd(0).physical_devices.back().display_properties));
@@ -3918,9 +3882,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRMixed) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR GetPhysicalDeviceDisplayPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPropertiesKHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -3944,7 +3908,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRMixed) {
                     cur_dev.properties.vendorID == pd_props.vendorID) {
                     std::vector<VkDisplayPropertiesKHR> props{};
                     uint32_t prop_count = 0;
-                    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_devices[dev], &prop_count, nullptr));
+                    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPropertiesKHR(physical_devices[dev], &prop_count, nullptr));
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
@@ -3952,7 +3916,8 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRMixed) {
                     } else {
                         ASSERT_EQ(cur_dev.display_properties.size(), prop_count);
                         props.resize(prop_count);
-                        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_devices[dev], &prop_count, props.data()));
+                        ASSERT_EQ(VK_SUCCESS,
+                                  GetPhysicalDeviceDisplayPropertiesKHR(physical_devices[dev], &prop_count, props.data()));
                         ASSERT_EQ(cur_dev.display_properties.size(), prop_count);
 
                         ASSERT_TRUE(CompareDisplayPropData(props, cur_dev.display_properties));
@@ -3977,9 +3942,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayPlaneProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayPlaneProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR GetPhysicalDeviceDisplayPlanePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayPlanePropertiesKHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceDisplayPlanePropertiesKHR where instance supports it, but nothing else.
@@ -3992,9 +3957,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceDisplayPlaneProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayPlaneProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR GetPhysicalDeviceDisplayPlanePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayPlanePropertiesKHR, nullptr);
 }
 
 // Fill in random but valid data into the display plane property data struct for the current physical device
@@ -4030,9 +3995,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRInstanceAndICDSupport) {
     instance.create_info.add_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayPlaneProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR GetPhysicalDeviceDisplayPlanePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPlanePropertiesKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -4041,10 +4006,10 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRInstanceAndICDSupport) {
 
     std::vector<VkDisplayPlanePropertiesKHR> props{};
     uint32_t prop_count = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_device, &prop_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_device, &prop_count, nullptr));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().display_plane_properties.size(), prop_count);
     props.resize(prop_count);
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_device, &prop_count, props.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_device, &prop_count, props.data()));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().display_plane_properties.size(), prop_count);
 
     ASSERT_TRUE(CompareDisplayPlanePropData(props, env.get_test_icd(0).physical_devices.back().display_plane_properties));
@@ -4105,9 +4070,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRMixed) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayPlaneProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR GetPhysicalDeviceDisplayPlanePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPlanePropertiesKHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -4131,7 +4096,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRMixed) {
                     cur_dev.properties.vendorID == pd_props.vendorID) {
                     std::vector<VkDisplayPlanePropertiesKHR> props{};
                     uint32_t prop_count = 0;
-                    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_devices[dev], &prop_count, nullptr));
+                    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_devices[dev], &prop_count, nullptr));
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
@@ -4140,7 +4105,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRMixed) {
                         ASSERT_EQ(cur_dev.display_plane_properties.size(), prop_count);
                         props.resize(prop_count);
                         ASSERT_EQ(VK_SUCCESS,
-                                  GetPhysicalDeviceDisplayPlaneProperties(physical_devices[dev], &prop_count, props.data()));
+                                  GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_devices[dev], &prop_count, props.data()));
                         ASSERT_EQ(cur_dev.display_plane_properties.size(), prop_count);
 
                         ASSERT_TRUE(CompareDisplayPlanePropData(props, cur_dev.display_plane_properties));
@@ -4165,9 +4130,9 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetDisplayPlaneSupportedDisplays = reinterpret_cast<PFN_vkGetDisplayPlaneSupportedDisplaysKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneSupportedDisplaysKHR"));
-    ASSERT_EQ(GetDisplayPlaneSupportedDisplays, nullptr);
+    PFN_vkGetDisplayPlaneSupportedDisplaysKHR GetDisplayPlaneSupportedDisplaysKHR =
+        instance.load("vkGetDisplayPlaneSupportedDisplaysKHR");
+    ASSERT_EQ(GetDisplayPlaneSupportedDisplaysKHR, nullptr);
 }
 
 // Test vkGetDisplayPlaneSupportedDisplaysKHR where instance supports it, but nothing else.
@@ -4180,9 +4145,9 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetDisplayPlaneSupportedDisplays = reinterpret_cast<PFN_vkGetDisplayPlaneSupportedDisplaysKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneSupportedDisplaysKHR"));
-    ASSERT_EQ(GetDisplayPlaneSupportedDisplays, nullptr);
+    PFN_vkGetDisplayPlaneSupportedDisplaysKHR GetDisplayPlaneSupportedDisplaysKHR =
+        instance.load("vkGetDisplayPlaneSupportedDisplaysKHR");
+    ASSERT_EQ(GetDisplayPlaneSupportedDisplaysKHR, nullptr);
 }
 
 // Fill in random but valid data into the display plane property data struct for the current physical device
@@ -4215,9 +4180,9 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRInstanceAndICDSupport) {
     instance.create_info.add_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDisplayPlaneSupportedDisplays = reinterpret_cast<PFN_vkGetDisplayPlaneSupportedDisplaysKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneSupportedDisplaysKHR"));
-    ASSERT_NE(GetDisplayPlaneSupportedDisplays, nullptr);
+    PFN_vkGetDisplayPlaneSupportedDisplaysKHR GetDisplayPlaneSupportedDisplaysKHR =
+        instance.load("vkGetDisplayPlaneSupportedDisplaysKHR");
+    ASSERT_NE(GetDisplayPlaneSupportedDisplaysKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -4226,10 +4191,10 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRInstanceAndICDSupport) {
 
     std::vector<VkDisplayKHR> disps{};
     uint32_t disp_count = 0;
-    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneSupportedDisplays(physical_device, 0, &disp_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneSupportedDisplaysKHR(physical_device, 0, &disp_count, nullptr));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().displays.size(), disp_count);
     disps.resize(disp_count);
-    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneSupportedDisplays(physical_device, 0, &disp_count, disps.data()));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneSupportedDisplaysKHR(physical_device, 0, &disp_count, disps.data()));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().displays.size(), disp_count);
 
     ASSERT_TRUE(CompareDisplays(disps, env.get_test_icd(0).physical_devices.back().displays));
@@ -4290,9 +4255,9 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRMixed) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetDisplayPlaneSupportedDisplays = reinterpret_cast<PFN_vkGetDisplayPlaneSupportedDisplaysKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneSupportedDisplaysKHR"));
-    ASSERT_NE(GetDisplayPlaneSupportedDisplays, nullptr);
+    PFN_vkGetDisplayPlaneSupportedDisplaysKHR GetDisplayPlaneSupportedDisplaysKHR =
+        instance.load("vkGetDisplayPlaneSupportedDisplaysKHR");
+    ASSERT_NE(GetDisplayPlaneSupportedDisplaysKHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -4316,7 +4281,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRMixed) {
                     cur_dev.properties.vendorID == pd_props.vendorID) {
                     std::vector<VkDisplayKHR> disps{};
                     uint32_t disp_count = 0;
-                    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneSupportedDisplays(physical_devices[dev], 0, &disp_count, nullptr));
+                    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneSupportedDisplaysKHR(physical_devices[dev], 0, &disp_count, nullptr));
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
@@ -4325,7 +4290,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRMixed) {
                         ASSERT_EQ(cur_dev.displays.size(), disp_count);
                         disps.resize(disp_count);
                         ASSERT_EQ(VK_SUCCESS,
-                                  GetDisplayPlaneSupportedDisplays(physical_devices[dev], 0, &disp_count, disps.data()));
+                                  GetDisplayPlaneSupportedDisplaysKHR(physical_devices[dev], 0, &disp_count, disps.data()));
                         ASSERT_EQ(cur_dev.displays.size(), disp_count);
 
                         ASSERT_TRUE(CompareDisplays(disps, cur_dev.displays));
@@ -4350,9 +4315,8 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetDisplayModeProperties = reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModePropertiesKHR"));
-    ASSERT_EQ(GetDisplayModeProperties, nullptr);
+    PFN_vkGetDisplayModePropertiesKHR GetDisplayModePropertiesKHR = instance.load("vkGetDisplayModePropertiesKHR");
+    ASSERT_EQ(GetDisplayModePropertiesKHR, nullptr);
 }
 
 // Test vkGetDisplayModePropertiesKHR where instance supports it, but nothing else.
@@ -4365,9 +4329,8 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetDisplayModeProperties = reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModePropertiesKHR"));
-    ASSERT_EQ(GetDisplayModeProperties, nullptr);
+    PFN_vkGetDisplayModePropertiesKHR GetDisplayModePropertiesKHR = instance.load("vkGetDisplayModePropertiesKHR");
+    ASSERT_EQ(GetDisplayModePropertiesKHR, nullptr);
 }
 
 // Fill in random but valid data into the display mode properties data struct for the current physical device
@@ -4407,9 +4370,8 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRInstanceAndICDSupport) {
     instance.create_info.add_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDisplayModeProperties = reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModePropertiesKHR"));
-    ASSERT_NE(GetDisplayModeProperties, nullptr);
+    PFN_vkGetDisplayModePropertiesKHR GetDisplayModePropertiesKHR = instance.load("vkGetDisplayModePropertiesKHR");
+    ASSERT_NE(GetDisplayModePropertiesKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -4418,10 +4380,10 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRInstanceAndICDSupport) {
 
     std::vector<VkDisplayModePropertiesKHR> props{};
     uint32_t props_count = 0;
-    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_device, VK_NULL_HANDLE, &props_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayModePropertiesKHR(physical_device, VK_NULL_HANDLE, &props_count, nullptr));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().display_mode_properties.size(), props_count);
     props.resize(props_count);
-    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_device, VK_NULL_HANDLE, &props_count, props.data()));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayModePropertiesKHR(physical_device, VK_NULL_HANDLE, &props_count, props.data()));
     ASSERT_EQ(env.get_test_icd(0).physical_devices.back().display_mode_properties.size(), props_count);
 
     ASSERT_TRUE(CompareDisplayModeProps(props, env.get_test_icd(0).physical_devices.back().display_mode_properties));
@@ -4482,9 +4444,8 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRMixed) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetDisplayModeProperties = reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModePropertiesKHR"));
-    ASSERT_NE(GetDisplayModeProperties, nullptr);
+    PFN_vkGetDisplayModePropertiesKHR GetDisplayModePropertiesKHR = instance.load("vkGetDisplayModePropertiesKHR");
+    ASSERT_NE(GetDisplayModePropertiesKHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -4507,7 +4468,8 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRMixed) {
                     cur_dev.properties.driverVersion == pd_props.driverVersion &&
                     cur_dev.properties.vendorID == pd_props.vendorID) {
                     uint32_t props_count = 0;
-                    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_devices[dev], VK_NULL_HANDLE, &props_count, nullptr));
+                    ASSERT_EQ(VK_SUCCESS,
+                              GetDisplayModePropertiesKHR(physical_devices[dev], VK_NULL_HANDLE, &props_count, nullptr));
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
@@ -4517,7 +4479,7 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRMixed) {
                         ASSERT_EQ(cur_dev.display_mode_properties.size(), props_count);
                         props.resize(props_count);
                         ASSERT_EQ(VK_SUCCESS,
-                                  GetDisplayModeProperties(physical_devices[dev], VK_NULL_HANDLE, &props_count, props.data()));
+                                  GetDisplayModePropertiesKHR(physical_devices[dev], VK_NULL_HANDLE, &props_count, props.data()));
                         ASSERT_EQ(cur_dev.display_mode_properties.size(), props_count);
 
                         ASSERT_TRUE(CompareDisplayModeProps(props, cur_dev.display_mode_properties));
@@ -4542,9 +4504,8 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto CreateDisplayMode =
-        reinterpret_cast<PFN_vkCreateDisplayModeKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkCreateDisplayModeKHR"));
-    ASSERT_EQ(CreateDisplayMode, nullptr);
+    PFN_vkCreateDisplayModeKHR CreateDisplayModeKHR = instance.load("vkCreateDisplayModeKHR");
+    ASSERT_EQ(CreateDisplayModeKHR, nullptr);
 }
 
 // Test vkCreateDisplayModeKHR where instance supports it, but nothing else.
@@ -4557,9 +4518,8 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto CreateDisplayMode =
-        reinterpret_cast<PFN_vkCreateDisplayModeKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkCreateDisplayModeKHR"));
-    ASSERT_EQ(CreateDisplayMode, nullptr);
+    PFN_vkCreateDisplayModeKHR CreateDisplayModeKHR = instance.load("vkCreateDisplayModeKHR");
+    ASSERT_EQ(CreateDisplayModeKHR, nullptr);
 }
 
 // Compare the display modes
@@ -4577,9 +4537,8 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRInstanceAndICDSupport) {
     instance.create_info.add_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto CreateDisplayMode =
-        reinterpret_cast<PFN_vkCreateDisplayModeKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkCreateDisplayModeKHR"));
-    ASSERT_NE(CreateDisplayMode, nullptr);
+    PFN_vkCreateDisplayModeKHR CreateDisplayModeKHR = instance.load("vkCreateDisplayModeKHR");
+    ASSERT_NE(CreateDisplayModeKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -4588,7 +4547,7 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRInstanceAndICDSupport) {
 
     VkDisplayModeKHR mode{};
     VkDisplayModeCreateInfoKHR create_info{VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR};
-    ASSERT_EQ(VK_SUCCESS, CreateDisplayMode(physical_device, VK_NULL_HANDLE, &create_info, nullptr, &mode));
+    ASSERT_EQ(VK_SUCCESS, CreateDisplayModeKHR(physical_device, VK_NULL_HANDLE, &create_info, nullptr, &mode));
     ASSERT_TRUE(CompareDisplayModes(mode, env.get_test_icd(0).physical_devices.back().display_mode));
 }
 
@@ -4647,9 +4606,8 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRMixed) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto CreateDisplayMode =
-        reinterpret_cast<PFN_vkCreateDisplayModeKHR>(instance.functions->vkGetInstanceProcAddr(instance, "vkCreateDisplayModeKHR"));
-    ASSERT_NE(CreateDisplayMode, nullptr);
+    PFN_vkCreateDisplayModeKHR CreateDisplayModeKHR = instance.load("vkCreateDisplayModeKHR");
+    ASSERT_NE(CreateDisplayModeKHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -4676,10 +4634,10 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRMixed) {
                     if (icd == 1) {
                         // Unsupported ICD should return initialization failed (instead of crash)
                         ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED,
-                                  CreateDisplayMode(physical_devices[dev], VK_NULL_HANDLE, &create_info, nullptr, &mode));
+                                  CreateDisplayModeKHR(physical_devices[dev], VK_NULL_HANDLE, &create_info, nullptr, &mode));
                     } else {
                         ASSERT_EQ(VK_SUCCESS,
-                                  CreateDisplayMode(physical_devices[dev], VK_NULL_HANDLE, &create_info, nullptr, &mode));
+                                  CreateDisplayModeKHR(physical_devices[dev], VK_NULL_HANDLE, &create_info, nullptr, &mode));
                         ASSERT_TRUE(CompareDisplayModes(mode, cur_dev.display_mode));
                     }
                     found = true;
@@ -4702,9 +4660,8 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_EQ(GetDisplayPlaneCapabilities, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_EQ(GetDisplayPlaneCapabilitiesKHR, nullptr);
 }
 
 // Test vkGetDisplayPlaneCapabilitiesKHR where instance supports it, but nothing else.
@@ -4717,9 +4674,8 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_EQ(GetDisplayPlaneCapabilities, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_EQ(GetDisplayPlaneCapabilitiesKHR, nullptr);
 }
 
 // Fill in random but valid data into the display plane caps for the current physical device
@@ -4799,9 +4755,8 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRInstanceAndICDSupport) {
     instance.create_info.add_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_NE(GetDisplayPlaneCapabilities, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_NE(GetDisplayPlaneCapabilitiesKHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -4809,7 +4764,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRInstanceAndICDSupport) {
     ASSERT_EQ(driver_count, 1U);
 
     VkDisplayPlaneCapabilitiesKHR caps{};
-    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities(physical_device, 0, 0, &caps));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilitiesKHR(physical_device, 0, 0, &caps));
     ASSERT_TRUE(CompareDisplayPlaneCaps(caps, env.get_test_icd(0).physical_devices.back().display_plane_capabilities));
 }
 
@@ -4868,9 +4823,8 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRMixed) {
     instance.create_info.add_extension(VK_KHR_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate();
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_NE(GetDisplayPlaneCapabilities, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_NE(GetDisplayPlaneCapabilitiesKHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -4893,7 +4847,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRMixed) {
                     cur_dev.properties.driverVersion == pd_props.driverVersion &&
                     cur_dev.properties.vendorID == pd_props.vendorID) {
                     VkDisplayPlaneCapabilitiesKHR caps{};
-                    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities(physical_devices[dev], 0, 0, &caps));
+                    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilitiesKHR(physical_devices[dev], 0, 0, &caps));
                     ASSERT_TRUE(CompareDisplayPlaneCaps(caps, cur_dev.display_plane_capabilities, icd != 1));
                     found = true;
                     break;
@@ -4919,9 +4873,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayProperties2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayProperties2KHR GetPhysicalDeviceDisplayProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayProperties2KHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayProperties2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceDisplayProperties2KHR where instance supports it, but nothing else.
@@ -4934,9 +4888,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceDisplayProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayProperties2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayProperties2KHR GetPhysicalDeviceDisplayProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayProperties2KHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayProperties2KHR, nullptr);
 }
 
 // Compare the display property data structs
@@ -4970,12 +4924,12 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayProperties, nullptr);
-    auto GetPhysicalDeviceDisplayProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayProperties2KHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR GetPhysicalDeviceDisplayPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPropertiesKHR, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayProperties2KHR GetPhysicalDeviceDisplayProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayProperties2KHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayProperties2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -4984,17 +4938,17 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRInstanceAndICDSupport) {
 
     std::vector<VkDisplayPropertiesKHR> props{};
     uint32_t prop_count = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_device, &prop_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPropertiesKHR(physical_device, &prop_count, nullptr));
     ASSERT_NE(0U, prop_count);
     props.resize(prop_count);
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_device, &prop_count, props.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPropertiesKHR(physical_device, &prop_count, props.data()));
 
     std::vector<VkDisplayProperties2KHR> props2{};
     uint32_t prop_count_2 = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2(physical_device, &prop_count_2, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2KHR(physical_device, &prop_count_2, nullptr));
     ASSERT_EQ(prop_count, prop_count_2);
     props2.resize(prop_count_2, {VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR});
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2(physical_device, &prop_count_2, props2.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2KHR(physical_device, &prop_count_2, props2.data()));
     ASSERT_EQ(prop_count, prop_count_2);
 
     ASSERT_TRUE(CompareDisplayPropData(props, props2));
@@ -5057,12 +5011,12 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRMixed) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayProperties, nullptr);
-    auto GetPhysicalDeviceDisplayProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayProperties2KHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR GetPhysicalDeviceDisplayPropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPropertiesKHR, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayProperties2KHR GetPhysicalDeviceDisplayProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayProperties2KHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayProperties2KHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -5072,17 +5026,17 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRMixed) {
     for (uint32_t dev = 0; dev < device_count; ++dev) {
         std::vector<VkDisplayPropertiesKHR> props{};
         uint32_t prop_count = 0;
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_devices[dev], &prop_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPropertiesKHR(physical_devices[dev], &prop_count, nullptr));
         ASSERT_NE(0U, prop_count);
         props.resize(prop_count);
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties(physical_devices[dev], &prop_count, props.data()));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPropertiesKHR(physical_devices[dev], &prop_count, props.data()));
 
         std::vector<VkDisplayProperties2KHR> props2{};
         uint32_t prop_count_2 = 0;
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2(physical_devices[dev], &prop_count_2, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2KHR(physical_devices[dev], &prop_count_2, nullptr));
         ASSERT_EQ(prop_count, prop_count_2);
         props2.resize(prop_count_2, {VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR});
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2(physical_devices[dev], &prop_count_2, props2.data()));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayProperties2KHR(physical_devices[dev], &prop_count_2, props2.data()));
         ASSERT_EQ(prop_count, prop_count_2);
 
         ASSERT_TRUE(CompareDisplayPropData(props, props2));
@@ -5098,9 +5052,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayPlaneProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlaneProperties2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayPlaneProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR GetPhysicalDeviceDisplayPlaneProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlaneProperties2KHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayPlaneProperties2KHR, nullptr);
 }
 
 // Test vkGetPhysicalDeviceDisplayPlaneProperties2KHR where instance supports it, but nothing else.
@@ -5113,9 +5067,9 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetPhysicalDeviceDisplayPlaneProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlaneProperties2KHR"));
-    ASSERT_EQ(GetPhysicalDeviceDisplayPlaneProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR GetPhysicalDeviceDisplayPlaneProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlaneProperties2KHR");
+    ASSERT_EQ(GetPhysicalDeviceDisplayPlaneProperties2KHR, nullptr);
 }
 
 // Compare the display plane property data structs
@@ -5144,12 +5098,12 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayPlaneProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties, nullptr);
-    auto GetPhysicalDeviceDisplayPlaneProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlaneProperties2KHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR GetPhysicalDeviceDisplayPlanePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPlanePropertiesKHR, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR GetPhysicalDeviceDisplayPlaneProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlaneProperties2KHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -5158,17 +5112,17 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRInstanceAndICDSupport) {
 
     std::vector<VkDisplayPlanePropertiesKHR> props{};
     uint32_t prop_count = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_device, &prop_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_device, &prop_count, nullptr));
     ASSERT_NE(0U, prop_count);
     props.resize(prop_count);
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_device, &prop_count, props.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_device, &prop_count, props.data()));
 
     std::vector<VkDisplayPlaneProperties2KHR> props2{};
     uint32_t prop_count2 = 0;
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2(physical_device, &prop_count2, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2KHR(physical_device, &prop_count2, nullptr));
     ASSERT_EQ(prop_count, prop_count2);
     props2.resize(prop_count2, {VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR});
-    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2(physical_device, &prop_count2, props2.data()));
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2KHR(physical_device, &prop_count2, props2.data()));
 
     ASSERT_TRUE(CompareDisplayPlanePropData(props, props2));
 }
@@ -5230,12 +5184,12 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRMixed) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetPhysicalDeviceDisplayPlaneProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties, nullptr);
-    auto GetPhysicalDeviceDisplayPlaneProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlaneProperties2KHR"));
-    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties2, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR GetPhysicalDeviceDisplayPlanePropertiesKHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPlanePropertiesKHR, nullptr);
+    PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR GetPhysicalDeviceDisplayPlaneProperties2KHR =
+        instance.load("vkGetPhysicalDeviceDisplayPlaneProperties2KHR");
+    ASSERT_NE(GetPhysicalDeviceDisplayPlaneProperties2KHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -5245,17 +5199,17 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRMixed) {
     for (uint32_t dev = 0; dev < device_count; ++dev) {
         std::vector<VkDisplayPlanePropertiesKHR> props{};
         uint32_t prop_count = 0;
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_devices[dev], &prop_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_devices[dev], &prop_count, nullptr));
         ASSERT_NE(0U, prop_count);
         props.resize(prop_count);
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties(physical_devices[dev], &prop_count, props.data()));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlanePropertiesKHR(physical_devices[dev], &prop_count, props.data()));
 
         std::vector<VkDisplayPlaneProperties2KHR> props2{};
         uint32_t prop_count2 = 0;
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2(physical_devices[dev], &prop_count2, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2KHR(physical_devices[dev], &prop_count2, nullptr));
         ASSERT_EQ(prop_count, prop_count2);
         props2.resize(prop_count2, {VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR});
-        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2(physical_devices[dev], &prop_count2, props2.data()));
+        ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceDisplayPlaneProperties2KHR(physical_devices[dev], &prop_count2, props2.data()));
 
         ASSERT_TRUE(CompareDisplayPlanePropData(props, props2));
     }
@@ -5270,9 +5224,8 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetDisplayModeProperties2 = reinterpret_cast<PFN_vkGetDisplayModeProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModeProperties2KHR"));
-    ASSERT_EQ(GetDisplayModeProperties2, nullptr);
+    PFN_vkGetDisplayModeProperties2KHR GetDisplayModeProperties2KHR = instance.load("vkGetDisplayModeProperties2KHR");
+    ASSERT_EQ(GetDisplayModeProperties2KHR, nullptr);
 }
 
 // Test vkGetDisplayModeProperties2KHR where instance supports it, but nothing else.
@@ -5285,9 +5238,8 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetDisplayModeProperties2 = reinterpret_cast<PFN_vkGetDisplayModeProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModeProperties2KHR"));
-    ASSERT_EQ(GetDisplayModeProperties2, nullptr);
+    PFN_vkGetDisplayModeProperties2KHR GetDisplayModeProperties2KHR = instance.load("vkGetDisplayModeProperties2KHR");
+    ASSERT_EQ(GetDisplayModeProperties2KHR, nullptr);
 }
 
 // Compare the display mode properties data structs
@@ -5320,12 +5272,10 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDisplayModeProperties = reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModePropertiesKHR"));
-    ASSERT_NE(GetDisplayModeProperties, nullptr);
-    auto GetDisplayModeProperties2 = reinterpret_cast<PFN_vkGetDisplayModeProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModeProperties2KHR"));
-    ASSERT_NE(GetDisplayModeProperties2, nullptr);
+    PFN_vkGetDisplayModePropertiesKHR GetDisplayModePropertiesKHR = instance.load("vkGetDisplayModePropertiesKHR");
+    ASSERT_NE(GetDisplayModePropertiesKHR, nullptr);
+    PFN_vkGetDisplayModeProperties2KHR GetDisplayModeProperties2KHR = instance.load("vkGetDisplayModeProperties2KHR");
+    ASSERT_NE(GetDisplayModeProperties2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -5334,17 +5284,17 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRInstanceAndICDSupport) {
 
     std::vector<VkDisplayModePropertiesKHR> props{};
     uint32_t props_count1 = 0;
-    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_device, VK_NULL_HANDLE, &props_count1, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayModePropertiesKHR(physical_device, VK_NULL_HANDLE, &props_count1, nullptr));
     ASSERT_NE(0U, props_count1);
     props.resize(props_count1);
-    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_device, VK_NULL_HANDLE, &props_count1, props.data()));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayModePropertiesKHR(physical_device, VK_NULL_HANDLE, &props_count1, props.data()));
 
     std::vector<VkDisplayModeProperties2KHR> props2{};
     uint32_t props_count2 = 0;
-    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2(physical_device, VK_NULL_HANDLE, &props_count2, nullptr));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2KHR(physical_device, VK_NULL_HANDLE, &props_count2, nullptr));
     ASSERT_EQ(props_count1, props_count2);
     props2.resize(props_count2, {VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR});
-    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2(physical_device, VK_NULL_HANDLE, &props_count2, props2.data()));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2KHR(physical_device, VK_NULL_HANDLE, &props_count2, props2.data()));
 
     ASSERT_TRUE(CompareDisplayModeProps(props, props2));
 }
@@ -5406,12 +5356,10 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRMixed) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDisplayModeProperties = reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModePropertiesKHR"));
-    ASSERT_NE(GetDisplayModeProperties, nullptr);
-    auto GetDisplayModeProperties2 = reinterpret_cast<PFN_vkGetDisplayModeProperties2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayModeProperties2KHR"));
-    ASSERT_NE(GetDisplayModeProperties2, nullptr);
+    PFN_vkGetDisplayModePropertiesKHR GetDisplayModePropertiesKHR = instance.load("vkGetDisplayModePropertiesKHR");
+    ASSERT_NE(GetDisplayModePropertiesKHR, nullptr);
+    PFN_vkGetDisplayModeProperties2KHR GetDisplayModeProperties2KHR = instance.load("vkGetDisplayModeProperties2KHR");
+    ASSERT_NE(GetDisplayModeProperties2KHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -5421,17 +5369,17 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRMixed) {
     for (uint32_t dev = 0; dev < device_count; ++dev) {
         std::vector<VkDisplayModePropertiesKHR> props{};
         uint32_t props_count1 = 0;
-        ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_devices[dev], VK_NULL_HANDLE, &props_count1, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetDisplayModePropertiesKHR(physical_devices[dev], VK_NULL_HANDLE, &props_count1, nullptr));
         ASSERT_NE(0U, props_count1);
         props.resize(props_count1);
-        ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties(physical_devices[dev], VK_NULL_HANDLE, &props_count1, props.data()));
+        ASSERT_EQ(VK_SUCCESS, GetDisplayModePropertiesKHR(physical_devices[dev], VK_NULL_HANDLE, &props_count1, props.data()));
 
         std::vector<VkDisplayModeProperties2KHR> props2{};
         uint32_t props_count2 = 0;
-        ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2(physical_devices[dev], VK_NULL_HANDLE, &props_count2, nullptr));
+        ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2KHR(physical_devices[dev], VK_NULL_HANDLE, &props_count2, nullptr));
         ASSERT_EQ(props_count1, props_count2);
         props2.resize(props_count2, {VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR});
-        ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2(physical_devices[dev], VK_NULL_HANDLE, &props_count2, props2.data()));
+        ASSERT_EQ(VK_SUCCESS, GetDisplayModeProperties2KHR(physical_devices[dev], VK_NULL_HANDLE, &props_count2, props2.data()));
 
         ASSERT_TRUE(CompareDisplayModeProps(props, props2));
     }
@@ -5446,9 +5394,8 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_EQ(GetDisplayPlaneCapabilities, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_EQ(GetDisplayPlaneCapabilitiesKHR, nullptr);
 }
 
 // Test vkGetDisplayPlaneCapabilities2KHR where instance supports it, but nothing else.
@@ -5461,9 +5408,8 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRNoICDSupport) {
     instance.create_info.add_extension(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_EQ(GetDisplayPlaneCapabilities, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_EQ(GetDisplayPlaneCapabilitiesKHR, nullptr);
 }
 
 // Compare the display plane caps
@@ -5503,12 +5449,10 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRInstanceAndICDSupport) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_NE(GetDisplayPlaneCapabilities, nullptr);
-    auto GetDisplayPlaneCapabilities2 = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilities2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilities2KHR"));
-    ASSERT_NE(GetDisplayPlaneCapabilities2, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_NE(GetDisplayPlaneCapabilitiesKHR, nullptr);
+    PFN_vkGetDisplayPlaneCapabilities2KHR GetDisplayPlaneCapabilities2KHR = instance.load("vkGetDisplayPlaneCapabilities2KHR");
+    ASSERT_NE(GetDisplayPlaneCapabilities2KHR, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -5516,10 +5460,10 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRInstanceAndICDSupport) {
     ASSERT_EQ(driver_count, 1U);
 
     VkDisplayPlaneCapabilitiesKHR caps{};
-    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities(physical_device, 0, 0, &caps));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilitiesKHR(physical_device, 0, 0, &caps));
     VkDisplayPlaneCapabilities2KHR caps2{};
     VkDisplayPlaneInfo2KHR info{VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR};
-    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities2(physical_device, &info, &caps2));
+    ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities2KHR(physical_device, &info, &caps2));
     ASSERT_TRUE(CompareDisplayPlaneCaps(caps, caps2));
 }
 
@@ -5580,12 +5524,10 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRMixed) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDisplayPlaneCapabilities = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilitiesKHR"));
-    ASSERT_NE(GetDisplayPlaneCapabilities, nullptr);
-    auto GetDisplayPlaneCapabilities2 = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilities2KHR>(
-        instance.functions->vkGetInstanceProcAddr(instance, "vkGetDisplayPlaneCapabilities2KHR"));
-    ASSERT_NE(GetDisplayPlaneCapabilities2, nullptr);
+    PFN_vkGetDisplayPlaneCapabilitiesKHR GetDisplayPlaneCapabilitiesKHR = instance.load("vkGetDisplayPlaneCapabilitiesKHR");
+    ASSERT_NE(GetDisplayPlaneCapabilitiesKHR, nullptr);
+    PFN_vkGetDisplayPlaneCapabilities2KHR GetDisplayPlaneCapabilities2KHR = instance.load("vkGetDisplayPlaneCapabilities2KHR");
+    ASSERT_NE(GetDisplayPlaneCapabilities2KHR, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -5594,10 +5536,10 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRMixed) {
 
     for (uint32_t dev = 0; dev < device_count; ++dev) {
         VkDisplayPlaneCapabilitiesKHR caps{};
-        ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities(physical_devices[dev], 0, 0, &caps));
+        ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilitiesKHR(physical_devices[dev], 0, 0, &caps));
         VkDisplayPlaneCapabilities2KHR caps2{};
         VkDisplayPlaneInfo2KHR info{VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR};
-        ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities2(physical_devices[dev], &info, &caps2));
+        ASSERT_EQ(VK_SUCCESS, GetDisplayPlaneCapabilities2KHR(physical_devices[dev], &info, &caps2));
         CompareDisplayPlaneCaps(caps, caps2);
     }
 }
@@ -5615,9 +5557,8 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto AcquireDrmDisplay =
-        reinterpret_cast<PFN_vkAcquireDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkAcquireDrmDisplayEXT"));
-    ASSERT_EQ(AcquireDrmDisplay, nullptr);
+    PFN_vkAcquireDrmDisplayEXT AcquireDrmDisplayEXT = instance.load("vkAcquireDrmDisplayEXT");
+    ASSERT_EQ(AcquireDrmDisplayEXT, nullptr);
 }
 
 // Test vkAcquireDrmDisplayEXT where instance supports it, but nothing else.
@@ -5630,9 +5571,8 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTNoICDSupport) {
     instance.create_info.add_extension(VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto AcquireDrmDisplay =
-        reinterpret_cast<PFN_vkAcquireDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkAcquireDrmDisplayEXT"));
-    ASSERT_EQ(AcquireDrmDisplay, nullptr);
+    PFN_vkAcquireDrmDisplayEXT AcquireDrmDisplayEXT = instance.load("vkAcquireDrmDisplayEXT");
+    ASSERT_EQ(AcquireDrmDisplayEXT, nullptr);
 }
 
 // Test vkAcquireDrmDisplayEXT where instance and ICD supports it, but device does not support it.
@@ -5649,9 +5589,8 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTInstanceAndICDSupport) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto AcquireDrmDisplay =
-        reinterpret_cast<PFN_vkAcquireDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkAcquireDrmDisplayEXT"));
-    ASSERT_NE(AcquireDrmDisplay, nullptr);
+    PFN_vkAcquireDrmDisplayEXT AcquireDrmDisplayEXT = instance.load("vkAcquireDrmDisplayEXT");
+    ASSERT_NE(AcquireDrmDisplayEXT, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -5659,7 +5598,7 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTInstanceAndICDSupport) {
     ASSERT_EQ(driver_count, 1U);
 
     VkDisplayKHR display = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, AcquireDrmDisplay(physical_device, 0, display));
+    ASSERT_EQ(VK_SUCCESS, AcquireDrmDisplayEXT(physical_device, 0, display));
 }
 
 // Test vkAcquireDrmDisplayEXT where instance supports it with some ICDs that both support
@@ -5719,9 +5658,8 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTMixed) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto AcquireDrmDisplay =
-        reinterpret_cast<PFN_vkAcquireDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkAcquireDrmDisplayEXT"));
-    ASSERT_NE(AcquireDrmDisplay, nullptr);
+    PFN_vkAcquireDrmDisplayEXT AcquireDrmDisplayEXT = instance.load("vkAcquireDrmDisplayEXT");
+    ASSERT_NE(AcquireDrmDisplayEXT, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -5747,9 +5685,9 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, AcquireDrmDisplay(physical_devices[dev], 0, display));
+                        ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, AcquireDrmDisplayEXT(physical_devices[dev], 0, display));
                     } else {
-                        ASSERT_EQ(VK_SUCCESS, AcquireDrmDisplay(physical_devices[dev], 0, display));
+                        ASSERT_EQ(VK_SUCCESS, AcquireDrmDisplayEXT(physical_devices[dev], 0, display));
                     }
                     found = true;
                     break;
@@ -5771,9 +5709,8 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTNoSupport) {
     InstWrapper instance(env.vulkan_functions);
     instance.CheckCreate();
 
-    auto GetDrmDisplay =
-        reinterpret_cast<PFN_vkGetDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkGetDrmDisplayEXT"));
-    ASSERT_EQ(GetDrmDisplay, nullptr);
+    PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT = instance.load("vkGetDrmDisplayEXT");
+    ASSERT_EQ(GetDrmDisplayEXT, nullptr);
 }
 
 // Test vkGetDrmDisplayEXT where instance supports it, but nothing else.
@@ -5786,9 +5723,8 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTNoICDSupport) {
     instance.create_info.add_extension(VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME);
     instance.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
 
-    auto GetDrmDisplay =
-        reinterpret_cast<PFN_vkGetDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkGetDrmDisplayEXT"));
-    ASSERT_EQ(GetDrmDisplay, nullptr);
+    PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT = instance.load("vkGetDrmDisplayEXT");
+    ASSERT_EQ(GetDrmDisplayEXT, nullptr);
 }
 
 // Test vkGetDrmDisplayEXT where instance and ICD supports it, but device does not support it.
@@ -5805,9 +5741,8 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTInstanceAndICDSupport) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDrmDisplay =
-        reinterpret_cast<PFN_vkGetDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkGetDrmDisplayEXT"));
-    ASSERT_NE(GetDrmDisplay, nullptr);
+    PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT = instance.load("vkGetDrmDisplayEXT");
+    ASSERT_NE(GetDrmDisplayEXT, nullptr);
 
     uint32_t driver_count = 1;
     VkPhysicalDevice physical_device;
@@ -5815,7 +5750,7 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTInstanceAndICDSupport) {
     ASSERT_EQ(driver_count, 1U);
 
     VkDisplayKHR display = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, GetDrmDisplay(physical_device, 0, 0, &display));
+    ASSERT_EQ(VK_SUCCESS, GetDrmDisplayEXT(physical_device, 0, 0, &display));
     ASSERT_EQ(display, env.get_test_icd(0).physical_devices.back().displays[0]);
 }
 
@@ -5876,9 +5811,8 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTMixed) {
     instance.create_info.add_extensions({VK_KHR_DISPLAY_EXTENSION_NAME, VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME});
     instance.CheckCreate();
 
-    auto GetDrmDisplay =
-        reinterpret_cast<PFN_vkGetDrmDisplayEXT>(instance.functions->vkGetInstanceProcAddr(instance, "vkGetDrmDisplayEXT"));
-    ASSERT_NE(GetDrmDisplay, nullptr);
+    PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT = instance.load("vkGetDrmDisplayEXT");
+    ASSERT_NE(GetDrmDisplayEXT, nullptr);
 
     uint32_t device_count = max_phys_devs;
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices;
@@ -5904,9 +5838,9 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, GetDrmDisplay(physical_devices[dev], 0, 0, &display));
+                        ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, GetDrmDisplayEXT(physical_devices[dev], 0, 0, &display));
                     } else {
-                        ASSERT_EQ(VK_SUCCESS, GetDrmDisplay(physical_devices[dev], 0, 0, &display));
+                        ASSERT_EQ(VK_SUCCESS, GetDrmDisplayEXT(physical_devices[dev], 0, 0, &display));
                         ASSERT_EQ(display, cur_dev.displays[0]);
                     }
                     found = true;
@@ -5950,12 +5884,12 @@ TEST(LoaderInstPhysDevExts, DifferentInstanceExtensions) {
     const uint32_t expected_device_count = 3;
     auto physical_devices = inst.GetPhysDevs(expected_device_count);
 
-    auto GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
-    auto GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"));
-    auto GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceExternalFencePropertiesKHR"));
+    PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR GetPhysicalDeviceExternalBufferProperties =
+        inst.load("vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+    PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR GetPhysicalDeviceExternalSemaphoreProperties =
+        inst.load("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+    PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR GetPhysicalDeviceExternalFenceProperties =
+        inst.load("vkGetPhysicalDeviceExternalFencePropertiesKHR");
     ASSERT_NE(nullptr, GetPhysicalDeviceExternalBufferProperties);
     ASSERT_NE(nullptr, GetPhysicalDeviceExternalSemaphoreProperties);
     ASSERT_NE(nullptr, GetPhysicalDeviceExternalFenceProperties);
@@ -5999,16 +5933,16 @@ TEST(LoaderInstPhysDevExts, DifferentPhysicalDeviceExtensions) {
     const uint32_t expected_device_count = 3;
     auto physical_devices = inst.GetPhysDevs(expected_device_count);
 
-    auto EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters =
-        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
-            inst.functions->vkGetInstanceProcAddr(inst, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
-    auto GetPhysicalDeviceMultisampleProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceMultisamplePropertiesEXT"));
-    auto GetPhysicalDeviceCalibrateableTimeDomains = reinterpret_cast<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>(
-        inst.functions->vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
-    ASSERT_NE(nullptr, EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters);
-    ASSERT_NE(nullptr, GetPhysicalDeviceMultisampleProperties);
-    ASSERT_NE(nullptr, GetPhysicalDeviceCalibrateableTimeDomains);
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
+        EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+            inst.load("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT =
+        inst.load("vkGetPhysicalDeviceMultisamplePropertiesEXT");
+    PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT GetPhysicalDeviceCalibrateableTimeDomainsEXT =
+        inst.load("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT");
+    ASSERT_NE(nullptr, EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR);
+    ASSERT_NE(nullptr, GetPhysicalDeviceMultisamplePropertiesEXT);
+    ASSERT_NE(nullptr, GetPhysicalDeviceCalibrateableTimeDomainsEXT);
 
     for (uint32_t dev = 0; dev < expected_device_count; ++dev) {
         uint32_t extension_count = 0;
@@ -6036,27 +5970,27 @@ TEST(LoaderInstPhysDevExts, DifferentPhysicalDeviceExtensions) {
 
         // For physical device extensions, they should work for devices that support it and crash for those that don't.
         if (supports_query) {
-            ASSERT_EQ(VK_SUCCESS, EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(physical_devices[dev], 0, nullptr,
-                                                                                             nullptr, nullptr));
+            ASSERT_EQ(VK_SUCCESS, EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(physical_devices[dev], 0, nullptr,
+                                                                                                nullptr, nullptr));
         } else {
             ASSERT_DEATH(
-                EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(physical_devices[dev], 0, nullptr, nullptr, nullptr),
+                EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(physical_devices[dev], 0, nullptr, nullptr, nullptr),
                 "");
             ASSERT_FALSE(
                 log.find("ICD associated with VkPhysicalDevice does not support "
                          "EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
         }
         if (supports_samples) {
-            GetPhysicalDeviceMultisampleProperties(physical_devices[dev], VK_SAMPLE_COUNT_2_BIT, nullptr);
+            GetPhysicalDeviceMultisamplePropertiesEXT(physical_devices[dev], VK_SAMPLE_COUNT_2_BIT, nullptr);
         } else {
-            ASSERT_DEATH(GetPhysicalDeviceMultisampleProperties(physical_devices[dev], VK_SAMPLE_COUNT_2_BIT, nullptr), "");
+            ASSERT_DEATH(GetPhysicalDeviceMultisamplePropertiesEXT(physical_devices[dev], VK_SAMPLE_COUNT_2_BIT, nullptr), "");
             ASSERT_FALSE(
                 log.find("ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceMultisamplePropertiesEXT"));
         }
         if (supports_timestamps) {
-            ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceCalibrateableTimeDomains(physical_devices[dev], nullptr, nullptr));
+            ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_devices[dev], nullptr, nullptr));
         } else {
-            ASSERT_DEATH(GetPhysicalDeviceCalibrateableTimeDomains(physical_devices[dev], nullptr, nullptr), "");
+            ASSERT_DEATH(GetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_devices[dev], nullptr, nullptr), "");
             ASSERT_FALSE(
                 log.find("ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCalibrateableTimeDomainsEXT"));
         }
