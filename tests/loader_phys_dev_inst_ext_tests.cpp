@@ -5926,17 +5926,17 @@ TEST(LoaderInstPhysDevExts, DifferentInstanceExtensions) {
     // Add 3 drivers each of which supports a different instance extension
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(0).add_instance_extension({VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME});
-    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.push_back({"pd0"});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(1).add_instance_extension({VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME});
-    env.get_test_icd(1).physical_devices.push_back({"pd1", 0});
+    env.get_test_icd(1).physical_devices.push_back({"pd1"});
     env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(2).add_instance_extension({VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME});
-    env.get_test_icd(2).physical_devices.push_back({"pd2", 1});
+    env.get_test_icd(2).physical_devices.push_back({"pd2"});
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME, 0});
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
@@ -5980,15 +5980,15 @@ TEST(LoaderInstPhysDevExts, DifferentPhysicalDeviceExtensions) {
 
     // Add 3 drivers each of which supports a different physical device extension
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
-    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.push_back("pd0");
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
-    env.get_test_icd(1).physical_devices.push_back({"pd1", 0});
+    env.get_test_icd(1).physical_devices.push_back("pd1");
     env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
-    env.get_test_icd(2).physical_devices.push_back({"pd2", 1});
+    env.get_test_icd(2).physical_devices.push_back("pd2");
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, 0});
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
