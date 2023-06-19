@@ -1213,17 +1213,8 @@ TEST(MetaLayers, DeviceExtensionInComponentLayer) {
         ASSERT_TRUE(env.debug_log.find(std::string("Meta-layer ") + meta_layer_name + " component layer " + regular_layer_name +
                                        " adding device extension " + device_ext_name));
 
-        auto phys_dev = inst.GetPhysDev();
-        uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 1> extensions;
-        EXPECT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name, &extension_count, nullptr));
-        EXPECT_EQ(extension_count, 1U);  // return device_ext_name
-
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name, &extension_count,
-                                                                                        extensions.data()));
-        EXPECT_EQ(extension_count, 1U);
-        EXPECT_TRUE(string_eq(extensions[0].extensionName, device_ext_name));
+        auto extensions = inst.EnumerateLayerDeviceExtensions(inst.GetPhysDev(), meta_layer_name, 1);
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, device_ext_name));
     }
     {  // layer is enabled
         InstWrapper inst{env.vulkan_functions};
@@ -1232,18 +1223,9 @@ TEST(MetaLayers, DeviceExtensionInComponentLayer) {
         inst.CheckCreate();
         ASSERT_TRUE(env.debug_log.find(std::string("Meta-layer ") + meta_layer_name + " component layer " + regular_layer_name +
                                        " adding device extension " + device_ext_name));
-        auto phys_dev = inst.GetPhysDev();
 
-        uint32_t extension_count = 0;
-        std::array<VkExtensionProperties, 1> extensions;
-        EXPECT_EQ(VK_SUCCESS,
-                  env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name, &extension_count, nullptr));
-        EXPECT_EQ(extension_count, 1U);  // return device_ext_name
-
-        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, meta_layer_name, &extension_count,
-                                                                                        extensions.data()));
-        EXPECT_EQ(extension_count, 1U);
-        EXPECT_TRUE(string_eq(extensions[0].extensionName, device_ext_name));
+        auto extensions = inst.EnumerateLayerDeviceExtensions(inst.GetPhysDev(), meta_layer_name, 1);
+        EXPECT_TRUE(string_eq(extensions.at(0).extensionName, device_ext_name));
     }
 }
 
@@ -3149,37 +3131,8 @@ TEST(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
     inst.CheckCreate();
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
-                                                                                        extension_props.data()));
-
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
-        }
-    }
-
-    // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name,
-                                                                                        &extension_count, extension_props.data()));
-
-        // Make sure the extensions still aren't present in this layer
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
-        }
-    }
+    ASSERT_NO_FATAL_FAILURE(inst.EnumerateDeviceExtensions(phys_dev, 0));
+    ASSERT_NO_FATAL_FAILURE(inst.EnumerateLayerDeviceExtensions(phys_dev, explicit_layer_name, 0));
 
     DeviceWrapper dev{inst};
     dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
@@ -3217,40 +3170,9 @@ TEST(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
     inst.CheckCreate();
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
-                                                                                        extension_props.data()));
-
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
-        }
-    }
-
-    // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 1U);
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count,
-                                                                                    extension_props.data()));
-
-    // Make sure only the one extension implemented by the enabled implicit layer is present.
-    bool found = true;
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
-            found = true;
-        }
-        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
-    }
-    ASSERT_EQ(true, found);
+    ASSERT_NO_FATAL_FAILURE(inst.EnumerateDeviceExtensions(phys_dev, 0));
+    auto layer_extensions = inst.EnumerateLayerDeviceExtensions(phys_dev, explicit_layer_name, 1);
+    ASSERT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
 
     DeviceWrapper dev{inst};
     dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
@@ -3288,40 +3210,9 @@ TEST(LayerExtensions, ExplicitPresentImageDeviceExtension) {
     inst.CheckCreate();
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
-                                                                                        extension_props.data()));
-
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
-        }
-    }
-
-    // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 1U);
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count,
-                                                                                    extension_props.data()));
-
-    // Make sure only the one extension implemented by the enabled implicit layer is present.
-    bool found = false;
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
-        if (!strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-            found = true;
-        }
-    }
-    ASSERT_EQ(true, found);
+    ASSERT_NO_FATAL_FAILURE(inst.EnumerateDeviceExtensions(phys_dev, 0));
+    auto layer_extensions = inst.EnumerateLayerDeviceExtensions(phys_dev, explicit_layer_name, 1);
+    ASSERT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
 
     DeviceWrapper dev{inst};
     dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
@@ -3362,44 +3253,10 @@ TEST(LayerExtensions, ExplicitBothDeviceExtensions) {
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
     handle_assert_has_value(phys_dev);
 
-    uint32_t extension_count = 0;
-    std::vector<VkExtensionProperties> extension_props;
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count, nullptr));
-    if (extension_count > 0) {
-        extension_props.resize(extension_count);
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, nullptr, &extension_count,
-                                                                                        extension_props.data()));
-
-        // Make sure the extensions are not present
-        for (uint32_t ext = 0; ext < extension_count; ++ext) {
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
-            ASSERT_NE(0, strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
-        }
-    }
-
-    // Now query by layer name.
-    extension_count = 0;
-    extension_props.clear();
-    ASSERT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count, nullptr));
-    ASSERT_EQ(extension_count, 2U);  // debug_utils, and debug_report
-    extension_props.resize(extension_count);
-    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev, explicit_layer_name, &extension_count,
-                                                                                    extension_props.data()));
-
-    // Make sure only the one extension implemented by the enabled implicit layer is present.
-    bool found[2] = {false, false};
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (!strcmp(extension_props[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
-            found[0] = true;
-        }
-        if (!strcmp(extension_props[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-            found[1] = true;
-        }
-    }
-    for (uint32_t ext = 0; ext < 2; ++ext) {
-        ASSERT_EQ(true, found[ext]);
-    }
+    ASSERT_NO_FATAL_FAILURE(inst.EnumerateDeviceExtensions(phys_dev, 0));
+    auto layer_extensions = inst.EnumerateLayerDeviceExtensions(phys_dev, explicit_layer_name, 2);
+    ASSERT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+    ASSERT_TRUE(string_eq(layer_extensions.at(1).extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
 
     DeviceWrapper dev{inst};
     dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
@@ -3618,22 +3475,9 @@ TEST(TestLayers, InstEnvironEnableExplicitLayer) {
     inst2.CheckCreate();
     VkPhysicalDevice phys_dev2 = inst2.GetPhysDev();
 
-    // Make sure the extensions in the layer are present
-    extension_count = 40;
-    EXPECT_EQ(VK_SUCCESS,
-              env.vulkan_functions.vkEnumerateDeviceExtensionProperties(phys_dev2, nullptr, &extension_count, extensions.data()));
-    bool maint_found = false;
-    bool pres_found = false;
-    for (uint32_t ext = 0; ext < extension_count; ++ext) {
-        if (string_eq(extensions[ext].extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
-            maint_found = true;
-        }
-        if (string_eq(extensions[ext].extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-            pres_found = true;
-        }
-    }
-    ASSERT_EQ(true, maint_found);
-    ASSERT_EQ(true, pres_found);
+    auto layer_extensions = inst2.EnumerateLayerDeviceExtensions(phys_dev2, explicit_layer_name, 2);
+    ASSERT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+    ASSERT_TRUE(string_eq(layer_extensions.at(1).extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
 
     DeviceWrapper dev2{inst2};
     dev2.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)

@@ -251,6 +251,19 @@ std::vector<VkExtensionProperties> InstWrapper::EnumerateDeviceExtensions(VkPhys
     return extensions;
 }
 
+std::vector<VkExtensionProperties> InstWrapper::EnumerateLayerDeviceExtensions(VkPhysicalDevice physical_device,
+                                                                               const char* layer_name, uint32_t expected_count) {
+    uint32_t count = 0;
+    VkResult res = functions->vkEnumerateDeviceExtensionProperties(physical_device, layer_name, &count, nullptr);
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    std::vector<VkExtensionProperties> extensions{count};
+    res = functions->vkEnumerateDeviceExtensionProperties(physical_device, layer_name, &count, extensions.data());
+    EXPECT_EQ(VK_SUCCESS, res);
+    EXPECT_EQ(count, expected_count);
+    return extensions;
+}
+
 DeviceWrapper::DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks) noexcept
     : functions(inst_wrapper.functions), callbacks(callbacks){};
 DeviceWrapper::DeviceWrapper(VulkanFunctions& functions, VkDevice device, VkAllocationCallbacks* callbacks) noexcept

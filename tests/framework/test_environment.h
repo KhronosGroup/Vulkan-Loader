@@ -294,6 +294,9 @@ struct InstWrapper {
     // Get list of device extensions associated with a VkPhysicalDevice
     // Use count to specify an expected count
     std::vector<VkExtensionProperties> EnumerateDeviceExtensions(VkPhysicalDevice physical_device, uint32_t count);
+    // Same as EnumerateDeviceExtensions but for a specific layer
+    std::vector<VkExtensionProperties> EnumerateLayerDeviceExtensions(VkPhysicalDevice physical_device, const char* layer_name,
+                                                                      uint32_t expected_count);
 
     VulkanFunctions* functions = nullptr;
     VkInstance inst = VK_NULL_HANDLE;
