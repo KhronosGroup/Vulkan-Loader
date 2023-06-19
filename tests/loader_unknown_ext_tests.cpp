@@ -661,7 +661,6 @@ void unknown_function_test_impl(std::vector<TestConfig> const& flags) {
 
     auto& driver = env.get_test_icd();
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().add_queue_family_properties({});
 
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);

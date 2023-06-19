@@ -77,7 +77,6 @@ TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
     ASSERT_EQ(gdpa_loader, gdpa_inst_queried);
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(phys_dev);
 
     PFN_vkGetDeviceProcAddr gdpa_dev_queried = dev.load("vkGetDeviceProcAddr");
@@ -204,7 +203,6 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     auto phys_dev = inst.GetPhysDev();
     {
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
         DeviceFunctions dev_funcs{env.vulkan_functions, dev};
 
@@ -249,7 +247,6 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
 
         DeviceWrapper dev{inst};
         dev.create_info.add_extensions({"VK_KHR_swapchain", "VK_KHR_display_swapchain", "VK_EXT_debug_marker"});
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
         DeviceFunctions dev_funcs{env.vulkan_functions, dev};
 

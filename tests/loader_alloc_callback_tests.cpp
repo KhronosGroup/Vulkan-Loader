@@ -269,12 +269,14 @@ TEST(Allocation, InstanceAndDevice) {
         ASSERT_EQ(family.timestampValidBits, 0U);
 
         DeviceCreateInfo dev_create_info;
-        DeviceQueueCreateInfo queue_info;
-        queue_info.add_priority(0.0f);
-        dev_create_info.add_device_queue(queue_info);
+        dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         VkDevice device;
         ASSERT_EQ(inst->vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device), VK_SUCCESS);
+
+        VkQueue queue;
+        inst->vkGetDeviceQueue(device, 0, 0, &queue);
+
         inst->vkDestroyDevice(device, tracker.get());
     }
     ASSERT_TRUE(tracker.empty());
@@ -317,12 +319,13 @@ TEST(Allocation, InstanceButNotDevice) {
         ASSERT_EQ(family.timestampValidBits, 0U);
 
         DeviceCreateInfo dev_create_info;
-        DeviceQueueCreateInfo queue_info;
-        queue_info.add_priority(0.0f);
-        dev_create_info.add_device_queue(queue_info);
+        dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         VkDevice device;
         ASSERT_EQ(inst->vkCreateDevice(physical_device, dev_create_info.get(), nullptr, &device), VK_SUCCESS);
+        VkQueue queue;
+        inst->vkGetDeviceQueue(device, 0, 0, &queue);
+
         inst->vkDestroyDevice(device, nullptr);
     }
     ASSERT_TRUE(tracker.empty());
@@ -374,12 +377,14 @@ TEST(Allocation, DeviceButNotInstance) {
         ASSERT_EQ(family.timestampValidBits, 0U);
 
         DeviceCreateInfo dev_create_info;
-        DeviceQueueCreateInfo queue_info;
-        queue_info.add_priority(0.0f);
-        dev_create_info.add_device_queue(queue_info);
+        dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         VkDevice device;
         ASSERT_EQ(inst->vkCreateDevice(physical_device, dev_create_info.get(), tracker.get(), &device), VK_SUCCESS);
+
+        VkQueue queue;
+        inst->vkGetDeviceQueue(device, 0, 0, &queue);
+
         inst->vkDestroyDevice(device, tracker.get());
     }
     ASSERT_TRUE(tracker.empty());
@@ -633,13 +638,14 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
         MemoryTracker tracker({false, 0, true, fail_index});
 
         DeviceCreateInfo dev_create_info;
-        DeviceQueueCreateInfo queue_info;
-        queue_info.add_priority(0.0f);
-        dev_create_info.add_device_queue(queue_info);
+        dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         VkDevice device;
         result = inst->vkCreateDevice(physical_devices[0], dev_create_info.get(), tracker.get(), &device);
         if (result == VK_SUCCESS || fail_index > 10000) {
+            VkQueue queue;
+            inst->vkGetDeviceQueue(device, 0, 0, &queue);
+
             inst->vkDestroyDevice(device, tracker.get());
             break;
         }
@@ -755,9 +761,7 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
             ASSERT_EQ(family.timestampValidBits, 0U);
 
             DeviceCreateInfo dev_create_info;
-            DeviceQueueCreateInfo queue_info;
-            queue_info.add_priority(0.0f);
-            dev_create_info.add_device_queue(queue_info);
+            dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
             VkDevice device;
             result = env.vulkan_functions.vkCreateDevice(physical_devices.at(i), dev_create_info.get(), tracker.get(), &device);
@@ -765,6 +769,9 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
                 break;
             }
             ASSERT_EQ(result, VK_SUCCESS);
+
+            VkQueue queue;
+            env.vulkan_functions.vkGetDeviceQueue(device, 0, 0, &queue);
 
             env.vulkan_functions.vkDestroyDevice(device, tracker.get());
         }
@@ -897,11 +904,14 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
             ASSERT_EQ(family.timestampValidBits, 0U);
 
             DeviceCreateInfo dev_create_info;
-            DeviceQueueCreateInfo queue_info;
-            queue_info.add_priority(0.0f);
-            dev_create_info.add_device_queue(queue_info);
+            dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
             result = env.vulkan_functions.vkCreateDevice(physical_devices[i], dev_create_info.get(), tracker.get(), &devices[i]);
+
+            VkQueue queue;
+            if (result == VK_SUCCESS) {
+                env.vulkan_functions.vkGetDeviceQueue(devices[i], 0, 0, &queue);
+            }
         }
         for (uint32_t i = 0; i < returned_physical_count; i++) {
             if (result == VK_SUCCESS) {
@@ -993,13 +1003,14 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
             ASSERT_EQ(family.timestampValidBits, 0U);
 
             DeviceCreateInfo dev_create_info;
-            DeviceQueueCreateInfo queue_info;
-            queue_info.add_priority(0.0f);
-            dev_create_info.add_device_queue(queue_info);
+            dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
             result = env.vulkan_functions.vkCreateDevice(physical_devices[i], dev_create_info.get(), tracker.get(), &devices[i]);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
                 devices[i] = VK_NULL_HANDLE;
+            } else {
+                VkQueue queue;
+                env.vulkan_functions.vkGetDeviceQueue(devices[i], 0, 0, &queue);
             }
         }
         for (uint32_t i = 0; i < returned_physical_count; i++) {
