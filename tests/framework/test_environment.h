@@ -572,7 +572,7 @@ struct FrameworkEnvironment {
     FrameworkEnvironment(const FrameworkEnvironment&) = delete;
     FrameworkEnvironment& operator=(const FrameworkEnvironment&) = delete;
 
-    TestICDHandle& add_icd(TestICDDetails icd_details) noexcept;
+    TestICD& add_icd(TestICDDetails icd_details) noexcept;
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_implicit_layer(TestLayerDetails layer_details) noexcept;
     void add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;

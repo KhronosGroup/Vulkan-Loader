@@ -780,12 +780,9 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
 
 TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd();
-    driver.setup_WSI();
-
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().add_extension("VK_KHR_swapchain");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .setup_WSI()
+        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_extension("VK_KHR_surface");
@@ -797,12 +794,9 @@ TEST(WsiTests, ForgetEnableSurfaceExtensions) {
 
 TEST(WsiTests, SwapchainFunctional) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd();
-    driver.setup_WSI();
-
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().add_extension("VK_KHR_swapchain");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .setup_WSI()
+        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.setup_WSI();

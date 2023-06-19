@@ -63,6 +63,13 @@ struct PhysicalDevice {
     BUILDER_VALUE(PhysicalDevice, VkDisplayModeKHR, display_mode, {})
     BUILDER_VALUE(PhysicalDevice, VkDisplayPlaneCapabilitiesKHR, display_plane_capabilities, {})
 
+    PhysicalDevice& set_api_version(uint32_t version) {
+        properties.apiVersion = version;
+        return *this;
+    }
+
+    PhysicalDevice&& finish() { return std::move(*this); }
+
     // Objects created from this physical device
     std::vector<VkDevice> device_handles;
     std::vector<DeviceCreateInfo> device_create_infos;

@@ -131,7 +131,7 @@ struct TestICD {
     BUILDER_VALUE(TestICD, bool, supports_tooling_info_ext, false);
     BUILDER_VALUE(TestICD, bool, supports_tooling_info_core, false);
     // List of tooling properties that this driver 'supports'
-    std::vector<VkPhysicalDeviceToolPropertiesEXT> tooling_properties;
+    BUILDER_VECTOR(TestICD, VkPhysicalDeviceToolPropertiesEXT, tooling_properties, tooling_property)
     std::vector<DispatchableHandle<VkCommandBuffer>> allocated_command_buffers;
 
     VkInstanceCreateFlags passed_in_instance_create_flags{};

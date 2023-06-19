@@ -57,10 +57,9 @@ void create_destroy_device_loop(FrameworkEnvironment* env, uint32_t num_loops_cr
                                 uint32_t num_loops_try_get_proc_addr) {
     InstWrapper inst{env->vulkan_functions};
     inst.CheckCreate();
-    VkPhysicalDevice phys_dev = inst.GetPhysDev();
     for (uint32_t i = 0; i < num_loops_create_destroy_device; i++) {
         DeviceWrapper dev{inst};
-        dev.CheckCreate(phys_dev);
+        dev.CheckCreate(inst.GetPhysDev());
 
         for (uint32_t j = 0; j < num_loops_try_get_proc_addr; j++) {
             PFN_vkCmdBindPipeline p = dev.load("vkCmdBindPipeline");
@@ -86,15 +85,13 @@ TEST(Threading, InstanceCreateDestroyLoop) {
     const auto processor_count = std::thread::hardware_concurrency();
 
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t num_loops_create_destroy_instance = 500;
     uint32_t num_loops_try_get_instance_proc_addr = 5;
     uint32_t num_loops_try_get_device_proc_addr = 100;
-    auto& driver = env.get_test_icd();
 
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)});
+    driver.physical_devices.emplace_back("physical_device_0")
+        .known_device_functions.push_back({"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)});
 
     std::vector<std::thread> instance_creation_threads;
     std::vector<std::thread> function_query_threads;
@@ -112,22 +109,17 @@ TEST(Threading, DeviceCreateDestroyLoop) {
     const auto processor_count = std::thread::hardware_concurrency();
 
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
 
     uint32_t num_loops_create_destroy_device = 1000;
     uint32_t num_loops_try_get_device_proc_addr = 5;
-    auto& driver = env.get_test_icd();
 
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)});
-    driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindDescriptorSets", to_vkVoidFunction(test_vkCmdBindDescriptorSets)});
-    driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindVertexBuffers", to_vkVoidFunction(test_vkCmdBindVertexBuffers)});
-    driver.physical_devices.back().known_device_functions.push_back(
-        {"vkCmdBindIndexBuffer", to_vkVoidFunction(test_vkCmdBindIndexBuffer)});
-    driver.physical_devices.back().known_device_functions.push_back({"vkCmdDraw", to_vkVoidFunction(test_vkCmdDraw)});
+    driver.physical_devices.emplace_back("physical_device_0").known_device_functions = {
+        {"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)},
+        {"vkCmdBindDescriptorSets", to_vkVoidFunction(test_vkCmdBindDescriptorSets)},
+        {"vkCmdBindVertexBuffers", to_vkVoidFunction(test_vkCmdBindVertexBuffers)},
+        {"vkCmdBindIndexBuffer", to_vkVoidFunction(test_vkCmdBindIndexBuffer)},
+        {"vkCmdDraw", to_vkVoidFunction(test_vkCmdDraw)}};
 
     std::vector<std::thread> device_creation_threads;
 

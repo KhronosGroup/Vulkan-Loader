@@ -212,11 +212,9 @@ TEST(Allocation, GetInstanceProcAddr) {
 // a vkEnumeratePhysicalDevices call pair.
 TEST(Allocation, EnumeratePhysicalDevices) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     MemoryTracker tracker;
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
         ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
@@ -237,12 +235,12 @@ TEST(Allocation, EnumeratePhysicalDevices) {
 // allocators used on both the instance and device.
 TEST(Allocation, InstanceAndDevice) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device(PhysicalDevice{"physical_device_0"}
+                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
+                                 .finish());
 
     MemoryTracker tracker;
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     {
         InstWrapper inst{env.vulkan_functions, tracker.get()};
         ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
@@ -286,14 +284,13 @@ TEST(Allocation, InstanceAndDevice) {
 // allocators used on only the instance and not the device.
 TEST(Allocation, InstanceButNotDevice) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device(PhysicalDevice{"physical_device_0"}
+                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
+                                 .finish());
 
     MemoryTracker tracker;
     {
-        auto& driver = env.get_test_icd();
-        driver.physical_devices.emplace_back("physical_device_0");
-        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
-
         InstWrapper inst{env.vulkan_functions, tracker.get()};
         ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
@@ -336,7 +333,10 @@ TEST(Allocation, InstanceButNotDevice) {
 // allocators used on only the device and not the instance.
 TEST(Allocation, DeviceButNotInstance) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device(PhysicalDevice{"physical_device_0"}
+                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
+                                 .finish());
 
     const char* layer_name = "VkLayerImplicit0";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -348,10 +348,6 @@ TEST(Allocation, DeviceButNotInstance) {
 
     MemoryTracker tracker;
     {
-        auto& driver = env.get_test_icd();
-        driver.physical_devices.emplace_back("physical_device_0");
-        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
-
         InstWrapper inst{env.vulkan_functions};
         ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
 
@@ -424,8 +420,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().setup_WSI();
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
 
     const char* layer_name = "VkLayerImplicit0";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -507,8 +502,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().setup_WSI();
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
 
     const char* layer_name = "VkLayerImplicit0";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -592,13 +586,13 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
 // may fail.
 TEST(Allocation, CreateDeviceIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
-    driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices[1].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device(PhysicalDevice{"physical_device_0"}
+                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
+                                 .finish())
+        .add_physical_device(PhysicalDevice{"physical_device_1"}
+                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
+                                 .finish());
 
     const char* layer_name = "VK_LAYER_VkLayerImplicit0";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -664,22 +658,22 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     for (uint32_t i = 0; i < num_physical_devices; i++) {
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)
                         .icd_manifest.set_is_portability_driver(false)
-                        .set_library_arch(sizeof(void*) == 8 ? "64" : "32"));
-        auto& driver = env.get_test_icd(i);
-        driver.set_icd_api_version(VK_API_VERSION_1_1);
-        driver.add_instance_extension("VK_KHR_get_physical_device_properties2");
-        driver.physical_devices.emplace_back("physical_device_0");
-        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
-        driver.physical_devices[0].add_extensions({"VK_EXT_one", "VK_EXT_two", "VK_EXT_three", "VK_EXT_four", "VK_EXT_five"});
+                        .set_library_arch(sizeof(void*) == 8 ? "64" : "32"))
+            .set_icd_api_version(VK_API_VERSION_1_1)
+            .add_instance_extension("VK_KHR_get_physical_device_properties2")
+            .add_physical_device("physical_device_0")
+            .physical_devices.at(0)
+            .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
+            .add_extensions({"VK_EXT_one", "VK_EXT_two", "VK_EXT_three", "VK_EXT_four", "VK_EXT_five"});
     }
 
     env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
 
-    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
     ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
-    ddl_info.pfnGetInstanceProcAddr = direct_driver_icd.icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+    ddl_info.pfnGetInstanceProcAddr = env.icds.back().icd_library.get_symbol("vk_icdGetInstanceProcAddr");
 
     VkDirectDriverLoadingListLUNARG ddl_list{};
     ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
@@ -838,8 +832,8 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         auto& driver = env.reset_icd();
 
         for (uint32_t i = 0; i < physical_dev_count; i++) {
-            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
-            driver.physical_devices[i].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i))
+                .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
         }
         MemoryTracker tracker{{false, 0, true, fail_index}};
         InstanceCreateInfo inst_create_info;
@@ -860,8 +854,8 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         ASSERT_EQ(physical_dev_count, returned_physical_count);
 
         for (uint32_t i = 0; i < 2; i++) {
-            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(physical_dev_count));
-            driver.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(physical_dev_count))
+                .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
             physical_dev_count += 1;
         }
 
@@ -934,8 +928,8 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
 
     for (uint32_t i = 0; i < 2; i++) {
         auto& driver = env.get_test_icd(i);
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
-        driver.physical_devices[0].add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i))
+            .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     }
 
     const char* layer_name = "VkLayerImplicit0";
@@ -951,7 +945,7 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
     desc1.VendorId = known_driver.vendor_id;
     desc1.AdapterLuid = _LUID{10, 1000};
     env.platform_shim->add_dxgi_adapter(GpuType::discrete, desc1);
-    env.get_test_icd().set_adapterLUID(desc1.AdapterLuid);
+    env.get_test_icd(0).set_adapterLUID(desc1.AdapterLuid);
 
     env.platform_shim->add_d3dkmt_adapter(D3DKMT_Adapter{0, _LUID{10, 1000}}.add_driver_manifest_path(env.get_icd_manifest_path()));
 

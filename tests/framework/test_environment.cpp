@@ -440,7 +440,7 @@ FrameworkEnvironment::~FrameworkEnvironment() {
     platform_shim->is_during_destruction = true;
 }
 
-TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
+TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     size_t cur_icd_index = icds.size();
     fs::FolderManager* folder = &get_folder(ManifestLocation::driver);
     if (icd_details.discovery_type == ManifestDiscoveryType::env_var ||
@@ -522,7 +522,7 @@ TestICDHandle& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcep
 #endif
         }
     }
-    return icds.back();
+    return icds.back().get_test_icd();
 }
 
 void FrameworkEnvironment::add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
