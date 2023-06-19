@@ -1177,28 +1177,15 @@ TEST(CreateDevice, ExtensionNotPresent) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-    uint32_t familyCount = 0;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, nullptr);
-    ASSERT_EQ(familyCount, 1U);
-
-    VkQueueFamilyProperties families;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, &families);
-    ASSERT_EQ(familyCount, 1U);
-    ASSERT_EQ(families, family_props.properties);
-
     DeviceWrapper dev{inst};
-    dev.create_info.add_extension("NotPresent").add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension("NotPresent");
 
     dev.CheckCreate(phys_dev, VK_ERROR_EXTENSION_NOT_PRESENT);
 }
@@ -1210,28 +1197,15 @@ TEST(CreateDevice, LayersNotPresent) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
-
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
-    uint32_t familyCount = 0;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, nullptr);
-    ASSERT_EQ(familyCount, 1U);
-
-    VkQueueFamilyProperties families;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &familyCount, &families);
-    ASSERT_EQ(familyCount, 1U);
-    ASSERT_EQ(families, family_props.properties);
-
     DeviceWrapper dev{inst};
-    dev.create_info.add_layer("NotPresent").add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_layer("NotPresent");
 
     dev.CheckCreate(phys_dev);
 }
@@ -1257,7 +1231,7 @@ TEST(CreateDevice, MatchInstanceAndDeviceLayers) {
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_layer(layer_name).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_layer(layer_name);
 
     dev.CheckCreate(phys_dev);
 }
@@ -1288,7 +1262,7 @@ TEST(CreateDevice, UnmatchInstanceAndDeviceLayers) {
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_layer(layer_name).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_layer(layer_name);
 
     dev.CheckCreate(phys_dev);
 
@@ -1324,7 +1298,7 @@ TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_layer(layer_name).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_layer(layer_name);
 
     dev.CheckCreate(phys_dev);
 }
@@ -1334,10 +1308,8 @@ TEST(CreateDevice, ConsecutiveCreate) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
 
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
     for (uint32_t i = 0; i < 100; i++) {
         driver.physical_devices.emplace_back("physical_device_0");
-        driver.physical_devices.back().queue_family_properties.push_back(family_props);
     }
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -1345,7 +1317,6 @@ TEST(CreateDevice, ConsecutiveCreate) {
     auto phys_devs = inst.GetPhysDevs(100);
     for (uint32_t i = 0; i < 100; i++) {
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_devs[i]);
     }
 }
@@ -1355,10 +1326,8 @@ TEST(CreateDevice, ConsecutiveCreateWithoutDestruction) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
 
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
     for (uint32_t i = 0; i < 100; i++) {
         driver.physical_devices.emplace_back("physical_device_0");
-        driver.physical_devices.back().queue_family_properties.push_back(family_props);
     }
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -1369,7 +1338,6 @@ TEST(CreateDevice, ConsecutiveCreateWithoutDestruction) {
     for (uint32_t i = 0; i < 100; i++) {
         devices.emplace_back(inst);
         DeviceWrapper& dev = devices.back();
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         dev.CheckCreate(phys_devs[i]);
     }
@@ -4056,7 +4024,6 @@ TEST(LayerCreatesDevice, Basic) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd().add_physical_device({});
-    env.get_test_icd().physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("implicit_layer_name")
@@ -4076,7 +4043,6 @@ TEST(LayerCreatesDevice, Basic) {
     inst.CheckCreate();
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(inst.GetPhysDev());
 }
 
@@ -4084,10 +4050,8 @@ TEST(LayerCreatesDevice, DifferentPhysicalDevice) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd(0).physical_devices.emplace_back("Device0");
-    env.get_test_icd(0).physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd(1).physical_devices.emplace_back("Device1");
-    env.get_test_icd(1).physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("implicit_layer_name")
@@ -4109,19 +4073,13 @@ TEST(LayerCreatesDevice, DifferentPhysicalDevice) {
     auto phys_devs = inst.GetPhysDevs();
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(phys_devs.at(0));
-
-    uint32_t familyCount = 0;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_devs.at(0), &familyCount, nullptr);
-    ASSERT_EQ(familyCount, 1U);
 }
 
 TEST(Layer, pfnNextGetInstanceProcAddr_should_not_return_layers_own_functions) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.get_test_icd(0).physical_devices.emplace_back("Device0");
-    env.get_test_icd(0).physical_devices.back().queue_family_properties.push_back({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("implicit_layer_name")
@@ -4136,10 +4094,5 @@ TEST(Layer, pfnNextGetInstanceProcAddr_should_not_return_layers_own_functions) {
     auto phys_devs = inst.GetPhysDevs();
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(phys_devs.at(0));
-
-    uint32_t familyCount = 0;
-    inst->vkGetPhysicalDeviceQueueFamilyProperties(phys_devs.at(0), &familyCount, nullptr);
-    ASSERT_EQ(familyCount, 1U);
 }

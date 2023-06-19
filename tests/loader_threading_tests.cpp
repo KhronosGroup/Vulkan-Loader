@@ -45,7 +45,6 @@ void create_destroy_instance_loop_with_function_queries(FrameworkEnvironment* en
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(1.0));
         dev.CheckCreate(phys_dev);
         for (uint32_t j = 0; j < num_loops_try_get_device_proc_addr; j++) {
             PFN_vkCmdBindPipeline p = dev.load("vkCmdBindPipeline");
@@ -61,7 +60,6 @@ void create_destroy_device_loop(FrameworkEnvironment* env, uint32_t num_loops_cr
     VkPhysicalDevice phys_dev = inst.GetPhysDev();
     for (uint32_t i = 0; i < num_loops_create_destroy_device; i++) {
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(1.0));
         dev.CheckCreate(phys_dev);
 
         for (uint32_t j = 0; j < num_loops_try_get_proc_addr; j++) {

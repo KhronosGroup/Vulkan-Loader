@@ -1995,10 +1995,7 @@ TEST(ExplicitLayers, WrapObjects) {
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_layer_2.json");
 
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
     {  // just the wrap layer
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_layer(wrap_objects_name);
@@ -2006,7 +2003,6 @@ TEST(ExplicitLayers, WrapObjects) {
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_dev);
     }
     {  // wrap layer first
@@ -2016,7 +2012,6 @@ TEST(ExplicitLayers, WrapObjects) {
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_dev);
     }
     {  // wrap layer last
@@ -2026,7 +2021,6 @@ TEST(ExplicitLayers, WrapObjects) {
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_dev);
     }
     {  // wrap layer last
@@ -2036,7 +2030,6 @@ TEST(ExplicitLayers, WrapObjects) {
         VkPhysicalDevice phys_dev = inst.GetPhysDev();
 
         DeviceWrapper dev{inst};
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
         dev.CheckCreate(phys_dev);
     }
 }
@@ -2460,10 +2453,7 @@ TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -2505,10 +2495,7 @@ TEST(LayerExtensions, ImplicitDirDispModeInstanceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -2554,10 +2541,7 @@ TEST(LayerExtensions, ImplicitDispSurfCountInstanceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -2600,10 +2584,7 @@ TEST(LayerExtensions, ImplicitBothInstanceExtensions) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -2650,10 +2631,7 @@ TEST(LayerExtensions, ExplicitNoAdditionalInstanceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -2685,10 +2663,7 @@ TEST(LayerExtensions, ExplicitDirDispModeInstanceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -2733,10 +2708,7 @@ TEST(LayerExtensions, ExplicitDispSurfCountInstanceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -2781,10 +2753,7 @@ TEST(LayerExtensions, ExplicitBothInstanceExtensions) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -2846,10 +2815,7 @@ TEST(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -2898,7 +2864,6 @@ TEST(LayerExtensions, ImplicitNoAdditionalDeviceExtension) {
     handle_assert_has_value(pfn_vkSetDeviceMemoryPriority);
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(phys_dev);
 
     // Query again after create device to make sure the value returned by vkGetInstanceProcAddr did not change
@@ -2924,10 +2889,7 @@ TEST(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -2970,7 +2932,7 @@ TEST(LayerExtensions, ImplicitMaintenanceDeviceExtension) {
     ASSERT_EQ(true, found);
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
@@ -2982,10 +2944,7 @@ TEST(LayerExtensions, ImplicitPresentImageDeviceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -3028,8 +2987,7 @@ TEST(LayerExtensions, ImplicitPresentImageDeviceExtension) {
     ASSERT_EQ(true, found);
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
-        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
@@ -3041,10 +2999,7 @@ TEST(LayerExtensions, ImplicitBothDeviceExtensions) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* implicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     const char* enable_env_var = "ENABLE_ME";
@@ -3091,9 +3046,7 @@ TEST(LayerExtensions, ImplicitBothDeviceExtensions) {
     }
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
-        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
-        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
@@ -3105,10 +3058,7 @@ TEST(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -3128,7 +3078,6 @@ TEST(LayerExtensions, ExplicitNoAdditionalDeviceExtension) {
     ASSERT_NO_FATAL_FAILURE(inst.EnumerateLayerDeviceExtensions(phys_dev, explicit_layer_name, 0));
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev.CheckCreate(phys_dev);
 
     // Make sure all the function pointers are NULL as well
@@ -3141,10 +3090,7 @@ TEST(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -3168,7 +3114,7 @@ TEST(LayerExtensions, ExplicitMaintenanceDeviceExtension) {
     ASSERT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
@@ -3180,10 +3126,7 @@ TEST(LayerExtensions, ExplicitPresentImageDeviceExtension) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -3208,8 +3151,7 @@ TEST(LayerExtensions, ExplicitPresentImageDeviceExtension) {
     ASSERT_TRUE(string_eq(layer_extensions.at(0).extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
-        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
@@ -3221,10 +3163,7 @@ TEST(LayerExtensions, ExplicitBothDeviceExtensions) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& driver = env.get_test_icd();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -3252,9 +3191,7 @@ TEST(LayerExtensions, ExplicitBothDeviceExtensions) {
     ASSERT_TRUE(string_eq(layer_extensions.at(1).extensionName, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME));
 
     DeviceWrapper dev{inst};
-    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
-        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
-        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME).add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     dev.CheckCreate(phys_dev);
 
     // Make sure only the appropriate function pointers are NULL as well
@@ -3450,7 +3387,6 @@ TEST(TestLayers, InstEnvironEnableExplicitLayer) {
 
     // Create a device and query the function pointers
     DeviceWrapper dev1{inst1};
-    dev1.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev1.CheckCreate(phys_dev1);
     PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolBefore = dev1.load("vkTrimCommandPoolKHR");
     PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusBefore = dev1.load("vkGetSwapchainStatusKHR");
@@ -3472,8 +3408,7 @@ TEST(TestLayers, InstEnvironEnableExplicitLayer) {
 
     DeviceWrapper dev2{inst2};
     dev2.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
-        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
-        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     dev2.CheckCreate(phys_dev2);
 
     PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolAfter = dev2.load("vkTrimCommandPoolKHR");
@@ -4469,7 +4404,6 @@ TEST(TestLayers, DoNotUseDeviceLayer) {
 
     // Create a device and query the function pointers
     DeviceWrapper dev1{inst1};
-    dev1.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
     dev1.CheckCreate(phys_dev1);
     PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolBefore = dev1.load("vkTrimCommandPoolKHR");
     PFN_vkGetSwapchainStatusKHR pfn_GetSwapchainStatusBefore = dev1.load("vkGetSwapchainStatusKHR");
@@ -4496,12 +4430,11 @@ TEST(TestLayers, DoNotUseDeviceLayer) {
     DeviceWrapper dev2{inst2};
     dev2.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
         .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
-        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f))
         .add_layer(explicit_layer_name);
     dev2.CheckCreate(phys_dev2, VK_ERROR_EXTENSION_NOT_PRESENT);
 
     DeviceWrapper dev3{inst2};
-    dev3.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f)).add_layer(explicit_layer_name);
+    dev3.create_info.add_layer(explicit_layer_name);
     dev3.CheckCreate(phys_dev2);
 
     PFN_vkTrimCommandPoolKHR pfn_TrimCommandPoolAfter = dev3.load("vkTrimCommandPoolKHR");
@@ -4539,7 +4472,6 @@ TEST(TestLayers, InstanceAndDeviceLayer) {
     DeviceWrapper dev{inst};
     dev.create_info.add_extension(VK_KHR_MAINTENANCE1_EXTENSION_NAME)
         .add_extension(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)
-        .add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f))
         .add_layer(explicit_layer_name);
     dev.CheckCreate(phys_dev);
 

@@ -783,10 +783,8 @@ TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
     driver.setup_WSI();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
     driver.physical_devices.back().add_extension("VK_KHR_swapchain");
 
     InstWrapper inst{env.vulkan_functions};
@@ -802,10 +800,8 @@ TEST(WsiTests, SwapchainFunctional) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& driver = env.get_test_icd();
     driver.setup_WSI();
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
     driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
     driver.physical_devices.back().add_extension("VK_KHR_swapchain");
 
     InstWrapper inst{env.vulkan_functions};
@@ -818,7 +814,6 @@ TEST(WsiTests, SwapchainFunctional) {
     {  // Use GDPA to get functions
         DeviceWrapper dev{inst};
         dev.create_info.add_extension("VK_KHR_swapchain");
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
 
@@ -837,7 +832,6 @@ TEST(WsiTests, SwapchainFunctional) {
     {  // Use GIPA gotten functions
         DeviceWrapper dev{inst};
         dev.create_info.add_extension("VK_KHR_swapchain");
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
 
@@ -872,7 +866,6 @@ TEST(WsiTests, SwapchainFunctional) {
     {  // forget to set the surface
         DeviceWrapper dev{inst};
         dev.create_info.add_extension("VK_KHR_swapchain");
-        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
 
         dev.CheckCreate(phys_dev);
 

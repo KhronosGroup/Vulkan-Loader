@@ -1583,8 +1583,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1617,8 +1615,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1651,8 +1647,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1685,8 +1679,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1719,8 +1711,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1753,8 +1743,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_MACOS_MVK");
@@ -1787,8 +1775,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_METAL_EXT");
@@ -1821,8 +1807,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1855,8 +1839,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1889,8 +1871,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_WAYLAND_KHR");
@@ -1923,8 +1903,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1957,8 +1935,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1993,8 +1969,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_XLIB_KHR");
@@ -2039,8 +2013,6 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
                            "wrap_objects_layer.json");
 
     driver.physical_devices.emplace_back("physical_device_0");
-    MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
-    driver.physical_devices.back().queue_family_properties.push_back(family_props);
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.add_extension("VK_EXT_debug_utils");

@@ -897,7 +897,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers([[maybe_unused]] Vk
 
 VKAPI_ATTR void VKAPI_CALL test_vkGetDeviceQueue([[maybe_unused]] VkDevice device, [[maybe_unused]] uint32_t queueFamilyIndex,
                                                  uint32_t queueIndex, VkQueue* pQueue) {
-    *pQueue = icd.physical_devices.back().queue_handles[queueIndex].handle;
+    auto fd = icd.lookup_device(device);
+    if (fd.found) {
+        *pQueue = icd.physical_devices.at(fd.phys_dev_index).queue_handles[queueIndex].handle;
+    }
 }
 
 // VK_EXT_acquire_drm_display
