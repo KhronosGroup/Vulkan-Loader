@@ -43,8 +43,7 @@ std::string get_settings_location_log_message([[maybe_unused]] FrameworkEnvironm
 // Make sure settings layer is found and that a layer defined in it is loaded
 TEST(SettingsFile, FileExist) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
@@ -74,8 +73,7 @@ TEST(SettingsFile, FileExist) {
 // Make sure that if the settings file is in a user local path, that it isn't used when running with elevated privileges
 TEST(SettingsFile, SettingsInUnsecuredLocation) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
@@ -116,8 +114,7 @@ TEST(SettingsFile, SettingsInUnsecuredLocation) {
 
 TEST(SettingsFile, SettingsInSecuredLocation) {
     FrameworkEnvironment env{FrameworkSettings{}.set_secure_loader_settings(true)};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(TestLayerDetails{
@@ -203,8 +200,7 @@ TEST(SettingsFile, SupportsMultipleSetingsSimultaneously) {
                     .set_name(global_layer_name)
                     .set_path(env.get_layer_manifest_path(1).str())
                     .set_control("on"))));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     {
         auto layer_props = env.GetLayerProperties(1);
         EXPECT_TRUE(string_eq(layer_props.at(0).layerName, global_layer_name));
@@ -238,8 +234,7 @@ TEST(SettingsFile, SupportsMultipleSetingsSimultaneously) {
 TEST(SettingsFile, LayerAutoEnabledByEnvVars) {
     FrameworkEnvironment env{};
     env.loader_settings.set_file_format_version({1, 0, 0});
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* layer_name = "VK_LAYER_automatic";
     env.add_explicit_layer(
@@ -285,8 +280,7 @@ TEST(SettingsFile, LayerAutoEnabledByEnvVars) {
 // Make sure layers are disallowed from loading if the settings file says so
 TEST(SettingsFile, LayerDisablesImplicitLayer) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* implicit_layer_name = "VK_LAYER_Implicit_TestLayer";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
@@ -315,8 +309,7 @@ TEST(SettingsFile, LayerDisablesImplicitLayer) {
 // Implicit layers should be reordered by the settings file
 TEST(SettingsFile, ImplicitLayersDontInterfere) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name1)
@@ -434,8 +427,7 @@ TEST(SettingsFile, ImplicitLayersDontInterfere) {
 // Make sure layers that are disabled can't be enabled by the application
 TEST(SettingsFile, ApplicationEnablesIgnored) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
         ManifestLayer{}.add_layer(
@@ -459,8 +451,7 @@ TEST(SettingsFile, ApplicationEnablesIgnored) {
 
 TEST(SettingsFile, LayerListIsEmpty) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* implicit_layer_name = "VK_LAYER_TestLayer";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(implicit_layer_name)
@@ -490,8 +481,7 @@ TEST(SettingsFile, LayerListIsEmpty) {
 // If a settings file exists but contains no valid settings - don't consider it
 TEST(SettingsFile, InvalidSettingsFile) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
         ManifestLayer{}.add_layer(
@@ -563,8 +553,7 @@ TEST(SettingsFile, InvalidSettingsFile) {
 // Unknown layers are put in the correct location
 TEST(SettingsFile, UnknownLayersInRightPlace) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* explicit_layer_name1 = "VK_LAYER_TestLayer1";
     env.add_explicit_layer(
         ManifestLayer{}.add_layer(
@@ -622,8 +611,7 @@ TEST(SettingsFile, UnknownLayersInRightPlace) {
 // Settings file allows loading multiple layers with the same name - as long as the path is different
 TEST(SettingsFile, MultipleLayersWithSameName) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -668,8 +656,7 @@ TEST(SettingsFile, MultipleLayersWithSameName) {
 // Settings file shouldn't be able to cause the same layer from the same path twice
 TEST(SettingsFile, MultipleLayersWithSamePath) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
@@ -704,8 +691,7 @@ TEST(SettingsFile, MultipleLayersWithSamePath) {
 // file is removed
 TEST(SettingsFile, MismatchedLayerNameAndManifestPath) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* manifest_explicit_layer_name = "VK_LAYER_MANIFEST_TestLayer";
     const char* settings_explicit_layer_name = "VK_LAYER_Settings_TestLayer";
@@ -740,8 +726,7 @@ TEST(SettingsFile, MismatchedLayerNameAndManifestPath) {
 // Settings file should take precedence over the meta layer, if present
 TEST(SettingsFile, MetaLayerAlsoActivates) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* settings_explicit_layer_name = "VK_LAYER_Regular_TestLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -848,8 +833,7 @@ TEST(SettingsFile, MetaLayerAlsoActivates) {
 // Layers are correctly ordered by settings file.
 TEST(SettingsFile, LayerOrdering) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
     env.add_explicit_layer(
@@ -929,8 +913,7 @@ TEST(SettingsFile, LayerOrdering) {
 
 TEST(SettingsFile, EnvVarsWork_VK_LAYER_PATH) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
     env.add_explicit_layer(TestLayerDetails{
@@ -1010,8 +993,7 @@ TEST(SettingsFile, EnvVarsWork_VK_LAYER_PATH) {
 
 TEST(SettingsFile, EnvVarsWork_VK_ADD_LAYER_PATH) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -1101,8 +1083,7 @@ TEST(SettingsFile, EnvVarsWork_VK_ADD_LAYER_PATH) {
 
 TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer1";
     env.add_explicit_layer(TestLayerDetails{
@@ -1151,8 +1132,7 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS) {
 // Make sure that layers disabled by settings file aren't enabled by VK_LOADER_LAYERS_ENABLE
 TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_ENABLE) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer1";
     env.add_explicit_layer(TestLayerDetails{
@@ -1179,8 +1159,7 @@ TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_ENABLE) {
 // Make sure that layers enabled by settings file aren't disabled by VK_LOADER_LAYERS_ENABLE
 TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_DISABLE) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer1";
     env.add_explicit_layer(TestLayerDetails{
@@ -1209,8 +1188,7 @@ TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_DISABLE) {
 #if defined(WIN32)
 TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     env.platform_shim->add_unsecured_manifest(ManifestCategory::settings, "jank_path");
     env.platform_shim->add_unsecured_manifest(ManifestCategory::settings, "jank_path2");
 
@@ -1243,8 +1221,7 @@ TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
 
 TEST(SettingsFile, MultipleKeysInRegistryInSecureLocation) {
     FrameworkEnvironment env{FrameworkSettings{}.set_secure_loader_settings(true)};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     env.platform_shim->add_manifest(ManifestCategory::settings, "jank_path");
     env.platform_shim->add_manifest(ManifestCategory::settings, "jank_path2");
 
@@ -1284,8 +1261,7 @@ TEST(SettingsFile, MultipleKeysInRegistryInSecureLocation) {
 // Preinstance functions respect the settings file
 TEST(SettingsFile, PreInstanceFunctions) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
@@ -1421,8 +1397,7 @@ TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {
     };
 
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -1533,8 +1508,7 @@ TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {
 // Settings can say which filters to use - make sure those are propagated & treated correctly
 TEST(SettingsFile, StderrLogFilters) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* explicit_layer_name = "Regular_TestLayer1";
     env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
@@ -1651,8 +1625,7 @@ TEST(SettingsFile, StderrLogFilters) {
 // Enough layers exist that arrays need to be resized - make sure that works
 TEST(SettingsFile, TooManyLayers) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all"));
     std::string layer_name = "VK_LAYER_regular_layer_name_";

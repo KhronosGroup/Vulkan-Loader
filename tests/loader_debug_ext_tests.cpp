@@ -1049,10 +1049,9 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
 
 TEST(GetDeviceProcAddr, DebugFuncsWithTerminator) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().setup_WSI();
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
-    env.get_test_icd().physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
+    auto& driver =
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).setup_WSI().add_physical_device("physical_device_0");
+    driver.physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
     // Hardware doesn't support the debug extensions
 
     // Use getDeviceProcAddr & vary enabling the debug extensions
@@ -1064,8 +1063,8 @@ TEST(GetDeviceProcAddr, DebugFuncsWithTerminator) {
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true));
 
     // Now set the hardware to support the extensions and run the situations again
-    env.get_test_icd().physical_devices.at(0).add_extensions({"VK_EXT_debug_marker"});
-    env.get_test_icd().add_instance_extension("VK_EXT_debug_utils");
+    driver.add_instance_extension("VK_EXT_debug_utils");
+    driver.physical_devices.at(0).add_extensions({"VK_EXT_debug_marker"});
 
     // Use getDeviceProcAddr & vary enabling the debug extensions
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false));

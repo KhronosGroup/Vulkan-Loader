@@ -36,10 +36,7 @@
 
 TEST(CreateInstance, BasicRun) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-
-    auto& driver = env.get_test_icd();
-    driver.set_min_icd_interface_version(5);
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -275,10 +272,7 @@ TEST(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
 
 TEST(EnumerateDeviceLayerProperties, LayersMatch) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -305,10 +299,7 @@ TEST(EnumerateDeviceLayerProperties, LayersMatch) {
 
 TEST(EnumerateDeviceExtensionProperties, DeviceExtensionEnumerated) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     std::array<Extension, 2> device_extensions = {Extension{"MyExtension0", 4}, Extension{"MyExtension1", 7}};
     for (auto& ext : device_extensions) {
@@ -335,10 +326,7 @@ TEST(EnumerateDeviceExtensionProperties, DeviceExtensionEnumerated) {
 
 TEST(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     std::array<Extension, 2> device_extensions = {Extension{"MyExtension0", 4}, Extension{"MyExtension1", 7}};
     for (auto& ext : device_extensions) {
@@ -366,9 +354,8 @@ TEST(EnumerateDeviceExtensionProperties, PropertyCountLessThanAvailable) {
 
 TEST(EnumerateDeviceExtensionProperties, ZeroPhysicalDeviceExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
-    env.get_test_icd().add_physical_device({});
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0));
     inst.CheckCreate(VK_SUCCESS);
@@ -455,34 +442,30 @@ void exercise_EnumerateDeviceExtensionProperties(InstWrapper& inst, VkPhysicalDe
 
 TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentNoExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    std::vector<Extension> exts = {Extension{"MyDriverExtension0", 4}, Extension{"MyDriverExtension1", 7},
+                                   Extension{"MyDriverExtension2", 6}, Extension{"MyDriverExtension3", 10}};
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device("physical_device_0")
+        .physical_devices.at(0)
+        .add_extensions(exts);
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("implicit_layer_name")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_disable_environment("DISABLE_ME")),
                            "implicit_test_layer.json");
-    std::vector<Extension> exts;
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-
-    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
-    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
-    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension2", 6);
-    driver.physical_devices.front().extensions.emplace_back("MyDriverExtension3", 10);
-
-    exts.insert(exts.begin(), driver.physical_devices.front().extensions.begin(), driver.physical_devices.front().extensions.end());
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
-    VkPhysicalDevice physical_device = inst.GetPhysDev();
-    exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
+    exercise_EnumerateDeviceExtensionProperties(inst, inst.GetPhysDev(), exts);
 }
 
 TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
@@ -499,9 +482,6 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithExtensions) {
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-
     driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
     driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
 
@@ -516,7 +496,7 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithExtensions) {
 
 TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithLotsOfExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
@@ -532,9 +512,6 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithLotsOfExtension
                            "implicit_test_layer.json");
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
 
     driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
     driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
@@ -552,7 +529,7 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithLotsOfExtension
 
 TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentWithExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
@@ -568,9 +545,6 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
                            "implicit_test_layer.json");
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -581,7 +555,7 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
 
 TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentWithLotsOfExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
@@ -598,9 +572,6 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
@@ -610,7 +581,7 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
 
 TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithDuplicateExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
@@ -626,9 +597,6 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithDuplicateExtens
                            "implicit_test_layer.json");
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
 
     driver.physical_devices.front().extensions.emplace_back("MyDriverExtension0", 4);
     driver.physical_devices.front().extensions.emplace_back("MyDriverExtension1", 7);
@@ -648,7 +616,7 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithDuplicateExtens
 
 TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithOnlyDuplicateExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
@@ -665,9 +633,6 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithOnlyDuplicateEx
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-
     driver.physical_devices.front().extensions = exts;
 
     InstWrapper inst{env.vulkan_functions};
@@ -679,14 +644,12 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithOnlyDuplicateEx
 
 TEST(EnumeratePhysicalDevices, OneCall) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
-
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices.emplace_back("physical_device_2");
-    driver.physical_devices.emplace_back("physical_device_3");
+    driver.add_physical_device("physical_device_0");
+    driver.add_physical_device("physical_device_1");
+    driver.add_physical_device("physical_device_2");
+    driver.add_physical_device("physical_device_3");
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -700,14 +663,13 @@ TEST(EnumeratePhysicalDevices, OneCall) {
 
 TEST(EnumeratePhysicalDevices, TwoCall) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
-    driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
 
     const uint32_t real_device_count = 2;
     for (uint32_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.add_physical_device(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
@@ -727,14 +689,13 @@ TEST(EnumeratePhysicalDevices, TwoCall) {
 
 TEST(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd();
-    driver.set_min_icd_interface_version(5);
-    driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
 
     const uint32_t real_device_count = 3;
     for (uint32_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.add_physical_device(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
@@ -764,9 +725,9 @@ TEST(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
 
 TEST(EnumeratePhysicalDevices, TwoCallIncomplete) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
-    driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
 
     const uint32_t real_device_count = 2;
     for (uint32_t i = 0; i < real_device_count; i++) {
@@ -822,8 +783,7 @@ TEST(EnumeratePhysicalDevices, ZeroPhysicalDevices) {
 
 TEST(EnumeratePhysicalDevices, ZeroPhysicalDevicesAfterCreateInstance) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
     inst.CheckCreate();
@@ -845,8 +805,7 @@ TEST(EnumeratePhysicalDevices, ZeroPhysicalDevicesAfterCreateInstance) {
 
 TEST(EnumeratePhysicalDevices, CallTwiceNormal) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
     for (size_t i = 0; i < 4; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
@@ -872,8 +831,7 @@ TEST(EnumeratePhysicalDevices, CallTwiceNormal) {
 
 TEST(EnumeratePhysicalDevices, CallTwiceIncompleteOnceNormal) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
     for (size_t i = 0; i < 8; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
@@ -909,8 +867,7 @@ TEST(EnumeratePhysicalDevices, CallTwiceIncompleteOnceNormal) {
 
 TEST(EnumeratePhysicalDevices, CallThriceSuccessReduce) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
     for (size_t i = 0; i < 8; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
@@ -946,8 +903,7 @@ TEST(EnumeratePhysicalDevices, CallThriceSuccessReduce) {
 
 TEST(EnumeratePhysicalDevices, CallThriceAddInBetween) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
     driver.physical_devices.emplace_back("physical_device_0");
     driver.physical_devices.emplace_back("physical_device_1");
@@ -986,8 +942,7 @@ TEST(EnumeratePhysicalDevices, CallThriceAddInBetween) {
 
 TEST(EnumeratePhysicalDevices, CallThriceRemoveInBetween) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
     for (size_t i = 0; i < 4; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
@@ -1043,8 +998,7 @@ TEST(EnumeratePhysicalDevices, CallThriceRemoveInBetween) {
 
 TEST(EnumeratePhysicalDevices, MultipleAddRemoves) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
 
     for (size_t i = 0; i < 4; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
@@ -1175,9 +1129,7 @@ TEST(EnumeratePhysicalDevices, MultipleAddRemoves) {
 
 TEST(CreateDevice, ExtensionNotPresent) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -1195,9 +1147,7 @@ TEST(CreateDevice, ExtensionNotPresent) {
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
 TEST(CreateDevice, LayersNotPresent) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -1215,8 +1165,7 @@ TEST(CreateDevice, LayersNotPresent) {
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
 TEST(CreateDevice, MatchInstanceAndDeviceLayers) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -1242,8 +1191,7 @@ TEST(CreateDevice, MatchInstanceAndDeviceLayers) {
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
 TEST(CreateDevice, UnmatchInstanceAndDeviceLayers) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -1277,8 +1225,7 @@ TEST(CreateDevice, UnmatchInstanceAndDeviceLayers) {
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#extendingvulkan-layers-devicelayerdeprecation
 TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -1305,8 +1252,7 @@ TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
 
 TEST(CreateDevice, ConsecutiveCreate) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd();
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     for (uint32_t i = 0; i < 100; i++) {
         driver.physical_devices.emplace_back("physical_device_0");
@@ -1323,8 +1269,7 @@ TEST(CreateDevice, ConsecutiveCreate) {
 
 TEST(CreateDevice, ConsecutiveCreateWithoutDestruction) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd();
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     for (uint32_t i = 0; i < 100; i++) {
         driver.physical_devices.emplace_back("physical_device_0");
@@ -1345,9 +1290,8 @@ TEST(CreateDevice, ConsecutiveCreateWithoutDestruction) {
 
 TEST(TryLoadWrongBinaries, WrongICD) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
     env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1372,8 +1316,7 @@ TEST(TryLoadWrongBinaries, WrongICD) {
 
 TEST(TryLoadWrongBinaries, WrongExplicit) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerExplicit";
     env.add_fake_explicit_layer(
@@ -1403,8 +1346,7 @@ TEST(TryLoadWrongBinaries, WrongExplicit) {
 
 TEST(TryLoadWrongBinaries, WrongImplicit) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerImplicit0";
     env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -1435,8 +1377,7 @@ TEST(TryLoadWrongBinaries, WrongImplicit) {
 
 TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
     env.add_fake_explicit_layer(
@@ -1475,8 +1416,7 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
 
 TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
     env.add_fake_explicit_layer(
@@ -1514,8 +1454,7 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
 
 TEST(TryLoadWrongBinaries, BadExplicit) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerExplicit";
     env.add_fake_explicit_layer(
@@ -1540,8 +1479,7 @@ TEST(TryLoadWrongBinaries, BadExplicit) {
 
 TEST(TryLoadWrongBinaries, BadImplicit) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerImplicit0";
     env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -1567,8 +1505,7 @@ TEST(TryLoadWrongBinaries, BadImplicit) {
 
 TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
     env.add_fake_explicit_layer(
@@ -1601,9 +1538,8 @@ TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
 TEST(TryLoadWrongBinaries, WrongArchDriver) {
     FrameworkEnvironment env{};
     // Intentionally set the wrong arch
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.icd_manifest.set_library_arch(sizeof(void*) == 4 ? "64" : "32"));
-
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.icd_manifest.set_library_arch(sizeof(void*) == 4 ? "64" : "32"))
+        .add_physical_device("physical_device_0");
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1616,8 +1552,7 @@ TEST(TryLoadWrongBinaries, WrongArchDriver) {
 
 TEST(TryLoadWrongBinaries, WrongArchLayer) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2});
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}).add_physical_device("physical_device_0");
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -1637,9 +1572,10 @@ TEST(TryLoadWrongBinaries, WrongArchLayer) {
 
 TEST(EnumeratePhysicalDeviceGroups, OneCall) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
-    driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
 
     // ICD contains 3 devices in two groups
     for (size_t i = 0; i < 3; i++) {
@@ -1769,9 +1705,10 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
 
 TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
-    driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
 
     // ICD contains 3 devices in two groups
     for (size_t i = 0; i < 3; i++) {
@@ -1884,9 +1821,10 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
 
 TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
-    driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
 
     // ICD contains 3 devices in two groups
     for (size_t i = 0; i < 3; i++) {
@@ -2000,10 +1938,11 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
 // vkEnumeratePhysicalDeviceGroupsKHR, and make sure they return the same info.
 TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
-    driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    driver.add_instance_extension({VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME})
+                       .add_instance_extension({VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME});
 
     // Generate the devices
     for (size_t i = 0; i < 6; i++) {
@@ -2088,8 +2027,9 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the add.
 TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 7; i++) {
@@ -2181,8 +2121,9 @@ TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the remove.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 7; i++) {
@@ -2266,8 +2207,9 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the add.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceAddDeviceInBetween) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 7; i++) {
@@ -2350,8 +2292,9 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceAddDeviceInBetween) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the remove.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveDeviceInBetween) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 6; i++) {
@@ -2445,8 +2388,9 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveDeviceInBetween) {
 // various devices and groups while querying in between.
 TEST(EnumeratePhysicalDeviceGroups, MultipleAddRemoves) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    auto& driver = env.get_test_icd().set_min_icd_interface_version(5).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 9; i++) {
@@ -2673,8 +2617,7 @@ TEST(ExtensionManual, ToolingProperties) {
                                                      "No-Layer"};
     {  // No support in driver
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-        env.get_test_icd().physical_devices.push_back({});
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
@@ -2690,11 +2633,10 @@ TEST(ExtensionManual, ToolingProperties) {
     }
     {  // extension is supported in driver
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-        env.get_test_icd().physical_devices.push_back({});
-        env.get_test_icd().supports_tooling_info_ext = true;
-        env.get_test_icd().tooling_properties.push_back(icd_tool_props);
-        env.get_test_icd().physical_devices.back().extensions.push_back({VK_EXT_TOOLING_INFO_EXTENSION_NAME, 0});
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+            .set_supports_tooling_info_ext(true)
+            .add_tooling_property(icd_tool_props)
+            .add_physical_device(PhysicalDevice{}.add_extension(VK_EXT_TOOLING_INFO_EXTENSION_NAME).finish());
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
@@ -2713,11 +2655,12 @@ TEST(ExtensionManual, ToolingProperties) {
     }
     {  // core
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-        env.get_test_icd().physical_devices.push_back({});
-        env.get_test_icd().physical_devices.back().properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
-        env.get_test_icd().supports_tooling_info_core = true;
-        env.get_test_icd().tooling_properties.push_back(icd_tool_props);
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+            .add_physical_device({})
+            .set_supports_tooling_info_core(true)
+            .add_tooling_property(icd_tool_props)
+            .physical_devices.back()
+            .properties.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
@@ -3597,11 +3540,9 @@ const char* portability_driver_warning =
 TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
     FrameworkEnvironment env{};
     env.add_icd(
-        TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_is_portability_driver(true)));
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.max_icd_interface_version = 1;
+           TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_is_portability_driver(true)))
+        .add_physical_device("physical_device_0")
+        .set_max_icd_interface_version(1);
     {  // enable portability extension and flag
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -3760,22 +3701,16 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICDCheckFlagsPassedIntoIC
 
 TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)));
-    env.add_icd(
-        TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_is_portability_driver(true)));
-
     Extension first_ext{"VK_EXT_validation_features"};  // known instance extensions
     Extension second_ext{"VK_EXT_headless_surface"};
-    env.get_test_icd().add_instance_extensions({first_ext, second_ext});
-
-    auto& driver0 = env.get_test_icd(0);
-    auto& driver1 = env.get_test_icd(1);
-
-    driver0.physical_devices.emplace_back("physical_device_0");
-    driver0.max_icd_interface_version = 1;
-
-    driver1.physical_devices.emplace_back("portability_physical_device_1");
-    driver1.max_icd_interface_version = 1;
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)))
+        .add_physical_device("physical_device_0")
+        .set_max_icd_interface_version(1)
+        .add_instance_extensions({first_ext, second_ext});
+    env.add_icd(
+           TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_is_portability_driver(true)))
+        .add_physical_device("portability_physical_device_1")
+        .set_max_icd_interface_version(1);
     {
         // check that enumerating instance extensions work with a portability driver present
         auto extensions = env.GetInstanceExtensions(6);
@@ -3813,8 +3748,8 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) 
 #if defined(_WIN32)
 TEST(AppPackageDriverDiscovery, AppPackageTest) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::windows_app_package));
-    env.get_test_icd().physical_devices.push_back({});
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::windows_app_package))
+        .add_physical_device({});
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -3849,10 +3784,9 @@ TEST(DuplicateRegistryEntries, Drivers) {
     auto null_path = env.get_folder(ManifestLocation::null).location() / "test_icd_0.json";
     env.platform_shim->add_manifest(ManifestCategory::icd, null_path.str());
 
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::null_dir));
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
-    driver.adapterLUID = _LUID{10, 1000};
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::null_dir))
+        .add_physical_device("physical_device_0")
+        .set_adapterLUID(_LUID{10, 1000});
     env.platform_shim->add_d3dkmt_adapter(D3DKMT_Adapter{0, _LUID{10, 1000}}.add_driver_manifest_path(env.get_icd_manifest_path()));
 
     InstWrapper inst{env.vulkan_functions};
@@ -3869,10 +3803,10 @@ TEST(LibraryLoading, SystemLocations) {
     EnvVarWrapper ld_library_path("LD_LIBRARY_PATH", env.get_folder(ManifestLocation::driver).location().str());
     ld_library_path.add_to_list(env.get_folder(ManifestLocation::explicit_layer).location().str());
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_use_dynamic_library_default_search_paths(true));
-    env.get_test_icd().physical_devices.push_back({});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_use_dynamic_library_default_search_paths(true))
+                       .add_physical_device({});
     const char* fake_ext_name = "VK_FAKE_extension";
-    env.get_test_icd().physical_devices.back().add_extension(fake_ext_name);
+    driver.physical_devices.back().add_extension(fake_ext_name);
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -3902,9 +3836,8 @@ TEST(LibraryLoading, SystemLocations) {
 // Check that valid symlinks do not cause the loader to crash when directly in an XDG env-var
 TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
     FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
-    env.add_icd(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder));
-    env.get_test_icd().physical_devices.push_back({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .add_physical_device({});
     auto driver_path = env.get_icd_manifest_path(0);
     std::string symlink_name = "symlink_to_driver.json";
     fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
@@ -3921,9 +3854,8 @@ TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
 // Check that valid symlinks do not cause the loader to crash
 TEST(ManifestDiscovery, ValidSymlink) {
     FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
-    env.add_icd(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder));
-    env.get_test_icd().physical_devices.push_back({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .add_physical_device({});
 
     auto driver_path = env.get_icd_manifest_path(0);
     std::string symlink_name = "symlink_to_driver.json";
@@ -4022,8 +3954,7 @@ TEST(ManifestDiscovery, AppleBundlesEnvVarActive) {
 
 TEST(LayerCreatesDevice, Basic) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd().add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("implicit_layer_name")
@@ -4078,8 +4009,7 @@ TEST(LayerCreatesDevice, DifferentPhysicalDevice) {
 
 TEST(Layer, pfnNextGetInstanceProcAddr_should_not_return_layers_own_functions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.get_test_icd(0).physical_devices.emplace_back("Device0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("implicit_layer_name")

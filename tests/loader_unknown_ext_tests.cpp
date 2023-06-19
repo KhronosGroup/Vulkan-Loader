@@ -335,13 +335,11 @@ using layer_implementation_physical_device_functions = layer_implementation_func
 
 TEST(UnknownFunction, PhysicalDeviceFunction) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver = env.get_test_icd();
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
 
-    driver.physical_devices.emplace_back("physical_device_0");
     fill_implementation_functions(driver.physical_devices.at(0).custom_physical_device_functions, function_names,
                                   custom_physical_device_functions{}, function_count);
     InstWrapper inst{env.vulkan_functions};
@@ -354,22 +352,15 @@ TEST(UnknownFunction, PhysicalDeviceFunction) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver_0 = env.get_test_icd(0);
-    auto& driver_1 = env.get_test_icd(1);
+    auto& driver_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver_1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
 
     // used to identify the GPUs
-    VkPhysicalDeviceProperties props{};
-    driver_0.physical_devices.emplace_back("physical_device_0");
-    props.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-    driver_0.physical_devices.back().set_properties(props);
-    driver_1.physical_devices.emplace_back("physical_device_1");
-    props.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-    driver_1.physical_devices.back().set_properties(props);
+    driver_0.physical_devices.emplace_back("physical_device_0").properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    driver_1.physical_devices.emplace_back("physical_device_1").properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 
     for (uint32_t i = 0; i < function_count / 10; i++) {
         fill_implementation_functions(driver_0.physical_devices.at(0).custom_physical_device_functions, function_names,
@@ -383,6 +374,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
     auto phys_devs = inst.GetPhysDevs(2);
     VkPhysicalDevice phys_dev_0 = phys_devs[0];
     VkPhysicalDevice phys_dev_1 = phys_devs[1];
+    VkPhysicalDeviceProperties props{};
     env.vulkan_functions.vkGetPhysicalDeviceProperties(phys_devs[0], &props);
     if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         phys_dev_0 = phys_devs[1];
@@ -399,21 +391,14 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
 // Add unknown functions to driver 0, and try to use them on driver 1.
 TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver_0 = env.get_test_icd(0);
-    auto& driver_1 = env.get_test_icd(1);
+    auto& driver_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver_1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     std::vector<std::string> function_names;
     add_function_names(function_names, 1);
 
     // used to identify the GPUs
-    VkPhysicalDeviceProperties props{};
-    driver_0.physical_devices.emplace_back("physical_device_0");
-    props.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-    driver_0.physical_devices.back().set_properties(props);
-    driver_1.physical_devices.emplace_back("physical_device_1");
-    props.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-    driver_1.physical_devices.back().set_properties(props);
+    driver_0.physical_devices.emplace_back("physical_device_0").properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    driver_1.physical_devices.emplace_back("physical_device_1").properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
     function_names.push_back(std::string("vkNotIntRealFuncTEST_0"));
 
     custom_physical_device_functions funcs{};
@@ -425,6 +410,7 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
 
     auto phys_devs = inst.GetPhysDevs(2);
     VkPhysicalDevice phys_dev_to_use = phys_devs[1];
+    VkPhysicalDeviceProperties props{};
     env.vulkan_functions.vkGetPhysicalDeviceProperties(phys_devs[1], &props);
     if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) phys_dev_to_use = phys_devs[0];
     // use the wrong GPU to query the functions, should get 5 errors
@@ -437,13 +423,10 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env.get_test_icd();
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
-
-    driver.physical_devices.emplace_back("physical_device_0");
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept")
@@ -464,22 +447,15 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLayerImplementation) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver_0 = env.get_test_icd(0);
-    auto& driver_1 = env.get_test_icd(1);
+    auto& driver_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver_1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
 
     // used to identify the GPUs
-    VkPhysicalDeviceProperties props{};
-    driver_0.physical_devices.emplace_back("physical_device_0");
-    props.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-    driver_0.physical_devices.back().set_properties(props);
-    driver_1.physical_devices.emplace_back("physical_device_1");
-    props.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-    driver_1.physical_devices.back().set_properties(props);
+    driver_0.physical_devices.emplace_back("physical_device_0").properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    driver_1.physical_devices.emplace_back("physical_device_1").properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
     for (uint32_t i = 0; i < function_count / 10; i++) {
         fill_implementation_functions(driver_0.physical_devices.at(0).custom_physical_device_functions, function_names,
                                       custom_physical_device_functions{}, 5, i * 10);
@@ -499,6 +475,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLay
     auto phys_devs = inst.GetPhysDevs(2);
     VkPhysicalDevice phys_dev_0 = phys_devs[0];
     VkPhysicalDevice phys_dev_1 = phys_devs[1];
+    VkPhysicalDeviceProperties props{};
     env.vulkan_functions.vkGetPhysicalDeviceProperties(phys_devs[0], &props);
     if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         phys_dev_0 = phys_devs[1];
@@ -514,10 +491,8 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLay
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
 
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
@@ -540,12 +515,10 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionDriverSupportWithImplicitLayerInterception) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver = env.get_test_icd();
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
     uint32_t function_count = 100;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
-    driver.physical_devices.emplace_back("physical_device_0");
     fill_implementation_functions(driver.physical_devices.at(0).custom_physical_device_functions, function_names,
                                   layer_implementation_physical_device_functions{}, function_count);
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -566,8 +539,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionDriverSupportWithImplicitLayerInterc
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersInterception) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver = env.get_test_icd();
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     std::vector<std::string> function_names;
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     add_function_names(function_names, function_count);
@@ -656,11 +628,8 @@ void unknown_function_test_impl(std::vector<TestConfig> const& flags) {
     using layer_intercept_functions_type = layer_intercept_functions<DispatchableHandleType>;
 
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
-
-    auto& driver = env.get_test_icd();
-    driver.physical_devices.emplace_back("physical_device_0");
 
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
@@ -1120,10 +1089,7 @@ struct D {};
 
 TEST(UnknownFunction, PhysicalDeviceFunctionTwoLayerInterception) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver = env.get_test_icd();
-
-    driver.physical_devices.emplace_back("physical_device_0");
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
     PhysicalDevice& pd = driver.physical_devices.back();
 
     UnknownFunction f{"vkFunc1"};
@@ -1156,8 +1122,8 @@ TEST(UnknownFunction, PhysicalDeviceFunctionTwoLayerInterception) {
 
 TEST(UnknownFunction, ManyCombinations) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver = env.get_test_icd();
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    PhysicalDevice& physical_device = driver.physical_devices.back();
     std::vector<UnknownFunction> unknown_funcs;
 
     unknown_funcs.emplace_back("vkZero_uint32_uint32_0");
@@ -1173,9 +1139,6 @@ TEST(UnknownFunction, ManyCombinations) {
     unknown_funcs.emplace_back("vkZero_uint32_uint32_10");
     unknown_funcs.emplace_back("vkOne_uint32_uint32_char_11");
     unknown_funcs.emplace_back("vkTwo_ptr_int_ptr_int_12");
-
-    driver.physical_devices.emplace_back("physical_device_0");
-    PhysicalDevice& physical_device = driver.physical_devices.back();
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_implicit_layer_unknown_function_intercept_0")

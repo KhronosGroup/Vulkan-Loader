@@ -92,7 +92,7 @@ TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa_
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var));
-    env.get_test_icd(0).physical_devices.emplace_back("pd0");
+    env.get_test_icd(0).add_physical_device("pd0");
 
     InstWrapper inst1{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
@@ -106,9 +106,9 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     ASSERT_EQ(phys_dev_count, 1U);
 
     for (uint32_t add = 0; add < 2; ++add) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var));
-        env.get_test_icd(add + 1).physical_devices.emplace_back("pd" + std::to_string(add) + "0");
-        env.get_test_icd(add + 1).physical_devices.emplace_back("pd" + std::to_string(add) + "1");
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var))
+            .add_physical_device("pd" + std::to_string(add) + "0")
+            .add_physical_device("pd" + std::to_string(add) + "1");
     }
 
     env.debug_log.clear();
@@ -138,8 +138,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
 // Make sure the loader reports the correct message based on if LOADER_USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().physical_devices.emplace_back("physical_device_0");
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -166,8 +165,7 @@ TEST(EnvVarICDOverrideSetup, XDG) {
     EnvVarWrapper xdg_data_home_env_var{"XDG_DATA_HOME", "::::/tmp/goober3:/tmp/goober4/with spaces:::"};
 
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().physical_devices.push_back({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -191,8 +189,7 @@ TEST(EnvVarICDOverrideSetup, XDGContainsJsonFile) {
     EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", "bad_file.json"};
 
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().physical_devices.push_back({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -232,11 +229,10 @@ TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
 
     // Add a driver that isn't enabled with the environment variable
     env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var));
-    env.get_test_icd(0).physical_devices.emplace_back("pd0");
-    env.get_test_icd(0).physical_devices.emplace_back("pd1");
+    env.get_test_icd(0).add_physical_device("pd0").add_physical_device("pd1");
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::add_env_var));
-    env.get_test_icd(0).physical_devices.emplace_back("pd2");
+    env.get_test_icd(0).add_physical_device("pd2");
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -252,8 +248,7 @@ TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
 // Test VK_LAYER_PATH environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().physical_devices.push_back({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
     env.platform_shim->redirect_path("/tmp/carol", env.get_folder(ManifestLocation::explicit_layer_env_var).location());
 
     const char* layer_name = "TestLayer";
@@ -298,8 +293,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
 // Test VK_ADD_LAYER_PATH environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    env.get_test_icd().physical_devices.push_back({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
     env.platform_shim->redirect_path("/tmp/carol", env.get_folder(ManifestLocation::explicit_layer_add_env_var).location());
 
     const char* layer_name = "TestLayer";
