@@ -683,10 +683,10 @@ TEST(EnumeratePhysicalDevices, OneCall) {
 
     auto& driver = env.get_test_icd().set_min_icd_interface_version(5);
 
-    driver.physical_devices.emplace_back("physical_device_0", 1);
-    driver.physical_devices.emplace_back("physical_device_1", 2);
-    driver.physical_devices.emplace_back("physical_device_2", 3);
-    driver.physical_devices.emplace_back("physical_device_3", 4);
+    driver.physical_devices.emplace_back("physical_device_0");
+    driver.physical_devices.emplace_back("physical_device_1");
+    driver.physical_devices.emplace_back("physical_device_2");
+    driver.physical_devices.emplace_back("physical_device_3");
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -707,7 +707,7 @@ TEST(EnumeratePhysicalDevices, TwoCall) {
 
     const uint32_t real_device_count = 2;
     for (uint32_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
@@ -734,7 +734,7 @@ TEST(EnumeratePhysicalDevices, MatchOneAndTwoCallNumbers) {
 
     const uint32_t real_device_count = 3;
     for (uint32_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
@@ -770,7 +770,7 @@ TEST(EnumeratePhysicalDevices, TwoCallIncomplete) {
 
     const uint32_t real_device_count = 2;
     for (uint32_t i = 0; i < real_device_count; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), i + 1);
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
 
@@ -1675,7 +1675,7 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
 
     // ICD contains 3 devices in two groups
     for (size_t i = 0; i < 3; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), rand() % 50 + 3);
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
     driver.physical_device_groups.emplace_back(driver.physical_devices[0]);
@@ -1808,7 +1808,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
 
     // ICD contains 3 devices in two groups
     for (size_t i = 0; i < 3; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), rand() % 50 + 3);
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
     driver.physical_device_groups.emplace_back(driver.physical_devices[0]);
@@ -1924,7 +1924,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
 
     // ICD contains 3 devices in two groups
     for (size_t i = 0; i < 3; i++) {
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i), rand() % 50 + 3);
+        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     }
     driver.physical_device_groups.emplace_back(driver.physical_devices[0]);
@@ -2624,15 +2624,15 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& cur_icd_0 = env.get_test_icd(0);
     cur_icd_0.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_0.physical_devices.push_back({"pd0", 7});
+    cur_icd_0.physical_devices.push_back({"pd0"});
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             888, 0xAAA001);
-    cur_icd_0.physical_devices.push_back({"pd1", 3});
+    cur_icd_0.physical_devices.push_back({"pd1"});
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
                             VK_API_VERSION_1_1, 888, 0xAAA002);
-    cur_icd_0.physical_devices.push_back({"pd2", 6});
+    cur_icd_0.physical_devices.push_back({"pd2"});
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             888, 0xAAA003);
@@ -2645,15 +2645,15 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     auto& cur_icd_1 = env.get_test_icd(1);
     cur_icd_1.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_1.physical_devices.push_back({"pd4", 1});
+    cur_icd_1.physical_devices.push_back({"pd4"});
     cur_icd_1.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_1.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC001);
-    cur_icd_1.physical_devices.push_back({"pd5", 4});
+    cur_icd_1.physical_devices.push_back({"pd5"});
     cur_icd_1.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_1.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC002);
-    cur_icd_1.physical_devices.push_back({"pd6", 2});
+    cur_icd_1.physical_devices.push_back({"pd6"});
     cur_icd_1.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_1.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC003);
@@ -2802,36 +2802,42 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled10NoAppExt) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.push_back({"pd0"});
+    env.get_test_icd(0).physical_devices.back().set_pci_bus(7);
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_1, 888, 0xAAA001);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(0).physical_devices.push_back({"pd1", 3});
+    env.get_test_icd(0).physical_devices.push_back({"pd1"});
+    env.get_test_icd(0).physical_devices.back().set_pci_bus(3);
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
                             VK_API_VERSION_1_1, 888, 0xAAA002);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(1).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(1).physical_devices.push_back({"pd2", 0});
+    env.get_test_icd(1).physical_devices.push_back({"pd2"});
+    env.get_test_icd(1).physical_devices.back().set_pci_bus(0);
     FillInRandomDeviceProps(env.get_test_icd(1).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_0,
                             1, 0xBBBB001);
     env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(2).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(2).physical_devices.push_back({"pd3", 1});
+    env.get_test_icd(2).physical_devices.push_back({"pd3"});
+    env.get_test_icd(2).physical_devices.back().set_pci_bus(1);
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_1, 75, 0xCCCC001);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(2).physical_devices.push_back({"pd4", 4});
+    env.get_test_icd(2).physical_devices.push_back({"pd4"});
+    env.get_test_icd(2).physical_devices.back().set_pci_bus(4);
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 75, 0xCCCC002);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(3).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(3).physical_devices.push_back({"pd5", 0});
+    env.get_test_icd(3).physical_devices.push_back({"pd5"});
+    env.get_test_icd(3).physical_devices.back().set_pci_bus(0);
     FillInRandomDeviceProps(env.get_test_icd(3).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
                             VK_API_VERSION_1_1, 6940, 0xDDDD001);
     env.get_test_icd(3).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -2904,36 +2910,42 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled10AppExt) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.push_back({"pd0"});
+    env.get_test_icd(0).physical_devices.back().set_pci_bus(7);
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_1, 888, 0xAAA001);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(0).physical_devices.push_back({"pd1", 3});
+    env.get_test_icd(0).physical_devices.push_back({"pd1"});
+    env.get_test_icd(0).physical_devices.back().set_pci_bus(3);
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
                             VK_API_VERSION_1_1, 888, 0xAAA002);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(1).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(1).physical_devices.push_back({"pd2", 0});
+    env.get_test_icd(1).physical_devices.push_back({"pd2"});
+    env.get_test_icd(1).physical_devices.back().set_pci_bus(0);
     FillInRandomDeviceProps(env.get_test_icd(1).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_0,
                             1, 0xBBBB001);
     env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(2).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(2).physical_devices.push_back({"pd3", 1});
+    env.get_test_icd(2).physical_devices.push_back({"pd3"});
+    env.get_test_icd(2).physical_devices.back().set_pci_bus(1);
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_1, 75, 0xCCCC001);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(2).physical_devices.push_back({"pd4", 4});
+    env.get_test_icd(2).physical_devices.push_back({"pd4"});
+    env.get_test_icd(2).physical_devices.back().set_pci_bus(4);
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 75, 0xCCCC002);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(3).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(3).physical_devices.push_back({"pd5", 0});
+    env.get_test_icd(3).physical_devices.push_back({"pd5"});
+    env.get_test_icd(3).physical_devices.back().set_pci_bus(0);
     FillInRandomDeviceProps(env.get_test_icd(3).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
                             VK_API_VERSION_1_1, 6940, 0xDDDD001);
     env.get_test_icd(3).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -3022,11 +3034,13 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled11) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(0).set_icd_api_version(VK_API_VERSION_1_1);
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(0).physical_devices.push_back({"pd0", 7});
+    env.get_test_icd(0).physical_devices.push_back({"pd0"});
+    env.get_test_icd(0).physical_devices.back().set_pci_bus(7);
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 888, 0xAAA001);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(0).physical_devices.push_back({"pd1", 3});
+    env.get_test_icd(0).physical_devices.push_back({"pd1"});
+    env.get_test_icd(0).physical_devices.back().set_pci_bus(3);
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
                             VK_API_VERSION_1_0, 888, 0xAAA002);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -3034,7 +3048,8 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled11) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(1).set_icd_api_version(VK_API_VERSION_1_1);
     env.get_test_icd(1).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(1).physical_devices.push_back({"pd2", 0});
+    env.get_test_icd(1).physical_devices.push_back({"pd2"});
+    env.get_test_icd(1).physical_devices.back().set_pci_bus(0);
     FillInRandomDeviceProps(env.get_test_icd(1).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_0,
                             1, 0xBBBB001);
     env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -3042,11 +3057,13 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled11) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(2).set_icd_api_version(VK_API_VERSION_1_1);
     env.get_test_icd(2).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(2).physical_devices.push_back({"pd3", 1});
+    env.get_test_icd(2).physical_devices.push_back({"pd3"});
+    env.get_test_icd(2).physical_devices.back().set_pci_bus(1);
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_1, 75, 0xCCCC001);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(2).physical_devices.push_back({"pd4", 4});
+    env.get_test_icd(2).physical_devices.push_back({"pd4"});
+    env.get_test_icd(2).physical_devices.back().set_pci_bus(4);
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_1, 75, 0xCCCC002);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -3054,7 +3071,8 @@ TEST(SortedPhysicalDevices, DevicesSortEnabled11) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.get_test_icd(3).set_icd_api_version(VK_API_VERSION_1_1);
     env.get_test_icd(3).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(3).physical_devices.push_back({"pd5", 0});
+    env.get_test_icd(3).physical_devices.push_back({"pd5"});
+    env.get_test_icd(3).physical_devices.back().set_pci_bus(0);
     FillInRandomDeviceProps(env.get_test_icd(3).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
                             VK_API_VERSION_1_1, 6940, 0xDDDD001);
     env.get_test_icd(3).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -3145,36 +3163,36 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(0).physical_devices.push_back({"pd0", 4});
+    env.get_test_icd(0).physical_devices.push_back({"pd0"});
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 888, 0xAAA001);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(0).physical_devices.push_back({"pd1", 3});
+    env.get_test_icd(0).physical_devices.push_back({"pd1"});
     FillInRandomDeviceProps(env.get_test_icd(0).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
                             VK_API_VERSION_1_0, 888, 0xAAA002);
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(1).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(1).physical_devices.push_back({"pd2", 0});
+    env.get_test_icd(1).physical_devices.push_back({"pd2"});
     FillInRandomDeviceProps(env.get_test_icd(1).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_0,
                             1, 0xBBBB001);
     env.get_test_icd(1).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(2).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(2).physical_devices.push_back({"pd3", 7});
+    env.get_test_icd(2).physical_devices.push_back({"pd3"});
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 75, 0xCCCC001);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
-    env.get_test_icd(2).physical_devices.push_back({"pd4", 1});
+    env.get_test_icd(2).physical_devices.push_back({"pd4"});
     FillInRandomDeviceProps(env.get_test_icd(2).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
                             VK_API_VERSION_1_0, 75, 0xCCCC002);
     env.get_test_icd(2).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
 
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_0));
     env.get_test_icd(3).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-    env.get_test_icd(3).physical_devices.push_back({"pd5", 0});
+    env.get_test_icd(3).physical_devices.push_back({"pd5"});
     FillInRandomDeviceProps(env.get_test_icd(3).physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
                             VK_API_VERSION_1_0, 6940, 0xDDDD001);
     env.get_test_icd(3).physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
@@ -3268,15 +3286,18 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_0 = env.get_test_icd(0);
     cur_icd_0.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_0.physical_devices.push_back({"pd0", 7});
+    cur_icd_0.physical_devices.push_back({"pd0"});
+    cur_icd_0.physical_devices.back().set_pci_bus(7);
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             888, 0xAAA001);
-    cur_icd_0.physical_devices.push_back({"pd1", 3});
+    cur_icd_0.physical_devices.push_back({"pd1"});
+    cur_icd_0.physical_devices.back().set_pci_bus(3);
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
                             VK_API_VERSION_1_1, 888, 0xAAA002);
-    cur_icd_0.physical_devices.push_back({"pd2", 6});
+    cur_icd_0.physical_devices.push_back({"pd2"});
+    cur_icd_0.physical_devices.back().set_pci_bus(6);
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             888, 0xAAA003);
@@ -3289,7 +3310,8 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_1 = env.get_test_icd(1);
     cur_icd_1.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_1.physical_devices.push_back({"pd3", 0});
+    cur_icd_1.physical_devices.push_back({"pd3"});
+    cur_icd_1.physical_devices.back().set_pci_bus(0);
     cur_icd_1.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_1.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_1, 1,
                             0xBBBB001);
@@ -3297,15 +3319,18 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_2 = env.get_test_icd(2);
     cur_icd_2.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_2.physical_devices.push_back({"pd4", 1});
+    cur_icd_2.physical_devices.push_back({"pd4"});
+    cur_icd_2.physical_devices.back().set_pci_bus(1);
     cur_icd_2.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_2.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC001);
-    cur_icd_2.physical_devices.push_back({"pd5", 4});
+    cur_icd_2.physical_devices.push_back({"pd5"});
+    cur_icd_2.physical_devices.back().set_pci_bus(4);
     cur_icd_2.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_2.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC002);
-    cur_icd_2.physical_devices.push_back({"pd6", 2});
+    cur_icd_2.physical_devices.push_back({"pd6"});
+    cur_icd_2.physical_devices.back().set_pci_bus(2);
     cur_icd_2.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_2.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC003);
@@ -3318,7 +3343,8 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_3 = env.get_test_icd(3);
     cur_icd_3.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_3.physical_devices.push_back({"pd7", 0});
+    cur_icd_3.physical_devices.push_back({"pd7"});
+    cur_icd_3.physical_devices.back().set_pci_bus(0);
     cur_icd_3.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_3.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU, VK_API_VERSION_1_1,
                             6940, 0xDDDD001);
@@ -3454,15 +3480,15 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_0 = env.get_test_icd(0);
     cur_icd_0.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_0.physical_devices.push_back({"pd0", 7});
+    cur_icd_0.physical_devices.push_back({"pd0"});
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             888, 0xAAA001);
-    cur_icd_0.physical_devices.push_back({"pd1", 3});
+    cur_icd_0.physical_devices.push_back({"pd1"});
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
                             VK_API_VERSION_1_1, 888, 0xAAA002);
-    cur_icd_0.physical_devices.push_back({"pd2", 6});
+    cur_icd_0.physical_devices.push_back({"pd2"});
     cur_icd_0.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_0.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             888, 0xAAA003);
@@ -3475,7 +3501,7 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_1 = env.get_test_icd(1);
     cur_icd_1.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_1.physical_devices.push_back({"pd3", 0});
+    cur_icd_1.physical_devices.push_back({"pd3"});
     cur_icd_1.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_1.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_CPU, VK_API_VERSION_1_1, 1,
                             0xBBBB001);
@@ -3483,15 +3509,15 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_2 = env.get_test_icd(2);
     cur_icd_2.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_2.physical_devices.push_back({"pd4", 1});
+    cur_icd_2.physical_devices.push_back({"pd4"});
     cur_icd_2.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_2.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC001);
-    cur_icd_2.physical_devices.push_back({"pd5", 4});
+    cur_icd_2.physical_devices.push_back({"pd5"});
     cur_icd_2.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_2.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC002);
-    cur_icd_2.physical_devices.push_back({"pd6", 2});
+    cur_icd_2.physical_devices.push_back({"pd6"});
     cur_icd_2.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_2.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1,
                             75, 0xCCCC003);
@@ -3504,7 +3530,7 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     auto& cur_icd_3 = env.get_test_icd(3);
     cur_icd_3.set_icd_api_version(VK_API_VERSION_1_1);
-    cur_icd_3.physical_devices.push_back({"pd7", 0});
+    cur_icd_3.physical_devices.push_back({"pd7"});
     cur_icd_3.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
     FillInRandomDeviceProps(cur_icd_3.physical_devices.back().properties, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU, VK_API_VERSION_1_1,
                             6940, 0xDDDD001);

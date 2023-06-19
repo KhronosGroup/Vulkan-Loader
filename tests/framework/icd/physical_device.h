@@ -34,8 +34,7 @@ struct PhysicalDevice {
     PhysicalDevice() {}
     PhysicalDevice(std::string name) : deviceName(name) {}
     PhysicalDevice(const char* name) : deviceName(name) {}
-    PhysicalDevice(std::string name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
-    PhysicalDevice(const char* name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
+
     DispatchableHandle<VkPhysicalDevice> vk_physical_device;
     BUILDER_VALUE(PhysicalDevice, std::string, deviceName, "")
     BUILDER_VALUE(PhysicalDevice, VkPhysicalDeviceProperties, properties, {})
