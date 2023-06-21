@@ -28,15 +28,9 @@ if (UPDATE_DEPS)
     list(APPEND update_dep_command "${CMAKE_GENERATOR}")
 
     if (CMAKE_GENERATOR_PLATFORM)
-        set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
-    else()
-        if (MSVC_IDE)
-            message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
-        endif()
-        set(_target_arch x64)
+        list(APPEND update_dep_command "--arch")
+        list(APPEND update_dep_command "${CMAKE_GENERATOR_PLATFORM}")
     endif()
-    list(APPEND update_dep_command "--arch")
-    list(APPEND update_dep_command "${_target_arch}")
 
     if (NOT CMAKE_BUILD_TYPE)
         message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
@@ -88,12 +82,16 @@ if (UPDATE_DEPS)
     set(UPDATE_DEPS_HASH "0" CACHE STRING "Default value until we run update_deps.py")
     mark_as_advanced(UPDATE_DEPS_HASH)
 
+    if ("${UPDATE_DEPS_HASH}" STREQUAL "0")
+        list(APPEND update_dep_command "--clean-build")
+        list(APPEND update_dep_command "--clean-install")
+    endif()
+
     if ("${md5_hash}" STREQUAL $CACHE{UPDATE_DEPS_HASH})
         message(DEBUG "update_deps.py: no work to do.")
     else()
         execute_process(
             COMMAND ${Python3_EXECUTABLE} ${update_dep_command}
-            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             RESULT_VARIABLE _update_deps_result
         )
         if (NOT (${_update_deps_result} EQUAL 0))
@@ -103,13 +101,12 @@ if (UPDATE_DEPS)
         include("${UPDATE_DEPS_DIR}/helper.cmake")
     endif()
 endif()
-
 if (VULKAN_HEADERS_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${VULKAN_HEADERS_INSTALL_DIR})
 endif()
 
 if (CMAKE_CROSSCOMPILING)
-    set(CMAKE_FIND_ROOT_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
+    set(CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH} ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
 else()
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
 endif()
