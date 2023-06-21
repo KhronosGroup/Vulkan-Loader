@@ -116,25 +116,44 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkI
 //    entry points both core and extensions.
 //    Device relative means call down the device chain.
 LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char *pName) {
-    void *addr;
+    if (!pName || pName[0] != 'v' || pName[1] != 'k') return NULL;
 
     // For entrypoints that loader must handle (ie non-dispatchable or create object)
     // make sure the loader entrypoint is returned
-    addr = loader_non_passthrough_gdpa(pName);
-    if (addr) {
-        return addr;
-    }
+    const char *name = pName;
+    name += 2;
+    if (!strcmp(name, "GetDeviceProcAddr")) return (PFN_vkVoidFunction)vkGetDeviceProcAddr;
+    if (!strcmp(name, "DestroyDevice")) return (PFN_vkVoidFunction)vkDestroyDevice;
+    if (!strcmp(name, "GetDeviceQueue")) return (PFN_vkVoidFunction)vkGetDeviceQueue;
+    if (!strcmp(name, "AllocateCommandBuffers")) return (PFN_vkVoidFunction)vkAllocateCommandBuffers;
 
     // Although CreateDevice is on device chain it's dispatchable object isn't
     // a VkDevice or child of VkDevice so return NULL.
     if (!strcmp(pName, "CreateDevice")) return NULL;
 
+    // Because vkGetDeviceQueue2 is a 1.1 entry point, we need to check if the apiVersion provided during instance creation is
+    // sufficient
+    if (!strcmp(name, "GetDeviceQueue2")) {
+        struct loader_device *dev = NULL;
+        uint32_t index = 0;
+        struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &index);
+        if (NULL != icd_term && dev != NULL) {
+            const struct loader_instance *inst = icd_term->this_instance;
+            uint32_t api_version =
+                VK_MAKE_API_VERSION(0, inst->app_api_version.major, inst->app_api_version.minor, inst->app_api_version.patch);
+            return (inst->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_1)
+                       ? NULL
+                       : (PFN_vkVoidFunction)vkGetDeviceQueue2;
+        }
+        return NULL;
+    }
     // Return the dispatch table entrypoint for the fastest case
-    const VkLayerDispatchTable *disp_table = *(VkLayerDispatchTable **)device;
+    const VkLayerDispatchTable *disp_table = loader_get_dispatch(device);
     if (disp_table == NULL) return NULL;
 
-    addr = loader_lookup_device_dispatch_table(disp_table, pName);
-    if (addr) return addr;
+    bool found_name = false;
+    void *addr = loader_lookup_device_dispatch_table(disp_table, pName, &found_name);
+    if (found_name) return addr;
 
     if (disp_table->GetDeviceProcAddr == NULL) return NULL;
     return disp_table->GetDeviceProcAddr(device, pName);
