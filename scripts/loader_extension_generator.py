@@ -486,7 +486,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos += '                                                                         VkInstance inst);\n'
         protos += '\n'
         protos += '// Device command lookup function\n'
-        protos += 'VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDispatchTable *table, const char *name);\n'
+        protos += 'VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDispatchTable *table, const char *name, bool* name_found);\n'
         protos += '\n'
         protos += '// Instance command lookup function\n'
         protos += 'VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerInstanceDispatchTable *table, const char *name,\n'
@@ -874,11 +874,17 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 cur_type = 'device'
 
                 tables += '// Device command lookup function\n'
-                tables += 'VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDispatchTable *table, const char *name) {\n'
-                tables += '    if (!name || name[0] != \'v\' || name[1] != \'k\') return NULL;\n'
+                tables += 'VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDispatchTable *table, const char *name, bool* found_name) {\n'
+                tables += '    if (!name || name[0] != \'v\' || name[1] != \'k\') {\n'
+                tables += '        *found_name = false;\n'
+                tables += '        return NULL;\n'
+                tables += '    }\n'
                 tables += '\n'
                 tables += '    name += 2;\n'
+                tables += '    *found_name = true;\n'
                 tables += '    struct loader_device* dev = (struct loader_device *)table;\n'
+                tables += '    const struct loader_instance* inst = dev->phys_dev_term->this_icd_term->this_instance;\n'
+                tables += '    uint32_t api_version = VK_MAKE_API_VERSION(0, inst->app_api_version.major, inst->app_api_version.minor, inst->app_api_version.patch);\n'
                 tables += '\n'
             else:
                 cur_type = 'instance'
@@ -894,6 +900,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 tables += '    *found_name = true;\n'
                 tables += '    name += 2;\n'
 
+
             for y in range(0, 2):
                 if y == 0:
                     commands = self.core_commands
@@ -903,12 +910,15 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 for cur_cmd in commands:
                     is_inst_handle_type = cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
                     if ((cur_type == 'instance' and is_inst_handle_type) or (cur_type == 'device' and not is_inst_handle_type)):
-
                         if cur_cmd.ext_name != cur_extension_name:
                             if 'VK_VERSION_' in cur_cmd.ext_name:
                                 tables += '\n    // ---- Core %s commands\n' % cur_cmd.ext_name[11:]
+                                if cur_type == 'device':
+                                    version_check = f'        if (inst->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_{cur_cmd.ext_name[11:]}) return NULL;\n'
                             else:
+
                                 tables += '\n    // ---- %s extension commands\n' % cur_cmd.ext_name
+                                version_check = ''
                             cur_extension_name = cur_cmd.ext_name
 
                         # Remove 'vk' from proto name
@@ -923,17 +933,24 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         if cur_cmd.protect is not None:
                             tables += '#if defined(%s)\n' % cur_cmd.protect
 
+                        tables += f'    if (!strcmp(name, "{base_name}")) '
                         if cur_cmd.name in DEVICE_CMDS_MUST_USE_TRAMP:
-                            tables += f'    if (!strcmp(name, "{base_name}")) return dev->extensions.{cur_cmd.ext_name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n'
+                            if version_check is not '':
+                                tables += f'{{\n{version_check}        return dev->extensions.{cur_cmd.ext_name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n    }}\n'
+                            else:
+                                tables += f'return dev->extensions.{cur_cmd.ext_name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n'
+
                         else:
-                            tables += f'    if (!strcmp(name, "{base_name}")) return (void *)table->{base_name};\n'
+                            if version_check is not '':
+                                tables += f'{{\n{version_check}        return (void *)table->{base_name};\n    }}\n'
+                            else:
+                                tables += f'return (void *)table->{base_name};\n'
 
                         if cur_cmd.protect is not None:
                             tables += '#endif // %s\n' % cur_cmd.protect
 
             tables += '\n'
-            if x == 1:
-                tables += '    *found_name = false;\n'
+            tables += '    *found_name = false;\n'
             tables += '    return NULL;\n'
             tables += '}\n\n'
         return tables

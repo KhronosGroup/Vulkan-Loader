@@ -27,5 +27,3 @@
 void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcName);
 
 void *globalGetProcAddr(const char *name);
-
-void *loader_non_passthrough_gdpa(const char *name);

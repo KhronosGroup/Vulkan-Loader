@@ -278,17 +278,3 @@ void *globalGetProcAddr(const char *name) {
 
     return NULL;
 }
-
-void *loader_non_passthrough_gdpa(const char *name) {
-    if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
-
-    name += 2;
-
-    if (!strcmp(name, "GetDeviceProcAddr")) return vkGetDeviceProcAddr;
-    if (!strcmp(name, "DestroyDevice")) return vkDestroyDevice;
-    if (!strcmp(name, "GetDeviceQueue")) return vkGetDeviceQueue;
-    if (!strcmp(name, "GetDeviceQueue2")) return vkGetDeviceQueue2;
-    if (!strcmp(name, "AllocateCommandBuffers")) return vkAllocateCommandBuffers;
-
-    return NULL;
-}
