@@ -1996,7 +1996,7 @@ Note: If a layer wraps the VkInstance handle, support for
 ### Layer Interface Version 1
 
 A layer supporting interface version 1 had the following behavior:
- 1. `GetInstanceProcAddr` and `GetDeviceProcAddr` were directly exported
+ 1. `vkGetInstanceProcAddr` and `vkGetDeviceProcAddr` were directly exported
  2. The layer manifest file was able to override the names of the
 `GetInstanceProcAddr` and `GetDeviceProcAddr`functions.
 
