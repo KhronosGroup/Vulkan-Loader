@@ -345,6 +345,9 @@ struct loader_icd_term_dispatch {
     PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+    // ---- VK_KHR_cooperative_matrix extension commands
+    PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
+
     // ---- VK_EXT_debug_report extension commands
     PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
     PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
