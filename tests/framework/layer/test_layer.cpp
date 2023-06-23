@@ -39,6 +39,11 @@
 #define TEST_LAYER_EXPORT_LAYER_NAMED_GIPA 0
 #endif
 
+// export test_override_GetInstanceProcAddr
+#if !defined(TEST_LAYER_EXPORT_OVERRIDE_GIPA)
+#define TEST_LAYER_EXPORT_OVERRIDE_GIPA 0
+#endif
+
 // export vkGetInstanceProcAddr
 #if !defined(TEST_LAYER_EXPORT_LAYER_VK_GIPA)
 #define TEST_LAYER_EXPORT_LAYER_VK_GIPA 0
@@ -49,19 +54,14 @@
 #define TEST_LAYER_EXPORT_LAYER_NAMED_GDPA 0
 #endif
 
+// export test_override_GetDeviceProcAddr
+#if !defined(TEST_LAYER_EXPORT_OVERRIDE_GDPA)
+#define TEST_LAYER_EXPORT_OVERRIDE_GDPA 0
+#endif
+
 // export vkGetDeviceProcAddr
 #if !defined(TEST_LAYER_EXPORT_LAYER_VK_GDPA)
 #define TEST_LAYER_EXPORT_LAYER_VK_GDPA 0
-#endif
-
-// export GetInstanceProcAddr
-#if !defined(TEST_LAYER_EXPORT_NO_PREFIX_GIPA)
-#define TEST_LAYER_EXPORT_NO_PREFIX_GIPA 0
-#endif
-
-// export GetDeviceProcAddr
-#if !defined(TEST_LAYER_EXPORT_NO_PREFIX_GDPA)
-#define TEST_LAYER_EXPORT_NO_PREFIX_GDPA 0
 #endif
 
 // export vk_layerGetPhysicalDeviceProcAddr
@@ -726,6 +726,9 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProper
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_layer_GetInstanceProcAddr(VkInstance instance, const char* pName) {
     return get_instance_func(instance, pName);
 }
+#endif
+
+#if TEST_LAYER_EXPORT_OVERRIDE_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_override_vkGetInstanceProcAddr(VkInstance instance,
                                                                                               const char* pName) {
     if (string_eq(pName, "vkCreateInstance")) return to_vkVoidFunction(test_override_vkCreateInstance);
@@ -745,20 +748,14 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_layer_GetDevicePr
 }
 #endif
 
-#if TEST_LAYER_EXPORT_LAYER_VK_GDPA
-FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char* pName) {
+#if TEST_LAYER_EXPORT_OVERRIDE_GDPA
+FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_override_GetDeviceProcAddr(VkDevice device, const char* pName) {
     return get_device_func(device, pName);
 }
 #endif
 
-#if TEST_LAYER_EXPORT_NO_PREFIX_GIPA
-FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* pName) {
-    return get_instance_func(instance, pName);
-}
-#endif
-
-#if TEST_LAYER_EXPORT_NO_PREFIX_GDPA
-FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char* pName) {
+#if TEST_LAYER_EXPORT_LAYER_VK_GDPA
+FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char* pName) {
     return get_device_func(device, pName);
 }
 #endif
