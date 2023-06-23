@@ -4,10 +4,8 @@ EXPORTS
     vkEnumerateInstanceExtensionProperties
     vkEnumerateDeviceLayerProperties
     vkEnumerateDeviceExtensionProperties
-    test_layer_GetInstanceProcAddr
-    test_layer_GetDeviceProcAddr
-    GetInstanceProcAddr
-    GetDeviceProcAddr
+    vkGetInstanceProcAddr
+    vkGetDeviceProcAddr
     vk_layerGetPhysicalDeviceProcAddr
     vkNegotiateLoaderLayerInterfaceVersion
     test_preinst_vkEnumerateInstanceLayerProperties
