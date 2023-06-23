@@ -1263,3 +1263,49 @@ TEST(UnknownFunction, ManyCombinations) {
         unknown_funcs.at(5).check<Functions::zero::physical_device>(env.vulkan_functions, inst.inst, phys_dev);
     }
 }
+
+TEST(UnknownFunction, PhysicalDeviceFunctionInLayer) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    env.add_implicit_layer(ManifestLayer{}
+                               .add_layer(ManifestLayer::LayerDescription{}
+                                              .set_name("VK_LAYER_implicit_layer_1")
+                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_0)
+                                              .set_disable_environment("DISABLE_ME"))
+                               .set_file_format_version({1, 0, 0}),
+                           "implicit_layer_1.json");
+
+    UnknownFunction unknown_func{"vkPhysicalDeviceFunctionInLayer"};
+    const char* ext_name = "VK_EXT_not_funny";
+
+    const char* explicit_layer_unknown_function_implement = "VK_LAYER_implement_unknown_function";
+    env.add_explicit_layer(
+        ManifestLayer{}
+            .add_layer(ManifestLayer::LayerDescription{}
+                           .set_name(explicit_layer_unknown_function_implement)
+                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                           .add_instance_extension(ManifestLayer::LayerDescription::Extension{ext_name, 0, {unknown_func.name}}))
+            .set_file_format_version({1, 1, 0}),
+        "implement_unknown_function.json");
+    auto& layer0 = env.get_test_layer(1);
+
+    const char* explicit_layer_to_enable_1 = "VK_LAYER_explicit_layer_1";
+    env.add_explicit_layer(ManifestLayer{}
+                               .add_layer(ManifestLayer::LayerDescription{}
+                                              .set_name(explicit_layer_to_enable_1)
+                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2))
+                               .set_file_format_version({1, 2, 0}),
+                           "explicit_layer_2.json");
+
+    Functions::four::physical_device::add_implementation_to_layer(unknown_func, layer0);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_to_enable_1);
+    inst.create_info.add_layer(explicit_layer_unknown_function_implement);
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    unknown_func.check<Functions::four::physical_device>(env.vulkan_functions, inst.inst, phys_dev);
+}
