@@ -203,8 +203,8 @@ bool loader_check_layer_list_for_phys_dev_ext_address(struct loader_instance *in
         // Find the first layer in the call chain which supports vk_layerGetPhysicalDeviceProcAddr
         // and call that, returning whether it found a valid pointer for this function name.
         // We return if the topmost layer supports GPDPA since the layer should call down the chain for us.
-        if (layer_prop_list[layer].interface_version > 1) {
-            const struct loader_layer_functions *const functions = &(layer_prop_list[layer].functions);
+        if (layer_prop_list->interface_version > 1) {
+            const struct loader_layer_functions *const functions = &(layer_prop_list->functions);
             if (NULL != functions->get_physical_device_proc_addr) {
                 return NULL != functions->get_physical_device_proc_addr((VkInstance)inst->instance, funcName);
             }
