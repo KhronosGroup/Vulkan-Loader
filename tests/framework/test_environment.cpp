@@ -334,7 +334,7 @@ PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders
     PFN_get_platform_shim get_platform_shim_func = shim_library.get_symbol(GET_PLATFORM_SHIM_STR);
     assert(get_platform_shim_func != NULL && "Must be able to get \"platform_shim\"");
     platform_shim = get_platform_shim_func(folders);
-#elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
     platform_shim = get_platform_shim(folders);
 #endif
     platform_shim->reset();

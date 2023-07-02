@@ -1301,7 +1301,7 @@ TEST(TryLoadWrongBinaries, WrongICD) {
 #if _WIN32 || _WIN64
     ASSERT_TRUE(log.find("Failed to open dynamic library"));
 #endif
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #if defined(__x86_64__)
     ASSERT_TRUE(log.find("wrong ELF class: ELFCLASS32"));
 #else
@@ -2699,7 +2699,7 @@ TEST(CreateInstance, InstanceNullExtensionPtr) {
     ASSERT_EQ(env.vulkan_functions.vkCreateInstance(&info, VK_NULL_HANDLE, &inst), VK_ERROR_EXTENSION_NOT_PRESENT);
 }
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 // NOTE: Sort order only affects Linux
 TEST(SortedPhysicalDevices, DevicesSortEnabled10NoAppExt) {
     FrameworkEnvironment env{};
@@ -3529,7 +3529,7 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     }
 }
 
-#endif  // __linux__ || __FreeBSD__ || __OpenBSD__
+#endif  // __linux__ || __FreeBSD__ || __OpenBSD__ || __GNU__
 
 const char* portability_driver_warning =
     "vkCreateInstance: Found drivers that contain devices which support the portability subset, but the "

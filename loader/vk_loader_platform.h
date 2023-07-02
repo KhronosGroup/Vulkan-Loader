@@ -40,7 +40,7 @@
 
 // Set of platforms with a common set of functionality which is queried throughout the program
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
-    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__GNU__)
 #define COMMON_UNIX_PLATFORMS 1
 #else
 #define COMMON_UNIX_PLATFORMS 0
@@ -260,7 +260,7 @@ static inline char *loader_platform_dirname(char *path) { return dirname(path); 
 
 // loader_platform_executable_path finds application path + name.
 // Path cannot be longer than 1024, returns NULL if it is greater than that.
-#if defined(__linux__)
+#if defined(__linux__) || defined(__GNU__)
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     ssize_t count = readlink("/proc/self/exe", buffer, size);
     if (count == -1) return NULL;
