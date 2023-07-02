@@ -35,7 +35,7 @@
 
 PlatformShim platform_shim;
 extern "C" {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 PlatformShim* get_platform_shim(std::vector<fs::FolderManager>* folders) {
     platform_shim = PlatformShim(folders);
     return &platform_shim;
@@ -48,7 +48,7 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #endif
 
 // Necessary for MacOS function shimming
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #define OPENDIR_FUNC_NAME opendir
 #define READDIR_FUNC_NAME readdir
 #define CLOSEDIR_FUNC_NAME closedir

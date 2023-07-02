@@ -63,7 +63,7 @@
 
 // Set of platforms with a common set of functionality which is queried throughout the program
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
-    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__GNU__)
 #define COMMON_UNIX_PLATFORMS 1
 #else
 #define COMMON_UNIX_PLATFORMS 0
@@ -784,7 +784,7 @@ inline bool contains(std::vector<VkLayerProperties> const& vec, const char* name
                        [name](VkLayerProperties const& elem) { return string_eq(name, elem.layerName); });
 }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__GNU__)
 
 // find application path + name. Path cannot be longer than 1024, returns NULL if it is greater than that.
 inline std::string test_platform_executable_path() {
