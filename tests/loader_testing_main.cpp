@@ -83,11 +83,11 @@ int main(int argc, char** argv) {
 
 #if COMMON_UNIX_PLATFORMS
     // Set only one of the 4 XDG variables to /etc, let everything else be empty
-    EnvVarWrapper xdg_config_home_env_var{"XDG_CONFIG_HOME", "/etc"};
+    EnvVarWrapper xdg_config_home_env_var{"XDG_CONFIG_HOME", ETC_DIR};
     EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS"};
     EnvVarWrapper xdg_data_home_env_var{"XDG_DATA_HOME"};
     EnvVarWrapper xdg_data_dirs_env_var{"XDG_DATA_DIRS"};
-    EnvVarWrapper home_env_var{"HOME", "/home/fake_home"};
+    EnvVarWrapper home_env_var{"HOME", HOME_DIR};
 #endif
     ::testing::InitGoogleTest(&argc, argv);
     ::testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);
