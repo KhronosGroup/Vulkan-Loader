@@ -957,6 +957,7 @@ TEST(ImplicitLayers, EnableAndDisableWithFilter) {
 }
 
 // Add 2 implicit layers with the same layer name and expect only one to be loaded.
+// Expect the second layer to be found first, because it'll be in a path that is searched first.
 TEST(ImplicitLayers, DuplicateLayers) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
@@ -968,28 +969,28 @@ TEST(ImplicitLayers, DuplicateLayers) {
                                                                           .set_description("actually_layer_1")
                                                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                                           .set_disable_environment("if_you_can")),
-                                            "regular_layer_1.json")
-                               // use override folder as just a folder and manually add it to the implicit layer search paths
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+                                            "regular_layer_1.json"));
     auto& layer1 = env.get_test_layer(0);
     layer1.set_description("actually_layer_1");
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
-#if defined(WIN32)
-    env.platform_shim->add_manifest(ManifestCategory::implicit_layer, env.get_folder(ManifestLocation::override_layer).location());
-#elif COMMON_UNIX_PLATFORMS
-    env.platform_shim->redirect_path(fs::path("/etc/vulkan/implicit_layer.d"),
-                                     env.get_folder(ManifestLocation::override_layer).location());
-#endif
 
     env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)
                                                                           .set_description("actually_layer_2")
                                                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                                           .set_disable_environment("if_you_can")),
-                                            "regular_layer_1.json"));
+                                            "regular_layer_1.json")
+                               // use override folder as just a folder and manually add it to the implicit layer search paths
+                               .set_discovery_type(ManifestDiscoveryType::override_folder));
     auto& layer2 = env.get_test_layer(1);
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
+#if defined(WIN32)
+    env.platform_shim->add_manifest(ManifestCategory::implicit_layer, env.get_folder(ManifestLocation::override_layer).location());
+#elif COMMON_UNIX_PLATFORMS
+    env.platform_shim->redirect_path(fs::path(USER_LOCAL_SHARE_DIR "/vulkan/implicit_layer.d"),
+                                     env.get_folder(ManifestLocation::override_layer).location());
+#endif
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));

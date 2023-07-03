@@ -72,6 +72,13 @@
 
 #include "layer/test_layer.h"
 
+// Useful defines
+#if COMMON_UNIX_PLATFORMS
+#define HOME_DIR "/home/fake_home"
+#define USER_LOCAL_SHARE_DIR HOME_DIR "/.local/share"
+#define ETC_DIR "/etc"
+#endif
+
 // handle checking
 template <typename T>
 void handle_assert_has_value(T const& handle) {
