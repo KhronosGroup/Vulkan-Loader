@@ -1363,6 +1363,7 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
                                                                          .add_component_layers({regular_layer_name})
                                                                          .set_disable_environment("DisableMeIfYouCan")),
         "meta_test_layer.json");
+
     {  // global functions
         auto layer_props = env.GetLayerProperties(2);
         // Expect the explicit layer to still be found
@@ -1376,10 +1377,10 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         inst.CheckCreate();
         // Newer component is allowed now
         EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        env.debug_log.clear();
         auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
     }
+    env.debug_log.clear();
 
     {
         // 1.3 instance
@@ -1389,7 +1390,6 @@ TEST(OverrideMetaLayer, NewerComponentLayerInMetaLayer) {
         inst.CheckCreate();
         // Newer component is allowed now
         EXPECT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        env.debug_log.clear();
         auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
 
         EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
@@ -1603,6 +1603,8 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
                                    .add_override_path(env.get_folder(ManifestLocation::override_layer).location().str())),
                            "meta_test_layer.json");
 
+    auto meta_layer_path = env.get_folder(ManifestLocation::override_layer).location();
+
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
     inst.create_info.add_layer(env_var_layer_name);
@@ -1613,6 +1615,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
         std::string("Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
                     "VK_LAYER_PATH is set to ") +
         env.env_var_vk_layer_paths.value()));
+    ASSERT_TRUE(env.debug_log.find("Override layer has override paths set to " + meta_layer_path.str()));
 
     env.layers.clear();
 }
