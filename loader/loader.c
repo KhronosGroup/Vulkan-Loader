@@ -3790,8 +3790,8 @@ VkResult get_override_layer_override_paths(struct loader_instance *inst, struct 
         --cur_write_ptr;
         assert(cur_write_ptr - (*override_paths) < (ptrdiff_t)override_path_size);
         *cur_write_ptr = '\0';
-        loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override paths set to %s",
-                   override_paths);
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override paths set to %s",
+                   *override_paths);
     }
     return VK_SUCCESS;
 }
