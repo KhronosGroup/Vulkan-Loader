@@ -147,7 +147,7 @@ VkResult parse_layer_configuration(const struct loader_instance* inst, cJSON* la
         goto out;
     }
 
-    cJSON* treat_as_implicit_manifest = cJSON_GetObjectItem(layer_configuration_json, "treat_as_implicit_manifest");
+    cJSON* treat_as_implicit_manifest = loader_cJSON_GetObjectItem(layer_configuration_json, "treat_as_implicit_manifest");
     if (treat_as_implicit_manifest && treat_as_implicit_manifest->type == cJSON_True) {
         layer_configuration->treat_as_implicit_manifest = true;
     }
@@ -161,12 +161,12 @@ out:
 VkResult parse_layer_configurations(const struct loader_instance* inst, cJSON* settings_object, loader_settings* loader_settings) {
     VkResult res = VK_SUCCESS;
 
-    cJSON* layer_configurations = cJSON_GetObjectItem(settings_object, "layers");
+    cJSON* layer_configurations = loader_cJSON_GetObjectItem(settings_object, "layers");
     if (NULL == layer_configurations) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    uint32_t layer_configurations_count = cJSON_GetArraySize(layer_configurations);
+    uint32_t layer_configurations_count = loader_cJSON_GetArraySize(layer_configurations);
     if (layer_configurations_count == 0) {
         return VK_SUCCESS;
     }
@@ -181,7 +181,7 @@ VkResult parse_layer_configurations(const struct loader_instance* inst, cJSON* s
     }
 
     for (uint32_t i = 0; i < layer_configurations_count; i++) {
-        cJSON* layer = cJSON_GetArrayItem(layer_configurations, i);
+        cJSON* layer = loader_cJSON_GetArrayItem(layer_configurations, i);
         if (NULL == layer) {
             res = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
@@ -324,11 +324,11 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     }
     uint32_t settings_array_count = 0;
     bool has_multi_setting_file = false;
-    cJSON* settings_array = cJSON_GetObjectItem(json, "settings_array");
-    cJSON* single_settings_object = cJSON_GetObjectItem(json, "settings");
+    cJSON* settings_array = loader_cJSON_GetObjectItem(json, "settings_array");
+    cJSON* single_settings_object = loader_cJSON_GetObjectItem(json, "settings");
     if (NULL != settings_array) {
         has_multi_setting_file = true;
-        settings_array_count = cJSON_GetArraySize(settings_array);
+        settings_array_count = loader_cJSON_GetArraySize(settings_array);
     } else if (NULL != single_settings_object) {
         settings_array_count = 1;
     }
@@ -343,25 +343,25 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 
     for (int i = 0; i < (int)settings_array_count; i++) {
         if (has_multi_setting_file) {
-            single_settings_object = cJSON_GetArrayItem(settings_array, i);
+            single_settings_object = loader_cJSON_GetArrayItem(settings_array, i);
         }
-        cJSON* app_keys = cJSON_GetObjectItem(single_settings_object, "app_keys");
+        cJSON* app_keys = loader_cJSON_GetObjectItem(single_settings_object, "app_keys");
         if (NULL == app_keys) {
             if (global_settings_index == -1) {
                 global_settings_index = i;  // use the first 'global' settings that has no app keys as the global one
             }
             continue;
         } else if (valid_exe_path) {
-            int app_key_count = cJSON_GetArraySize(app_keys);
+            int app_key_count = loader_cJSON_GetArraySize(app_keys);
             if (app_key_count == 0) {
                 continue;  // empty array
             }
             for (int j = 0; j < app_key_count; j++) {
-                cJSON* app_key_json = cJSON_GetArrayItem(app_keys, j);
+                cJSON* app_key_json = loader_cJSON_GetArrayItem(app_keys, j);
                 if (NULL == app_key_json) {
                     continue;
                 }
-                char* app_key = cJSON_Print(app_key_json);
+                char* app_key = loader_cJSON_Print(app_key_json);
                 if (NULL == app_key) {
                     continue;
                 }
@@ -389,7 +389,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     // Now get the actual settings object to use - already have it if there is only one settings object
     // If there are multiple settings, just need to set single_settings_object to the desired settings object
     if (has_multi_setting_file) {
-        single_settings_object = cJSON_GetArrayItem(settings_array, index_to_use);
+        single_settings_object = loader_cJSON_GetArrayItem(settings_array, index_to_use);
         if (NULL == single_settings_object) {
             res = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
@@ -397,7 +397,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     }
 
     // optional
-    cJSON* stderr_filter = cJSON_GetObjectItem(single_settings_object, "stderr_log");
+    cJSON* stderr_filter = loader_cJSON_GetObjectItem(single_settings_object, "stderr_log");
     if (NULL != stderr_filter) {
         struct loader_string_list stderr_log = {0};
         res = loader_parse_json_array_of_strings(inst, single_settings_object, "stderr_log", &stderr_log);
@@ -409,11 +409,11 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     }
 
     // optional
-    cJSON* logs_to_use = cJSON_GetObjectItem(single_settings_object, "log_locations");
+    cJSON* logs_to_use = loader_cJSON_GetObjectItem(single_settings_object, "log_locations");
     if (NULL != logs_to_use) {
-        int log_count = cJSON_GetArraySize(logs_to_use);
+        int log_count = loader_cJSON_GetArraySize(logs_to_use);
         for (int i = 0; i < log_count; i++) {
-            cJSON* log_element = cJSON_GetArrayItem(logs_to_use, i);
+            cJSON* log_element = loader_cJSON_GetArrayItem(logs_to_use, i);
             // bool is_valid = true;
             if (NULL != log_element) {
                 struct loader_string_list log_destinations = {0};
@@ -451,7 +451,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     loader_settings->settings_active = true;
 out:
     if (NULL != json) {
-        cJSON_Delete(json);
+        loader_cJSON_Delete(json);
     }
 
     loader_instance_heap_free(inst, settings_file_path);
@@ -577,7 +577,7 @@ VkResult get_settings_layers(const struct loader_instance* inst, struct loader_l
 
         local_res =
             loader_add_layer_properties(inst, settings_layers, json, layer_config->treat_as_implicit_manifest, layer_config->path);
-        cJSON_Delete(json);
+        loader_cJSON_Delete(json);
 
         // If the error is anything other than out of memory we still want to try to load the other layers
         if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
