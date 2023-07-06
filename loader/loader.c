@@ -3152,6 +3152,8 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 #if defined(__APPLE__)
             // Add the bundle's Resources dir to the beginning of the search path.
             // Looks for manifests in the bundle first, before any system directories.
+            // This also appears to work unmodified for iOS, it finds the app bundle on the devices
+            // file system. (RSW)
             CFBundleRef main_bundle = CFBundleGetMainBundle();
             if (NULL != main_bundle) {
                 CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);

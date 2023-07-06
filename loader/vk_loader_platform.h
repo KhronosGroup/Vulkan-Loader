@@ -275,6 +275,12 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     return buffer;
 }
 #elif defined(__APPLE__)
+#if defined(__APPLE_EMBEDDED__)
+static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    buffer[0] = '\0';
+    return buffer;
+}
+#else
 #include <libproc.h>
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     pid_t pid = getpid();
@@ -283,6 +289,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     buffer[ret] = '\0';
     return buffer;
 }
+#endif
 #elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/sysctl.h>
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
