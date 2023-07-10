@@ -16,7 +16,7 @@
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
 
-project(VULKAN_LOADER VERSION 1.3.256)
+project(VULKAN_LOADER VERSION 1.3.257)
 
 add_subdirectory(scripts)
 
@@ -235,8 +235,9 @@ option(LOADER_CODEGEN "Enable vulkan loader code generation")
 if(LOADER_CODEGEN)
     find_package(Python3 REQUIRED)
     add_custom_target(loader_codegen
-        COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/generate_source.py ${VULKAN_HEADERS_REGISTRY_DIRECTORY}
-                --generated-version ${VulkanHeaders_VERSION} --incremental
+        COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
+            "${VULKAN_HEADERS_INSTALL_DIR}/${CMAKE_INSTALL_DATADIR}/vulkan/registry"
+            --generated-version ${VulkanHeaders_VERSION} --incremental
     )
 endif()
 
