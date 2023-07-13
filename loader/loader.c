@@ -3779,7 +3779,7 @@ VkResult get_override_layer_override_paths(struct loader_instance *inst, struct 
             override_path_size += determine_data_file_path_size(prop->override_paths.list[j], 0);
         }
         *override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (override_paths == NULL) {
+        if (*override_paths == NULL) {
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
         cur_write_ptr = &(*override_paths)[0];
