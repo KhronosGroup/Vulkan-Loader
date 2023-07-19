@@ -103,7 +103,7 @@ elseif(ANDROID)
 elseif(APPLE)
     target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
     
-    # Build for iOS and tvOS
+# Build for iOS and tvOS
     option(APPLE_EMBEDDED "Apple non desktop devices" OFF)
     if (APPLE_EMBEDDED)
         add_definitions(-D__APPLE_EMBEDDED__)
