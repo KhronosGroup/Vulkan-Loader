@@ -173,7 +173,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceLayerProperties(uint32_t*
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
     if (pApiVersion != nullptr) {
-        *pApiVersion = VK_API_VERSION_1_0;
+        *pApiVersion = icd.icd_api_version;
     }
     return VK_SUCCESS;
 }
@@ -1162,7 +1162,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDe
 PFN_vkVoidFunction get_instance_func_ver_1_1([[maybe_unused]] VkInstance instance, const char* pName) {
     if (icd.icd_api_version >= VK_API_VERSION_1_1) {
         if (string_eq(pName, "test_vkEnumerateInstanceVersion")) {
-            return to_vkVoidFunction(test_vkEnumerateInstanceVersion);
+            return icd.can_query_vkEnumerateInstanceVersion ? to_vkVoidFunction(test_vkEnumerateInstanceVersion) : nullptr;
         }
         if (string_eq(pName, "vkEnumeratePhysicalDeviceGroups")) {
             return to_vkVoidFunction(test_vkEnumeratePhysicalDeviceGroups);
@@ -1549,7 +1549,8 @@ PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* 
                        : NULL;
         if (string_eq(pName, "vkEnumerateInstanceLayerProperties"))
             return to_vkVoidFunction(test_vkEnumerateInstanceLayerProperties);
-        if (string_eq(pName, "vkEnumerateInstanceVersion")) return to_vkVoidFunction(test_vkEnumerateInstanceVersion);
+        if (string_eq(pName, "vkEnumerateInstanceVersion"))
+            return icd.can_query_vkEnumerateInstanceVersion ? to_vkVoidFunction(test_vkEnumerateInstanceVersion) : nullptr;
         if (string_eq(pName, "vkCreateInstance")) return to_vkVoidFunction(test_vkCreateInstance);
     }
     if (string_eq(pName, "vkGetDeviceProcAddr")) return to_vkVoidFunction(test_vkGetDeviceProcAddr);

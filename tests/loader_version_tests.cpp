@@ -1368,3 +1368,36 @@ TEST(DirectDriverLoading, DriverDoesNotExportNegotiateFunction) {
                      "VkDirectDriverLoadingInfoLUNARG structure at index 0, skipping."));
     }
 }
+
+TEST(DriverManifest, VersionMismatchWithEnumerateInstanceVersion) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+        .set_icd_api_version(VK_API_VERSION_1_0)
+        .add_physical_device({});
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+
+    ASSERT_TRUE(env.debug_log.find(std::string("terminator_CreateInstance: Manifest ICD for \"") + env.get_test_icd_path().str() +
+                                   "\" contained a 1.1 or greater API version, but "
+                                   "vkEnumerateInstanceVersion returned 1.0, treating as a 1.0 ICD"));
+}
+
+TEST(DriverManifest, EnumerateInstanceVersionNotSupported) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+        .set_icd_api_version(VK_API_VERSION_1_0)
+        .set_can_query_vkEnumerateInstanceVersion(false)
+        .add_physical_device({});
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+
+    ASSERT_TRUE(env.debug_log.find(std::string("terminator_CreateInstance: Manifest ICD for \"") + env.get_test_icd_path().str() +
+                                   "\" contained a 1.1 or greater API version, but does "
+                                   "not support vkEnumerateInstanceVersion, treating as a 1.0 ICD"));
+}
