@@ -3213,10 +3213,10 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
         auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(regular_layer_name, layer_props.at(0).layerName));
     }
-    {  // application doesn't state its API version
+    {  // application sets its API version to 0
         DebugUtilsLogger log;
         InstWrapper inst{env.vulkan_functions};
-        inst.create_info.set_fill_in_application_info(false);
+        inst.create_info.set_api_version(0);
         FillDebugUtilsCreateDetails(inst.create_info, log);
         inst.CheckCreate();
         EXPECT_TRUE(log.find(std::string("Insert instance layer \"") + regular_layer_name));

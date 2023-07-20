@@ -5419,7 +5419,17 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
                                "terminator_CreateInstance: ICD \"%s\" vkEnumerateInstanceVersion returned error. The ICD will be "
                                "treated as a 1.0 ICD",
                                icd_term->scanned_icd->lib_name);
+                } else if (VK_API_VERSION_MINOR(icd_version) == 0) {
+                    loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                               "terminator_CreateInstance: Manifest ICD for \"%s\" contained a 1.1 or greater API version, but "
+                               "vkEnumerateInstanceVersion returned 1.0, treating as a 1.0 ICD",
+                               icd_term->scanned_icd->lib_name);
                 }
+            } else {
+                loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                           "terminator_CreateInstance: Manifest ICD for \"%s\" contained a 1.1 or greater API version, but does "
+                           "not support vkEnumerateInstanceVersion, treating as a 1.0 ICD",
+                           icd_term->scanned_icd->lib_name);
             }
         }
 
