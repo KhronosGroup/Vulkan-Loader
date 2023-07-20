@@ -92,7 +92,7 @@ TEST(ImplicitLayers, WithEnableAndDisableEnvVar) {
 TEST(ImplicitLayers, OnlyDisableEnvVar) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
     EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -127,7 +127,7 @@ TEST(ImplicitLayers, OnlyDisableEnvVar) {
 TEST(ImplicitLayers, PreInstanceEnumInstLayerProps) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
     EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(
@@ -161,7 +161,7 @@ TEST(ImplicitLayers, PreInstanceEnumInstLayerProps) {
 TEST(ImplicitLayers, PreInstanceEnumInstExtProps) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
     EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(
@@ -198,7 +198,7 @@ TEST(ImplicitLayers, PreInstanceVersion) {
         .add_physical_device({})
         .set_icd_api_version(VK_MAKE_API_VERSION(0, 1, 2, 3));
 
-    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
     EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
@@ -237,7 +237,7 @@ TEST(ImplicitLayers, OverrideGetInstanceProcAddr) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    const char* implicit_layer_name = "ImplicitTestLayer";
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
     EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
     env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 0, 0}).add_layer(
@@ -1873,7 +1873,7 @@ TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {
         .add_physical_device({})
         .set_icd_api_version(VK_API_VERSION_1_1);
 
-    const char* regular_layer_name = "TestLayer";
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
         ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
@@ -1973,13 +1973,13 @@ TEST(ExplicitLayers, WrapObjects) {
                                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
                            "wrap_objects_layer.json");
 
-    const char* regular_layer_name_1 = "RegularLayer1";
+    const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_layer_1.json");
 
-    const char* regular_layer_name_2 = "RegularLayer2";
+    const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
     env.add_explicit_layer(
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
@@ -2029,7 +2029,7 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
 
     {
         // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
-        const char* regular_layer_name_1 = "RegularLayer1";
+        const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
         env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                               .set_name(regular_layer_name_1)
                                                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
@@ -2045,7 +2045,7 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
     }
     {
         // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
-        const char* regular_layer_name_1 = "RegularLayer1";
+        const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
         env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                               .set_name(regular_layer_name_1)
                                                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
@@ -2053,7 +2053,7 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
                                    .set_discovery_type(ManifestDiscoveryType::env_var)
                                    .set_is_dir(false));
 
-        const char* regular_layer_name_2 = "RegularLayer2";
+        const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
         env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                               .set_name(regular_layer_name_2)
                                                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
@@ -2070,14 +2070,14 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
     }
     {
         // verify layers load successfully when setting VK_LAYER_PATH to a directory
-        const char* regular_layer_name_1 = "RegularLayer1";
+        const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
         env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                               .set_name(regular_layer_name_1)
                                                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
                                                 "regular_layer_1.json")
                                    .set_discovery_type(ManifestDiscoveryType::env_var));
 
-        const char* regular_layer_name_2 = "RegularLayer2";
+        const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
         env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                               .set_name(regular_layer_name_2)
                                                                               .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
@@ -4350,7 +4350,7 @@ TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_add_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_add_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_ADD_PHYS_DEV")),
@@ -4427,7 +4427,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_remove_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_remove_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_REMOVE_PHYS_DEV")),
@@ -4477,7 +4477,7 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_reorder_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_reorder_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_REORDER_PHYS_DEV")),
@@ -4527,7 +4527,7 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_all_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_all_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_ALL_PHYS_DEV")),
@@ -4603,7 +4603,7 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_add_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_add_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_ADD_PHYS_DEV")),
@@ -4691,7 +4691,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_remove_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_remove_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_REMOVE_PHYS_DEV")),
@@ -4744,7 +4744,7 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_reorder_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_reorder_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_REORDER_PHYS_DEV")),
@@ -4797,7 +4797,7 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VkLayer_LunarG_all_phys_dev")
+                                                         .set_name("VK_LAYER_LunarG_all_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_api_version(VK_API_VERSION_1_1)
                                                          .set_disable_environment("TEST_DISABLE_ALL_PHYS_DEV")),

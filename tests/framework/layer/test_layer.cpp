@@ -75,7 +75,7 @@
 #endif
 
 #if !defined(TEST_LAYER_NAME)
-#define TEST_LAYER_NAME "VkLayer_LunarG_test_layer"
+#define TEST_LAYER_NAME "VK_LAYER_LunarG_test_layer"
 #endif
 
 TestLayer layer;
