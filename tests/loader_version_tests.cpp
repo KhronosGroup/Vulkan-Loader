@@ -206,8 +206,8 @@ TEST(ICDInterfaceVersion2, EnumAdapters2) {
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResults) {
     FrameworkEnvironment env{};
     auto& driver =
-        env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}.set_discovery_type(
-                        ManifestDiscoveryType::null_dir))
+        env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, VK_API_VERSION_1_1}
+                        .set_discovery_type(ManifestDiscoveryType::null_dir))
             .set_min_icd_interface_version(6)
             .set_icd_api_version(VK_API_VERSION_1_1);
     const std::vector<std::string> physical_device_names = {"physical_device_4", "physical_device_3", "physical_device_2",
@@ -250,8 +250,8 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResul
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults) {
     FrameworkEnvironment env{};
     auto& driver =
-        env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES}.set_discovery_type(
-                        ManifestDiscoveryType::null_dir))
+        env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, VK_API_VERSION_1_1}
+                        .set_discovery_type(ManifestDiscoveryType::null_dir))
             .set_min_icd_interface_version(6)
             .set_icd_api_version(VK_API_VERSION_1_1);
     const std::vector<std::string> physical_device_names = {"physical_device_4", "physical_device_3", "physical_device_2",
@@ -415,7 +415,7 @@ TEST(MultipleDriverConfig, DifferentICDsWithDevices) {
 TEST(MultipleDriverConfig, DifferentICDsWithDevicesAndGroups) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
 
     // The loader has to be able to handle drivers that support device groups in combination
@@ -433,8 +433,8 @@ TEST(MultipleDriverConfig, DifferentICDsWithDevicesAndGroups) {
 
     // ICD 1 :  1.1 support (with 1 group with 2 devices)
     TestICD& icd1 = env.get_test_icd(1);
-    icd1.physical_devices.emplace_back("physical_device_1");
-    icd1.physical_devices.emplace_back("physical_device_2");
+    icd1.physical_devices.emplace_back("physical_device_1").set_api_version(VK_API_VERSION_1_1);
+    icd1.physical_devices.emplace_back("physical_device_2").set_api_version(VK_API_VERSION_1_1);
     icd1.physical_device_groups.emplace_back(icd1.physical_devices[0]);
     icd1.physical_device_groups.back().use_physical_device(icd1.physical_devices[1]);
     icd1.min_icd_interface_version = 5;

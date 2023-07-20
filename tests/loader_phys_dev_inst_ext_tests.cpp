@@ -122,7 +122,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2KHRInstanceAndICDSupport) {
 // Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_1));
     env.get_test_icd(0).icd_api_version = VK_API_VERSION_1_1;
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
     env.get_test_icd(0).physical_devices.push_back({});
@@ -297,7 +297,7 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Mixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -521,11 +521,12 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2KHRInstanceAndICDSupport) {
 // Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_1));
     env.get_test_icd(0).icd_api_version = VK_API_VERSION_1_1;
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
+    env.get_test_icd(0).physical_devices.back().set_api_version(VK_API_VERSION_1_1);
     FillInRandomFeatures(env.get_test_icd(0).physical_devices.back().features);
     {
         InstWrapper instance(env.vulkan_functions);
@@ -663,7 +664,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFeatsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -792,11 +793,12 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2KHRInstanceAndICDSupport) {
 // Also check if the application didn't enable 1.1 and when a layer 'upgrades' the api version to 1.1
 TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_1));
     env.get_test_icd(0).icd_api_version = VK_API_VERSION_1_1;
     env.get_test_icd(0).add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
     env.get_test_icd(0).physical_devices.push_back({});
     env.get_test_icd(0).physical_devices.back().extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
+    env.get_test_icd(0).physical_devices.back().set_api_version(VK_API_VERSION_1_1);
     FillInRandomFormatProperties(env.get_test_icd(0).physical_devices.back().format_properties);
     {
         InstWrapper instance(env.vulkan_functions);
@@ -946,7 +948,7 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatPropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -1323,7 +1325,7 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatPropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -1630,7 +1632,7 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryPropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -1976,7 +1978,7 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyPropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -2393,7 +2395,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatPropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -2658,7 +2660,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufPropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -2918,7 +2920,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemPropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -3177,7 +3179,7 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFencePropsMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
 
         // ICD 1 should not have 1.1
@@ -3409,7 +3411,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceCaps2KHRMixed) {
     Extension third_ext{VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME};
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.min_icd_interface_version = 3;
@@ -3620,7 +3622,7 @@ TEST(LoaderInstPhysDevExts, PhysDevSurfaceFormats2KHRMixed) {
     Extension third_ext{VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME};
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.enable_icd_wsi = true;
@@ -3827,7 +3829,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPropsKHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
 
@@ -4015,7 +4017,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlanePropsKHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
 
@@ -4200,7 +4202,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneSupDispsKHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
 
@@ -4389,7 +4391,7 @@ TEST(LoaderInstPhysDevExts, GetDispModePropsKHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
 
@@ -4551,7 +4553,7 @@ TEST(LoaderInstPhysDevExts, GetDispModesKHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
 
@@ -4768,7 +4770,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCapsKHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
 
@@ -4954,7 +4956,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispProps2KHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
@@ -5127,7 +5129,7 @@ TEST(LoaderInstPhysDevExts, PhysDevDispPlaneProps2KHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
@@ -5299,7 +5301,7 @@ TEST(LoaderInstPhysDevExts, GetDispModeProps2KHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
@@ -5467,7 +5469,7 @@ TEST(LoaderInstPhysDevExts, GetDispPlaneCaps2KHRMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
@@ -5601,7 +5603,7 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extension({VK_KHR_DISPLAY_EXTENSION_NAME});
@@ -5754,7 +5756,7 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTMixed) {
     const uint32_t max_phys_devs = 7;
 
     for (uint32_t icd = 0; icd < max_icd_count; ++icd) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, icd != 1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0));
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extension({VK_KHR_DISPLAY_EXTENSION_NAME});

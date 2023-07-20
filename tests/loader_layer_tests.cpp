@@ -4348,7 +4348,6 @@ TEST(TestLayers, DeviceLayerNotPresent) {
 
 TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_add_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4360,7 +4359,8 @@ TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
     layer.set_add_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4425,7 +4425,6 @@ TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
 
 TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_remove_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4437,7 +4436,8 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
     layer.set_remove_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4475,7 +4475,6 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
 
 TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_reorder_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4487,7 +4486,8 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
     layer.set_reorder_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4525,7 +4525,6 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
 
 TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_all_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4537,7 +4536,8 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
     layer.set_add_phys_devs(true).set_remove_phys_devs(true).set_reorder_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4601,7 +4601,6 @@ bool GroupsAreTheSame(VkPhysicalDeviceGroupProperties a, VkPhysicalDeviceGroupPr
 
 TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_add_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4613,7 +4612,8 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
     layer.set_add_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4687,7 +4687,7 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
 
 TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    EnvVarWrapper disable_linux_sort("VK_LOADER_DISABLE_SELECT", "1");
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_remove_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4699,7 +4699,8 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
     layer.set_remove_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4719,7 +4720,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
         cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
         cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
     }
-    const uint32_t icd_groups = 4;
+    const uint32_t icd_groups = 3;
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
@@ -4727,7 +4728,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
 
     uint32_t grp_count = 0;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
-    ASSERT_LT(grp_count, icd_groups);
+    ASSERT_EQ(grp_count, icd_groups);
 
     auto phys_dev_groups =
         std::vector<VkPhysicalDeviceGroupProperties>(grp_count, {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
@@ -4739,7 +4740,6 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
 
 TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_reorder_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4751,7 +4751,8 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
     layer.set_reorder_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4791,7 +4792,6 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
 
 TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
     FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name("VK_LAYER_LunarG_all_phys_dev")
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -4803,7 +4803,8 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
     layer.set_add_phys_devs(true).set_remove_phys_devs(true).set_reorder_phys_devs(true);
 
     for (uint32_t icd = 0; icd < 2; ++icd) {
-        auto& cur_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_2);
+        auto& cur_icd =
+            env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2)).set_icd_api_version(VK_API_VERSION_1_2);
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
@@ -4820,8 +4821,8 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
             cur_icd.physical_devices.back().set_properties(properties);
         }
         cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[1]);
+        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[2]);
     }
     const uint32_t icd_groups = 4;
 
