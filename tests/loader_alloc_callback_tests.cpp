@@ -701,7 +701,7 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     custom_json_file_contents << custom_json_file.rdbuf();
 
     fs::path new_path = env.get_folder(ManifestLocation::explicit_layer)
-                            .write_manifest("VkLayer_complex_file.json", custom_json_file_contents.str());
+                            .write_manifest("VK_LAYER_complex_file.json", custom_json_file_contents.str());
     env.platform_shim->add_manifest(ManifestCategory::explicit_layer, new_path);
 
     size_t fail_index = 0;
