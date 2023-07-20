@@ -783,7 +783,7 @@ TEST(EnumeratePhysicalDevices, ZeroPhysicalDevices) {
 
 TEST(EnumeratePhysicalDevices, ZeroPhysicalDevicesAfterCreateInstance) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1)).set_min_icd_interface_version(5);
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
     inst.CheckCreate();
@@ -1572,7 +1572,7 @@ TEST(TryLoadWrongBinaries, WrongArchLayer) {
 
 TEST(EnumeratePhysicalDeviceGroups, OneCall) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1)
                        .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
@@ -1581,6 +1581,7 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
     for (size_t i = 0; i < 3; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
     driver.physical_device_groups.emplace_back(driver.physical_devices[0]);
     driver.physical_device_groups.back().use_physical_device(driver.physical_devices[1]);
@@ -1705,7 +1706,7 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
 
 TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1)
                        .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
@@ -1714,6 +1715,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
     for (size_t i = 0; i < 3; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
     driver.physical_device_groups.emplace_back(driver.physical_devices[0]);
     driver.physical_device_groups.back().use_physical_device(driver.physical_devices[1]);
@@ -1821,7 +1823,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
 
 TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1)
                        .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
@@ -1830,6 +1832,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
     for (size_t i = 0; i < 3; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
         driver.physical_devices.back().extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
     driver.physical_device_groups.emplace_back(driver.physical_devices[0]);
     driver.physical_device_groups.back().use_physical_device(driver.physical_devices[1]);
@@ -1938,7 +1941,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
 // vkEnumeratePhysicalDeviceGroupsKHR, and make sure they return the same info.
 TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1)
                        .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME})
@@ -1947,6 +1950,7 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
     // Generate the devices
     for (size_t i = 0; i < 6; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
 
     // Generate the starting groups
@@ -2027,13 +2031,14 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the add.
 TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 7; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
 
     // Generate the starting groups
@@ -2121,13 +2126,14 @@ TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the remove.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 7; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
 
     // Generate the starting groups
@@ -2207,13 +2213,14 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the add.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceAddDeviceInBetween) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 7; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
 
     // Generate the starting groups
@@ -2292,13 +2299,14 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceAddDeviceInBetween) {
 // querying vkEnumeratePhysicalDeviceGroups before and after the remove.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveDeviceInBetween) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 6; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
 
     // Generate the starting groups
@@ -2388,13 +2396,14 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveDeviceInBetween) {
 // various devices and groups while querying in between.
 TEST(EnumeratePhysicalDeviceGroups, MultipleAddRemoves) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
                        .set_min_icd_interface_version(5)
                        .set_icd_api_version(VK_API_VERSION_1_1);
 
     // Generate the devices
     for (size_t i = 0; i < 9; i++) {
         driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i));
+        driver.physical_devices.back().properties.apiVersion = VK_API_VERSION_1_1;
     }
 
     // Generate the starting groups
@@ -2529,7 +2538,7 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
     //   PhysDev 6: pd6, Discrete, Vulkan 1.1, Bus 2
     //   Group 0: PhysDev 5, PhysDev 6
     //   Group 1: PhysDev 4
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_1));
     auto& cur_icd_0 = env.get_test_icd(0);
     cur_icd_0.set_icd_api_version(VK_API_VERSION_1_1);
     cur_icd_0.physical_devices.push_back({"pd0"});
@@ -2550,7 +2559,7 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
         .use_physical_device(cur_icd_0.physical_devices[2]);
     cur_icd_0.physical_device_groups.push_back({cur_icd_0.physical_devices[1]});
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_1));
     auto& cur_icd_1 = env.get_test_icd(1);
     cur_icd_1.set_icd_api_version(VK_API_VERSION_1_1);
     cur_icd_1.physical_devices.push_back({"pd4"});
@@ -2655,7 +2664,7 @@ TEST(ExtensionManual, ToolingProperties) {
     }
     {  // core
         FrameworkEnvironment env{};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_3))
             .add_physical_device({})
             .set_supports_tooling_info_core(true)
             .add_tooling_property(icd_tool_props)
