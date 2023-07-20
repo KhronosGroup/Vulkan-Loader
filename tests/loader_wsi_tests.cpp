@@ -37,7 +37,6 @@ TEST(WsiTests, CreateSurfaceWin32NoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_extensions({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
@@ -55,7 +54,6 @@ TEST(WsiTests, CreateSurfaceWin32NoICDCreateSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = false;
@@ -78,7 +76,6 @@ TEST(WsiTests, CreateSurfaceWin32ICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = true;
@@ -128,7 +125,6 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");
@@ -156,7 +152,6 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");
@@ -221,7 +216,6 @@ TEST(WsiTests, CreateSurfaceXCBNoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
@@ -240,7 +234,6 @@ TEST(WsiTests, CreateSurfaceXCBNoICDCreateSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = false;
@@ -264,7 +257,6 @@ TEST(WsiTests, CreateSurfaceXCBICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = true;
@@ -316,7 +308,6 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");
@@ -344,7 +335,6 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");
@@ -409,7 +399,6 @@ TEST(WsiTests, CreateSurfaceXLIBNoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
@@ -428,7 +417,6 @@ TEST(WsiTests, CreateSurfaceXLIBNoICDCreateSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = false;
@@ -452,7 +440,6 @@ TEST(WsiTests, CreateSurfaceXLIBICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = true;
@@ -504,7 +491,6 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");
@@ -532,7 +518,6 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");
@@ -597,7 +582,6 @@ TEST(WsiTests, CreateSurfaceWaylandNoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
@@ -616,7 +600,6 @@ TEST(WsiTests, CreateSurfaceWaylandNoICDCreateSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = false;
@@ -640,7 +623,6 @@ TEST(WsiTests, CreateSurfaceWaylandICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
     cur_icd.enable_icd_wsi = true;
@@ -692,7 +674,6 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");
@@ -720,7 +701,6 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentICDSupport) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
-    cur_icd.set_icd_api_version(VK_API_VERSION_1_0);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
     cur_icd.physical_devices.emplace_back("physical_device_0");

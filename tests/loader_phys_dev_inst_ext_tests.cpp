@@ -304,8 +304,6 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Mixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -672,8 +670,6 @@ TEST(LoaderInstPhysDevExts, PhysDevFeatsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -957,8 +953,6 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatPropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -1336,8 +1330,6 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatPropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -1645,8 +1637,6 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryPropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -1993,8 +1983,6 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyPropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -2412,8 +2400,6 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatPropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -2679,8 +2665,6 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufPropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -2941,8 +2925,6 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemPropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
@@ -3202,8 +3184,6 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFencePropsMixed) {
         if (icd != 1) {
             cur_icd.icd_api_version = VK_API_VERSION_1_1;
             cur_icd.add_instance_extension({VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME});
-        } else {
-            cur_icd.icd_api_version = VK_API_VERSION_1_0;
         }
 
         uint32_t rand_vendor_id;
