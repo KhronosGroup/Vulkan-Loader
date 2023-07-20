@@ -267,6 +267,9 @@ test_vkEnumeratePhysicalDeviceGroups([[maybe_unused]] VkInstance instance, uint3
                 pPhysicalDeviceGroupProperties[device_group].physicalDeviceCount = 1;
                 pPhysicalDeviceGroupProperties[device_group].physicalDevices[0] =
                     icd.physical_devices[device_group].vk_physical_device.handle;
+                for (size_t i = 1; i < VK_MAX_DEVICE_GROUP_SIZE; i++) {
+                    pPhysicalDeviceGroupProperties[device_group].physicalDevices[i] = {};
+                }
             }
         } else {
             group_count = static_cast<uint32_t>(icd.physical_device_groups.size());
@@ -283,6 +286,9 @@ test_vkEnumeratePhysicalDeviceGroups([[maybe_unused]] VkInstance instance, uint3
                     handles_written++;
                     pPhysicalDeviceGroupProperties[device_group].physicalDevices[i] =
                         icd.physical_device_groups[device_group].physical_device_handles[i]->vk_physical_device.handle;
+                }
+                for (size_t i = handles_written; i < VK_MAX_DEVICE_GROUP_SIZE; i++) {
+                    pPhysicalDeviceGroupProperties[device_group].physicalDevices[i] = {};
                 }
                 pPhysicalDeviceGroupProperties[device_group].physicalDeviceCount = handles_written;
             }

@@ -4643,18 +4643,16 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
     ASSERT_GT(grp_count, icd_groups);
 
-    auto not_exp_phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(icd_groups);
-    for (uint32_t group = 0; group < icd_groups; ++group) {
-        not_exp_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-    }
+    auto not_exp_phys_dev_groups =
+        std::vector<VkPhysicalDeviceGroupProperties>(icd_groups, {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+
     uint32_t returned_group_count = icd_groups;
     ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, not_exp_phys_dev_groups.data()));
     ASSERT_EQ(icd_groups, returned_group_count);
 
-    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
-    for (uint32_t group = 0; group < grp_count; ++group) {
-        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-    }
+    auto phys_dev_groups =
+        std::vector<VkPhysicalDeviceGroupProperties>(grp_count, {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+
     returned_group_count = grp_count;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
     ASSERT_EQ(grp_count, returned_group_count);
@@ -4731,10 +4729,9 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
     ASSERT_LT(grp_count, icd_groups);
 
-    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
-    for (uint32_t group = 0; group < grp_count; ++group) {
-        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-    }
+    auto phys_dev_groups =
+        std::vector<VkPhysicalDeviceGroupProperties>(grp_count, {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+
     uint32_t returned_group_count = grp_count;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
     ASSERT_EQ(grp_count, returned_group_count);
@@ -4784,10 +4781,9 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
     ASSERT_EQ(grp_count, icd_groups);
 
-    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
-    for (uint32_t group = 0; group < grp_count; ++group) {
-        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-    }
+    auto phys_dev_groups =
+        std::vector<VkPhysicalDeviceGroupProperties>(grp_count, {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+
     uint32_t returned_group_count = grp_count;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
     ASSERT_EQ(grp_count, returned_group_count);
@@ -4837,10 +4833,9 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &grp_count, nullptr));
     ASSERT_GT(grp_count, icd_groups);
 
-    auto phys_dev_groups = std::vector<VkPhysicalDeviceGroupProperties>(grp_count);
-    for (uint32_t group = 0; group < grp_count; ++group) {
-        phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-    }
+    auto phys_dev_groups =
+        std::vector<VkPhysicalDeviceGroupProperties>(grp_count, {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+
     uint32_t returned_group_count = grp_count;
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, phys_dev_groups.data()));
     ASSERT_EQ(grp_count, returned_group_count);
