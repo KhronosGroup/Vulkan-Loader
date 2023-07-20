@@ -457,10 +457,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
             //       underneath us when using this test.
             uint32_t icd_group_count = 0;
             layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, nullptr);
-            std::vector<VkPhysicalDeviceGroupProperties> tmp_vector(icd_group_count);
-            for (uint32_t group = 0; group < icd_group_count; ++group) {
-                tmp_vector[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-            }
+            std::vector<VkPhysicalDeviceGroupProperties> tmp_vector(icd_group_count,
+                                                                    {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
             layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, tmp_vector.data());
             layer.complete_physical_device_groups.clear();
 
