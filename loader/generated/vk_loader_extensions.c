@@ -890,6 +890,13 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdSetStencilTestEnableEXT = (PFN_vkCmdSetStencilTestEnableEXT)gdpa(dev, "vkCmdSetStencilTestEnableEXT");
     table->CmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)gdpa(dev, "vkCmdSetStencilOpEXT");
 
+    // ---- VK_EXT_host_image_copy extension commands
+    table->CopyMemoryToImageEXT = (PFN_vkCopyMemoryToImageEXT)gdpa(dev, "vkCopyMemoryToImageEXT");
+    table->CopyImageToMemoryEXT = (PFN_vkCopyImageToMemoryEXT)gdpa(dev, "vkCopyImageToMemoryEXT");
+    table->CopyImageToImageEXT = (PFN_vkCopyImageToImageEXT)gdpa(dev, "vkCopyImageToImageEXT");
+    table->TransitionImageLayoutEXT = (PFN_vkTransitionImageLayoutEXT)gdpa(dev, "vkTransitionImageLayoutEXT");
+    table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT)gdpa(dev, "vkGetImageSubresourceLayout2EXT");
+
     // ---- VK_EXT_swapchain_maintenance1 extension commands
     table->ReleaseSwapchainImagesEXT = (PFN_vkReleaseSwapchainImagesEXT)gdpa(dev, "vkReleaseSwapchainImagesEXT");
 
@@ -930,9 +937,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)gdpa(dev, "vkCmdSetFragmentShadingRateEnumNV");
-
-    // ---- VK_EXT_image_compression_control extension commands
-    table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT)gdpa(dev, "vkGetImageSubresourceLayout2EXT");
 
     // ---- VK_EXT_device_fault extension commands
     table->GetDeviceFaultInfoEXT = (PFN_vkGetDeviceFaultInfoEXT)gdpa(dev, "vkGetDeviceFaultInfoEXT");
@@ -1034,6 +1038,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_NV_memory_decompression extension commands
     table->CmdDecompressMemoryNV = (PFN_vkCmdDecompressMemoryNV)gdpa(dev, "vkCmdDecompressMemoryNV");
     table->CmdDecompressMemoryIndirectCountNV = (PFN_vkCmdDecompressMemoryIndirectCountNV)gdpa(dev, "vkCmdDecompressMemoryIndirectCountNV");
+
+    // ---- VK_NV_device_generated_commands_compute extension commands
+    table->GetPipelineIndirectMemoryRequirementsNV = (PFN_vkGetPipelineIndirectMemoryRequirementsNV)gdpa(dev, "vkGetPipelineIndirectMemoryRequirementsNV");
+    table->CmdUpdatePipelineIndirectBuffer = (PFN_vkCmdUpdatePipelineIndirectBuffer)gdpa(dev, "vkCmdUpdatePipelineIndirectBuffer");
+    table->GetPipelineIndirectDeviceAddressNV = (PFN_vkGetPipelineIndirectDeviceAddressNV)gdpa(dev, "vkGetPipelineIndirectDeviceAddressNV");
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)gdpa(dev, "vkCmdSetTessellationDomainOriginEXT");
@@ -2013,6 +2022,13 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdSetStencilTestEnableEXT")) return (void *)table->CmdSetStencilTestEnableEXT;
     if (!strcmp(name, "CmdSetStencilOpEXT")) return (void *)table->CmdSetStencilOpEXT;
 
+    // ---- VK_EXT_host_image_copy extension commands
+    if (!strcmp(name, "CopyMemoryToImageEXT")) return (void *)table->CopyMemoryToImageEXT;
+    if (!strcmp(name, "CopyImageToMemoryEXT")) return (void *)table->CopyImageToMemoryEXT;
+    if (!strcmp(name, "CopyImageToImageEXT")) return (void *)table->CopyImageToImageEXT;
+    if (!strcmp(name, "TransitionImageLayoutEXT")) return (void *)table->TransitionImageLayoutEXT;
+    if (!strcmp(name, "GetImageSubresourceLayout2EXT")) return (void *)table->GetImageSubresourceLayout2EXT;
+
     // ---- VK_EXT_swapchain_maintenance1 extension commands
     if (!strcmp(name, "ReleaseSwapchainImagesEXT")) return (void *)table->ReleaseSwapchainImagesEXT;
 
@@ -2053,9 +2069,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     if (!strcmp(name, "CmdSetFragmentShadingRateEnumNV")) return (void *)table->CmdSetFragmentShadingRateEnumNV;
-
-    // ---- VK_EXT_image_compression_control extension commands
-    if (!strcmp(name, "GetImageSubresourceLayout2EXT")) return (void *)table->GetImageSubresourceLayout2EXT;
 
     // ---- VK_EXT_device_fault extension commands
     if (!strcmp(name, "GetDeviceFaultInfoEXT")) return (void *)table->GetDeviceFaultInfoEXT;
@@ -2157,6 +2170,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_NV_memory_decompression extension commands
     if (!strcmp(name, "CmdDecompressMemoryNV")) return (void *)table->CmdDecompressMemoryNV;
     if (!strcmp(name, "CmdDecompressMemoryIndirectCountNV")) return (void *)table->CmdDecompressMemoryIndirectCountNV;
+
+    // ---- VK_NV_device_generated_commands_compute extension commands
+    if (!strcmp(name, "GetPipelineIndirectMemoryRequirementsNV")) return (void *)table->GetPipelineIndirectMemoryRequirementsNV;
+    if (!strcmp(name, "CmdUpdatePipelineIndirectBuffer")) return (void *)table->CmdUpdatePipelineIndirectBuffer;
+    if (!strcmp(name, "GetPipelineIndirectDeviceAddressNV")) return (void *)table->GetPipelineIndirectDeviceAddressNV;
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     if (!strcmp(name, "CmdSetTessellationDomainOriginEXT")) return (void *)table->CmdSetTessellationDomainOriginEXT;
@@ -6112,6 +6130,77 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
 }
 
 
+// ---- VK_EXT_host_image_copy extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(
+    VkDevice                                    device,
+    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCopyMemoryToImageEXT: Invalid device "
+                   "[VUID-vkCopyMemoryToImageEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(
+    VkDevice                                    device,
+    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCopyImageToMemoryEXT: Invalid device "
+                   "[VUID-vkCopyImageToMemoryEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(
+    VkDevice                                    device,
+    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCopyImageToImageEXT: Invalid device "
+                   "[VUID-vkCopyImageToImageEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CopyImageToImageEXT(device, pCopyImageToImageInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(
+    VkDevice                                    device,
+    uint32_t                                    transitionCount,
+    const VkHostImageLayoutTransitionInfoEXT*   pTransitions) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkTransitionImageLayoutEXT: Invalid device "
+                   "[VUID-vkTransitionImageLayoutEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->TransitionImageLayoutEXT(device, transitionCount, pTransitions);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetImageSubresourceLayout2EXT: Invalid device "
+                   "[VUID-vkGetImageSubresourceLayout2EXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+}
+
+
 // ---- VK_EXT_swapchain_maintenance1 extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(
@@ -6557,24 +6646,6 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->CmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
-}
-
-
-// ---- VK_EXT_image_compression_control extension trampoline/terminators
-
-VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
-    VkDevice                                    device,
-    VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetImageSubresourceLayout2EXT: Invalid device "
-                   "[VUID-vkGetImageSubresourceLayout2EXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
 }
 
 
@@ -7387,6 +7458,50 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->CmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress, indirectCommandsCountAddress, stride);
+}
+
+
+// ---- VK_NV_device_generated_commands_compute extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL GetPipelineIndirectMemoryRequirementsNV(
+    VkDevice                                    device,
+    const VkComputePipelineCreateInfo*          pCreateInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPipelineIndirectMemoryRequirementsNV: Invalid device "
+                   "[VUID-vkGetPipelineIndirectMemoryRequirementsNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBuffer(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipeline                                  pipeline) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdUpdatePipelineIndirectBuffer: Invalid commandBuffer "
+                   "[VUID-vkCmdUpdatePipelineIndirectBuffer-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdUpdatePipelineIndirectBuffer(commandBuffer, pipelineBindPoint, pipeline);
+}
+
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(
+    VkDevice                                    device,
+    const VkPipelineIndirectDeviceAddressInfoNV* pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPipelineIndirectDeviceAddressNV: Invalid device "
+                   "[VUID-vkGetPipelineIndirectDeviceAddressNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetPipelineIndirectDeviceAddressNV(device, pInfo);
 }
 
 
@@ -9594,6 +9709,28 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_host_image_copy extension commands
+    if (!strcmp("vkCopyMemoryToImageEXT", name)) {
+        *addr = (void *)CopyMemoryToImageEXT;
+        return true;
+    }
+    if (!strcmp("vkCopyImageToMemoryEXT", name)) {
+        *addr = (void *)CopyImageToMemoryEXT;
+        return true;
+    }
+    if (!strcmp("vkCopyImageToImageEXT", name)) {
+        *addr = (void *)CopyImageToImageEXT;
+        return true;
+    }
+    if (!strcmp("vkTransitionImageLayoutEXT", name)) {
+        *addr = (void *)TransitionImageLayoutEXT;
+        return true;
+    }
+    if (!strcmp("vkGetImageSubresourceLayout2EXT", name)) {
+        *addr = (void *)GetImageSubresourceLayout2EXT;
+        return true;
+    }
+
     // ---- VK_EXT_swapchain_maintenance1 extension commands
     if (!strcmp("vkReleaseSwapchainImagesEXT", name)) {
         *addr = (void *)ReleaseSwapchainImagesEXT;
@@ -9721,12 +9858,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     if (!strcmp("vkCmdSetFragmentShadingRateEnumNV", name)) {
         *addr = (void *)CmdSetFragmentShadingRateEnumNV;
-        return true;
-    }
-
-    // ---- VK_EXT_image_compression_control extension commands
-    if (!strcmp("vkGetImageSubresourceLayout2EXT", name)) {
-        *addr = (void *)GetImageSubresourceLayout2EXT;
         return true;
     }
 
@@ -9983,6 +10114,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdDecompressMemoryIndirectCountNV", name)) {
         *addr = (void *)CmdDecompressMemoryIndirectCountNV;
+        return true;
+    }
+
+    // ---- VK_NV_device_generated_commands_compute extension commands
+    if (!strcmp("vkGetPipelineIndirectMemoryRequirementsNV", name)) {
+        *addr = (void *)GetPipelineIndirectMemoryRequirementsNV;
+        return true;
+    }
+    if (!strcmp("vkCmdUpdatePipelineIndirectBuffer", name)) {
+        *addr = (void *)CmdUpdatePipelineIndirectBuffer;
+        return true;
+    }
+    if (!strcmp("vkGetPipelineIndirectDeviceAddressNV", name)) {
+        *addr = (void *)GetPipelineIndirectDeviceAddressNV;
         return true;
     }
 
