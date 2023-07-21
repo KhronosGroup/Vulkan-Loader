@@ -361,7 +361,6 @@ else()
         # framework version does not have to be "A", this part of the Apple toolchain expects it.
         # https://forums.developer.apple.com/thread/65963
 
-# cmake-format: off
         set_target_properties(vulkan-framework PROPERTIES
             OUTPUT_NAME vulkan
             FRAMEWORK TRUE
@@ -375,7 +374,6 @@ else()
             PUBLIC_HEADER DESTINATION vulkan
             FRAMEWORK DESTINATION loader
         )
-# cmake-format: on
     endif()
 endif()
 
