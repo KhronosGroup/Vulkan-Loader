@@ -852,6 +852,13 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetStencilTestEnableEXT CmdSetStencilTestEnableEXT;
     PFN_vkCmdSetStencilOpEXT CmdSetStencilOpEXT;
 
+    // ---- VK_EXT_host_image_copy extension commands
+    PFN_vkCopyMemoryToImageEXT CopyMemoryToImageEXT;
+    PFN_vkCopyImageToMemoryEXT CopyImageToMemoryEXT;
+    PFN_vkCopyImageToImageEXT CopyImageToImageEXT;
+    PFN_vkTransitionImageLayoutEXT TransitionImageLayoutEXT;
+    PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
+
     // ---- VK_EXT_swapchain_maintenance1 extension commands
     PFN_vkReleaseSwapchainImagesEXT ReleaseSwapchainImagesEXT;
 
@@ -892,9 +899,6 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     PFN_vkCmdSetFragmentShadingRateEnumNV CmdSetFragmentShadingRateEnumNV;
-
-    // ---- VK_EXT_image_compression_control extension commands
-    PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
 
     // ---- VK_EXT_device_fault extension commands
     PFN_vkGetDeviceFaultInfoEXT GetDeviceFaultInfoEXT;
@@ -996,6 +1000,11 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_NV_memory_decompression extension commands
     PFN_vkCmdDecompressMemoryNV CmdDecompressMemoryNV;
     PFN_vkCmdDecompressMemoryIndirectCountNV CmdDecompressMemoryIndirectCountNV;
+
+    // ---- VK_NV_device_generated_commands_compute extension commands
+    PFN_vkGetPipelineIndirectMemoryRequirementsNV GetPipelineIndirectMemoryRequirementsNV;
+    PFN_vkCmdUpdatePipelineIndirectBuffer CmdUpdatePipelineIndirectBuffer;
+    PFN_vkGetPipelineIndirectDeviceAddressNV GetPipelineIndirectDeviceAddressNV;
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     PFN_vkCmdSetTessellationDomainOriginEXT CmdSetTessellationDomainOriginEXT;
