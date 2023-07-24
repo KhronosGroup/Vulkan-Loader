@@ -1041,7 +1041,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_NV_device_generated_commands_compute extension commands
     table->GetPipelineIndirectMemoryRequirementsNV = (PFN_vkGetPipelineIndirectMemoryRequirementsNV)gdpa(dev, "vkGetPipelineIndirectMemoryRequirementsNV");
-    table->CmdUpdatePipelineIndirectBuffer = (PFN_vkCmdUpdatePipelineIndirectBuffer)gdpa(dev, "vkCmdUpdatePipelineIndirectBuffer");
+    table->CmdUpdatePipelineIndirectBufferNV = (PFN_vkCmdUpdatePipelineIndirectBufferNV)gdpa(dev, "vkCmdUpdatePipelineIndirectBufferNV");
     table->GetPipelineIndirectDeviceAddressNV = (PFN_vkGetPipelineIndirectDeviceAddressNV)gdpa(dev, "vkGetPipelineIndirectDeviceAddressNV");
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
@@ -2173,7 +2173,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NV_device_generated_commands_compute extension commands
     if (!strcmp(name, "GetPipelineIndirectMemoryRequirementsNV")) return (void *)table->GetPipelineIndirectMemoryRequirementsNV;
-    if (!strcmp(name, "CmdUpdatePipelineIndirectBuffer")) return (void *)table->CmdUpdatePipelineIndirectBuffer;
+    if (!strcmp(name, "CmdUpdatePipelineIndirectBufferNV")) return (void *)table->CmdUpdatePipelineIndirectBufferNV;
     if (!strcmp(name, "GetPipelineIndirectDeviceAddressNV")) return (void *)table->GetPipelineIndirectDeviceAddressNV;
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
@@ -7477,18 +7477,18 @@ VKAPI_ATTR void VKAPI_CALL GetPipelineIndirectMemoryRequirementsNV(
     disp->GetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBuffer(
+VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
     VkPipeline                                  pipeline) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdUpdatePipelineIndirectBuffer: Invalid commandBuffer "
-                   "[VUID-vkCmdUpdatePipelineIndirectBuffer-commandBuffer-parameter]");
+                   "vkCmdUpdatePipelineIndirectBufferNV: Invalid commandBuffer "
+                   "[VUID-vkCmdUpdatePipelineIndirectBufferNV-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->CmdUpdatePipelineIndirectBuffer(commandBuffer, pipelineBindPoint, pipeline);
+    disp->CmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
 }
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(
@@ -10122,8 +10122,8 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)GetPipelineIndirectMemoryRequirementsNV;
         return true;
     }
-    if (!strcmp("vkCmdUpdatePipelineIndirectBuffer", name)) {
-        *addr = (void *)CmdUpdatePipelineIndirectBuffer;
+    if (!strcmp("vkCmdUpdatePipelineIndirectBufferNV", name)) {
+        *addr = (void *)CmdUpdatePipelineIndirectBufferNV;
         return true;
     }
     if (!strcmp("vkGetPipelineIndirectDeviceAddressNV", name)) {
