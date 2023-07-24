@@ -1003,7 +1003,7 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_NV_device_generated_commands_compute extension commands
     PFN_vkGetPipelineIndirectMemoryRequirementsNV GetPipelineIndirectMemoryRequirementsNV;
-    PFN_vkCmdUpdatePipelineIndirectBuffer CmdUpdatePipelineIndirectBuffer;
+    PFN_vkCmdUpdatePipelineIndirectBufferNV CmdUpdatePipelineIndirectBufferNV;
     PFN_vkGetPipelineIndirectDeviceAddressNV GetPipelineIndirectDeviceAddressNV;
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
