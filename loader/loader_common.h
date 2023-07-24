@@ -311,6 +311,8 @@ struct loader_instance {
     loader_settings settings;
 
     bool portability_enumeration_enabled;
+    bool portability_enumeration_flag_bit_set;
+    bool portability_enumeration_extension_enabled;
 
     bool wsi_surface_enabled;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
