@@ -3532,10 +3532,23 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
 #endif  // __linux__ || __FreeBSD__ || __OpenBSD__ || __GNU__
 
 const char* portability_driver_warning =
-    "vkCreateInstance: Found drivers that contain devices which support the portability subset, but the "
-    "portability enumeration bit was not set! Applications that wish to enumerate portability drivers must set the "
-    "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo flags and "
-    "enable the VK_KHR_portability_enumeration instance extension.";
+    "vkCreateInstance: Found drivers that contain devices which support the portability subset, but "
+    "the instance does not enumerate portability drivers! Applications that wish to enumerate portability "
+    "drivers must set the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo "
+    "flags and enable the VK_KHR_portability_enumeration instance extension.";
+
+const char* portability_flag_missing =
+    "vkCreateInstance: Found drivers that contain devices which support the portability subset, but "
+    "the instance does not enumerate portability drivers! Applications that wish to enumerate portability "
+    "drivers must set the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo "
+    "flags.";
+
+const char* portability_extension_missing =
+    "VkInstanceCreateInfo: If flags has the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit set, the "
+    "list of enabled extensions in ppEnabledExtensionNames must contain VK_KHR_portability_enumeration "
+    "[VUID-VkInstanceCreateInfo-flags-06559 ]"
+    "Applications that wish to enumerate portability drivers must enable the VK_KHR_portability_enumeration "
+    "instance extension.";
 
 TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
     FrameworkEnvironment env{};
@@ -3561,6 +3574,8 @@ TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
         DeviceWrapper dev_info{inst};
         dev_info.CheckCreate(phys_dev);
         ASSERT_FALSE(log.find(portability_driver_warning));
+        ASSERT_FALSE(log.find(portability_flag_missing));
+        ASSERT_FALSE(log.find(portability_extension_missing));
     }
     {  // enable portability flag but not extension - shouldn't be able to create an instance when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
@@ -3568,7 +3583,7 @@ TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
-        ASSERT_TRUE(env.debug_log.find(portability_driver_warning));
+        ASSERT_TRUE(env.debug_log.find(portability_extension_missing));
     }
     {  // enable portability extension but not flag - shouldn't be able to create an instance when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
@@ -3576,7 +3591,7 @@ TEST(PortabilityICDConfiguration, PortabilityICDOnly) {
         inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
-        ASSERT_TRUE(env.debug_log.find(portability_driver_warning));
+        ASSERT_TRUE(env.debug_log.find(portability_flag_missing));
     }
     {  // enable neither the portability extension or the flag - shouldn't be able to create an instance when filtering is enabled
         InstWrapper inst{env.vulkan_functions};
