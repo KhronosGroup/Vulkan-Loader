@@ -103,7 +103,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 write(s, file=self.outFile)
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See dispatch_helper_generator.py for modifications\n'
+        file_comment += '// See dispatch_table_helper_generator.py for modifications\n'
         write(file_comment, file=self.outFile)
         # Copyright Notice
         copyright =  '/*\n'
