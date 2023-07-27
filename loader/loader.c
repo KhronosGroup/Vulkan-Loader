@@ -96,6 +96,10 @@ loader_platform_thread_mutex loader_global_instance_list_lock;
 // vkCreateInstance.
 struct loader_icd_tramp_list scanned_icds;
 
+// controls whether loader_platform_close_library() closes the libraries or not - controlled by an environment
+// variables - this is just the definition of the variable, usage is in vk_loader_platform.h
+bool loader_disable_dynamic_library_unloading;
+
 LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
 // Creates loader_api_version struct that contains the major and minor fields, setting patch to 0
@@ -1895,10 +1899,15 @@ void loader_initialize(void) {
     loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "[Vulkan Loader Git - Tag: " GIT_BRANCH_NAME ", Branch/Commit: " GIT_TAG_INFO "]");
 #endif
 
-#if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
-    loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: library unloading is disabled");
-#endif
-
+    char *loader_disable_dynamic_library_unloading_env_var = loader_getenv("VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING", NULL);
+    if (loader_disable_dynamic_library_unloading_env_var &&
+        0 == strncmp(loader_disable_dynamic_library_unloading_env_var, "1", 2)) {
+        loader_disable_dynamic_library_unloading = true;
+        loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: library unloading is disabled");
+    } else {
+        loader_disable_dynamic_library_unloading = false;
+    }
+    loader_free_getenv(loader_disable_dynamic_library_unloading_env_var, NULL);
 #if defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: unsafe searching is enabled");
 #endif

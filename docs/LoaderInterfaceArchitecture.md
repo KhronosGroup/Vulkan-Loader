@@ -887,6 +887,26 @@ discovery.
         that would normally be enabled on the system.
     </small></td>
   </tr>
+  <tr>
+    <td><small>
+        <i>VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING</i>
+    </small></td>
+    <td><small>
+        If set to "1", causes the loader to not unload dynamic libraries during vkDestroyInstance.
+        This option allows leak sanitizers to have full stack traces.
+    </small></td>
+    <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.259 of the Vulkan headers and later.<br/>
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=1<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=1<br/><br/>
+    </small></td>
+  </tr>
 </table>
 
 <br/>
