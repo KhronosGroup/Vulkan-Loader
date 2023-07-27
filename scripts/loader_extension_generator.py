@@ -1071,7 +1071,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    const VkLayerInstanceDispatchTable *disp;\n'
                     funcs += '    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(%s);\n' % (phys_dev_var_name)
                     funcs += '    if (VK_NULL_HANDLE == unwrapped_phys_dev) {\n'
-                    funcs += '        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
+                    funcs += '        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '                   "%s: Invalid %s "\n' % (ext_cmd.name, phys_dev_var_name)
                     funcs += '                   "[VUID-%s-%s-parameter]");\n' % (ext_cmd.name, phys_dev_var_name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
@@ -1081,7 +1081,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    struct loader_instance *inst = loader_get_instance(%s);\n' % (instance_var_name)
                     funcs += '    if (NULL == inst) {\n'
                     funcs += '        loader_log(\n'
-                    funcs += '            NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
+                    funcs += '            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '            "%s: Invalid instance [VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.name, instance_var_name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                     funcs += '    }\n'
@@ -1091,7 +1091,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += ext_cmd.params[0].name
                     funcs += ');\n'
                     funcs += '    if (NULL == disp) {\n'
-                    funcs += '        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
+                    funcs += '        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '                   "%s: Invalid %s "\n' % (ext_cmd.name, ext_cmd.params[0].name)
                     funcs += '                   "[VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.params[0].name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
@@ -1169,7 +1169,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    if (NULL == icd_term->dispatch.'
                     funcs += base_name
                     funcs += ') {\n'
-                    funcs += '        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,\n'
+                    fatal_error_bit = '' if ext_cmd.ext_type =='instance' and has_return_type else 'VULKAN_LOADER_FATAL_ERROR_BIT | '
+                    funcs += f'        loader_log(icd_term->this_instance, {fatal_error_bit}VULKAN_LOADER_ERROR_BIT, 0,\n'
                     funcs += '                   "ICD associated with VkPhysicalDevice does not support '
                     funcs += base_name
                     funcs += '");\n'
@@ -1237,7 +1238,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    struct loader_instance *inst = loader_get_instance(%s);\n' % (instance_var_name)
                     funcs += '    if (NULL == inst) {\n'
                     funcs += '        loader_log(\n'
-                    funcs += '            NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
+                    funcs += '            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                     funcs += '            "%s: Invalid instance [VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.name, instance_var_name)
                     funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                     funcs += '    }\n'
@@ -1256,7 +1257,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '    struct loader_device *dev;\n'
                         funcs += f'    struct loader_icd_term *icd_term = loader_get_icd_and_device({ ext_cmd.params[0].name}, &dev, &icd_index);\n'
                         funcs += f'    if (NULL == icd_term || NULL == dev) {{\n'
-                        funcs += f'        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.name[2:]}: Invalid device handle");\n'
+                        funcs += f'        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.name[2:]}: Invalid device handle");\n'
                         funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                         funcs += '    }\n'
                         funcs += f'    { ext_cmd.params[1].type} {local_struct};\n'
@@ -1284,7 +1285,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     else:
                         funcs += f'    struct loader_dev_dispatch_table *dispatch_table = loader_get_dev_dispatch({ext_cmd.params[0].name});\n'
                         funcs += f'    if (NULL == dispatch_table) {{\n'
-                        funcs += f'        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.ext_name}: Invalid device handle");\n'
+                        funcs += f'        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.ext_name}: Invalid device handle");\n'
                         funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                         funcs += '    }\n'
                         funcs += '    // Only call down if the device supports the function\n'
@@ -1324,7 +1325,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 funcs += ext_cmd.params[0].name
                 funcs += ');\n'
                 funcs += '    if (NULL == disp) {\n'
-                funcs += '        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
+                funcs += '        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n'
                 funcs += '                   "%s: Invalid %s "\n' % (ext_cmd.name, ext_cmd.params[0].name)
                 funcs += '                   "[VUID-%s-%s-parameter]");\n' % (ext_cmd.name, ext_cmd.params[0].name)
                 funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
