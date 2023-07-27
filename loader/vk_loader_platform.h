@@ -214,6 +214,9 @@ typedef CONDITION_VARIABLE loader_platform_thread_cond;
 
 #endif
 
+// controls whether loader_platform_close_library() closes the libraries or not - controlled by an environment variables
+extern bool loader_disable_dynamic_library_unloading;
+
 // Returns true if the DIRECTORY_SYMBOL is contained within path
 static inline bool loader_platform_is_path(const char *path) { return strchr(path, DIRECTORY_SYMBOL) != NULL; }
 
@@ -363,12 +366,11 @@ static inline const char *loader_platform_open_library_error(const char *libPath
 #endif
 }
 static inline void loader_platform_close_library(loader_platform_dl_handle library) {
-#if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
-    (void)library;
-    return;
-#else
-    dlclose(library);
-#endif
+    if (!loader_disable_dynamic_library_unloading) {
+        dlclose(library);
+    } else {
+        (void)library;
+    }
 }
 static inline void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);
@@ -519,12 +521,11 @@ static inline const char *loader_platform_open_library_error(const char *libPath
     return errorMsg;
 }
 static inline void loader_platform_close_library(loader_platform_dl_handle library) {
-#if defined(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
-    (void)library;
-    return;
-#else
-    FreeLibrary(library);
-#endif
+    if (!loader_disable_dynamic_library_unloading) {
+        FreeLibrary(library);
+    } else {
+        (void)library;
+    }
 }
 static inline void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);

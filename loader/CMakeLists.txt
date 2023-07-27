@@ -382,11 +382,6 @@ if (LOADER_USE_UNSAFE_FILE_SEARCH)
     target_compile_definitions(vulkan PRIVATE LOADER_USE_UNSAFE_FILE_SEARCH)
 endif()
 
-option(LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING "Causes the loader to not unload dynamic libraries.")
-if (LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
-    target_compile_definitions(vulkan PRIVATE LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING)
-endif()
-
 # common attributes of the vulkan library
 target_link_libraries(vulkan PRIVATE loader_specific_options)
 
