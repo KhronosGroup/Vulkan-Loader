@@ -208,13 +208,15 @@ VkResult check_if_settings_path_exists(const struct loader_instance* inst, char*
     if (NULL == base || NULL == suffix) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-
-    *settings_file_path = loader_instance_heap_calloc(inst, strlen(base) + strlen(suffix) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    size_t base_len = strlen(base);
+    size_t suffix_len = strlen(suffix);
+    size_t path_len = base_len + suffix_len + 1;
+    *settings_file_path = loader_instance_heap_calloc(inst, path_len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == *settings_file_path) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    strncpy(*settings_file_path, base, strlen(base));
-    strncat(*settings_file_path, suffix, strlen(suffix));
+    loader_strncpy(*settings_file_path, path_len, base, base_len);
+    loader_strncat(*settings_file_path, path_len, suffix, suffix_len);
 
     if (!loader_platform_file_exists(*settings_file_path)) {
         loader_instance_heap_free(inst, *settings_file_path);
@@ -532,7 +534,7 @@ VkResult get_settings_layers(const struct loader_instance* inst, struct loader_l
         if (layer_config->control == LOADER_SETTINGS_LAYER_CONTROL_OFF) {
             struct loader_layer_properties props = {0};
             props.settings_control_value = LOADER_SETTINGS_LAYER_CONTROL_OFF;
-            strncpy(props.info.layerName, layer_config->name, VK_MAX_EXTENSION_NAME_SIZE);
+            loader_strncpy(props.info.layerName, VK_MAX_EXTENSION_NAME_SIZE, layer_config->name, VK_MAX_EXTENSION_NAME_SIZE);
             props.info.layerName[VK_MAX_EXTENSION_NAME_SIZE - 1] = '\0';
             res = loader_copy_to_new_str(inst, layer_config->path, &props.manifest_file_name);
             if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
@@ -748,7 +750,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
             size_t vk_instance_layers_env_len = strlen(vk_instance_layers_env) + 1;
             char* name = loader_stack_alloc(vk_instance_layers_env_len);
             if (name != NULL) {
-                strncpy(name, vk_instance_layers_env, vk_instance_layers_env_len);
+                loader_strncpy(name, vk_instance_layers_env_len, vk_instance_layers_env, vk_instance_layers_env_len);
                 // First look for the old-fashion layers forced on with VK_INSTANCE_LAYERS
                 while (name && *name) {
                     char* next = loader_get_next_path(name);

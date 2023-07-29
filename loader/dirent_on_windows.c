@@ -36,11 +36,12 @@ DIR *opendir(const VkAllocationCallbacks *pAllocator, const char *name) {
         size_t base_length = strlen(name);
         const char *all = /* search pattern must end with suitable wildcard */
             strchr("/\\", name[base_length - 1]) ? "*" : "/*";
+        size_t full_length = base_length + strlen(all) + 1;
 
         if ((dir = (DIR *)loader_alloc(pAllocator, sizeof *dir, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0 &&
-            (dir->name = (char *)loader_alloc(pAllocator, base_length + strlen(all) + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) !=
-                0) {
-            strcat(strcpy(dir->name, name), all);
+            (dir->name = (char *)loader_calloc(pAllocator, full_length, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0) {
+            loader_strncpy(dir->name, full_length, name, base_length);
+            loader_strncat(dir->name, full_length, all, strlen(all));
 
             if ((dir->handle = (handle_type)_findfirst(dir->name, &dir->info)) != -1) {
                 dir->result.d_name = 0;

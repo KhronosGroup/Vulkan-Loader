@@ -110,6 +110,7 @@ VkResult append_str_to_string_list(const struct loader_instance *inst, struct lo
 // Resize if there isn't enough space, then copy the string str to a new string the end of the loader_string_list
 // This function does not take ownership of the string, it merely copies it.
 // This function appends a null terminator to the string automatically
+// The str_len parameter does not include the null terminator
 VkResult copy_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, const char *str,
                                  size_t str_len);
 

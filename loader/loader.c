@@ -257,11 +257,11 @@ VkResult loader_init_library_list(struct loader_layer_list *instance_layers, loa
 
 VkResult loader_copy_to_new_str(const struct loader_instance *inst, const char *source_str, char **dest_str) {
     assert(source_str && dest_str);
-    size_t str_len = strlen(source_str);
-    *dest_str = loader_instance_heap_calloc(inst, str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    size_t str_len = strlen(source_str) + 1;
+    *dest_str = loader_instance_heap_calloc(inst, str_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == *dest_str) return VK_ERROR_OUT_OF_HOST_MEMORY;
-    strncpy(*dest_str, source_str, str_len);
-    (*dest_str)[str_len] = 0;
+    loader_strncpy(*dest_str, str_len, source_str, str_len);
+    (*dest_str)[str_len - 1] = 0;
     return VK_SUCCESS;
 }
 
@@ -307,7 +307,7 @@ VkResult copy_str_to_string_list(const struct loader_instance *inst, struct load
     if (NULL == new_str) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    strncpy(new_str, str, str_len);
+    loader_strncpy(new_str, sizeof(char *) * str_len + 1, str, str_len);
     new_str[str_len] = '\0';
     VkResult res = append_str_to_string_list(inst, string_list, new_str);
     if (res != VK_SUCCESS) {
@@ -329,51 +329,6 @@ void free_string_list(const struct loader_instance *inst, struct loader_string_l
     }
     string_list->count = 0;
     string_list->allocated_count = 0;
-}
-
-// Combine path elements, separating each element with the platform-specific
-// directory separator, and save the combined string to a destination buffer,
-// not exceeding the given length. Path elements are given as variable args,
-// with a NULL element terminating the list.
-//
-// \returns the total length of the combined string, not including an ASCII
-// NUL termination character. This length may exceed the available storage:
-// in this case, the written string will be truncated to avoid a buffer
-// overrun, and the return value will greater than or equal to the storage
-// size. A NULL argument may be provided as the destination buffer in order
-// to determine the required string length without actually writing a string.
-size_t loader_platform_combine_path(char *dest, size_t len, ...) {
-    size_t required_len = 0;
-    va_list ap;
-    const char *component;
-
-    va_start(ap, len);
-    component = va_arg(ap, const char *);
-    while (component) {
-        if (required_len > 0) {
-            // This path element is not the first non-empty element; prepend
-            // a directory separator if space allows
-            if (dest && required_len + 1 < len) {
-                (void)snprintf(dest + required_len, len - required_len, "%c", DIRECTORY_SYMBOL);
-            }
-            required_len++;
-        }
-
-        if (dest && required_len < len) {
-            strncpy(dest + required_len, component, len - required_len);
-        }
-        required_len += strlen(component);
-        component = va_arg(ap, const char *);
-    }
-
-    va_end(ap);
-
-    // strncpy(3) won't add a NUL terminating byte in the event of truncation.
-    if (dest && required_len >= len) {
-        dest[len - 1] = '\0';
-    }
-
-    return required_len;
 }
 
 // Given string of three part form "maj.min.pat" convert to a vulkan version number.
@@ -2028,10 +1983,11 @@ VkResult combine_manifest_directory_and_library_path(const struct loader_instanc
     }
     // Add manifest_file_path up to the last directory symbol
     if (found_directory_symbol) {
-        strncpy(*out_fullpath, manifest_file_path, last_directory_symbol);
+        loader_strncpy(*out_fullpath, new_str_len, manifest_file_path, last_directory_symbol);
         cur_loc_in_out_fullpath += last_directory_symbol;
     }
-    strncpy(&(*out_fullpath)[cur_loc_in_out_fullpath], library_path, library_path_len);
+    loader_strncpy(&(*out_fullpath)[cur_loc_in_out_fullpath], new_str_len - cur_loc_in_out_fullpath, library_path,
+                   library_path_len);
     cur_loc_in_out_fullpath += library_path_len + 1;
     (*out_fullpath)[cur_loc_in_out_fullpath] = '\0';
 
@@ -2041,7 +1997,7 @@ out:
     return res;
 }
 
-// Given a filename (file)  and a list of paths (dir), try to find an existing
+// Given a filename (file)  and a list of paths (in_dirs), try to find an existing
 // file in the paths.  If filename already is a path then no searching in the given paths.
 //
 // @return - A string in out_fullpath of either the full path or file.
@@ -2049,14 +2005,17 @@ void loader_get_fullpath(const char *file, const char *in_dirs, size_t out_size,
     if (!loader_platform_is_path(file) && *in_dirs) {
         size_t dirs_copy_len = strlen(in_dirs) + 1;
         char *dirs_copy = loader_stack_alloc(dirs_copy_len);
-        strncpy(dirs_copy, in_dirs, dirs_copy_len);
+        loader_strncpy(dirs_copy, dirs_copy_len, in_dirs, dirs_copy_len);
 
         // find if file exists after prepending paths in given list
         // for (dir = dirs_copy; *dir && (next_dir = loader_get_next_path(dir)); dir = next_dir) {
         char *dir = dirs_copy;
         char *next_dir = loader_get_next_path(dir);
         while (*dir && next_dir) {
-            loader_platform_combine_path(out_fullpath, out_size, dir, file, NULL);
+            int path_concat_ret = snprintf(out_fullpath, out_size, "%s%c%s", dir, DIRECTORY_SYMBOL, file);
+            if (path_concat_ret < 0) {
+                continue;
+            }
             if (loader_platform_file_exists(out_fullpath)) {
                 return;
             }
@@ -3185,8 +3144,9 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
     // Add the remaining paths to the list
     if (NULL != override_path) {
-        strncpy(cur_path_ptr, override_path, search_path_size);
-        cur_path_ptr += strlen(override_path);
+        size_t override_path_len = strlen(override_path);
+        loader_strncpy(cur_path_ptr, search_path_size, override_path, override_path_len);
+        cur_path_ptr += override_path_len;
     } else {
         // Add any additional search paths defined in the additive environment variable
         if (NULL != additional_env) {
@@ -3286,7 +3246,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     if (search_path_size > 0) {
         char *tmp_search_path = loader_instance_heap_alloc(inst, search_path_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (NULL != tmp_search_path) {
-            strncpy(tmp_search_path, search_path, search_path_size);
+            loader_strncpy(tmp_search_path, search_path_size + 1, search_path, search_path_size);
             tmp_search_path[search_path_size] = '\0';
             if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
                 log_flags = VULKAN_LOADER_DRIVER_BIT;

@@ -167,7 +167,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     // Also use the same header for all output
     char cmd_line_msg[64];
     size_t cmd_line_size = sizeof(cmd_line_msg);
-    size_t num_used = 1;
+    size_t num_used = 0;
 
     cmd_line_msg[0] = '\0';
 
@@ -175,8 +175,8 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 // Assumes that we haven't used the entire buffer - must manually check this when adding new filter types
 // We concat at the end of cmd_line_msg, so that strncat isn't a victim of Schlemiel the Painter
 // We write to the end - 1 of cmd_line_msg, as the end is actually a null terminator
-#define STRNCAT_TO_BUFFER(string_literal_to_cat)                                             \
-    strncat(cmd_line_msg + (num_used - 1), string_literal_to_cat, cmd_line_size - num_used); \
+#define STRNCAT_TO_BUFFER(string_literal_to_cat)                                                                             \
+    loader_strncat(cmd_line_msg + num_used, cmd_line_size - num_used, string_literal_to_cat, sizeof(string_literal_to_cat)); \
     num_used += sizeof(string_literal_to_cat) - 1;  // subtract one to remove the null terminator in the string literal
 
     if ((msg_type & VULKAN_LOADER_ERROR_BIT) != 0) {
@@ -216,8 +216,8 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     if (num_used < 19) {
         const char *space_buffer = "                   ";
         // Only write (19 - num_used) spaces
-        strncat(cmd_line_msg + (num_used - 1), space_buffer, 19 - num_used);
-        num_used += sizeof(space_buffer) - (num_used - 1);
+        loader_strncat(cmd_line_msg + num_used, cmd_line_size - num_used, space_buffer, 19 - num_used);
+        num_used += sizeof(space_buffer) - 1 - num_used;
     }
     // Assert that we didn't write more than what is available in cmd_line_msg
     assert(cmd_line_size > num_used);

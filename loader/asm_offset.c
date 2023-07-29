@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
         // clang-format on
     };
 
-    FILE *file = fopen("gen_defines.asm", "w");
+    FILE *file = loader_fopen("gen_defines.asm", "w");
     fprintf(file, "\n");
     if (!strcmp(assembler, "MASM")) {
         for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {

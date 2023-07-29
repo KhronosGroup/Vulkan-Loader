@@ -164,7 +164,7 @@ void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName
         // failed to allocate memory, return NULL
         return NULL;
     }
-    strncpy(inst->dev_ext_disp_functions[inst->dev_ext_disp_function_count], funcName, funcName_len);
+    loader_strncpy(inst->dev_ext_disp_functions[inst->dev_ext_disp_function_count], funcName_len, funcName, funcName_len);
     // init any dev dispatch table entries as needed
     loader_init_dispatch_dev_ext_entry(inst, NULL, inst->dev_ext_disp_function_count, funcName);
     void *out_function = loader_get_dev_ext_trampoline(inst->dev_ext_disp_function_count);
@@ -276,7 +276,8 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
             // failed to allocate memory, return NULL
             return NULL;
         }
-        strncpy(inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count], funcName, funcName_len);
+        loader_strncpy(inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count], funcName_len, funcName,
+                       funcName_len);
 
         new_function_index = inst->phys_dev_ext_disp_function_count;
         // increment the count so that the subsequent logic includes the newly added entry point when searching for functions

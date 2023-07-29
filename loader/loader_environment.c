@@ -275,9 +275,11 @@ VkResult parse_generic_filter_environment_var(const struct loader_instance *inst
         size_t actual_len;
         determine_filter_type(token, &cur_filter_type, &actual_start, &actual_len);
         if (actual_len > VK_MAX_EXTENSION_NAME_SIZE) {
-            strncpy(filter_struct->filters[filter_struct->count].value, actual_start, VK_MAX_EXTENSION_NAME_SIZE);
+            loader_strncpy(filter_struct->filters[filter_struct->count].value, VK_MAX_EXTENSION_NAME_SIZE, actual_start,
+                           VK_MAX_EXTENSION_NAME_SIZE);
         } else {
-            strncpy(filter_struct->filters[filter_struct->count].value, actual_start, actual_len);
+            loader_strncpy(filter_struct->filters[filter_struct->count].value, VK_MAX_EXTENSION_NAME_SIZE, actual_start,
+                           actual_len);
         }
         filter_struct->filters[filter_struct->count].length = actual_len;
         filter_struct->filters[filter_struct->count++].type = cur_filter_type;
@@ -344,9 +346,11 @@ VkResult parse_layers_disable_filter_environment_var(const struct loader_instanc
             }
         } else {
             if (actual_len > VK_MAX_EXTENSION_NAME_SIZE) {
-                strncpy(disable_struct->additional_filters.filters[cur_count].value, actual_start, VK_MAX_EXTENSION_NAME_SIZE);
+                loader_strncpy(disable_struct->additional_filters.filters[cur_count].value, VK_MAX_EXTENSION_NAME_SIZE,
+                               actual_start, VK_MAX_EXTENSION_NAME_SIZE);
             } else {
-                strncpy(disable_struct->additional_filters.filters[cur_count].value, actual_start, actual_len);
+                loader_strncpy(disable_struct->additional_filters.filters[cur_count].value, VK_MAX_EXTENSION_NAME_SIZE,
+                               actual_start, actual_len);
             }
             disable_struct->additional_filters.filters[cur_count].length = actual_len;
             disable_struct->additional_filters.filters[cur_count].type = cur_filter_type;
@@ -440,7 +444,7 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
         size_t layer_env_len = strlen(layer_env) + 1;
         char *name = loader_stack_alloc(layer_env_len);
         if (name != NULL) {
-            strncpy(name, layer_env, layer_env_len);
+            loader_strncpy(name, layer_env_len, layer_env, layer_env_len);
 
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers \"%s\"",
                        ENABLED_LAYERS_ENV, name);
