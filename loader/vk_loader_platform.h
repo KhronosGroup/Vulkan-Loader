@@ -30,9 +30,11 @@
 #endif
 
 #include <assert.h>
-#include <string.h>
+#include <float.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #if defined(__Fuchsia__)
 #include "dlopen_fuchsia.h"
@@ -390,6 +392,16 @@ static inline void loader_platform_thread_delete_mutex(loader_platform_thread_mu
 
 static inline void *thread_safe_strtok(char *str, const char *delim, char **saveptr) { return strtok_r(str, delim, saveptr); }
 
+static inline FILE *loader_fopen(const char *fileName, const char *mode) { return fopen(fileName, mode); }
+static inline char *loader_strncat(char *dest, size_t dest_sz, const char *src, size_t count) {
+    (void)dest_sz;
+    return strncat(dest, src, count);
+}
+static inline char *loader_strncpy(char *dest, size_t dest_sz, const char *src, size_t count) {
+    (void)dest_sz;
+    return strncpy(dest, src, count);
+}
+
 #elif defined(_WIN32)
 
 // Get the key for the plug n play driver registry
@@ -546,6 +558,25 @@ static inline void loader_platform_thread_delete_mutex(loader_platform_thread_mu
 
 static inline void *thread_safe_strtok(char *str, const char *delimiters, char **context) {
     return strtok_s(str, delimiters, context);
+}
+
+static inline FILE *loader_fopen(const char *fileName, const char *mode) {
+    FILE *file = NULL;
+    errno_t err = fopen_s(&file, fileName, mode);
+    if (err != 0) return NULL;
+    return file;
+}
+
+static inline char *loader_strncat(char *dest, size_t dest_sz, const char *src, size_t count) {
+    errno_t err = strncat_s(dest, dest_sz, src, count);
+    if (err != 0) return NULL;
+    return dest;
+}
+
+static inline char *loader_strncpy(char *dest, size_t dest_sz, const char *src, size_t count) {
+    errno_t err = strncpy_s(dest, dest_sz, src, count);
+    if (err != 0) return NULL;
+    return dest;
 }
 
 #else  // defined(_WIN32)

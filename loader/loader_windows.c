@@ -622,7 +622,8 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
             .value_type = REG_MULTI_SZ,
             .physical_adapter_index = 0,
         };
-        wcsncpy(filename_info.value_name, value_name, sizeof(filename_info.value_name) / sizeof(WCHAR));
+        size_t value_name_size = wcslen(value_name);
+        wcsncpy_s(filename_info.value_name, MAX_PATH, value_name, value_name_size);
         LoaderQueryAdapterInfo query_info;
         query_info.handle = adapters.adapters[i].handle;
         query_info.type = LOADER_QUERY_TYPE_REGISTRY;
@@ -1105,11 +1106,12 @@ VkResult get_settings_path_if_exists_in_registry_key(const struct loader_instanc
         }
 
         if (strcmp(VK_LOADER_SETTINGS_FILENAME, &(name[start_of_path_filename])) == 0) {
-            *out_path = loader_instance_heap_alloc(inst, name_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            *out_path = loader_instance_heap_calloc(inst, name_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (*out_path == NULL) {
                 return VK_ERROR_OUT_OF_HOST_MEMORY;
             }
-            strcpy(*out_path, name);
+            loader_strncpy(*out_path, name_size + 1, name, name_size);
+            (*out_path)[name_size] = '\0';
             result = VK_SUCCESS;
             break;
         }

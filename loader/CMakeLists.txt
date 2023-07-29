@@ -30,7 +30,6 @@ if(WIN32)
         set(CMAKE_C_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES})
     endif()
 
-    target_compile_options(loader_specific_options INTERFACE -D_CRT_SECURE_NO_WARNINGS)
     # ~~~
     # Build dev_ext_trampoline.c and unknown_ext_chain.c with /O2 to allow tail-call optimization.
     # Setup two CMake targets (loader-norm and loader-opt) for the different compilation flags.

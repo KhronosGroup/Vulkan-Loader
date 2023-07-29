@@ -41,11 +41,11 @@
 #include "log.h"
 
 void *cJSON_malloc(const VkAllocationCallbacks *pAllocator, size_t size) {
-    return loader_alloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    return loader_calloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
 }
 
 void *cJSON_malloc_instance_scope(const VkAllocationCallbacks *pAllocator, size_t size) {
-    return loader_alloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    return loader_calloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
 }
 
 void cJSON_Free(const VkAllocationCallbacks *pAllocator, void *pMemory) { loader_free(pAllocator, pMemory); }
@@ -182,7 +182,7 @@ char *print_number(cJSON *item, printbuffer *p) {
             str = ensure(item->pAllocator, p, str_buf_size);
         else
             str = (char *)cJSON_malloc(item->pAllocator, str_buf_size);
-        if (str) strncpy(str, "0", str_buf_size);
+        if (str) loader_strncpy(str, str_buf_size, "0", 2);
     } else if (fabs(((double)item->valueint) - d) <= DBL_EPSILON && d <= INT_MAX && d >= INT_MIN) {
         str_buf_size = 21; /* 2^64+1 can be represented in 21 chars. */
         if (p)
@@ -361,7 +361,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         if (!out) return 0;
         ptr2 = out;
         // *ptr2++ = '\"'; // Modified to not put quotes around the string
-        strncpy(ptr2, str, out_buf_size);
+        loader_strncpy(ptr2, out_buf_size, str, out_buf_size);
         // ptr2[len] = '\"'; // Modified to not put quotes around the string
         ptr2[len] = 0;  // ptr2[len + 1] = 0; // Modified to not put quotes around the string
         return out;
@@ -374,7 +374,7 @@ char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const char *str,
         else
             out = (char *)cJSON_malloc_instance_scope(pAllocator, out_buf_size);
         if (!out) return 0;
-        strncpy(out, "\"\"", out_buf_size);
+        loader_strncpy(out, out_buf_size, "\"\"", 3);
         return out;
     }
     ptr = str;
@@ -538,17 +538,17 @@ char *print_value(cJSON *item, int depth, int fmt, printbuffer *p) {
         switch ((item->type) & 255) {
             case cJSON_NULL: {
                 out = ensure(item->pAllocator, p, 5);
-                if (out) strncpy(out, "null", 5);
+                if (out) loader_strncpy(out, 5, "null", 5);
                 break;
             }
             case cJSON_False: {
                 out = ensure(item->pAllocator, p, 6);
-                if (out) strncpy(out, "false", 6);
+                if (out) loader_strncpy(out, 6, "false", 6);
                 break;
             }
             case cJSON_True: {
                 out = ensure(item->pAllocator, p, 5);
-                if (out) strncpy(out, "true", 5);
+                if (out) loader_strncpy(out, 5, "true", 5);
                 break;
             }
             case cJSON_Number:
@@ -642,7 +642,7 @@ char *print_array(cJSON *item, int depth, int fmt, printbuffer *p) {
             out = ensure(item->pAllocator, p, 3);
         else
             out = (char *)cJSON_malloc(item->pAllocator, 3);
-        if (out) strncpy(out, "[]", 3);
+        if (out) loader_strncpy(out, 3, "[]", 3);
         return out;
     }
 
@@ -903,8 +903,9 @@ char *print_object(cJSON *item, int depth, int fmt, printbuffer *p) {
             ptr += tmplen;
             *ptr++ = ':';
             if (fmt) *ptr++ = '\t';
-            strcpy(ptr, entries[j]);
-            ptr += strlen(entries[j]);
+            size_t entries_size = strlen(entries[j]);
+            loader_strncpy(ptr, len - (ptr - out), entries[j], entries_size);
+            ptr += entries_size;
             if (j != numentries - 1) *ptr++ = ',';
             if (fmt) *ptr++ = '\n';
             *ptr = 0;
@@ -1242,7 +1243,10 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
     if (filename_utf16_size > 0) {
         wchar_t *filename_utf16 = (wchar_t *)loader_stack_alloc(filename_utf16_size * sizeof(wchar_t));
         if (MultiByteToWideChar(CP_UTF8, 0, filename, -1, filename_utf16, filename_utf16_size) == filename_utf16_size) {
-            file = _wfopen(filename_utf16, L"rb");
+            errno_t wfopen_error = _wfopen_s(&file, filename_utf16, L"rb");
+            if (0 != wfopen_error) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
+            }
         }
     }
 #elif COMMON_UNIX_PLATFORMS
@@ -1317,7 +1321,7 @@ VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     if (NULL != out_string) {
-        strncpy(out_string, str, out_str_len);
+        loader_strncpy(out_string, out_str_len, str, out_str_len);
         if (out_str_len > 0) {
             out_string[out_str_len - 1] = '\0';
         }
