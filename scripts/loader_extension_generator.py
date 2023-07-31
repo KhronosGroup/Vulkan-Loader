@@ -941,7 +941,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                                 tables += f'return dev->extensions.{cur_cmd.ext_name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n'
 
                         else:
-                            if version_check is not '':
+                            if version_check != '':
                                 tables += f'{{\n{version_check}        return (void *)table->{base_name};\n    }}\n'
                             else:
                                 tables += f'return (void *)table->{base_name};\n'
@@ -1105,6 +1105,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '        struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pNameInfo->object;\n'
                     funcs += '        local_name_info.object = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;\n'
                     funcs += '    }\n'
+                    funcs += '    if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {\n'
+                    funcs += '        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pNameInfo->object;\n'
+                    funcs += '        local_name_info.object = (uint64_t)(uintptr_t)instance->instance;\n'
+                    funcs += '    }\n'
                 elif 'DebugMarkerSetObjectTag' in ext_cmd.name:
                     funcs += '    VkDebugMarkerObjectTagInfoEXT local_tag_info;\n'
                     funcs += '    memcpy(&local_tag_info, pTagInfo, sizeof(VkDebugMarkerObjectTagInfoEXT));\n'
@@ -1112,6 +1116,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {\n'
                     funcs += '        struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pTagInfo->object;\n'
                     funcs += '        local_tag_info.object = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;\n'
+                    funcs += '    }\n'
+                    funcs += '    if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {\n'
+                    funcs += '        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pTagInfo->object;\n'
+                    funcs += '        local_tag_info.object = (uint64_t)(uintptr_t)instance->instance;\n'
                     funcs += '    }\n'
                 elif 'SetDebugUtilsObjectName' in ext_cmd.name:
                     funcs += '    VkDebugUtilsObjectNameInfoEXT local_name_info;\n'
@@ -1121,6 +1129,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '        struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pNameInfo->objectHandle;\n'
                     funcs += '        local_name_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;\n'
                     funcs += '    }\n'
+                    funcs += '    if (pNameInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {\n'
+                    funcs += '        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pNameInfo->objectHandle;\n'
+                    funcs += '        local_name_info.objectHandle = (uint64_t)(uintptr_t)instance->instance;\n'
+                    funcs += '    }\n'
                 elif 'SetDebugUtilsObjectTag' in ext_cmd.name:
                     funcs += '    VkDebugUtilsObjectTagInfoEXT local_tag_info;\n'
                     funcs += '    memcpy(&local_tag_info, pTagInfo, sizeof(VkDebugUtilsObjectTagInfoEXT));\n'
@@ -1128,6 +1140,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    if (pTagInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {\n'
                     funcs += '        struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pTagInfo->objectHandle;\n'
                     funcs += '        local_tag_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;\n'
+                    funcs += '    }\n'
+                    funcs += '    if (pTagInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {\n'
+                    funcs += '        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pTagInfo->objectHandle;\n'
+                    funcs += '        local_tag_info.objectHandle = (uint64_t)(uintptr_t)instance->instance;\n'
                     funcs += '    }\n'
 
                 if ext_cmd.ext_name in NULL_CHECK_EXT_NAMES:
