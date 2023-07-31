@@ -935,7 +935,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                         tables += f'    if (!strcmp(name, "{base_name}")) '
                         if cur_cmd.name in DEVICE_CMDS_MUST_USE_TRAMP:
-                            if version_check is not '':
+                            if version_check != '':
                                 tables += f'{{\n{version_check}        return dev->extensions.{cur_cmd.ext_name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n    }}\n'
                             else:
                                 tables += f'return dev->extensions.{cur_cmd.ext_name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n'
