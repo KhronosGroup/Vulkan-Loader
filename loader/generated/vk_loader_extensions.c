@@ -707,6 +707,12 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetDeviceImageMemoryRequirementsKHR = (PFN_vkGetDeviceImageMemoryRequirementsKHR)gdpa(dev, "vkGetDeviceImageMemoryRequirementsKHR");
     table->GetDeviceImageSparseMemoryRequirementsKHR = (PFN_vkGetDeviceImageSparseMemoryRequirementsKHR)gdpa(dev, "vkGetDeviceImageSparseMemoryRequirementsKHR");
 
+    // ---- VK_KHR_maintenance5 extension commands
+    table->CmdBindIndexBuffer2KHR = (PFN_vkCmdBindIndexBuffer2KHR)gdpa(dev, "vkCmdBindIndexBuffer2KHR");
+    table->GetRenderingAreaGranularityKHR = (PFN_vkGetRenderingAreaGranularityKHR)gdpa(dev, "vkGetRenderingAreaGranularityKHR");
+    table->GetDeviceImageSubresourceLayoutKHR = (PFN_vkGetDeviceImageSubresourceLayoutKHR)gdpa(dev, "vkGetDeviceImageSubresourceLayoutKHR");
+    table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gdpa(dev, "vkGetImageSubresourceLayout2KHR");
+
     // ---- VK_EXT_debug_marker extension commands
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gdpa(dev, "vkDebugMarkerSetObjectTagEXT");
     table->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)gdpa(dev, "vkDebugMarkerSetObjectNameEXT");
@@ -787,6 +793,29 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     table->GetMemoryAndroidHardwareBufferANDROID = (PFN_vkGetMemoryAndroidHardwareBufferANDROID)gdpa(dev, "vkGetMemoryAndroidHardwareBufferANDROID");
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+
+    // ---- VK_AMDX_shader_enqueue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->CreateExecutionGraphPipelinesAMDX = (PFN_vkCreateExecutionGraphPipelinesAMDX)gdpa(dev, "vkCreateExecutionGraphPipelinesAMDX");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->GetExecutionGraphPipelineScratchSizeAMDX = (PFN_vkGetExecutionGraphPipelineScratchSizeAMDX)gdpa(dev, "vkGetExecutionGraphPipelineScratchSizeAMDX");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->GetExecutionGraphPipelineNodeIndexAMDX = (PFN_vkGetExecutionGraphPipelineNodeIndexAMDX)gdpa(dev, "vkGetExecutionGraphPipelineNodeIndexAMDX");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->CmdInitializeGraphScratchMemoryAMDX = (PFN_vkCmdInitializeGraphScratchMemoryAMDX)gdpa(dev, "vkCmdInitializeGraphScratchMemoryAMDX");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->CmdDispatchGraphAMDX = (PFN_vkCmdDispatchGraphAMDX)gdpa(dev, "vkCmdDispatchGraphAMDX");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->CmdDispatchGraphIndirectAMDX = (PFN_vkCmdDispatchGraphIndirectAMDX)gdpa(dev, "vkCmdDispatchGraphIndirectAMDX");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    table->CmdDispatchGraphIndirectCountAMDX = (PFN_vkCmdDispatchGraphIndirectCountAMDX)gdpa(dev, "vkCmdDispatchGraphIndirectCountAMDX");
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_sample_locations extension commands
     table->CmdSetSampleLocationsEXT = (PFN_vkCmdSetSampleLocationsEXT)gdpa(dev, "vkCmdSetSampleLocationsEXT");
@@ -2403,6 +2432,12 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetDeviceImageMemoryRequirementsKHR")) return (void *)table->GetDeviceImageMemoryRequirementsKHR;
     if (!strcmp(name, "GetDeviceImageSparseMemoryRequirementsKHR")) return (void *)table->GetDeviceImageSparseMemoryRequirementsKHR;
 
+    // ---- VK_KHR_maintenance5 extension commands
+    if (!strcmp(name, "CmdBindIndexBuffer2KHR")) return (void *)table->CmdBindIndexBuffer2KHR;
+    if (!strcmp(name, "GetRenderingAreaGranularityKHR")) return (void *)table->GetRenderingAreaGranularityKHR;
+    if (!strcmp(name, "GetDeviceImageSubresourceLayoutKHR")) return (void *)table->GetDeviceImageSubresourceLayoutKHR;
+    if (!strcmp(name, "GetImageSubresourceLayout2KHR")) return (void *)table->GetImageSubresourceLayout2KHR;
+
     // ---- VK_EXT_debug_marker extension commands
     if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return dev->extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectTagEXT : NULL;
     if (!strcmp(name, "DebugMarkerSetObjectNameEXT")) return dev->extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectNameEXT : NULL;
@@ -2483,6 +2518,29 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     if (!strcmp(name, "GetMemoryAndroidHardwareBufferANDROID")) return (void *)table->GetMemoryAndroidHardwareBufferANDROID;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+
+    // ---- VK_AMDX_shader_enqueue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "CreateExecutionGraphPipelinesAMDX")) return (void *)table->CreateExecutionGraphPipelinesAMDX;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "GetExecutionGraphPipelineScratchSizeAMDX")) return (void *)table->GetExecutionGraphPipelineScratchSizeAMDX;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "GetExecutionGraphPipelineNodeIndexAMDX")) return (void *)table->GetExecutionGraphPipelineNodeIndexAMDX;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "CmdInitializeGraphScratchMemoryAMDX")) return (void *)table->CmdInitializeGraphScratchMemoryAMDX;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "CmdDispatchGraphAMDX")) return (void *)table->CmdDispatchGraphAMDX;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "CmdDispatchGraphIndirectAMDX")) return (void *)table->CmdDispatchGraphIndirectAMDX;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp(name, "CmdDispatchGraphIndirectCountAMDX")) return (void *)table->CmdDispatchGraphIndirectCountAMDX;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_sample_locations extension commands
     if (!strcmp(name, "CmdSetSampleLocationsEXT")) return (void *)table->CmdSetSampleLocationsEXT;
@@ -4656,6 +4714,68 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
 }
 
 
+// ---- VK_KHR_maintenance5 extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBindIndexBuffer2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBindIndexBuffer2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetRenderingAreaGranularityKHR: Invalid device "
+                   "[VUID-vkGetRenderingAreaGranularityKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceImageSubresourceLayoutKHR: Invalid device "
+                   "[VUID-vkGetDeviceImageSubresourceLayoutKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetImageSubresourceLayout2KHR: Invalid device "
+                   "[VUID-vkGetImageSubresourceLayout2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+}
+
+
 // ---- VK_KHR_cooperative_matrix extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
@@ -5646,6 +5766,124 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(
 }
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+
+// ---- VK_AMDX_shader_enqueue extension trampoline/terminators
+
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateExecutionGraphPipelinesAMDX: Invalid device "
+                   "[VUID-vkCreateExecutionGraphPipelinesAMDX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetExecutionGraphPipelineScratchSizeAMDX: Invalid device "
+                   "[VUID-vkGetExecutionGraphPipelineScratchSizeAMDX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetExecutionGraphPipelineNodeIndexAMDX: Invalid device "
+                   "[VUID-vkGetExecutionGraphPipelineNodeIndexAMDX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdInitializeGraphScratchMemoryAMDX: Invalid commandBuffer "
+                   "[VUID-vkCmdInitializeGraphScratchMemoryAMDX-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDispatchGraphAMDX: Invalid commandBuffer "
+                   "[VUID-vkCmdDispatchGraphAMDX-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDispatchGraphIndirectAMDX: Invalid commandBuffer "
+                   "[VUID-vkCmdDispatchGraphIndirectAMDX-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDispatchGraphIndirectCountAMDX: Invalid commandBuffer "
+                   "[VUID-vkCmdDispatchGraphIndirectCountAMDX-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 // ---- VK_EXT_sample_locations extension trampoline/terminators
 
@@ -6753,8 +6991,8 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(
 VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -9680,6 +9918,24 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_KHR_maintenance5 extension commands
+    if (!strcmp("vkCmdBindIndexBuffer2KHR", name)) {
+        *addr = (void *)CmdBindIndexBuffer2KHR;
+        return true;
+    }
+    if (!strcmp("vkGetRenderingAreaGranularityKHR", name)) {
+        *addr = (void *)GetRenderingAreaGranularityKHR;
+        return true;
+    }
+    if (!strcmp("vkGetDeviceImageSubresourceLayoutKHR", name)) {
+        *addr = (void *)GetDeviceImageSubresourceLayoutKHR;
+        return true;
+    }
+    if (!strcmp("vkGetImageSubresourceLayout2KHR", name)) {
+        *addr = (void *)GetImageSubresourceLayout2KHR;
+        return true;
+    }
+
     // ---- VK_KHR_cooperative_matrix extension commands
     if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", name)) {
         *addr = (void *)GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
@@ -9959,6 +10215,50 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+
+    // ---- VK_AMDX_shader_enqueue extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkCreateExecutionGraphPipelinesAMDX", name)) {
+        *addr = (void *)CreateExecutionGraphPipelinesAMDX;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkGetExecutionGraphPipelineScratchSizeAMDX", name)) {
+        *addr = (void *)GetExecutionGraphPipelineScratchSizeAMDX;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkGetExecutionGraphPipelineNodeIndexAMDX", name)) {
+        *addr = (void *)GetExecutionGraphPipelineNodeIndexAMDX;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkCmdInitializeGraphScratchMemoryAMDX", name)) {
+        *addr = (void *)CmdInitializeGraphScratchMemoryAMDX;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkCmdDispatchGraphAMDX", name)) {
+        *addr = (void *)CmdDispatchGraphAMDX;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkCmdDispatchGraphIndirectAMDX", name)) {
+        *addr = (void *)CmdDispatchGraphIndirectAMDX;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
+    if (!strcmp("vkCmdDispatchGraphIndirectCountAMDX", name)) {
+        *addr = (void *)CmdDispatchGraphIndirectCountAMDX;
+        return true;
+    }
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_sample_locations extension commands
     if (!strcmp("vkCmdSetSampleLocationsEXT", name)) {
