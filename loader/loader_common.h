@@ -200,6 +200,10 @@ struct loader_device {
     } extensions;
 
     struct loader_device *next;
+
+    // Makes vkGetDeviceProcAddr check if core functions are supported by the current app_api_version.
+    // Only set to true if VK_KHR_maintenance5 is enabled.
+    bool should_ignore_device_commands_from_newer_version;
 };
 
 // Per ICD information
@@ -359,10 +363,6 @@ struct loader_instance {
     bool wsi_display_props2_enabled;
     bool create_terminator_invalid_extension;
     bool supports_get_dev_prop_2;
-
-    // Makes vkGetDeviceProcAddr check if core functions are supported by the current app_api_version
-    // Currently unused
-    bool should_ignore_device_commands_from_newer_version;
 };
 
 // VkPhysicalDevice requires special treatment by loader.  Firstly, terminator

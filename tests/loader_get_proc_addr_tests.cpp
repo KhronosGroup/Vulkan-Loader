@@ -303,22 +303,22 @@ TEST(GetProcAddr, PreserveLayerGettingVkCreateDeviceWithNullInstance) {
 
 // The following tests - AppQueries11FunctionsWhileOnlyEnabling10, AppQueries12FunctionsWhileOnlyEnabling11, and
 // AppQueries13FunctionsWhileOnlyEnabling12 - check that vkGetDeviceProcAddr only returning functions from core versions up to
-// the apiVersion declared in VkApplicationInfo. They currently are partially implemented. as this behavior is not active.
-// Future commits will add the mechanism to enable this behavior. The tests currently make sure that the existing behavior is not
-// affected by the changes made in this commit.
+// the apiVersion declared in VkApplicationInfo. Function querying should succeed if VK_KHR_maintenance_5 is not enabled, and they
+// should return zero when that extension is enabled.
 
 TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
-                       .set_icd_api_version(VK_API_VERSION_1_1)
-                       .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).finish());
+    auto& driver =
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+            .set_icd_api_version(VK_API_VERSION_1_1)
+            .add_physical_device(
+                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
 
     std::vector<const char*> functions = {"vkGetDeviceQueue2", "vkCmdDispatchBase", "vkCreateDescriptorUpdateTemplate"};
     for (const auto& f : functions) {
         driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
     }
     {
-        // Positive testing - behavior not active
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 0, 0);
         inst.CheckCreate();
@@ -330,22 +330,32 @@ TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
         }
     }
     {
-        // Negative testing - need to implement once behavior is incorporated
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 0, 0);
+        inst.CheckCreate();
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.CheckCreate(inst.GetPhysDev());
+        for (const auto& f : functions) {
+            ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
+        }
     }
 }
 
 TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2))
-                       .set_icd_api_version(VK_API_VERSION_1_2)
-                       .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).finish());
+    auto& driver =
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2))
+            .set_icd_api_version(VK_API_VERSION_1_2)
+            .add_physical_device(
+                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
     std::vector<const char*> functions = {"vkCmdDrawIndirectCount", "vkCmdNextSubpass2", "vkGetBufferDeviceAddress",
                                           "vkGetDeviceMemoryOpaqueCaptureAddress"};
     for (const auto& f : functions) {
         driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
     }
     {
-        // Positive testing - behavior not active
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
@@ -358,15 +368,27 @@ TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
         }
     }
     {
-        // Negative testing - need to implement once behavior is incorporated
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 1, 0);
+        inst.CheckCreate();
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.CheckCreate(inst.GetPhysDev());
+
+        for (const auto& f : functions) {
+            ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
+        }
     }
 }
 
 TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_3))
-                       .set_icd_api_version(VK_API_VERSION_1_3)
-                       .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_3).finish());
+    auto& driver =
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_3))
+            .set_icd_api_version(VK_API_VERSION_1_3)
+            .add_physical_device(
+                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_3).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
     std::vector<const char*> functions = {"vkCreatePrivateDataSlot", "vkGetDeviceBufferMemoryRequirements", "vkCmdWaitEvents2",
                                           "vkGetDeviceImageSparseMemoryRequirements"};
 
@@ -374,7 +396,6 @@ TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
         driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
     }
     {
-        // Positive testing - behavior not active
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
@@ -387,6 +408,16 @@ TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
         }
     }
     {
-        // Negative testing - need to implement once behavior is incorporated
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 2, 0);
+        inst.CheckCreate();
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.CheckCreate(inst.GetPhysDev());
+
+        for (const auto& f : functions) {
+            ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
+        }
     }
 }

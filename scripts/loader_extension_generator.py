@@ -914,7 +914,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                             if 'VK_VERSION_' in cur_cmd.ext_name:
                                 tables += '\n    // ---- Core %s commands\n' % cur_cmd.ext_name[11:]
                                 if cur_type == 'device':
-                                    version_check = f'        if (inst->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_{cur_cmd.ext_name[11:]}) return NULL;\n'
+                                    version_check = f'        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_{cur_cmd.ext_name[11:]}) return NULL;\n'
                             else:
 
                                 tables += '\n    // ---- %s extension commands\n' % cur_cmd.ext_name

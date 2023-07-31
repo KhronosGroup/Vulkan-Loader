@@ -143,7 +143,7 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDev
             const struct loader_instance *inst = icd_term->this_instance;
             uint32_t api_version =
                 VK_MAKE_API_VERSION(0, inst->app_api_version.major, inst->app_api_version.minor, inst->app_api_version.patch);
-            return (inst->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_1)
+            return (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_1)
                        ? NULL
                        : (PFN_vkVoidFunction)vkGetDeviceQueue2;
         }
