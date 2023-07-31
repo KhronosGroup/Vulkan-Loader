@@ -1074,3 +1074,105 @@ TEST(GetDeviceProcAddr, DebugFuncsWithTerminator) {
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false));
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true));
 }
+
+TEST(DebugUtils, WrappingLayer) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .set_min_icd_interface_version(5)
+        .add_physical_device(PhysicalDevice{}.add_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME).finish())
+        .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+    const char* wrap_objects_name = "VK_LAYER_LUNARG_wrap_objects";
+    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(wrap_objects_name)
+                                                         .set_lib_path(TEST_LAYER_WRAP_OBJECTS)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_instance_extension({VK_EXT_DEBUG_UTILS_EXTENSION_NAME})),
+                           "wrap_objects_layer.json");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    inst.create_info.add_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    inst.create_info.add_layer(wrap_objects_name);
+    inst.CheckCreate();
+    DebugUtilsWrapper log{inst};
+    CreateDebugUtilsMessenger(log);
+
+    auto phys_dev = inst.GetPhysDev();
+    DeviceWrapper device{inst};
+    device.create_info.add_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    device.CheckCreate(phys_dev);
+    {
+        PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT = inst.load("vkSetDebugUtilsObjectNameEXT");
+
+        VkDebugUtilsObjectNameInfoEXT info = {};
+        info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        info.objectType = VK_OBJECT_TYPE_DEVICE;
+        info.objectHandle = (uint64_t)device.dev;
+        info.pObjectName = "Test Name";
+        ASSERT_EQ(VK_SUCCESS, SetDebugUtilsObjectNameEXT(device, &info));
+
+        info.objectType = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
+        info.objectHandle = (uint64_t)phys_dev;
+        ASSERT_EQ(VK_SUCCESS, SetDebugUtilsObjectNameEXT(device, &info));
+
+        info.objectType = VK_OBJECT_TYPE_INSTANCE;
+        info.objectHandle = (uint64_t)inst.inst;
+        ASSERT_EQ(VK_SUCCESS, SetDebugUtilsObjectNameEXT(device, &info));
+    }
+    {
+        PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT = inst.load("vkSetDebugUtilsObjectTagEXT");
+
+        VkDebugUtilsObjectTagInfoEXT info = {};
+        info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT;
+        info.objectType = VK_OBJECT_TYPE_DEVICE;
+        info.objectHandle = (uint64_t)device.dev;
+        info.pTag = "Test Name";
+        ASSERT_EQ(VK_SUCCESS, SetDebugUtilsObjectTagEXT(device, &info));
+
+        info.objectType = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
+        info.objectHandle = (uint64_t)phys_dev;
+        ASSERT_EQ(VK_SUCCESS, SetDebugUtilsObjectTagEXT(device, &info));
+
+        info.objectType = VK_OBJECT_TYPE_INSTANCE;
+        info.objectHandle = (uint64_t)inst.inst;
+        ASSERT_EQ(VK_SUCCESS, SetDebugUtilsObjectTagEXT(device, &info));
+    }
+    // Debug marker
+    {
+        PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = inst.load("vkDebugMarkerSetObjectNameEXT");
+
+        VkDebugMarkerObjectNameInfoEXT info = {};
+        info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
+        info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT;
+        info.object = (uint64_t)device.dev;
+        info.pObjectName = "Test Name";
+        ASSERT_EQ(VK_SUCCESS, DebugMarkerSetObjectNameEXT(device, &info));
+
+        info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
+        info.object = (uint64_t)phys_dev;
+        ASSERT_EQ(VK_SUCCESS, DebugMarkerSetObjectNameEXT(device, &info));
+
+        info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
+        info.object = (uint64_t)inst.inst;
+        ASSERT_EQ(VK_SUCCESS, DebugMarkerSetObjectNameEXT(device, &info));
+    }
+    {
+        PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT = inst.load("vkDebugMarkerSetObjectTagEXT");
+
+        VkDebugMarkerObjectTagInfoEXT info = {};
+        info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_TAG_INFO_EXT;
+        info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT;
+        info.object = (uint64_t)device.dev;
+        info.pTag = "Test Name";
+        ASSERT_EQ(VK_SUCCESS, DebugMarkerSetObjectTagEXT(device, &info));
+
+        info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
+        info.object = (uint64_t)phys_dev;
+        ASSERT_EQ(VK_SUCCESS, DebugMarkerSetObjectTagEXT(device, &info));
+
+        info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
+        info.object = (uint64_t)inst.inst;
+        ASSERT_EQ(VK_SUCCESS, DebugMarkerSetObjectTagEXT(device, &info));
+    }
+}

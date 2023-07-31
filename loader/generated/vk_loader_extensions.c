@@ -4708,6 +4708,10 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(
         struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pTagInfo->object;
         local_tag_info.object = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;
     }
+    if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {
+        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pTagInfo->object;
+        local_tag_info.object = (uint64_t)(uintptr_t)instance->instance;
+    }
     return disp->DebugMarkerSetObjectTagEXT(device, &local_tag_info);
 }
 
@@ -4762,6 +4766,10 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(
     if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {
         struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pNameInfo->object;
         local_name_info.object = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;
+    }
+    if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT) {
+        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pNameInfo->object;
+        local_name_info.object = (uint64_t)(uintptr_t)instance->instance;
     }
     return disp->DebugMarkerSetObjectNameEXT(device, &local_name_info);
 }
@@ -5346,6 +5354,10 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(
         struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pNameInfo->objectHandle;
         local_name_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;
     }
+    if (pNameInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {
+        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pNameInfo->objectHandle;
+        local_name_info.objectHandle = (uint64_t)(uintptr_t)instance->instance;
+    }
     if (disp->SetDebugUtilsObjectNameEXT != NULL) {
         return disp->SetDebugUtilsObjectNameEXT(device, &local_name_info);
     } else {
@@ -5404,6 +5416,10 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(
     if (pTagInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {
         struct loader_physical_device_tramp *phys_dev_tramp = (struct loader_physical_device_tramp *)(uintptr_t)pTagInfo->objectHandle;
         local_tag_info.objectHandle = (uint64_t)(uintptr_t)phys_dev_tramp->phys_dev;
+    }
+    if (pTagInfo->objectType == VK_OBJECT_TYPE_INSTANCE) {
+        struct loader_instance* instance = (struct loader_instance *)(uintptr_t)pTagInfo->objectHandle;
+        local_tag_info.objectHandle = (uint64_t)(uintptr_t)instance->instance;
     }
     if (disp->SetDebugUtilsObjectTagEXT != NULL) {
         return disp->SetDebugUtilsObjectTagEXT(device, &local_tag_info);
