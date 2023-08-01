@@ -888,6 +888,34 @@ discovery.
     </small></td>
   </tr>
   <tr>
+  <td><small>
+    <i>VK_LOADER_LAYERS_ALLOW</i>
+    </small></td>
+    <td><small>
+        A comma-delimited list of globs to search for in known layers and
+        used to prevent layers whose layer name matches one or more of
+        the provided globs from being disabled by <i>VK_LOADER_LAYERS_DISABLE</i>.<br/>
+        Known layers are those which are found by the loader taking into account
+        default search paths and other environment variables
+        (like <i>VK_LAYER_PATH</i>).
+    </small></td>
+    <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.262 of the Vulkan headers and later.<br/>
+        This will not cause layers to be enabled if the normal mechanism to
+        enable them
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_LOADER_LAYERS_ALLOW=*validation*,*recon*<br/>
+        <br/>
+        set<br/>
+        &nbsp;&nbsp;VK_LOADER_LAYERS_ALLOW=*validation*,*recon*<br/><br/>
+        The above would allow any layer whose name is validation or recon to be
+        enabled regardless of the value of <i>VK_LOADER_LAYERS_DISABLE</i>.
+    </small></td>
+  </tr>
+  <tr>
     <td><small>
         <i>VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING</i>
     </small></td>

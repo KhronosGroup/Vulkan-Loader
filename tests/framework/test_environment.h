@@ -596,6 +596,7 @@ struct FrameworkEnvironment {
     void write_settings_file(std::string const& file_contents);
     // apply any changes made to FrameworkEnvironment's loader_settings member
     void update_loader_settings(const LoaderSettings& loader_settings) noexcept;
+    void remove_loader_settings();
 
     TestICD& get_test_icd(size_t index = 0) noexcept;
     TestICD& reset_icd(size_t index = 0) noexcept;

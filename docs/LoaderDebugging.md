@@ -19,6 +19,7 @@
   - [Enable Layer Logging](#enable-layer-logging)
   - [Disable Layers](#disable-layers)
   - [Selectively Re-enable Layers](#selectively-re-enable-layers)
+- [Allow specific layers to be ignored by VK\_LOADER\_LAYERS\_DISABLE](#allow-specific-layers-to-be-ignored-by-vk_loader_layers_disable)
 - [Debugging Possible Driver Issues](#debugging-possible-driver-issues)
   - [Enable Driver Logging](#enable-driver-logging)
   - [Selectively Enable Specific Drivers](#selectively-enable-specific-drivers)
@@ -226,6 +227,35 @@ For more info on how to use the filtering environment variables, refer to the
 [Layer Filtering](LoaderLayerInterface.md#layer-filtering) section of the
 [LoaderLayerInterface](LoaderLayerInterface.md) document.
 
+## Allow specific layers to be ignored by VK_LOADER_LAYERS_DISABLE
+
+**NOTE:** VK_LOADER_LAYERS_DISABLE is only available with Loaders built with version
+1.3.262 of the Vulkan headers and later.
+
+When using `VK_LOADER_LAYERS_DISABLE` to disable implicit layers, it is possible
+to allow specific layers to be enabled using `VK_LOADER_LAYERS_ENABLE`.
+However, this has the effect of *forcing* layers to be enabled, which is not
+always desired.
+Implicit layers have the ability to only be enabled when a layer specified
+environment variable is set, allow for context dependent enablement.
+`VK_LOADER_LAYERS_ENABLE` ignores that context.
+
+Thus, a different environment variable is needed: `VK_LOADER_LAYERS_ALLOW`
+
+The behavior of `VK_LOADER_LAYERS_ALLOW` is similar to `VK_LOADER_LAYERS_ENABLE`
+except that it does not force a layer to be enabled.
+The way to think about this environment variable is that every layer matching
+`VK_LOADER_LAYERS_ALLOW` is excluded from being forcibly disabled by
+`VK_LOADER_LAYERS_DISABLE`.
+this allows for implicit layers that are context dependent to be enabled
+depending on the relevant context instead of force enabling them.
+
+Example: Disable all implicit layers except for any layers that have steam or
+mesa in their name.
+```
+set VK_LOADER_LAYERS_DISABLE=~implicit~
+set VK_LOADER_LAYERS_ALLOW=*steam*,*Mesa*
+```
 
 ## Debugging Possible Driver Issues
 

@@ -501,4 +501,5 @@ struct loader_envvar_disable_layers_filter {
 struct loader_envvar_all_filters {
     struct loader_envvar_filter enable_filter;
     struct loader_envvar_disable_layers_filter disable_filter;
+    struct loader_envvar_filter allow_filter;
 };

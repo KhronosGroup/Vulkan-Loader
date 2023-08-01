@@ -30,6 +30,7 @@
     - [Layer Disable Filtering](#layer-disable-filtering)
     - [Layer Special Case Disable](#layer-special-case-disable)
     - [Layer Disable Warning](#layer-disable-warning)
+    - [Allow certain Layers to ignore Layer Disabling](#allow-certain-layers-to-ignore-layer-disabling)
       - [`VK_INSTANCE_LAYERS`](#vk_instance_layers)
   - [Exception for Elevated Privileges](#exception-for-elevated-privileges)
 - [Layer Version Negotiation](#layer-version-negotiation)
@@ -505,6 +506,30 @@ Disabling layers, whether just through normal usage of
 `VK_LOADER_LAYERS_DISABLE` or by evoking one of the special disable options like
 `~all~` or `~explicit~` could cause application breakage if the application is
 relying on features provided by one or more explicit layers.
+
+#### Allow certain Layers to ignore Layer Disabling
+
+**NOTE:** VK_LOADER_LAYERS_DISABLE is only available with Loaders built with version
+1.3.262 of the Vulkan headers and later.
+
+The layer allow environment variable `VK_LOADER_LAYERS_ALLOW` is a
+comma-delimited list of globs to search for in known layers.
+The layer names are compared against the globs listed in the environment
+variable, and if they match, they will not be able to be disabled by
+`VK_LOADER_LAYERS_DISABLE`.
+
+Implicit layers have the ability to only be enabled when a layer specified
+environment variable is set, allow for context dependent enablement.
+`VK_LOADER_LAYERS_ENABLE` ignores that context.
+`VK_LOADER_LAYERS_ALLOW` behaves similar to `VK_LOADER_LAYERS_ENABLE` while
+also respecting the context which is normally used to determine whether an
+implicit layer should be enabled.
+
+`VK_LOADER_LAYERS_ALLOW` effectively negates the behavior of
+`VK_LOADER_LAYERS_DISABLE`.
+Explicit layers listed by `VK_LOADER_LAYERS_ALLOW` will not be enabled.
+Implicit layers listed by ``VK_LOADER_LAYERS_ALLOW` which are always active,
+i.e. they do not require any external context to be enabled, will be enabled.
 
 ##### `VK_INSTANCE_LAYERS`
 

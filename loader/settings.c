@@ -736,7 +736,8 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
 
         // Check if disable filter needs to skip the layer
         if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
-             check_name_matches_filter_environment_var(props->info.layerName, &filters->disable_filter.additional_filters))) {
+             check_name_matches_filter_environment_var(props->info.layerName, &filters->disable_filter.additional_filters)) &&
+            !check_name_matches_filter_environment_var(props->info.layerName, &filters->allow_filter)) {
             continue;
         }
         // Check the enable filter
