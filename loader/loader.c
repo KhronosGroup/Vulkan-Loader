@@ -870,19 +870,17 @@ VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst,
 }
 
 // Determine if the provided explicit layer should be available by querying the appropriate environmental variables.
-bool loader_layer_is_available(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                               const struct loader_envvar_disable_layers_filter *disable_filter,
+bool loader_layer_is_available(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                const struct loader_layer_properties *prop) {
     bool available = true;
-    if (NULL != disable_filter) {
-        bool is_implicit = (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
-        bool disabled_by_type = (is_implicit) ? (disable_filter->disable_all_implicit) : (disable_filter->disable_all_explicit);
-        if (disable_filter->disable_all || disabled_by_type ||
-            check_name_matches_filter_environment_var(prop->info.layerName, &disable_filter->additional_filters)) {
-            available = false;
-        }
+    bool is_implicit = (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
+    bool disabled_by_type =
+        (is_implicit) ? (filters->disable_filter.disable_all_implicit) : (filters->disable_filter.disable_all_explicit);
+    if (filters->disable_filter.disable_all || disabled_by_type ||
+        check_name_matches_filter_environment_var(prop->info.layerName, &filters->disable_filter.additional_filters)) {
+        available = false;
     }
-    if (NULL != enable_filter && check_name_matches_filter_environment_var(prop->info.layerName, enable_filter)) {
+    if (check_name_matches_filter_environment_var(prop->info.layerName, &filters->enable_filter)) {
         available = true;
     } else if (!available) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -895,8 +893,7 @@ bool loader_layer_is_available(const struct loader_instance *inst, const struct 
 
 // Search the given search_list for any layers in the props list.  Add these to the
 // output layer_list.
-VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                                        const struct loader_envvar_disable_layers_filter *disable_filter,
+VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                         struct loader_pointer_layer_list *output_list,
                                         struct loader_pointer_layer_list *expanded_output_list, uint32_t name_count,
                                         const char *const *names, const struct loader_layer_list *source_list) {
@@ -918,7 +915,7 @@ VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, cons
             continue;
         }
 
-        if (!loader_layer_is_available(inst, enable_filter, disable_filter, layer_prop)) {
+        if (!loader_layer_is_available(inst, filters, layer_prop)) {
             continue;
         }
 
@@ -929,8 +926,7 @@ VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, cons
             err = loader_add_layer_properties_to_list(inst, expanded_output_list, layer_prop);
             if (err == VK_ERROR_OUT_OF_HOST_MEMORY) return err;
         } else {
-            err = loader_add_meta_layer(inst, enable_filter, disable_filter, layer_prop, output_list, expanded_output_list,
-                                        source_list, NULL);
+            err = loader_add_meta_layer(inst, filters, layer_prop, output_list, expanded_output_list, source_list, NULL);
             if (err == VK_ERROR_OUT_OF_HOST_MEMORY) return err;
         }
     }
@@ -940,19 +936,17 @@ VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, cons
 
 // Determine if the provided implicit layer should be enabled by querying the appropriate environmental variables.
 // For an implicit layer, at least a disable environment variable is required.
-bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                                      const struct loader_envvar_disable_layers_filter *disable_filter,
+bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                       const struct loader_layer_properties *prop) {
     bool enable = false;
     bool forced_disabled = false;
     bool forced_enabled = false;
 
-    if ((NULL != disable_filter &&
-         (disable_filter->disable_all || disable_filter->disable_all_implicit ||
-          check_name_matches_filter_environment_var(prop->info.layerName, &disable_filter->additional_filters)))) {
+    if (filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
+        check_name_matches_filter_environment_var(prop->info.layerName, &filters->disable_filter.additional_filters)) {
         forced_disabled = true;
     }
-    if (NULL != enable_filter && check_name_matches_filter_environment_var(prop->info.layerName, enable_filter)) {
+    if (check_name_matches_filter_environment_var(prop->info.layerName, &filters->enable_filter)) {
         forced_enabled = true;
     }
 
@@ -1026,13 +1020,11 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
 // every check has passed indicating it should be used, including making sure a layer of the same name hasn't already been
 // added.
 VkResult loader_add_implicit_layer(const struct loader_instance *inst, struct loader_layer_properties *prop,
-                                   const struct loader_envvar_filter *enable_filter,
-                                   const struct loader_envvar_disable_layers_filter *disable_filter,
-                                   struct loader_pointer_layer_list *target_list,
+                                   const struct loader_envvar_all_filters *filters, struct loader_pointer_layer_list *target_list,
                                    struct loader_pointer_layer_list *expanded_target_list,
                                    const struct loader_layer_list *source_list) {
     VkResult result = VK_SUCCESS;
-    if (loader_implicit_layer_is_enabled(inst, enable_filter, disable_filter, prop)) {
+    if (loader_implicit_layer_is_enabled(inst, filters, prop)) {
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
             // Make sure the layer isn't already in the output_list, skip adding it if it is.
             if (loader_find_layer_name_in_list(&prop->info.layerName[0], target_list)) {
@@ -1045,16 +1037,14 @@ VkResult loader_add_implicit_layer(const struct loader_instance *inst, struct lo
                 result = loader_add_layer_properties_to_list(inst, expanded_target_list, prop);
             }
         } else {
-            result = loader_add_meta_layer(inst, enable_filter, disable_filter, prop, target_list, expanded_target_list,
-                                           source_list, NULL);
+            result = loader_add_meta_layer(inst, filters, prop, target_list, expanded_target_list, source_list, NULL);
         }
     }
     return result;
 }
 
 // Add the component layers of a meta-layer to the active list of layers
-VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                               const struct loader_envvar_disable_layers_filter *disable_filter,
+VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                struct loader_layer_properties *prop, struct loader_pointer_layer_list *target_list,
                                struct loader_pointer_layer_list *expanded_target_list, const struct loader_layer_list *source_list,
                                bool *out_found_all_component_layers) {
@@ -1076,7 +1066,7 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
                            search_prop->info.layerName, search_prop_version.major, search_prop_version.minor);
             }
 
-            if (!loader_layer_is_available(inst, enable_filter, disable_filter, search_prop)) {
+            if (!loader_layer_is_available(inst, filters, search_prop)) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                            "Meta Layer \"%s\" component layer \"%s\" disabled.", prop->info.layerName, search_prop->info.layerName);
                 continue;
@@ -1085,14 +1075,13 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
             // If the component layer is itself an implicit layer, we need to do the implicit layer enable
             // checks
             if (0 == (search_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-                result = loader_add_implicit_layer(inst, search_prop, enable_filter, disable_filter, target_list,
-                                                   expanded_target_list, source_list);
+                result = loader_add_implicit_layer(inst, search_prop, filters, target_list, expanded_target_list, source_list);
                 if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
             } else {
                 if (0 != (search_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
                     bool found_layers_in_component_meta_layer = true;
-                    result = loader_add_meta_layer(inst, enable_filter, disable_filter, search_prop, target_list,
-                                                   expanded_target_list, source_list, &found_layers_in_component_meta_layer);
+                    result = loader_add_meta_layer(inst, filters, search_prop, target_list, expanded_target_list, source_list,
+                                                   &found_layers_in_component_meta_layer);
                     if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
                     if (!found_layers_in_component_meta_layer) found_all_component_layers = false;
                 } else if (!loader_find_layer_name_in_list(&search_prop->info.layerName[0], target_list)) {
@@ -2138,8 +2127,7 @@ bool update_meta_layer_extensions_from_component_layers(const struct loader_inst
 }
 
 // Verify that all meta-layers in a layer verify_meta_layer_component_layerslist are valid.
-VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                                const struct loader_envvar_disable_layers_filter *disable_filter,
+VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                 struct loader_layer_list *instance_layers, bool *override_layer_present) {
     VkResult res = VK_SUCCESS;
     *override_layer_present = false;
@@ -2154,7 +2142,7 @@ VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loade
                 if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
                     return res;
                 }
-                if (prop->is_override && loader_implicit_layer_is_enabled(inst, enable_filter, disable_filter, prop)) {
+                if (prop->is_override && loader_implicit_layer_is_enabled(inst, filters, prop)) {
                     *override_layer_present = true;
                 }
             } else {
@@ -3771,8 +3759,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     struct loader_layer_list regular_instance_layers = {0};
     bool override_layer_valid = false;
     char *override_paths = NULL;
-    struct loader_envvar_filter enable_filter;
-    struct loader_envvar_disable_layers_filter disable_filter;
+    struct loader_envvar_all_filters filters = {0};
 
     bool should_search_for_other_layers = true;
     res = get_settings_layers(inst, &settings_layers, &should_search_for_other_layers);
@@ -3789,11 +3776,11 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     }
 
     // Parse the filter environment variables to determine if we have any special behavior
-    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &enable_filter);
+    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &filters.enable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
-    res = parse_layers_disable_filter_environment_var(inst, &disable_filter);
+    res = parse_layers_disable_filter_environment_var(inst, &filters.disable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -3809,8 +3796,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     // Check to see if the override layer is present, and use it's override paths.
     for (uint32_t i = 0; i < regular_instance_layers.count; i++) {
         struct loader_layer_properties *prop = &regular_instance_layers.list[i];
-        if (prop->is_override && loader_implicit_layer_is_enabled(inst, &enable_filter, &disable_filter, prop) &&
-            prop->override_paths.count > 0) {
+        if (prop->is_override && loader_implicit_layer_is_enabled(inst, &filters, prop) && prop->override_paths.count > 0) {
             res = get_override_layer_override_paths(inst, prop, &override_paths);
             if (VK_SUCCESS != res) {
                 goto out;
@@ -3827,7 +3813,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
 
     // Verify any meta-layers in the list are valid and all the component layers are
     // actually present in the available layer list
-    res = verify_all_meta_layers(inst, &enable_filter, &disable_filter, &regular_instance_layers, &override_layer_valid);
+    res = verify_all_meta_layers(inst, &filters, &regular_instance_layers, &override_layer_valid);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
         return res;
     }
@@ -3841,7 +3827,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
 
     // Remove disabled layers
     for (uint32_t i = 0; i < regular_instance_layers.count; ++i) {
-        if (!loader_layer_is_available(inst, &enable_filter, &disable_filter, &regular_instance_layers.list[i])) {
+        if (!loader_layer_is_available(inst, &filters, &regular_instance_layers.list[i])) {
             loader_remove_layer_in_list(inst, &regular_instance_layers, i);
             i--;
         }
@@ -3864,8 +3850,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     bool override_layer_valid = false;
     char *override_paths = NULL;
     bool implicit_metalayer_present = false;
-    struct loader_envvar_filter enable_filter;
-    struct loader_envvar_disable_layers_filter disable_filter;
+    struct loader_envvar_all_filters filters = {0};
 
     bool should_search_for_other_layers = true;
     res = get_settings_layers(inst, &settings_layers, &should_search_for_other_layers);
@@ -3882,11 +3867,11 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     }
 
     // Parse the filter environment variables to determine if we have any special behavior
-    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &enable_filter);
+    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &filters.enable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
-    res = parse_layers_disable_filter_environment_var(inst, &disable_filter);
+    res = parse_layers_disable_filter_environment_var(inst, &filters.disable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -3903,7 +3888,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     // Each of these may require explicit layers to be enabled at this time.
     for (uint32_t i = 0; i < regular_instance_layers.count; i++) {
         struct loader_layer_properties *prop = &regular_instance_layers.list[i];
-        if (prop->is_override && loader_implicit_layer_is_enabled(inst, &enable_filter, &disable_filter, prop)) {
+        if (prop->is_override && loader_implicit_layer_is_enabled(inst, &filters, prop)) {
             override_layer_valid = true;
             res = get_override_layer_override_paths(inst, prop, &override_paths);
             if (VK_SUCCESS != res) {
@@ -3927,7 +3912,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
 
     // Verify any meta-layers in the list are valid and all the component layers are
     // actually present in the available layer list
-    res = verify_all_meta_layers(inst, &enable_filter, &disable_filter, &regular_instance_layers, &override_layer_valid);
+    res = verify_all_meta_layers(inst, &filters, &regular_instance_layers, &override_layer_valid);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
         return res;
     }
@@ -3941,7 +3926,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
 
     // Remove disabled layers
     for (uint32_t i = 0; i < regular_instance_layers.count; ++i) {
-        if (!loader_implicit_layer_is_enabled(inst, &enable_filter, &disable_filter, &regular_instance_layers.list[i])) {
+        if (!loader_implicit_layer_is_enabled(inst, &filters, &regular_instance_layers.list[i])) {
             loader_remove_layer_in_list(inst, &regular_instance_layers, i);
             i--;
         }
@@ -4155,16 +4140,14 @@ loader_platform_dl_handle loader_open_layer_file(const struct loader_instance *i
 
 // Go through the search_list and find any layers which match type. If layer
 // type match is found in then add it to ext_list.
-VkResult loader_add_implicit_layers(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                                    const struct loader_envvar_disable_layers_filter *disable_filter,
+VkResult loader_add_implicit_layers(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                     struct loader_pointer_layer_list *target_list,
                                     struct loader_pointer_layer_list *expanded_target_list,
                                     const struct loader_layer_list *source_list) {
     for (uint32_t src_layer = 0; src_layer < source_list->count; src_layer++) {
         struct loader_layer_properties *prop = &source_list->list[src_layer];
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-            VkResult result = loader_add_implicit_layer(inst, prop, enable_filter, disable_filter, target_list,
-                                                        expanded_target_list, source_list);
+            VkResult result = loader_add_implicit_layer(inst, prop, filters, target_list, expanded_target_list, source_list);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
         }
     }
@@ -4190,8 +4173,7 @@ void warn_if_layers_are_older_than_application(struct loader_instance *inst) {
 VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
                                        const struct loader_layer_list *instance_layers) {
     VkResult res = VK_SUCCESS;
-    struct loader_envvar_filter layers_enable_filter;
-    struct loader_envvar_disable_layers_filter layers_disable_filter;
+    struct loader_envvar_all_filters layers_filters = {0};
 
     assert(inst && "Cannot have null instance");
 
@@ -4210,42 +4192,42 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
     }
 
     // Parse the filter environment variables to determine if we have any special behavior
-    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &layers_enable_filter);
+    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &layers_filters.enable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
-    res = parse_layers_disable_filter_environment_var(inst, &layers_disable_filter);
+    res = parse_layers_disable_filter_environment_var(inst, &layers_filters.disable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
 
     if (inst->settings.settings_active) {
-        res = enable_correct_layers_from_settings(
-            inst, &layers_enable_filter, &layers_disable_filter, pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames,
-            &inst->instance_layer_list, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list);
+        res = enable_correct_layers_from_settings(inst, &layers_filters, pCreateInfo->enabledLayerCount,
+                                                  pCreateInfo->ppEnabledLayerNames, &inst->instance_layer_list,
+                                                  &inst->app_activated_layer_list, &inst->expanded_activated_layer_list);
         warn_if_layers_are_older_than_application(inst);
 
         goto out;
     }
 
     // Add any implicit layers first
-    res = loader_add_implicit_layers(inst, &layers_enable_filter, &layers_disable_filter, &inst->app_activated_layer_list,
-                                     &inst->expanded_activated_layer_list, instance_layers);
+    res = loader_add_implicit_layers(inst, &layers_filters, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
+                                     instance_layers);
     if (res != VK_SUCCESS) {
         goto out;
     }
 
     // Add any layers specified via environment variable next
-    res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, &layers_enable_filter, &layers_disable_filter,
-                                        &inst->app_activated_layer_list, &inst->expanded_activated_layer_list, instance_layers);
+    res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, &layers_filters, &inst->app_activated_layer_list,
+                                        &inst->expanded_activated_layer_list, instance_layers);
     if (res != VK_SUCCESS) {
         goto out;
     }
 
     // Add layers specified by the application
-    res = loader_add_layer_names_to_list(inst, &layers_enable_filter, &layers_disable_filter, &inst->app_activated_layer_list,
-                                         &inst->expanded_activated_layer_list, pCreateInfo->enabledLayerCount,
-                                         pCreateInfo->ppEnabledLayerNames, instance_layers);
+    res =
+        loader_add_layer_names_to_list(inst, &layers_filters, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
+                                       pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
 
     warn_if_layers_are_older_than_application(inst);
 out:
@@ -5042,8 +5024,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
     char *env_value;
     bool check_if_known = true;
     VkResult res = VK_SUCCESS;
-    struct loader_envvar_filter layers_enable_filter;
-    struct loader_envvar_disable_layers_filter layers_disable_filter;
+    struct loader_envvar_all_filters layers_filters = {0};
 
     struct loader_pointer_layer_list active_layers = {0};
     struct loader_pointer_layer_list expanded_layers = {0};
@@ -5064,36 +5045,35 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
     }
 
     // Parse the filter environment variables to determine if we have any special behavior
-    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &layers_enable_filter);
+    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &layers_filters.enable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
-    res = parse_layers_disable_filter_environment_var(inst, &layers_disable_filter);
+    res = parse_layers_disable_filter_environment_var(inst, &layers_filters.disable_filter);
     if (VK_SUCCESS != res) {
         goto out;
     }
 
     if (inst->settings.settings_active) {
-        res = enable_correct_layers_from_settings(inst, &layers_enable_filter, &layers_disable_filter,
-                                                  pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers,
-                                                  &active_layers, &expanded_layers);
+        res = enable_correct_layers_from_settings(inst, &layers_filters, pCreateInfo->enabledLayerCount,
+                                                  pCreateInfo->ppEnabledLayerNames, instance_layers, &active_layers,
+                                                  &expanded_layers);
         if (res != VK_SUCCESS) {
             goto out;
         }
     } else {
         // Build the lists of active layers (including metalayers) and expanded layers (with metalayers resolved to their
         // components)
-        res = loader_add_implicit_layers(inst, &layers_enable_filter, &layers_disable_filter, &active_layers, &expanded_layers,
-                                         instance_layers);
+        res = loader_add_implicit_layers(inst, &layers_filters, &active_layers, &expanded_layers, instance_layers);
         if (res != VK_SUCCESS) {
             goto out;
         }
-        res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, &layers_enable_filter, &layers_disable_filter,
-                                            &active_layers, &expanded_layers, instance_layers);
+        res = loader_add_environment_layers(inst, VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER, &layers_filters, &active_layers,
+                                            &expanded_layers, instance_layers);
         if (res != VK_SUCCESS) {
             goto out;
         }
-        res = loader_add_layer_names_to_list(inst, &layers_enable_filter, &layers_disable_filter, &active_layers, &expanded_layers,
+        res = loader_add_layer_names_to_list(inst, &layers_filters, &active_layers, &expanded_layers,
                                              pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
         if (VK_SUCCESS != res) {
             goto out;

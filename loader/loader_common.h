@@ -497,3 +497,8 @@ struct loader_envvar_disable_layers_filter {
     bool disable_all_implicit;
     bool disable_all_explicit;
 };
+
+struct loader_envvar_all_filters {
+    struct loader_envvar_filter enable_filter;
+    struct loader_envvar_disable_layers_filter disable_filter;
+};
