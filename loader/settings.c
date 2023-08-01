@@ -710,9 +710,9 @@ out:
     return res;
 }
 
-VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_filter* enable_filter,
-                                             const struct loader_envvar_disable_layers_filter* disable_filter, uint32_t name_count,
-                                             const char* const* names, const struct loader_layer_list* instance_layers,
+VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
+                                             uint32_t name_count, const char* const* names,
+                                             const struct loader_layer_list* instance_layers,
                                              struct loader_pointer_layer_list* target_layer_list,
                                              struct loader_pointer_layer_list* activated_layer_list) {
     VkResult res = VK_SUCCESS;
@@ -735,14 +735,12 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         }
 
         // Check if disable filter needs to skip the layer
-        if (NULL != disable_filter &&
-            (disable_filter->disable_all || disable_filter->disable_all_implicit ||
-             check_name_matches_filter_environment_var(props->info.layerName, &disable_filter->additional_filters))) {
+        if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
+             check_name_matches_filter_environment_var(props->info.layerName, &filters->disable_filter.additional_filters))) {
             continue;
         }
         // Check the enable filter
-        if (!enable_layer && NULL != enable_filter &&
-            check_name_matches_filter_environment_var(props->info.layerName, enable_filter)) {
+        if (!enable_layer && check_name_matches_filter_environment_var(props->info.layerName, &filters->enable_filter)) {
             enable_layer = true;
         }
 
@@ -778,15 +776,14 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
 
         // Check if its an implicit layers and thus enabled by default
         if (!enable_layer && (0 == (props->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) &&
-            loader_implicit_layer_is_enabled(inst, enable_filter, disable_filter, props)) {
+            loader_implicit_layer_is_enabled(inst, filters, props)) {
             enable_layer = true;
         }
 
         if (enable_layer) {
             // Check if the layer is a meta layer reuse the existing function to add the meta layer
             if (props->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                res = loader_add_meta_layer(inst, enable_filter, disable_filter, props, target_layer_list, activated_layer_list,
-                                            instance_layers, NULL);
+                res = loader_add_meta_layer(inst, filters, props, target_layer_list, activated_layer_list, instance_layers, NULL);
                 if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             } else {
                 res = loader_add_layer_properties_to_list(inst, target_layer_list, props);

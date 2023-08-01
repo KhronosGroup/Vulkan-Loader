@@ -431,8 +431,7 @@ bool check_name_matches_filter_environment_var(const char *name, const struct lo
 // Get the layer name(s) from the env_name environment variable. If layer is found in
 // search_list then add it to layer_list.  But only add it to layer_list if type_flags matches.
 VkResult loader_add_environment_layers(struct loader_instance *inst, const enum layer_type_flags type_flags,
-                                       const struct loader_envvar_filter *enable_filter,
-                                       const struct loader_envvar_disable_layers_filter *disable_filter,
+                                       const struct loader_envvar_all_filters *filters,
                                        struct loader_pointer_layer_list *target_list,
                                        struct loader_pointer_layer_list *expanded_target_list,
                                        const struct loader_layer_list *source_list) {
@@ -468,8 +467,8 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
                                     res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                 } else {
-                                    res = loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list,
-                                                                expanded_target_list, source_list, NULL);
+                                    res = loader_add_meta_layer(inst, filters, source_prop, target_list, expanded_target_list,
+                                                                source_list, NULL);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                 }
                                 break;
@@ -498,11 +497,10 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
         // We found a layer we're interested in, but has it been disabled...
         bool adding = true;
         bool is_implicit = (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
-        bool disabled_by_type = (is_implicit) ? (NULL != disable_filter && disable_filter->disable_all_implicit)
-                                              : (NULL != disable_filter && disable_filter->disable_all_explicit);
-        if (NULL != disable_filter &&
-            (disable_filter->disable_all || disabled_by_type ||
-             check_name_matches_filter_environment_var(source_prop->info.layerName, &disable_filter->additional_filters))) {
+        bool disabled_by_type =
+            (is_implicit) ? (filters->disable_filter.disable_all_implicit) : (filters->disable_filter.disable_all_explicit);
+        if (filters->disable_filter.disable_all || disabled_by_type ||
+            check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->disable_filter.additional_filters)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Layer \"%s\" ignored because it has been disabled by env var \'%s\'", source_prop->info.layerName,
                        VK_LAYERS_DISABLE_ENV_VAR);
@@ -512,7 +510,7 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
         // If we are supposed to filter through all layers, we need to compare the layer name against the filter.
         // This can override the disable above, so we want to do it second.
         // Also make sure the layer isn't already in the output_list, skip adding it if it is.
-        if (check_name_matches_filter_environment_var(source_prop->info.layerName, enable_filter) &&
+        if (check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->enable_filter) &&
             !loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
             adding = true;
             // Only way is_substring is true is if there are enable variables.  If that's the case, and we're past the
@@ -534,8 +532,7 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
             res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         } else {
-            res = loader_add_meta_layer(inst, enable_filter, disable_filter, source_prop, target_list, expanded_target_list,
-                                        source_list, NULL);
+            res = loader_add_meta_layer(inst, filters, source_prop, target_list, expanded_target_list, source_list, NULL);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
     }

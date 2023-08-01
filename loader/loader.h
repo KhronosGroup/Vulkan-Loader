@@ -130,11 +130,9 @@ bool loader_find_layer_name_in_list(const char *name, const struct loader_pointe
 VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_pointer_layer_list *list,
                                              struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
-bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                                      const struct loader_envvar_disable_layers_filter *disable_filter,
+bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                       const struct loader_layer_properties *prop);
-VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_filter *enable_filter,
-                               const struct loader_envvar_disable_layers_filter *disable_filter,
+VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                struct loader_layer_properties *prop, struct loader_pointer_layer_list *target_list,
                                struct loader_pointer_layer_list *expanded_target_list, const struct loader_layer_list *source_list,
                                bool *out_found_all_component_layers);

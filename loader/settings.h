@@ -35,8 +35,7 @@
 struct loader_instance;
 struct loader_layer_list;
 struct loader_pointer_layer_list;
-struct loader_envvar_filter;
-struct loader_envvar_disable_layers_filter;
+struct loader_envvar_all_filters;
 typedef struct log_configuration log_configuration;
 
 typedef enum loader_settings_layer_control {
@@ -108,8 +107,8 @@ VkResult combine_settings_layers_with_regular_layers(const struct loader_instanc
 
 // Fill out activated_layer_list with the layers that should be activated, based on environment variables, VkInstanceCreateInfo, and
 // the settings
-VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_filter* enable_filter,
-                                             const struct loader_envvar_disable_layers_filter* disable_filter, uint32_t name_count,
-                                             const char* const* names, const struct loader_layer_list* instance_layers,
+VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
+                                             uint32_t name_count, const char* const* names,
+                                             const struct loader_layer_list* instance_layers,
                                              struct loader_pointer_layer_list* target_layer_list,
                                              struct loader_pointer_layer_list* activated_layer_list);
