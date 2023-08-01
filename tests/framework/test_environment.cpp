@@ -736,6 +736,9 @@ void FrameworkEnvironment::write_settings_file(std::string const& file_contents)
 void FrameworkEnvironment::update_loader_settings(const LoaderSettings& settings) noexcept {
     write_settings_file(get_loader_settings_file_contents(settings));
 }
+void FrameworkEnvironment::remove_loader_settings() {
+    get_folder(ManifestLocation::settings_location).remove("vk_loader_settings.json");
+}
 
 TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
 TestICD& FrameworkEnvironment::reset_icd(size_t index) noexcept { return icds[index].reset_icd(); }

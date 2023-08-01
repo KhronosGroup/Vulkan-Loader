@@ -1512,15 +1512,14 @@ TEST(OverrideMetaLayer, BasicOverridePaths) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
-    env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(lunarg_meta_layer_name)
-                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                                         .add_component_layer(regular_layer_name)
-                                                                         .set_disable_environment("DisableMeIfYouCan")
-                                                                         .add_override_path(override_folder_location)),
-        "meta_test_layer.json");
+    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
+                               ManifestLayer::LayerDescription{}
+                                   .set_name(lunarg_meta_layer_name)
+                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                   .add_component_layer(regular_layer_name)
+                                   .set_disable_environment("DisableMeIfYouCan")
+                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
+                           "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
@@ -1552,15 +1551,14 @@ TEST(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
-    env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(lunarg_meta_layer_name)
-                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                                         .add_component_layer(special_layer_name)
-                                                                         .set_disable_environment("DisableMeIfYouCan")
-                                                                         .add_override_path(override_folder_location)),
-        "meta_test_layer.json");
+    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
+                               ManifestLayer::LayerDescription{}
+                                   .set_name(lunarg_meta_layer_name)
+                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                   .add_component_layer(special_layer_name)
+                                   .set_disable_environment("DisableMeIfYouCan")
+                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
+                           "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
@@ -1642,14 +1640,13 @@ TEST(OverrideMetaLayer, OverridePathsEnableImplicitLayerInDefaultPaths) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
     env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
                                ManifestLayer::LayerDescription{}
                                    .set_name(lunarg_meta_layer_name)
                                    .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                    .add_component_layers({regular_layer_name, implicit_layer_name})
                                    .set_disable_environment("DisableMeIfYouCan")
-                                   .add_override_path(override_folder_location)),
+                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
                            "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
@@ -1675,15 +1672,14 @@ TEST(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
-    env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 0, 0}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(lunarg_meta_layer_name)
-                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                                         .add_component_layer(regular_layer_name)
-                                                                         .set_disable_environment("DisableMeIfYouCan")
-                                                                         .add_override_path(override_folder_location)),
-        "meta_test_layer.json");
+    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 0, 0}).add_layer(
+                               ManifestLayer::LayerDescription{}
+                                   .set_name(lunarg_meta_layer_name)
+                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                   .add_component_layer(regular_layer_name)
+                                   .set_disable_environment("DisableMeIfYouCan")
+                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
+                           "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
@@ -1772,14 +1768,14 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
     auto override_folder_location = fs::make_native(override_layer_folder.location().str());
-    env.add_implicit_layer(TestLayerDetails{
-        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(lunarg_meta_layer_name)
-                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                                         .add_component_layer(regular_layer_name)
-                                                                         .set_disable_environment("DisableMeIfYouCan")
-                                                                         .add_override_path(override_folder_location)),
-        "meta_test_layer.json"});
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
+                                                ManifestLayer::LayerDescription{}
+                                                    .set_name(lunarg_meta_layer_name)
+                                                    .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                    .add_component_layer(regular_layer_name)
+                                                    .set_disable_environment("DisableMeIfYouCan")
+                                                    .add_override_path(fs::make_native(override_layer_folder.location().str()))),
+                                            "meta_test_layer.json"});
 
     {  // try with no elevated privileges
         auto layer_props = env.GetLayerProperties(2);
@@ -1826,15 +1822,14 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
-    env.add_implicit_layer(TestLayerDetails{
-        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(lunarg_meta_layer_name)
-                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                                         .add_component_layer(regular_layer_name)
-                                                                         .set_disable_environment("DisableMeIfYouCan")
-                                                                         .add_override_path(override_folder_location)),
-        "meta_test_layer.json"}
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
+                                                ManifestLayer::LayerDescription{}
+                                                    .set_name(lunarg_meta_layer_name)
+                                                    .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                    .add_component_layer(regular_layer_name)
+                                                    .set_disable_environment("DisableMeIfYouCan")
+                                                    .add_override_path(fs::make_native(override_layer_folder.location().str()))),
+                                            "meta_test_layer.json"}
                                .set_discovery_type(ManifestDiscoveryType::unsecured_generic));
 
     {  // try with no elevated privileges
@@ -5012,4 +5007,488 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
     // groups and 3 new groups
     ASSERT_EQ(2U, diff_count);
     ASSERT_EQ(found_added_count, 3U);
+}
+
+TEST(TestLayers, AllowFilterWithExplicitLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    const char* layer_name = "VK_LAYER_test_layer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "test_layer_all.json");
+
+    EnvVarWrapper allow{"VK_LOADER_LAYERS_ALLOW", layer_name};
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+        EnvVarWrapper enable{"VK_LOADER_LAYERS_ENABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(layer_name);
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("on")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_treat_as_implicit_manifest(false)));
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+}
+
+TEST(TestLayers, AllowFilterWithImplicitLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    const char* layer_name = "VK_LAYER_test_layer";
+    const char* disable_env_var = "TEST_DISABLE_ENV_VAR";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment(disable_env_var)),
+                           "test_layer_all.json");
+
+    EnvVarWrapper allow{"VK_LOADER_LAYERS_ALLOW", layer_name};
+
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+        EnvVarWrapper enable{"VK_LOADER_LAYERS_ENABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(layer_name);
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("on")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_treat_as_implicit_manifest(true)));
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+
+    env.remove_loader_settings();
+
+    // Set the disable_environment variable
+    EnvVarWrapper set_disable_env_var{disable_env_var, "1"};
+
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+        EnvVarWrapper enable{"VK_LOADER_LAYERS_ENABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        // layer's disable_environment takes priority
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(layer_name);
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("on")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_treat_as_implicit_manifest(true)));
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+}
+
+TEST(TestLayers, AllowFilterWithConditionallyImlicitLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    const char* layer_name = "VK_LAYER_test_layer";
+    const char* enable_env_var = "TEST_ENABLE_ENV_VAR";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("TEST_DISABLE_ENV_VAR")
+                                                         .set_enable_environment(enable_env_var)),
+                           "test_layer_all.json");
+
+    EnvVarWrapper allow{"VK_LOADER_LAYERS_ALLOW", layer_name};
+
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+        EnvVarWrapper enable{"VK_LOADER_LAYERS_ENABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(layer_name);
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("on")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_treat_as_implicit_manifest(true)));
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+
+    env.remove_loader_settings();
+
+    // Repeate the above tests but with the enable_environment variable set
+    EnvVarWrapper set_enable_env_var{enable_env_var, "1"};
+
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+        EnvVarWrapper enable{"VK_LOADER_LAYERS_ENABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(layer_name);
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("on")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_treat_as_implicit_manifest(true)));
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+}
+
+TEST(TestLayers, AllowFilterWithConditionallyImlicitLayerWithOverrideLayer) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    const char* layer_name = "VK_LAYER_test_layer";
+    const char* enable_env_var = "TEST_ENABLE_ENV_VAR";
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_api_version(VK_API_VERSION_1_1)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("TEST_DISABLE_ENV_VAR")
+                                                                          .set_enable_environment(enable_env_var)),
+                                            "test_layer_all.json"}
+                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(lunarg_meta_layer_name)
+                .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                .add_component_layer(layer_name)
+                .set_disable_environment("DisableMeIfYouCan")
+                .add_override_path(fs::make_native(env.get_folder(ManifestLocation::override_layer).location().str()))),
+        "meta_test_layer.json");
+
+    EnvVarWrapper allow{"VK_LOADER_LAYERS_ALLOW", layer_name};
+
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, lunarg_meta_layer_name));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, lunarg_meta_layer_name));
+    }
+    {
+        EnvVarWrapper disable{"VK_LOADER_LAYERS_DISABLE", layer_name};
+        EnvVarWrapper enable{"VK_LOADER_LAYERS_ENABLE", layer_name};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, lunarg_meta_layer_name));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(layer_name);
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, lunarg_meta_layer_name));
+    }
+    {
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("on")
+                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_treat_as_implicit_manifest(true)));
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
+    {
+        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+        env.update_loader_settings(env.loader_settings);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
+    }
 }

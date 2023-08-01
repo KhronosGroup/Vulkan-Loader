@@ -377,6 +377,10 @@ VkResult parse_layer_environment_var_filters(const struct loader_instance *inst,
     if (VK_SUCCESS != res) {
         return res;
     }
+    res = parse_generic_filter_environment_var(inst, VK_LAYERS_ALLOW_ENV_VAR, &layer_filters->allow_filter);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
     return res;
 }
 
@@ -512,8 +516,9 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
         bool is_implicit = (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
         bool disabled_by_type =
             (is_implicit) ? (filters->disable_filter.disable_all_implicit) : (filters->disable_filter.disable_all_explicit);
-        if (filters->disable_filter.disable_all || disabled_by_type ||
-            check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->disable_filter.additional_filters)) {
+        if ((filters->disable_filter.disable_all || disabled_by_type ||
+             check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->disable_filter.additional_filters)) &&
+            !check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->allow_filter)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Layer \"%s\" ignored because it has been disabled by env var \'%s\'", source_prop->info.layerName,
                        VK_LAYERS_DISABLE_ENV_VAR);

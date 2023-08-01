@@ -876,8 +876,9 @@ bool loader_layer_is_available(const struct loader_instance *inst, const struct 
     bool is_implicit = (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
     bool disabled_by_type =
         (is_implicit) ? (filters->disable_filter.disable_all_implicit) : (filters->disable_filter.disable_all_explicit);
-    if (filters->disable_filter.disable_all || disabled_by_type ||
-        check_name_matches_filter_environment_var(prop->info.layerName, &filters->disable_filter.additional_filters)) {
+    if ((filters->disable_filter.disable_all || disabled_by_type ||
+         check_name_matches_filter_environment_var(prop->info.layerName, &filters->disable_filter.additional_filters)) &&
+        !check_name_matches_filter_environment_var(prop->info.layerName, &filters->allow_filter)) {
         available = false;
     }
     if (check_name_matches_filter_environment_var(prop->info.layerName, &filters->enable_filter)) {
@@ -942,8 +943,9 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
     bool forced_disabled = false;
     bool forced_enabled = false;
 
-    if (filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
-        check_name_matches_filter_environment_var(prop->info.layerName, &filters->disable_filter.additional_filters)) {
+    if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
+         check_name_matches_filter_environment_var(prop->info.layerName, &filters->disable_filter.additional_filters)) &&
+        !check_name_matches_filter_environment_var(prop->info.layerName, &filters->allow_filter)) {
         forced_disabled = true;
     }
     if (check_name_matches_filter_environment_var(prop->info.layerName, &filters->enable_filter)) {
