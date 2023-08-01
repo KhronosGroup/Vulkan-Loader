@@ -91,6 +91,7 @@ VkResult loader_validate_layers(const struct loader_instance *inst, const uint32
 
 VkResult loader_validate_instance_extensions(struct loader_instance *inst, const struct loader_extension_list *icd_exts,
                                              const struct loader_layer_list *instance_layer,
+                                             const struct loader_envvar_all_filters *layer_filters,
                                              const VkInstanceCreateInfo *pCreateInfo);
 
 void loader_initialize(void);
@@ -154,8 +155,10 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                          const VkInstanceCreateInfo *pCreateInfo, bool *skipped_portability_drivers);
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
                         const VkAllocationCallbacks *pAllocator);
-VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);
-VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers);
+VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
+                                const struct loader_envvar_all_filters *layer_filters);
+VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
+                                         const struct loader_envvar_all_filters *layer_filters);
 VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                                                    struct loader_extension_list *inst_exts);
 struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index);
@@ -169,7 +172,8 @@ void loader_remove_logical_device(struct loader_icd_term *icd_term, struct loade
 void loader_destroy_logical_device(struct loader_device *dev, const VkAllocationCallbacks *pAllocator);
 
 VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
-                                       const struct loader_layer_list *instance_layers);
+                                       const struct loader_layer_list *instance_layers,
+                                       const struct loader_envvar_all_filters *layer_filters);
 
 VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                       struct loader_instance *inst, VkInstance *created_instance);
