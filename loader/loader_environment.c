@@ -367,6 +367,19 @@ out:
     return result;
 }
 
+// Parses the filter environment variables to determine if we have any special behavior
+VkResult parse_layer_environment_var_filters(const struct loader_instance *inst, struct loader_envvar_all_filters *layer_filters) {
+    VkResult res = parse_generic_filter_environment_var(inst, VK_LAYERS_ENABLE_ENV_VAR, &layer_filters->enable_filter);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+    res = parse_layers_disable_filter_environment_var(inst, &layer_filters->disable_filter);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+    return res;
+}
+
 // Check to see if the provided layer name matches any of the filter strings.
 // This will properly check against:
 //  - substrings "*string*"

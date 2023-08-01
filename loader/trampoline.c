@@ -31,6 +31,7 @@
 #include "debug_utils.h"
 #include "gpa_helper.h"
 #include "loader.h"
+#include "loader_environment.h"
 #include "log.h"
 #include "settings.h"
 #include "vk_loader_extensions.h"
@@ -187,8 +188,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
     loader_platform_dl_handle *libs = NULL;
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
+    struct loader_envvar_all_filters layer_filters = {0};
 
-    res = loader_scan_for_implicit_layers(NULL, &layers);
+    res = parse_layer_environment_var_filters(NULL, &layer_filters);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+
+    res = loader_scan_for_implicit_layers(NULL, &layers, &layer_filters);
     if (VK_SUCCESS != res) {
         return res;
     }
@@ -287,8 +294,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     loader_platform_dl_handle *libs = NULL;
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
+    struct loader_envvar_all_filters layer_filters = {0};
 
-    res = loader_scan_for_implicit_layers(NULL, &layers);
+    res = parse_layer_environment_var_filters(NULL, &layer_filters);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+
+    res = loader_scan_for_implicit_layers(NULL, &layers, &layer_filters);
     if (VK_SUCCESS != res) {
         return res;
     }
@@ -394,8 +407,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     loader_platform_dl_handle *libs = NULL;
     size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
+    struct loader_envvar_all_filters layer_filters = {0};
 
-    res = loader_scan_for_implicit_layers(NULL, &layers);
+    res = parse_layer_environment_var_filters(NULL, &layer_filters);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+
+    res = loader_scan_for_implicit_layers(NULL, &layers, &layer_filters);
     if (VK_SUCCESS != res) {
         return res;
     }
@@ -473,6 +492,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     VkInstance created_instance = VK_NULL_HANDLE;
     VkResult res = VK_ERROR_INITIALIZATION_FAILED;
     VkInstanceCreateInfo ici = *pCreateInfo;
+    struct loader_envvar_all_filters layer_filters = {0};
 
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
@@ -565,11 +585,16 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         }
     }
 
+    res = parse_layer_environment_var_filters(ptr_instance, &layer_filters);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
+
     // Due to implicit layers need to get layer list even if
     // enabledLayerCount == 0 and VK_INSTANCE_LAYERS is unset. For now always
     // get layer list via loader_scan_for_layers().
     memset(&ptr_instance->instance_layer_list, 0, sizeof(ptr_instance->instance_layer_list));
-    res = loader_scan_for_layers(ptr_instance, &ptr_instance->instance_layer_list);
+    res = loader_scan_for_layers(ptr_instance, &ptr_instance->instance_layer_list, &layer_filters);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -625,7 +650,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     if (res != VK_SUCCESS) {
         goto out;
     }
-    res = loader_validate_instance_extensions(ptr_instance, &ptr_instance->ext_list, &ptr_instance->instance_layer_list, &ici);
+    res = loader_validate_instance_extensions(ptr_instance, &ptr_instance->ext_list, &ptr_instance->instance_layer_list,
+                                              &layer_filters, &ici);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -646,7 +672,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
 
     // Activate any layers on instance chain
-    res = loader_enable_instance_layers(ptr_instance, &ici, &ptr_instance->instance_layer_list);
+    res = loader_enable_instance_layers(ptr_instance, &ici, &ptr_instance->instance_layer_list, &layer_filters);
     if (res != VK_SUCCESS) {
         goto out;
     }
