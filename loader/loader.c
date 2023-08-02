@@ -5837,6 +5837,30 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
         }
     }
 
+    VkBool32 maintenance5_feature_enabled = false;
+    // Look for the VkPhysicalDeviceMaintenance5FeaturesKHR struct to see if the feature was enabled
+    {
+        const void *pNext = localCreateInfo.pNext;
+        while (pNext != NULL) {
+            switch (*(VkStructureType *)pNext) {
+                case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR: {
+                    const VkPhysicalDeviceMaintenance5FeaturesKHR *maintenance_features = pNext;
+                    if (maintenance_features->maintenance5 == VK_TRUE) {
+                        maintenance5_feature_enabled = true;
+                    }
+                    pNext = maintenance_features->pNext;
+                    break;
+                }
+
+                default: {
+                    const VkBaseInStructure *header = pNext;
+                    pNext = header->pNext;
+                    break;
+                }
+            }
+        }
+    }
+
     // Every extension that has a loader-defined terminator needs to be marked as enabled or disabled so that we know whether or
     // not to return that terminator when vkGetDeviceProcAddr is called
     for (uint32_t i = 0; i < localCreateInfo.enabledExtensionCount; ++i) {
@@ -5850,7 +5874,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
             dev->extensions.ext_debug_marker_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], "VK_EXT_full_screen_exclusive")) {
             dev->extensions.ext_full_screen_exclusive_enabled = true;
-        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
+        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_MAINTENANCE_5_EXTENSION_NAME) &&
+                   maintenance5_feature_enabled) {
             dev->should_ignore_device_commands_from_newer_version = true;
         }
     }
