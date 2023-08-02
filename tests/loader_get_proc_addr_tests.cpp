@@ -318,7 +318,7 @@ TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
     for (const auto& f : functions) {
         driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
     }
-    {
+    {  // doesn't enable the feature or extension
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 0, 0);
         inst.CheckCreate();
@@ -329,13 +329,30 @@ TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
             ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
         }
     }
-    {
+    {  // doesn't enable the feature
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 0, 0);
         inst.CheckCreate();
 
         DeviceWrapper dev{inst};
         dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.CheckCreate(inst.GetPhysDev());
+        for (const auto& f : functions) {
+            ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
+        }
+    }
+    {  // enables the feature and extension
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 0, 0);
+        inst.CheckCreate();
+
+        VkPhysicalDeviceMaintenance5FeaturesKHR features{};
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR;
+        features.maintenance5 = VK_TRUE;
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.create_info.dev.pNext = &features;
         dev.CheckCreate(inst.GetPhysDev());
         for (const auto& f : functions) {
             ASSERT_EQ(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
@@ -355,7 +372,7 @@ TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
     for (const auto& f : functions) {
         driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
     }
-    {
+    {  // doesn't enable the feature or extension
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
@@ -367,13 +384,31 @@ TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
             ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
         }
     }
-    {
+    {  // doesn't enable the feature
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 1, 0);
         inst.CheckCreate();
 
         DeviceWrapper dev{inst};
         dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.CheckCreate(inst.GetPhysDev());
+
+        for (const auto& f : functions) {
+            ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
+        }
+    }
+    {  // enables the feature and extension
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 1, 0);
+        inst.CheckCreate();
+
+        VkPhysicalDeviceMaintenance5FeaturesKHR features{};
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR;
+        features.maintenance5 = VK_TRUE;
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.create_info.dev.pNext = &features;
         dev.CheckCreate(inst.GetPhysDev());
 
         for (const auto& f : functions) {
@@ -395,7 +430,7 @@ TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
     for (const auto& f : functions) {
         driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
     }
-    {
+    {  // doesn't enable the feature or extension
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
@@ -407,13 +442,31 @@ TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
             ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
         }
     }
-    {
+    {  // doesn't enable the feature
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(1, 2, 0);
         inst.CheckCreate();
 
         DeviceWrapper dev{inst};
         dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.CheckCreate(inst.GetPhysDev());
+
+        for (const auto& f : functions) {
+            ASSERT_NE(nullptr, dev->vkGetDeviceProcAddr(dev.dev, f));
+        }
+    }
+    {  // enables the feature and extension
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(1, 2, 0);
+        inst.CheckCreate();
+
+        VkPhysicalDeviceMaintenance5FeaturesKHR features{};
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR;
+        features.maintenance5 = VK_TRUE;
+
+        DeviceWrapper dev{inst};
+        dev.create_info.add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        dev.create_info.dev.pNext = &features;
         dev.CheckCreate(inst.GetPhysDev());
 
         for (const auto& f : functions) {
