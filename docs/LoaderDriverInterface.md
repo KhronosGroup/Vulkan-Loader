@@ -42,6 +42,7 @@
   - [Using Pre-Production ICDs or Software Drivers](#using-pre-production-icds-or-software-drivers)
   - [Driver Discovery on Android](#driver-discovery-on-android)
 - [Driver Manifest File Format](#driver-manifest-file-format)
+  - [JSON Schema for Driver Manifest Files](#json-schema-for-driver-manifest-files)
   - [Driver Manifest File Versions](#driver-manifest-file-versions)
     - [Driver Manifest File Version 1.0.0](#driver-manifest-file-version-100)
     - [Driver Manifest File Version 1.0.1](#driver-manifest-file-version-101)
@@ -715,15 +716,36 @@ Here is an example driver JSON Manifest file:
 }
 ```
 
+### JSON Schema for Driver Manifest Files
+
+The Driver Manifest file can be validated against the provided JSON Schema files.
+This offers a quick way to check that the manifest file matches the format the
+loader expects.
+
+While the schema files are located in the repo, it is best to reference the web
+URL `https://schema.khronos.org/vulkan/driver_manifest_X_Y_Z.json`
+where `X`, `Y`, and `Z` correspond to the file_format_version used by the manifest.
+
+For example, a manifest of version 1.0.1 should use the following:
+
+```json
+{
+    "$schema":"https://schema.khronos.org/vulkan/driver_manifest_1_0_1.json",
+    "file_format_version" : "1.0.1",
+    ...
+```
+
 <table style="width:100%">
   <tr>
     <th>Field Name</th>
     <th>Field Value</th>
+    <th>JSON Type</th>
   </tr>
   <tr>
     <td>"file_format_version"</td>
     <td>The JSON format major.minor.patch version number of this file.<br/>
         Supported versions are: 1.0.0 and 1.0.1.</td>
+    <td>string</td>
   </tr>
   <tr>
     <td>"ICD"</td>
@@ -731,6 +753,7 @@ Here is an example driver JSON Manifest file:
         <br/>
         <b>NOTE:</b> Even though this is labelled <i>ICD</i> it is historical
         and just as accurate to use for other drivers.</td>
+    <td>object</td>
   </tr>
   <tr>
     <td>"library_path"</td>
@@ -743,6 +766,7 @@ Here is an example driver JSON Manifest file:
         There are no rules about the name of the driver's shared library file
         other than it should end with the appropriate suffix (".DLL" on
         Windows, ".so" on Linux and ".dylib" on macOS).</td>
+    <td>string</td>
   </tr>
   <tr>
     <td>"library_arch"</td>
@@ -751,6 +775,7 @@ Here is an example driver JSON Manifest file:
         Allows the loader to quickly determine if the architecture of the driver
         matches that of the running application. <br />
         The only valid values are "32" and "64".</td>
+    <td>string</td>
   </tr>
   <tr>
     <td>"api_version" </td>
@@ -763,12 +788,14 @@ Here is an example driver JSON Manifest file:
         queried by the user using the <i>vkGetPhysicalDeviceProperties</i> API
         call.<br/>
         For example: 1.0.33.</td>
+    <td>string</td>
   </tr>
   <tr>
     <td>"is_portability_driver" </td>
     <td>Defines whether the driver contains any VkPhysicalDevices which
         implement the VK_KHR_portability_subset extension.<br/>
     </td>
+    <td>boolean</td>
   </tr>
 </table>
 
@@ -798,7 +825,7 @@ they contain VkPhysicalDevices which support the VK_KHR_portability_subset
 extension. This is an optional field. Omitting the field has the same effect as
 setting the field to `false`.
 
-Added the "library\_arch" field to the driver manifest to allow the loader to
+Added the `library_arch` field to the driver manifest to allow the loader to
 quickly determine if the driver matches the architecture of the current running
 application. This field is optional.
 
