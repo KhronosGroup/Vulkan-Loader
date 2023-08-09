@@ -632,14 +632,15 @@ discovery.
     <td><small>
         Force the loader to use the specific driver JSON files.
         The value contains a list of delimited full path listings to
-        driver JSON Manifest files.<br/>
+        driver JSON Manifest files and/or
+        paths to folders containing driver JSON files.<br/>
         <br/>
         This has replaced the older deprecated environment variable
         <i>VK_ICD_FILENAMES</i>, however the older environment variable will
-        continue to work for some time.
+        continue to work.
     </small></td>
     <td><small>
-        If a global path to the JSON file is not used, issues may be encountered.
+        If a relative path not used, issues may be encountered.
         <br/> <br/>
         <a href="#elevated-privilege-caveats">
             Ignored when running Vulkan application with elevated privileges.

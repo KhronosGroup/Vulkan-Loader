@@ -508,11 +508,19 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
 #endif
                 break;
             case (ManifestDiscoveryType::env_var):
-                env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                if (icd_details.is_dir) {
+                    env_var_vk_icd_filenames.add_to_list(folder->location().str());
+                } else {
+                    env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                }
                 platform_shim->add_known_path(folder->location());
                 break;
             case (ManifestDiscoveryType::add_env_var):
-                add_env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                if (icd_details.is_dir) {
+                    add_env_var_vk_icd_filenames.add_to_list(folder->location().str());
+                } else {
+                    add_env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                }
                 platform_shim->add_known_path(folder->location());
                 break;
             case (ManifestDiscoveryType::macos_bundle):
