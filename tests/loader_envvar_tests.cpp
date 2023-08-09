@@ -134,6 +134,52 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     env.platform_shim->set_elevated_privilege(false);
 }
 
+// Test VK_DRIVER_FILES environment variable containing a path to a folder
+TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolder) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+    env.get_test_icd(0).add_physical_device("pd0");
+
+    InstWrapper inst1{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+    EXPECT_FALSE(
+        env.debug_log.find("Ignoring override VK_ICD_FILENAMES, VK_DRIVER_FILES, and VK_ADD_DRIVER_FILES due to high-integrity"));
+
+    std::array<VkPhysicalDevice, 5> phys_devs_array;
+    uint32_t phys_dev_count = 1;
+    ASSERT_EQ(inst1->vkEnumeratePhysicalDevices(inst1.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
+    ASSERT_EQ(phys_dev_count, 1U);
+
+    for (uint32_t add = 0; add < 2; ++add) {
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::env_var))
+            .add_physical_device("pd" + std::to_string(add) + "0")
+            .add_physical_device("pd" + std::to_string(add) + "1");
+    }
+
+    env.debug_log.clear();
+
+    InstWrapper inst2{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    phys_dev_count = 5;
+    ASSERT_EQ(inst2->vkEnumeratePhysicalDevices(inst2.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
+    ASSERT_EQ(phys_dev_count, 5U);
+
+    env.debug_log.clear();
+
+    env.platform_shim->set_elevated_privilege(true);
+
+    InstWrapper inst3{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst3.create_info, env.debug_log);
+    inst3.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+
+    EXPECT_TRUE(env.debug_log.find("vkCreateInstance: Found no drivers!"));
+
+    env.platform_shim->set_elevated_privilege(false);
+}
+
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 // Make sure the loader reports the correct message based on if LOADER_USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {

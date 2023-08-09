@@ -536,7 +536,8 @@ struct TestICDDetails {
     BUILDER_VALUE(TestICDDetails, bool, disable_icd_inc, false);
     BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
-    // Dont add any path information to the library_path - force the use of the default search paths
+    // If discovery type is env-var, is_dir controls whether to use the path to the file or folder the manifest is in
+    BUILDER_VALUE(TestICDDetails, bool, is_dir, false);
     BUILDER_VALUE(TestICDDetails, LibraryPathType, library_path_type, LibraryPathType::absolute);
 };
 
@@ -547,7 +548,7 @@ struct TestLayerDetails {
     BUILDER_VALUE(TestLayerDetails, std::string, json_name, "test_layer");
     BUILDER_VALUE(TestLayerDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
-    // If discovery type is env-var, is_dir controls whether the env-var has the full name to the manifest or just the folder
+    // If discovery type is env-var, is_dir controls whether to use the path to the file or folder the manifest is in
     BUILDER_VALUE(TestLayerDetails, bool, is_dir, true);
     BUILDER_VALUE(TestLayerDetails, LibraryPathType, library_path_type, LibraryPathType::absolute);
 };

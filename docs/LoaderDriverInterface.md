@@ -120,8 +120,9 @@ If both `VK_DRIVER_FILES` and `VK_ICD_FILENAMES` environment variables are
 present, then the newer `VK_DRIVER_FILES` will be used, and the values in
 `VK_ICD_FILENAMES` will be ignored.
 
-The `VK_DRIVER_FILES` environment variable is a list of Driver Manifest
-files, containing the full path to the driver JSON Manifest file.
+The `VK_DRIVER_FILES` environment variable is a list of paths to Driver Manifest
+files, containing the full path to the driver JSON Manifest file, and/or paths
+to folders containing Driver Manifest files.
 This list is colon-separated on Linux and macOS, and semicolon-separated on
 Windows.
 Typically, `VK_DRIVER_FILES` will only contain a full pathname to one info
@@ -135,7 +136,7 @@ Driver in addition to the standard drivers (without replacing the standard
 search paths.
 The `VK_ADD_DRIVER_FILES` environment variable can be used to add a list of
 Driver Manifest files, containing the full path to the driver JSON Manifest
-file.
+file, and/or paths to folders containing Driver Manifest files.
 This list is colon-separated on Linux and macOS, and semicolon-separated on
 Windows.
 It will be added prior to the standard driver search files.
