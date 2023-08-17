@@ -606,16 +606,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceDirectFBPresentationSuppo
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
-                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK([[maybe_unused]] VkInstance instance,
+                                                            [[maybe_unused]] const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
+                                                            [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                            VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
 #if defined(VK_USE_PLATFORM_IOS_MVK)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
-                                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK([[maybe_unused]] VkInstance instance,
+                                                          [[maybe_unused]] const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
+                                                          [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                          VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -632,8 +636,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(VkInstanc
 #endif  // VK_USE_PLATFORM_GGP
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
-                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT([[maybe_unused]] VkInstance instance,
+                                                            [[maybe_unused]] const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
+                                                            [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                            VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }

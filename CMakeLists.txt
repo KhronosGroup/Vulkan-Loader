@@ -164,7 +164,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Cl
         target_compile_options(loader_common_options INTERFACE /WX)
     endif()
     target_compile_options(loader_common_options INTERFACE /W4)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     # using GCC or Clang with the regular front end
     if (ENABLE_WERROR)
         target_compile_options(loader_common_options INTERFACE -Werror)
@@ -172,7 +172,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "C
     target_compile_options(loader_common_options INTERFACE -Wall -Wextra)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     target_compile_options(loader_common_options INTERFACE -Wno-missing-field-initializers)
 
     # need to prepend /clang: to compiler arguments when using clang-cl

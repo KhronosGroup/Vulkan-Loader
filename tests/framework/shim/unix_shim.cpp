@@ -72,11 +72,13 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #define DLOPEN_FUNC_NAME my_dlopen
 #define GETEUID_FUNC_NAME my_geteuid
 #define GETEGID_FUNC_NAME my_getegid
+#if !defined(TARGET_OS_IPHONE)
 #if defined(HAVE_SECURE_GETENV)
 #define SECURE_GETENV_FUNC_NAME my_secure_getenv
 #endif
 #if defined(HAVE___SECURE_GETENV)
 #define __SECURE_GETENV_FUNC_NAME my__secure_getenv
+#endif
 #endif
 #endif
 
@@ -102,7 +104,7 @@ using PFN_SEC_GETENV = char* (*)(const char* name);
 #define real_geteuid geteuid
 #define real_getegid getegid
 #if defined(HAVE_SECURE_GETENV)
-#define real_secure_getenv _secure_getenv
+#define real_secure_getenv secure_getenv
 #endif
 #if defined(HAVE___SECURE_GETENV)
 #define real__secure_getenv __secure_getenv
@@ -281,6 +283,7 @@ FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
     }
 }
 
+#if !defined(TARGET_OS_IPHONE)
 #if defined(HAVE_SECURE_GETENV)
 FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char* name) {
 #if !defined(__APPLE__)
@@ -306,20 +309,21 @@ FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char* name) {
     }
 }
 #endif
-
+#endif
 #if defined(__APPLE__)
 FRAMEWORK_EXPORT CFBundleRef my_CFBundleGetMainBundle() {
     static CFBundleRef global_bundle{};
     return reinterpret_cast<CFBundleRef>(&global_bundle);
 }
-FRAMEWORK_EXPORT CFURLRef my_CFBundleCopyResourcesDirectoryURL(CFBundleRef bundle) {
+FRAMEWORK_EXPORT CFURLRef my_CFBundleCopyResourcesDirectoryURL([[maybe_unused]] CFBundleRef bundle) {
     static CFURLRef global_url{};
     return reinterpret_cast<CFURLRef>(&global_url);
 }
-FRAMEWORK_EXPORT Boolean my_CFURLGetFileSystemRepresentation(CFURLRef url, Boolean resolveAgainstBase, UInt8* buffer,
+FRAMEWORK_EXPORT Boolean my_CFURLGetFileSystemRepresentation([[maybe_unused]] CFURLRef url,
+                                                             [[maybe_unused]] Boolean resolveAgainstBase, UInt8* buffer,
                                                              CFIndex maxBufLen) {
     if (!platform_shim.bundle_contents.empty()) {
-        size_t copy_len = platform_shim.bundle_contents.size();
+        CFIndex copy_len = (CFIndex)platform_shim.bundle_contents.size();
         if (copy_len > maxBufLen) {
             copy_len = maxBufLen;
         }
@@ -352,6 +356,7 @@ __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_C
 __attribute__((used)) static Interposer _interpose_dlopen MACOS_ATTRIB = {VOIDP_CAST(my_dlopen), VOIDP_CAST(dlopen)};
 __attribute__((used)) static Interposer _interpose_euid MACOS_ATTRIB = {VOIDP_CAST(my_geteuid), VOIDP_CAST(geteuid)};
 __attribute__((used)) static Interposer _interpose_egid MACOS_ATTRIB = {VOIDP_CAST(my_getegid), VOIDP_CAST(getegid)};
+#if !defined(TARGET_OS_IPHONE)
 #if defined(HAVE_SECURE_GETENV)
 __attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my_secure_getenv),
                                                                                  VOIDP_CAST(secure_getenv)};
@@ -359,6 +364,7 @@ __attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = 
 #if defined(HAVE___SECURE_GETENV)
 __attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my__secure_getenv),
                                                                                   VOIDP_CAST(__secure_getenv)};
+#endif
 #endif
 __attribute__((used)) static Interposer _interpose_CFBundleGetMainBundle MACOS_ATTRIB = {VOIDP_CAST(my_CFBundleGetMainBundle),
                                                                                          VOIDP_CAST(CFBundleGetMainBundle)};
