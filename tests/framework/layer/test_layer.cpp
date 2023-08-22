@@ -179,6 +179,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     }
     const VkInstanceCreateInfo* create_info_pointer = use_modified_create_info ? &instance_create_info : pCreateInfo;
 
+    if (layer.clobber_pInstance) {
+        memset(*pInstance, 0, 128);
+    }
+
     // Continue call down the chain
     VkResult result = fpCreateInstance(create_info_pointer, pAllocator, pInstance);
     if (result != VK_SUCCESS) {
@@ -298,6 +302,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     }
     // Advance the link info for the next element on the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+
+    if (layer.clobber_pDevice) {
+        memset(*pDevice, 0, 128);
+    }
 
     VkResult result = fpCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
     if (result != VK_SUCCESS) {

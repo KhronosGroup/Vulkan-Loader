@@ -183,6 +183,11 @@ struct TestLayer {
 
     BUILDER_VALUE(TestLayer, bool, check_if_EnumDevExtProps_is_same_as_queried_function, false)
 
+    // Clober the data pointed to by pInstance to overwrite the magic value
+    BUILDER_VALUE(TestLayer, bool, clobber_pInstance, false)
+    // Clober the data pointed to by pDevice to overwrite the magic value
+    BUILDER_VALUE(TestLayer, bool, clobber_pDevice, false)
+
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;

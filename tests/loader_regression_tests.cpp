@@ -4069,3 +4069,80 @@ TEST(Layer, pfnNextGetInstanceProcAddr_should_not_return_layers_own_functions) {
     DeviceWrapper dev{inst};
     dev.CheckCreate(phys_devs.at(0));
 }
+
+TEST(Layer, LLP_LAYER_21) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer.json");
+    env.get_test_layer(0).set_clobber_pInstance(true);
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+#if defined(WIN32)
+#if defined(_WIN64)
+    ASSERT_DEATH(
+        inst.CheckCreate(),
+        testing::ContainsRegex(
+            R"(terminator_CreateInstance: Instance pointer \(................\) has invalid MAGIC value 0x00000000. Instance value )"
+            R"(possibly corrupted by active layer \(Policy #LLP_LAYER_21\))"));
+#else
+    ASSERT_DEATH(
+        inst.CheckCreate(),
+        testing::ContainsRegex(
+            R"(terminator_CreateInstance: Instance pointer \(........\) has invalid MAGIC value 0x00000000. Instance value )"
+            R"(possibly corrupted by active layer \(Policy #LLP_LAYER_21\))"));
+#endif
+#else
+    ASSERT_DEATH(
+        inst.CheckCreate(),
+        testing::ContainsRegex(
+            R"(terminator_CreateInstance: Instance pointer \(0x[0-9A-Fa-f]+\) has invalid MAGIC value 0x00000000. Instance value )"
+            R"(possibly corrupted by active layer \(Policy #LLP_LAYER_21\))"));
+#endif
+}
+
+TEST(Layer, LLP_LAYER_22) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("implicit_layer_name")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "implicit_test_layer.json");
+    env.get_test_layer(0).set_clobber_pDevice(true);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension("VK_EXT_debug_utils");
+    inst.CheckCreate();
+
+    DebugUtilsWrapper log{inst};
+    CreateDebugUtilsMessenger(log);
+
+    DeviceWrapper dev{inst};
+#if defined(WIN32)
+#if defined(_WIN64)
+    ASSERT_DEATH(
+        dev.CheckCreate(inst.GetPhysDev()),
+        testing::ContainsRegex(
+            R"(terminator_CreateDevice: Device pointer \(................\) has invalid MAGIC value 0x00000000. Device value )"
+            R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
+#else
+    ASSERT_DEATH(dev.CheckCreate(inst.GetPhysDev()),
+                 testing::ContainsRegex(
+                     R"(terminator_CreateDevice: Device pointer \(........\) has invalid MAGIC value 0x00000000. Device value )"
+                     R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
+#endif
+#else
+    ASSERT_DEATH(
+        dev.CheckCreate(inst.GetPhysDev()),
+        testing::ContainsRegex(
+            R"(terminator_CreateDevice: Device pointer \(0x[0-9A-Fa-f]+\) has invalid MAGIC value 0x00000000. Device value )"
+            R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
+#endif
+}

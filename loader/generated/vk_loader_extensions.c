@@ -316,7 +316,7 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
 VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_dispatch_table *dev_table, PFN_vkGetDeviceProcAddr gpa,
                                                              VkDevice dev) {
     VkLayerDispatchTable *table = &dev_table->core_dispatch;
-    assert(table->magic == DEVICE_DISP_TABLE_MAGIC_NUMBER);
+    if (table->magic != DEVICE_DISP_TABLE_MAGIC_NUMBER) { abort(); }
     for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch[i] = (PFN_vkDevExt)vkDevExtError;
 
     // ---- Core 1_0 commands

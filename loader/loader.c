@@ -5181,7 +5181,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
                    "terminator_CreateInstance: Instance pointer (%p) has invalid MAGIC value 0x%08x. Instance value possibly "
                    "corrupted by active layer (Policy #LLP_LAYER_21).  ",
-                   ptr_instance->magic);
+                   ptr_instance, ptr_instance->magic);
     }
 
     // Save the application version if it has been modified - layers sometimes needs features in newer API versions than
@@ -5563,6 +5563,17 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
     VkBaseOutStructure *caller_dgci_container = NULL;
     VkDeviceGroupDeviceCreateInfoKHR *caller_dgci = NULL;
+
+    if (NULL == dev) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+                   "terminator_CreateDevice: Loader device pointer null encountered.  Possibly set by active layer. (Policy "
+                   "#LLP_LAYER_22)");
+    } else if (LOADER_MAGIC_NUMBER != dev->loader_dispatch.core_dispatch.magic) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+                   "terminator_CreateDevice: Device pointer (%p) has invalid MAGIC value 0x%08x. Device value possibly "
+                   "corrupted by active layer (Policy #LLP_LAYER_22).  ",
+                   dev, dev->loader_dispatch.core_dispatch.magic);
+    }
 
     dev->phys_dev_term = phys_dev_term;
 
