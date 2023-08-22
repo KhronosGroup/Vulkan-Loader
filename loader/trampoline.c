@@ -97,10 +97,8 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkI
         struct loader_instance *ptr_instance = loader_get_instance(instance);
         // If we've gotten here and the pointer is NULL, it's invalid
         if (ptr_instance == NULL) {
-            loader_log(NULL,
-                       VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT |
-                           VULKAN_LOADER_VALIDATION_BIT,
-                       0, "vkGetInstanceProcAddr: Invalid instance [VUID-vkGetInstanceProcAddr-instance-parameter]");
+            loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                       "vkGetInstanceProcAddr: Invalid instance [VUID-vkGetInstanceProcAddr-instance-parameter]");
             abort(); /* Intentionally fail so user can correct issue. */
         }
         // Return trampoline code for non-global entrypoints including any extensions.
@@ -770,10 +768,8 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
 
     ptr_instance = loader_get_instance(instance);
     if (ptr_instance == NULL) {
-        loader_log(
-            NULL,
-            VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT,
-            0, "vkDestroyInstance: Invalid instance [VUID-vkDestroyInstance-instance-parameter]");
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkDestroyInstance: Invalid instance [VUID-vkDestroyInstance-instance-parameter]");
         loader_platform_thread_unlock_mutex(&loader_lock);
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -829,20 +825,15 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
 
     inst = loader_get_instance(instance);
     if (NULL == inst) {
-        loader_log(
-            NULL,
-            VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT,
-            0, "vkEnumeratePhysicalDevices: Invalid instance [VUID-vkEnumeratePhysicalDevices-instance-parameter]");
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkEnumeratePhysicalDevices: Invalid instance [VUID-vkEnumeratePhysicalDevices-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
     if (NULL == pPhysicalDeviceCount) {
-        loader_log(
-            inst,
-            VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT,
-            0,
-            "vkEnumeratePhysicalDevices: Received NULL pointer for physical device count return value. "
-            "[VUID-vkEnumeratePhysicalDevices-pPhysicalDeviceCount-parameter]");
+        loader_log(inst, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkEnumeratePhysicalDevices: Received NULL pointer for physical device count return value. "
+                   "[VUID-vkEnumeratePhysicalDevices-pPhysicalDeviceCount-parameter]");
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
@@ -870,9 +861,8 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFeatures(VkPhysicalD
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
         loader_log(
-            NULL,
-            VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT,
-            0, "vkGetPhysicalDeviceFeatures: Invalid physicalDevice [VUID-vkGetPhysicalDeviceFeatures-physicalDevice-parameter]");
+            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            "vkGetPhysicalDeviceFeatures: Invalid physicalDevice [VUID-vkGetPhysicalDeviceFeatures-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);

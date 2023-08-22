@@ -2500,6 +2500,22 @@ Android Vulkan documentation</a>.
     <td>Yes</td>
     <td><small>N/A</small></td>
   </tr>
+  <tr>
+  <td><small><b>LLP_LAYER_22</b></small></td>
+    <td>During <i>vkCreateDevice</i>, a layer <b>must not</b> modify the
+        <i>pDevice</i> pointer during prior to calling down to the lower
+        layers.<br/>
+        This is because the loader passes information in this pointer that is
+        necessary for the initialization code in the loader's terminator
+        function.<br/>
+        Instead, if the layer is overriding the <i>pDevice</i> pointer, it
+        <b>must</b> do so only after the call to the lower layers returns.
+    </td>
+    <td>The loader will likely crash.</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td><small>N/A</small></td>
+  </tr>
 </table>
 
 
