@@ -324,10 +324,7 @@ else()
     set_target_properties(vulkan
                           PROPERTIES SOVERSION "1"
                           VERSION ${VULKAN_LOADER_VERSION})
-    target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m)
-    if (NOT ANDROID)
-        target_link_libraries(vulkan PRIVATE Threads::Threads)
-    endif()
+    target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m Threads::Threads)
 
     if (LOADER_ENABLE_ADDRESS_SANITIZER)
         target_compile_options(vulkan PUBLIC -fsanitize=address)
