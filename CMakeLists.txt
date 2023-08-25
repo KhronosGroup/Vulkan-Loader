@@ -99,7 +99,7 @@ add_library(platform_wsi INTERFACE)
 if(WIN32)
     target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_WIN32_KHR)
 elseif(ANDROID)
-    target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_ANDROID_KHR)
+    message(FATAL_ERROR "Android build not supported!")
 elseif(APPLE)
     target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
 elseif(UNIX AND NOT APPLE) # i.e.: Linux
