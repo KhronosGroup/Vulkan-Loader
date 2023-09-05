@@ -16,7 +16,7 @@
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
 
-project(VULKAN_LOADER VERSION 1.3.262)
+project(VULKAN_LOADER VERSION 1.3.263)
 
 add_subdirectory(scripts)
 
