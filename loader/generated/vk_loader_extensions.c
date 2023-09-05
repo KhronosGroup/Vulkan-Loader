@@ -1429,38 +1429,38 @@ void init_extension_device_proc_terminator_dispatch(struct loader_device *dev) {
     struct loader_device_terminator_dispatch* dispatch = &dev->loader_dispatch.extension_terminator_dispatch;
     PFN_vkGetDeviceProcAddr gpda = (PFN_vkGetDeviceProcAddr)dev->phys_dev_term->this_icd_term->dispatch.GetDeviceProcAddr;
     // ---- VK_KHR_swapchain extension commands
-    if (dev->extensions.khr_swapchain_enabled)
+    if (dev->driver_extensions.khr_swapchain_enabled)
        dispatch->CreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)gpda(dev->icd_device, "vkCreateSwapchainKHR");
-    if (dev->extensions.khr_swapchain_enabled)
+    if (dev->driver_extensions.khr_swapchain_enabled)
        dispatch->GetDeviceGroupSurfacePresentModesKHR = (PFN_vkGetDeviceGroupSurfacePresentModesKHR)gpda(dev->icd_device, "vkGetDeviceGroupSurfacePresentModesKHR");
     // ---- VK_KHR_display_swapchain extension commands
-    if (dev->extensions.khr_display_swapchain_enabled)
+    if (dev->driver_extensions.khr_display_swapchain_enabled)
        dispatch->CreateSharedSwapchainsKHR = (PFN_vkCreateSharedSwapchainsKHR)gpda(dev->icd_device, "vkCreateSharedSwapchainsKHR");
     // ---- VK_EXT_debug_marker extension commands
-    if (dev->extensions.ext_debug_marker_enabled)
+    if (dev->driver_extensions.ext_debug_marker_enabled)
        dispatch->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gpda(dev->icd_device, "vkDebugMarkerSetObjectTagEXT");
-    if (dev->extensions.ext_debug_marker_enabled)
+    if (dev->driver_extensions.ext_debug_marker_enabled)
        dispatch->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)gpda(dev->icd_device, "vkDebugMarkerSetObjectNameEXT");
     // ---- VK_EXT_debug_utils extension commands
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->SetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)gpda(dev->icd_device, "vkSetDebugUtilsObjectNameEXT");
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->SetDebugUtilsObjectTagEXT = (PFN_vkSetDebugUtilsObjectTagEXT)gpda(dev->icd_device, "vkSetDebugUtilsObjectTagEXT");
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->QueueBeginDebugUtilsLabelEXT = (PFN_vkQueueBeginDebugUtilsLabelEXT)gpda(dev->icd_device, "vkQueueBeginDebugUtilsLabelEXT");
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->QueueEndDebugUtilsLabelEXT = (PFN_vkQueueEndDebugUtilsLabelEXT)gpda(dev->icd_device, "vkQueueEndDebugUtilsLabelEXT");
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->QueueInsertDebugUtilsLabelEXT = (PFN_vkQueueInsertDebugUtilsLabelEXT)gpda(dev->icd_device, "vkQueueInsertDebugUtilsLabelEXT");
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->CmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)gpda(dev->icd_device, "vkCmdBeginDebugUtilsLabelEXT");
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->CmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)gpda(dev->icd_device, "vkCmdEndDebugUtilsLabelEXT");
-    if (dev->extensions.ext_debug_utils_enabled)
+    if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->CmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT)gpda(dev->icd_device, "vkCmdInsertDebugUtilsLabelEXT");
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     // ---- VK_EXT_full_screen_exclusive extension commands
-    if (dev->extensions.ext_full_screen_exclusive_enabled && dev->extensions.khr_device_group_enabled)
+    if (dev->driver_extensions.ext_full_screen_exclusive_enabled && dev->driver_extensions.khr_device_group_enabled)
        dispatch->GetDeviceGroupSurfacePresentModes2EXT = (PFN_vkGetDeviceGroupSurfacePresentModes2EXT)gpda(dev->icd_device, "vkGetDeviceGroupSurfacePresentModes2EXT");
 #endif // VK_USE_PLATFORM_WIN32_KHR
 }
@@ -2439,8 +2439,8 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetImageSubresourceLayout2KHR")) return (void *)table->GetImageSubresourceLayout2KHR;
 
     // ---- VK_EXT_debug_marker extension commands
-    if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return dev->extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectTagEXT : NULL;
-    if (!strcmp(name, "DebugMarkerSetObjectNameEXT")) return dev->extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectNameEXT : NULL;
+    if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) return dev->layer_extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectTagEXT : NULL;
+    if (!strcmp(name, "DebugMarkerSetObjectNameEXT")) return dev->layer_extensions.ext_debug_marker_enabled ? (void *)DebugMarkerSetObjectNameEXT : NULL;
     if (!strcmp(name, "CmdDebugMarkerBeginEXT")) return (void *)table->CmdDebugMarkerBeginEXT;
     if (!strcmp(name, "CmdDebugMarkerEndEXT")) return (void *)table->CmdDebugMarkerEndEXT;
     if (!strcmp(name, "CmdDebugMarkerInsertEXT")) return (void *)table->CmdDebugMarkerInsertEXT;
@@ -2502,8 +2502,8 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "SetHdrMetadataEXT")) return (void *)table->SetHdrMetadataEXT;
 
     // ---- VK_EXT_debug_utils extension commands
-    if (!strcmp(name, "SetDebugUtilsObjectNameEXT")) return dev->extensions.ext_debug_utils_enabled ? (void *)SetDebugUtilsObjectNameEXT : NULL;
-    if (!strcmp(name, "SetDebugUtilsObjectTagEXT")) return dev->extensions.ext_debug_utils_enabled ? (void *)SetDebugUtilsObjectTagEXT : NULL;
+    if (!strcmp(name, "SetDebugUtilsObjectNameEXT")) return dev->layer_extensions.ext_debug_utils_enabled ? (void *)SetDebugUtilsObjectNameEXT : NULL;
+    if (!strcmp(name, "SetDebugUtilsObjectTagEXT")) return dev->layer_extensions.ext_debug_utils_enabled ? (void *)SetDebugUtilsObjectTagEXT : NULL;
     if (!strcmp(name, "QueueBeginDebugUtilsLabelEXT")) return (void *)table->QueueBeginDebugUtilsLabelEXT;
     if (!strcmp(name, "QueueEndDebugUtilsLabelEXT")) return (void *)table->QueueEndDebugUtilsLabelEXT;
     if (!strcmp(name, "QueueInsertDebugUtilsLabelEXT")) return (void *)table->QueueInsertDebugUtilsLabelEXT;
@@ -11385,77 +11385,77 @@ PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *de
     // ---- VK_KHR_swapchain extension commands
     if (!strcmp(name, "CreateSwapchainKHR")) {
         *found_name = true;
-        return dev->extensions.khr_swapchain_enabled ?
+        return dev->driver_extensions.khr_swapchain_enabled ?
             (PFN_vkVoidFunction)terminator_CreateSwapchainKHR : NULL;
     }
     if (!strcmp(name, "GetDeviceGroupSurfacePresentModesKHR")) {
         *found_name = true;
-        return dev->extensions.khr_swapchain_enabled ?
+        return dev->driver_extensions.khr_swapchain_enabled ?
             (PFN_vkVoidFunction)terminator_GetDeviceGroupSurfacePresentModesKHR : NULL;
     }
     // ---- VK_KHR_display_swapchain extension commands
     if (!strcmp(name, "CreateSharedSwapchainsKHR")) {
         *found_name = true;
-        return dev->extensions.khr_display_swapchain_enabled ?
+        return dev->driver_extensions.khr_display_swapchain_enabled ?
             (PFN_vkVoidFunction)terminator_CreateSharedSwapchainsKHR : NULL;
     }
     // ---- VK_EXT_debug_marker extension commands
     if (!strcmp(name, "DebugMarkerSetObjectTagEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_marker_enabled ?
+        return dev->driver_extensions.ext_debug_marker_enabled ?
             (PFN_vkVoidFunction)terminator_DebugMarkerSetObjectTagEXT : NULL;
     }
     if (!strcmp(name, "DebugMarkerSetObjectNameEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_marker_enabled ?
+        return dev->driver_extensions.ext_debug_marker_enabled ?
             (PFN_vkVoidFunction)terminator_DebugMarkerSetObjectNameEXT : NULL;
     }
     // ---- VK_EXT_debug_utils extension commands
     if (!strcmp(name, "SetDebugUtilsObjectNameEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectNameEXT : NULL;
     }
     if (!strcmp(name, "SetDebugUtilsObjectTagEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_SetDebugUtilsObjectTagEXT : NULL;
     }
     if (!strcmp(name, "QueueBeginDebugUtilsLabelEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_QueueBeginDebugUtilsLabelEXT : NULL;
     }
     if (!strcmp(name, "QueueEndDebugUtilsLabelEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_QueueEndDebugUtilsLabelEXT : NULL;
     }
     if (!strcmp(name, "QueueInsertDebugUtilsLabelEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_QueueInsertDebugUtilsLabelEXT : NULL;
     }
     if (!strcmp(name, "CmdBeginDebugUtilsLabelEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_CmdBeginDebugUtilsLabelEXT : NULL;
     }
     if (!strcmp(name, "CmdEndDebugUtilsLabelEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_CmdEndDebugUtilsLabelEXT : NULL;
     }
     if (!strcmp(name, "CmdInsertDebugUtilsLabelEXT")) {
         *found_name = true;
-        return dev->extensions.ext_debug_utils_enabled ?
+        return dev->driver_extensions.ext_debug_utils_enabled ?
             (PFN_vkVoidFunction)terminator_CmdInsertDebugUtilsLabelEXT : NULL;
     }
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     // ---- VK_EXT_full_screen_exclusive extension commands
     if (!strcmp(name, "GetDeviceGroupSurfacePresentModes2EXT")) {
         *found_name = true;
-        return dev->extensions.ext_full_screen_exclusive_enabled && dev->extensions.khr_device_group_enabled ?
+        return dev->driver_extensions.ext_full_screen_exclusive_enabled && dev->driver_extensions.khr_device_group_enabled ?
             (PFN_vkVoidFunction)terminator_GetDeviceGroupSurfacePresentModes2EXT : NULL;
     }
 #endif // VK_USE_PLATFORM_WIN32_KHR
