@@ -851,10 +851,12 @@ TEST_F(ManualMessage, InfoMessage) {
     ASSERT_EQ(true, message_found);
 }
 
-void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_debug_extensions) {
+void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_debug_extensions,
+                          bool hardware_supports_debug_exts) {
     InstWrapper inst(env.vulkan_functions);
     if (enable_debug_extensions) {
         inst.create_info.add_extension("VK_EXT_debug_utils");
+        inst.create_info.add_extension("VK_EXT_debug_report");
     }
     inst.create_info.setup_WSI();
     ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
@@ -867,14 +869,16 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
     if (enable_debug_extensions) {
         dev.create_info.add_extension("VK_EXT_debug_marker");
     }
-    // if the hardware doesn't support VK_EXT_debug_marker and we are trying to enable it, then we should exit since that will fail
-    // to create a device
-    if (enable_debug_extensions &&
-        env.get_test_icd().physical_devices.at(0).extensions.size() == 1 /*only swapchain should be available*/) {
+
+    if (enable_debug_extensions && !hardware_supports_debug_exts) {
+        // if the hardware doesn't support VK_EXT_debug_marker and we are trying to enable it, then we should exit since that will
+        // fail to create a device
+
         dev.CheckCreate(phys_dev, VK_ERROR_EXTENSION_NOT_PRESENT);
         return;
+    } else {
+        ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
     }
-    ASSERT_NO_FATAL_FAILURE(dev.CheckCreate(phys_dev));
     DeviceFunctions dev_funcs{env.vulkan_functions, dev};
 
     VkSurfaceKHR surface{};
@@ -887,37 +891,25 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
     VkSwapchainKHR swapchain{};
     ASSERT_EQ(VK_SUCCESS, dev_funcs.vkCreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain));
 
-    // Debug marker
-    PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
-    DebugMarkerSetObjectTagEXT = use_GIPA ? inst.load("vkDebugMarkerSetObjectTagEXT") : dev.load("vkDebugMarkerSetObjectTagEXT");
-    PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
-    DebugMarkerSetObjectNameEXT = use_GIPA ? inst.load("vkDebugMarkerSetObjectNameEXT") : dev.load("vkDebugMarkerSetObjectNameEXT");
-    PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT =
-        use_GIPA ? inst.load("vkCmdDebugMarkerBeginEXT") : dev.load("vkCmdDebugMarkerBeginEXT");
-    PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT =
-        use_GIPA ? inst.load("vkCmdDebugMarkerEndEXT") : dev.load("vkCmdDebugMarkerEndEXT");
-    PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT =
-        use_GIPA ? inst.load("vkCmdDebugMarkerInsertEXT") : dev.load("vkCmdDebugMarkerInsertEXT");
+    auto load_function = [&inst, &dev, use_GIPA](const char* func_name) {
+        return use_GIPA ? inst.load(func_name) : dev.load(func_name);
+    };
 
+    // Debug marker
+    PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT = load_function("vkDebugMarkerSetObjectTagEXT");
+    PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = load_function("vkDebugMarkerSetObjectNameEXT");
+    PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT = load_function("vkCmdDebugMarkerBeginEXT");
+    PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT = load_function("vkCmdDebugMarkerEndEXT");
+    PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT = load_function("vkCmdDebugMarkerInsertEXT");
     // Debug utils
-    PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
-    SetDebugUtilsObjectNameEXT = use_GIPA ? inst.load("vkSetDebugUtilsObjectNameEXT") : dev.load("vkSetDebugUtilsObjectNameEXT");
-    PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT;
-    SetDebugUtilsObjectTagEXT = use_GIPA ? inst.load("vkSetDebugUtilsObjectTagEXT") : dev.load("vkSetDebugUtilsObjectTagEXT");
-    PFN_vkQueueBeginDebugUtilsLabelEXT QueueBeginDebugUtilsLabelEXT;
-    QueueBeginDebugUtilsLabelEXT =
-        use_GIPA ? inst.load("vkQueueBeginDebugUtilsLabelEXT") : dev.load("vkQueueBeginDebugUtilsLabelEXT");
-    PFN_vkQueueEndDebugUtilsLabelEXT QueueEndDebugUtilsLabelEXT;
-    QueueEndDebugUtilsLabelEXT = use_GIPA ? inst.load("vkQueueEndDebugUtilsLabelEXT") : dev.load("vkQueueEndDebugUtilsLabelEXT");
-    PFN_vkQueueInsertDebugUtilsLabelEXT QueueInsertDebugUtilsLabelEXT;
-    QueueInsertDebugUtilsLabelEXT =
-        use_GIPA ? inst.load("vkQueueInsertDebugUtilsLabelEXT") : dev.load("vkQueueInsertDebugUtilsLabelEXT");
-    PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT;
-    CmdBeginDebugUtilsLabelEXT = use_GIPA ? inst.load("vkCmdBeginDebugUtilsLabelEXT") : dev.load("vkCmdBeginDebugUtilsLabelEXT");
-    PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT;
-    CmdEndDebugUtilsLabelEXT = use_GIPA ? inst.load("vkCmdEndDebugUtilsLabelEXT") : dev.load("vkCmdEndDebugUtilsLabelEXT");
-    PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
-    CmdInsertDebugUtilsLabelEXT = use_GIPA ? inst.load("vkCmdInsertDebugUtilsLabelEXT") : dev.load("vkCmdInsertDebugUtilsLabelEXT");
+    PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT = load_function("vkSetDebugUtilsObjectNameEXT");
+    PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT = load_function("vkSetDebugUtilsObjectTagEXT");
+    PFN_vkQueueBeginDebugUtilsLabelEXT QueueBeginDebugUtilsLabelEXT = load_function("vkQueueBeginDebugUtilsLabelEXT");
+    PFN_vkQueueEndDebugUtilsLabelEXT QueueEndDebugUtilsLabelEXT = load_function("vkQueueEndDebugUtilsLabelEXT");
+    PFN_vkQueueInsertDebugUtilsLabelEXT QueueInsertDebugUtilsLabelEXT = load_function("vkQueueInsertDebugUtilsLabelEXT");
+    PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT = load_function("vkCmdBeginDebugUtilsLabelEXT");
+    PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT = load_function("vkCmdEndDebugUtilsLabelEXT");
+    PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT = load_function("vkCmdInsertDebugUtilsLabelEXT");
 
     // Debug marker functions - should always be found when using GIPA but when using GDPA found only when the extension is enabled
     if (use_GIPA) {
@@ -1047,7 +1039,7 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
 }
 
-TEST(GetDeviceProcAddr, DebugFuncsWithTerminator) {
+TEST(GetProcAddr, DebugFuncsWithTerminator) {
     FrameworkEnvironment env{};
     auto& driver =
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).setup_WSI().add_physical_device("physical_device_0");
@@ -1055,24 +1047,92 @@ TEST(GetDeviceProcAddr, DebugFuncsWithTerminator) {
     // Hardware doesn't support the debug extensions
 
     // Use getDeviceProcAddr & vary enabling the debug extensions
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false));
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, false));
 
     // Use getInstanceProcAddr & vary enabling the debug extensions
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false));
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, false));
 
     // Now set the hardware to support the extensions and run the situations again
-    driver.add_instance_extension("VK_EXT_debug_utils");
+    driver.add_instance_extensions({"VK_EXT_debug_utils", "VK_EXT_debug_report"});
     driver.physical_devices.at(0).add_extensions({"VK_EXT_debug_marker"});
 
     // Use getDeviceProcAddr & vary enabling the debug extensions
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false));
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, true));
 
     // Use getInstanceProcAddr & vary enabling the debug extensions
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false));
-    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, true));
+}
+
+TEST(GetProcAddr, DebugFuncsWithTrampoline) {
+    FrameworkEnvironment env{};
+    auto& driver =
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).setup_WSI().add_physical_device("physical_device_0");
+    driver.physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
+    // Hardware doesn't support the debug extensions
+
+    // // Use getDeviceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, false));
+
+    // // Use getInstanceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, false));
+
+    // Now add a layer that supports the extensions and run the situations again
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_test_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .add_instance_extensions({{VK_EXT_DEBUG_REPORT_EXTENSION_NAME},
+                                                                                   {VK_EXT_DEBUG_UTILS_EXTENSION_NAME}})
+                                                         .add_device_extension({VK_EXT_DEBUG_MARKER_EXTENSION_NAME})),
+                           "test_layer.json");
+
+    // // Use getDeviceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, true));
+
+    // Use getInstanceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, true));
+}
+
+TEST(GetProcAddr, DebugFuncsWithDebugExtsForceAdded) {
+    FrameworkEnvironment env{};
+    auto& driver =
+        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).setup_WSI().add_physical_device("physical_device_0");
+    driver.physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
+    // Hardware doesn't support the debug extensions
+
+    // // Use getDeviceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, false));
+
+    // // Use getInstanceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, false));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, false));
+
+    // Now add a layer that supports the extensions and run the situations again
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_test_layer")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")),
+                           "test_layer.json");
+    env.get_test_layer()
+        .add_injected_instance_extensions({{VK_EXT_DEBUG_REPORT_EXTENSION_NAME}, {VK_EXT_DEBUG_UTILS_EXTENSION_NAME}})
+        .add_injected_device_extension({VK_EXT_DEBUG_MARKER_EXTENSION_NAME});
+
+    // // Use getDeviceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, true));
+
+    // Use getInstanceProcAddr & vary enabling the debug extensions
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, true));
+    ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, true));
 }
 
 TEST(DebugUtils, WrappingLayer) {
