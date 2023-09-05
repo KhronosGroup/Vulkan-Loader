@@ -4235,6 +4235,33 @@ bool loader_get_layer_interface_version(PFN_vkNegotiateLoaderLayerInterfaceVersi
     return true;
 }
 
+// Every extension that has a loader-defined trampoline needs to be marked as enabled or disabled so that we know whether or
+// not to return that trampoline when vkGetDeviceProcAddr is called
+void setup_logical_device_enabled_layer_extensions(const struct loader_instance *inst, struct loader_device *dev,
+                                                   const struct loader_extension_list *icd_exts,
+                                                   const VkDeviceCreateInfo *pCreateInfo) {
+    // Can only setup debug marker as debug utils is an instance extensions.
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
+        if (!strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+            // Check if its supported by the driver
+            for (uint32_t j = 0; j < icd_exts->count; ++j) {
+                if (!strcmp(icd_exts->list[j].extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+                    dev->layer_extensions.ext_debug_marker_enabled = true;
+                }
+            }
+            // also check if any layers support it.
+            for (uint32_t j = 0; j < inst->app_activated_layer_list.count; j++) {
+                struct loader_layer_properties *layer = inst->app_activated_layer_list.list[j];
+                for (uint32_t k = 0; k < layer->device_extension_list.count; k++) {
+                    if (!strcmp(layer->device_extension_list.list[k].props.extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+                        dev->layer_extensions.ext_debug_marker_enabled = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, VkPhysicalDevice physicalDevice,
                                                           const VkDeviceCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
@@ -4287,6 +4314,8 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
+
+    setup_logical_device_enabled_layer_extensions(inst, dev, &icd_exts, pCreateInfo);
 
     res = loader_create_device_chain(internal_device, pCreateInfo, pAllocator, inst, dev, layerGIPA, nextGDPA);
     if (res != VK_SUCCESS) {
@@ -5766,27 +5795,28 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     // not to return that terminator when vkGetDeviceProcAddr is called
     for (uint32_t i = 0; i < localCreateInfo.enabledExtensionCount; ++i) {
         if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-            dev->extensions.khr_swapchain_enabled = true;
+            dev->driver_extensions.khr_swapchain_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)) {
-            dev->extensions.khr_display_swapchain_enabled = true;
+            dev->driver_extensions.khr_display_swapchain_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-            dev->extensions.khr_device_group_enabled = true;
+            dev->driver_extensions.khr_device_group_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
-            dev->extensions.ext_debug_marker_enabled = true;
+            dev->driver_extensions.ext_debug_marker_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], "VK_EXT_full_screen_exclusive")) {
-            dev->extensions.ext_full_screen_exclusive_enabled = true;
+            dev->driver_extensions.ext_full_screen_exclusive_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_MAINTENANCE_5_EXTENSION_NAME) &&
                    maintenance5_feature_enabled) {
             dev->should_ignore_device_commands_from_newer_version = true;
         }
     }
-    dev->extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
+    dev->layer_extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
+    dev->driver_extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
 
     VkPhysicalDeviceProperties properties;
     icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
-    if (!dev->extensions.khr_device_group_enabled) {
+    if (!dev->driver_extensions.khr_device_group_enabled) {
         if (properties.apiVersion >= VK_API_VERSION_1_1) {
-            dev->extensions.khr_device_group_enabled = true;
+            dev->driver_extensions.khr_device_group_enabled = true;
         }
     }
 
