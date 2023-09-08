@@ -92,7 +92,7 @@ uint32_t loader_get_global_debug_level(void) { return g_loader_debug; }
 
 void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
     (void)msg_code;
-    char msg[512];
+    char msg[512] = {0};
 
     va_list ap;
     va_start(ap, format);
