@@ -1074,11 +1074,11 @@ TEST(GetProcAddr, DebugFuncsWithTrampoline) {
     driver.physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
     // Hardware doesn't support the debug extensions
 
-    // // Use getDeviceProcAddr & vary enabling the debug extensions
+    // Use getDeviceProcAddr & vary enabling the debug extensions
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, false));
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, false));
 
-    // // Use getInstanceProcAddr & vary enabling the debug extensions
+    // Use getInstanceProcAddr & vary enabling the debug extensions
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, false));
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, false));
 
@@ -1108,11 +1108,11 @@ TEST(GetProcAddr, DebugFuncsWithDebugExtsForceAdded) {
     driver.physical_devices.at(0).add_extensions({"VK_KHR_swapchain"});
     // Hardware doesn't support the debug extensions
 
-    // // Use getDeviceProcAddr & vary enabling the debug extensions
+    // Use getDeviceProcAddr & vary enabling the debug extensions
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, false));
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, false));
 
-    // // Use getInstanceProcAddr & vary enabling the debug extensions
+    // Use getInstanceProcAddr & vary enabling the debug extensions
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, false, false));
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, false));
 
@@ -1126,7 +1126,7 @@ TEST(GetProcAddr, DebugFuncsWithDebugExtsForceAdded) {
         .add_injected_instance_extensions({{VK_EXT_DEBUG_REPORT_EXTENSION_NAME}, {VK_EXT_DEBUG_UTILS_EXTENSION_NAME}})
         .add_injected_device_extension({VK_EXT_DEBUG_MARKER_EXTENSION_NAME});
 
-    // // Use getDeviceProcAddr & vary enabling the debug extensions
+    // Use getDeviceProcAddr & vary enabling the debug extensions
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, true));
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, true, true));
 

@@ -654,11 +654,11 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
                                        layer.second_device_created_during_create_device.dispatch_table.DestroyDevice);
     }
 
-    for (auto& created_device : layer.created_devices) {
-        if (created_device.device_handle == device) {
-            created_device.dispatch_table.DestroyDevice(device, pAllocator);
-            break;
-        }
+    auto it = std::find_if(std::begin(layer.created_devices), std::end(layer.created_devices),
+                           [device](const TestLayer::Device& dev) { return device == dev.device_handle; });
+    if (it != std::end(layer.created_devices)) {
+        it->dispatch_table.DestroyDevice(device, pAllocator);
+        layer.created_devices.erase(it);
     }
 }
 
