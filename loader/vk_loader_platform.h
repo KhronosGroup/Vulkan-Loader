@@ -41,7 +41,7 @@
 #endif  // defined(__Fuchsia__)
 
 // Set of platforms with a common set of functionality which is queried throughout the program
-#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || \
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNX__) || defined(__FreeBSD__) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__GNU__)
 #define COMMON_UNIX_PLATFORMS 1
 #else
@@ -144,7 +144,7 @@
 #define VK_ILAYERS_INFO_REGISTRY_LOC ""
 #define VK_SETTINGS_INFO_REGISTRY_LOC ""
 
-#if defined(__QNXNTO__)
+#if defined(__QNX__)
 #define SYSCONFDIR "/etc"
 #endif
 
@@ -306,7 +306,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 }
 #elif defined(__Fuchsia__) || defined(__OpenBSD__)
 static inline char *loader_platform_executable_path(char *buffer, size_t size) { return NULL; }
-#elif defined(__QNXNTO__)
+#elif defined(__QNX__)
 
 #define SYSCONFDIR "/etc"
 
@@ -330,7 +330,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 
     return buffer;
 }
-#endif  // defined (__QNXNTO__)
+#endif  // defined (__QNX__)
 
 // Compatability with compilers that don't support __has_feature
 #if !defined(__has_feature)

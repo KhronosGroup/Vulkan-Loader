@@ -269,7 +269,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
             bool device_is_1_1_capable =
                 loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
             if (!sorted_device_info[index].has_pci_bus_info) {
-                uint32_t ext_count;
+                uint32_t ext_count = 0;
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(sorted_device_info[index].physical_device, NULL, &ext_count,
                                                                       NULL);
                 if (ext_count > 0) {

@@ -16,7 +16,7 @@
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
 
-project(VULKAN_LOADER VERSION 1.3.261)
+project(VULKAN_LOADER VERSION 1.3.264)
 
 add_subdirectory(scripts)
 
@@ -99,7 +99,7 @@ add_library(platform_wsi INTERFACE)
 if(WIN32)
     target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_WIN32_KHR)
 elseif(ANDROID)
-    target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_ANDROID_KHR)
+    message(FATAL_ERROR "Android build not supported!")
 elseif(APPLE)
     target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
 elseif(UNIX AND NOT APPLE) # i.e.: Linux
