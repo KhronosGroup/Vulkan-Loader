@@ -406,22 +406,19 @@ if(PKG_CONFIG_FOUND)
         list(REMOVE_DUPLICATES PRIVATE_LIBS)
         set(PRIVATE_LIBS "Libs.private: ${PRIVATE_LIBS}")
     endif()
+
     if(WIN32)
         if(MINGW)
             set(VULKAN_LIB_SUFFIX "-1.dll")
         else()
             set(VULKAN_LIB_SUFFIX "-1")
         endif()
-        # Set libdir path as in cmake's FindVulkan.cmake
-        # https://github.com/KhronosGroup/Vulkan-Loader/issues/668
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            string(REPLACE "lib" "Lib" CMAKE_INSTALL_FULL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
-        else()
-            string(REPLACE "lib" "Lib32" CMAKE_INSTALL_FULL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
-        endif()
-    else()
-        set(CMAKE_INSTALL_FULL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
-    endif ()
+    endif()
+
+    set(CMAKE_INSTALL_FULL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
+
+    # NOTE: Hopefully in the future CMake can generate .pc files natively so we can simplify our code.
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/22621
     if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "")
         set(CMAKE_INSTALL_REL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR_PC})
         set(CMAKE_INSTALL_REL_INCLUDEDIR_PC ${CMAKE_INSTALL_FULL_INCLUDEDIR})
