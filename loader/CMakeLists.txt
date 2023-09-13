@@ -435,6 +435,13 @@ if(PKG_CONFIG_FOUND)
 endif()
 
 target_link_libraries(vulkan PRIVATE Vulkan::Headers)
-add_library(Vulkan::Vulkan ALIAS vulkan)
+add_library(Vulkan::Loader ALIAS vulkan)
 
-install(TARGETS vulkan)
+if (APPLE AND BUILD_STATIC_LOADER)
+    # When exporting a static library all linked libraries - private or not - need to be exported.
+    return()
+endif()
+
+install(TARGETS vulkan EXPORT VulkanLoaderConfig)
+set_target_properties(vulkan PROPERTIES EXPORT_NAME "Loader")
+install(EXPORT VulkanLoaderConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VulkanLoader NAMESPACE Vulkan::)
