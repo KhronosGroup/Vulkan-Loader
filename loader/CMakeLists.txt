@@ -437,7 +437,4 @@ endif()
 target_link_libraries(vulkan PRIVATE Vulkan::Headers)
 add_library(Vulkan::Vulkan ALIAS vulkan)
 
-install(TARGETS vulkan
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS vulkan)
