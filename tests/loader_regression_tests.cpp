@@ -4130,19 +4130,20 @@ TEST(Layer, LLP_LAYER_22) {
     ASSERT_DEATH(
         dev.CheckCreate(inst.GetPhysDev()),
         testing::ContainsRegex(
-            R"(terminator_CreateDevice: Device pointer \(................\) has invalid MAGIC value 0x00000000. Device value )"
+            R"(terminator_CreateDevice: Device pointer \(................\) has invalid MAGIC value 0x00000000. The expected value is 0x10ADED040410ADED. Device value )"
             R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
 #else
-    ASSERT_DEATH(dev.CheckCreate(inst.GetPhysDev()),
-                 testing::ContainsRegex(
-                     R"(terminator_CreateDevice: Device pointer \(........\) has invalid MAGIC value 0x00000000. Device value )"
-                     R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
+    ASSERT_DEATH(
+        dev.CheckCreate(inst.GetPhysDev()),
+        testing::ContainsRegex(
+            R"(terminator_CreateDevice: Device pointer \(........\) has invalid MAGIC value 0x00000000. The expected value is 0x10ADED040410ADED. Device value )"
+            R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
 #endif
 #else
     ASSERT_DEATH(
         dev.CheckCreate(inst.GetPhysDev()),
         testing::ContainsRegex(
-            R"(terminator_CreateDevice: Device pointer \(0x[0-9A-Fa-f]+\) has invalid MAGIC value 0x00000000. Device value )"
+            R"(terminator_CreateDevice: Device pointer \(0x[0-9A-Fa-f]+\) has invalid MAGIC value 0x00000000. The expected value is 0x10ADED040410ADED. Device value )"
             R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
 #endif
 }
