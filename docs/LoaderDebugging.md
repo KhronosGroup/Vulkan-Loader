@@ -176,7 +176,7 @@ You can use the filtering environment variables
 (`VK_LOADER_LAYERS_ENABLE` and `VK_LOADER_LAYERS_DISABLE`) to selectively enable
 or disable various layers.
 If you're not sure what to do, try disabling all implicit layers manually by
-setting `VK_LOADER_LAYERS_DISABLE` to '~implicit~'.
+setting `VK_LOADER_LAYERS_DISABLE` to `~implicit~`.
 
 ```
   set VK_LOADER_LAYERS_DISABLE=~implicit~
