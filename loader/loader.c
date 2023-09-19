@@ -3654,7 +3654,7 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                                icd_details[i].full_library_path);
                     break;
                 case LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE: {
-                    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Requested layer %s was wrong bit-type. Ignoring this JSON",
+                    loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Requested ICD %s was wrong bit-type. Ignoring this JSON",
                                icd_details[i].full_library_path);
                     break;
                 }
