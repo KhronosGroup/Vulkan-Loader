@@ -277,6 +277,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 #elif defined(__APPLE__)
 #if defined(__APPLE_EMBEDDED__)
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    (void)size;
     buffer[0] = '\0';
     return buffer;
 }
