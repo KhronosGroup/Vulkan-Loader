@@ -1495,7 +1495,8 @@ VkResult loader_add_direct_driver(const struct loader_instance *inst, uint32_t i
         void *new_ptr = loader_instance_heap_realloc(inst, icd_tramp_list->scanned_list, icd_tramp_list->capacity,
                                                      icd_tramp_list->capacity * 2, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_ptr) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_add_direct_driver: Realloc failed on icd library list for ICD %s");
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "loader_add_direct_driver: Realloc failed on icd library list for ICD index %u", index);
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
         icd_tramp_list->scanned_list = new_ptr;
@@ -5210,7 +5211,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
                    "#LLP_LAYER_21)");
     } else if (LOADER_MAGIC_NUMBER != ptr_instance->magic) {
         loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
-                   "terminator_CreateInstance: Instance pointer (%p) has invalid MAGIC value 0x%08x. Instance value possibly "
+                   "terminator_CreateInstance: Instance pointer (%p) has invalid MAGIC value 0x%08lx. Instance value possibly "
                    "corrupted by active layer (Policy #LLP_LAYER_21).  ",
                    ptr_instance, ptr_instance->magic);
     }
