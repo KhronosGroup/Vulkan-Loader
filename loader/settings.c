@@ -711,15 +711,20 @@ out:
 }
 
 VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
-                                             uint32_t name_count, const char* const* names,
+                                             uint32_t app_enabled_name_count, const char* const* app_enabled_names,
                                              const struct loader_layer_list* instance_layers,
                                              struct loader_pointer_layer_list* target_layer_list,
                                              struct loader_pointer_layer_list* activated_layer_list) {
     VkResult res = VK_SUCCESS;
     char* vk_instance_layers_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
+    size_t vk_instance_layers_env_len = 0;
+    char* vk_instance_layers_env_copy = NULL;
     if (vk_instance_layers_env != NULL) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers \"%s\"",
-                   ENABLED_LAYERS_ENV, names);
+        vk_instance_layers_env_len = strlen(vk_instance_layers_env) + 1;
+        vk_instance_layers_env_copy = loader_stack_alloc(vk_instance_layers_env_len);
+
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers: %s",
+                   ENABLED_LAYERS_ENV, vk_instance_layers_env);
     }
     for (uint32_t i = 0; i < instance_layers->count; i++) {
         bool enable_layer = false;
@@ -745,30 +750,27 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
             enable_layer = true;
         }
 
-        if (!enable_layer && vk_instance_layers_env) {
-            size_t vk_instance_layers_env_len = strlen(vk_instance_layers_env) + 1;
-            char* name = loader_stack_alloc(vk_instance_layers_env_len);
-            if (name != NULL) {
-                loader_strncpy(name, vk_instance_layers_env_len, vk_instance_layers_env, vk_instance_layers_env_len);
-                // First look for the old-fashion layers forced on with VK_INSTANCE_LAYERS
-                while (name && *name) {
-                    char* next = loader_get_next_path(name);
+        // First look for the old-fashion layers forced on with VK_INSTANCE_LAYERS
+        if (!enable_layer && vk_instance_layers_env && vk_instance_layers_env_copy && vk_instance_layers_env_len > 0) {
+            // Copy the env-var on each iteration, so that loader_get_next_path can correctly find the separators
+            // This solution only needs one stack allocation ahead of time rather than an allocation per layer in the env-var
+            loader_strncpy(vk_instance_layers_env_copy, vk_instance_layers_env_len, vk_instance_layers_env,
+                           vk_instance_layers_env_len);
 
-                    if (strlen(name) > 0) {
-                        if (0 == strcmp(name, props->info.layerName)) {
-                            enable_layer = true;
-                            break;
-                        }
-                        name = next;
-                    }
+            while (vk_instance_layers_env_copy && *vk_instance_layers_env_copy) {
+                char* next = loader_get_next_path(vk_instance_layers_env_copy);
+                if (0 == strcmp(vk_instance_layers_env_copy, props->info.layerName)) {
+                    enable_layer = true;
+                    break;
                 }
+                vk_instance_layers_env_copy = next;
             }
         }
 
         // Check if it should be enabled by the application
         if (!enable_layer) {
-            for (uint32_t j = 0; j < name_count; j++) {
-                if (strcmp(props->info.layerName, names[j]) == 0) {
+            for (uint32_t j = 0; j < app_enabled_name_count; j++) {
+                if (strcmp(props->info.layerName, app_enabled_names[j]) == 0) {
                     enable_layer = true;
                     break;
                 }

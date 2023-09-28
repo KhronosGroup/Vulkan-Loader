@@ -976,7 +976,7 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
     json_buf = (char *)loader_instance_heap_calloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (json_buf == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "loader_get_json: Failed to allocate space for JSON file %s buffer of length %d", filename, len);
+                   "loader_get_json: Failed to allocate space for JSON file %s buffer of length %lu", filename, len);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
