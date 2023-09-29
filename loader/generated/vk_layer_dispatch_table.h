@@ -1088,6 +1088,13 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
     PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
 
+    // ---- VK_NV_low_latency2 extension commands
+    PFN_vkSetLatencySleepModeNV SetLatencySleepModeNV;
+    PFN_vkLatencySleepNV LatencySleepNV;
+    PFN_vkSetLatencyMarkerNV SetLatencyMarkerNV;
+    PFN_vkGetLatencyTimingsNV GetLatencyTimingsNV;
+    PFN_vkQueueNotifyOutOfBandNV QueueNotifyOutOfBandNV;
+
     // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension commands
     PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 

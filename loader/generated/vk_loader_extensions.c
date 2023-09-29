@@ -1126,6 +1126,13 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetFramebufferTilePropertiesQCOM = (PFN_vkGetFramebufferTilePropertiesQCOM)gdpa(dev, "vkGetFramebufferTilePropertiesQCOM");
     table->GetDynamicRenderingTilePropertiesQCOM = (PFN_vkGetDynamicRenderingTilePropertiesQCOM)gdpa(dev, "vkGetDynamicRenderingTilePropertiesQCOM");
 
+    // ---- VK_NV_low_latency2 extension commands
+    table->SetLatencySleepModeNV = (PFN_vkSetLatencySleepModeNV)gdpa(dev, "vkSetLatencySleepModeNV");
+    table->LatencySleepNV = (PFN_vkLatencySleepNV)gdpa(dev, "vkLatencySleepNV");
+    table->SetLatencyMarkerNV = (PFN_vkSetLatencyMarkerNV)gdpa(dev, "vkSetLatencyMarkerNV");
+    table->GetLatencyTimingsNV = (PFN_vkGetLatencyTimingsNV)gdpa(dev, "vkGetLatencyTimingsNV");
+    table->QueueNotifyOutOfBandNV = (PFN_vkQueueNotifyOutOfBandNV)gdpa(dev, "vkQueueNotifyOutOfBandNV");
+
     // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension commands
     table->CmdSetAttachmentFeedbackLoopEnableEXT = (PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT)gdpa(dev, "vkCmdSetAttachmentFeedbackLoopEnableEXT");
 
@@ -2850,6 +2857,13 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_QCOM_tile_properties extension commands
     if (!strcmp(name, "GetFramebufferTilePropertiesQCOM")) return (void *)table->GetFramebufferTilePropertiesQCOM;
     if (!strcmp(name, "GetDynamicRenderingTilePropertiesQCOM")) return (void *)table->GetDynamicRenderingTilePropertiesQCOM;
+
+    // ---- VK_NV_low_latency2 extension commands
+    if (!strcmp(name, "SetLatencySleepModeNV")) return (void *)table->SetLatencySleepModeNV;
+    if (!strcmp(name, "LatencySleepNV")) return (void *)table->LatencySleepNV;
+    if (!strcmp(name, "SetLatencyMarkerNV")) return (void *)table->SetLatencyMarkerNV;
+    if (!strcmp(name, "GetLatencyTimingsNV")) return (void *)table->GetLatencyTimingsNV;
+    if (!strcmp(name, "QueueNotifyOutOfBandNV")) return (void *)table->QueueNotifyOutOfBandNV;
 
     // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension commands
     if (!strcmp(name, "CmdSetAttachmentFeedbackLoopEnableEXT")) return (void *)table->CmdSetAttachmentFeedbackLoopEnableEXT;
@@ -8962,6 +8976,79 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 }
 
 
+// ---- VK_NV_low_latency2 extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    VkLatencySleepModeInfoNV*                   pSleepModeInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkSetLatencySleepModeNV: Invalid device "
+                   "[VUID-vkSetLatencySleepModeNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->SetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    VkLatencySleepInfoNV*                       pSleepInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkLatencySleepNV: Invalid device "
+                   "[VUID-vkLatencySleepNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->LatencySleepNV(device, swapchain, pSleepInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    VkSetLatencyMarkerInfoNV*                   pLatencyMarkerInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkSetLatencyMarkerNV: Invalid device "
+                   "[VUID-vkSetLatencyMarkerNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->SetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    uint32_t*                                   pTimingCount,
+    VkGetLatencyMarkerInfoNV*                   pLatencyMarkerInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetLatencyTimingsNV: Invalid device "
+                   "[VUID-vkGetLatencyTimingsNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(
+    VkQueue                                     queue,
+    VkOutOfBandQueueTypeInfoNV                  pQueueTypeInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkQueueNotifyOutOfBandNV: Invalid queue "
+                   "[VUID-vkQueueNotifyOutOfBandNV-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->QueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
+}
+
+
 // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(
@@ -11195,6 +11282,28 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetDynamicRenderingTilePropertiesQCOM", name)) {
         *addr = (void *)GetDynamicRenderingTilePropertiesQCOM;
+        return true;
+    }
+
+    // ---- VK_NV_low_latency2 extension commands
+    if (!strcmp("vkSetLatencySleepModeNV", name)) {
+        *addr = (void *)SetLatencySleepModeNV;
+        return true;
+    }
+    if (!strcmp("vkLatencySleepNV", name)) {
+        *addr = (void *)LatencySleepNV;
+        return true;
+    }
+    if (!strcmp("vkSetLatencyMarkerNV", name)) {
+        *addr = (void *)SetLatencyMarkerNV;
+        return true;
+    }
+    if (!strcmp("vkGetLatencyTimingsNV", name)) {
+        *addr = (void *)GetLatencyTimingsNV;
+        return true;
+    }
+    if (!strcmp("vkQueueNotifyOutOfBandNV", name)) {
+        *addr = (void *)QueueNotifyOutOfBandNV;
         return true;
     }
 
