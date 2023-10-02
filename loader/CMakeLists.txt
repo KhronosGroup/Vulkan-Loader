@@ -117,7 +117,7 @@ set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted 
 if(WIN32)
     option(USE_MASM "Use MASM" ON)
     if(USE_MASM AND MINGW)
-        find_program(JWASM_FOUND NAMES jwasm)
+        find_program(JWASM_FOUND NAMES jwasm uasm)
         if (JWASM_FOUND)
             set(CMAKE_ASM_MASM_COMPILER ${JWASM_FOUND})
             execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine OUTPUT_VARIABLE COMPILER_VERSION_OUTPUT)
