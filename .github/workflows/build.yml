@@ -465,7 +465,7 @@ jobs:
         - name: GCC Version
           run: gcc --version # If this fails MINGW is not setup correctly
         - name: Configure
-          run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -D ENABLE_WERROR=ON
+          run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -D ENABLE_WERROR=ON -D USE_MASM=OFF
           env:
             LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
             CMAKE_C_COMPILER_LAUNCHER: ccache
