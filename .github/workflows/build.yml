@@ -416,36 +416,42 @@ jobs:
 
     # MinGW uses JWASM to compile the assembly code - since that isn't available on github actions, this run is disabled
 
-    # mingw:
-    #   runs-on: windows-2022
-    #   defaults:
-    #     run:
-    #       shell: bash
-    #   steps:
-    #     - uses: actions/checkout@v3
-    #     - name: Setup ccache
-    #       uses: hendrikmuhs/ccache-action@v1.2
-    #       with:
-    #         key: mingw-ccache
-    #     - uses: actions/setup-python@v4
-    #       with:
-    #         python-version: '3.8'
-    #     - uses: lukka/get-cmake@latest
-    #     - name: GCC Version
-    #       run: gcc --version # If this fails MINGW is not setup correctly
-    #     - name: Configure
-    #       run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
-    #       env:
-    #         LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
-    #         CMAKE_C_COMPILER_LAUNCHER: ccache
-    #         CMAKE_CXX_COMPILER_LAUNCHER: ccache
-    #         CMAKE_GENERATOR: Ninja
-    #     - name: Build
-    #       run: cmake --build build -- --quiet
-    #     - name: Install
-    #       run: cmake --install build --prefix build/install
-    #     - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
-    #       run: ccache --show-stats
+    mingw:
+      runs-on: windows-2022
+      defaults:
+        run:
+          shell: bash
+      steps:
+        - uses: actions/checkout@v3
+        - name: Setup ccache
+          uses: hendrikmuhs/ccache-action@v1.2
+          with:
+            key: mingw-ccache
+        - uses: actions/setup-python@v4
+          with:
+            python-version: '3.8'
+        - uses: lukka/get-cmake@latest
+        - name: GCC Version
+          run: gcc --version # If this fails MINGW is not setup correctly
+        - name: Setup uasm
+          run: |
+            C:/msys64/usr/bin/pacman -Sy --noconfirm --needed mingw-w64-x86_64-uasm
+            printf '%s\n' 'C:/msys64/mingw64/bin' >> $GITHUB_PATH
+        - name: UASM Check
+          run: uasm -?
+        - name: Configure
+          run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
+          env:
+            LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
+            CMAKE_C_COMPILER_LAUNCHER: ccache
+            CMAKE_CXX_COMPILER_LAUNCHER: ccache
+            CMAKE_GENERATOR: Ninja
+        - name: Build
+          run: cmake --build build -- --quiet
+        - name: Install
+          run: cmake --install build --prefix build/install
+        - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
+          run: ccache --show-stats
 
     mingw-no-asm:
       runs-on: windows-2022
