@@ -134,13 +134,42 @@ if(WIN32)
     if (USE_MASM)
         enable_language(ASM_MASM)
     endif()
+    # Test if the detected compiler actually works.
+    # Unfortunately, CMake's detection of ASM_MASM is not reliable, so we need to do this ourselves.
+    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
+.model flat
+.code
+extrn _start:near
+    xor eax, eax
+    ret
+end
+]=])
+    else()
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
+.code
+extrn start:near
+    xor rax, rax
+    ret
+end
+]=])
+    endif ()
+    if(MINGW)
+        set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} ${JWASM_FLAGS})
+    elseif(NOT CMAKE_CL_64 AND NOT JWASM_FOUND)
+        set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} /safeseh)
+    endif()
+    # try_compile does not work here due to the same reasons as static above.
+    execute_process(COMMAND ${CMAKE_ASM_MASM_COMPILER} ${CMAKE_ASM_MASM_FLAGS} -c -Fo ${CMAKE_CURRENT_BINARY_DIR}/masm_check.obj ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm
+        RESULT_VARIABLE CMAKE_ASM_MASM_COMPILER_WORKS
+        OUTPUT_QUIET ERROR_QUIET)
+    # Convert the return code to a boolean
+    if(CMAKE_ASM_MASM_COMPILER_WORKS EQUAL 0)
+        set(CMAKE_ASM_MASM_COMPILER_WORKS true)
+    else()
+        set(CMAKE_ASM_MASM_COMPILER_WORKS false)
+    endif()
     if(CMAKE_ASM_MASM_COMPILER_WORKS)
-        if(MINGW)
-            set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} ${JWASM_FLAGS})
-        elseif(NOT CMAKE_CL_64 AND NOT JWASM_FOUND)
-            set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} /safeseh)
-        endif()
-
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset PRIVATE loader_specific_options)
         # If am emulator is provided (Like Wine), or running on native, run asm_offset to generate gen_defines.asm
