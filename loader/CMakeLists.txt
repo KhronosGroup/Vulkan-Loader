@@ -390,9 +390,24 @@ if (TARGET asm_offset)
     set_target_properties(asm_offset PROPERTIES ${LOADER_STANDARD_C_PROPERTIES})
 endif()
 
-# Generate pkg-config file.
-find_package(PkgConfig QUIET)
-if(PKG_CONFIG_FOUND)
+target_link_libraries(vulkan PRIVATE Vulkan::Headers)
+add_library(Vulkan::Loader ALIAS vulkan)
+
+if (APPLE AND BUILD_STATIC_LOADER)
+    # When exporting a static library all linked libraries - private or not - need to be exported.
+    return()
+endif()
+
+install(TARGETS vulkan EXPORT VulkanLoaderConfig)
+# Generate CMake Configuration File (IE: VulkanLoaderConfig.cmake)
+set_target_properties(vulkan PROPERTIES EXPORT_NAME "Loader")
+install(EXPORT VulkanLoaderConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VulkanLoader NAMESPACE Vulkan::)
+
+# Generate PkgConfig File (IE: vulkan.pc)
+# NOTE: Hopefully in the future CMake can generate .pc files natively.
+# https://gitlab.kitware.com/cmake/cmake/-/issues/22621
+find_package(PkgConfig)
+if (PKG_CONFIG_FOUND)
     set(PRIVATE_LIBS "")
     if (APPLE AND BUILD_STATIC_LOADER)
         # Libs.private should only be present when building a static loader
@@ -411,30 +426,17 @@ if(PKG_CONFIG_FOUND)
         endif()
     endif()
 
-    set(CMAKE_INSTALL_FULL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
-
-    # NOTE: Hopefully in the future CMake can generate .pc files natively so we can simplify our code.
-    # https://gitlab.kitware.com/cmake/cmake/-/issues/22621
+    # BUG: The following code will NOT work will with `cmake --install ... --prefix <dir>`
+    #
+    # ISSUE: vulkan.pc also adds an include path that incidentally points to the vulkan headers.
+    # This shouldn't have been added but removing it may break backcompat at this point.
     if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "")
-        set(CMAKE_INSTALL_REL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR_PC})
-        set(CMAKE_INSTALL_REL_INCLUDEDIR_PC ${CMAKE_INSTALL_FULL_INCLUDEDIR})
+        set(CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
+        set(CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_FULL_INCLUDEDIR})
     else()
-        file(RELATIVE_PATH CMAKE_INSTALL_REL_LIBDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_LIBDIR_PC})
-        file(RELATIVE_PATH CMAKE_INSTALL_REL_INCLUDEDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_INCLUDEDIR})
+        file(RELATIVE_PATH CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_LIBDIR})
+        file(RELATIVE_PATH CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_INCLUDEDIR})
     endif()
-    set(VULKAN_LOADER_PKG_CONFIG_NAME "Vulkan-Loader")
     configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
-
-target_link_libraries(vulkan PRIVATE Vulkan::Headers)
-add_library(Vulkan::Loader ALIAS vulkan)
-
-if (APPLE AND BUILD_STATIC_LOADER)
-    # When exporting a static library all linked libraries - private or not - need to be exported.
-    return()
-endif()
-
-install(TARGETS vulkan EXPORT VulkanLoaderConfig)
-set_target_properties(vulkan PROPERTIES EXPORT_NAME "Loader")
-install(EXPORT VulkanLoaderConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VulkanLoader NAMESPACE Vulkan::)

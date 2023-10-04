@@ -73,6 +73,9 @@ jobs:
             - name: Install the loader
               run: cmake --install build --prefix build/install
 
+            - name: cat vulkan.pc
+              run: cat ./build/install/lib/pkgconfig/vulkan.pc
+
             - name: Validate pkg-config
               run: pkg-config --validate ./build/install/lib/pkgconfig/vulkan.pc
 
