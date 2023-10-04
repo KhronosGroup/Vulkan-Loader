@@ -106,7 +106,6 @@ if (!is_android) {
       "loader/adapters.h",
       "loader/allocation.c",
       "loader/allocation.h",
-      "loader/asm_offset.c",
       "loader/cJSON.c",
       "loader/cJSON.h",
       "loader/debug_utils.c",
