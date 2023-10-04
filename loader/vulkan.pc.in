@@ -2,4 +2,3 @@ Name: Vulkan-Loader
 Description: Vulkan Loader
 Version: @VULKAN_LOADER_VERSION@
 Libs: -L@CMAKE_INSTALL_LIBDIR_PC@ -lvulkan@VULKAN_LIB_SUFFIX@
-Cflags: -I@CMAKE_INSTALL_INCLUDEDIR_PC@
