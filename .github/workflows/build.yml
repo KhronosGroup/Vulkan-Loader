@@ -414,8 +414,6 @@ jobs:
             - name: Build the loader
               run: ninja -C out/${{matrix.config}}
 
-    # MinGW uses JWASM to compile the assembly code - since that isn't available on github actions, this run is disabled
-
     mingw:
       runs-on: windows-2022
       defaults:
