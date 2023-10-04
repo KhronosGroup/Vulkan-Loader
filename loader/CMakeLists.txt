@@ -418,15 +418,11 @@ if (PKG_CONFIG_FOUND)
     endif()
 
     # BUG: The following code will NOT work well with `cmake --install ... --prefix <dir>`
-    #
-    # ISSUE: vulkan.pc also adds an include path that incidentally points to the vulkan headers.
-    # This shouldn't have been added but removing it may break backcompat at this point.
+    # due to this code relying on CMAKE_INSTALL_PREFIX being defined at configure time.
     if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "")
         set(CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
-        set(CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_FULL_INCLUDEDIR})
     else()
         file(RELATIVE_PATH CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_LIBDIR})
-        file(RELATIVE_PATH CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_INCLUDEDIR})
     endif()
     configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
