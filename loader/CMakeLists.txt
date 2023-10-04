@@ -395,11 +395,12 @@ add_library(Vulkan::Loader ALIAS vulkan)
 
 if (APPLE AND BUILD_STATIC_LOADER)
     # When exporting a static library all linked libraries - private or not - need to be exported.
+    message(NOTICE "vulkan.pc and VulkanLoaderConfig.cmake not generated for STATIC Apple builds!")
     return()
 endif()
 
-install(TARGETS vulkan EXPORT VulkanLoaderConfig)
 # Generate CMake Configuration File (IE: VulkanLoaderConfig.cmake)
+install(TARGETS vulkan EXPORT VulkanLoaderConfig)
 set_target_properties(vulkan PROPERTIES EXPORT_NAME "Loader")
 install(EXPORT VulkanLoaderConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VulkanLoader NAMESPACE Vulkan::)
 
@@ -408,16 +409,6 @@ install(EXPORT VulkanLoaderConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Vulk
 # https://gitlab.kitware.com/cmake/cmake/-/issues/22621
 find_package(PkgConfig)
 if (PKG_CONFIG_FOUND)
-    set(PRIVATE_LIBS "")
-    if (APPLE AND BUILD_STATIC_LOADER)
-        # Libs.private should only be present when building a static loader
-        foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-            list(APPEND PRIVATE_LIBS "-l${LIB}")
-        endforeach()
-        list(REMOVE_DUPLICATES PRIVATE_LIBS)
-        set(PRIVATE_LIBS "Libs.private: ${PRIVATE_LIBS}")
-    endif()
-
     if(WIN32)
         if(MINGW)
             set(VULKAN_LIB_SUFFIX "-1.dll")
@@ -426,7 +417,7 @@ if (PKG_CONFIG_FOUND)
         endif()
     endif()
 
-    # BUG: The following code will NOT work will with `cmake --install ... --prefix <dir>`
+    # BUG: The following code will NOT work well with `cmake --install ... --prefix <dir>`
     #
     # ISSUE: vulkan.pc also adds an include path that incidentally points to the vulkan headers.
     # This shouldn't have been added but removing it may break backcompat at this point.
