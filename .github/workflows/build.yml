@@ -472,6 +472,38 @@ jobs:
         - name: GCC Version
           run: gcc --version # If this fails MINGW is not setup correctly
         - name: Configure
+          # Make sure this doesn't fail even without -D USE_MASM=OFF and without uasm
+          run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
+          env:
+            LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
+            CMAKE_C_COMPILER_LAUNCHER: ccache
+            CMAKE_CXX_COMPILER_LAUNCHER: ccache
+            CMAKE_GENERATOR: Ninja
+        - name: Build
+          run: cmake --build build -- --quiet
+        - name: Install
+          run: cmake --install build --prefix build/install
+        - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
+          run: ccache --show-stats
+
+    mingw-no-asm-explicit:
+      runs-on: windows-2022
+      defaults:
+        run:
+          shell: bash
+      steps:
+        - uses: actions/checkout@v3
+        - name: Setup ccache
+          uses: hendrikmuhs/ccache-action@v1.2
+          with:
+            key: mingw-ccache
+        - uses: actions/setup-python@v4
+          with:
+            python-version: '3.8'
+        - uses: lukka/get-cmake@latest
+        - name: GCC Version
+          run: gcc --version # If this fails MINGW is not setup correctly
+        - name: Configure
           run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -D ENABLE_WERROR=ON -D USE_MASM=OFF
           env:
             LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
