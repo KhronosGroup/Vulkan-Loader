@@ -8981,7 +8981,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkLatencySleepModeInfoNV*                   pSleepModeInfo) {
+    const VkLatencySleepModeInfoNV*             pSleepModeInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -8995,7 +8995,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(
 VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkLatencySleepInfoNV*                       pSleepInfo) {
+    const VkLatencySleepInfoNV*                 pSleepInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -9009,7 +9009,7 @@ VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(
 VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkSetLatencyMarkerInfoNV*                   pLatencyMarkerInfo) {
+    const VkSetLatencyMarkerInfoNV*             pLatencyMarkerInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -9037,7 +9037,7 @@ VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(
 
 VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(
     VkQueue                                     queue,
-    VkOutOfBandQueueTypeInfoNV                  pQueueTypeInfo) {
+    const VkOutOfBandQueueTypeInfoNV*           pQueueTypeInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
