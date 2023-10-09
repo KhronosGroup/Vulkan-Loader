@@ -793,12 +793,141 @@ out:
     return vk_result;
 }
 
-// This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *sorted_devices_count,
-                                              struct loader_phys_dev_per_icd **sorted_devices) {
+VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct loader_icd_term *icd_term, uint32_t icd_idx,
+                                            LUID luid, uint32_t *icd_phys_devs_array_count,
+                                            struct loader_icd_physical_devices *icd_phys_devs_array) {
+    uint32_t count = 0;
+    VkResult res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        return res;
+    } else if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
+        return VK_SUCCESS;  // This driver doesn't support the adapter
+    } else if (res != VK_SUCCESS) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code");
+        return res;
+    } else if (0 == count) {
+        return VK_SUCCESS;  // This driver doesn't support the adapter
+    }
+
+    // Take a pointer to the last element of icd_phys_devs_array to simplify usage
+    struct loader_icd_physical_devices *next_icd_phys_devs = &icd_phys_devs_array[*icd_phys_devs_array_count];
+
+    // Get the actual physical devices
+    do {
+        next_icd_phys_devs->physical_devices = loader_instance_heap_realloc(
+            inst, next_icd_phys_devs->physical_devices, next_icd_phys_devs->device_count * sizeof(VkPhysicalDevice),
+            count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (next_icd_phys_devs->physical_devices == NULL) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        next_icd_phys_devs->device_count = count;
+    } while ((res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count,
+                                                                           next_icd_phys_devs->physical_devices)) == VK_INCOMPLETE);
+
+    if (res != VK_SUCCESS) {
+        loader_instance_heap_free(inst, next_icd_phys_devs->physical_devices);
+        next_icd_phys_devs->physical_devices = NULL;
+        // Unless OOHM occurs, only return VK_SUCCESS
+        if (res != VK_ERROR_OUT_OF_HOST_MEMORY) {
+            res = VK_SUCCESS;
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
+        }
+        return res;
+    }
+
+    // Because the loader calls EnumerateAdapterPhysicalDevices on all drivers with each DXGI Adapter, if there are multiple drivers
+    // that share a luid the physical device will get queried multiple times. We can prevent that by not adding them if the
+    // enumerated physical devices have already been added.
+    bool already_enumerated = false;
+    for (uint32_t j = 0; j < *icd_phys_devs_array_count; j++) {
+        if (count == icd_phys_devs_array[j].device_count) {
+            bool matches = true;
+            for (uint32_t k = 0; k < icd_phys_devs_array[j].device_count; k++) {
+                if (icd_phys_devs_array[j].physical_devices[k] != next_icd_phys_devs->physical_devices[k]) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                already_enumerated = true;
+            }
+        }
+    }
+    if (!already_enumerated) {
+        next_icd_phys_devs->device_count = count;
+        next_icd_phys_devs->icd_index = icd_idx;
+        next_icd_phys_devs->icd_term = icd_term;
+        next_icd_phys_devs->windows_adapter_luid = luid;
+        (*icd_phys_devs_array_count)++;
+    }
+
+    return VK_SUCCESS;
+}
+
+// Whenever there are multiple drivers for the same hardware and one of the drivers is an implementation layered ontop of another
+// API (such as the Dozen driver which converts vulkan to Dx12), we want to make sure the layered driver appears after the 'native'
+// driver. This function iterates over all physical devices and make sure any with matching LUID's are sorted such that drivers with
+// a underlyingAPI of VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT are ordered after drivers without it.
+void sort_physical_devices_with_same_luid(struct loader_instance *inst, uint32_t icd_phys_devs_array_count,
+                                          struct loader_icd_physical_devices *icd_phys_devs_array) {
+    bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
+
+    for (uint32_t i = 0; icd_phys_devs_array_count > 1 && i < icd_phys_devs_array_count - 1; i++) {
+        for (uint32_t j = i + 1; j < icd_phys_devs_array_count; j++) {
+            // Only want to reorder physical devices if their ICD's LUID's match
+            if ((icd_phys_devs_array[i].windows_adapter_luid.HighPart != icd_phys_devs_array[j].windows_adapter_luid.HighPart) ||
+                (icd_phys_devs_array[i].windows_adapter_luid.LowPart != icd_phys_devs_array[j].windows_adapter_luid.LowPart)) {
+                continue;
+            }
+
+            VkLayeredDriverUnderlyingApiMSFT underlyingAPI = VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT;
+            VkPhysicalDeviceLayeredDriverPropertiesMSFT layered_driver_properties_msft = {0};
+            layered_driver_properties_msft.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT;
+            VkPhysicalDeviceProperties2 props2 = {0};
+            props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            props2.pNext = (void *)&layered_driver_properties_msft;
+
+            // Because there may be multiple physical devices associated with each ICD, we need to check each physical device
+            // whether it is layered
+            for (uint32_t k = 0; k < icd_phys_devs_array[i].device_count; k++) {
+                VkPhysicalDeviceProperties dev_props = {0};
+                icd_phys_devs_array[i].icd_term->dispatch.GetPhysicalDeviceProperties(icd_phys_devs_array[i].physical_devices[k],
+                                                                                      &dev_props);
+
+                bool device_is_1_1_capable =
+                    loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
+
+                PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
+                if (app_is_vulkan_1_1 && device_is_1_1_capable) {
+                    GetPhysDevProps2 = icd_phys_devs_array[i].icd_term->dispatch.GetPhysicalDeviceProperties2;
+                } else {
+                    GetPhysDevProps2 = (PFN_vkGetPhysicalDeviceProperties2)icd_phys_devs_array[i]
+                                           .icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
+                }
+                if (GetPhysDevProps2) {
+                    GetPhysDevProps2(icd_phys_devs_array[i].physical_devices[k], &props2);
+                    if (layered_driver_properties_msft.underlyingAPI != VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT) {
+                        underlyingAPI = layered_driver_properties_msft.underlyingAPI;
+                        break;
+                    }
+                }
+            }
+            if (underlyingAPI == VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT) {
+                struct loader_icd_physical_devices swap_icd = icd_phys_devs_array[i];
+                icd_phys_devs_array[i] = icd_phys_devs_array[j];
+                icd_phys_devs_array[j] = swap_icd;
+            }
+        }
+    }
+}
+
+// This function allocates icd_phys_devs_array which must be freed by the caller if not null
+VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *icd_phys_devs_array_count,
+                                              struct loader_icd_physical_devices **icd_phys_devs_array) {
     VkResult res = VK_SUCCESS;
 
-    uint32_t sorted_alloc = 0;
+    uint32_t icd_phys_devs_array_size = 0;
     struct loader_icd_term *icd_term = NULL;
     IDXGIFactory6 *dxgi_factory = NULL;
     HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void **)&dxgi_factory);
@@ -806,10 +935,10 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Failed to create DXGI factory 6. Physical devices will not be sorted");
         goto out;
     }
-    sorted_alloc = 16;
-    *sorted_devices = loader_instance_heap_calloc(inst, sorted_alloc * sizeof(struct loader_phys_dev_per_icd),
-                                                  VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (*sorted_devices == NULL) {
+    icd_phys_devs_array_size = 16;
+    *icd_phys_devs_array = loader_instance_heap_calloc(inst, icd_phys_devs_array_size * sizeof(struct loader_icd_physical_devices),
+                                                       VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (*icd_phys_devs_array == NULL) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
@@ -833,20 +962,19 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
             continue;
         }
 
-        if (sorted_alloc <= i) {
-            uint32_t old_size = sorted_alloc * sizeof(struct loader_phys_dev_per_icd);
-            *sorted_devices =
-                loader_instance_heap_realloc(inst, *sorted_devices, old_size, 2 * old_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-            if (*sorted_devices == NULL) {
+        if (icd_phys_devs_array_size <= i) {
+            uint32_t old_size = icd_phys_devs_array_size * sizeof(struct loader_icd_physical_devices);
+            *icd_phys_devs_array = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
+                                                                VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (*icd_phys_devs_array == NULL) {
                 adapter->lpVtbl->Release(adapter);
                 res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
-            sorted_alloc *= 2;
+            icd_phys_devs_array_size *= 2;
         }
-        struct loader_phys_dev_per_icd *sorted_array = *sorted_devices;
-        sorted_array[*sorted_devices_count].device_count = 0;
-        sorted_array[*sorted_devices_count].physical_devices = NULL;
+        (*icd_phys_devs_array)[*icd_phys_devs_array_count].device_count = 0;
+        (*icd_phys_devs_array)[*icd_phys_devs_array_count].physical_devices = NULL;
 
         icd_term = inst->icd_terms;
         for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
@@ -855,52 +983,12 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
                 continue;
             }
 
-            uint32_t count = 0;
-            VkResult vkres =
-                icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, description.AdapterLuid, &count, NULL);
-            if (vkres == VK_ERROR_INCOMPATIBLE_DRIVER) {
-                continue;  // This driver doesn't support the adapter
-            } else if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            res = enumerate_adapter_physical_devices(inst, icd_term, icd_idx, description.AdapterLuid, icd_phys_devs_array_count,
+                                                     *icd_phys_devs_array);
+            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                adapter->lpVtbl->Release(adapter);
                 goto out;
-            } else if (vkres != VK_SUCCESS) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code");
-                continue;
             }
-
-            // Get the actual physical devices
-            if (0 != count) {
-                do {
-                    sorted_array[*sorted_devices_count].physical_devices =
-                        loader_instance_heap_realloc(inst, sorted_array[*sorted_devices_count].physical_devices,
-                                                     sorted_array[*sorted_devices_count].device_count * sizeof(VkPhysicalDevice),
-                                                     count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                    if (sorted_array[*sorted_devices_count].physical_devices == NULL) {
-                        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        break;
-                    }
-                    sorted_array[*sorted_devices_count].device_count = count;
-                } while ((vkres = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(
-                              icd_term->instance, description.AdapterLuid, &count,
-                              sorted_array[*sorted_devices_count].physical_devices)) == VK_INCOMPLETE);
-            }
-
-            if (vkres != VK_SUCCESS) {
-                loader_instance_heap_free(inst, sorted_array[*sorted_devices_count].physical_devices);
-                sorted_array[*sorted_devices_count].physical_devices = NULL;
-                if (vkres == VK_ERROR_OUT_OF_HOST_MEMORY) {
-                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                } else {
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Failed to convert DXGI adapter into Vulkan physical device");
-                    continue;
-                }
-            }
-            sorted_array[*sorted_devices_count].device_count = count;
-            sorted_array[*sorted_devices_count].icd_index = icd_idx;
-            sorted_array[*sorted_devices_count].icd_term = icd_term;
-            (*sorted_devices_count)++;
         }
 
         adapter->lpVtbl->Release(adapter);
@@ -908,13 +996,13 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
 
     dxgi_factory->lpVtbl->Release(dxgi_factory);
 
+    sort_physical_devices_with_same_luid(inst, *icd_phys_devs_array_count, *icd_phys_devs_array);
+
 out:
-    if (*sorted_devices_count == 0 && *sorted_devices != NULL) {
-        loader_instance_heap_free(inst, *sorted_devices);
-        *sorted_devices = NULL;
+    if (*icd_phys_devs_array_count == 0 && *icd_phys_devs_array != NULL) {
+        loader_instance_heap_free(inst, *icd_phys_devs_array);
+        *icd_phys_devs_array = NULL;
     }
-    *sorted_devices_count = *sorted_devices_count;
-    *sorted_devices = *sorted_devices;
     return res;
 }
 
@@ -933,7 +1021,7 @@ VkLoaderFeatureFlags windows_initialize_dxgi(void) {
 // Multiple groups could have devices out of the same sorted list, however, a single group's devices must all come
 // from the same sorted list.
 void windows_sort_devices_in_group(struct loader_instance *inst, struct VkPhysicalDeviceGroupProperties *group_props,
-                                   struct loader_phys_dev_per_icd *icd_sorted_list) {
+                                   struct loader_icd_physical_devices *icd_sorted_list) {
     uint32_t cur_index = 0;
     for (uint32_t dev = 0; dev < icd_sorted_list->device_count; ++dev) {
         for (uint32_t grp_dev = cur_index; grp_dev < group_props->physicalDeviceCount; ++grp_dev) {
@@ -958,7 +1046,7 @@ void windows_sort_devices_in_group(struct loader_instance *inst, struct VkPhysic
 VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const uint32_t group_count,
                                              struct loader_physical_device_group_term *sorted_group_term,
                                              const uint32_t sorted_device_count,
-                                             struct loader_phys_dev_per_icd *sorted_phys_dev_array) {
+                                             struct loader_icd_physical_devices *sorted_phys_dev_array) {
     if (0 == group_count || NULL == sorted_group_term) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "windows_sort_physical_device_groups: Called with invalid information (Group count %d, Sorted Info %p)",

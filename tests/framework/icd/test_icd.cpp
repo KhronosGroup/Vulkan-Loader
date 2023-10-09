@@ -988,9 +988,12 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties2(VkPhysicalDevice 
         VkBaseInStructure* pNext = reinterpret_cast<VkBaseInStructure*>(pProperties->pNext);
         while (pNext) {
             if (pNext->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT) {
-                VkPhysicalDevicePCIBusInfoPropertiesEXT* bus_info =
-                    reinterpret_cast<VkPhysicalDevicePCIBusInfoPropertiesEXT*>(pNext);
+                auto* bus_info = reinterpret_cast<VkPhysicalDevicePCIBusInfoPropertiesEXT*>(pNext);
                 bus_info->pciBus = phys_dev.pci_bus;
+            }
+            if (pNext->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT) {
+                auto* layered_driver_props = reinterpret_cast<VkPhysicalDeviceLayeredDriverPropertiesMSFT*>(pNext);
+                layered_driver_props->underlyingAPI = phys_dev.layered_driver_underlying_api;
             }
             pNext = reinterpret_cast<VkBaseInStructure*>(const_cast<VkBaseInStructure*>(pNext->pNext));
         }
@@ -1110,7 +1113,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInst
                                                                           VkPhysicalDevice* pPhysicalDevices) {
     if (adapterLUID.LowPart != icd.adapterLUID.LowPart || adapterLUID.HighPart != icd.adapterLUID.HighPart) {
         *pPhysicalDeviceCount = 0;
-        return VK_SUCCESS;
+        return VK_ERROR_INCOMPATIBLE_DRIVER;
     }
     icd.called_enumerate_adapter_physical_devices = true;
     VkResult res = test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);

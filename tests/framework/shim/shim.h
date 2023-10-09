@@ -89,6 +89,8 @@ struct DXGIAdapter {
     GpuType gpu_preference = GpuType::unspecified;
     DXGI_ADAPTER_DESC1 desc1{};
     uint32_t adapter_index = 0;
+    IDXGIAdapter1 adapter_instance{};
+    IDXGIAdapter1Vtbl adapter_vtbl_instance{};
 };
 
 struct D3DKMT_Adapter {
@@ -156,10 +158,8 @@ struct PlatformShim {
     void add_d3dkmt_adapter(D3DKMT_Adapter const& adapter);
     void set_app_package_path(fs::path const& path);
 
-    uint32_t next_adapter_handle = 1;  // increment everytime add_dxgi_adapter is called
-    std::vector<DXGIAdapter> dxgi_adapters;
-    std::unordered_map<IDXGIAdapter1*, uint32_t> dxgi_adapter_map;
-    // next two are a pair
+    std::unordered_map<uint32_t, DXGIAdapter> dxgi_adapters;
+
     std::vector<D3DKMT_Adapter> d3dkmt_adapters;
 
     // TODO:

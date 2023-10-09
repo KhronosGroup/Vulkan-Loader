@@ -338,7 +338,7 @@ TEST(Allocation, DeviceButNotInstance) {
                                  .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
                                  .finish());
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -392,7 +392,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -467,7 +467,7 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -512,7 +512,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -549,7 +549,7 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -600,7 +600,7 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::env_var));
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -639,7 +639,7 @@ TEST(Allocation, CreateDeviceIntentionalAllocFail) {
                                  .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
                                  .finish());
 
-    const char* layer_name = "VK_LAYER_VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -828,7 +828,7 @@ TEST(TryLoadWrongBinaries, CreateInstanceIntentionalAllocFail) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.add_icd(TestICDDetails(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE).set_is_fake(true));
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -859,7 +859,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -977,7 +977,7 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
             .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     }
 
-    const char* layer_name = "VkLayerImplicit0";
+    const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)

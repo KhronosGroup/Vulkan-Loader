@@ -28,7 +28,7 @@
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
 VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32_t icd_count,
-                                            struct loader_phys_dev_per_icd *icd_devices, uint32_t phys_dev_count,
+                                            struct loader_icd_physical_devices *icd_devices, uint32_t phys_dev_count,
                                             struct loader_physical_device_term **sorted_device_term);
 
 // This function sorts an array in physical device groups

@@ -63,6 +63,9 @@ struct PhysicalDevice {
     BUILDER_VALUE(PhysicalDevice, VkDisplayModeKHR, display_mode, {})
     BUILDER_VALUE(PhysicalDevice, VkDisplayPlaneCapabilitiesKHR, display_plane_capabilities, {})
 
+    BUILDER_VALUE(PhysicalDevice, VkLayeredDriverUnderlyingApiMSFT, layered_driver_underlying_api,
+                  VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT)
+
     PhysicalDevice& set_api_version(uint32_t version) {
         properties.apiVersion = version;
         return *this;
