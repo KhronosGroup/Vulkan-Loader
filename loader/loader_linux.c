@@ -233,7 +233,7 @@ void linux_env_var_default_device(struct loader_instance *inst, uint32_t device_
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
 VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32_t icd_count,
-                                            struct loader_phys_dev_per_icd *icd_devices, uint32_t phys_dev_count,
+                                            struct loader_icd_physical_devices *icd_devices, uint32_t phys_dev_count,
                                             struct loader_physical_device_term **sorted_device_term) {
     VkResult res = VK_SUCCESS;
     bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);

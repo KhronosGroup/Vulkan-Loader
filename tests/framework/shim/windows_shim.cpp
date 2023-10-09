@@ -168,49 +168,24 @@ HRESULT __stdcall ShimGetDesc1(IDXGIAdapter1 *pAdapter,
                                /* [annotation][out] */
                                _Out_ DXGI_ADAPTER_DESC1 *pDesc) {
     if (pAdapter == nullptr || pDesc == nullptr) return DXGI_ERROR_INVALID_CALL;
-    auto it = platform_shim.dxgi_adapter_map.find(pAdapter);
-    if (it == platform_shim.dxgi_adapter_map.end()) {
-        return DXGI_ERROR_INVALID_CALL;
-    }
-    *pDesc = platform_shim.dxgi_adapters[it->second].desc1;
-    return S_OK;
-}
-ULONG __stdcall ShimIDXGIFactory1Release(IDXGIFactory1 *factory) {
-    if (factory != nullptr) {
-        if (factory->lpVtbl != nullptr) {
-            delete factory->lpVtbl;
-        }
-        delete factory;
-    }
-    return S_OK;
-}
-ULONG __stdcall ShimIDXGIFactory6Release(IDXGIFactory6 *factory) {
-    if (factory != nullptr) {
-        if (factory->lpVtbl != nullptr) {
-            delete factory->lpVtbl;
-        }
-        delete factory;
-    }
-    return S_OK;
-}
 
-ULONG __stdcall ShimRelease(IDXGIAdapter1 *pAdapter) {
-    if (pAdapter != nullptr) {
-        if (pAdapter->lpVtbl != nullptr) {
-            delete pAdapter->lpVtbl;
+    for (const auto &[index, adapter] : platform_shim.dxgi_adapters) {
+        if (&adapter.adapter_instance == pAdapter) {
+            *pDesc = adapter.desc1;
+            return S_OK;
         }
-        delete pAdapter;
     }
-    return S_OK;
+    return DXGI_ERROR_INVALID_CALL;
 }
+ULONG __stdcall ShimIDXGIFactory1Release(IDXGIFactory1 *) { return S_OK; }
+ULONG __stdcall ShimIDXGIFactory6Release(IDXGIFactory6 *) { return S_OK; }
+ULONG __stdcall ShimRelease(IDXGIAdapter1 *) { return S_OK; }
 
-IDXGIAdapter1 *create_IDXGIAdapter1() {
-    IDXGIAdapter1Vtbl *vtbl = new IDXGIAdapter1Vtbl();
-    vtbl->GetDesc1 = ShimGetDesc1;
-    vtbl->Release = ShimRelease;
-    IDXGIAdapter1 *adapter = new IDXGIAdapter1();
-    adapter->lpVtbl = vtbl;
-    return adapter;
+IDXGIAdapter1 *setup_and_get_IDXGIAdapter1(DXGIAdapter &adapter) {
+    adapter.adapter_vtbl_instance.GetDesc1 = ShimGetDesc1;
+    adapter.adapter_vtbl_instance.Release = ShimRelease;
+    adapter.adapter_instance.lpVtbl = &adapter.adapter_vtbl_instance;
+    return &adapter.adapter_instance;
 }
 
 HRESULT __stdcall ShimEnumAdapters1_1([[maybe_unused]] IDXGIFactory1 *This,
@@ -221,9 +196,7 @@ HRESULT __stdcall ShimEnumAdapters1_1([[maybe_unused]] IDXGIFactory1 *This,
         return DXGI_ERROR_INVALID_CALL;
     }
     if (ppAdapter != nullptr) {
-        auto *pAdapter = create_IDXGIAdapter1();
-        *ppAdapter = pAdapter;
-        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+        *ppAdapter = setup_and_get_IDXGIAdapter1(platform_shim.dxgi_adapters.at(Adapter));
     }
     return S_OK;
 }
@@ -236,9 +209,7 @@ HRESULT __stdcall ShimEnumAdapters1_6([[maybe_unused]] IDXGIFactory6 *This,
         return DXGI_ERROR_INVALID_CALL;
     }
     if (ppAdapter != nullptr) {
-        auto *pAdapter = create_IDXGIAdapter1();
-        *ppAdapter = pAdapter;
-        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+        *ppAdapter = setup_and_get_IDXGIAdapter1(platform_shim.dxgi_adapters.at(Adapter));
     }
     return S_OK;
 }
@@ -254,40 +225,38 @@ HRESULT __stdcall ShimEnumAdapterByGpuPreference([[maybe_unused]] IDXGIFactory6 
     assert(GpuPreference == DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_UNSPECIFIED &&
            "Test shim assumes the GpuPreference is unspecified.");
     if (ppvAdapter != nullptr) {
-        auto *pAdapter = create_IDXGIAdapter1();
-        *ppvAdapter = pAdapter;
-        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+        *ppvAdapter = setup_and_get_IDXGIAdapter1(platform_shim.dxgi_adapters.at(Adapter));
     }
     return S_OK;
 }
 
-IDXGIFactory1 *create_IDXGIFactory1() {
-    IDXGIFactory1Vtbl *vtbl = new IDXGIFactory1Vtbl();
-    vtbl->EnumAdapters1 = ShimEnumAdapters1_1;
-    vtbl->Release = ShimIDXGIFactory1Release;
-    IDXGIFactory1 *factory = new IDXGIFactory1();
-    factory->lpVtbl = vtbl;
-    return factory;
+static IDXGIFactory1 *get_IDXGIFactory1() {
+    static IDXGIFactory1Vtbl vtbl{};
+    vtbl.EnumAdapters1 = ShimEnumAdapters1_1;
+    vtbl.Release = ShimIDXGIFactory1Release;
+    static IDXGIFactory1 factory{};
+    factory.lpVtbl = &vtbl;
+    return &factory;
 }
 
-IDXGIFactory6 *create_IDXGIFactory6() {
-    IDXGIFactory6Vtbl *vtbl = new IDXGIFactory6Vtbl();
-    vtbl->EnumAdapters1 = ShimEnumAdapters1_6;
-    vtbl->EnumAdapterByGpuPreference = ShimEnumAdapterByGpuPreference;
-    vtbl->Release = ShimIDXGIFactory6Release;
-    IDXGIFactory6 *factory = new IDXGIFactory6();
-    factory->lpVtbl = vtbl;
-    return factory;
+static IDXGIFactory6 *get_IDXGIFactory6() {
+    static IDXGIFactory6Vtbl vtbl{};
+    vtbl.EnumAdapters1 = ShimEnumAdapters1_6;
+    vtbl.EnumAdapterByGpuPreference = ShimEnumAdapterByGpuPreference;
+    vtbl.Release = ShimIDXGIFactory6Release;
+    static IDXGIFactory6 factory{};
+    factory.lpVtbl = &vtbl;
+    return &factory;
 }
 
 HRESULT __stdcall ShimCreateDXGIFactory1(REFIID riid, void **ppFactory) {
     if (riid == IID_IDXGIFactory1) {
-        auto *factory = create_IDXGIFactory1();
+        auto *factory = get_IDXGIFactory1();
         *ppFactory = factory;
         return S_OK;
     }
     if (riid == IID_IDXGIFactory6) {
-        auto *factory = create_IDXGIFactory6();
+        auto *factory = get_IDXGIFactory6();
         *ppFactory = factory;
         return S_OK;
     }

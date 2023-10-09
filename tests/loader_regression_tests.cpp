@@ -4195,3 +4195,177 @@ TEST(InvalidManifest, Layer) {
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 }
+#if defined(WIN32)
+void add_dxgi_adapter(FrameworkEnvironment& env, const char* name, LUID luid, uint32_t vendor_id) {
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_discovery_type(ManifestDiscoveryType::null_dir));
+    driver.set_min_icd_interface_version(5);
+    driver.set_max_icd_interface_version(6);
+    driver.setup_WSI();
+    driver.set_icd_api_version(VK_API_VERSION_1_1);
+    driver.physical_devices.emplace_back(name);
+    auto& pd0 = driver.physical_devices.back();
+    pd0.properties.apiVersion = VK_API_VERSION_1_1;
+
+    DXGI_ADAPTER_DESC1 desc{};
+    desc.VendorId = known_driver_list.at(vendor_id).vendor_id;
+    desc.AdapterLuid = luid;
+    auto wide_name = conver_str_to_wstr(name);
+    wcsncpy_s(desc.Description, 128, wide_name.c_str(), wide_name.size());
+    driver.set_adapterLUID(desc.AdapterLuid);
+    env.platform_shim->add_dxgi_adapter(GpuType::discrete, desc);
+
+    env.platform_shim->add_d3dkmt_adapter(
+        D3DKMT_Adapter{static_cast<UINT>(env.icds.size()) - 1U, desc.AdapterLuid}.add_driver_manifest_path(
+            env.get_icd_manifest_path(env.icds.size() - 1)));
+}
+
+TEST(EnumerateAdapterPhysicalDevices, SameAdapterLUID_reordered) {
+    FrameworkEnvironment env;
+
+    uint32_t physical_count = 3;
+
+    // Physical devices are enumerate in reverse order to the drivers insertion into the test framework
+    add_dxgi_adapter(env, "physical_device_2", LUID{10, 100}, 2);
+    add_dxgi_adapter(env, "physical_device_1", LUID{20, 200}, 1);
+    add_dxgi_adapter(env, "physical_device_0", LUID{10, 100}, 2);
+
+    {
+        uint32_t returned_physical_count = 0;
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.setup_WSI().set_api_version(VK_API_VERSION_1_1);
+        inst.CheckCreate();
+
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        ASSERT_EQ(physical_count, returned_physical_count);
+        std::vector<VkPhysicalDevice> physical_device_handles{returned_physical_count};
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
+                                                                              physical_device_handles.data()));
+        ASSERT_EQ(physical_count, returned_physical_count);
+
+        VkPhysicalDeviceProperties phys_dev_props[3]{};
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[0], &(phys_dev_props[0]));
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[1], &(phys_dev_props[1]));
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[2], &(phys_dev_props[2]));
+
+        EXPECT_TRUE(string_eq(phys_dev_props[0].deviceName, "physical_device_0"));
+        EXPECT_TRUE(string_eq(phys_dev_props[1].deviceName, "physical_device_2"));
+        // Because LUID{10,100} is encountered first, all physical devices which correspond to that LUID are enumerated before any
+        // other physical devices.
+        EXPECT_TRUE(string_eq(phys_dev_props[2].deviceName, "physical_device_1"));
+
+        // Check that both devices do not report VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT
+        VkPhysicalDeviceLayeredDriverPropertiesMSFT layered_driver_properties_msft{};
+        layered_driver_properties_msft.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT;
+        VkPhysicalDeviceProperties2 props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        props2.pNext = (void*)&layered_driver_properties_msft;
+
+        env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[0], &props2);
+        EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+
+        env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[1], &props2);
+        EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+
+        env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[2], &props2);
+        EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+    }
+    // Set the first physical device that is enumerated to be a 'layered' driver so it should be swapped with the first physical
+    // device
+    env.get_test_icd(2).physical_devices.back().layered_driver_underlying_api = VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT;
+    {
+        uint32_t returned_physical_count = 0;
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.setup_WSI().set_api_version(VK_API_VERSION_1_1);
+        inst.CheckCreate();
+
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        ASSERT_EQ(physical_count, returned_physical_count);
+        std::vector<VkPhysicalDevice> physical_device_handles{returned_physical_count};
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count,
+                                                                              physical_device_handles.data()));
+        ASSERT_EQ(physical_count, returned_physical_count);
+
+        VkPhysicalDeviceProperties phys_dev_props[3]{};
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[0], &(phys_dev_props[0]));
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[1], &(phys_dev_props[1]));
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[2], &(phys_dev_props[2]));
+
+        // Because the 'last' driver has the layered_driver set to D3D12, the order is modified
+        EXPECT_TRUE(string_eq(phys_dev_props[0].deviceName, "physical_device_2"));
+        EXPECT_TRUE(string_eq(phys_dev_props[1].deviceName, "physical_device_0"));
+        // Because LUID{10,100} is encountered first, all physical devices which correspond to that LUID are enumerated before any
+        // other physical devices.
+        EXPECT_TRUE(string_eq(phys_dev_props[2].deviceName, "physical_device_1"));
+
+        // Check that the correct physical device reports VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT
+        VkPhysicalDeviceLayeredDriverPropertiesMSFT layered_driver_properties_msft{};
+        layered_driver_properties_msft.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT;
+        VkPhysicalDeviceProperties2 props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        props2.pNext = (void*)&layered_driver_properties_msft;
+
+        env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[0], &props2);
+        EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+
+        env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[1], &props2);
+        EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT);
+
+        env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[2], &props2);
+        EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+    }
+}
+
+TEST(EnumerateAdapterPhysicalDevices, SameAdapterLUID_same_order) {
+    FrameworkEnvironment env;
+
+    uint32_t physical_count = 3;
+
+    // Physical devices are enumerate in reverse order to the drivers insertion into the test framework
+    add_dxgi_adapter(env, "physical_device_2", LUID{10, 100}, 2);
+    add_dxgi_adapter(env, "physical_device_1", LUID{20, 200}, 1);
+    add_dxgi_adapter(env, "physical_device_0", LUID{10, 100}, 2);
+
+    // Set the last physical device that is enumerated last to be a 'layered'  physical device - no swapping should occur
+    env.get_test_icd(0).physical_devices.back().layered_driver_underlying_api = VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT;
+
+    uint32_t returned_physical_count = 0;
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.setup_WSI().set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+    ASSERT_EQ(physical_count, returned_physical_count);
+    std::vector<VkPhysicalDevice> physical_device_handles{returned_physical_count};
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, physical_device_handles.data()));
+    ASSERT_EQ(physical_count, returned_physical_count);
+
+    VkPhysicalDeviceProperties phys_dev_props[3]{};
+    env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[0], &(phys_dev_props[0]));
+    env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[1], &(phys_dev_props[1]));
+    env.vulkan_functions.vkGetPhysicalDeviceProperties(physical_device_handles[2], &(phys_dev_props[2]));
+
+    // Make sure that reordering doesn't occur if the MSFT layered driver appears second
+    EXPECT_TRUE(string_eq(phys_dev_props[0].deviceName, "physical_device_0"));
+    EXPECT_TRUE(string_eq(phys_dev_props[1].deviceName, "physical_device_2"));
+    // Because LUID{10,100} is encountered first, all physical devices which correspond to that LUID are enumerated before any
+    // other physical devices.
+    EXPECT_TRUE(string_eq(phys_dev_props[2].deviceName, "physical_device_1"));
+
+    // Check that the correct physical device reports VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT
+    VkPhysicalDeviceLayeredDriverPropertiesMSFT layered_driver_properties_msft{};
+    layered_driver_properties_msft.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT;
+    VkPhysicalDeviceProperties2 props2{};
+    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    props2.pNext = (void*)&layered_driver_properties_msft;
+
+    env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[0], &props2);
+    EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+
+    env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[1], &props2);
+    EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT);
+
+    env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[2], &props2);
+    EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+}
+#endif  // defined(WIN32)

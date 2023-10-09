@@ -100,14 +100,14 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
                                              struct loader_string_list *out_files);
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *sorted_devices_count,
-                                              struct loader_phys_dev_per_icd **sorted_devices);
+VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *icd_phys_devs_array_count,
+                                              struct loader_icd_physical_devices **icd_phys_devs_array);
 
 // This function sorts an array in physical device groups based on the sorted physical device information
 VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const uint32_t group_count,
                                              struct loader_physical_device_group_term *sorted_group_term,
                                              const uint32_t sorted_device_count,
-                                             struct loader_phys_dev_per_icd *sorted_phys_dev_array);
+                                             struct loader_icd_physical_devices *sorted_phys_dev_array);
 
 // Creates a DXGI factory
 // Returns VkLoaderFeatureFlags containing VK_LOADER_FEATURE_PHYSICAL_DEVICE_SORTING if successful, otherwise 0

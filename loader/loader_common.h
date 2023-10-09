@@ -464,11 +464,14 @@ enum loader_data_files_type {
     LOADER_DATA_FILE_NUM_TYPES  // Not a real field, used for possible loop terminator
 };
 
-struct loader_phys_dev_per_icd {
+struct loader_icd_physical_devices {
     uint32_t device_count;
     VkPhysicalDevice *physical_devices;
     uint32_t icd_index;
     struct loader_icd_term *icd_term;
+#if defined(WIN32)
+    LUID windows_adapter_luid;
+#endif
 };
 
 struct loader_msg_callback_map_entry {
