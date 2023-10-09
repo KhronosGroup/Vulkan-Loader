@@ -15,7 +15,7 @@
             "build_dir": "googletest",
             "install_dir": "googletest",
             "build_step": "skip",
-            "commit": "ec4fed93217bc2830959bb8e86798c1d86956949",
+            "commit": "v1.14.0",
             "optional": [
                 "tests"
             ]
