@@ -4147,3 +4147,51 @@ TEST(Layer, LLP_LAYER_22) {
             R"(possibly corrupted by active layer \(Policy #LLP_LAYER_22\))"));
 #endif
 }
+
+TEST(InvalidManifest, ICD) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    std::vector<std::string> invalid_jsons;
+    invalid_jsons.push_back(",");
+    invalid_jsons.push_back("{},[]");
+    invalid_jsons.push_back("{ \"foo\":\"bar\", }");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": [], },");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": [{},] },");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": {\"fee\"} },");
+    invalid_jsons.push_back("{\"\":\"bar\", \"baz\": {}");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": {\"fee\":1234, true, \"ab\":\"bc\"} },");
+
+    for (size_t i = 0; i < invalid_jsons.size(); i++) {
+        auto file_name = std::string("invalid_driver_") + std::to_string(i) + ".json";
+        fs::path new_path = env.get_folder(ManifestLocation::driver).write_manifest(file_name, invalid_jsons[i]);
+        env.platform_shim->add_manifest(ManifestCategory::icd, new_path);
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+}
+
+TEST(InvalidManifest, Layer) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    std::vector<std::string> invalid_jsons;
+    invalid_jsons.push_back(",");
+    invalid_jsons.push_back("{},[]");
+    invalid_jsons.push_back("{ \"foo\":\"bar\", }");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": [], },");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": [{},] },");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": {\"fee\"} },");
+    invalid_jsons.push_back("{\"\":\"bar\", \"baz\": {}");
+    invalid_jsons.push_back("{\"foo\":\"bar\", \"baz\": {\"fee\":1234, true, \"ab\":\"bc\"} },");
+
+    for (size_t i = 0; i < invalid_jsons.size(); i++) {
+        auto file_name = std::string("invalid_implicit_layer_") + std::to_string(i) + ".json";
+        fs::path new_path = env.get_folder(ManifestLocation::implicit_layer).write_manifest(file_name, invalid_jsons[i]);
+        env.platform_shim->add_manifest(ManifestCategory::implicit_layer, new_path);
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+}

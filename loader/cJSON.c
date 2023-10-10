@@ -253,7 +253,7 @@ static unsigned parse_hex4(const char *str) {
 
 /* Parse the input text into an unescaped cstring, and populate item. */
 static const unsigned char firstByteMark[7] = {0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
-static const char *parse_string(cJSON *item, const char *str) {
+static const char *parse_string(cJSON *item, const char *str, bool *out_of_memory) {
     const char *ptr = str + 1;
     char *ptr2;
     char *out;
@@ -268,7 +268,10 @@ static const char *parse_string(cJSON *item, const char *str) {
         if (*ptr++ == '\\') ptr++; /* Skip escaped quotes. */
 
     out = (char *)cJSON_malloc(item->pAllocator, len + 1); /* This is how long we need for the string, roughly. */
-    if (!out) return 0;
+    if (!out) {
+        *out_of_memory = true;
+        return 0;
+    }
 
     ptr = str + 1;
     ptr2 = out;
@@ -440,11 +443,11 @@ static char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const cha
 static char *print_string(cJSON *item, printbuffer *p) { return print_string_ptr(item->pAllocator, item->valuestring, p); }
 
 /* Predeclare these prototypes. */
-static const char *parse_value(cJSON *item, const char *value);
+static const char *parse_value(cJSON *item, const char *value, bool *out_of_memory);
 static char *print_value(cJSON *item, int depth, int fmt, printbuffer *p);
-static const char *parse_array(cJSON *item, const char *value);
+static const char *parse_array(cJSON *item, const char *value, bool *out_of_memory);
 static char *print_array(cJSON *item, int depth, int fmt, printbuffer *p);
-static const char *parse_object(cJSON *item, const char *value);
+static const char *parse_object(cJSON *item, const char *value, bool *out_of_memory);
 static char *print_object(cJSON *item, int depth, int fmt, printbuffer *p);
 
 /* Utility to jump whitespace and cr/lf */
@@ -455,13 +458,16 @@ static const char *skip(const char *in) {
 
 /* Parse an object - create a new root, and populate. */
 static cJSON *cJSON_ParseWithOpts(const VkAllocationCallbacks *pAllocator, const char *value, const char **return_parse_end,
-                                  int require_null_terminated) {
+                                  int require_null_terminated, bool *out_of_memory) {
     const char *end = 0;
     cJSON *c = cJSON_New_Item(pAllocator);
     // ep = 0; // commented out as it is unused
-    if (!c) return 0; /* memory fail */
+    if (!c) {
+        *out_of_memory = true;
+        return 0; /* memory fail */
+    }
 
-    end = parse_value(c, skip(value));
+    end = parse_value(c, skip(value), out_of_memory);
     if (!end) {
         loader_cJSON_Delete(c);
         return 0;
@@ -481,8 +487,8 @@ static cJSON *cJSON_ParseWithOpts(const VkAllocationCallbacks *pAllocator, const
     return c;
 }
 /* Default options for cJSON_Parse */
-static cJSON *cJSON_Parse(const VkAllocationCallbacks *pAllocator, const char *value) {
-    return cJSON_ParseWithOpts(pAllocator, value, 0, 0);
+static cJSON *cJSON_Parse(const VkAllocationCallbacks *pAllocator, const char *value, bool *out_of_memory) {
+    return cJSON_ParseWithOpts(pAllocator, value, 0, 0, out_of_memory);
 }
 
 /* Render a cJSON item/entity/structure to text. */
@@ -490,7 +496,7 @@ char *loader_cJSON_Print(cJSON *item) { return print_value(item, 0, 1, 0); }
 char *loader_cJSON_PrintUnformatted(cJSON *item) { return print_value(item, 0, 0, 0); }
 
 /* Parser core - when encountering text, process appropriately. */
-static const char *parse_value(cJSON *item, const char *value) {
+static const char *parse_value(cJSON *item, const char *value, bool *out_of_memory) {
     if (!value) return 0; /* Fail on null. */
     if (!strncmp(value, "null", 4)) {
         item->type = cJSON_NULL;
@@ -506,16 +512,16 @@ static const char *parse_value(cJSON *item, const char *value) {
         return value + 4;
     }
     if (*value == '\"') {
-        return parse_string(item, value);
+        return parse_string(item, value, out_of_memory);
     }
     if (*value == '-' || (*value >= '0' && *value <= '9')) {
         return parse_number(item, value);
     }
     if (*value == '[') {
-        return parse_array(item, value);
+        return parse_array(item, value, out_of_memory);
     }
     if (*value == '{') {
-        return parse_object(item, value);
+        return parse_object(item, value, out_of_memory);
     }
 
     // ep = value; // commented out as it is unused
@@ -585,7 +591,7 @@ static char *print_value(cJSON *item, int depth, int fmt, printbuffer *p) {
 }
 
 /* Build an array from input text. */
-static const char *parse_array(cJSON *item, const char *value) {
+static const char *parse_array(cJSON *item, const char *value, bool *out_of_memory) {
     cJSON *child;
     if (*value != '[') {
         // ep = value; // commented out as it is unused
@@ -597,18 +603,24 @@ static const char *parse_array(cJSON *item, const char *value) {
     if (*value == ']') return value + 1; /* empty array. */
 
     item->child = child = cJSON_New_Item(item->pAllocator);
-    if (!item->child) return 0;                    /* memory fail */
-    value = skip(parse_value(child, skip(value))); /* skip any spacing, get the value. */
+    if (!item->child) {
+        *out_of_memory = true;
+        return 0; /* memory fail */
+    }
+    value = skip(parse_value(child, skip(value), out_of_memory)); /* skip any spacing, get the value. */
     if (!value) return 0;
 
     while (*value == ',') {
         cJSON *new_item;
         new_item = cJSON_New_Item(item->pAllocator);
-        if (!new_item) return 0; /* memory fail */
+        if (!new_item) {
+            *out_of_memory = true;
+            return 0; /* memory fail */
+        }
         child->next = new_item;
         new_item->prev = child;
         child = new_item;
-        value = skip(parse_value(child, skip(value + 1)));
+        value = skip(parse_value(child, skip(value + 1), out_of_memory));
         if (!value) return 0; /* memory fail */
     }
 
@@ -718,7 +730,7 @@ static char *print_array(cJSON *item, int depth, int fmt, printbuffer *p) {
 }
 
 /* Build an object from the text. */
-static const char *parse_object(cJSON *item, const char *value) {
+static const char *parse_object(cJSON *item, const char *value, bool *out_of_memory) {
     cJSON *child;
     if (*value != '{') {
         // ep = value; // commented out as it is unused
@@ -730,34 +742,40 @@ static const char *parse_object(cJSON *item, const char *value) {
     if (*value == '}') return value + 1; /* empty array. */
 
     item->child = child = cJSON_New_Item(item->pAllocator);
-    if (!item->child) return 0;
-    value = skip(parse_string(child, skip(value)));
+    if (!item->child) {
+        *out_of_memory = true;
+        return 0;
+    }
+    value = skip(parse_string(child, skip(value), out_of_memory));
     if (!value) return 0;
     child->string = child->valuestring;
     child->valuestring = 0;
     if (*value != ':') {
         // ep = value; // commented out as it is unused
         return 0;
-    }                                                  /* fail! */
-    value = skip(parse_value(child, skip(value + 1))); /* skip any spacing, get the value. */
+    }                                                                 /* fail! */
+    value = skip(parse_value(child, skip(value + 1), out_of_memory)); /* skip any spacing, get the value. */
     if (!value) return 0;
 
     while (*value == ',') {
         cJSON *new_item;
         new_item = cJSON_New_Item(item->pAllocator);
-        if (!new_item) return 0; /* memory fail */
+        if (!new_item) {
+            *out_of_memory = true;
+            return 0; /* memory fail */
+        }
         child->next = new_item;
         new_item->prev = child;
         child = new_item;
-        value = skip(parse_string(child, skip(value + 1)));
+        value = skip(parse_string(child, skip(value + 1), out_of_memory));
         if (!value) return 0;
         child->string = child->valuestring;
         child->valuestring = 0;
         if (*value != ':') {
             // ep = value; // commented out as it is unused
             return 0;
-        }                                                  /* fail! */
-        value = skip(parse_value(child, skip(value + 1))); /* skip any spacing, get the value. */
+        }                                                                 /* fail! */
+        value = skip(parse_value(child, skip(value + 1), out_of_memory)); /* skip any spacing, get the value. */
         if (!value) return 0;
     }
 
@@ -993,11 +1011,15 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
         goto out;
     }
     // Parse text from file
-    *json = cJSON_Parse(inst ? &inst->alloc_callbacks : NULL, json_buf);
-    if (*json == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "loader_get_json: Failed to parse JSON file %s, this is usually because something ran out of memory.", filename);
+    bool out_of_memory = false;
+    *json = cJSON_Parse(inst ? &inst->alloc_callbacks : NULL, json_buf, &out_of_memory);
+    if (out_of_memory) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Out of Memory error occured while parsing JSON file %s.",
+                   filename);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    } else if (*json == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Invalid JSON file %s.", filename);
         goto out;
     }
 
