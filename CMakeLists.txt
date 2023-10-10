@@ -201,11 +201,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC"))
+    # /sdl: Enable additional security checks
     # /GR-: Disable RTTI
     # /guard:cf: Enable control flow guard
     # /wd4152: Disable warning on conversion of a function pointer to a data pointer
     # /wd4201: Disable warning on anonymous struct/unions
-    target_compile_options(loader_common_options INTERFACE /GR- /guard:cf /wd4152 /wd4201)
+    target_compile_options(loader_common_options INTERFACE /sdl /GR- /guard:cf /wd4152 /wd4201)
 
     # Enable control flow guard
     target_link_options(loader_common_options INTERFACE "LINKER:/guard:cf")
