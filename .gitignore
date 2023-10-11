@@ -30,3 +30,16 @@ external/*
 _out64
 out32/*
 out64/*
+
+# Chromium build artifacts
+.cipd/
+.gn
+.gclient
+.gclient_entries
+.gclient_previous_sync_commits
+out/
+third_party/
+buildtools/
+depot_tools/
+testing/
+tools/

@@ -389,33 +389,11 @@ jobs:
               run: ctest --output-on-failure -E UnknownFunction
 
 
-    gn:
-        runs-on: ubuntu-20.04
-
-        strategy:
-            matrix:
-                config: [ Debug, Release ]
-
-        steps:
-            - uses: actions/checkout@v3
-            - name: Get depot tools
-              run: |
-                git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools
-                echo "$GITHUB_WORKSPACE/depot_tools" >> $GITHUB_PATH
-
-            - name: Fetch and install headers
-              run: ./build-gn/update_deps.sh
-
-            - name: Generate build files
-              run: gn gen out/${{matrix.config}} --args="is_debug=true"
-              if: matrix.config != 'Release'
-
-            - name: Generate build files
-              run: gn gen out/${{matrix.config}} --args="is_debug=false"
-              if: matrix.config == 'Release'
-
-            - name: Build the loader
-              run: ninja -C out/${{matrix.config}}
+    chromium:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - run: scripts/gn/gn.py
 
     mingw:
       runs-on: windows-2022
