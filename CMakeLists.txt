@@ -100,7 +100,7 @@ elseif(ANDROID)
     message(FATAL_ERROR "Android build not supported!")
 elseif(APPLE)
     target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
-elseif(UNIX AND NOT APPLE) # i.e.: Linux
+elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD")
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
