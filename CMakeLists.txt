@@ -351,12 +351,6 @@ if(BUILD_TESTS)
             endif(ver EQUAL 0x0700)
             target_compile_definitions(detours PUBLIC "_WIN32_WINNT=${ver}")
 
-            if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-                target_compile_definitions(detours PUBLIC "DETOURS_TARGET_PROCESSOR=X64" DETOURS_X64 DETOURS_64BIT _AMD64_)
-            else("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-                target_compile_definitions(detours PUBLIC "DETOURS_TARGET_PROCESSOR=X86" DETOURS_X86 _X86_)
-            endif("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-
             target_compile_definitions(detours PUBLIC  "DETOURS_VERSION=0x4c0c1" WIN32_LEAN_AND_MEAN)
 
             if(MSVC)
