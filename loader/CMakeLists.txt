@@ -102,7 +102,7 @@ set(NORMAL_LOADER_SRCS
 
 if(WIN32)
     list(APPEND NORMAL_LOADER_SRCS loader_windows.c dirent_on_windows.c)
-elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD")
+elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD|DragonFly|GNU")
     list(APPEND NORMAL_LOADER_SRCS loader_linux.c)
     target_compile_definitions(loader_specific_options INTERFACE LOADER_ENABLE_LINUX_SORT)
 endif()
