@@ -350,6 +350,7 @@ jobs:
                 # Specify the minimum version of macOS on which the target binaries are to be deployed.
                 # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
                 MACOSX_DEPLOYMENT_TARGET: 10.12
+                LDFLAGS: -Wl,-fatal_warnings
 
             - name: Build the loader
               run: cmake --build build
