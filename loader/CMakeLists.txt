@@ -346,9 +346,12 @@ else()
         add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     endif()
     add_dependencies(vulkan loader_asm_gen_files)
-    set_target_properties(vulkan
-                          PROPERTIES SOVERSION "1"
-                          VERSION ${VULKAN_LOADER_VERSION})
+
+    set_target_properties(vulkan PROPERTIES
+        SOVERSION "1"
+        VERSION ${VULKAN_LOADER_VERSION}
+    )
+
     target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m Threads::Threads)
 
     if (LOADER_ENABLE_ADDRESS_SANITIZER)
@@ -385,6 +388,13 @@ else()
             target_compile_definitions(vulkan-framework PRIVATE MODIFY_UNKNOWN_FUNCTION_DECLS)
         endif()
 
+        # Workaround linker warning: https://github.com/KhronosGroup/Vulkan-Loader/issues/1332
+        set(APPLE_VULKAN_LOADER_VERSION "${VULKAN_LOADER_VERSION_MAJOR}.${VULKAN_LOADER_VERSION_MINOR}.0")
+
+        message(STATUS "APPLE_VULKAN_LOADER_VERSION = ${APPLE_VULKAN_LOADER_VERSION}")
+
+        set_target_properties(vulkan PROPERTIES VERSION ${APPLE_VULKAN_LOADER_VERSION})
+
         # The FRAMEWORK_VERSION needs to be "A" here so that Xcode code-signing works when a user adds their framework to an Xcode
         # project and does "Sign on Copy". It would have been nicer to use "1" to denote Vulkan 1. Although Apple docs say that a
         # framework version does not have to be "A", this part of the Apple toolchain expects it.
@@ -394,8 +404,8 @@ else()
             OUTPUT_NAME vulkan
             FRAMEWORK TRUE
             FRAMEWORK_VERSION A
-            VERSION "${VULKAN_LOADER_VERSION}" # "current generated version"
-            SOVERSION "1.0.0"                  # "compatibility version"
+            VERSION "${APPLE_VULKAN_LOADER_VERSION}"
+            SOVERSION "1.0.0"
             MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
             PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
         )
