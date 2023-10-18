@@ -52,7 +52,7 @@ jobs:
                       cxx: g++
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -98,7 +98,7 @@ jobs:
         runs-on: ubuntu-22.04
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -138,7 +138,7 @@ jobs:
                       cxx: g++
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -180,7 +180,7 @@ jobs:
     linux-32-no-asm:
         runs-on: ubuntu-20.04
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -221,7 +221,7 @@ jobs:
                 config: [ Debug, Release ]
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -246,7 +246,7 @@ jobs:
                 arch: [ Win32, x64 ]
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -278,7 +278,7 @@ jobs:
                 config: debug
 
       steps:
-          - uses: actions/checkout@v3
+          - uses: actions/checkout@v4
           - uses: actions/setup-python@v4
             with:
               python-version: '3.7'
@@ -304,7 +304,7 @@ jobs:
             config: [ Release ]
 
       steps:
-          - uses: actions/checkout@v3
+          - uses: actions/checkout@v4
           - uses: actions/setup-python@v4
             with:
               python-version: '3.7'
@@ -341,7 +341,7 @@ jobs:
                     static_build: BUILD_STATIC_LOADER=ON
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -372,7 +372,7 @@ jobs:
                 static_build: [ BUILD_STATIC_LOADER=ON, BUILD_STATIC_LOADER=OFF ]
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
@@ -395,7 +395,7 @@ jobs:
     chromium:
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - run: scripts/gn/gn.py
 
     mingw:
@@ -404,7 +404,7 @@ jobs:
         run:
           shell: bash
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
@@ -441,7 +441,7 @@ jobs:
         run:
           shell: bash
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
@@ -473,7 +473,7 @@ jobs:
         run:
           shell: bash
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
