@@ -329,7 +329,7 @@ jobs:
         strategy:
             matrix:
                 config: [ Debug, Release ]
-                os: [ macos-11, macos-latest ]
+                os: [ macos-11, macos-12 ]
                 static_build: [ BUILD_STATIC_LOADER=ON, BUILD_STATIC_LOADER=OFF ]
                 exclude:
                   - os: macos-latest
@@ -347,16 +347,11 @@ jobs:
             - name: Generate build files
               run: cmake -S. -B build -D CMAKE_BUILD_TYPE=${{matrix.config}} -D ${{matrix.static_build}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -D ENABLE_WERROR=ON -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -G "Ninja"
               env:
-                # Specify the minimum version of macOS on which the target binaries are to be deployed.
-                # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
-                MACOSX_DEPLOYMENT_TARGET: 10.12
                 LDFLAGS: -Wl,-fatal_warnings
 
-            - name: Build the loader
-              run: cmake --build build
+            - run: cmake --build build
 
-            - name: Install the loader
-              run: cmake --install build --prefix build/install
+            - run: cmake --install build --prefix build/install
 
             - name: Run regression tests
               working-directory: ./build
@@ -378,13 +373,8 @@ jobs:
             - name: Generate build files
               run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D ${{matrix.static_build}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -D ENABLE_WERROR=ON -D USE_GAS=OFF -G "Ninja"
               env:
-                # Specify the minimum version of macOS on which the target binaries are to be deployed.
-                # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
-                MACOSX_DEPLOYMENT_TARGET: 10.12
-
-            - name: Build the loader
-              run: cmake --build build
-
+                LDFLAGS: -Wl,-fatal_warnings
+            - run: cmake --build build
             - name: Run regression tests
               working-directory: ./build
               run: ctest --output-on-failure -E UnknownFunction

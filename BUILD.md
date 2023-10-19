@@ -534,10 +534,6 @@ regularly as a part of CI.
 
 ### MacOS Development Environment Requirements
 
-Tested on OSX version 10.12
-
-NOTE: To force the OSX version set the environment variable [MACOSX_DEPLOYMENT_TARGET](https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html) when building.
-
 Setup Homebrew and components
 
 - Ensure Homebrew is at the beginning of your PATH:
