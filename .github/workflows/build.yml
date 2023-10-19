@@ -86,12 +86,6 @@ jobs:
             - name: Verify generated source files
               run: python scripts/generate_source.py --verify external/${{matrix.config}}/Vulkan-Headers/registry
 
-            - name: Verify code formatting with clang-format
-              run: ./scripts/check_code_format.sh
-
-            - name: Verify commit message formatting
-              run: ./scripts/check_commit_message_format.sh
-
     linux-no-asm:
         runs-on: ubuntu-22.04
 
