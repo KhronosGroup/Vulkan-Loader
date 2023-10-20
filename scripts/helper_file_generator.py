@@ -176,10 +176,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         if interface.tag != 'extension':
             return
         name = self.featureName
-        nameElem = interface[0][1]
-        name_define = nameElem.get('name')
-        if 'EXTENSION_NAME' not in name_define:
-            print("Error in vk.xml file -- extension name is not available")
+        name_define = next(enum.get('name') for enum in interface.findall('require/enum') if enum.get('name').endswith('_EXTENSION_NAME'))
         requires = interface.get('requires')
         if requires is not None:
             required_extensions = requires.split(',')
@@ -426,7 +423,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += 'const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {\n'
         object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n'
 
-        dbg_re = '^VK_DEBUG_REPORT_OBJECT_TYPE_(.*)_EXT$'
+        dbg_re = '^VK_DEBUG_REPORT_OBJECT_TYPE_(.*?)(_EXT)?$'
         dbg_map = {to_key(dbg_re, dbg) : dbg for dbg in self.debug_report_object_types}
         dbg_default = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'
         for object_type in type_list:
