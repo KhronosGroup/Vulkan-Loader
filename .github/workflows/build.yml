@@ -83,8 +83,12 @@ jobs:
               working-directory: ./build
               run: ctest --output-on-failure
 
-            - name: Verify generated source files
-              run: python scripts/generate_source.py --verify external/${{matrix.config}}/Vulkan-Headers/registry
+    codegen:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - run: scripts/update_deps.py --dir ext --no-build
+        - run: scripts/generate_source.py --verify ext/Vulkan-Headers/registry/
 
     linux-no-asm:
         runs-on: ubuntu-22.04
