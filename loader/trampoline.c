@@ -1933,7 +1933,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkAllocateCommandBuffers(VkDevice d
     if (res == VK_SUCCESS) {
         for (uint32_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
             if (pCommandBuffers[i]) {
-                loader_init_dispatch(pCommandBuffers[i], disp);
+                loader_set_dispatch(pCommandBuffers[i], disp);
             }
         }
     }
