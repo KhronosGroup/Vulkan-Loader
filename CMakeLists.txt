@@ -99,7 +99,13 @@ if(WIN32)
 elseif(ANDROID)
     message(FATAL_ERROR "Android build not supported!")
 elseif(APPLE)
-    target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
+    target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_METAL_EXT)
+    if (IOS)
+        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_IOS_MVK)
+    endif()
+    if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_MACOS_MVK)
+    endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD|DragonFly|GNU")
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
@@ -148,12 +154,6 @@ set(LOADER_STANDARD_C_PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSI
 set(LOADER_STANDARD_CXX_PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
 
 set(TESTS_STANDARD_CXX_PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES} MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-
-# Build for iOS and tvOS
-option(APPLE_EMBEDDED "Apple non desktop devices" OFF)
-if (APPLE_EMBEDDED)
-    add_definitions(-D__APPLE_EMBEDDED__)
-endif()
 
 # Force the use of the multithreaded, static version of the C runtime.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
