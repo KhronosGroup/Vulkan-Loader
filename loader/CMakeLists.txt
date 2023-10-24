@@ -201,6 +201,21 @@ end
         message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
     endif()
 elseif(UNIX) # i.e.: Linux & Apple
+
+    # This is hacky but works for now to get iOS/tvOS working.
+    # The problem is CMAKE_SYSTEM_PROCESSOR is empty when compiling for these platforms.
+    # This is likely due to the fact that CMAKE_OSX_ARCHITECTURES lets you compile for
+    # multiple archs at the same time.
+    #
+    # EX:
+    #  -D CMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+    if (APPLE AND CMAKE_CROSSCOMPILING)
+        set(CMAKE_SYSTEM_PROCESSOR "${CMAKE_OSX_ARCHITECTURES}")
+    endif()
+    if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES ";")
+        message(FATAL_ERROR "Cannot handle multiple archs ( ${CMAKE_OSX_ARCHITECTURES} ) at the same time!")
+    endif()
+
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
         enable_language(ASM)
@@ -208,12 +223,12 @@ elseif(UNIX) # i.e.: Linux & Apple
         set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
         set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-        if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64" OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")
+        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64|arm64")
             try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S)
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
             endif()
-        elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64" OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "amd64" OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^i.86$")
+        elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64|amd64|x86|^i.86$")
             check_include_file("cet.h" HAVE_CET_H)
             if(HAVE_CET_H)
                 target_compile_definitions(loader_specific_options INTERFACE HAVE_CET_H)
@@ -230,7 +245,7 @@ elseif(UNIX) # i.e.: Linux & Apple
     # Instead, check the size of void* and if its 4, set ASM_OFFSET_SYSTEM_PROCESSOR to x86
     # Note - there is no 32 bit arm assembly code, so this only applies to x86 currently.
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        set(ASM_OFFSET_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}) # x86_64 or aarch64
+        set(ASM_OFFSET_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}) # x86_64 or aarch64/arm64
     else()
         set(ASM_OFFSET_SYSTEM_PROCESSOR "x86")
     endif()

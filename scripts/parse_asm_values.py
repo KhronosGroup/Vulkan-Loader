@@ -72,7 +72,7 @@ with open(destination_file, "w", encoding="utf-8") as dest:
         # let the assembler know which platform to use
         if arch == "x86_64":
             dest.write(".set X86_64, 1\n")
-        elif arch == "aarch64":
+        elif arch == "aarch64" or arch == "arm64":
             dest.write(".set AARCH_64, 1\n")
         # Nothing to write in the x86 case
 

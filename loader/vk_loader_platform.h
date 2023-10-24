@@ -275,13 +275,16 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     return buffer;
 }
 #elif defined(__APPLE__)
-#if defined(__APPLE_EMBEDDED__)
+#include <TargetConditionals.h>
+// TARGET_OS_IPHONE isn't just iOS it's also iOS/tvOS/watchOS. See TargetConditionals.h documentation.
+#if TARGET_OS_IPHONE
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     (void)size;
     buffer[0] = '\0';
     return buffer;
 }
-#else
+#endif
+#if TARGET_OS_OSX
 #include <libproc.h>
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     pid_t pid = getpid();
