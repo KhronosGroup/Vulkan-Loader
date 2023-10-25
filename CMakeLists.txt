@@ -219,21 +219,23 @@ endif()
 # Add git branch and tag info in debug mode
 target_compile_definitions(loader_common_options INTERFACE $<$<CONFIG:DEBUG>:DEBUG;GIT_BRANCH_NAME="${GIT_BRANCH_NAME}";GIT_TAG_INFO="${GIT_TAG_INFO}">)
 
-# Check for the existance of the secure_getenv or __secure_getenv commands
-include(CheckFunctionExists)
-include(CheckIncludeFile)
+if (NOT (WIN32 OR APPLE))
+    # Check for the existance of the secure_getenv or __secure_getenv commands
+    include(CheckFunctionExists)
+    include(CheckIncludeFile)
 
-check_function_exists(secure_getenv HAVE_SECURE_GETENV)
-check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
+    check_function_exists(secure_getenv HAVE_SECURE_GETENV)
+    check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
 
-if (HAVE_SECURE_GETENV)
-    target_compile_definitions(loader_common_options INTERFACE HAVE_SECURE_GETENV)
-endif()
-if (HAVE___SECURE_GETENV)
-    target_compile_definitions(loader_common_options INTERFACE HAVE___SECURE_GETENV)
-endif()
-if(NOT MSVC AND NOT (HAVE_SECURE_GETENV OR HAVE___SECURE_GETENV))
-    message(WARNING "Using non-secure environmental lookups. This loader will not properly disable environent variables when run with elevated permissions.")
+    if (HAVE_SECURE_GETENV)
+        target_compile_definitions(loader_common_options INTERFACE HAVE_SECURE_GETENV)
+    endif()
+    if (HAVE___SECURE_GETENV)
+        target_compile_definitions(loader_common_options INTERFACE HAVE___SECURE_GETENV)
+    endif()
+    if (NOT (HAVE_SECURE_GETENV OR HAVE___SECURE_GETENV))
+        message(WARNING "Using non-secure environmental lookups. This loader will not properly disable environent variables when run with elevated permissions.")
+    endif()
 endif()
 
 option(LOADER_CODEGEN "Enable vulkan loader code generation")
