@@ -222,7 +222,6 @@ target_compile_definitions(loader_common_options INTERFACE $<$<CONFIG:DEBUG>:DEB
 if (NOT (WIN32 OR APPLE))
     # Check for the existance of the secure_getenv or __secure_getenv commands
     include(CheckFunctionExists)
-    include(CheckIncludeFile)
 
     check_function_exists(secure_getenv HAVE_SECURE_GETENV)
     check_function_exists(__secure_getenv HAVE___SECURE_GETENV)

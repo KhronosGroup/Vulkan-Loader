@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
+include(CheckIncludeFile)
 
 add_library(loader_specific_options INTERFACE)
 target_link_libraries(loader_specific_options INTERFACE loader_common_options Vulkan::Headers)
