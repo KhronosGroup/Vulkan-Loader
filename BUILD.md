@@ -603,7 +603,7 @@ QNX is using its own build system. The proper build environment must be set
 under the QNX host development system (Linux, Win64, MacOS) by invoking
 the shell/batch script provided with QNX installation.
 
-Then change working directory to the "build-qnx" in this project and type "make".
+Then change working directory to the "scripts/qnx" in this project and type "make".
 It will build the ICD loader for all CPU targets supported by QNX.
 
 ## Cross Compilation
