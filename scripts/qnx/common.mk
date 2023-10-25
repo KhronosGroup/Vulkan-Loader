@@ -7,9 +7,9 @@ define PINFO
 PINFO DESCRIPTION = "Vulkan ICD Loader"
 endef
 
-ICD_ROOT=$(CURDIR)/../../../..
+ICD_ROOT=$(CURDIR)/../../../../..
 
-EXTRA_INCVPATH+=$(ICD_ROOT)/build_qnx
+EXTRA_INCVPATH+=$(ICD_ROOT)/scripts/gn
 EXTRA_INCVPATH+=$(ICD_ROOT)/external/Vulkan-Headers/include
 
 EXTRA_SRCVPATH+=$(ICD_ROOT)/loader
@@ -30,14 +30,11 @@ LDFLAGS += -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,-fPIC
 
 include $(MKFILES_ROOT)/qtargets.mk
 
-CCFLAGS += -DVK_USE_PLATFORM_SCREEN_QNX=1 -Dvulkan_EXPORTS
+CCFLAGS += -DVK_USE_PLATFORM_SCREEN_QNX=1 -DVK_ENABLE_BETA_EXTENSIONS
 CCFLAGS += -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 CCFLAGS += -fno-strict-aliasing -fno-builtin-memcmp -Wno-stringop-truncation
 CCFLAGS += -Wno-stringop-overflow -fvisibility=hidden
 CCFLAGS += -Wpointer-arith -fPIC
-
-# Enable this if required
-CCFLAGS += -DVK_ENABLE_BETA_EXTENSIONS
 
 CXXFLAGS += $(CCFLAGS)
 

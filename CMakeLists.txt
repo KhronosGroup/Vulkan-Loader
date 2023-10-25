@@ -111,7 +111,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD|DragonFly|GNU")
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
     option(BUILD_WSI_DIRECTFB_SUPPORT "Build DirectFB WSI support" OFF)
-    option(BUILD_WSI_SCREEN_QNX_SUPPORT "Build QNX Screen WSI support" OFF)
 
     find_package(PkgConfig REQUIRED QUIET) # Use PkgConfig to find Linux system libraries
 
@@ -133,10 +132,8 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD|DragonFly|GNU")
         target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_DIRECTFB_EXT)
         target_link_libraries(platform_wsi INTERFACE PkgConfig::DirectFB)
     endif()
-    if(BUILD_WSI_SCREEN_QNX_SUPPORT)
-        # Part of OS, no additional include directories are required
-        target_compile_definitions(platform_wsi INTERFACE VK_USE_PLATFORM_SCREEN_QNX)
-    endif()
+elseif(CMAKE_SYSTEM_NAME MATCHES "QNX")
+    message(FATAL_ERROR "See BUILD.md for QNX build")
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
