@@ -4691,18 +4691,18 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
         loader_init_instance_core_dispatch_table(&inst->disp->layer_inst_disp, next_gipa, *created_instance);
         inst->instance = *created_instance;
-    }
 
-    if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
-        res = create_string_list(inst, pCreateInfo->enabledLayerCount, &inst->enabled_layer_names);
-        if (res != VK_SUCCESS) {
-            return res;
-        }
+        if (pCreateInfo->enabledLayerCount > 0 && pCreateInfo->ppEnabledLayerNames != NULL) {
+            res = create_string_list(inst, pCreateInfo->enabledLayerCount, &inst->enabled_layer_names);
+            if (res != VK_SUCCESS) {
+                return res;
+            }
 
-        for (uint32_t i = 0; i < pCreateInfo->enabledLayerCount; ++i) {
-            res = copy_str_to_string_list(inst, &inst->enabled_layer_names, pCreateInfo->ppEnabledLayerNames[i],
-                                          strlen(pCreateInfo->ppEnabledLayerNames[i]));
-            if (res != VK_SUCCESS) return res;
+            for (uint32_t i = 0; i < pCreateInfo->enabledLayerCount; ++i) {
+                res = copy_str_to_string_list(inst, &inst->enabled_layer_names, pCreateInfo->ppEnabledLayerNames[i],
+                                              strlen(pCreateInfo->ppEnabledLayerNames[i]));
+                if (res != VK_SUCCESS) return res;
+            }
         }
     }
 
