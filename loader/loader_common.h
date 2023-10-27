@@ -307,13 +307,10 @@ struct loader_instance {
     struct loader_extension_list ext_list;  // icds and loaders extensions
     struct loader_instance_extension_enables enabled_known_extensions;
 
-    // Stores debug callbacks - used in the log
-    VkLayerDbgFunctionNode *DbgFunctionHead;
-
-    // Stores the debug callbacks set during instance creation
-    // These are kept separate because they aren't to be used outside of instance creation and destruction
-    // So they are swapped out at the end of instance creation and swapped in at instance destruction
-    VkLayerDbgFunctionNode *InstanceCreationDeletionDebugFunctionHead;
+    // Stores debug callbacks - used in the log.
+    VkLayerDbgFunctionNode *current_dbg_function_head;        // Current head
+    VkLayerDbgFunctionNode *instance_only_dbg_function_head;  // Only used for instance create/destroy
+    VkLayerDbgFunctionNode *standard_dbg_function_head;       // Always used until destroyed
 
     VkAllocationCallbacks alloc_callbacks;
 
