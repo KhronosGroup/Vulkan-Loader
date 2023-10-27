@@ -484,6 +484,45 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
     return res;
 }
 
+// Add the "instance-only" debug functions to the list of active debug functions
+// at the very end.  This way it doesn't get replaced by any new messengers
+static void AddInstanceOnlyDebugFunctions(struct loader_instance *ptr_instance) {
+    VkLayerDbgFunctionNode *cur_node = ptr_instance->current_dbg_function_head;
+    if (cur_node == NULL) {
+        ptr_instance->current_dbg_function_head = ptr_instance->instance_only_dbg_function_head;
+    } else {
+        while (cur_node != NULL) {
+            if (cur_node == ptr_instance->instance_only_dbg_function_head) {
+                // Already added
+                break;
+            }
+            // Last item
+            else if (cur_node->pNext == NULL) {
+                cur_node->pNext = ptr_instance->instance_only_dbg_function_head;
+            }
+            cur_node = cur_node->pNext;
+        }
+    }
+}
+
+// Remove the "instance-only" debug functions from the list of active debug functions.
+// It should be added after the last actual debug utils/debug report function.
+static void RemoveInstanceOnlyDebugFunctions(struct loader_instance *ptr_instance) {
+    VkLayerDbgFunctionNode *cur_node = ptr_instance->current_dbg_function_head;
+
+    // Only thing in list is the instance only head
+    if (cur_node == ptr_instance->instance_only_dbg_function_head) {
+        ptr_instance->current_dbg_function_head = NULL;
+    }
+    while (cur_node != NULL) {
+        if (cur_node->pNext == ptr_instance->instance_only_dbg_function_head) {
+            cur_node->pNext = NULL;
+            break;
+        }
+        cur_node = cur_node->pNext;
+    }
+}
+
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkInstance *pInstance) {
     struct loader_instance *ptr_instance = NULL;
@@ -749,8 +788,7 @@ out:
             loader_instance_heap_free(ptr_instance, ptr_instance);
         } else {
             // success path, swap out created debug callbacks out so they aren't used until instance destruction
-            ptr_instance->InstanceCreationDeletionDebugFunctionHead = ptr_instance->DbgFunctionHead;
-            ptr_instance->DbgFunctionHead = NULL;
+            RemoveInstanceOnlyDebugFunctions(ptr_instance);
         }
         // Only unlock when ptr_instance isn't NULL, as if it is, the above code didn't make it to when loader_lock was locked.
         loader_platform_thread_unlock_mutex(&loader_lock);
@@ -784,8 +822,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     destroy_debug_callbacks_chain(ptr_instance, pAllocator);
 
     // Swap in the debug callbacks created during instance creation
-    ptr_instance->DbgFunctionHead = ptr_instance->InstanceCreationDeletionDebugFunctionHead;
-    ptr_instance->InstanceCreationDeletionDebugFunctionHead = NULL;
+    AddInstanceOnlyDebugFunctions(ptr_instance);
 
     disp = loader_get_instance_layer_dispatch(instance);
     disp->DestroyInstance(ptr_instance->instance, pAllocator);
