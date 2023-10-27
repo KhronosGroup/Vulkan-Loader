@@ -229,7 +229,8 @@ elseif(UNIX) # i.e.: Linux & Apple
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
             endif()
-        elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64|amd64|x86|^i.86$")
+        # Covers x86_64, amd64, x86, i386, i686, I386, I686
+        elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "amd64|86")
             check_include_file("cet.h" HAVE_CET_H)
             if(HAVE_CET_H)
                 target_compile_definitions(loader_specific_options INTERFACE HAVE_CET_H)
