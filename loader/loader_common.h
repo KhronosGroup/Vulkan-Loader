@@ -310,7 +310,6 @@ struct loader_instance {
     // Stores debug callbacks - used in the log.
     VkLayerDbgFunctionNode *current_dbg_function_head;        // Current head
     VkLayerDbgFunctionNode *instance_only_dbg_function_head;  // Only used for instance create/destroy
-    VkLayerDbgFunctionNode *standard_dbg_function_head;       // Always used until destroyed
 
     VkAllocationCallbacks alloc_callbacks;
 

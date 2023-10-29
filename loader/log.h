@@ -54,9 +54,6 @@ void loader_init_global_debug_level(void);
 // Sets the global debug level - used by global settings files
 void loader_set_global_debug_level(uint32_t new_loader_debug);
 
-// Returns a bitmask that indicates the current flags that should be output
-uint32_t loader_get_global_debug_level(void);
-
 // The asm declaration prevents name mangling which is necessary for macOS
 #if defined(MODIFY_UNKNOWN_FUNCTION_DECLS)
 #define ASM_NAME(name) __asm(name)
