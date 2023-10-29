@@ -486,7 +486,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
 
 // Add the "instance-only" debug functions to the list of active debug functions
 // at the very end.  This way it doesn't get replaced by any new messengers
-static void AddInstanceOnlyDebugFunctions(struct loader_instance *ptr_instance) {
+void loader_add_instance_only_debug_funcs(struct loader_instance *ptr_instance) {
     VkLayerDbgFunctionNode *cur_node = ptr_instance->current_dbg_function_head;
     if (cur_node == NULL) {
         ptr_instance->current_dbg_function_head = ptr_instance->instance_only_dbg_function_head;
@@ -507,7 +507,7 @@ static void AddInstanceOnlyDebugFunctions(struct loader_instance *ptr_instance) 
 
 // Remove the "instance-only" debug functions from the list of active debug functions.
 // It should be added after the last actual debug utils/debug report function.
-static void RemoveInstanceOnlyDebugFunctions(struct loader_instance *ptr_instance) {
+void loader_remove_instance_only_debug_funcs(struct loader_instance *ptr_instance) {
     VkLayerDbgFunctionNode *cur_node = ptr_instance->current_dbg_function_head;
 
     // Only thing in list is the instance only head
@@ -788,7 +788,7 @@ out:
             loader_instance_heap_free(ptr_instance, ptr_instance);
         } else {
             // success path, swap out created debug callbacks out so they aren't used until instance destruction
-            RemoveInstanceOnlyDebugFunctions(ptr_instance);
+            loader_remove_instance_only_debug_funcs(ptr_instance);
         }
         // Only unlock when ptr_instance isn't NULL, as if it is, the above code didn't make it to when loader_lock was locked.
         loader_platform_thread_unlock_mutex(&loader_lock);
@@ -822,7 +822,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     destroy_debug_callbacks_chain(ptr_instance, pAllocator);
 
     // Swap in the debug callbacks created during instance creation
-    AddInstanceOnlyDebugFunctions(ptr_instance);
+    loader_add_instance_only_debug_funcs(ptr_instance);
 
     disp = loader_get_instance_layer_dispatch(instance);
     disp->DestroyInstance(ptr_instance->instance, pAllocator);

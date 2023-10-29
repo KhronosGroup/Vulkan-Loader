@@ -2078,10 +2078,8 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                prop->component_layer_names.count);
 
     // If layer logging is on, list the internals included in the meta-layer
-    if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
-        for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names.list[comp_layer]);
-        }
+    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names.list[comp_layer]);
     }
     return true;
 }
@@ -4656,27 +4654,25 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
-        if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "vkCreateInstance layer callstack setup to:");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Application>");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader>");
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-            for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
-                uint32_t index = num_activated_layers - cur_layer - 1;
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
-                           activated_layers[index].is_implicit ? "Implicit" : "Explicit");
-                if (activated_layers[index].is_implicit) {
-                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
-                               activated_layers[index].disable_env);
-                }
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifest: %s", activated_layers[index].manifest);
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "vkCreateInstance layer callstack setup to:");
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Application>");
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Loader>");
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
+        for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
+            uint32_t index = num_activated_layers - cur_layer - 1;
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
+                       activated_layers[index].is_implicit ? "Implicit" : "Explicit");
+            if (activated_layers[index].is_implicit) {
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
+                           activated_layers[index].disable_env);
             }
-            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Drivers>");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifest: %s", activated_layers[index].manifest);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
         }
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   <Drivers>");
 
         res = fpCreateInstance(&loader_create_info, pAllocator, created_instance);
     } else {
@@ -4921,29 +4917,25 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         // If layer debugging is enabled, let's print out the full callstack with layers in their
         // defined order.
         uint32_t layer_driver_bits = VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT;
-        if ((loader_get_global_debug_level() & layer_driver_bits) != 0) {
-            loader_log(inst, layer_driver_bits, 0, "vkCreateDevice layer callstack setup to:");
-            loader_log(inst, layer_driver_bits, 0, "   <Application>");
-            loader_log(inst, layer_driver_bits, 0, "     ||");
-            loader_log(inst, layer_driver_bits, 0, "   <Loader>");
-            loader_log(inst, layer_driver_bits, 0, "     ||");
-            if ((loader_get_global_debug_level() & VULKAN_LOADER_LAYER_BIT) != 0) {
-                for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
-                    uint32_t index = num_activated_layers - cur_layer - 1;
-                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
-                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
-                               activated_layers[index].is_implicit ? "Implicit" : "Explicit");
-                    if (activated_layers[index].is_implicit) {
-                        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
-                                   activated_layers[index].disable_env);
-                    }
-                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifest: %s", activated_layers[index].manifest);
-                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
-                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
-                }
+        loader_log(inst, layer_driver_bits, 0, "vkCreateDevice layer callstack setup to:");
+        loader_log(inst, layer_driver_bits, 0, "   <Application>");
+        loader_log(inst, layer_driver_bits, 0, "     ||");
+        loader_log(inst, layer_driver_bits, 0, "   <Loader>");
+        loader_log(inst, layer_driver_bits, 0, "     ||");
+        for (uint32_t cur_layer = 0; cur_layer < num_activated_layers; ++cur_layer) {
+            uint32_t index = num_activated_layers - cur_layer - 1;
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
+                       activated_layers[index].is_implicit ? "Implicit" : "Explicit");
+            if (activated_layers[index].is_implicit) {
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
+                           activated_layers[index].disable_env);
             }
-            loader_log(inst, layer_driver_bits, 0, "   <Device>");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifest: %s", activated_layers[index].manifest);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "     ||");
         }
+        loader_log(inst, layer_driver_bits, 0, "   <Device>");
         create_info_disp.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp;
         res = fpCreateDevice(pd, &loader_create_info, pAllocator, &created_device);

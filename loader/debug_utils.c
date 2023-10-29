@@ -124,7 +124,6 @@ void util_DestroyDebugUtilsMessenger(struct loader_instance *inst, VkDebugUtilsM
             pPrev->pNext = pTrav->pNext;
             if (inst->current_dbg_function_head == pTrav) inst->current_dbg_function_head = pTrav->pNext;
             if (inst->instance_only_dbg_function_head == pTrav) inst->instance_only_dbg_function_head = pTrav->pNext;
-            if (inst->standard_dbg_function_head == pTrav) inst->standard_dbg_function_head = pTrav->pNext;
             loader_free_with_instance_fallback(pAllocator, inst, pTrav);
             break;
         }
@@ -220,9 +219,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugUtilsMessengerEXT(VkInstanc
     new_dbg_func_node->messenger.messageSeverity = pCreateInfo->messageSeverity;
     new_dbg_func_node->messenger.messageType = pCreateInfo->messageType;
     new_dbg_func_node->pUserData = pCreateInfo->pUserData;
-    new_dbg_func_node->pNext = inst->standard_dbg_function_head;
-    inst->standard_dbg_function_head = new_dbg_func_node;
-    inst->current_dbg_function_head = inst->standard_dbg_function_head;
+    new_dbg_func_node->pNext = inst->current_dbg_function_head;
+    inst->current_dbg_function_head = new_dbg_func_node;
 
     *(VkDebugUtilsMessengerEXT **)pMessenger = icd_info;
     new_dbg_func_node->messenger.messenger = *pMessenger;
@@ -380,7 +378,7 @@ void util_DestroyDebugReportCallback(struct loader_instance *inst, VkDebugReport
             pPrev->pNext = pTrav->pNext;
             if (inst->current_dbg_function_head == pTrav) inst->current_dbg_function_head = pTrav->pNext;
             if (inst->instance_only_dbg_function_head == pTrav) inst->instance_only_dbg_function_head = pTrav->pNext;
-            if (inst->standard_dbg_function_head == pTrav) inst->standard_dbg_function_head = pTrav->pNext;
+            if (inst->current_dbg_function_head == pTrav) inst->current_dbg_function_head = pTrav->pNext;
             loader_free_with_instance_fallback(pAllocator, inst, pTrav);
             break;
         }
@@ -478,7 +476,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugReportCallbackEXT(VkInstanc
     new_dbg_func_node->pUserData = pCreateInfo->pUserData;
     new_dbg_func_node->pNext = inst->current_dbg_function_head;
     inst->current_dbg_function_head = new_dbg_func_node;
-    inst->standard_dbg_function_head = inst->current_dbg_function_head;
 
     *(VkDebugReportCallbackEXT **)pCallback = icd_info;
     new_dbg_func_node->report.msgCallback = *pCallback;
