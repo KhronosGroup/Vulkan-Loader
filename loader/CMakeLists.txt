@@ -451,6 +451,7 @@ add_library(Vulkan::Loader ALIAS vulkan)
 
 if (APPLE AND BUILD_STATIC_LOADER)
     # When exporting a static library all linked libraries - private or not - need to be exported.
+    install(TARGETS vulkan)
     message(NOTICE "vulkan.pc and VulkanLoaderConfig.cmake not generated for STATIC Apple builds!")
     return()
 endif()
