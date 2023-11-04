@@ -28,3 +28,6 @@ if(APPLE_STATIC_LOADER)
         target_link_options(macos_static_loader_build PUBLIC -fsanitize=thread)
     endif()
 endif()
+
+add_executable(time_dynamic_loading time_dynamic_loading.cpp)
+target_link_libraries(time_dynamic_loading Vulkan::Headers vulkan)
