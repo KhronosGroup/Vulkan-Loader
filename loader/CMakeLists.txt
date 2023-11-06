@@ -450,8 +450,8 @@ target_link_libraries(vulkan PRIVATE Vulkan::Headers)
 add_library(Vulkan::Loader ALIAS vulkan)
 
 if (APPLE AND BUILD_STATIC_LOADER)
-    # When exporting a static library all linked libraries - private or not - need to be exported.
-    message(NOTICE "vulkan.pc and VulkanLoaderConfig.cmake not generated for STATIC Apple builds!")
+    # TLDR: This feature only exists at the request of Google for Chromium. No other project should use this!
+    message(NOTICE "Apple STATIC lib: it will be built but not installed, and vulkan.pc and VulkanLoaderConfig.cmake won't be generated!")
     return()
 endif()
 
