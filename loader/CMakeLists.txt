@@ -110,12 +110,23 @@ endif()
 
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
 
+# Apple supports universal binaries.
+# EX:
+#  -D CMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES ";")
+    message(NOTICE "Disabling GAS in order to build universal binary!")
+
+    set(LOADER_UNIVERSAL_BINARY ON)
+endif()
+
 # Check for assembler support
 set(ASM_FAILURE_MSG "The build will fall back on building with C code\n")
 set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG}Note that this may be unsafe, as the C code requires tail-call optimizations to remove")
 set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} the stack frame for certain calls. If the compiler does not do this, then unknown device")
 set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted stack.")
-if(WIN32)
+if(LOADER_UNIVERSAL_BINARY)
+    set(USE_ASSEMBLY_FALLBACK ON)
+elseif(WIN32)
     option(USE_MASM "Use MASM" ON)
     if(USE_MASM AND MINGW)
         find_program(JWASM_FOUND NAMES jwasm uasm)
@@ -201,22 +212,7 @@ end
         set(USE_ASSEMBLY_FALLBACK ON)
         message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
     endif()
-elseif(UNIX) # i.e.: Linux & Apple
-
-    # This is hacky but works for now to get iOS/tvOS working.
-    # The problem is CMAKE_SYSTEM_PROCESSOR is empty when compiling for these platforms.
-    # This is likely due to the fact that CMAKE_OSX_ARCHITECTURES lets you compile for
-    # multiple archs at the same time.
-    #
-    # EX:
-    #  -D CMAKE_OSX_ARCHITECTURES="x86_64;arm64"
-    if (APPLE AND CMAKE_CROSSCOMPILING)
-        set(CMAKE_SYSTEM_PROCESSOR "${CMAKE_OSX_ARCHITECTURES}")
-    endif()
-    if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES ";")
-        message(FATAL_ERROR "Cannot handle multiple archs ( ${CMAKE_OSX_ARCHITECTURES} ) at the same time!")
-    endif()
-
+elseif(UNIX) # i.e.: Linux & Apple (Except in the case of universal binaries)
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
         enable_language(ASM)
@@ -362,7 +358,9 @@ else()
     else()
         add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     endif()
-    add_dependencies(vulkan loader_asm_gen_files)
+    if (TARGET loader_asm_gen_files)
+        add_dependencies(vulkan loader_asm_gen_files)
+    endif()
 
     set_target_properties(vulkan PROPERTIES
         SOVERSION "1"
@@ -394,7 +392,9 @@ else()
         else()
             add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
         endif()
-        add_dependencies(vulkan-framework loader_asm_gen_files)
+        if (TARGET loader_asm_gen_files)
+            add_dependencies(vulkan-framework loader_asm_gen_files)
+        endif()
         target_link_libraries(vulkan-framework ${CMAKE_DL_LIBS} Threads::Threads -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework loader_specific_options)
 

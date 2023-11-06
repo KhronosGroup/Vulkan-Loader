@@ -355,6 +355,29 @@ jobs:
               working-directory: ./build
               run: ctest --output-on-failure
 
+    # SDK ships with a universal binaries
+    # Ensure Univeral Binary Builds build cleanly.
+    mac-univeral-binary:
+      runs-on: macos-13
+      steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v4
+            with:
+              python-version: '3.7'
+          - uses: lukka/get-cmake@latest
+          - run: cmake -S. -B build
+            env:
+              LDFLAGS: -Wl,-fatal_warnings
+              CMAKE_OSX_ARCHITECTURES: x86_64;arm64
+              MACOSX_DEPLOYMENT_TARGET: 11.0
+              CMAKE_GENERATOR: Ninja
+          - run: cmake --build build
+          - run: cmake --install build --prefix /tmp
+          - name: Verify binary is universal
+            run: |
+              vtool -show-build /tmp/lib/libvulkan.dylib | grep x86_64
+              vtool -show-build /tmp/lib/libvulkan.dylib | grep arm64
+
     apple-cross-compile:
       name: ${{ matrix.CMAKE_SYSTEM_NAME }}
       runs-on: macos-11
@@ -371,7 +394,7 @@ jobs:
             run: |
               cmake -S . -B build \
               -D CMAKE_SYSTEM_NAME=${{ matrix.CMAKE_SYSTEM_NAME }} \
-              -D CMAKE_OSX_ARCHITECTURES=arm64 \
+              -D CMAKE_SYSTEM_PROCESSOR=arm64 \
               -D CMAKE_BUILD_TYPE=Debug \
               -D UPDATE_DEPS=ON \
               -D ENABLE_WERROR=ON
@@ -380,8 +403,10 @@ jobs:
               CMAKE_GENERATOR: Ninja
           - run: cmake --build build
           - run: cmake --install build --prefix /tmp
-          # Helps verify useful details about the dylib (platform, minos, sdk)
-          - run: vtool -show-build /tmp/lib/libvulkan.dylib
+          - name: Verify binary is universal
+            run: |
+              vtool -show-build /tmp/lib/libvulkan.dylib | grep x86_64
+              vtool -show-build /tmp/lib/libvulkan.dylib | grep arm64
 
     mac-no-asm:
         runs-on: macos-latest
