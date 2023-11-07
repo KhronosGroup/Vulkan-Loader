@@ -204,21 +204,19 @@ end
 elseif(UNIX) # i.e.: Linux & Apple
 
     # This is hacky but works for now to get iOS/tvOS working.
-    # The problem is CMAKE_SYSTEM_PROCESSOR is empty when compiling for these platforms.
-    # This is likely due to the fact that CMAKE_OSX_ARCHITECTURES lets you compile for
-    # multiple archs at the same time.
     #
     # EX:
     #  -D CMAKE_OSX_ARCHITECTURES="x86_64;arm64"
     if (APPLE AND CMAKE_CROSSCOMPILING)
         set(CMAKE_SYSTEM_PROCESSOR "${CMAKE_OSX_ARCHITECTURES}")
     endif()
-    if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES ";")
-        message(FATAL_ERROR "Cannot handle multiple archs ( ${CMAKE_OSX_ARCHITECTURES} ) at the same time!")
-    endif()
 
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
+        if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES ";")
+            message(FATAL_ERROR "USE_GAS cannot be used when compiling a universal binary!")
+        endif()
+
         enable_language(ASM)
 
         set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
