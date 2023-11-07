@@ -764,7 +764,7 @@ out:
             loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->app_activated_layer_list);
 
             loader_delete_layer_list_and_properties(ptr_instance, &ptr_instance->instance_layer_list);
-            loader_scanned_icd_clear(ptr_instance, &ptr_instance->icd_tramp_list);
+            loader_clear_scanned_icd_list(ptr_instance, &ptr_instance->icd_tramp_list);
             loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->ext_list);
 
             // Free any icd_terms that were created.
@@ -886,11 +886,15 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
         if (VK_SUCCESS != update_res) {
             res = update_res;
         }
+
+        // Unloads any drivers that do not expose any physical devices - should save some address space
+        unload_drivers_without_physical_devices(inst);
     }
 
 out:
 
     loader_platform_thread_unlock_mutex(&loader_lock);
+
     return res;
 }
 
