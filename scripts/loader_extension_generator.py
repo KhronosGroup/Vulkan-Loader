@@ -463,8 +463,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos += '// Array of extension strings for instance extensions we support.\n'
         protos += 'extern const char *const LOADER_INSTANCE_EXTENSIONS[];\n'
         protos += '\n'
-        protos += 'VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_term, VkInstance inst,\n'
-        protos += '                                                   const PFN_vkGetInstanceProcAddr fp_gipa);\n'
+        protos += 'VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst, struct loader_icd_term *icd_term);\n'
         protos += '\n'
         protos += '// Init Device function pointer dispatch table with core commands\n'
         protos += 'VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_dispatch_table *dev_table, PFN_vkGetDeviceProcAddr gpa,\n'
@@ -655,19 +654,22 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         cur_extension_name = ''
 
         table = ''
-        table += 'VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_term, VkInstance inst,\n'
-        table += '                                                   const PFN_vkGetInstanceProcAddr fp_gipa) {\n'
+        table += 'VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst, struct loader_icd_term *icd_term) {\n'
+        table += '    const PFN_vkGetInstanceProcAddr fp_gipa = icd_term->scanned_icd->GetInstanceProcAddr;\n'
         table += '\n'
-        table += '#define LOOKUP_GIPA(func, required)                                                        \\\n'
-        table += '    do {                                                                                   \\\n'
-        table += '        icd_term->dispatch.func = (PFN_vk##func)fp_gipa(inst, "vk" #func);                 \\\n'
-        table += '        if (!icd_term->dispatch.func && required) {                                        \\\n'
-        table += '            loader_log((struct loader_instance *)inst, VULKAN_LOADER_WARN_BIT, 0, \\\n'
-        table += '                       loader_platform_get_proc_address_error("vk" #func));                \\\n'
-        table += '            return false;                                                                  \\\n'
-        table += '        }                                                                                  \\\n'
+        table += '#define LOOKUP_GIPA(func) icd_term->dispatch.func = (PFN_vk##func)fp_gipa(icd_term->instance, "vk" #func);\n'
+        table += '\n'
+        table += '#define LOOKUP_REQUIRED_GIPA(func)                                                      \\\n'
+        table += '    do {                                                                                \\\n'
+        table += '        LOOKUP_GIPA(func);                                                              \\\n'
+        table += '        if (!icd_term->dispatch.func) {                                                 \\\n'
+        table += '            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Unable to load %s from ICD %s",\\\n'
+        table += '                       "vk"#func, icd_term->scanned_icd->lib_name);                     \\\n'
+        table += '            return false;                                                               \\\n'
+        table += '        }                                                                               \\\n'
         table += '    } while (0)\n'
         table += '\n'
+
 
         skip_gipa_commands = ['vkGetInstanceProcAddr',
                               'vkEnumerateDeviceLayerProperties',
@@ -702,14 +704,17 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     if cur_cmd.protect is not None:
                         table += '#if defined(%s)\n' % cur_cmd.protect
 
-                    # The Core Vulkan code will be wrapped in a feature called VK_VERSION_#_#
-                    # For example: VK_VERSION_1_0 wraps the core 1.0 Vulkan functionality
-                    table += '    LOOKUP_GIPA(%s, %s);\n' % (base_name, 'true' if required else 'false')
-
+                    if required:
+                        # The Core Vulkan code will be wrapped in a feature called VK_VERSION_#_#
+                        # For example: VK_VERSION_1_0 wraps the core 1.0 Vulkan functionality
+                        table += f'    LOOKUP_REQUIRED_GIPA({base_name});\n'
+                    else:
+                        table += f'    LOOKUP_GIPA({base_name});\n'
                     if cur_cmd.protect is not None:
                         table += '#endif // %s\n' % cur_cmd.protect
 
         table += '\n'
+        table += '#undef LOOKUP_REQUIRED_GIPA\n'
         table += '#undef LOOKUP_GIPA\n'
         table += '\n'
         table += '    return true;\n'

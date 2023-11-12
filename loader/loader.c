@@ -5413,8 +5413,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             continue;
         }
 
-        if (!loader_icd_init_entries(icd_term, icd_term->instance,
-                                     ptr_instance->icd_tramp_list.scanned_list[i].GetInstanceProcAddr)) {
+        if (!loader_icd_init_entries(ptr_instance, icd_term)) {
             loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
                        "terminator_CreateInstance: Failed to CreateInstance and find entrypoints with ICD.  Skipping ICD.");
             ptr_instance->icd_terms = icd_term->next;

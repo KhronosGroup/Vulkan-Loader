@@ -121,6 +121,7 @@ struct TestICD {
     std::vector<uint64_t> swapchain_handles;
 
     BUILDER_VALUE(TestICD, bool, can_query_vkEnumerateInstanceVersion, true);
+    BUILDER_VALUE(TestICD, bool, can_query_GetPhysicalDeviceFuncs, true);
 
     // Unknown instance functions Add a `VulkanFunction` to this list which will be searched in
     // vkGetInstanceProcAddr for custom_instance_functions and vk_icdGetPhysicalDeviceProcAddr for
