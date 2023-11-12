@@ -178,6 +178,25 @@ TEST(GetProcAddr, GlobalFunctions) {
     }
 }
 
+TEST(GetProcAddr, Verify10FunctionsFailToLoadWithSingleDriver) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+}
+
+TEST(GetProcAddr, Verify10FunctionsLoadWithMultipleDrivers) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    inst.GetPhysDevs(1);
+}
+
 // Swapchain functions which require a terminator in all cases have situations where the driver may have a
 // NULL function pointer but the loader shouldn't abort() if that is the case. Rather, it should log a message
 // and return VK_SUCCESS to maintain previous behavior.

@@ -46,267 +46,270 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
     return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
-VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_term, VkInstance inst,
-                                                   const PFN_vkGetInstanceProcAddr fp_gipa) {
+VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst, struct loader_icd_term *icd_term) {
+    const PFN_vkGetInstanceProcAddr fp_gipa = icd_term->scanned_icd->GetInstanceProcAddr;
 
-#define LOOKUP_GIPA(func, required)                                                        \
-    do {                                                                                   \
-        icd_term->dispatch.func = (PFN_vk##func)fp_gipa(inst, "vk" #func);                 \
-        if (!icd_term->dispatch.func && required) {                                        \
-            loader_log((struct loader_instance *)inst, VULKAN_LOADER_WARN_BIT, 0, \
-                       loader_platform_get_proc_address_error("vk" #func));                \
-            return false;                                                                  \
-        }                                                                                  \
+#define LOOKUP_GIPA(func) icd_term->dispatch.func = (PFN_vk##func)fp_gipa(icd_term->instance, "vk" #func);
+
+#define LOOKUP_REQUIRED_GIPA(func)                                                      \
+    do {                                                                                \
+        LOOKUP_GIPA(func);                                                              \
+        if (!icd_term->dispatch.func) {                                                 \
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Unable to load %s from ICD %s",\
+                       "vk"#func, icd_term->scanned_icd->lib_name);                     \
+            return false;                                                               \
+        }                                                                               \
     } while (0)
 
 
     // ---- Core 1_0
-    LOOKUP_GIPA(DestroyInstance, true);
-    LOOKUP_GIPA(EnumeratePhysicalDevices, true);
-    LOOKUP_GIPA(GetPhysicalDeviceFeatures, true);
-    LOOKUP_GIPA(GetPhysicalDeviceFormatProperties, true);
-    LOOKUP_GIPA(GetPhysicalDeviceImageFormatProperties, true);
-    LOOKUP_GIPA(GetPhysicalDeviceProperties, true);
-    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyProperties, true);
-    LOOKUP_GIPA(GetPhysicalDeviceMemoryProperties, true);
-    LOOKUP_GIPA(GetDeviceProcAddr, true);
-    LOOKUP_GIPA(CreateDevice, true);
-    LOOKUP_GIPA(EnumerateDeviceExtensionProperties, true);
-    LOOKUP_GIPA(GetPhysicalDeviceSparseImageFormatProperties, true);
+    LOOKUP_REQUIRED_GIPA(DestroyInstance);
+    LOOKUP_REQUIRED_GIPA(EnumeratePhysicalDevices);
+    LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceFeatures);
+    LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceFormatProperties);
+    LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceImageFormatProperties);
+    LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceProperties);
+    LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceQueueFamilyProperties);
+    LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceMemoryProperties);
+    LOOKUP_REQUIRED_GIPA(GetDeviceProcAddr);
+    LOOKUP_REQUIRED_GIPA(CreateDevice);
+    LOOKUP_REQUIRED_GIPA(EnumerateDeviceExtensionProperties);
+    LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceSparseImageFormatProperties);
 
     // ---- Core 1_1
-    LOOKUP_GIPA(EnumeratePhysicalDeviceGroups, false);
-    LOOKUP_GIPA(GetPhysicalDeviceFeatures2, false);
-    LOOKUP_GIPA(GetPhysicalDeviceProperties2, false);
-    LOOKUP_GIPA(GetPhysicalDeviceFormatProperties2, false);
-    LOOKUP_GIPA(GetPhysicalDeviceImageFormatProperties2, false);
-    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyProperties2, false);
-    LOOKUP_GIPA(GetPhysicalDeviceMemoryProperties2, false);
-    LOOKUP_GIPA(GetPhysicalDeviceSparseImageFormatProperties2, false);
-    LOOKUP_GIPA(GetPhysicalDeviceExternalBufferProperties, false);
-    LOOKUP_GIPA(GetPhysicalDeviceExternalFenceProperties, false);
-    LOOKUP_GIPA(GetPhysicalDeviceExternalSemaphoreProperties, false);
+    LOOKUP_GIPA(EnumeratePhysicalDeviceGroups);
+    LOOKUP_GIPA(GetPhysicalDeviceFeatures2);
+    LOOKUP_GIPA(GetPhysicalDeviceProperties2);
+    LOOKUP_GIPA(GetPhysicalDeviceFormatProperties2);
+    LOOKUP_GIPA(GetPhysicalDeviceImageFormatProperties2);
+    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyProperties2);
+    LOOKUP_GIPA(GetPhysicalDeviceMemoryProperties2);
+    LOOKUP_GIPA(GetPhysicalDeviceSparseImageFormatProperties2);
+    LOOKUP_GIPA(GetPhysicalDeviceExternalBufferProperties);
+    LOOKUP_GIPA(GetPhysicalDeviceExternalFenceProperties);
+    LOOKUP_GIPA(GetPhysicalDeviceExternalSemaphoreProperties);
 
     // ---- Core 1_3
-    LOOKUP_GIPA(GetPhysicalDeviceToolProperties, false);
+    LOOKUP_GIPA(GetPhysicalDeviceToolProperties);
 
     // ---- VK_KHR_surface extension commands
-    LOOKUP_GIPA(DestroySurfaceKHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceSurfaceSupportKHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceSurfaceCapabilitiesKHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceSurfaceFormatsKHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceSurfacePresentModesKHR, false);
+    LOOKUP_GIPA(DestroySurfaceKHR);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfaceSupportKHR);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfaceFormatsKHR);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfacePresentModesKHR);
 
     // ---- VK_KHR_swapchain extension commands
-    LOOKUP_GIPA(GetPhysicalDevicePresentRectanglesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDevicePresentRectanglesKHR);
 
     // ---- VK_KHR_display extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceDisplayPropertiesKHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceDisplayPlanePropertiesKHR, false);
-    LOOKUP_GIPA(GetDisplayPlaneSupportedDisplaysKHR, false);
-    LOOKUP_GIPA(GetDisplayModePropertiesKHR, false);
-    LOOKUP_GIPA(CreateDisplayModeKHR, false);
-    LOOKUP_GIPA(GetDisplayPlaneCapabilitiesKHR, false);
-    LOOKUP_GIPA(CreateDisplayPlaneSurfaceKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceDisplayPropertiesKHR);
+    LOOKUP_GIPA(GetPhysicalDeviceDisplayPlanePropertiesKHR);
+    LOOKUP_GIPA(GetDisplayPlaneSupportedDisplaysKHR);
+    LOOKUP_GIPA(GetDisplayModePropertiesKHR);
+    LOOKUP_GIPA(CreateDisplayModeKHR);
+    LOOKUP_GIPA(GetDisplayPlaneCapabilitiesKHR);
+    LOOKUP_GIPA(CreateDisplayPlaneSurfaceKHR);
 
     // ---- VK_KHR_xlib_surface extension commands
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    LOOKUP_GIPA(CreateXlibSurfaceKHR, false);
+    LOOKUP_GIPA(CreateXlibSurfaceKHR);
 #endif // VK_USE_PLATFORM_XLIB_KHR
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    LOOKUP_GIPA(GetPhysicalDeviceXlibPresentationSupportKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceXlibPresentationSupportKHR);
 #endif // VK_USE_PLATFORM_XLIB_KHR
 
     // ---- VK_KHR_xcb_surface extension commands
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    LOOKUP_GIPA(CreateXcbSurfaceKHR, false);
+    LOOKUP_GIPA(CreateXcbSurfaceKHR);
 #endif // VK_USE_PLATFORM_XCB_KHR
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    LOOKUP_GIPA(GetPhysicalDeviceXcbPresentationSupportKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceXcbPresentationSupportKHR);
 #endif // VK_USE_PLATFORM_XCB_KHR
 
     // ---- VK_KHR_wayland_surface extension commands
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    LOOKUP_GIPA(CreateWaylandSurfaceKHR, false);
+    LOOKUP_GIPA(CreateWaylandSurfaceKHR);
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    LOOKUP_GIPA(GetPhysicalDeviceWaylandPresentationSupportKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceWaylandPresentationSupportKHR);
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 
     // ---- VK_KHR_android_surface extension commands
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    LOOKUP_GIPA(CreateAndroidSurfaceKHR, false);
+    LOOKUP_GIPA(CreateAndroidSurfaceKHR);
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
     // ---- VK_KHR_win32_surface extension commands
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    LOOKUP_GIPA(CreateWin32SurfaceKHR, false);
+    LOOKUP_GIPA(CreateWin32SurfaceKHR);
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    LOOKUP_GIPA(GetPhysicalDeviceWin32PresentationSupportKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceWin32PresentationSupportKHR);
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_KHR_video_queue extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceVideoCapabilitiesKHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceVideoFormatPropertiesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceVideoCapabilitiesKHR);
+    LOOKUP_GIPA(GetPhysicalDeviceVideoFormatPropertiesKHR);
 
     // ---- VK_KHR_get_physical_device_properties2 extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceFeatures2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceProperties2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceFormatProperties2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceImageFormatProperties2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyProperties2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceMemoryProperties2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceSparseImageFormatProperties2KHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceFeatures2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceProperties2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceFormatProperties2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceImageFormatProperties2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyProperties2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceMemoryProperties2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceSparseImageFormatProperties2KHR);
 
     // ---- VK_KHR_device_group_creation extension commands
-    LOOKUP_GIPA(EnumeratePhysicalDeviceGroupsKHR, false);
+    LOOKUP_GIPA(EnumeratePhysicalDeviceGroupsKHR);
 
     // ---- VK_KHR_external_memory_capabilities extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceExternalBufferPropertiesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceExternalBufferPropertiesKHR);
 
     // ---- VK_KHR_external_semaphore_capabilities extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceExternalSemaphorePropertiesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceExternalSemaphorePropertiesKHR);
 
     // ---- VK_KHR_external_fence_capabilities extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceExternalFencePropertiesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceExternalFencePropertiesKHR);
 
     // ---- VK_KHR_performance_query extension commands
-    LOOKUP_GIPA(EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR, false);
+    LOOKUP_GIPA(EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR);
+    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR);
 
     // ---- VK_KHR_get_surface_capabilities2 extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceSurfaceCapabilities2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceSurfaceFormats2KHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfaceCapabilities2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfaceFormats2KHR);
 
     // ---- VK_KHR_get_display_properties2 extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceDisplayProperties2KHR, false);
-    LOOKUP_GIPA(GetPhysicalDeviceDisplayPlaneProperties2KHR, false);
-    LOOKUP_GIPA(GetDisplayModeProperties2KHR, false);
-    LOOKUP_GIPA(GetDisplayPlaneCapabilities2KHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceDisplayProperties2KHR);
+    LOOKUP_GIPA(GetPhysicalDeviceDisplayPlaneProperties2KHR);
+    LOOKUP_GIPA(GetDisplayModeProperties2KHR);
+    LOOKUP_GIPA(GetDisplayPlaneCapabilities2KHR);
 
     // ---- VK_KHR_fragment_shading_rate extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceFragmentShadingRatesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceFragmentShadingRatesKHR);
 
     // ---- VK_KHR_video_encode_queue extension commands
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
-    LOOKUP_GIPA(GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR);
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_cooperative_matrix extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixPropertiesKHR, false);
+    LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixPropertiesKHR);
 
     // ---- VK_EXT_debug_report extension commands
-    LOOKUP_GIPA(CreateDebugReportCallbackEXT, false);
-    LOOKUP_GIPA(DestroyDebugReportCallbackEXT, false);
-    LOOKUP_GIPA(DebugReportMessageEXT, false);
+    LOOKUP_GIPA(CreateDebugReportCallbackEXT);
+    LOOKUP_GIPA(DestroyDebugReportCallbackEXT);
+    LOOKUP_GIPA(DebugReportMessageEXT);
 
     // ---- VK_GGP_stream_descriptor_surface extension commands
 #if defined(VK_USE_PLATFORM_GGP)
-    LOOKUP_GIPA(CreateStreamDescriptorSurfaceGGP, false);
+    LOOKUP_GIPA(CreateStreamDescriptorSurfaceGGP);
 #endif // VK_USE_PLATFORM_GGP
 
     // ---- VK_NV_external_memory_capabilities extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceExternalImageFormatPropertiesNV, false);
+    LOOKUP_GIPA(GetPhysicalDeviceExternalImageFormatPropertiesNV);
 
     // ---- VK_NN_vi_surface extension commands
 #if defined(VK_USE_PLATFORM_VI_NN)
-    LOOKUP_GIPA(CreateViSurfaceNN, false);
+    LOOKUP_GIPA(CreateViSurfaceNN);
 #endif // VK_USE_PLATFORM_VI_NN
 
     // ---- VK_EXT_direct_mode_display extension commands
-    LOOKUP_GIPA(ReleaseDisplayEXT, false);
+    LOOKUP_GIPA(ReleaseDisplayEXT);
 
     // ---- VK_EXT_acquire_xlib_display extension commands
 #if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
-    LOOKUP_GIPA(AcquireXlibDisplayEXT, false);
+    LOOKUP_GIPA(AcquireXlibDisplayEXT);
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 #if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
-    LOOKUP_GIPA(GetRandROutputDisplayEXT, false);
+    LOOKUP_GIPA(GetRandROutputDisplayEXT);
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
     // ---- VK_EXT_display_surface_counter extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceSurfaceCapabilities2EXT, false);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfaceCapabilities2EXT);
 
     // ---- VK_MVK_ios_surface extension commands
 #if defined(VK_USE_PLATFORM_IOS_MVK)
-    LOOKUP_GIPA(CreateIOSSurfaceMVK, false);
+    LOOKUP_GIPA(CreateIOSSurfaceMVK);
 #endif // VK_USE_PLATFORM_IOS_MVK
 
     // ---- VK_MVK_macos_surface extension commands
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
-    LOOKUP_GIPA(CreateMacOSSurfaceMVK, false);
+    LOOKUP_GIPA(CreateMacOSSurfaceMVK);
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
     // ---- VK_EXT_debug_utils extension commands
-    LOOKUP_GIPA(CreateDebugUtilsMessengerEXT, false);
-    LOOKUP_GIPA(DestroyDebugUtilsMessengerEXT, false);
-    LOOKUP_GIPA(SubmitDebugUtilsMessageEXT, false);
+    LOOKUP_GIPA(CreateDebugUtilsMessengerEXT);
+    LOOKUP_GIPA(DestroyDebugUtilsMessengerEXT);
+    LOOKUP_GIPA(SubmitDebugUtilsMessageEXT);
 
     // ---- VK_EXT_sample_locations extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceMultisamplePropertiesEXT, false);
+    LOOKUP_GIPA(GetPhysicalDeviceMultisamplePropertiesEXT);
 
     // ---- VK_EXT_calibrated_timestamps extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceCalibrateableTimeDomainsEXT, false);
+    LOOKUP_GIPA(GetPhysicalDeviceCalibrateableTimeDomainsEXT);
 
     // ---- VK_FUCHSIA_imagepipe_surface extension commands
 #if defined(VK_USE_PLATFORM_FUCHSIA)
-    LOOKUP_GIPA(CreateImagePipeSurfaceFUCHSIA, false);
+    LOOKUP_GIPA(CreateImagePipeSurfaceFUCHSIA);
 #endif // VK_USE_PLATFORM_FUCHSIA
 
     // ---- VK_EXT_metal_surface extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-    LOOKUP_GIPA(CreateMetalSurfaceEXT, false);
+    LOOKUP_GIPA(CreateMetalSurfaceEXT);
 #endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_EXT_tooling_info extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceToolPropertiesEXT, false);
+    LOOKUP_GIPA(GetPhysicalDeviceToolPropertiesEXT);
 
     // ---- VK_NV_cooperative_matrix extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixPropertiesNV, false);
+    LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixPropertiesNV);
 
     // ---- VK_NV_coverage_reduction_mode extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV, false);
+    LOOKUP_GIPA(GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV);
 
     // ---- VK_EXT_full_screen_exclusive extension commands
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    LOOKUP_GIPA(GetPhysicalDeviceSurfacePresentModes2EXT, false);
+    LOOKUP_GIPA(GetPhysicalDeviceSurfacePresentModes2EXT);
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_EXT_headless_surface extension commands
-    LOOKUP_GIPA(CreateHeadlessSurfaceEXT, false);
+    LOOKUP_GIPA(CreateHeadlessSurfaceEXT);
 
     // ---- VK_EXT_acquire_drm_display extension commands
-    LOOKUP_GIPA(AcquireDrmDisplayEXT, false);
-    LOOKUP_GIPA(GetDrmDisplayEXT, false);
+    LOOKUP_GIPA(AcquireDrmDisplayEXT);
+    LOOKUP_GIPA(GetDrmDisplayEXT);
 
     // ---- VK_NV_acquire_winrt_display extension commands
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    LOOKUP_GIPA(AcquireWinrtDisplayNV, false);
+    LOOKUP_GIPA(AcquireWinrtDisplayNV);
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    LOOKUP_GIPA(GetWinrtDisplayNV, false);
+    LOOKUP_GIPA(GetWinrtDisplayNV);
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_EXT_directfb_surface extension commands
 #if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-    LOOKUP_GIPA(CreateDirectFBSurfaceEXT, false);
+    LOOKUP_GIPA(CreateDirectFBSurfaceEXT);
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 #if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-    LOOKUP_GIPA(GetPhysicalDeviceDirectFBPresentationSupportEXT, false);
+    LOOKUP_GIPA(GetPhysicalDeviceDirectFBPresentationSupportEXT);
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
     // ---- VK_QNX_screen_surface extension commands
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
-    LOOKUP_GIPA(CreateScreenSurfaceQNX, false);
+    LOOKUP_GIPA(CreateScreenSurfaceQNX);
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
-    LOOKUP_GIPA(GetPhysicalDeviceScreenPresentationSupportQNX, false);
+    LOOKUP_GIPA(GetPhysicalDeviceScreenPresentationSupportQNX);
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
     // ---- VK_NV_optical_flow extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceOpticalFlowImageFormatsNV, false);
+    LOOKUP_GIPA(GetPhysicalDeviceOpticalFlowImageFormatsNV);
 
+#undef LOOKUP_REQUIRED_GIPA
 #undef LOOKUP_GIPA
 
     return true;

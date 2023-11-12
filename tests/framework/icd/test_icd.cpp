@@ -1333,14 +1333,19 @@ PFN_vkVoidFunction get_physical_device_func([[maybe_unused]] VkInstance instance
         return to_vkVoidFunction(test_vkGetPhysicalDeviceQueueFamilyProperties);
     if (string_eq(pName, "vkCreateDevice")) return to_vkVoidFunction(test_vkCreateDevice);
 
-    if (string_eq(pName, "vkGetPhysicalDeviceFeatures")) return to_vkVoidFunction(test_vkGetPhysicalDeviceFeatures);
-    if (string_eq(pName, "vkGetPhysicalDeviceProperties")) return to_vkVoidFunction(test_vkGetPhysicalDeviceProperties);
-    if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties")) return to_vkVoidFunction(test_vkGetPhysicalDeviceMemoryProperties);
+    if (string_eq(pName, "vkGetPhysicalDeviceFeatures"))
+        return icd.can_query_GetPhysicalDeviceFuncs ? to_vkVoidFunction(test_vkGetPhysicalDeviceFeatures) : nullptr;
+    if (string_eq(pName, "vkGetPhysicalDeviceProperties"))
+        return icd.can_query_GetPhysicalDeviceFuncs ? to_vkVoidFunction(test_vkGetPhysicalDeviceProperties) : nullptr;
+    if (string_eq(pName, "vkGetPhysicalDeviceMemoryProperties"))
+        return icd.can_query_GetPhysicalDeviceFuncs ? to_vkVoidFunction(test_vkGetPhysicalDeviceMemoryProperties) : nullptr;
     if (string_eq(pName, "vkGetPhysicalDeviceSparseImageFormatProperties"))
-        return to_vkVoidFunction(test_vkGetPhysicalDeviceSparseImageFormatProperties);
-    if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties")) return to_vkVoidFunction(test_vkGetPhysicalDeviceFormatProperties);
+        return icd.can_query_GetPhysicalDeviceFuncs ? to_vkVoidFunction(test_vkGetPhysicalDeviceSparseImageFormatProperties)
+                                                    : nullptr;
+    if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties"))
+        return icd.can_query_GetPhysicalDeviceFuncs ? to_vkVoidFunction(test_vkGetPhysicalDeviceFormatProperties) : nullptr;
     if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties"))
-        return to_vkVoidFunction(test_vkGetPhysicalDeviceImageFormatProperties);
+        return icd.can_query_GetPhysicalDeviceFuncs ? to_vkVoidFunction(test_vkGetPhysicalDeviceImageFormatProperties) : nullptr;
 
     if (IsInstanceExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR")) return to_vkVoidFunction(test_vkGetPhysicalDeviceFeatures2);
