@@ -451,7 +451,7 @@ The loader then selects each path, and applies the "/vulkan/icd.d" suffix onto
 each and looks in that specific folder for manifest files.
 
 The Vulkan loader will open each manifest file found to obtain the name or
-pathname of a driver's shared library (".dylib") file.
+pathname of a driver's shared library (".so") file.
 
 **NOTE** While the order of folders searched for manifest files is well
 defined, the order contents are read by the loader in each directory is
