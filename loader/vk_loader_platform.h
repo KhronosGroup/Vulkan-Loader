@@ -287,9 +287,15 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 #if TARGET_OS_OSX
 #include <libproc.h>
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    // proc_pidpath takes a uint32_t for the buffer size
+    if (size > UINT32_MAX) {
+        return NULL;
+    }
     pid_t pid = getpid();
-    int ret = proc_pidpath(pid, buffer, size);
-    if (ret <= 0) return NULL;
+    int ret = proc_pidpath(pid, buffer, (uint32_t)size);
+    if (ret <= 0) {
+        return NULL;
+    }
     buffer[ret] = '\0';
     return buffer;
 }
