@@ -445,6 +445,12 @@ class GoodRepo(object):
 
     def CustomBuild(self, repo_dict):
         """Execute any custom_build steps from the repo root"""
+
+        # It's not uncommon for builds to not support universal binaries
+        if self._args.OSX_ARCHITECTURES:
+            print("Universal Binaries not supported for custom builds", file=sys.stderr)
+            exit(-1)
+
         for p in self.custom_build:
             cmd = self.CustomPreProcess(p, repo_dict)
             command_output(shlex.split(cmd), self.repo_dir)
@@ -488,6 +494,11 @@ class GoodRepo(object):
 
         # Set build config for single-configuration generators (this is a no-op on multi-config generators)
         cmake_cmd.append(f'-D CMAKE_BUILD_TYPE={CONFIG_MAP[self._args.config]}')
+
+        if self._args.OSX_ARCHITECTURES:
+            # CMAKE_OSX_ARCHITECTURES must be a semi-colon seperated list
+            cmake_osx_archs = self._args.OSX_ARCHITECTURES.replace(':', ';')
+            cmake_cmd.append(f'-D CMAKE_OSX_ARCHITECTURES={cmake_osx_archs}')
 
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
@@ -534,18 +545,13 @@ class GoodRepo(object):
 
         start = time.time()
 
-        # Run any prebuild commands
         self.PreBuild()
 
         if self.build_step == 'custom':
             self.CustomBuild(repo_dict)
-            return
-
-        # Build and execute CMake command for creating build files
-        self.CMakeConfig(repos)
-
-        # Build and execute CMake command for the build
-        self.CMakeBuild()
+        else:
+            self.CMakeConfig(repos)
+            self.CMakeBuild()
 
         total_time = time.time() - start
 
@@ -712,9 +718,18 @@ def main():
         metavar='VAR[=VALUE]',
         help="Add CMake command line option -D'VAR'='VALUE' to the CMake generation command line; may be used multiple times",
         default=[])
+    parser.add_argument(
+        '--osx-archs',
+        dest='OSX_ARCHITECTURES',
+        help="Architectures when building a universal binary. Takes a colon seperated list. Ex: arm64:x86_64",
+        type=str,
+        default=None)
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
+
+    if args.OSX_ARCHITECTURES:
+        print(f"Building dependencies as universal binaries targeting {args.OSX_ARCHITECTURES}")
 
     # Create working "top" directory if needed
     make_or_exist_dirs(args.dir)

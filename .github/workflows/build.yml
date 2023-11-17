@@ -371,7 +371,7 @@ jobs:
             run: |
               cmake -S . -B build \
               -D CMAKE_SYSTEM_NAME=${{ matrix.CMAKE_SYSTEM_NAME }} \
-              -D CMAKE_OSX_ARCHITECTURES=arm64 \
+              "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
               -D CMAKE_BUILD_TYPE=Debug \
               -D UPDATE_DEPS=ON \
               -D ENABLE_WERROR=ON
@@ -380,16 +380,19 @@ jobs:
               CMAKE_GENERATOR: Ninja
           - run: cmake --build build
           - run: cmake --install build --prefix /tmp
-          # Helps verify useful details about the dylib (platform, minos, sdk)
-          - run: vtool -show-build /tmp/lib/libvulkan.dylib
+          - name: Verify Universal Binary
+            run: |
+              vtool -show-build /tmp/lib/libvulkan.dylib | grep 'architecture x86_64'
+              vtool -show-build /tmp/lib/libvulkan.dylib | grep 'architecture arm64'
 
-    mac-no-asm:
+    # Building a universal binary disables assembly automatically
+    # Furthermore the Vulkan SDK ships universal binaries
+    mac-univeral:
+        name: "Universal Binary Testing (STATIC ${{ matrix.static }})"
         runs-on: macos-latest
-
         strategy:
             matrix:
-                static_build: [ BUILD_STATIC_LOADER=ON, BUILD_STATIC_LOADER=OFF ]
-
+                static: [ 'ON', 'OFF' ]
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
@@ -397,13 +400,26 @@ jobs:
                 python-version: '3.7'
             - uses: lukka/get-cmake@latest
             - name: Generate build files
-              run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D ${{matrix.static_build}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -D ENABLE_WERROR=ON -D USE_GAS=OFF -G "Ninja"
+              run: |
+                cmake -S. -B build \
+                -D CMAKE_BUILD_TYPE=Release \
+                -D BUILD_STATIC_LOADER=${{matrix.static}} \
+                "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
+                -D BUILD_TESTS=ON \
+                -D UPDATE_DEPS=ON \
+                -D ENABLE_WERROR=ON \
+                -G Ninja
               env:
                 LDFLAGS: -Wl,-fatal_warnings
             - run: cmake --build build
-            - name: Run regression tests
+            - run: ctest --output-on-failure -E UnknownFunction
               working-directory: ./build
-              run: ctest --output-on-failure -E UnknownFunction
+            - run: cmake --install build --prefix /tmp
+            - name: Verify Universal Binary
+              if: ${{ matrix.static == 'OFF' }}
+              run: |
+                vtool -show-build /tmp/lib/libvulkan.dylib | grep 'architecture x86_64'
+                vtool -show-build /tmp/lib/libvulkan.dylib | grep 'architecture arm64'
 
 
     chromium:
