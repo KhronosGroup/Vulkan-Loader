@@ -125,6 +125,21 @@ TEST(CreateInstance, RelativePaths) {
     ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
 }
 
+TEST(CreateInstance, ApiVersionBelow1_0) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
+
+    DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, debug_log);
+    inst.create_info.api_version = 1;
+    inst.CheckCreate();
+    ASSERT_TRUE(
+        debug_log.find("VkInstanceCreateInfo::pApplicationInfo::apiVersion has value of 1 which is not permitted. If apiVersion is "
+                       "not 0, then it must be "
+                       "greater than or equal to the value of VK_API_VERSION_1_0 [VUID-VkApplicationInfo-apiVersion]"));
+}
+
 TEST(CreateInstance, ConsecutiveCreate) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
