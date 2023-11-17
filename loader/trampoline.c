@@ -595,6 +595,15 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         log_settings(ptr_instance, &ptr_instance->settings);
     }
 
+    // Providing an apiVersion less than VK_API_VERSION_1_0 but greater than zero prevents the validation layers from starting
+    if (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion < VK_API_VERSION_1_0) {
+        loader_log(ptr_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "VkInstanceCreateInfo::pApplicationInfo::apiVersion has value of %u which is not permitted. If apiVersion is "
+                   "not 0, then it must be "
+                   "greater than or equal to the value of VK_API_VERSION_1_0 [VUID-VkApplicationInfo-apiVersion]",
+                   pCreateInfo->pApplicationInfo->apiVersion);
+    }
+
     // Check the VkInstanceCreateInfoFlags wether to allow the portability enumeration flag
     if ((pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR) == 1) {
         ptr_instance->portability_enumeration_flag_bit_set = true;
