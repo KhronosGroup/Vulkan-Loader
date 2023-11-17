@@ -108,6 +108,14 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD|DragonFly|GNU")
     target_compile_definitions(loader_specific_options INTERFACE LOADER_ENABLE_LINUX_SORT)
 endif()
 
+if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES ";")
+    set(APPLE_UNIVERSAL_BINARY ON)
+
+    # When building a universal binary we cannot enable USE_GAS
+    # Since USE_GAS assumes only 1 architecture (arm64, x64, etc).
+    set(USE_GAS OFF)
+endif()
+
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
 
 # Check for assembler support
@@ -115,7 +123,10 @@ set(ASM_FAILURE_MSG "The build will fall back on building with C code\n")
 set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG}Note that this may be unsafe, as the C code requires tail-call optimizations to remove")
 set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} the stack frame for certain calls. If the compiler does not do this, then unknown device")
 set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted stack.")
-if(WIN32)
+
+if (APPLE_UNIVERSAL_BINARY)
+    set(USE_ASSEMBLY_FALLBACK ON)
+elseif(WIN32)
     option(USE_MASM "Use MASM" ON)
     if(USE_MASM AND MINGW)
         find_program(JWASM_FOUND NAMES jwasm uasm)
@@ -203,17 +214,9 @@ end
     endif()
 elseif(UNIX) # i.e.: Linux & Apple
 
-    # This is hacky but works for now to get iOS/tvOS working.
-    #
-    # EX:
-    #  -D CMAKE_OSX_ARCHITECTURES="x86_64;arm64"
-    if (APPLE AND CMAKE_CROSSCOMPILING)
-        set(CMAKE_SYSTEM_PROCESSOR "${CMAKE_OSX_ARCHITECTURES}")
-    endif()
-
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
-        if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES ";")
+        if (APPLE_UNIVERSAL_BINARY)
             message(FATAL_ERROR "USE_GAS cannot be used when compiling a universal binary!")
         endif()
 
