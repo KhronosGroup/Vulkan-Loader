@@ -507,6 +507,16 @@ TEST(SettingsFile, InvalidSettingsFile) {
         ASSERT_TRUE(string_eq(layers.at(1).layerName, explicit_layer_name));
     };
 
+    {
+        std::fstream fuzzer_output_json_file{FUZZER_OUTPUT_JSON_FILE, std::ios_base::in};
+        ASSERT_TRUE(fuzzer_output_json_file.is_open());
+        std::stringstream fuzzer_output_json;
+        fuzzer_output_json << fuzzer_output_json_file.rdbuf();
+        env.write_settings_file(fuzzer_output_json.str());
+
+        check_integrity();
+    }
+
     // No actual settings
     {
         JsonWriter writer{};
