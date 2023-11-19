@@ -76,7 +76,6 @@ config("vulkan_loader_config") {
     "loader",
   ]
   defines = [
-    "API_NAME=\"Vulkan\"",
     "LOADER_USE_UNSAFE_FILE_SEARCH=1",
   ]
 

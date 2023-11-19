@@ -141,7 +141,6 @@ else()
 endif()
 
 add_library(loader_common_options INTERFACE)
-target_compile_definitions(loader_common_options INTERFACE API_NAME="Vulkan")
 target_link_libraries(loader_common_options INTERFACE platform_wsi)
 
 # Enable beta Vulkan extensions
