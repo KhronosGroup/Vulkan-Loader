@@ -180,15 +180,10 @@ typedef pthread_cond_t loader_platform_thread_cond;
 #define VK_ELAYERS_INFO_RELATIVE_DIR ""
 #define VK_ILAYERS_INFO_RELATIVE_DIR ""
 
-#if defined(_WIN64)
-#define HKR_VK_DRIVER_NAME API_NAME "DriverName"
-#else
-#define HKR_VK_DRIVER_NAME API_NAME "DriverNameWow"
-#endif
-#define VK_DRIVERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\" API_NAME "\\Drivers"
-#define VK_ELAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\" API_NAME "\\ExplicitLayers"
-#define VK_ILAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\" API_NAME "\\ImplicitLayers"
-#define VK_SETTINGS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\" API_NAME "\\LoaderSettings"
+#define VK_DRIVERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan\\Drivers"
+#define VK_ELAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers"
+#define VK_ILAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers"
+#define VK_SETTINGS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan\\LoaderSettings"
 
 #define PRINTF_SIZE_T_SPECIFIER "%Iu"
 
