@@ -180,9 +180,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
 
     # need to prepend /clang: to compiler arguments when using clang-cl
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC")
-        target_compile_options(loader_common_options INTERFACE /clang:-fno-strict-aliasing /clang:-fno-builtin-memcmp)
+        target_compile_options(loader_common_options INTERFACE /clang:-fno-strict-aliasing)
     else()
-        target_compile_options(loader_common_options INTERFACE -fno-strict-aliasing -fno-builtin-memcmp)
+        target_compile_options(loader_common_options INTERFACE -fno-strict-aliasing)
     endif()
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
