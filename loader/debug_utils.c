@@ -222,7 +222,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugUtilsMessengerEXT(VkInstanc
     new_dbg_func_node->pNext = inst->current_dbg_function_head;
     inst->current_dbg_function_head = new_dbg_func_node;
 
-    *(VkDebugUtilsMessengerEXT **)pMessenger = icd_info;
+    *pMessenger = (VkDebugUtilsMessengerEXT)(uintptr_t)icd_info;
     new_dbg_func_node->messenger.messenger = *pMessenger;
 
 out:
@@ -255,7 +255,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
     const struct loader_icd_term *icd_term;
 
     struct loader_instance *inst = (struct loader_instance *)instance;
-    icd_info = *(VkDebugUtilsMessengerEXT **)&messenger;
+    icd_info = (VkDebugUtilsMessengerEXT *)(uintptr_t)messenger;
     storage_idx = 0;
     for (icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
         if (NULL == icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
@@ -477,7 +477,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugReportCallbackEXT(VkInstanc
     new_dbg_func_node->pNext = inst->current_dbg_function_head;
     inst->current_dbg_function_head = new_dbg_func_node;
 
-    *(VkDebugReportCallbackEXT **)pCallback = icd_info;
+    *pCallback = (VkDebugReportCallbackEXT)(uintptr_t)icd_info;
     new_dbg_func_node->report.msgCallback = *pCallback;
 
 out:
@@ -510,7 +510,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugReportCallbackEXT(VkInstance i
     const struct loader_icd_term *icd_term;
 
     struct loader_instance *inst = (struct loader_instance *)instance;
-    icd_info = *(VkDebugReportCallbackEXT **)&callback;
+    icd_info = (VkDebugReportCallbackEXT *)(uintptr_t)callback;
     storage_idx = 0;
     for (icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
         if (NULL == icd_term->dispatch.DestroyDebugReportCallbackEXT) {
