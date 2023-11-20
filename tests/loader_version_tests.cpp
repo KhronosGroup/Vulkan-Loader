@@ -545,7 +545,7 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
 
 // shim function pointers for 1.3
 // Should use autogen for this - it generates 'shim' functions for validation layers, maybe that could be used here.
-void test_vkCmdBeginRendering(VkCommandBuffer, const VkRenderPassBeginInfo*, VkSubpassContents) {}
+void test_vkCmdBeginRendering(VkCommandBuffer, const VkRenderingInfo*) {}
 void test_vkCmdBindVertexBuffers2(VkCommandBuffer, uint32_t, uint32_t, const VkBuffer*, const VkDeviceSize*, const VkDeviceSize*,
                                   const VkDeviceSize*) {}
 void test_vkCmdBlitImage2(VkCommandBuffer, const VkBlitImageInfo2*) {}
