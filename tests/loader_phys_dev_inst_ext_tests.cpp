@@ -5667,7 +5667,7 @@ TEST(LoaderInstPhysDevExts, AcquireDrmDisplayEXTMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, AcquireDrmDisplayEXT(physical_devices[dev], 0, display));
+                        ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, AcquireDrmDisplayEXT(physical_devices[dev], 0, display));
                     } else {
                         ASSERT_EQ(VK_SUCCESS, AcquireDrmDisplayEXT(physical_devices[dev], 0, display));
                     }
@@ -5820,7 +5820,7 @@ TEST(LoaderInstPhysDevExts, GetDrmDisplayEXTMixed) {
                     if (icd == 1) {
                         // For this extension, if no support exists (like for ICD 1), the value of 0 should be returned by the
                         // loader.
-                        ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, GetDrmDisplayEXT(physical_devices[dev], 0, 0, &display));
+                        ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, GetDrmDisplayEXT(physical_devices[dev], 0, 0, &display));
                     } else {
                         ASSERT_EQ(VK_SUCCESS, GetDrmDisplayEXT(physical_devices[dev], 0, 0, &display));
                         ASSERT_EQ(display, cur_dev.displays[0]);

@@ -7200,7 +7200,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireDrmDisplayEXT(
     if (NULL == icd_term->dispatch.AcquireDrmDisplayEXT) {
         loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD associated with VkPhysicalDevice does not support AcquireDrmDisplayEXT");
-        return VK_ERROR_INITIALIZATION_FAILED;
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
     return icd_term->dispatch.AcquireDrmDisplayEXT(phys_dev_term->phys_dev, drmFd, display);
 }
@@ -7232,7 +7232,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDrmDisplayEXT(
     if (NULL == icd_term->dispatch.GetDrmDisplayEXT) {
         loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "ICD associated with VkPhysicalDevice does not support GetDrmDisplayEXT");
-        return VK_ERROR_INITIALIZATION_FAILED;
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
     return icd_term->dispatch.GetDrmDisplayEXT(phys_dev_term->phys_dev, drmFd, connectorId, display);
 }
