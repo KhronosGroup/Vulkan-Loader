@@ -1199,7 +1199,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     # If this is an instance function taking a physical device (i.e. pre Vulkan 1.1), we need to behave and not crash so return an
                     # error here.
                     if ext_cmd.ext_type =='instance' and has_return_type:
-                        funcs += '        return VK_ERROR_INITIALIZATION_FAILED;\n'
+                        funcs += '        return VK_ERROR_EXTENSION_NOT_PRESENT;\n'
                     else:
                         funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                     funcs += '    }\n'
