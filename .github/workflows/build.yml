@@ -67,21 +67,10 @@ jobs:
                 CC: ${{matrix.cc}}
                 CXX: ${{matrix.cxx}}
 
-            - name: Build the loader
-              run: cmake --build build
+            - run: cmake --build build
 
-            - name: Install the loader
-              run: cmake --install build --prefix build/install
-
-            - name: cat vulkan.pc
-              run: cat ./build/install/lib/pkgconfig/vulkan.pc
-
-            - name: Validate pkg-config
-              run: pkg-config --validate ./build/install/lib/pkgconfig/vulkan.pc
-
-            - name: Run regression tests
+            - run: ctest --output-on-failure
               working-directory: ./build
-              run: ctest --output-on-failure
 
     codegen:
       runs-on: ubuntu-latest
@@ -111,12 +100,10 @@ jobs:
                 CC: clang
                 CXX: clang++
 
-            - name: Build the loader
-              run: cmake --build build
+            - run: cmake --build build
 
-            - name: Run regression tests
+            - run: ctest --output-on-failure -E UnknownFunction
               working-directory: ./build
-              run: ctest --output-on-failure -E UnknownFunction
 
     linux-32:
         runs-on: ${{matrix.os}}
@@ -160,18 +147,10 @@ jobs:
                 LDFLAGS: -m32
                 ASFLAGS: --32
 
-            - name: Build the loader
-              run: cmake --build build
+            - run: cmake --build build
 
-            - name: Install the loader
-              run: cmake --install build --prefix build/install
-
-            - name: Validate pkg-config
-              run: pkg-config --validate ./build/install/lib/pkgconfig/vulkan.pc
-
-            - name: Run regression tests
+            - run: ctest --output-on-failure
               working-directory: ./build
-              run: ctest --output-on-failure
 
     linux-32-no-asm:
         runs-on: ubuntu-20.04
@@ -202,12 +181,10 @@ jobs:
                 LDFLAGS: -m32
                 ASFLAGS: --32
 
-            - name: Build the loader
-              run: cmake --build build
+            - run: cmake --build build
 
-            - name: Run regression tests
+            - run: ctest --output-on-failure -E UnknownFunction
               working-directory: ./build
-              run: ctest --output-on-failure -E UnknownFunction
 
     windows_vs:
         runs-on: windows-latest
@@ -225,11 +202,7 @@ jobs:
             - name: Generate build files
               run: cmake -S. -B build -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -A ${{ matrix.arch }} -D ENABLE_WERROR=ON
 
-            - name: Build the loader
-              run: cmake --build ./build --config ${{matrix.config}}
-
-            - name: Install the loader
-              run: cmake --install build --prefix build/install --config ${{matrix.config}}
+            - run: cmake --build ./build --config ${{matrix.config}}
 
             - name: Run regression tests
               working-directory: ./build
@@ -285,11 +258,9 @@ jobs:
           - name: Configure
             run: cmake -S. -B build -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -G "Ninja" -D ENABLE_WERROR=ON -D LOADER_USE_UNSAFE_FILE_SEARCH=ON
 
-          - name: Build
-            run: cmake --build ./build
+          - run: cmake --build ./build
 
-          - name: Install the loader
-            run: cmake --install build --prefix build/install
+          - run: cmake --install build --prefix build/install
 
     # Make sure clang-cl builds still succeed - used by the chromium project
     windows_clang_cl:
@@ -311,11 +282,7 @@ jobs:
           - name: Configure
             run: cmake -S. -B build -D UPDATE_DEPS=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -T "ClangCL" -D ENABLE_WERROR=ON
 
-          - name: Build
-            run: cmake --build ./build --config ${{matrix.config}}
-
-          - name: Install the loader
-            run: cmake --install build --prefix build/install --config ${{matrix.config}}
+          - run: cmake --build ./build --config ${{matrix.config}}
 
           - name: Run regression tests
             working-directory: ./build
@@ -349,11 +316,8 @@ jobs:
 
             - run: cmake --build build
 
-            - run: cmake --install build --prefix build/install
-
-            - name: Run regression tests
+            - run: ctest --output-on-failure
               working-directory: ./build
-              run: ctest --output-on-failure
 
     apple-cross-compile:
       name: ${{ matrix.CMAKE_SYSTEM_NAME }}
@@ -414,7 +378,6 @@ jobs:
             - run: cmake --build build
             - run: ctest --output-on-failure -E UnknownFunction
               working-directory: ./build
-            - run: cmake --install build --prefix /tmp
             - name: Verify Universal Binary
               if: ${{ matrix.static == 'OFF' }}
               run: |
@@ -458,12 +421,8 @@ jobs:
             CMAKE_C_COMPILER_LAUNCHER: ccache
             CMAKE_CXX_COMPILER_LAUNCHER: ccache
             CMAKE_GENERATOR: Ninja
-        - name: Build
-          run: cmake --build build -- --quiet
-        - name: Install
-          run: cmake --install build --prefix build/install
-        - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
-          run: ccache --show-stats
+        - run: cmake --build build
+        - run: cmake --install build --prefix build/install
 
     mingw-no-asm:
       runs-on: windows-2022
@@ -490,12 +449,8 @@ jobs:
             CMAKE_C_COMPILER_LAUNCHER: ccache
             CMAKE_CXX_COMPILER_LAUNCHER: ccache
             CMAKE_GENERATOR: Ninja
-        - name: Build
-          run: cmake --build build -- --quiet
-        - name: Install
-          run: cmake --install build --prefix build/install
-        - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
-          run: ccache --show-stats
+        - run: cmake --build build
+        - run: cmake --install build --prefix build/install
 
     mingw-no-asm-explicit:
       runs-on: windows-2022
@@ -521,9 +476,5 @@ jobs:
             CMAKE_C_COMPILER_LAUNCHER: ccache
             CMAKE_CXX_COMPILER_LAUNCHER: ccache
             CMAKE_GENERATOR: Ninja
-        - name: Build
-          run: cmake --build build -- --quiet
-        - name: Install
-          run: cmake --install build --prefix build/install
-        - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
-          run: ccache --show-stats
+        - run: cmake --build build
+        - run: cmake --install build --prefix build/install

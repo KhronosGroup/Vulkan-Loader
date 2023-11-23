@@ -72,6 +72,24 @@ if(WIN32)
     endif()
 endif()
 
+# Test installation
+set(test_install_dir "${CMAKE_CURRENT_BINARY_DIR}/install")
+add_test(NAME integration.install
+    COMMAND ${CMAKE_COMMAND} --install ${PROJECT_BINARY_DIR} --prefix ${test_install_dir} --config $<CONFIG>
+)
+
+# Test find_package suppport
+add_test(NAME integration.find_package
+    COMMAND ${CMAKE_CTEST_COMMAND}
+        --build-and-test ${CMAKE_CURRENT_LIST_DIR}/integration
+                         ${CMAKE_CURRENT_BINARY_DIR}/find_package
+        --build-generator ${CMAKE_GENERATOR}
+        --build-options -DCMAKE_PREFIX_PATH=${test_install_dir}
+)
+
+# Installing comes before testing
+set_tests_properties(integration.find_package PROPERTIES DEPENDS integration.install)
+
 # must happen after the dll's get copied over
 if(NOT CMAKE_CROSSCOMPILING)
     gtest_discover_tests(test_regression PROPERTIES DISCOVERY_TIMEOUT 100)
