@@ -803,7 +803,7 @@ inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     pid_t pid = getpid();
-    int ret = proc_pidpath(pid, &buffer[0], buffer.size());
+    int ret = proc_pidpath(pid, &buffer[0], static_cast<uint32_t>(buffer.size()));
     if (ret <= 0) return NULL;
     buffer[ret] = '\0';
     buffer.resize(ret);

@@ -388,11 +388,12 @@ jobs:
     # Building a universal binary disables assembly automatically
     # Furthermore the Vulkan SDK ships universal binaries
     mac-univeral:
-        name: "Universal Binary Testing (STATIC ${{ matrix.static }})"
+        name: "Universal Binary Testing (STATIC ${{ matrix.static }}) w/ ${{ matrix.generator }}"
         runs-on: macos-latest
         strategy:
             matrix:
                 static: [ 'ON', 'OFF' ]
+                generator: [ Ninja, Xcode ]
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-python@v4
@@ -408,13 +409,12 @@ jobs:
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
                 -D ENABLE_WERROR=ON \
-                -G Ninja
+                -G ${{ matrix.generator }}
               env:
                 LDFLAGS: -Wl,-fatal_warnings
-            - run: cmake --build build
-            - run: ctest --output-on-failure -E UnknownFunction
-              working-directory: ./build
-            - run: cmake --install build --prefix /tmp
+            - run: cmake --build build --config Release
+            - run: ctest --output-on-failure --build-config Release -E UnknownFunction --test-dir build/
+            - run: cmake --install build --config Release --prefix /tmp
             - name: Verify Universal Binary
               if: ${{ matrix.static == 'OFF' }}
               run: |
