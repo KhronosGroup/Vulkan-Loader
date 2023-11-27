@@ -15,7 +15,6 @@
 # limitations under the License.
 # ~~~
 
-
 option(ENABLE_LIVE_VERIFICATION_TESTS "Enable tests which expect to run on live drivers. Meant for manual verification only" OFF)
 
 include(GoogleTest)
@@ -70,6 +69,14 @@ if(WIN32)
         add_custom_command(TARGET test_regression POST_BUILD
                            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gtest> $<TARGET_FILE_DIR:dynamic_rendering_get_proc_addr>)
     endif()
+endif()
+
+# https://discourse.cmake.org/t/googletest-crash-when-using-cmake-xcode-arm64/5766
+#
+# TLDR: On macOS arm64, all binaries have to be signed before running.
+# Delay test discovery until test time as a workaround.
+if (XCODE)
+    set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE "PRE_TEST")
 endif()
 
 # must happen after the dll's get copied over
