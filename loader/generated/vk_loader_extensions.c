@@ -9131,7 +9131,6 @@ VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(
 VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    uint32_t*                                   pTimingCount,
     VkGetLatencyMarkerInfoNV*                   pLatencyMarkerInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -9140,7 +9139,7 @@ VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(
                    "[VUID-vkGetLatencyTimingsNV-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->GetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+    disp->GetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(
