@@ -357,12 +357,23 @@ if(WIN32)
     add_dependencies(vulkan loader_asm_gen_files)
 
 else()
-    if(APPLE AND BUILD_STATIC_LOADER)
-        add_library(vulkan STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-        target_compile_definitions(vulkan PRIVATE BUILD_STATIC_LOADER)
-    else()
-        add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+    if(APPLE)
+        option(APPLE_STATIC_LOADER "Build a loader that can be statically linked. Intended for Chromium usage/testing.")
+        mark_as_advanced(APPLE_STATIC_LOADER)
     endif()
+
+    if(APPLE_STATIC_LOADER)
+        add_library(vulkan STATIC)
+        target_compile_definitions(vulkan PRIVATE APPLE_STATIC_LOADER)
+
+        message(WARNING "The APPLE_STATIC_LOADER option has been set. Note that this will only work on MacOS and is not supported "
+                "or tested as part of the loader. Use it at your own risk.")
+    else()
+        add_library(vulkan SHARED)
+    endif()
+
+    target_sources(vulkan PRIVATE ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+
     add_dependencies(vulkan loader_asm_gen_files)
 
     set_target_properties(vulkan PROPERTIES
@@ -394,11 +405,10 @@ else()
         # Use CONFIGURE_DEPENDS to ensure that if the header files are updated, this list is also updated
         get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
         file(GLOB_RECURSE CONFIGURE_DEPENDS FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS})
-        if(BUILD_STATIC_LOADER)
-            add_library(vulkan-framework STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
-        else()
-            add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
-        endif()
+
+        add_library(vulkan-framework SHARED)
+        target_sources(vulkan-framework PRIVATE ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+
         add_dependencies(vulkan-framework loader_asm_gen_files)
         target_link_libraries(vulkan-framework ${CMAKE_DL_LIBS} Threads::Threads -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework loader_specific_options)
@@ -454,7 +464,7 @@ endif()
 target_link_libraries(vulkan PRIVATE Vulkan::Headers)
 add_library(Vulkan::Loader ALIAS vulkan)
 
-if (APPLE AND BUILD_STATIC_LOADER)
+if (APPLE_STATIC_LOADER)
     # TLDR: This feature only exists at the request of Google for Chromium. No other project should use this!
     message(NOTICE "Apple STATIC lib: it will be built but not installed, and vulkan.pc and VulkanLoaderConfig.cmake won't be generated!")
     return()

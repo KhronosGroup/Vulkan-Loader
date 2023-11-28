@@ -73,7 +73,11 @@
 
 #include "stack_allocation.h"
 
-#if defined(BUILD_STATIC_LOADER)
+#if defined(APPLE_STATIC_LOADER) && !defined(__APPLE__)
+#error "APPLE_STATIC_LOADER can only be defined on Apple platforms!"
+#endif
+
+#if defined(APPLE_STATIC_LOADER)
 #define LOADER_EXPORT
 #elif defined(__GNUC__) && __GNUC__ >= 4
 #define LOADER_EXPORT __attribute__((visibility("default")))
@@ -222,7 +226,7 @@ static inline bool loader_platform_is_path(const char *path) { return strchr(pat
 // resources allocated by anything allocated by once init. This isn't a problem for static libraries, but it is for dynamic
 // ones. When building a DLL, we use DllMain() instead to allow properly cleaning up resources.
 
-#if defined(__APPLE__) && defined(BUILD_STATIC_LOADER)
+#if defined(APPLE_STATIC_LOADER)
 static inline void loader_platform_thread_once_fn(pthread_once_t *ctl, void (*func)(void)) {
     assert(func != NULL);
     assert(ctl != NULL);
