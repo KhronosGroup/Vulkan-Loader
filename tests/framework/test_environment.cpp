@@ -37,7 +37,7 @@ fs::path get_loader_path() {
 }
 
 void init_vulkan_functions(VulkanFunctions& funcs) {
-#if defined(BUILD_STATIC_LOADER)
+#if defined(APPLE_STATIC_LOADER)
 #define GPA(name) name
 #else
 #define GPA(name) funcs.loader.get_symbol(#name)
@@ -145,7 +145,7 @@ void init_vulkan_functions(VulkanFunctions& funcs) {
     // clang-format on
 }
 
-#if defined(BUILD_STATIC_LOADER)
+#if defined(APPLE_STATIC_LOADER)
 VulkanFunctions::VulkanFunctions() {
 #else
 VulkanFunctions::VulkanFunctions() : loader(get_loader_path()) {

@@ -328,13 +328,13 @@ jobs:
             matrix:
                 config: [ Debug, Release ]
                 os: [ macos-11, macos-12 ]
-                static_build: [ BUILD_STATIC_LOADER=ON, BUILD_STATIC_LOADER=OFF ]
+                static_build: [ APPLE_STATIC_LOADER=ON, APPLE_STATIC_LOADER=OFF ]
                 exclude:
                   - os: macos-latest
-                    static_build: BUILD_STATIC_LOADER=ON
+                    static_build: APPLE_STATIC_LOADER=ON
                   - config: Debug
                     os: macos-11
-                    static_build: BUILD_STATIC_LOADER=ON
+                    static_build: APPLE_STATIC_LOADER=ON
 
         steps:
             - uses: actions/checkout@v4
@@ -404,7 +404,7 @@ jobs:
               run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
-                -D BUILD_STATIC_LOADER=${{matrix.static}} \
+                -D APPLE_STATIC_LOADER=${{matrix.static}} \
                 "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \

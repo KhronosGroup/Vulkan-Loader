@@ -127,7 +127,7 @@ void handle_assert_equal(size_t count, T left[], T right[]) {
 // VulkanFunctions - loads vulkan functions for tests to use
 
 struct VulkanFunctions {
-#if !defined(BUILD_STATIC_LOADER)
+#if !defined(APPLE_STATIC_LOADER)
     LibraryWrapper loader;
 #endif
     // Pre-Instance
