@@ -121,6 +121,9 @@ class HelperFileOutputGenerator(OutputGenerator):
         # User-supplied prefix text, if any (list of strings)
         self.helper_file_type = genOpts.helper_file_type
         self.library_name = genOpts.library_name
+
+        write("// clang-format off", file=self.outFile)
+
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
         file_comment += '// See helper_file_generator.py for modifications\n'
@@ -163,7 +166,8 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Remove blank lines at EOF
         if dest_file.endswith('\n'):
             dest_file = dest_file[:-1]
-        write(dest_file, file=self.outFile);
+        write(dest_file, file=self.outFile)
+        write("// clang-format on", file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
     #
