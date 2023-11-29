@@ -29,9 +29,6 @@ import tempfile
 import datetime
 import re
 
-# files to exclude from --verify check
-verify_exclude = ['.clang-format']
-
 def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('registry', metavar='REGISTRY_PATH', help='path to the Vulkan-Headers registry directory')
@@ -79,7 +76,7 @@ def main(argv):
         temp_files = set(os.listdir(temp_dir))
         repo_files = set(os.listdir(repo_dir))
         files_match = True
-        for filename in sorted((temp_files | repo_files) - set(verify_exclude)):
+        for filename in sorted((temp_files | repo_files)):
             if filename not in repo_files:
                 print('ERROR: Missing repo file', filename)
                 files_match = False

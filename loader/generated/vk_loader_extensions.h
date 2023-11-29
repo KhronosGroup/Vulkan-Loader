@@ -22,6 +22,7 @@
  * Author: Mark Young <marky@lunarg.com>
  */
 
+// clang-format off
 #pragma once
 
 // Structures defined externally, but used here
@@ -498,6 +499,6 @@ struct loader_device_terminator_dispatch {
     // ---- VK_EXT_full_screen_exclusive extension commands
     PFN_vkGetDeviceGroupSurfacePresentModes2EXT GetDeviceGroupSurfacePresentModes2EXT;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-}; 
+};
 
-
+// clang-format on

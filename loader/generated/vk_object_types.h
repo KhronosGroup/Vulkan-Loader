@@ -1,3 +1,4 @@
+// clang-format off
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See helper_file_generator.py for modifications
 
@@ -446,3 +447,4 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
     }
     return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
 }
+// clang-format on

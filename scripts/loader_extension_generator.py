@@ -213,6 +213,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
         preamble = ''
 
+        preamble += '// clang-format off\n'
+
         if self.genOpts.filename == 'vk_loader_extensions.h':
             preamble += '#pragma once\n'
 
@@ -267,6 +269,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         elif self.genOpts.filename == 'vk_layer_dispatch_table.h':
             file_data += self.OutputLayerInstanceDispatchTable()
             file_data += self.OutputLayerDeviceDispatchTable()
+
+        file_data += '// clang-format on'
 
         write(file_data, file=self.outFile);
 
@@ -1547,7 +1551,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         if last_protect is not None:
             term_func += '#endif // %s\n' % last_protect
 
-        term_func += '}; \n\n'
+        term_func += '};\n\n'
 
         return term_func
 

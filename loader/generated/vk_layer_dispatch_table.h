@@ -22,6 +22,7 @@
  * Author: Mark Young <marky@lunarg.com>
  */
 
+// clang-format off
 #pragma once
 
 #if !defined(PFN_GetPhysicalDeviceProcAddr)
@@ -1143,4 +1144,4 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdDrawMeshTasksIndirectCountEXT CmdDrawMeshTasksIndirectCountEXT;
 } VkLayerDispatchTable;
 
-
+// clang-format on

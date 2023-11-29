@@ -28,7 +28,7 @@ typedef struct LoaderEnumAdapters2 {
         LUID luid;
         ULONG source_count;
         BOOL present_move_regions_preferred;
-    } * adapters;
+    } *adapters;
 } LoaderEnumAdapters2;
 
 typedef _Check_return_ NTSTATUS(APIENTRY *PFN_LoaderEnumAdapters2)(const LoaderEnumAdapters2 *);

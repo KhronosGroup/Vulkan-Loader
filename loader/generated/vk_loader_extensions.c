@@ -22,6 +22,7 @@
  * Author: Mark Young <marky@lunarg.com>
  */
 
+// clang-format off
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12026,4 +12027,4 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME,
                                                   VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME,
                                                   NULL };
-
+// clang-format on
