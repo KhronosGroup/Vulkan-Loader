@@ -12026,5 +12026,6 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #endif // VK_USE_PLATFORM_SCREEN_QNX
                                                   VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME,
                                                   VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME,
+                                                  VK_EXT_LAYER_SETTINGS_EXTENSION_NAME,
                                                   NULL };
 // clang-format on
