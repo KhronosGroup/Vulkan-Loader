@@ -3244,7 +3244,8 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
                 loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
             } else {
                 log_flags = VULKAN_LOADER_LAYER_BIT;
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for layer manifest files");
+                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for %s layer manifest files",
+                           manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER ? "explicit" : "implicit");
             }
             loader_log(inst, log_flags, 0, "   In following locations:");
             char *cur_file;
