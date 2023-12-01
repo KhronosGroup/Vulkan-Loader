@@ -400,24 +400,10 @@ else()
         find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
         target_link_libraries(vulkan PRIVATE "-framework CoreFoundation")
 
-        # Build vulkan.framework
-        # Use GLOB_RECURSE to find all the header files and populate the vulkan.framework headers with them
-        # Use CONFIGURE_DEPENDS to ensure that if the header files are updated, this list is also updated
-        get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
-        file(GLOB_RECURSE CONFIGURE_DEPENDS FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS})
-
-        add_library(vulkan-framework SHARED)
-        target_sources(vulkan-framework PRIVATE ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
-
-        add_dependencies(vulkan-framework loader_asm_gen_files)
-        target_link_libraries(vulkan-framework ${CMAKE_DL_LIBS} Threads::Threads -lm "-framework CoreFoundation")
-        target_link_libraries(vulkan-framework loader_specific_options)
-
         if (MODIFY_UNKNOWN_FUNCTION_DECLS)
             # Modifies the names of functions as they appearin the assembly code so that the
             # unknown function handling will work
             target_compile_definitions(vulkan PRIVATE MODIFY_UNKNOWN_FUNCTION_DECLS)
-            target_compile_definitions(vulkan-framework PRIVATE MODIFY_UNKNOWN_FUNCTION_DECLS)
         endif()
 
         # Workaround linker warning: https://github.com/KhronosGroup/Vulkan-Loader/issues/1332
@@ -426,25 +412,6 @@ else()
         message(STATUS "APPLE_VULKAN_LOADER_VERSION = ${APPLE_VULKAN_LOADER_VERSION}")
 
         set_target_properties(vulkan PROPERTIES VERSION ${APPLE_VULKAN_LOADER_VERSION})
-
-        # The FRAMEWORK_VERSION needs to be "A" here so that Xcode code-signing works when a user adds their framework to an Xcode
-        # project and does "Sign on Copy". It would have been nicer to use "1" to denote Vulkan 1. Although Apple docs say that a
-        # framework version does not have to be "A", this part of the Apple toolchain expects it.
-        # https://forums.developer.apple.com/thread/65963
-
-        set_target_properties(vulkan-framework PROPERTIES
-            OUTPUT_NAME vulkan
-            FRAMEWORK TRUE
-            FRAMEWORK_VERSION A
-            VERSION "${APPLE_VULKAN_LOADER_VERSION}"
-            SOVERSION "1.0.0"
-            MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
-            PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
-        )
-        install(TARGETS vulkan-framework
-            PUBLIC_HEADER DESTINATION vulkan
-            FRAMEWORK DESTINATION loader
-        )
     endif()
 endif()
 
