@@ -274,31 +274,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
     return buffer;
 }
 #elif defined(__APPLE__)
-#include <TargetConditionals.h>
-// TARGET_OS_IPHONE isn't just iOS it's also iOS/tvOS/watchOS. See TargetConditionals.h documentation.
-#if TARGET_OS_IPHONE
-static inline char *loader_platform_executable_path(char *buffer, size_t size) {
-    (void)size;
-    buffer[0] = '\0';
-    return buffer;
-}
-#endif
-#if TARGET_OS_OSX
-#include <libproc.h>
-static inline char *loader_platform_executable_path(char *buffer, size_t size) {
-    // proc_pidpath takes a uint32_t for the buffer size
-    if (size > UINT32_MAX) {
-        return NULL;
-    }
-    pid_t pid = getpid();
-    int ret = proc_pidpath(pid, buffer, (uint32_t)size);
-    if (ret <= 0) {
-        return NULL;
-    }
-    buffer[ret] = '\0';
-    return buffer;
-}
-#endif
+char *loader_platform_executable_path(char *buffer, size_t size);
 #elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/sysctl.h>
 static inline char *loader_platform_executable_path(char *buffer, size_t size) {
