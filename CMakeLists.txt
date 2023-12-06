@@ -152,7 +152,7 @@ option(ENABLE_WERROR "Enable warnings as errors" ON)
 # Set warnings as errors and the main diagnostic flags
 # Must be set first so the warning silencing later on works properly
 # Note that clang-cl.exe should use MSVC flavor flags, not GNU
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC"))
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
     if (ENABLE_WERROR)
         target_compile_options(loader_common_options INTERFACE /WX)
     endif()
@@ -182,7 +182,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
     target_compile_options(loader_common_options INTERFACE -Wpointer-arith)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC"))
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
     # /sdl: Enable additional security checks
     # /GR-: Disable RTTI
     # /guard:cf: Enable control flow guard

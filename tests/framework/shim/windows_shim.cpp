@@ -370,7 +370,12 @@ LONG WINAPI ShimGetPackagesByPackageFamily(_In_ PCWSTR packageFamilyName, _Inout
         *bufferLength = ARRAYSIZE(package_full_name);
         if (too_small) return ERROR_INSUFFICIENT_BUFFER;
 
-        wcscpy(buffer, package_full_name);
+        for (size_t i = 0; i < sizeof(package_full_name) / sizeof(wchar_t); i++) {
+            if (i >= *bufferLength) {
+                break;
+            }
+            buffer[i] = package_full_name[i];
+        }
         *packageFullNames = buffer;
         return 0;
     }
@@ -391,7 +396,12 @@ LONG WINAPI ShimGetPackagePathByFullName(_In_ PCWSTR packageFullName, _Inout_ UI
         *pathLength = static_cast<UINT32>(platform_shim.app_package_path.size() + 1);
         return ERROR_INSUFFICIENT_BUFFER;
     }
-    wcscpy(path, platform_shim.app_package_path.c_str());
+    for (size_t i = 0; i < platform_shim.app_package_path.length(); i++) {
+        if (i >= *pathLength) {
+            break;
+        }
+        path[i] = platform_shim.app_package_path.c_str()[i];
+    }
     return 0;
 }
 
