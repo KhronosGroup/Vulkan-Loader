@@ -325,10 +325,8 @@ void free_string_list(const struct loader_instance *inst, struct loader_string_l
             string_list->list[i] = NULL;
         }
         loader_instance_heap_free(inst, string_list->list);
-        string_list->list = NULL;
     }
-    string_list->count = 0;
-    string_list->allocated_count = 0;
+    memset(string_list, 0, sizeof(struct loader_string_list));
 }
 
 // Given string of three part form "maj.min.pat" convert to a vulkan version number.
@@ -503,6 +501,7 @@ void loader_delete_layer_list_and_properties(const struct loader_instance *inst,
         layer_list->capacity = 0;
         loader_instance_heap_free(inst, layer_list->list);
     }
+    memset(layer_list, 0, sizeof(struct loader_layer_list));
 }
 
 void loader_remove_layer_in_list(const struct loader_instance *inst, struct loader_layer_list *layer_list,
@@ -715,9 +714,7 @@ VkResult loader_init_generic_list(const struct loader_instance *inst, struct loa
 
 void loader_destroy_generic_list(const struct loader_instance *inst, struct loader_generic_list *list) {
     loader_instance_heap_free(inst, list->list);
-    list->count = 0;
-    list->capacity = 0;
-    list->list = NULL;
+    memset(list, 0, sizeof(struct loader_generic_list));
 }
 
 // Append non-duplicate extension properties defined in props to the given ext_list.
@@ -837,9 +834,7 @@ bool loader_names_array_has_layer_property(const VkLayerProperties *vk_layer_pro
 
 void loader_destroy_pointer_layer_list(const struct loader_instance *inst, struct loader_pointer_layer_list *layer_list) {
     loader_instance_heap_free(inst, layer_list->list);
-    layer_list->count = 0;
-    layer_list->capacity = 0;
-    layer_list->list = NULL;
+    memset(layer_list, 0, sizeof(struct loader_pointer_layer_list));
 }
 
 // Append layer properties defined in prop_list to the given layer_info list
@@ -1388,9 +1383,7 @@ void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_
         }
         loader_instance_heap_free(inst, icd_tramp_list->scanned_list);
     }
-    icd_tramp_list->capacity = 0;
-    icd_tramp_list->count = 0;
-    icd_tramp_list->scanned_list = NULL;
+    memset(icd_tramp_list, 0, sizeof(struct loader_icd_tramp_list));
 }
 
 VkResult loader_scanned_icd_init(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list) {
