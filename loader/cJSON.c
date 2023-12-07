@@ -442,7 +442,7 @@ static char *print_string_ptr(const VkAllocationCallbacks *pAllocator, const cha
 /* Invoke print_string_ptr (which is useful) on an item. */
 static char *print_string(cJSON *item, printbuffer *p) { return print_string_ptr(item->pAllocator, item->valuestring, p); }
 
-/* Predeclare these prototypes. */
+/* Declare these prototypes. */
 static const char *parse_value(cJSON *item, const char *value, bool *out_of_memory);
 static char *print_value(cJSON *item, int depth, int fmt, printbuffer *p);
 static const char *parse_array(cJSON *item, const char *value, bool *out_of_memory);
@@ -1014,7 +1014,7 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
     bool out_of_memory = false;
     *json = cJSON_Parse(inst ? &inst->alloc_callbacks : NULL, json_buf, &out_of_memory);
     if (out_of_memory) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Out of Memory error occured while parsing JSON file %s.",
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Out of Memory error occurred while parsing JSON file %s.",
                    filename);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;

@@ -348,7 +348,7 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 }
 #endif  // defined (__QNX__)
 
-// Compatability with compilers that don't support __has_feature
+// Compatibility with compilers that don't support __has_feature
 #if !defined(__has_feature)
 #define __has_feature(x) 0
 #endif

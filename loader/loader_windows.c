@@ -46,7 +46,7 @@
 #include <winternl.h>
 #include <strsafe.h>
 #if defined(__MINGW32__)
-#undef strcpy  // fix error with redfined strcpy when building with MinGW-w64
+#undef strcpy  // fix error with redefined strcpy when building with MinGW-w64
 #endif
 #include <dxgi1_6.h>
 #include "adapters.h"
@@ -688,7 +688,7 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
                 goto out;
             }
 
-            // If this is a string and not a multi-string, we don't want to go throught the loop more than once
+            // If this is a string and not a multi-string, we don't want to go through the loop more than once
             if (full_info->value_type == REG_SZ) {
                 break;
             }
@@ -865,7 +865,7 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
     return VK_SUCCESS;
 }
 
-// Whenever there are multiple drivers for the same hardware and one of the drivers is an implementation layered ontop of another
+// Whenever there are multiple drivers for the same hardware and one of the drivers is an implementation layered on top of another
 // API (such as the Dozen driver which converts vulkan to Dx12), we want to make sure the layered driver appears after the 'native'
 // driver. This function iterates over all physical devices and make sure any with matching LUID's are sorted such that drivers with
 // a underlyingAPI of VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT are ordered after drivers without it.
