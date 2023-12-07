@@ -37,9 +37,8 @@ loader_settings global_loader_settings;
 
 void free_layer_configuration(const struct loader_instance* inst, loader_settings_layer_configuration* layer_configuration) {
     loader_instance_heap_free(inst, layer_configuration->name);
-    layer_configuration->name = NULL;
     loader_instance_heap_free(inst, layer_configuration->path);
-    layer_configuration->path = NULL;
+    memset(layer_configuration, 0, sizeof(loader_settings_layer_configuration));
 }
 
 void free_loader_settings(const struct loader_instance* inst, loader_settings* settings) {
@@ -50,7 +49,6 @@ void free_loader_settings(const struct loader_instance* inst, loader_settings* s
     }
     loader_instance_heap_free(inst, settings->layer_configurations);
     loader_instance_heap_free(inst, settings->settings_file_path);
-    settings->layer_configurations = NULL;
     memset(settings, 0, sizeof(loader_settings));
 }
 
