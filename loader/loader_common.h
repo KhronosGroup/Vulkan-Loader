@@ -404,8 +404,8 @@ struct loader_physical_device_term {
 };
 
 #if defined(LOADER_ENABLE_LINUX_SORT)
-// Structure for storing the relevent device information for selecting a device.
-// NOTE: Needs to be defined here so we can store this content in the term structrue
+// Structure for storing the relevant device information for selecting a device.
+// NOTE: Needs to be defined here so we can store this content in the term structure
 //       for quicker sorting.
 struct LinuxSortedDeviceInfo {
     // Associated Vulkan Physical Device

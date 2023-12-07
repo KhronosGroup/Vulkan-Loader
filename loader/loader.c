@@ -1725,13 +1725,13 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
         fp_create_inst = loader_platform_get_proc_address(handle, "vkCreateInstance");
         if (NULL == fp_create_inst) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_scanned_icd_add:  Failed querying \'vkCreateInstance\' via dlsym/loadlibrary for ICD %s", filename);
+                       "loader_scanned_icd_add:  Failed querying \'vkCreateInstance\' via dlsym/LoadLibrary for ICD %s", filename);
             goto out;
         }
         fp_get_inst_ext_props = loader_platform_get_proc_address(handle, "vkEnumerateInstanceExtensionProperties");
         if (NULL == fp_get_inst_ext_props) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_scanned_icd_add: Could not get \'vkEnumerateInstanceExtensionProperties\' via dlsym/loadlibrary "
+                       "loader_scanned_icd_add: Could not get \'vkEnumerateInstanceExtensionProperties\' via dlsym/LoadLibrary "
                        "for ICD %s",
                        filename);
             goto out;
@@ -1929,7 +1929,7 @@ char *loader_get_next_path(char *path) {
 }
 
 /* Processes a json manifest's library_path and the location of the json manifest to create the path of the library
- * The output is stored in out_fullpath by allocating a string - so its the caller's repsonsibility to free it
+ * The output is stored in out_fullpath by allocating a string - so its the caller's responsibility to free it
  * The output is the combination of the base path of manifest_file_path concatenated with library path
  * If library_path is an absolute path, we do not prepend the base path of manifest_file_path
  *
@@ -1967,14 +1967,14 @@ VkResult combine_manifest_directory_and_library_path(const struct loader_instanc
         goto out;
     }
     size_t cur_loc_in_out_fullpath = 0;
-    // look for the last occurance of DIRECTORY_SYMBOL in manifest_file_path
+    // look for the last occurrence of DIRECTORY_SYMBOL in manifest_file_path
     size_t last_directory_symbol = 0;
     bool found_directory_symbol = false;
     for (size_t i = 0; i < manifest_file_path_str_len; i++) {
         if (manifest_file_path[i] == DIRECTORY_SYMBOL) {
             last_directory_symbol = i + 1;  // we want to include the symbol
             found_directory_symbol = true;
-            // dont break because we want to find the last occurance
+            // dont break because we want to find the last occurrence
         }
     }
     // Add manifest_file_path up to the last directory symbol
@@ -2131,7 +2131,7 @@ bool update_meta_layer_extensions_from_component_layers(const struct loader_inst
     return res;
 }
 
-// Verify that all meta-layers in a layer verify_meta_layer_component_layerslist are valid.
+// Verify that all meta-layers in a layer list are valid.
 VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                 struct loader_layer_list *instance_layers, bool *override_layer_present) {
     VkResult res = VK_SUCCESS;
@@ -2606,7 +2606,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     if (loader_cJSON_GetObjectItem(layer_node, "app_keys")) {
         if (!props.is_override) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Layer %s contains app_keys, but any app_keys can only be provided by the override metalayer. "
+                       "Layer %s contains app_keys, but any app_keys can only be provided by the override meta layer. "
                        "These will be ignored.",
                        props.info.layerName);
         }
@@ -3774,7 +3774,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         goto out;
     }
 
-    // If we should not look for layers using other mechanisms, assing settings_layers to instance_layers and jump to the
+    // If we should not look for layers using other mechanisms, assign settings_layers to instance_layers and jump to the
     // output
     if (!should_search_for_other_layers) {
         *instance_layers = settings_layers;
@@ -3855,7 +3855,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
         goto out;
     }
 
-    // If we should not look for layers using other mechanisms, assing settings_layers to instance_layers and jump to the
+    // If we should not look for layers using other mechanisms, assign settings_layers to instance_layers and jump to the
     // output
     if (!should_search_for_other_layers) {
         *instance_layers = settings_layers;
@@ -3972,11 +3972,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
         return (PFN_vkVoidFunction)terminator_CreateInstance;
     }
 
-    // While the spec is very clear that quering vkCreateDevice requires a valid VkInstance, because the loader allowed querying
+    // While the spec is very clear that querying vkCreateDevice requires a valid VkInstance, because the loader allowed querying
     // with a NULL VkInstance handle for a long enough time, it is impractical to fix this bug in the loader
 
     // As such, this is a bug to maintain compatibility for the RTSS layer (Riva Tuner Statistics Server) but may
-    // be dependend upon by other layers out in the wild.
+    // be depended upon by other layers out in the wild.
     if (!strcmp(pName, "vkCreateDevice")) {
         return (PFN_vkVoidFunction)terminator_CreateDevice;
     }
@@ -5051,7 +5051,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
             goto out;
         }
     } else {
-        // Build the lists of active layers (including metalayers) and expanded layers (with metalayers resolved to their
+        // Build the lists of active layers (including meta layers) and expanded layers (with meta layers resolved to their
         // components)
         res = loader_add_implicit_layers(inst, layer_filters, &active_layers, &expanded_layers, instance_layers);
         if (res != VK_SUCCESS) {
@@ -6353,7 +6353,7 @@ out:
 }
 /**
  * Iterates through all drivers and unloads any which do not contain physical devices.
- * This saves address space, which for 32 bit applications is scarse.
+ * This saves address space, which for 32 bit applications is scarce.
  * This must only be called after a call to vkEnumeratePhysicalDevices that isn't just querying the count
  */
 void unload_drivers_without_physical_devices(struct loader_instance *inst) {
