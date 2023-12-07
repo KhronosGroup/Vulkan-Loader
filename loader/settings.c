@@ -335,7 +335,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 
     // Corresponds to the settings object that has no app keys
     int global_settings_index = -1;
-    // Corresponds to the settings object which has a matchign app key
+    // Corresponds to the settings object which has a matching app key
     int index_to_use = -1;
 
     char current_process_path[1024];
@@ -551,7 +551,7 @@ VkResult get_settings_layers(const struct loader_instance* inst, struct loader_l
         }
 
         // The special layer location that indicates where unordered layers should go only should have the
-        // settings_control_value set - everythign else should be NULL
+        // settings_control_value set - everything else should be NULL
         if (layer_config->control == LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION) {
             struct loader_layer_properties props = {0};
             props.settings_control_value = LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION;

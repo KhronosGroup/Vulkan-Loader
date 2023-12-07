@@ -48,7 +48,7 @@ typedef enum loader_settings_layer_control {
 } loader_settings_layer_control;
 
 // If a loader_settings_layer_configuration has a name of loader_settings_unknown_layers_location, then it specifies that the
-// layer configuation it was found in shall be the location all layers not listed in the settings file that are enabled.
+// layer configuration it was found in shall be the location all layers not listed in the settings file that are enabled.
 #define LOADER_SETTINGS_UNKNOWN_LAYERS_LOCATION "loader_settings_unknown_layers_location"
 
 #define LOADER_SETTINGS_MAX_NAME_SIZE 256U;
@@ -73,7 +73,7 @@ typedef struct loader_settings {
 } loader_settings;
 
 // Call this function to get the current settings that the loader should use.
-// It will open up the current loader settings file and return a loader_settigns in out_loader_settings if it.
+// It will open up the current loader settings file and return a loader_settings in out_loader_settings if it.
 // It should be called on every call to the global functions excluding vkGetInstanceProcAddr
 // Caller is responsible for cleaning up by calling free_loader_settings()
 VkResult get_loader_settings(const struct loader_instance* inst, loader_settings* out_loader_settings);
