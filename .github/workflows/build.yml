@@ -322,19 +322,12 @@ jobs:
             run: ctest --output-on-failure -C ${{matrix.config}}
 
     mac:
-        runs-on: ${{matrix.os}}
+        runs-on: macos-12
 
         strategy:
             matrix:
                 config: [ Debug, Release ]
-                os: [ macos-11, macos-12 ]
                 static_build: [ APPLE_STATIC_LOADER=ON, APPLE_STATIC_LOADER=OFF ]
-                exclude:
-                  - os: macos-latest
-                    static_build: APPLE_STATIC_LOADER=ON
-                  - config: Debug
-                    os: macos-11
-                    static_build: APPLE_STATIC_LOADER=ON
 
         steps:
             - uses: actions/checkout@v4
@@ -357,7 +350,7 @@ jobs:
 
     apple-cross-compile:
       name: ${{ matrix.CMAKE_SYSTEM_NAME }}
-      runs-on: macos-11
+      runs-on: macos-12
       strategy:
           matrix:
             CMAKE_SYSTEM_NAME: [ iOS, tvOS ]
