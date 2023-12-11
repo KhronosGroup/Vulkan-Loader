@@ -70,7 +70,7 @@ jobs:
       if: matrix.language == 'python' 
       uses: github/codeql-action/autobuild@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2.22.8
 
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       if: matrix.language == 'cpp'
       with:
         python-version: '3.7'
