@@ -338,6 +338,7 @@ jobs:
             - name: Generate build files
               run: cmake -S. -B build -D CMAKE_BUILD_TYPE=${{matrix.config}} -D ${{matrix.static_build}} -D BUILD_TESTS=ON -D UPDATE_DEPS=ON -D ENABLE_WERROR=ON -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -G "Ninja"
               env:
+                # Prevents regression of KhronosGroup/Vulkan-Loader/issues/1332
                 LDFLAGS: -Wl,-fatal_warnings
 
             - run: cmake --build build
