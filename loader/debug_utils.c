@@ -183,7 +183,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugUtilsMessengerEXT(VkInstanc
     VkLayerDbgFunctionNode *new_dbg_func_node = NULL;
 
     icd_info = (VkDebugUtilsMessengerEXT *)loader_calloc_with_instance_fallback(
-        pAllocator, inst, inst->total_icd_count * sizeof(VkDebugUtilsMessengerEXT), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+        pAllocator, inst, inst->icd_terms_count * sizeof(VkDebugUtilsMessengerEXT), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
 
     if (!icd_info) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -439,7 +439,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugReportCallbackEXT(VkInstanc
     VkLayerDbgFunctionNode *new_dbg_func_node = NULL;
 
     icd_info = ((VkDebugReportCallbackEXT *)loader_calloc_with_instance_fallback(
-        pAllocator, inst, inst->total_icd_count * sizeof(VkDebugReportCallbackEXT), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT));
+        pAllocator, inst, inst->icd_terms_count * sizeof(VkDebugReportCallbackEXT), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT));
     if (!icd_info) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;

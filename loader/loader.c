@@ -1311,7 +1311,7 @@ void loader_remove_logical_device(struct loader_icd_term *icd_term, struct loade
 
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
                         const VkAllocationCallbacks *pAllocator) {
-    ptr_inst->total_icd_count--;
+    ptr_inst->icd_terms_count--;
     for (struct loader_device *dev = icd_term->logical_device_list; dev;) {
         struct loader_device *next_dev = dev->next;
         loader_destroy_logical_device(dev, pAllocator);
@@ -1335,7 +1335,7 @@ struct loader_icd_term *loader_icd_add(struct loader_instance *ptr_inst, const s
     // Prepend to the list
     icd_term->next = ptr_inst->icd_terms;
     ptr_inst->icd_terms = icd_term;
-    ptr_inst->total_icd_count++;
+    ptr_inst->icd_terms_count++;
 
     return icd_term;
 }
@@ -6152,7 +6152,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     }
 #endif
 
-    icd_count = inst->total_icd_count;
+    icd_count = inst->icd_terms_count;
 
     // Allocate something to store the physical device characteristics that we read from each ICD.
     icd_phys_dev_array =
