@@ -278,7 +278,7 @@ struct loader_instance {
 
     struct loader_instance *next;
 
-    uint32_t total_icd_count;
+    uint32_t icd_terms_count;
     struct loader_icd_term *icd_terms;
     struct loader_icd_tramp_list icd_tramp_list;
 
