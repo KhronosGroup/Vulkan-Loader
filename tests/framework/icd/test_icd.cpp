@@ -342,7 +342,8 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT([[maybe_unused]]
             // Delete the handle
             delete (uint8_t*)fake_msgr_handle;
         } else {
-            assert(false && "Messenger not found during destroy!");
+            std::cerr << "Messenger not found during destroy!\n";
+            abort();
         }
     }
 }

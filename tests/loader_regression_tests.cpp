@@ -4486,13 +4486,19 @@ TEST(EnumerateAdapterPhysicalDevices, WrongErrorCodes) {
 }
 #endif  // defined(WIN32)
 
-void try_create_swapchain(DeviceWrapper& dev, VkSurfaceKHR& surface) {
+void try_create_swapchain(InstWrapper& inst, VkPhysicalDevice physical_device, DeviceWrapper& dev, VkSurfaceKHR& surface) {
+    PFN_vkGetPhysicalDeviceSurfaceSupportKHR GetPhysicalDeviceSurfaceSupportKHR = inst.load("vkGetPhysicalDeviceSurfaceSupportKHR");
     PFN_vkCreateSwapchainKHR CreateSwapchainKHR = dev.load("vkCreateSwapchainKHR");
     PFN_vkGetSwapchainImagesKHR GetSwapchainImagesKHR = dev.load("vkGetSwapchainImagesKHR");
     PFN_vkDestroySwapchainKHR DestroySwapchainKHR = dev.load("vkDestroySwapchainKHR");
+    ASSERT_TRUE(nullptr != GetPhysicalDeviceSurfaceSupportKHR);
     ASSERT_TRUE(nullptr != CreateSwapchainKHR);
     ASSERT_TRUE(nullptr != GetSwapchainImagesKHR);
     ASSERT_TRUE(nullptr != DestroySwapchainKHR);
+
+    VkBool32 supported = false;
+    ASSERT_EQ(VK_SUCCESS, GetPhysicalDeviceSurfaceSupportKHR(physical_device, 0, surface, &supported));
+    ASSERT_EQ(supported, VK_TRUE);
 
     VkSwapchainKHR swapchain{};
     VkSwapchainCreateInfoKHR swap_create_info{};
@@ -4507,108 +4513,129 @@ void try_create_swapchain(DeviceWrapper& dev, VkSurfaceKHR& surface) {
     DestroySwapchainKHR(dev, swapchain, nullptr);
 }
 
+void add_driver_for_unloading_testing(FrameworkEnvironment& env) {
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+        .setup_WSI()
+        .add_physical_device(PhysicalDevice{}
+                                 .add_extension("VK_KHR_swapchain")
+                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true})
+                                 .finish());
+}
+
+void add_empty_driver_for_unloading_testing(FrameworkEnvironment& env) {
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME).setup_WSI();
+}
+
 TEST(DriverUnloadingFromZeroPhysDevs, InterspersedThroughout) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
-        .setup_WSI()
-        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
-        .setup_WSI()
-        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
+    add_empty_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
 
+    DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.setup_WSI();
+    FillDebugUtilsCreateDetails(inst.create_info, debug_log);
     inst.CheckCreate();
+    DebugUtilsWrapper log{inst};
+    ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));
+
+    PFN_vkSubmitDebugUtilsMessageEXT submit_message = inst.load("vkSubmitDebugUtilsMessageEXT");
+    ASSERT_TRUE(submit_message != nullptr);
 
     auto phys_devs = inst.GetPhysDevs();
     VkSurfaceKHR surface{};
-    create_surface(inst, surface);
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
     for (const auto& phys_dev : phys_devs) {
         DeviceWrapper dev{inst};
         dev.create_info.add_extension("VK_KHR_swapchain");
         dev.CheckCreate(phys_dev);
 
-        try_create_swapchain(dev, surface);
+        try_create_swapchain(inst, phys_dev, dev, surface);
     }
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
 }
 
 TEST(DriverUnloadingFromZeroPhysDevs, InMiddleOfList) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
-        .setup_WSI()
-        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
-        .setup_WSI()
-        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
+    add_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
 
     InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     inst.create_info.setup_WSI();
     inst.CheckCreate();
+    DebugUtilsWrapper log{inst};
+    ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));
 
     auto phys_devs = inst.GetPhysDevs();
     VkSurfaceKHR surface{};
-    create_surface(inst, surface);
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
     for (const auto& phys_dev : phys_devs) {
         DeviceWrapper dev{inst};
         dev.create_info.add_extension("VK_KHR_swapchain");
         dev.CheckCreate(phys_dev);
 
-        try_create_swapchain(dev, surface);
+        try_create_swapchain(inst, phys_dev, dev, surface);
     }
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
 }
 
 TEST(DriverUnloadingFromZeroPhysDevs, AtFrontAndBack) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
-        .setup_WSI()
-        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
-        .setup_WSI()
-        .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
 
+    DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.setup_WSI();
+    FillDebugUtilsCreateDetails(inst.create_info, debug_log);
     inst.CheckCreate();
+    DebugUtilsWrapper log{inst};
+    ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));
 
     auto phys_devs = inst.GetPhysDevs();
     VkSurfaceKHR surface{};
-    create_surface(inst, surface);
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
     for (const auto& phys_dev : phys_devs) {
         DeviceWrapper dev{inst};
         dev.create_info.add_extension("VK_KHR_swapchain");
         dev.CheckCreate(phys_dev);
 
-        try_create_swapchain(dev, surface);
+        try_create_swapchain(inst, phys_dev, dev, surface);
     }
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
 }
 
 TEST(DriverUnloadingFromZeroPhysDevs, NoPhysicaldevices) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).setup_WSI();
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
 
+    DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.setup_WSI();
+    FillDebugUtilsCreateDetails(inst.create_info, debug_log);
     inst.CheckCreate();
+    DebugUtilsWrapper log{inst};
+    ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));
     // No physical devices == VK_ERROR_INITIALIZATION_FAILED
     inst.GetPhysDevs(VK_ERROR_INITIALIZATION_FAILED);
 
     VkSurfaceKHR surface{};
-    create_surface(inst, surface);
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
 
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
 }
