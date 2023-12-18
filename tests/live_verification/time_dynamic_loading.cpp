@@ -30,45 +30,26 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
-#include <string>
-#include <iomanip>
-#include <thread>
 
 int main() {
-    // uint32_t iterations = 20;
-    // std::vector<std::chrono::microseconds> samples;
-    // samples.resize(iterations);
-    // for (uint32_t i = 0; i < iterations; i++) {
-    //     auto t1 = std::chrono::system_clock::now();
-    //     uint32_t count = 0;
-    //     vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
-    //     // vkEnumerateInstanceLayerProperties(&count, nullptr);
-    //     // vkEnumerateInstanceVersion(&count);
-    //     auto t2 = std::chrono::system_clock::now();
-    //     samples[i] = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    // }
-    // std::chrono::microseconds total_time{};
-    // for (uint32_t i = 0; i < iterations; i++) {
-    //     total_time += samples[i];
-    // }
-    // std::cout << "average time " << total_time.count() / iterations << " (μs)\n";
-    // std::cout << std::setw(10) << "Iteration" << std::setw(12) << " Time (μs)\n";
-    // for (uint32_t i = 0; i < iterations; i++) {
-    //     std::cout << std::setw(10) << std::to_string(i) << std::setw(12) << samples[i].count() << "\n";
-    // }
-
-    uint32_t count = 0;
-    VkInstanceCreateInfo ci{};
-    VkInstance i{};
-    auto res = vkCreateInstance(&ci, nullptr, &i);
-    if (res != VK_SUCCESS) return -1;
-    std::cout << "After called vkCreateInstance\n";
-    do {
-        std::cout << '\n' << "Press a key to continue...";
-    } while (std::cin.get() != '\n');
-    vkDestroyInstance(i, nullptr);
-    std::cout << "After called vkDestroyInstance\n";
-    do {
-        std::cout << '\n' << "Press a key to continue...";
-    } while (std::cin.get() != '\n');
+    uint32_t iterations = 20;
+    std::vector<std::chrono::milliseconds> samples;
+    samples.resize(iterations);
+    for (uint32_t i = 0; i < iterations; i++) {
+        auto t1 = std::chrono::system_clock::now();
+        uint32_t count = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+        // vkEnumerateInstanceLayerProperties(&count, nullptr);
+        // vkEnumerateInstanceVersion(&count);
+        auto t2 = std::chrono::system_clock::now();
+        samples[i] = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+    }
+    std::chrono::milliseconds total_time{};
+    for (uint32_t i = 0; i < iterations; i++) {
+        total_time += samples[i];
+    }
+    std::cout << "average time " << total_time.count() / iterations << "ms\n";
+    std::cout << "first call time " << samples[0].count() << "ms\n";
+    std::cout << "second call time " << samples[1].count() << "ms\n";
+    std::cout << "last call time " << samples[iterations - 1].count() << "ms\n";
 }
