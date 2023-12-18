@@ -149,8 +149,8 @@ void loader_destroy_pointer_layer_list(const struct loader_instance *inst, struc
 void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list);
 void loader_remove_layer_in_list(const struct loader_instance *inst, struct loader_layer_list *layer_list,
                                  uint32_t layer_to_remove);
-VkResult loader_init_scanned_icd_list(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
-void loader_clear_scanned_icd_list(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
+VkResult loader_scanned_icd_init(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
+void loader_scanned_icd_clear(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                          const VkInstanceCreateInfo *pCreateInfo, bool *skipped_portability_drivers);
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
@@ -199,7 +199,6 @@ VkResult loader_validate_device_extensions(struct loader_instance *this_instance
 VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phys_dev_count, VkPhysicalDevice *phys_devs);
 VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance *inst, uint32_t group_count,
                                             VkPhysicalDeviceGroupProperties *groups);
-void unload_drivers_without_physical_devices(struct loader_instance *inst);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 char *loader_get_next_path(char *path);

@@ -229,8 +229,6 @@ struct loader_icd_term {
 
     PFN_PhysDevExt phys_dev_ext[MAX_NUM_UNKNOWN_EXTS];
     bool supports_get_dev_prop_2;
-
-    uint32_t physical_device_count;
 };
 
 // Per ICD library structure
