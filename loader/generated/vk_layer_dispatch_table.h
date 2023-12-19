@@ -168,9 +168,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
 
     // ---- VK_KHR_video_encode_queue extension commands
-#if defined(VK_ENABLE_BETA_EXTENSIONS)
     PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_cooperative_matrix extension commands
     PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
@@ -640,12 +638,8 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
 
     // ---- VK_KHR_video_encode_queue extension commands
-#if defined(VK_ENABLE_BETA_EXTENSIONS)
     PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#if defined(VK_ENABLE_BETA_EXTENSIONS)
     PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_synchronization2 extension commands
     PFN_vkCmdSetEvent2KHR CmdSetEvent2KHR;
@@ -681,6 +675,14 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_KHR_calibrated_timestamps extension commands
     PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
+
+    // ---- VK_KHR_maintenance6 extension commands
+    PFN_vkCmdBindDescriptorSets2KHR CmdBindDescriptorSets2KHR;
+    PFN_vkCmdPushConstants2KHR CmdPushConstants2KHR;
+    PFN_vkCmdPushDescriptorSet2KHR CmdPushDescriptorSet2KHR;
+    PFN_vkCmdPushDescriptorSetWithTemplate2KHR CmdPushDescriptorSetWithTemplate2KHR;
+    PFN_vkCmdSetDescriptorBufferOffsets2EXT CmdSetDescriptorBufferOffsets2EXT;
+    PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT CmdBindDescriptorBufferEmbeddedSamplers2EXT;
 
     // ---- VK_EXT_debug_marker extension commands
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
