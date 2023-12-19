@@ -322,7 +322,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pSurfaceInfo->surface;
-    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)icd_surface->real_icd_surfaces[icd_index]) {
         VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
         surface_info_copy.sType = pSurfaceInfo->sType;
         surface_info_copy.pNext = pSurfaceInfo->pNext;
