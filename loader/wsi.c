@@ -631,7 +631,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(pIcdSurface);
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -1595,7 +1595,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
             }
         }
     }
-    *pSurface = (VkSurfaceKHR)icd_surface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
     if (result != VK_SUCCESS && icd_surface != NULL) {
@@ -2571,7 +2571,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(pIcdSurface);
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
