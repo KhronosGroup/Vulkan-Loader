@@ -478,29 +478,29 @@ set_target_properties(vulkan PROPERTIES EXPORT_NAME "Loader")
 install(EXPORT VulkanLoaderConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VulkanLoader NAMESPACE Vulkan::)
 
 # Generate PkgConfig File (IE: vulkan.pc)
-# NOTE: Hopefully in the future CMake can generate .pc files natively.
-# https://gitlab.kitware.com/cmake/cmake/-/issues/22621
 find_package(PkgConfig)
-if (PKG_CONFIG_FOUND)
-    if(WIN32)
-        if(MINGW)
-            set(VULKAN_LIB_SUFFIX "-1.dll")
-        else()
-            set(VULKAN_LIB_SUFFIX "-1")
-        endif()
-    endif()
-
-    # BUG: The following code will NOT work well with `cmake --install ... --prefix <dir>`
-    # due to this code relying on CMAKE_INSTALL_PREFIX being defined at configure time.
-    #
-    # NOTE: vulkan.pc essentially cover both Vulkan-Loader and Vulkan-Headers for legacy reasons.
-    if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "")
-        set(CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
-        set(CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_FULL_INCLUDEDIR})
-    else()
-        file(RELATIVE_PATH CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_LIBDIR})
-        file(RELATIVE_PATH CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_INCLUDEDIR})
-    endif()
-    configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+if (NOT PKG_CONFIG_FOUND)
+    return()
 endif()
+
+if(WIN32)
+    if(MINGW)
+        set(VULKAN_LIB_SUFFIX "-1.dll")
+    else()
+        set(VULKAN_LIB_SUFFIX "-1")
+    endif()
+endif()
+
+# BUG: The following code will NOT work well with `cmake --install ... --prefix <dir>`
+# due to this code relying on CMAKE_INSTALL_PREFIX being defined at configure time.
+#
+# NOTE: vulkan.pc essentially cover both Vulkan-Loader and Vulkan-Headers for legacy reasons.
+if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "")
+    set(CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_FULL_LIBDIR})
+    set(CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_FULL_INCLUDEDIR})
+else()
+    file(RELATIVE_PATH CMAKE_INSTALL_LIBDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_LIBDIR})
+    file(RELATIVE_PATH CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_INCLUDEDIR})
+endif()
+configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
