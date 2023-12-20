@@ -257,69 +257,28 @@ jobs:
               working-directory: ./build
               run: ctest --output-on-failure -C Release -E UnknownFunction
 
-    # Something about Github Actions + Windows + Ninja + Unicode doesn't play nicely together.
-    # https://github.com/KhronosGroup/Vulkan-Loader/pull/1188#issuecomment-1536659318
-    #
-    # Disable testing explicitly for Ninja. But still ensure it builds properly.
-    windows_ninja:
-      runs-on: windows-2019
-      strategy:
-        matrix:
-            arch: [ Win32, x64 ]
-            config: [ Debug, Release ]
-            exclude:
-              - arch: Win32
-                config: release
-              - arch: x64
-                config: debug
-
-      steps:
-          - uses: actions/checkout@v4
-          - uses: actions/setup-python@v5
-            with:
-              python-version: '3.7'
-          - uses: ilammy/msvc-dev-cmd@v1
-            with:
-              arch: ${{ matrix.arch }}
-
-          - name: Configure
-            run: cmake -S. -B build -DUPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -G "Ninja" -D ENABLE_WERROR=ON -D LOADER_USE_UNSAFE_FILE_SEARCH=ON
-
-          - name: Build
-            run: cmake --build ./build
-
-          - name: Install the loader
-            run: cmake --install build --prefix build/install
-
+    # Test both clang and clang-cl
     # Make sure clang-cl builds still succeed - used by the chromium project
-    windows_clang_cl:
+    windows_clang:
       runs-on: windows-2022
       strategy:
         matrix:
-            arch: [ x64 ]
-            config: [ Release ]
-
+            compiler: [ clang, clang-cl ]
+            config: [ Debug, Release ]
       steps:
           - uses: actions/checkout@v4
-          - uses: actions/setup-python@v5
-            with:
-              python-version: '3.7'
           - uses: ilammy/msvc-dev-cmd@v1
-            with:
-              arch: ${{ matrix.arch }}
-
-          - name: Configure
-            run: cmake -S. -B build -D UPDATE_DEPS=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=${{matrix.config}} -T "ClangCL" -D ENABLE_WERROR=ON
-
-          - name: Build
-            run: cmake --build ./build --config ${{matrix.config}}
-
-          - name: Install the loader
-            run: cmake --install build --prefix build/install --config ${{matrix.config}}
-
-          - name: Run regression tests
-            working-directory: ./build
-            run: ctest --output-on-failure -C ${{matrix.config}}
+          - run: |
+              cmake -S. -B build `
+              -D CMAKE_C_COMPILER=${{matrix.compiler}} -D CMAKE_CXX_COMPILER=${{matrix.compiler}} `
+              -D UPDATE_DEPS=ON `
+              -D CMAKE_BUILD_TYPE=${{matrix.config}} `
+              -D ENABLE_WERROR=ON `
+              -D BUILD_TESTS=ON `
+              -G Ninja
+          - run: cmake --build ./build
+          - run: ctest --output-on-failure --test-dir build/
+          - run: cmake --install build --prefix build/install
 
     mac:
         runs-on: macos-12
