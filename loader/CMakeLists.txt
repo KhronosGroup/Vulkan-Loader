@@ -477,6 +477,13 @@ install(TARGETS vulkan EXPORT VulkanLoaderConfig)
 set_target_properties(vulkan PROPERTIES EXPORT_NAME "Loader")
 install(EXPORT VulkanLoaderConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VulkanLoader NAMESPACE Vulkan::)
 
+# Generate CMake Version File (IE: VulkanLoaderConfigVersion.cmake)
+include(CMakePackageConfigHelpers)
+
+set(version_config "${CMAKE_CURRENT_BINARY_DIR}/generated/VulkanLoaderConfigVersion.cmake")
+write_basic_package_version_file("${version_config}" COMPATIBILITY SameMajorVersion)
+install(FILES "${version_config}" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VulkanLoader)
+
 # Generate PkgConfig File (IE: vulkan.pc)
 # NOTE: Hopefully in the future CMake can generate .pc files natively.
 # https://gitlab.kitware.com/cmake/cmake/-/issues/22621
