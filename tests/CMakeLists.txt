@@ -85,3 +85,32 @@ if(NOT CMAKE_CROSSCOMPILING)
 else()
     gtest_add_tests(TARGET test_regression)
 endif()
+
+# When APPLE_STATIC_LOADER is ON installation is disabled
+if (APPLE_STATIC_LOADER)
+    return()
+endif()
+
+# Test installation
+set(test_install_dir "${CMAKE_CURRENT_BINARY_DIR}/install")
+add_test(NAME integration.install
+    COMMAND ${CMAKE_COMMAND} --install ${PROJECT_BINARY_DIR} --prefix ${test_install_dir} --config $<CONFIG>
+)
+
+# find_package testing currently doesn't work well under cross-compilation scenarios.
+if (CMAKE_CROSSCOMPILING OR
+    NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    return()
+endif()
+
+# Test find_package suppport
+add_test(NAME integration.find_package
+    COMMAND ${CMAKE_CTEST_COMMAND}
+        --build-and-test ${CMAKE_CURRENT_LIST_DIR}/integration
+                        ${CMAKE_CURRENT_BINARY_DIR}/find_package
+        --build-generator ${CMAKE_GENERATOR}
+        --build-options -DCMAKE_PREFIX_PATH=${test_install_dir}
+)
+
+# Installing comes before testing
+set_tests_properties(integration.find_package PROPERTIES DEPENDS integration.install)
