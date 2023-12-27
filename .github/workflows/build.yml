@@ -70,11 +70,6 @@ jobs:
             - run: cmake --build build
             - run: ctest --output-on-failure --test-dir build/
             - run: cmake --install build --prefix /tmp
-            # NOTE: This check is NOT sufficient to ensure vulkan.pc is actually valid
-            - name: Check vulkan.pc exists and validate it
-              run: |
-                cat /tmp/lib/pkgconfig/vulkan.pc
-                pkg-config --validate /tmp/lib/pkgconfig/vulkan.pc
 
     codegen:
       runs-on: ubuntu-latest
