@@ -86,7 +86,7 @@ jobs:
 
     - name: Generate build files
       if: matrix.language == 'cpp'
-      run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D UPDATE_DEPS=ON -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -D ENABLE_WERROR=ON
+      run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D UPDATE_DEPS=ON
       env:
         CC: gcc
         CXX: g++

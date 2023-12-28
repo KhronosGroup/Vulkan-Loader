@@ -135,19 +135,19 @@ set(LOADER_STANDARD_C_PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSI
 # Force the use of the multithreaded, static version of the C runtime.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-option(ENABLE_WERROR "Enable warnings as errors" ON)
+option(BUILD_WERROR "Enable warnings as errors")
 
 # Set warnings as errors and the main diagnostic flags
 # Must be set first so the warning silencing later on works properly
 # Note that clang-cl.exe should use MSVC flavor flags, not GNU
 if (CMAKE_C_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
-    if (ENABLE_WERROR)
+    if (BUILD_WERROR)
         target_compile_options(loader_common_options INTERFACE /WX)
     endif()
     target_compile_options(loader_common_options INTERFACE /W4)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # using GCC or Clang with the regular front end
-    if (ENABLE_WERROR)
+    if (BUILD_WERROR)
         target_compile_options(loader_common_options INTERFACE -Werror)
     endif()
     target_compile_options(loader_common_options INTERFACE -Wall -Wextra)

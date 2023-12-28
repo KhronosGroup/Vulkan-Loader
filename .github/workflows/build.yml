@@ -64,7 +64,7 @@ jobs:
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
                 -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
-                -D ENABLE_WERROR=ON \
+                -D BUILD_WERROR=ON \
                 -D CMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
                 -D CMAKE_C_COMPILER=${{ matrix.compiler.cc }}
             - run: cmake --build build
@@ -89,7 +89,7 @@ jobs:
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
-                -D ENABLE_WERROR=ON \
+                -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
                 -D CMAKE_C_COMPILER=clang \
                 -D CMAKE_CXX_COMPILER=clang++
@@ -122,7 +122,7 @@ jobs:
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
-                -D ENABLE_WERROR=ON \
+                -D BUILD_WERROR=ON \
                 -D SYSCONFDIR=/etc/not_vulkan \
                 -G Ninja
               env:
@@ -157,7 +157,7 @@ jobs:
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
-                -D ENABLE_WERROR=ON \
+                -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
                 -G Ninja
               env:
@@ -183,7 +183,7 @@ jobs:
                 -D UPDATE_DEPS=ON `
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} `
                 -A ${{ matrix.arch }} `
-                -D ENABLE_WERROR=ON
+                -D BUILD_WERROR=ON
             - run: cmake --build build/ --config ${{matrix.config}}
             - run: cmake --install build --prefix build/install --config ${{matrix.config}}
             - run: ctest --output-on-failure -C ${{matrix.config}} --test-dir build/
@@ -202,7 +202,7 @@ jobs:
                 -D USE_MASM=OFF `
                 -D CMAKE_BUILD_TYPE=Release `
                 -A ${{ matrix.arch }} `
-                -D ENABLE_WERROR=ON
+                -D BUILD_WERROR=ON
             - run: cmake --build build/ --config Release
             - run: ctest --output-on-failure -C Release -E UnknownFunction --test-dir build/
 
@@ -222,7 +222,7 @@ jobs:
               -D CMAKE_CXX_COMPILER=${{matrix.compiler}} `
               -D UPDATE_DEPS=ON `
               -D CMAKE_BUILD_TYPE=${{matrix.config}} `
-              -D ENABLE_WERROR=ON `
+              -D BUILD_WERROR=ON `
               -D BUILD_TESTS=ON `
               -G Ninja
           - run: cmake --build build/
@@ -247,7 +247,7 @@ jobs:
                 -D ${{matrix.static_build}} \
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
-                -D ENABLE_WERROR=ON \
+                -D BUILD_WERROR=ON \
                 -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
                 -G Ninja
               env:
@@ -275,7 +275,7 @@ jobs:
               "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
               -D CMAKE_BUILD_TYPE=Debug \
               -D UPDATE_DEPS=ON \
-              -D ENABLE_WERROR=ON \
+              -D BUILD_WERROR=ON \
               -G Ninja
             env:
               LDFLAGS: -Wl,-fatal_warnings
@@ -308,7 +308,7 @@ jobs:
                 "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
-                -D ENABLE_WERROR=ON \
+                -D BUILD_WERROR=ON \
                 -G ${{ matrix.generator }}
               env:
                 LDFLAGS: -Wl,-fatal_warnings
@@ -348,6 +348,7 @@ jobs:
             cmake -S. -B build \
             -D UPDATE_DEPS=ON \
             -D CMAKE_BUILD_TYPE=Release \
+            -D BUILD_WERROR=ON \
             -G Ninja
         - run: cmake --build build
         - run: cmake --install build --prefix /tmp
@@ -368,6 +369,7 @@ jobs:
             cmake -S. -B build \
             -D UPDATE_DEPS=ON \
             -D CMAKE_BUILD_TYPE=Release \
+            -D BUILD_WERROR=ON \
             -G Ninja
         - run: cmake --build build
         - run: cmake --install build --prefix /tmp
@@ -384,7 +386,7 @@ jobs:
             cmake -S. -B build \
             -D UPDATE_DEPS=ON \
             -D CMAKE_BUILD_TYPE=Release \
-            -D ENABLE_WERROR=ON \
+            -D BUILD_WERROR=ON \
             -D USE_MASM=OFF \
             -G Ninja
         - run: cmake --build build
