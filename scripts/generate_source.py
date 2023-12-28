@@ -105,13 +105,13 @@ def main(argv):
                 print('update', repo_filename)
                 shutil.copyfile(temp_filename, repo_filename)
 
-    # write out the header version used to generate the code to a checked in CMake FIle
+    # write out the header version used to generate the code to a checked in CMake file
     if args.generated_version:
         # Update the CMake project version
         with open(common_codegen.repo_relative('CMakeLists.txt'), "r+") as f:
             data = f.read()
             f.seek(0)
-            f.write(re.sub("project.*VERSION.*", f"project(VULKAN_LOADER VERSION {args.generated_version})", data))
+            f.write(re.sub("project.*VERSION.*", f"project(VULKAN_LOADER VERSION {args.generated_version} LANGUAGES C)", data))
             f.truncate()
 
         with open(common_codegen.repo_relative('loader/loader.rc.in'), "r") as rc_file:

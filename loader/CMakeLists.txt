@@ -27,8 +27,7 @@ if(WIN32)
     if(ENABLE_WIN10_ONECORE)
         # Note: When linking your app or driver to OneCore.lib, be sure to remove any links to non-umbrella libs (such as
         # kernel32.lib).
-        set(CMAKE_CXX_STANDARD_LIBRARIES " ") # space is intentional
-        set(CMAKE_C_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES})
+        set(CMAKE_C_STANDARD_LIBRARIES " ") # space is intentional
     endif()
 
     # ~~~
@@ -197,7 +196,7 @@ end
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
             add_custom_command(TARGET asm_offset POST_BUILD
                 COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
-                    "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "MASM" "${CMAKE_CXX_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
+                    "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "MASM" "${CMAKE_C_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
                 BYPRODUCTS gen_defines.asm
             )
         endif()
@@ -262,25 +261,25 @@ elseif(UNIX) # i.e.: Linux & Apple
         else()
             # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
             target_compile_options(asm_offset PRIVATE -save-temps=obj)
-            if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
                 set(ASM_OFFSET_EXECUTABLE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm")
                 set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.c.s")
-            elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang")
                 set(ASM_OFFSET_EXECUTABLE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm")
                 set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.s")
-            elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+            elseif(CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
             # Need to use the current binary dir since the asm_offset.s file is in that folder rather than the bundle
                 set(ASM_OFFSET_EXECUTABLE_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm")
                 set(ASM_OFFSET_INTERMEDIATE_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/asm_offset.dir/asm_offset.s")
             else()
-                message(FATAL_ERROR "CXX_COMPILER_ID not supported!")
+                message(FATAL_ERROR "C_COMPILER_ID not supported!")
             endif()
 
             find_package(Python3 REQUIRED QUIET)
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
             add_custom_command(TARGET asm_offset POST_BUILD
                 COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${ASM_OFFSET_EXECUTABLE_LOCATION}"
-                    "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_CXX_COMPILER_ID}" "${ASM_OFFSET_SYSTEM_PROCESSOR}"
+                    "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_C_COMPILER_ID}" "${ASM_OFFSET_SYSTEM_PROCESSOR}"
                 BYPRODUCTS gen_defines.asm
             )
         endif()
@@ -380,6 +379,9 @@ else()
         SOVERSION "1"
         VERSION "${VULKAN_LOADER_VERSION}"
     )
+
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
 
     target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m Threads::Threads)
 
