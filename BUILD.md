@@ -127,6 +127,16 @@ cmake ... -D UPDATE_DEPS=ON -D BUILD_TESTS=ON ...
 ```
 This will ensure googletest and detours is downloaded and the appropriate version is used.
 
+### Warnings as errors off by default!
+
+By default `BUILD_WERROR` is `OFF`. The idiom for open source projects is to NOT enable warnings as errors.
+
+System/language package managers have to build on multiple different platforms and compilers.
+
+By defaulting to `ON` we cause issues for package managers since there is no standard way to disable warnings.
+
+Add `-D BUILD_WERROR=ON` to your workflow
+
 ### Build and Install Directory Locations
 
 A common convention is to place the `build` directory in the top directory of
