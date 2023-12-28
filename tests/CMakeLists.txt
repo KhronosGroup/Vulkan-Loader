@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2022 Valve Corporation
-# Copyright (c) 2014-2022 LunarG, Inc.
+# Copyright (c) 2014-2023 Valve Corporation
+# Copyright (c) 2014-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
+enable_language(CXX) # Tests use C++
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Make sure tests uses the dynamic runtime instead
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+
+# For MSVC/Windows, replace /GR with an empty string, this prevents warnings of /GR being overriden by /GR-
+# Newer CMake versions (3.20) have better solutions for this through policy - using the old
+# way while waiting for when updating can occur
+string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+if (IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}/googletest")
+    set(BUILD_GTEST ON)
+    set(BUILD_GMOCK OFF)
+    set(gtest_force_shared_crt ON)
+    set(BUILD_SHARED_LIBS ON)
+    set(INSTALL_GTEST OFF)
+    add_subdirectory("${GOOGLETEST_INSTALL_DIR}" ${CMAKE_CURRENT_BINARY_DIR}/gtest)
+else()
+    message(FATAL_ERROR "Could not find googletest directory. See BUILD.md")
+endif()
+
+if (WIN32)
+    if(NOT IS_DIRECTORY ${DETOURS_INSTALL_DIR})
+        message(FATAL_ERROR "Could not find detours! See BUILD.md")
+    endif()
+    add_library(detours STATIC
+        ${DETOURS_INSTALL_DIR}/src/creatwth.cpp
+        ${DETOURS_INSTALL_DIR}/src/detours.cpp
+        ${DETOURS_INSTALL_DIR}/src/detours.h
+        ${DETOURS_INSTALL_DIR}/src/detver.h
+        ${DETOURS_INSTALL_DIR}/src/disasm.cpp
+        ${DETOURS_INSTALL_DIR}/src/disolarm.cpp
+        ${DETOURS_INSTALL_DIR}/src/disolarm64.cpp
+        ${DETOURS_INSTALL_DIR}/src/disolia64.cpp
+        ${DETOURS_INSTALL_DIR}/src/disolx64.cpp
+        ${DETOURS_INSTALL_DIR}/src/disolx86.cpp
+        ${DETOURS_INSTALL_DIR}/src/image.cpp
+        ${DETOURS_INSTALL_DIR}/src/modules.cpp
+    )
+    target_include_directories(detours PUBLIC ${DETOURS_INSTALL_DIR}/src)
+
+    target_compile_definitions(detours PUBLIC WIN32_LEAN_AND_MEAN)
+
+    if(MSVC)
+        target_compile_definitions(detours PUBLIC  "_CRT_SECURE_NO_WARNINGS=1")
+        set_target_properties(detours PROPERTIES COMPILE_FLAGS /EHsc)
+    endif()
+
+    # Silence errors found in clang-cl
+    if(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_C_SIMULATE_ID}" MATCHES "MSVC")
+        target_compile_options(detours PRIVATE -Wno-sizeof-pointer-memaccess -Wno-microsoft-goto -Wno-microsoft-cast)
+    endif()
+endif()
 
 option(ENABLE_LIVE_VERIFICATION_TESTS "Enable tests which expect to run on live drivers. Meant for manual verification only" OFF)
 
@@ -36,7 +93,6 @@ add_executable(
         loader_unknown_ext_tests.cpp
         loader_wsi_tests.cpp)
 target_link_libraries(test_regression PUBLIC testing_dependencies)
-set_target_properties(test_regression PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
 target_compile_definitions(test_regression PUBLIC VK_NO_PROTOTYPES)
 
 # Threading tests live in separate executabe just for threading tests as it'll need support
@@ -46,7 +102,6 @@ add_executable(
         loader_testing_main.cpp
         loader_threading_tests.cpp)
 target_link_libraries(test_threading PUBLIC testing_dependencies)
-set_target_properties(test_threading PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
 target_compile_definitions(test_threading PUBLIC VK_NO_PROTOTYPES)
 
 # executables that are meant for testing against real drivers rather than the mocks

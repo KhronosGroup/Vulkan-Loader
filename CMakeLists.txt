@@ -16,12 +16,9 @@
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
 
-project(VULKAN_LOADER VERSION 1.3.274)
+project(VULKAN_LOADER VERSION 1.3.274 LANGUAGES C)
 
 add_subdirectory(scripts)
-
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 
 # By default, loader & tests are built without sanitizers
 # Use these options to force a specific sanitizer on the loader and test executables
@@ -74,11 +71,6 @@ if(UNIX)
     set(SYSCONFDIR "" CACHE STRING
             "System-wide search directory. If not set or empty, CMAKE_INSTALL_FULL_SYSCONFDIR and /etc are used.")
 endif()
-
-# For MSVC/Windows, replace /GR with an empty string, this prevents warnings of /GR being overriden by /GR-
-# Newer CMake versions (3.20) have better solutions for this through policy - using the old
-# way while waiting for when updating can occur
-string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 if(WIN32)
     option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
@@ -138,11 +130,7 @@ target_link_libraries(loader_common_options INTERFACE platform_wsi)
 target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)
 
 target_compile_features(loader_common_options INTERFACE c_std_99)
-target_compile_features(loader_common_options INTERFACE cxx_std_17)
 set(LOADER_STANDARD_C_PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS OFF)
-set(LOADER_STANDARD_CXX_PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS OFF)
-
-set(TESTS_STANDARD_CXX_PROPERTIES ${LOADER_STANDARD_CXX_PROPERTIES} MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 # Force the use of the multithreaded, static version of the C runtime.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -152,12 +140,12 @@ option(ENABLE_WERROR "Enable warnings as errors" ON)
 # Set warnings as errors and the main diagnostic flags
 # Must be set first so the warning silencing later on works properly
 # Note that clang-cl.exe should use MSVC flavor flags, not GNU
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+if (CMAKE_C_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
     if (ENABLE_WERROR)
         target_compile_options(loader_common_options INTERFACE /WX)
     endif()
     target_compile_options(loader_common_options INTERFACE /W4)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # using GCC or Clang with the regular front end
     if (ENABLE_WERROR)
         target_compile_options(loader_common_options INTERFACE -Werror)
@@ -165,12 +153,12 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "C
     target_compile_options(loader_common_options INTERFACE -Wall -Wextra)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(loader_common_options INTERFACE -Wno-missing-field-initializers)
 
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
         target_compile_options(loader_common_options INTERFACE -Wno-stringop-truncation -Wno-stringop-overflow)
-        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
+        if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
             target_compile_options(loader_common_options INTERFACE -Wshadow=local) #only added in GCC 7
         endif()
     endif()
@@ -182,7 +170,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
     target_compile_options(loader_common_options INTERFACE -Wpointer-arith)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
     # /sdl: Enable additional security checks
     # /GR-: Disable RTTI
     # /guard:cf: Enable control flow guard
@@ -248,108 +236,7 @@ endif()
 add_subdirectory(loader)
 
 option(BUILD_TESTS "Build Tests")
-if(BUILD_TESTS)
-    # Set gtest build configuration
-    # Attempt to enable if it is available.
-    if(TARGET gtest)
-        # Already enabled as a target (perhaps by a project enclosing this one)
-        message(STATUS "Vulkan-Loader/external: " "googletest already configured - using it")
-    elseif(IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}/googletest")
-        set(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
-        set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
-        set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically" FORCE)
-        set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-        set(INSTALL_GTEST OFF CACHE BOOL "Don't install gtest")
-        # The googletest directory exists, so enable it as a target.
-        message(STATUS "Vulkan-Loader/external: " "googletest found - configuring it for tests")
-        add_subdirectory("${GOOGLETEST_INSTALL_DIR}")
-    else()
-        message(SEND_ERROR "Could not find googletest directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of googletest")
-        set(BUILD_TESTS OFF)
-    endif()
-
-    # make sure gtest uses the dynamic runtime instead
-    set_target_properties(gtest PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
-    set_target_properties(gtest_main PROPERTIES ${TESTS_STANDARD_CXX_PROPERTIES})
-
-    if (WIN32)
-        if(TARGET detours)
-            # Already enabled as a target (perhaps by a project enclosing this one)
-            message(STATUS "Vulkan-Loader/external: " "detours already configured - using it")
-        else()
-            if(IS_DIRECTORY ${DETOURS_INSTALL_DIR})
-                # The detours directory exists, so enable it as a target.
-                message(STATUS "Vulkan-Loader/external: " "detours found - configuring it for tests")
-            else()
-                message(SEND_ERROR "Could not find detours directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of detours")
-                set(BUILD_TESTS OFF)
-            endif()
-            add_library(detours STATIC
-                ${DETOURS_INSTALL_DIR}/src/creatwth.cpp
-                ${DETOURS_INSTALL_DIR}/src/detours.cpp
-                ${DETOURS_INSTALL_DIR}/src/detours.h
-                ${DETOURS_INSTALL_DIR}/src/detver.h
-                ${DETOURS_INSTALL_DIR}/src/disasm.cpp
-                ${DETOURS_INSTALL_DIR}/src/disolarm.cpp
-                ${DETOURS_INSTALL_DIR}/src/disolarm64.cpp
-                ${DETOURS_INSTALL_DIR}/src/disolia64.cpp
-                ${DETOURS_INSTALL_DIR}/src/disolx64.cpp
-                ${DETOURS_INSTALL_DIR}/src/disolx86.cpp
-                ${DETOURS_INSTALL_DIR}/src/image.cpp
-                ${DETOURS_INSTALL_DIR}/src/modules.cpp
-                )
-            target_include_directories(detours PUBLIC ${DETOURS_INSTALL_DIR}/src)
-
-            macro(GET_WIN32_WINNT version)
-                if(WIN32 AND CMAKE_SYSTEM_VERSION)
-            		set(ver ${CMAKE_SYSTEM_VERSION})
-            		string(REGEX MATCH "^([0-9]+).([0-9])" ver ${ver})
-            		string(REGEX MATCH "^([0-9]+)" verMajor ${ver})
-            		# Check for Windows 10, b/c we'll need to convert to hex 'A'.
-            		if("${verMajor}" MATCHES "10")
-            			set(verMajor "A")
-            			string(REGEX REPLACE "^([0-9]+)" ${verMajor} ver ${ver})
-            		endif("${verMajor}" MATCHES "10")
-            		# Remove all remaining '.' characters.
-            		string(REPLACE "." "" ver ${ver})
-            		# Prepend each digit with a zero.
-            		string(REGEX REPLACE "([0-9A-Z])" "0\\1" ver ${ver})
-            		set(${version} "0x${ver}")
-                endif()
-            endmacro()
-
-            set(DETOURS_MAJOR_VERSION "4")
-            set(DETOURS_MINOR_VERSION "0")
-            set(DETOURS_PATCH_VERSION "1")
-            set(DETOURS_VERSION "${DETOURS_MAJOR_VERSION}.${DETOURS_MINOR_VERSION}.${DETOURS_PATCH_VERSION}")
-
-            target_include_directories(detours PUBLIC ${DETOURS_INSTALL_DIR}/src)
-
-            if(MSVC_VERSION GREATER_EQUAL 1700)
-                target_compile_definitions(detours PUBLIC DETOURS_CL_17_OR_NEWER)
-            endif(MSVC_VERSION GREATER_EQUAL 1700)
-            GET_WIN32_WINNT(ver)
-            if(ver EQUAL 0x0700)
-                target_compile_definitions(detours PUBLIC _USING_V110_SDK71_ DETOURS_WIN_7)
-            endif(ver EQUAL 0x0700)
-            target_compile_definitions(detours PUBLIC "_WIN32_WINNT=${ver}")
-
-            target_compile_definitions(detours PUBLIC  "DETOURS_VERSION=0x4c0c1" WIN32_LEAN_AND_MEAN)
-
-            if(MSVC)
-                target_compile_definitions(detours PUBLIC  "_CRT_SECURE_NO_WARNINGS=1")
-                set_target_properties(detours PROPERTIES COMPILE_FLAGS /EHsc ${TESTS_STANDARD_CXX_PROPERTIES})
-            endif()
-
-            # Silence errors found in clang-cl
-            if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC")
-                target_compile_options(detours PRIVATE -Wno-sizeof-pointer-memaccess -Wno-microsoft-goto -Wno-microsoft-cast)
-            endif()
-        endif()
-    endif()
-
-    if (BUILD_TESTS)
-        enable_testing()
-        add_subdirectory(tests)
-    endif()
+if (BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
 endif()
