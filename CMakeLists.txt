@@ -20,6 +20,12 @@ project(VULKAN_LOADER VERSION 1.3.274 LANGUAGES C)
 
 add_subdirectory(scripts)
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_C_VISIBILITY_PRESET "hidden")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 # By default, loader & tests are built without sanitizers
 # Use these options to force a specific sanitizer on the loader and test executables
 if (UNIX)
@@ -129,12 +135,6 @@ target_link_libraries(loader_common_options INTERFACE platform_wsi)
 # Enable beta Vulkan extensions
 target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)
 
-target_compile_features(loader_common_options INTERFACE c_std_99)
-set(LOADER_STANDARD_C_PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS OFF)
-
-# Force the use of the multithreaded, static version of the C runtime.
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
 option(BUILD_WERROR "Enable warnings as errors")
 
 # Set warnings as errors and the main diagnostic flags
@@ -161,10 +161,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
             target_compile_options(loader_common_options INTERFACE -Wshadow=local) #only added in GCC 7
         endif()
-    endif()
-
-    if(UNIX)
-        target_compile_options(loader_common_options INTERFACE -fvisibility=hidden)
     endif()
 
     target_compile_options(loader_common_options INTERFACE -Wpointer-arith)
