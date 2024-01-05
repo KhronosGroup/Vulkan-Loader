@@ -5,6 +5,8 @@
  * Copyright (c) 2015-2022 The Khronos Group Inc.
  * Copyright (c) 2015-2022 Valve Corporation
  * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2021-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Copyright (c) 2023-2023 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +65,7 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     } while (0)
 
 
-    // ---- Core 1_0
+    // ---- Core Vulkan 1.0
     LOOKUP_REQUIRED_GIPA(DestroyInstance);
     LOOKUP_REQUIRED_GIPA(EnumeratePhysicalDevices);
     LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceFeatures);
@@ -77,7 +79,7 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     LOOKUP_REQUIRED_GIPA(EnumerateDeviceExtensionProperties);
     LOOKUP_REQUIRED_GIPA(GetPhysicalDeviceSparseImageFormatProperties);
 
-    // ---- Core 1_1
+    // ---- Core Vulkan 1.1
     LOOKUP_GIPA(EnumeratePhysicalDeviceGroups);
     LOOKUP_GIPA(GetPhysicalDeviceFeatures2);
     LOOKUP_GIPA(GetPhysicalDeviceProperties2);
@@ -90,7 +92,7 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     LOOKUP_GIPA(GetPhysicalDeviceExternalFenceProperties);
     LOOKUP_GIPA(GetPhysicalDeviceExternalSemaphoreProperties);
 
-    // ---- Core 1_3
+    // ---- Core Vulkan 1.3
     LOOKUP_GIPA(GetPhysicalDeviceToolProperties);
 
     // ---- VK_KHR_surface extension commands
@@ -324,7 +326,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_d
     if (table->magic != DEVICE_DISP_TABLE_MAGIC_NUMBER) { abort(); }
     for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) dev_table->ext_dispatch[i] = (PFN_vkDevExt)vkDevExtError;
 
-    // ---- Core 1_0 commands
+    // ---- Core Vulkan 1.0 commands
     table->GetDeviceProcAddr = gpa;
     table->DestroyDevice = (PFN_vkDestroyDevice)gpa(dev, "vkDestroyDevice");
     table->GetDeviceQueue = (PFN_vkGetDeviceQueue)gpa(dev, "vkGetDeviceQueue");
@@ -447,7 +449,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_d
     table->CmdEndRenderPass = (PFN_vkCmdEndRenderPass)gpa(dev, "vkCmdEndRenderPass");
     table->CmdExecuteCommands = (PFN_vkCmdExecuteCommands)gpa(dev, "vkCmdExecuteCommands");
 
-    // ---- Core 1_1 commands
+    // ---- Core Vulkan 1.1 commands
     table->BindBufferMemory2 = (PFN_vkBindBufferMemory2)gpa(dev, "vkBindBufferMemory2");
     table->BindImageMemory2 = (PFN_vkBindImageMemory2)gpa(dev, "vkBindImageMemory2");
     table->GetDeviceGroupPeerMemoryFeatures = (PFN_vkGetDeviceGroupPeerMemoryFeatures)gpa(dev, "vkGetDeviceGroupPeerMemoryFeatures");
@@ -465,7 +467,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_d
     table->UpdateDescriptorSetWithTemplate = (PFN_vkUpdateDescriptorSetWithTemplate)gpa(dev, "vkUpdateDescriptorSetWithTemplate");
     table->GetDescriptorSetLayoutSupport = (PFN_vkGetDescriptorSetLayoutSupport)gpa(dev, "vkGetDescriptorSetLayoutSupport");
 
-    // ---- Core 1_2 commands
+    // ---- Core Vulkan 1.2 commands
     table->CmdDrawIndirectCount = (PFN_vkCmdDrawIndirectCount)gpa(dev, "vkCmdDrawIndirectCount");
     table->CmdDrawIndexedIndirectCount = (PFN_vkCmdDrawIndexedIndirectCount)gpa(dev, "vkCmdDrawIndexedIndirectCount");
     table->CreateRenderPass2 = (PFN_vkCreateRenderPass2)gpa(dev, "vkCreateRenderPass2");
@@ -480,7 +482,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_d
     table->GetBufferOpaqueCaptureAddress = (PFN_vkGetBufferOpaqueCaptureAddress)gpa(dev, "vkGetBufferOpaqueCaptureAddress");
     table->GetDeviceMemoryOpaqueCaptureAddress = (PFN_vkGetDeviceMemoryOpaqueCaptureAddress)gpa(dev, "vkGetDeviceMemoryOpaqueCaptureAddress");
 
-    // ---- Core 1_3 commands
+    // ---- Core Vulkan 1.3 commands
     table->CreatePrivateDataSlot = (PFN_vkCreatePrivateDataSlot)gpa(dev, "vkCreatePrivateDataSlot");
     table->DestroyPrivateDataSlot = (PFN_vkDestroyPrivateDataSlot)gpa(dev, "vkDestroyPrivateDataSlot");
     table->SetPrivateData = (PFN_vkSetPrivateData)gpa(dev, "vkSetPrivateData");
@@ -1197,7 +1199,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 VKAPI_ATTR void VKAPI_CALL loader_init_instance_core_dispatch_table(VkLayerInstanceDispatchTable *table, PFN_vkGetInstanceProcAddr gpa,
                                                                     VkInstance inst) {
 
-    // ---- Core 1_0 commands
+    // ---- Core Vulkan 1.0 commands
     table->DestroyInstance = (PFN_vkDestroyInstance)gpa(inst, "vkDestroyInstance");
     table->EnumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices)gpa(inst, "vkEnumeratePhysicalDevices");
     table->GetPhysicalDeviceFeatures = (PFN_vkGetPhysicalDeviceFeatures)gpa(inst, "vkGetPhysicalDeviceFeatures");
@@ -1211,7 +1213,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_core_dispatch_table(VkLayerInsta
     table->EnumerateDeviceLayerProperties = (PFN_vkEnumerateDeviceLayerProperties)gpa(inst, "vkEnumerateDeviceLayerProperties");
     table->GetPhysicalDeviceSparseImageFormatProperties = (PFN_vkGetPhysicalDeviceSparseImageFormatProperties)gpa(inst, "vkGetPhysicalDeviceSparseImageFormatProperties");
 
-    // ---- Core 1_1 commands
+    // ---- Core Vulkan 1.1 commands
     table->EnumeratePhysicalDeviceGroups = (PFN_vkEnumeratePhysicalDeviceGroups)gpa(inst, "vkEnumeratePhysicalDeviceGroups");
     table->GetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)gpa(inst, "vkGetPhysicalDeviceFeatures2");
     table->GetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)gpa(inst, "vkGetPhysicalDeviceProperties2");
@@ -1224,7 +1226,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_core_dispatch_table(VkLayerInsta
     table->GetPhysicalDeviceExternalFenceProperties = (PFN_vkGetPhysicalDeviceExternalFenceProperties)gpa(inst, "vkGetPhysicalDeviceExternalFenceProperties");
     table->GetPhysicalDeviceExternalSemaphoreProperties = (PFN_vkGetPhysicalDeviceExternalSemaphoreProperties)gpa(inst, "vkGetPhysicalDeviceExternalSemaphoreProperties");
 
-    // ---- Core 1_3 commands
+    // ---- Core Vulkan 1.3 commands
     table->GetPhysicalDeviceToolProperties = (PFN_vkGetPhysicalDeviceToolProperties)gpa(inst, "vkGetPhysicalDeviceToolProperties");
 }
 
@@ -1524,7 +1526,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     uint32_t api_version = VK_MAKE_API_VERSION(0, inst->app_api_version.major, inst->app_api_version.minor, inst->app_api_version.patch);
 
 
-    // ---- Core 1_0 commands
+    // ---- Core Vulkan 1.0 commands
     if (!strcmp(name, "GetDeviceProcAddr")) {
         if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_0) return NULL;
         return (void *)table->GetDeviceProcAddr;
@@ -2010,7 +2012,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
         return (void *)table->CmdExecuteCommands;
     }
 
-    // ---- Core 1_1 commands
+    // ---- Core Vulkan 1.1 commands
     if (!strcmp(name, "BindBufferMemory2")) {
         if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_1) return NULL;
         return (void *)table->BindBufferMemory2;
@@ -2076,7 +2078,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
         return (void *)table->GetDescriptorSetLayoutSupport;
     }
 
-    // ---- Core 1_2 commands
+    // ---- Core Vulkan 1.2 commands
     if (!strcmp(name, "CmdDrawIndirectCount")) {
         if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_2) return NULL;
         return (void *)table->CmdDrawIndirectCount;
@@ -2130,7 +2132,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
         return (void *)table->GetDeviceMemoryOpaqueCaptureAddress;
     }
 
-    // ---- Core 1_3 commands
+    // ---- Core Vulkan 1.3 commands
     if (!strcmp(name, "CreatePrivateDataSlot")) {
         if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_3) return NULL;
         return (void *)table->CreatePrivateDataSlot;
@@ -2955,7 +2957,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     *found_name = true;
     name += 2;
 
-    // ---- Core 1_0 commands
+    // ---- Core Vulkan 1.0 commands
     if (!strcmp(name, "DestroyInstance")) return (void *)table->DestroyInstance;
     if (!strcmp(name, "EnumeratePhysicalDevices")) return (void *)table->EnumeratePhysicalDevices;
     if (!strcmp(name, "GetPhysicalDeviceFeatures")) return (void *)table->GetPhysicalDeviceFeatures;
@@ -2969,7 +2971,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     if (!strcmp(name, "EnumerateDeviceLayerProperties")) return (void *)table->EnumerateDeviceLayerProperties;
     if (!strcmp(name, "GetPhysicalDeviceSparseImageFormatProperties")) return (void *)table->GetPhysicalDeviceSparseImageFormatProperties;
 
-    // ---- Core 1_1 commands
+    // ---- Core Vulkan 1.1 commands
     if (!strcmp(name, "EnumeratePhysicalDeviceGroups")) return (void *)table->EnumeratePhysicalDeviceGroups;
     if (!strcmp(name, "GetPhysicalDeviceFeatures2")) return (void *)table->GetPhysicalDeviceFeatures2;
     if (!strcmp(name, "GetPhysicalDeviceProperties2")) return (void *)table->GetPhysicalDeviceProperties2;
@@ -2982,7 +2984,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     if (!strcmp(name, "GetPhysicalDeviceExternalFenceProperties")) return (void *)table->GetPhysicalDeviceExternalFenceProperties;
     if (!strcmp(name, "GetPhysicalDeviceExternalSemaphoreProperties")) return (void *)table->GetPhysicalDeviceExternalSemaphoreProperties;
 
-    // ---- Core 1_3 commands
+    // ---- Core Vulkan 1.3 commands
     if (!strcmp(name, "GetPhysicalDeviceToolProperties")) return (void *)table->GetPhysicalDeviceToolProperties;
 
     // ---- VK_KHR_surface extension commands
@@ -11881,7 +11883,7 @@ PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *de
 // pointers to "terminator functions".
 const VkLayerInstanceDispatchTable instance_disp = {
 
-    // ---- Core 1_0 commands
+    // ---- Core Vulkan 1.0 commands
     .DestroyInstance = terminator_DestroyInstance,
     .EnumeratePhysicalDevices = terminator_EnumeratePhysicalDevices,
     .GetPhysicalDeviceFeatures = terminator_GetPhysicalDeviceFeatures,
@@ -11895,7 +11897,7 @@ const VkLayerInstanceDispatchTable instance_disp = {
     .EnumerateDeviceLayerProperties = terminator_EnumerateDeviceLayerProperties,
     .GetPhysicalDeviceSparseImageFormatProperties = terminator_GetPhysicalDeviceSparseImageFormatProperties,
 
-    // ---- Core 1_1 commands
+    // ---- Core Vulkan 1.1 commands
     .EnumeratePhysicalDeviceGroups = terminator_EnumeratePhysicalDeviceGroups,
     .GetPhysicalDeviceFeatures2 = terminator_GetPhysicalDeviceFeatures2,
     .GetPhysicalDeviceProperties2 = terminator_GetPhysicalDeviceProperties2,
@@ -11908,7 +11910,7 @@ const VkLayerInstanceDispatchTable instance_disp = {
     .GetPhysicalDeviceExternalFenceProperties = terminator_GetPhysicalDeviceExternalFenceProperties,
     .GetPhysicalDeviceExternalSemaphoreProperties = terminator_GetPhysicalDeviceExternalSemaphoreProperties,
 
-    // ---- Core 1_3 commands
+    // ---- Core Vulkan 1.3 commands
     .GetPhysicalDeviceToolProperties = terminator_GetPhysicalDeviceToolProperties,
 
     // ---- VK_KHR_surface extension commands

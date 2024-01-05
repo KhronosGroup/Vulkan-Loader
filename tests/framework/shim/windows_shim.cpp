@@ -82,11 +82,11 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo *query_info)
     auto *reg_info = reinterpret_cast<LoaderQueryRegistryInfo *>(query_info->private_data);
 
     std::vector<std::wstring> *paths = nullptr;
-    if (reg_info->value_name[6] == L'D') {  // looking for drivers
+    if (wcsstr(reg_info->value_name, L"DriverName") != nullptr) {  // looking for drivers
         paths = &adapter.driver_paths;
-    } else if (reg_info->value_name[6] == L'I') {  // looking for implicit layers
+    } else if (wcsstr(reg_info->value_name, L"ImplicitLayers") != nullptr) {  // looking for implicit layers
         paths = &adapter.implicit_layer_paths;
-    } else if (reg_info->value_name[6] == L'E') {  // looking for explicit layers
+    } else if (wcsstr(reg_info->value_name, L"ExplicitLayers") != nullptr) {  // looking for explicit layers
         paths = &adapter.explicit_layer_paths;
     }
 
@@ -300,17 +300,13 @@ const std::string *get_path_of_created_key(HKEY hKey) {
     return nullptr;
 }
 std::vector<RegistryEntry> *get_registry_vector(std::string const &path) {
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\Drivers") return &platform_shim.hkey_local_machine_drivers;
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers")
-        return &platform_shim.hkey_local_machine_explicit_layers;
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers")
-        return &platform_shim.hkey_local_machine_implicit_layers;
-    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers")
-        return &platform_shim.hkey_current_user_explicit_layers;
-    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers")
-        return &platform_shim.hkey_current_user_implicit_layers;
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\LoaderSettings") return &platform_shim.hkey_local_machine_settings;
-    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\LoaderSettings") return &platform_shim.hkey_current_user_settings;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_drivers;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_ELAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_explicit_layers;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_ILAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_implicit_layers;
+    if (path == "HKEY_CURRENT_USER\\" VK_ELAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_current_user_explicit_layers;
+    if (path == "HKEY_CURRENT_USER\\" VK_ILAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_current_user_implicit_layers;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_SETTINGS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_settings;
+    if (path == "HKEY_CURRENT_USER\\" VK_SETTINGS_INFO_REGISTRY_LOC) return &platform_shim.hkey_current_user_settings;
     return nullptr;
 }
 LSTATUS __stdcall ShimRegQueryValueExA(HKEY, LPCSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD) {

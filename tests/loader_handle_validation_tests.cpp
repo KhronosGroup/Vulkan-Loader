@@ -803,7 +803,7 @@ TEST(LoaderHandleValidTests, BadPhysDevGetPhysDevExternSemaphoreProps) {
 
     auto bad_physical_dev = get_bad_handle<VkPhysicalDevice>();
 
-    VkPhysicalDeviceExternalSemaphoreInfoKHR info = {};
+    VkPhysicalDeviceExternalSemaphoreInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO;
     info.pNext = nullptr;
     VkExternalSemaphoreProperties props = {};

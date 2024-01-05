@@ -2,6 +2,8 @@
  * Copyright (c) 2021-2023 The Khronos Group Inc.
  * Copyright (c) 2021-2023 Valve Corporation
  * Copyright (c) 2021-2023 LunarG, Inc.
+ * Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Copyright (c) 2023-2023 RasterGrid Kft.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -1657,7 +1659,7 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
             ASSERT_EQ(true, found[dev]);
         }
         for (auto& group : group_props) {
-            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
             group_info.physicalDeviceCount = group.physicalDeviceCount;
             group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -1675,7 +1677,7 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
             const VkBaseInStructure* pNext = reinterpret_cast<const VkBaseInStructure*>(dev.create_info.dev.pNext);
             while (pNext != nullptr) {
                 if (pNext->sType == VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO) {
-                    ASSERT_EQ(&group_info, reinterpret_cast<const VkDeviceGroupDeviceCreateInfoKHR*>(pNext));
+                    ASSERT_EQ(&group_info, reinterpret_cast<const VkDeviceGroupDeviceCreateInfo*>(pNext));
                 }
                 if (pNext->sType == 100000) {
                     ASSERT_EQ(&spacer_structure, pNext);
@@ -1702,8 +1704,8 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
 
         uint32_t group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
         uint32_t returned_group_count = group_count;
-        std::vector<VkPhysicalDeviceGroupPropertiesKHR> group_props{};
-        group_props.resize(group_count, VkPhysicalDeviceGroupPropertiesKHR{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR});
+        std::vector<VkPhysicalDeviceGroupProperties> group_props{};
+        group_props.resize(group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, group_props.data()));
         ASSERT_EQ(group_count, returned_group_count);
 
@@ -1724,7 +1726,7 @@ TEST(EnumeratePhysicalDeviceGroups, OneCall) {
             ASSERT_EQ(true, found[dev]);
         }
         for (auto& group : group_props) {
-            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
             group_info.physicalDeviceCount = group.physicalDeviceCount;
             group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -1794,7 +1796,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
             ASSERT_EQ(true, found[dev]);
         }
         for (auto& group : group_props) {
-            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
             group_info.physicalDeviceCount = group.physicalDeviceCount;
             group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -1822,8 +1824,8 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, nullptr));
         ASSERT_EQ(group_count, returned_group_count);
 
-        std::vector<VkPhysicalDeviceGroupPropertiesKHR> group_props{};
-        group_props.resize(group_count, VkPhysicalDeviceGroupPropertiesKHR{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR});
+        std::vector<VkPhysicalDeviceGroupProperties> group_props{};
+        group_props.resize(group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, group_props.data()));
         ASSERT_EQ(group_count, returned_group_count);
 
@@ -1844,7 +1846,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCall) {
             ASSERT_EQ(true, found[dev]);
         }
         for (auto& group : group_props) {
-            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
             group_info.physicalDeviceCount = group.physicalDeviceCount;
             group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -1910,7 +1912,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
             ASSERT_EQ(true, found);
         }
         for (auto& group : group_props) {
-            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
             group_info.physicalDeviceCount = group.physicalDeviceCount;
             group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -1934,13 +1936,13 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         ASSERT_EQ(group_count, returned_group_count);
 
         returned_group_count = 1;
-        std::array<VkPhysicalDeviceGroupPropertiesKHR, 1> group_props{};
+        std::array<VkPhysicalDeviceGroupProperties, 1> group_props{};
         group_props[0].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_INCOMPLETE, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, group_props.data()));
         ASSERT_EQ(1U, returned_group_count);
 
         returned_group_count = 2;
-        std::array<VkPhysicalDeviceGroupPropertiesKHR, 2> group_props_2{};
+        std::array<VkPhysicalDeviceGroupProperties, 2> group_props_2{};
         group_props_2[0].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         group_props_2[1].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, group_props_2.data()));
@@ -1960,7 +1962,7 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
             ASSERT_EQ(true, found);
         }
         for (auto& group : group_props) {
-            VkDeviceGroupDeviceCreateInfoKHR group_info{};
+            VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
             group_info.physicalDeviceCount = group.physicalDeviceCount;
             group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -2000,7 +2002,7 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
     uint32_t core_group_count = 0;
     std::vector<VkPhysicalDeviceGroupProperties> core_group_props{};
     uint32_t ext_group_count = 0;
-    std::vector<VkPhysicalDeviceGroupPropertiesKHR> ext_group_props{};
+    std::vector<VkPhysicalDeviceGroupProperties> ext_group_props{};
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
@@ -2026,7 +2028,7 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
     ASSERT_EQ(ext_group_count, returned_group_count);
 
     ext_group_props.resize(returned_group_count,
-                           VkPhysicalDeviceGroupPropertiesKHR{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR});
+                           VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, ext_group_props.data()));
     ASSERT_EQ(ext_group_count, returned_group_count);
 
@@ -2051,7 +2053,7 @@ TEST(EnumeratePhysicalDeviceGroups, TestCoreVersusExtensionSameReturns) {
         }
     }
     for (auto& group : core_group_props) {
-        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        VkDeviceGroupDeviceCreateInfo group_info{};
         group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
         group_info.physicalDeviceCount = group.physicalDeviceCount;
         group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -2146,7 +2148,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
         }
     }
     for (auto& group : group_props_after) {
-        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        VkDeviceGroupDeviceCreateInfo group_info{};
         group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
         group_info.physicalDeviceCount = group.physicalDeviceCount;
         group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -2233,7 +2235,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
         }
     }
     for (auto& group : group_props_after) {
-        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        VkDeviceGroupDeviceCreateInfo group_info{};
         group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
         group_info.physicalDeviceCount = group.physicalDeviceCount;
         group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -2319,7 +2321,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceAddDeviceInBetween) {
         }
     }
     for (auto& group : group_props_after) {
-        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        VkDeviceGroupDeviceCreateInfo group_info{};
         group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
         group_info.physicalDeviceCount = group.physicalDeviceCount;
         group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -2416,7 +2418,7 @@ TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveDeviceInBetween) {
         }
     }
     for (auto& group : group_props_after) {
-        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        VkDeviceGroupDeviceCreateInfo group_info{};
         group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
         group_info.physicalDeviceCount = group.physicalDeviceCount;
         group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -2534,7 +2536,7 @@ TEST(EnumeratePhysicalDeviceGroups, MultipleAddRemoves) {
         ASSERT_EQ(group_props_after_add_device[group].physicalDeviceCount, after_add_dev_expected_counts[group]);
     }
     for (auto& group : group_props_after_add_device) {
-        VkDeviceGroupDeviceCreateInfoKHR group_info{};
+        VkDeviceGroupDeviceCreateInfo group_info{};
         group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
         group_info.physicalDeviceCount = group.physicalDeviceCount;
         group_info.pPhysicalDevices = &group.physicalDevices[0];
@@ -3850,9 +3852,9 @@ TEST(DuplicateRegistryEntries, Drivers) {
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find(
-        std::string("Skipping adding of json file \"") + null_path.str() +
-        "\" from registry \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\Drivers\" to the list due to duplication"));
+    ASSERT_TRUE(env.debug_log.find(std::string("Skipping adding of json file \"") + null_path.str() +
+                                   "\" from registry \"HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC
+                                   "\" to the list due to duplication"));
 }
 #endif
 
