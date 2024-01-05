@@ -49,6 +49,14 @@ enum class ManifestCategory { implicit_layer, explicit_layer, icd, settings };
 enum class GpuType { unspecified, integrated, discrete, external };
 
 #if defined(WIN32)
+#define VK_VARIANT_REG_STR ""
+#define VK_VARIANT_REG_STR_W L""
+
+#define VK_DRIVERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\Drivers"
+#define VK_ELAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\ExplicitLayers"
+#define VK_ILAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\ImplicitLayers"
+#define VK_SETTINGS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\LoaderSettings"
+
 struct RegistryEntry {
     RegistryEntry() = default;
     RegistryEntry(std::string const& name) noexcept : name(name) {}

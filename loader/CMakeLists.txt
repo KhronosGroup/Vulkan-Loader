@@ -3,6 +3,7 @@
 # Copyright (c) 2014-2023 Valve Corporation
 # Copyright (c) 2014-2023 LunarG, Inc.
 # Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -328,7 +329,7 @@ if(WIN32)
                 SHARED
                 ${NORMAL_LOADER_SRCS}
                 ${LOADER_UNKNOWN_CHAIN_LIBRARY}
-                ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-1.def
+                ${CMAKE_CURRENT_SOURCE_DIR}/${API_TYPE}-1.def
                 ${RC_FILE_LOCATION})
 
     target_link_libraries(vulkan PRIVATE loader_specific_options loader-opt)
@@ -338,7 +339,7 @@ if(WIN32)
     # msvc: vulkan-1.lib / vulkan-1.dll
     set_target_properties(vulkan
                           PROPERTIES
-                          OUTPUT_NAME vulkan-1)
+                          OUTPUT_NAME ${API_TYPE}-1)
     if(MINGW)
         # generate the same DLL with mingw
         set_target_properties(vulkan
@@ -384,6 +385,8 @@ else()
     find_package(Threads REQUIRED)
 
     target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m Threads::Threads)
+
+    set_target_properties(vulkan PROPERTIES OUTPUT_NAME ${API_TYPE})
 
     if (LOADER_ENABLE_ADDRESS_SANITIZER)
         target_compile_options(vulkan PUBLIC -fsanitize=address)
@@ -506,5 +509,5 @@ if (PKG_CONFIG_FOUND)
         file(RELATIVE_PATH CMAKE_INSTALL_INCLUDEDIR_PC ${CMAKE_INSTALL_PREFIX} ${CMAKE_INSTALL_FULL_INCLUDEDIR})
     endif()
     configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig" RENAME "${API_TYPE}.pc")
 endif()

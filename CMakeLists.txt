@@ -1,6 +1,8 @@
 # ~~~
 # Copyright (c) 2014-2023 Valve Corporation
 # Copyright (c) 2014-2023 LunarG, Inc.
+# Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +19,10 @@
 cmake_minimum_required(VERSION 3.17.2)
 
 project(VULKAN_LOADER VERSION 1.3.274 LANGUAGES C)
+
+# This variable enables downstream users to customize the target API
+# variant (e.g. Vulkan SC)
+set(API_TYPE "vulkan")
 
 add_subdirectory(scripts)
 
@@ -209,7 +215,7 @@ if(LOADER_CODEGEN)
     add_custom_target(loader_codegen
         COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
             "${VULKAN_HEADERS_INSTALL_DIR}/${CMAKE_INSTALL_DATADIR}/vulkan/registry"
-            --generated-version ${VulkanHeaders_VERSION} --incremental
+            --generated-version ${VulkanHeaders_VERSION} --incremental --api ${API_TYPE}
     )
 endif()
 
