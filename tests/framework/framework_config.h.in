@@ -78,7 +78,7 @@
 #define BAD_DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.dll"
 #define BAD_DUMMY_BINARY_WINDOWS_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_32.dll"
 #endif
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__) || defined(__QNX__)
 #define DUMMY_BINARY_LINUX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_64.so"
 #define DUMMY_BINARY_LINUX_32 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/libdummy_library_elf_32.so"
 #define BAD_DUMMY_BINARY_LINUX_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.so"
@@ -96,7 +96,7 @@
 #endif
 #endif
 #if defined(__linux__) || defined(__GNU__)
-#if __x86_64__ || __ppc64__
+#if __x86_64__ || __ppc64__ || __aarch64__
 #define CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE DUMMY_BINARY_LINUX_32
 #define CURRENT_PLATFORM_DUMMY_BINARY_BAD BAD_DUMMY_BINARY_LINUX_64
 #else
@@ -105,7 +105,7 @@
 #endif
 #endif
 // Apple doesn't have 32 bit but this should allow tests to run as if it was supported
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__QNX__)
 #define CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE DUMMY_BINARY_LINUX_32
 #define CURRENT_PLATFORM_DUMMY_BINARY_BAD BAD_DUMMY_BINARY_LINUX_64
 #endif

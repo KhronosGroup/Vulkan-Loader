@@ -151,7 +151,9 @@
 #define VK_SETTINGS_INFO_REGISTRY_LOC ""
 
 #if defined(__QNX__)
+#ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
+#endif
 #endif
 
 // C99:
@@ -329,7 +331,9 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 static inline char *loader_platform_executable_path(char *buffer, size_t size) { return NULL; }
 #elif defined(__QNX__)
 
+#ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
+#endif
 
 #include <fcntl.h>
 #include <sys/stat.h>

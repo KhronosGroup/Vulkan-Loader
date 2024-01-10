@@ -180,7 +180,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolder) {
     env.platform_shim->set_elevated_privilege(false);
 }
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__) || defined(__QNX__)
 // Make sure the loader reports the correct message based on if LOADER_USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {
     FrameworkEnvironment env{};
@@ -290,7 +290,7 @@ TEST(EnvVarICDOverrideSetup, TestBothDriverEnvVars) {
     ASSERT_EQ(phys_dev_count, 3U);
 }
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__) || defined(__QNX__)
 // Test VK_LAYER_PATH environment variable
 TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     FrameworkEnvironment env{};

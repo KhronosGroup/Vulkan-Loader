@@ -235,7 +235,7 @@ extern "C" {
 using PFN_get_platform_shim = PlatformShim* (*)(std::vector<fs::FolderManager>* folders);
 #define GET_PLATFORM_SHIM_STR "get_platform_shim"
 
-#elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__) || defined(__QNX__)
 // statically link on linux
 PlatformShim* get_platform_shim(std::vector<fs::FolderManager>* folders);
 #endif

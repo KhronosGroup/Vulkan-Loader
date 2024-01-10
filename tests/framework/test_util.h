@@ -838,7 +838,9 @@ inline std::string test_platform_executable_path() {
 inline std::string test_platform_executable_path() { return {}; }
 #elif defined(__QNX__)
 
+#ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
+#endif
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -847,14 +849,14 @@ inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     int fd = open("/proc/self/exefile", O_RDONLY);
-    size_t rdsize;
+    ssize_t rdsize;
 
     if (fd == -1) {
         return NULL;
     }
 
     rdsize = read(fd, &buffer[0], buffer.size());
-    if (rdsize == size) {
+    if (rdsize < 0) {
         return NULL;
     }
     buffer[rdsize] = 0x00;
