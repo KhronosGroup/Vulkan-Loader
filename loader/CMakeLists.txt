@@ -72,6 +72,9 @@ else()
     if(HAVE_ALLOCA_H)
         target_compile_definitions(loader_specific_options INTERFACE HAVE_ALLOCA_H)
     endif()
+
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
 endif()
 
 set(NORMAL_LOADER_SRCS
@@ -380,9 +383,6 @@ else()
         SOVERSION "1"
         VERSION "${VULKAN_LOADER_VERSION}"
     )
-
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
-    find_package(Threads REQUIRED)
 
     target_link_libraries(vulkan PRIVATE ${CMAKE_DL_LIBS} m Threads::Threads)
 
