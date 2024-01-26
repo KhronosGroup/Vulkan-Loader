@@ -656,6 +656,10 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_KHR_fragment_shading_rate extension commands
     table->CmdSetFragmentShadingRateKHR = (PFN_vkCmdSetFragmentShadingRateKHR)gdpa(dev, "vkCmdSetFragmentShadingRateKHR");
 
+    // ---- VK_KHR_dynamic_rendering_local_read extension commands
+    table->CmdSetRenderingAttachmentLocationsKHR = (PFN_vkCmdSetRenderingAttachmentLocationsKHR)gdpa(dev, "vkCmdSetRenderingAttachmentLocationsKHR");
+    table->CmdSetRenderingInputAttachmentIndicesKHR = (PFN_vkCmdSetRenderingInputAttachmentIndicesKHR)gdpa(dev, "vkCmdSetRenderingInputAttachmentIndicesKHR");
+
     // ---- VK_KHR_present_wait extension commands
     table->WaitForPresentKHR = (PFN_vkWaitForPresentKHR)gdpa(dev, "vkWaitForPresentKHR");
 
@@ -715,6 +719,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetRenderingAreaGranularityKHR = (PFN_vkGetRenderingAreaGranularityKHR)gdpa(dev, "vkGetRenderingAreaGranularityKHR");
     table->GetDeviceImageSubresourceLayoutKHR = (PFN_vkGetDeviceImageSubresourceLayoutKHR)gdpa(dev, "vkGetDeviceImageSubresourceLayoutKHR");
     table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gdpa(dev, "vkGetImageSubresourceLayout2KHR");
+
+    // ---- VK_KHR_line_rasterization extension commands
+    table->CmdSetLineStippleKHR = (PFN_vkCmdSetLineStippleKHR)gdpa(dev, "vkCmdSetLineStippleKHR");
 
     // ---- VK_KHR_calibrated_timestamps extension commands
     table->GetCalibratedTimestampsKHR = (PFN_vkGetCalibratedTimestampsKHR)gdpa(dev, "vkGetCalibratedTimestampsKHR");
@@ -1096,7 +1103,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetPipelineIndirectDeviceAddressNV = (PFN_vkGetPipelineIndirectDeviceAddressNV)gdpa(dev, "vkGetPipelineIndirectDeviceAddressNV");
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
-    table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)gdpa(dev, "vkCmdSetTessellationDomainOriginEXT");
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)gdpa(dev, "vkCmdSetDepthClampEnableEXT");
     table->CmdSetPolygonModeEXT = (PFN_vkCmdSetPolygonModeEXT)gdpa(dev, "vkCmdSetPolygonModeEXT");
     table->CmdSetRasterizationSamplesEXT = (PFN_vkCmdSetRasterizationSamplesEXT)gdpa(dev, "vkCmdSetRasterizationSamplesEXT");
@@ -1107,6 +1113,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdSetColorBlendEnableEXT = (PFN_vkCmdSetColorBlendEnableEXT)gdpa(dev, "vkCmdSetColorBlendEnableEXT");
     table->CmdSetColorBlendEquationEXT = (PFN_vkCmdSetColorBlendEquationEXT)gdpa(dev, "vkCmdSetColorBlendEquationEXT");
     table->CmdSetColorWriteMaskEXT = (PFN_vkCmdSetColorWriteMaskEXT)gdpa(dev, "vkCmdSetColorWriteMaskEXT");
+    table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)gdpa(dev, "vkCmdSetTessellationDomainOriginEXT");
     table->CmdSetRasterizationStreamEXT = (PFN_vkCmdSetRasterizationStreamEXT)gdpa(dev, "vkCmdSetRasterizationStreamEXT");
     table->CmdSetConservativeRasterizationModeEXT = (PFN_vkCmdSetConservativeRasterizationModeEXT)gdpa(dev, "vkCmdSetConservativeRasterizationModeEXT");
     table->CmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)gdpa(dev, "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
@@ -2404,6 +2411,10 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_KHR_fragment_shading_rate extension commands
     if (!strcmp(name, "CmdSetFragmentShadingRateKHR")) return (void *)table->CmdSetFragmentShadingRateKHR;
 
+    // ---- VK_KHR_dynamic_rendering_local_read extension commands
+    if (!strcmp(name, "CmdSetRenderingAttachmentLocationsKHR")) return (void *)table->CmdSetRenderingAttachmentLocationsKHR;
+    if (!strcmp(name, "CmdSetRenderingInputAttachmentIndicesKHR")) return (void *)table->CmdSetRenderingInputAttachmentIndicesKHR;
+
     // ---- VK_KHR_present_wait extension commands
     if (!strcmp(name, "WaitForPresentKHR")) return (void *)table->WaitForPresentKHR;
 
@@ -2463,6 +2474,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetRenderingAreaGranularityKHR")) return (void *)table->GetRenderingAreaGranularityKHR;
     if (!strcmp(name, "GetDeviceImageSubresourceLayoutKHR")) return (void *)table->GetDeviceImageSubresourceLayoutKHR;
     if (!strcmp(name, "GetImageSubresourceLayout2KHR")) return (void *)table->GetImageSubresourceLayout2KHR;
+
+    // ---- VK_KHR_line_rasterization extension commands
+    if (!strcmp(name, "CmdSetLineStippleKHR")) return (void *)table->CmdSetLineStippleKHR;
 
     // ---- VK_KHR_calibrated_timestamps extension commands
     if (!strcmp(name, "GetCalibratedTimestampsKHR")) return (void *)table->GetCalibratedTimestampsKHR;
@@ -2844,7 +2858,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetPipelineIndirectDeviceAddressNV")) return (void *)table->GetPipelineIndirectDeviceAddressNV;
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
-    if (!strcmp(name, "CmdSetTessellationDomainOriginEXT")) return (void *)table->CmdSetTessellationDomainOriginEXT;
     if (!strcmp(name, "CmdSetDepthClampEnableEXT")) return (void *)table->CmdSetDepthClampEnableEXT;
     if (!strcmp(name, "CmdSetPolygonModeEXT")) return (void *)table->CmdSetPolygonModeEXT;
     if (!strcmp(name, "CmdSetRasterizationSamplesEXT")) return (void *)table->CmdSetRasterizationSamplesEXT;
@@ -2855,6 +2868,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdSetColorBlendEnableEXT")) return (void *)table->CmdSetColorBlendEnableEXT;
     if (!strcmp(name, "CmdSetColorBlendEquationEXT")) return (void *)table->CmdSetColorBlendEquationEXT;
     if (!strcmp(name, "CmdSetColorWriteMaskEXT")) return (void *)table->CmdSetColorWriteMaskEXT;
+    if (!strcmp(name, "CmdSetTessellationDomainOriginEXT")) return (void *)table->CmdSetTessellationDomainOriginEXT;
     if (!strcmp(name, "CmdSetRasterizationStreamEXT")) return (void *)table->CmdSetRasterizationStreamEXT;
     if (!strcmp(name, "CmdSetConservativeRasterizationModeEXT")) return (void *)table->CmdSetConservativeRasterizationModeEXT;
     if (!strcmp(name, "CmdSetExtraPrimitiveOverestimationSizeEXT")) return (void *)table->CmdSetExtraPrimitiveOverestimationSizeEXT;
@@ -4229,6 +4243,35 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(
 }
 
 
+// ---- VK_KHR_dynamic_rendering_local_read extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingAttachmentLocationInfoKHR* pLocationInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetRenderingAttachmentLocationsKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRenderingAttachmentLocationsKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetRenderingInputAttachmentIndicesKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pLocationInfo);
+}
+
+
 // ---- VK_KHR_present_wait extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(
@@ -4853,6 +4896,23 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixProp
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixPropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, pProperties);
+}
+
+
+// ---- VK_KHR_line_rasterization extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    lineStippleFactor,
+    uint16_t                                    lineStipplePattern) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetLineStippleKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdSetLineStippleKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
 
@@ -8592,19 +8652,6 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(
 
 // ---- VK_EXT_extended_dynamic_state3 extension trampoline/terminators
 
-VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
-    VkCommandBuffer                             commandBuffer,
-    VkTessellationDomainOrigin                  domainOrigin) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdSetTessellationDomainOriginEXT: Invalid commandBuffer "
-                   "[VUID-vkCmdSetTessellationDomainOriginEXT-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
-}
-
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    depthClampEnable) {
@@ -8740,6 +8787,19 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->CmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkTessellationDomainOrigin                  domainOrigin) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetTessellationDomainOriginEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetTessellationDomainOriginEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(
@@ -10106,6 +10166,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_KHR_dynamic_rendering_local_read extension commands
+    if (!strcmp("vkCmdSetRenderingAttachmentLocationsKHR", name)) {
+        *addr = (void *)CmdSetRenderingAttachmentLocationsKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdSetRenderingInputAttachmentIndicesKHR", name)) {
+        *addr = (void *)CmdSetRenderingInputAttachmentIndicesKHR;
+        return true;
+    }
+
     // ---- VK_KHR_present_wait extension commands
     if (!strcmp("vkWaitForPresentKHR", name)) {
         *addr = (void *)WaitForPresentKHR;
@@ -10287,6 +10357,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_KHR_cooperative_matrix extension commands
     if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", name)) {
         *addr = (void *)GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
+        return true;
+    }
+
+    // ---- VK_KHR_line_rasterization extension commands
+    if (!strcmp("vkCmdSetLineStippleKHR", name)) {
+        *addr = (void *)CmdSetLineStippleKHR;
         return true;
     }
 
@@ -11407,10 +11483,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
-    if (!strcmp("vkCmdSetTessellationDomainOriginEXT", name)) {
-        *addr = (void *)CmdSetTessellationDomainOriginEXT;
-        return true;
-    }
     if (!strcmp("vkCmdSetDepthClampEnableEXT", name)) {
         *addr = (void *)CmdSetDepthClampEnableEXT;
         return true;
@@ -11449,6 +11521,10 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdSetColorWriteMaskEXT", name)) {
         *addr = (void *)CmdSetColorWriteMaskEXT;
+        return true;
+    }
+    if (!strcmp("vkCmdSetTessellationDomainOriginEXT", name)) {
+        *addr = (void *)CmdSetTessellationDomainOriginEXT;
         return true;
     }
     if (!strcmp("vkCmdSetRasterizationStreamEXT", name)) {
