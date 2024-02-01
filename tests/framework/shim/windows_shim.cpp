@@ -92,9 +92,11 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo *query_info)
 
     reg_info->status = LOADER_QUERY_REGISTRY_STATUS_SUCCESS;
     if (reg_info->output_value_size == 0) {
-        ULONG size = 2;  // final null terminator
-        for (auto const &path : *paths) size = static_cast<ULONG>(path.length() * sizeof(wchar_t));
-        // size in bytes, so multiply path size by two and add 2 for the null terminator
+        // final null terminator size
+        ULONG size = 2;
+
+        // size is in bytes, so multiply path size + 1 (for null terminator) by size of wchar (basically, 2).
+        for (auto const &path : *paths) size += static_cast<ULONG>((path.length() + 1) * sizeof(wchar_t));
         reg_info->output_value_size = size;
         if (size != 2) {
             // only want to write data if there is path data to write
