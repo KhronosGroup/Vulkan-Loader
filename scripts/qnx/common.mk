@@ -32,7 +32,7 @@ include $(MKFILES_ROOT)/qtargets.mk
 
 CCFLAGS += -DVK_USE_PLATFORM_SCREEN_QNX=1 -DVK_ENABLE_BETA_EXTENSIONS
 CCFLAGS += -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
-CCFLAGS += -Wno-stringop-truncation
+CCFLAGS += -fno-strict-aliasing -Wno-stringop-truncation
 CCFLAGS += -Wno-stringop-overflow -fvisibility=hidden
 CCFLAGS += -Wpointer-arith -fPIC
 
