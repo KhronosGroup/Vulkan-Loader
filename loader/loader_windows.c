@@ -860,6 +860,11 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
         next_icd_phys_devs->icd_term = icd_term;
         next_icd_phys_devs->windows_adapter_luid = luid;
         (*icd_phys_devs_array_count)++;
+    } else {
+        // Avoid memory leak in case of the already_enumerated hitting true
+        // at the last enumerate_adapter_physical_devices call in the outer loop
+        loader_instance_heap_free(inst, next_icd_phys_devs->physical_devices);
+        next_icd_phys_devs->physical_devices = NULL;
     }
 
     return VK_SUCCESS;
