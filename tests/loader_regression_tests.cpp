@@ -4222,18 +4222,32 @@ void add_dxgi_adapter(FrameworkEnvironment& env, const char* name, LUID luid, ui
     driver.physical_devices.emplace_back(name);
     auto& pd0 = driver.physical_devices.back();
     pd0.properties.apiVersion = VK_API_VERSION_1_1;
+    driver.set_adapterLUID(luid);
 
-    DXGI_ADAPTER_DESC1 desc{};
-    desc.VendorId = known_driver_list.at(vendor_id).vendor_id;
-    desc.AdapterLuid = luid;
-    auto wide_name = conver_str_to_wstr(name);
-    wcsncpy_s(desc.Description, 128, wide_name.c_str(), wide_name.size());
-    driver.set_adapterLUID(desc.AdapterLuid);
-    env.platform_shim->add_dxgi_adapter(GpuType::discrete, desc);
+    // luid is unique per DXGI/D3DKMT adapters.Don't add extra DXGI device if one is already created.
+    // Just add path icd path to matching d3dkmt_adapter.
+    D3DKMT_Adapter* pAdapter = NULL;
+    for (uint32_t i = 0; i < env.platform_shim->d3dkmt_adapters.size(); i++) {
+        if (env.platform_shim->d3dkmt_adapters[i].adapter_luid.HighPart == luid.HighPart &&
+            env.platform_shim->d3dkmt_adapters[i].adapter_luid.LowPart == luid.LowPart) {
+            pAdapter = &env.platform_shim->d3dkmt_adapters[i];
+            break;
+        }
+    }
+    if (pAdapter == NULL) {
+        DXGI_ADAPTER_DESC1 desc{};
+        desc.VendorId = known_driver_list.at(vendor_id).vendor_id;
+        desc.AdapterLuid = luid;
+        auto wide_name = conver_str_to_wstr(name);
+        wcsncpy_s(desc.Description, 128, wide_name.c_str(), wide_name.size());
+        env.platform_shim->add_dxgi_adapter(GpuType::discrete, desc);
 
-    env.platform_shim->add_d3dkmt_adapter(
-        D3DKMT_Adapter{static_cast<UINT>(env.icds.size()) - 1U, desc.AdapterLuid}.add_driver_manifest_path(
-            env.get_icd_manifest_path(env.icds.size() - 1)));
+        env.platform_shim->add_d3dkmt_adapter(
+            D3DKMT_Adapter{static_cast<UINT>(env.icds.size()) - 1U, desc.AdapterLuid}.add_driver_manifest_path(
+                env.get_icd_manifest_path(env.icds.size() - 1)));
+    } else {
+        pAdapter->add_driver_manifest_path(env.get_icd_manifest_path(env.icds.size() - 1));
+    }
 }
 
 TEST(EnumerateAdapterPhysicalDevices, SameAdapterLUID_reordered) {
@@ -4241,7 +4255,9 @@ TEST(EnumerateAdapterPhysicalDevices, SameAdapterLUID_reordered) {
 
     uint32_t physical_count = 3;
 
-    // Physical devices are enumerate in reverse order to the drivers insertion into the test framework
+    // Physical devices are enumerated:
+    // a) first in the order of LUIDs showing up in DXGIAdapter list
+    // b) then in the reverse order to the drivers insertion into the test framework
     add_dxgi_adapter(env, "physical_device_2", LUID{10, 100}, 2);
     add_dxgi_adapter(env, "physical_device_1", LUID{20, 200}, 1);
     add_dxgi_adapter(env, "physical_device_0", LUID{10, 100}, 2);
@@ -4337,7 +4353,9 @@ TEST(EnumerateAdapterPhysicalDevices, SameAdapterLUID_same_order) {
 
     uint32_t physical_count = 3;
 
-    // Physical devices are enumerate in reverse order to the drivers insertion into the test framework
+    // Physical devices are enumerated:
+    // a) first in the order of LUIDs showing up in DXGIAdapter list
+    // b) then in the reverse order to the drivers insertion into the test framework
     add_dxgi_adapter(env, "physical_device_2", LUID{10, 100}, 2);
     add_dxgi_adapter(env, "physical_device_1", LUID{20, 200}, 1);
     add_dxgi_adapter(env, "physical_device_0", LUID{10, 100}, 2);
