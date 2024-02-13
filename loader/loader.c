@@ -3039,6 +3039,9 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 #if COMMON_UNIX_PLATFORMS
             relative_location = VK_ILAYERS_INFO_RELATIVE_DIR;
 #endif
+#if defined(_WIN32)
+            package_path = windows_get_app_package_manifest_path(inst);
+#endif
             break;
         case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
             override_env = loader_secure_getenv(VK_LAYER_PATH_ENV_VAR, inst);

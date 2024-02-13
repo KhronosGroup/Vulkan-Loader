@@ -233,6 +233,13 @@ distributed as part of a driver installation.
 An application installer should not modify the device-specific registries,
 while a device driver should not modify the system registries.
 
+Additionally, the Vulkan loader will scan the system for well-known Windows
+AppX/MSIX packages.
+If a package is found, the loader will scan the root directory of this installed
+package for JSON manifest files. At this time, the only package that is known is
+Microsoft's
+[OpenCL™, OpenGL®, and Vulkan® Compatibility Pack](https://apps.microsoft.com/store/detail/9NQPSL29BFFF?hl=en-us&gl=US).
+
 The Vulkan loader will open each manifest file to obtain information about the
 layer, including the name or pathname of a shared library (".dll") file.
 

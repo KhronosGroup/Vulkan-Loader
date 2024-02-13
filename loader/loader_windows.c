@@ -1110,10 +1110,8 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
     }
 
     UINT32 numPackages = 0, bufferLength = 0;
-    /* This literal string identifies the Microsoft-published OpenCL and OpenGL Compatibility Pack
-     * (so named at the time this is being added), which contains OpenGLOn12 and OpenCLOn12 mapping
-     * layers, and will contain VulkanOn12 (aka Dozen) going forward.
-     */
+    // This literal string identifies the Microsoft-published OpenCL, OpenGL, and Vulkan Compatibility Pack, which contains
+    // OpenGLOn12, OpenCLOn12, and VulkanOn12 (aka Dozen) mappinglayers
     PCWSTR familyName = L"Microsoft.D3DMappingLayers_8wekyb3d8bbwe";
     if (ERROR_INSUFFICIENT_BUFFER != fpGetPackagesByPackageFamily(familyName, &numPackages, NULL, &bufferLength, NULL) ||
         numPackages == 0 || bufferLength == 0) {
