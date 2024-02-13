@@ -594,6 +594,9 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
         case (ManifestDiscoveryType::unsecured_generic):
             fs_ptr = &(get_folder(ManifestLocation::unsecured_location));
             break;
+        case (ManifestDiscoveryType::windows_app_package):
+            fs_ptr = &(get_folder(ManifestLocation::windows_app_package));
+            break;
         case (ManifestDiscoveryType::none):
         case (ManifestDiscoveryType::null_dir):
             fs_ptr = &(get_folder(ManifestLocation::null));
@@ -650,6 +653,11 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
         if (layer_details.discovery_type == ManifestDiscoveryType::unsecured_generic) {
             platform_shim->add_unsecured_manifest(category, layer_manifest_loc);
         }
+#if defined(_WIN32)
+        if (layer_details.discovery_type == ManifestDiscoveryType::windows_app_package) {
+            platform_shim->set_app_package_path(layer_manifest_loc);
+        }
+#endif
         for (size_t i = new_layers_start; i < layers.size(); i++) {
             layers.at(i).manifest_path = layer_manifest_loc;
             layers.at(i).shimmed_manifest_path = layer_manifest_loc;

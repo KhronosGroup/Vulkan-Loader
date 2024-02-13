@@ -360,7 +360,7 @@ AppX/MSIX packages.
 If a package is found, the loader will scan the root directory of this installed
 package for JSON manifest files. At this time, the only package that is known is
 Microsoft's
-[OpenCL™ and OpenGL® Compatibility Pack](https://apps.microsoft.com/store/detail/9NQPSL29BFFF?hl=en-us&gl=US).
+[OpenCL™, OpenGL®, and Vulkan® Compatibility Pack](https://apps.microsoft.com/store/detail/9NQPSL29BFFF?hl=en-us&gl=US).
 
 The Vulkan loader will open each enabled manifest file found to obtain the name
 or pathname of a driver's shared library (".DLL") file.
