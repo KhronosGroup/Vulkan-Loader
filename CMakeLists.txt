@@ -18,7 +18,7 @@
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
 
-project(VULKAN_LOADER VERSION 1.3.278 LANGUAGES C)
+project(VULKAN_LOADER VERSION 1.3.279 LANGUAGES C)
 
 # This variable enables downstream users to customize the target API
 # variant (e.g. Vulkan SC)
