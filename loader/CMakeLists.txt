@@ -129,7 +129,7 @@ set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted 
 
 if (APPLE_UNIVERSAL_BINARY)
     set(USE_ASSEMBLY_FALLBACK ON)
-elseif(WIN32)
+elseif(WIN32 AND NOT USE_GAS)
     option(USE_MASM "Use MASM" ON)
     if(USE_MASM AND MINGW)
         find_program(JWASM_FOUND NAMES jwasm uasm)
@@ -215,7 +215,7 @@ end
         set(USE_ASSEMBLY_FALLBACK ON)
         message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
     endif()
-elseif(UNIX) # i.e.: Linux & Apple
+elseif(UNIX OR MINGW) # i.e.: Linux & Apple & MinGW
 
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
