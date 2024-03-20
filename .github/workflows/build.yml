@@ -58,6 +58,9 @@ jobs:
                 cmakeVersion: 3.17.2
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+            # This is to combat a bug when using 6.6 linux kernels with thread/address sanitizer
+            # https://github.com/google/sanitizers/issues/1716
+            - run: sudo sysctl vm.mmap_rnd_bits=28
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{ matrix.config }} \
