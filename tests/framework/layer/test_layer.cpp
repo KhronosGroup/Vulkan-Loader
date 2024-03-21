@@ -297,6 +297,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     // next layer in the chain.
     layer_init_instance_dispatch_table(layer.instance_handle, &layer.instance_dispatch_table, fpGetInstanceProcAddr);
 
+    layer.enabled_instance_extensions.clear();
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         layer.enabled_instance_extensions.push_back({pCreateInfo->ppEnabledExtensionNames[i]});
     }
@@ -377,6 +378,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance(VkInstance instance, const VkA
         pAllocator->pfnFree(pAllocator->pUserData, layer.spurious_instance_memory_allocation);
         layer.spurious_instance_memory_allocation = nullptr;
     }
+    layer.enabled_instance_extensions.clear();
 
     layer.instance_dispatch_table.DestroyInstance(instance, pAllocator);
 }
