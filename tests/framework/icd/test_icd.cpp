@@ -194,9 +194,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     }
 
     // Add to the list of enabled extensions only those that the ICD actively supports
-    for (uint32_t iii = 0; iii < pCreateInfo->enabledExtensionCount; ++iii) {
-        if (IsInstanceExtensionSupported(pCreateInfo->ppEnabledExtensionNames[iii])) {
-            icd.add_enabled_instance_extension({pCreateInfo->ppEnabledExtensionNames[iii]});
+    icd.enabled_instance_extensions.clear();
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        if (IsInstanceExtensionSupported(pCreateInfo->ppEnabledExtensionNames[i])) {
+            icd.enabled_instance_extensions.push_back({pCreateInfo->ppEnabledExtensionNames[i]});
         }
     }
 
@@ -209,7 +210,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
 }
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance([[maybe_unused]] VkInstance instance,
-                                                  [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {}
+                                                  [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {
+    icd.enabled_instance_extensions.clear();
+}
 
 // VK_SUCCESS,VK_INCOMPLETE
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices([[maybe_unused]] VkInstance instance, uint32_t* pPhysicalDeviceCount,
