@@ -264,7 +264,14 @@ elseif(UNIX OR MINGW) # i.e.: Linux & Apple & MinGW
             add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         else()
             # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
-            target_compile_options(asm_offset PRIVATE -save-temps=obj)
+            # If with lto, compiler will output IR instead of asm, so we need to explicitly disable lto here.
+            if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+                target_compile_options(asm_offset PRIVATE -save-temps=obj -fno-lto)
+            elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
+                target_compile_options(asm_offset PRIVATE -save-temps=obj -fno-lto -fno-whole-program-vtables -fno-virtual-function-elimination)
+            else()
+                target_compile_options(asm_offset PRIVATE -save-temps=obj)
+            endif()
             if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
                 set(ASM_OFFSET_EXECUTABLE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm")
                 set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.c.s")

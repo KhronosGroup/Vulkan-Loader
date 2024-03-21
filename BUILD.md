@@ -637,11 +637,6 @@ can be manually disabled by setting `USE_GAS` or `USE_MASM` to `OFF`.
 Platforms not listed will use a fallback C Code path that relies on tail-call optimization to work.
 No guarantees are made about the use of the fallback code paths.
 
-### Link Time Optimization
-
-When cross compiling, the use of Link Time Optimization (LTO) and unknown function handling
-is not supported. Either LTO needs to be turned off, or the assembly should be disabled.
-
 ## Tests
 
 To build tests, make sure that the `BUILD_TESTS` option is set to true. Using
