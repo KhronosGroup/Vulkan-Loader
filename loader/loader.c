@@ -6135,7 +6135,6 @@ VkResult check_and_add_to_new_phys_devs(struct loader_instance *inst, VkPhysical
 VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     VkResult res = VK_SUCCESS;
     struct loader_icd_term *icd_term;
-    uint32_t icd_idx = 0;
     uint32_t windows_sorted_devices_count = 0;
     struct loader_icd_physical_devices *windows_sorted_devices_array = NULL;
     uint32_t icd_count = 0;
@@ -6169,13 +6168,14 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     // For each ICD, query the number of physical devices, and then get an
     // internal value for those physical devices.
     icd_term = inst->icd_terms;
+    uint32_t icd_idx = 0;
     while (NULL != icd_term) {
         res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &icd_phys_dev_array[icd_idx].device_count, NULL);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code "
+                       "setup_loader_term_phys_devs: Call to \'vkEnumeratePhysicalDevices\' in ICD %s failed with error code "
                        "VK_ERROR_OUT_OF_HOST_MEMORY",
-                       icd_idx);
+                       icd_term->scanned_icd->lib_name);
             goto out;
         } else if (VK_SUCCESS == res) {
             icd_phys_dev_array[icd_idx].physical_devices =
@@ -6183,8 +6183,8 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
             if (NULL == icd_phys_dev_array[icd_idx].physical_devices) {
                 loader_log(
                     inst, VULKAN_LOADER_ERROR_BIT, 0,
-                    "setup_loader_term_phys_devs:  Failed to allocate temporary ICD Physical device array for ICD %d of size %d",
-                    icd_idx, icd_phys_dev_array[icd_idx].device_count);
+                    "setup_loader_term_phys_devs: Failed to allocate temporary ICD Physical device array for ICD %s of size %d",
+                    icd_term->scanned_icd->lib_name, icd_phys_dev_array[icd_idx].device_count);
                 res = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
             }
@@ -6193,23 +6193,23 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                                                               icd_phys_dev_array[icd_idx].physical_devices);
             if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                           "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code "
+                           "setup_loader_term_phys_devs: Call to \'vkEnumeratePhysicalDevices\' in ICD %s failed with error code "
                            "VK_ERROR_OUT_OF_HOST_MEMORY",
-                           icd_idx);
+                           icd_term->scanned_icd->lib_name);
                 goto out;
             }
             if (VK_SUCCESS != res) {
                 loader_log(
                     inst, VULKAN_LOADER_ERROR_BIT, 0,
-                    "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code %d",
-                    icd_idx, res);
+                    "setup_loader_term_phys_devs: Call to \'vkEnumeratePhysicalDevices\' in ICD %s failed with error code %d",
+                    icd_term->scanned_icd->lib_name, res);
                 icd_phys_dev_array[icd_idx].device_count = 0;
                 icd_phys_dev_array[icd_idx].physical_devices = 0;
             }
         } else {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code %d",
-                       icd_idx, res);
+                       "setup_loader_term_phys_devs: Call to \'vkEnumeratePhysicalDevices\' in ICD %s failed with error code %d",
+                       icd_term->scanned_icd->lib_name, res);
             icd_phys_dev_array[icd_idx].device_count = 0;
             icd_phys_dev_array[icd_idx].physical_devices = 0;
         }
@@ -6887,7 +6887,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
     // For each ICD, query the number of physical device groups, and then get an
     // internal value for those physical devices.
     icd_term = inst->icd_terms;
-    for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
+    while (NULL != icd_term) {
         cur_icd_group_count = 0;
 
         // Get the function pointer to use to call into the ICD. This could be the core or KHR version
@@ -6903,8 +6903,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             if (res != VK_SUCCESS) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                            "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of \'EnumeratePhysicalDevices\' "
-                           "to ICD %d to get plain phys dev count.",
-                           icd_idx);
+                           "to ICD %s to get plain phys dev count.",
+                           icd_term->scanned_icd->lib_name);
                 continue;
             }
         } else {
@@ -6913,12 +6913,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             if (res != VK_SUCCESS) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                            "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of "
-                           "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get count.",
-                           icd_idx);
+                           "\'EnumeratePhysicalDeviceGroups\' to ICD %s to get count.",
+                           icd_term->scanned_icd->lib_name);
                 continue;
             }
         }
         total_count += cur_icd_group_count;
+        icd_term = icd_term->next;
     }
 
     // If GPUs not sorted yet, look through them and generate list of all available GPUs
@@ -6985,8 +6986,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                 if (res != VK_SUCCESS) {
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                                "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of "
-                               "\'EnumeratePhysicalDevices\' to ICD %d to get plain phys dev count.",
-                               icd_idx);
+                               "\'EnumeratePhysicalDevices\' to ICD %s to get plain phys dev count.",
+                               icd_term->scanned_icd->lib_name);
                     goto out;
                 }
 
@@ -7004,8 +7005,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                 if (res != VK_SUCCESS) {
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                                "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of "
-                               "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get group count.",
-                               icd_idx);
+                               "\'EnumeratePhysicalDeviceGroups\' to ICD %s to get group count.",
+                               icd_term->scanned_icd->lib_name);
                     goto out;
                 }
                 if (cur_icd_group_count + count_this_time < *pPhysicalDeviceGroupCount) {
@@ -7017,8 +7018,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     if (res != VK_SUCCESS) {
                         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                                    "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of "
-                                   "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get group information.",
-                                   icd_idx);
+                                   "\'EnumeratePhysicalDeviceGroups\' to ICD %s to get group information.",
+                                   icd_term->scanned_icd->lib_name);
                         goto out;
                     }
                     for (uint32_t group = 0; group < count_this_time; ++group) {
@@ -7048,8 +7049,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     if (res != VK_SUCCESS) {
                         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                                    "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of "
-                                   "\'EnumeratePhysicalDeviceGroups\' to ICD %d  to get group information for temp data.",
-                                   icd_idx);
+                                   "\'EnumeratePhysicalDeviceGroups\' to ICD %s  to get group information for temp data.",
+                                   icd_term->scanned_icd->lib_name);
                         goto out;
                     }
                     for (uint32_t group = 0; group < count_this_time; ++group) {
@@ -7062,8 +7063,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                 if (VK_SUCCESS != res) {
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                                "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of "
-                               "\'EnumeratePhysicalDeviceGroups\' to ICD %d to get content.",
-                               icd_idx);
+                               "\'EnumeratePhysicalDeviceGroups\' to ICD %s to get content.",
+                               icd_term->scanned_icd->lib_name);
                     goto out;
                 }
             }
