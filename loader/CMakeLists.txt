@@ -215,7 +215,7 @@ end
         set(USE_ASSEMBLY_FALLBACK ON)
         message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
     endif()
-elseif(UNIX OR MINGW) # i.e.: Linux & Apple & MinGW
+elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Windows using Clang-CL
 
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
@@ -228,8 +228,21 @@ elseif(UNIX OR MINGW) # i.e.: Linux & Apple & MinGW
         set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
         set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64|arm64")
-            try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S)
+        if(WIN32 AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "ARM64")
+            # In this particular case, we are using the same approach as for NASM
+            # This specifically avoids CMake issue #18889
+            execute_process(COMMAND ${CMAKE_ASM_COMPILER} ${CMAKE_ASM_FLAGS} -c -o ${CMAKE_CURRENT_BINARY_DIR}/asm_test_aarch64.obj ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S
+                RESULT_VARIABLE WIN_ARM64_ASSEMBLER_WORKS
+                OUTPUT_QUIET ERROR_QUIET)
+            if(WIN_ARM64_ASSEMBLER_WORKS EQUAL 0)
+                set(ASSEMBLER_WORKS true)
+            endif()
+
+            if(ASSEMBLER_WORKS)
+                set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
+            endif()
+        elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64|arm64")
+            try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S OUTPUT_VARIABLE TRY_COMPILE_OUTPUT)
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
             endif()
