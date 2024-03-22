@@ -153,6 +153,13 @@ VulkanFunctions::VulkanFunctions() : loader(get_loader_path()) {
     init_vulkan_functions(*this);
 }
 
+void VulkanFunctions::load_instance_functions(VkInstance instance) {
+    vkCreateDebugReportCallbackEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
+    vkDestroyDebugReportCallbackEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
+    vkCreateDebugUtilsMessengerEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    vkDestroyDebugUtilsMessengerEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+}
+
 DeviceFunctions::DeviceFunctions(const VulkanFunctions& vulkan_functions, VkDevice device) {
     vkGetDeviceProcAddr = vulkan_functions.vkGetDeviceProcAddr;
     vkDestroyDevice = load(device, "vkDestroyDevice");
@@ -192,10 +199,12 @@ InstWrapper& InstWrapper::operator=(InstWrapper&& other) noexcept {
 
 void InstWrapper::CheckCreate(VkResult result_to_check) {
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
+    functions->load_instance_functions(inst);
 }
 
 void InstWrapper::CheckCreateWithInfo(InstanceCreateInfo& create_info, VkResult result_to_check) {
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
+    functions->load_instance_functions(inst);
 }
 
 std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check) {
@@ -292,8 +301,8 @@ void DeviceWrapper::CheckCreate(VkPhysicalDevice phys_dev, VkResult result_to_ch
 }
 
 VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils) {
-    return debug_utils.vkCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
-                                                      &debug_utils.messenger);
+    return debug_utils.local_vkCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
+                                                            &debug_utils.messenger);
 }
 
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger) {
@@ -876,6 +885,11 @@ VkResult create_surface(VulkanFunctions* functions, VkInstance inst, VkSurfaceKH
 }
 VkResult create_surface(InstWrapper& inst, VkSurfaceKHR& surface, const char* api_selection) {
     return create_surface(inst.functions, inst.inst, surface, api_selection);
+}
+
+VkResult create_debug_callback(InstWrapper& inst, const VkDebugReportCallbackCreateInfoEXT& create_info,
+                               VkDebugReportCallbackEXT& callback) {
+    return inst.functions->vkCreateDebugReportCallbackEXT(inst.inst, &create_info, nullptr, &callback);
 }
 
 extern "C" {

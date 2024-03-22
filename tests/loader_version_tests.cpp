@@ -306,7 +306,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults
 #endif  // defined(WIN32)
 TEST(ICDInterfaceVersion7, SingleDriver) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7_WITH_ADDITIONAL_EXPORTS)).add_physical_device({});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7)).add_physical_device({});
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
     DeviceWrapper dev{inst};
@@ -316,7 +316,7 @@ TEST(ICDInterfaceVersion7, SingleDriver) {
 
 TEST(ICDInterfaceVersion7, SingleDriverWithoutExportedFunctions) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7)).add_physical_device({});
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7_WIHTOUT_EXPORTS)).add_physical_device({});
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
     DeviceWrapper dev{inst};

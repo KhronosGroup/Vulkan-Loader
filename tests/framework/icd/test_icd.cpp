@@ -49,10 +49,11 @@
 #define TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES 0
 #endif
 
-// expose vk_icdNegotiateLoaderICDInterfaceVersion, vk_icdEnumerateAdapterPhysicalDevices, and vk_icdGetPhysicalDeviceProcAddr
-// through vk_icdGetInstanceProcAddr or vkGetInstanceProcAddr
-#if !defined(TEST_ICD_EXPOSE_VERSION_7)
-#define TEST_ICD_EXPOSE_VERSION_7 0
+// export vk_icdNegotiateLoaderICDInterfaceVersion, vk_icdEnumerateAdapterPhysicalDevices, and vk_icdGetPhysicalDeviceProcAddr
+// through dlsym/GetProcAddress
+// Default is *on*
+#if !defined(TEST_ICD_EXPORT_VERSION_7)
+#define TEST_ICD_EXPORT_VERSION_7 1
 #endif
 
 TestICD icd;
@@ -343,7 +344,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT([[maybe_unused]]
             // Remove it from the list
             icd.messenger_handles.erase(found_iter);
             // Delete the handle
-            delete (uint8_t*)fake_msgr_handle;
+            delete (uint8_t*)(fake_msgr_handle);
         } else {
             std::cerr << "Messenger not found during destroy!\n";
             abort();
@@ -1160,21 +1161,6 @@ VkResult test_vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersi
     return VK_SUCCESS;
 }
 
-// Forward declarations for trampolines
-extern "C" {
-#if TEST_ICD_EXPOSE_VERSION_7
-FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion);
-#if TEST_ICD_EXPORT_ICD_GPDPA
-FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(VkInstance instance, const char* pName);
-#endif
-#if defined(WIN32) && TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
-FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
-                                                                                      uint32_t* pPhysicalDeviceCount,
-                                                                                      VkPhysicalDevice* pPhysicalDevices);
-#endif
-#endif
-}
-
 //// trampolines
 
 PFN_vkVoidFunction get_instance_func_ver_1_1([[maybe_unused]] VkInstance instance, const char* pName) {
@@ -1549,21 +1535,18 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_vkGetDeviceProcAddr(VkDevice devic
 PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* pName) {
     if (pName == nullptr) return nullptr;
     if (instance == NULL) {
-#if TEST_ICD_EXPOSE_VERSION_7
         if (string_eq(pName, "vk_icdNegotiateLoaderICDInterfaceVersion"))
             return icd.exposes_vk_icdNegotiateLoaderICDInterfaceVersion
-                       ? to_vkVoidFunction(vk_icdNegotiateLoaderICDInterfaceVersion)
+                       ? to_vkVoidFunction(test_vk_icdNegotiateLoaderICDInterfaceVersion)
                        : NULL;
-#if TEST_ICD_EXPORT_ICD_GPDPA
+
         if (string_eq(pName, "vk_icdGetPhysicalDeviceProcAddr"))
-            return icd.exposes_vk_icdGetPhysicalDeviceProcAddr ? to_vkVoidFunction(vk_icdGetPhysicalDeviceProcAddr) : NULL;
-#endif
-#if defined(WIN32) && TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
+            return icd.exposes_vk_icdGetPhysicalDeviceProcAddr ? to_vkVoidFunction(get_physical_device_func) : NULL;
+#if defined(WIN32)
         if (string_eq(pName, "vk_icdEnumerateAdapterPhysicalDevices"))
-            return icd.exposes_vk_icdEnumerateAdapterPhysicalDevices ? to_vkVoidFunction(vk_icdEnumerateAdapterPhysicalDevices)
+            return icd.exposes_vk_icdEnumerateAdapterPhysicalDevices ? to_vkVoidFunction(test_vk_icdEnumerateAdapterPhysicalDevices)
                                                                      : NULL;
 #endif  // defined(WIN32)
-#endif  // TEST_ICD_EXPOSE_VERSION_7
 
         if (string_eq(pName, "vkGetInstanceProcAddr")) return to_vkVoidFunction(test_vkGetInstanceProcAddr);
         if (string_eq(pName, "vkEnumerateInstanceExtensionProperties"))
@@ -1589,13 +1572,13 @@ PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* 
 
 // Exported functions
 extern "C" {
-#if TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
+#if TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION && TEST_ICD_EXPORT_VERSION_7
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
     return test_vk_icdNegotiateLoaderICDInterfaceVersion(pSupportedVersion);
 }
 #endif  // TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
 
-#if TEST_ICD_EXPORT_ICD_GPDPA
+#if TEST_ICD_EXPORT_ICD_GPDPA && TEST_ICD_EXPORT_VERSION_7
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(VkInstance instance, const char* pName) {
     return get_physical_device_func(instance, pName);
 }
@@ -1622,7 +1605,7 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProp
 }
 #endif  // TEST_ICD_EXPORT_ICD_GIPA
 
-#if TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES
+#if TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES && TEST_ICD_EXPORT_VERSION_7
 #if defined(WIN32)
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
                                                                                       uint32_t* pPhysicalDeviceCount,

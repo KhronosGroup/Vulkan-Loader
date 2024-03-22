@@ -411,18 +411,20 @@ struct FRAMEWORK_EXPORT DispatchableHandle {
         handle = reinterpret_cast<T>(ptr_handle);
     }
     ~DispatchableHandle() {
-        delete reinterpret_cast<VK_LOADER_DATA*>(handle);
+        if (handle) {
+            delete reinterpret_cast<VK_LOADER_DATA*>(handle);
+        }
         handle = nullptr;
     }
     DispatchableHandle(DispatchableHandle const&) = delete;
     DispatchableHandle& operator=(DispatchableHandle const&) = delete;
     DispatchableHandle(DispatchableHandle&& other) noexcept : handle(other.handle) { other.handle = nullptr; }
     DispatchableHandle& operator=(DispatchableHandle&& other) noexcept {
-        if (this != &other) {
+        if (handle) {
             delete reinterpret_cast<VK_LOADER_DATA*>(handle);
-            handle = other.handle;
-            other.handle = nullptr;
         }
+        handle = other.handle;
+        other.handle = nullptr;
         return *this;
     }
     bool operator==(T base_handle) { return base_handle == handle; }
