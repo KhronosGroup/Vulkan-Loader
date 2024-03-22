@@ -167,8 +167,6 @@ struct VulkanFunctions {
 
     PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
     PFN_vkCreateDevice vkCreateDevice = nullptr;
-    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
-    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
 
     // WSI
     PFN_vkCreateHeadlessSurfaceEXT vkCreateHeadlessSurfaceEXT = nullptr;
@@ -231,11 +229,19 @@ struct VulkanFunctions {
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
 
+    // instance extensions functions (can only be loaded with a valid instance)
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;    // Null unless the extension is enabled
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;  // Null unless the extension is enabled
+    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = nullptr;    // Null unless the extension is enabled
+    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = nullptr;  // Null unless the extension is enabled
+
     // device functions
     PFN_vkDestroyDevice vkDestroyDevice = nullptr;
     PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
 
     VulkanFunctions();
+
+    void load_instance_functions(VkInstance instance);
 
     FromVoidStarFunc load(VkInstance inst, const char* func_name) const {
         return FromVoidStarFunc(vkGetInstanceProcAddr(inst, func_name));
@@ -338,6 +344,41 @@ struct DeviceWrapper {
     DeviceCreateInfo create_info{};
 };
 
+template <typename HandleType, typename ParentType, typename DestroyFuncType>
+struct WrappedHandle {
+    WrappedHandle(HandleType in_handle, ParentType in_parent, DestroyFuncType in_destroy_func,
+                  VkAllocationCallbacks* in_callbacks = nullptr)
+        : handle(in_handle), parent(in_parent), destroy_func(in_destroy_func), callbacks(in_callbacks) {}
+    ~WrappedHandle() {
+        if (handle) {
+            destroy_func(parent, handle, callbacks);
+            handle = VK_NULL_HANDLE;
+        }
+    }
+    WrappedHandle(WrappedHandle const&) = delete;
+    WrappedHandle& operator=(WrappedHandle const&) = delete;
+    WrappedHandle(WrappedHandle&& other) noexcept
+        : handle(other.handle), parent(other.parent), destroy_func(other.destroy_func), callbacks(other.callbacks) {
+        other.handle = VK_NULL_HANDLE;
+    }
+    WrappedHandle& operator=(WrappedHandle&& other) noexcept {
+        if (handle != VK_NULL_HANDLE) {
+            destroy_func(parent, handle, callbacks);
+        }
+        handle = other.handle;
+        other.handle = VK_NULL_HANDLE;
+        parent = other.parent;
+        destroy_func = other.destroy_func;
+        callbacks = other.callbacks;
+        return *this;
+    }
+
+    HandleType handle = VK_NULL_HANDLE;
+    ParentType parent = VK_NULL_HANDLE;
+    DestroyFuncType destroy_func = nullptr;
+    VkAllocationCallbacks* callbacks = nullptr;
+};
+
 struct DebugUtilsLogger {
     static VkBool32 VKAPI_PTR
     DebugUtilsMessengerLoggerCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -369,6 +410,16 @@ struct DebugUtilsLogger {
     DebugUtilsLogger& operator=(DebugUtilsLogger&&) = delete;
     // Find a string in the log output
     bool find(std::string const& search_text) const { return returned_output.find(search_text) != std::string::npos; }
+    // Find the number of times a string appears in the log output
+    uint32_t count(std::string const& search_text) const {
+        uint32_t occurrences = 0;
+        std::string::size_type position = 0;
+        while ((position = returned_output.find(search_text, position)) != std::string::npos) {
+            ++occurrences;
+            position += search_text.length();
+        }
+        return occurrences;
+    }
 
     // Look through the event log. If you find a line containing the prefix we're interested in, look for the end of
     // line character, and then see if the postfix occurs in it as well.
@@ -387,15 +438,17 @@ struct DebugUtilsWrapper {
                       VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                                                      VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
                       VkAllocationCallbacks* callbacks = nullptr)
-        : logger(severity), inst(inst_wrapper.inst), callbacks(callbacks) {
-        vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-            inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkCreateDebugUtilsMessengerEXT"));
-        vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-            inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkDestroyDebugUtilsMessengerEXT"));
-    };
+        : logger(severity),
+          inst(inst_wrapper.inst),
+          callbacks(callbacks),
+          local_vkCreateDebugUtilsMessengerEXT(
+              FromVoidStarFunc(inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkCreateDebugUtilsMessengerEXT"))),
+          local_vkDestroyDebugUtilsMessengerEXT(FromVoidStarFunc(
+              inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkDestroyDebugUtilsMessengerEXT"))){};
     ~DebugUtilsWrapper() noexcept {
         if (messenger) {
-            vkDestroyDebugUtilsMessengerEXT(inst, messenger, callbacks);
+            local_vkDestroyDebugUtilsMessengerEXT(inst, messenger, callbacks);
+            messenger = VK_NULL_HANDLE;
         }
     }
     // Immoveable object
@@ -405,13 +458,14 @@ struct DebugUtilsWrapper {
     DebugUtilsWrapper& operator=(DebugUtilsWrapper&&) = delete;
 
     bool find(std::string const& search_text) { return logger.find(search_text); }
+    uint32_t count(std::string const& search_text) { return logger.count(search_text); }
     VkDebugUtilsMessengerCreateInfoEXT* get() noexcept { return logger.get(); }
 
     DebugUtilsLogger logger;
     VkInstance inst = VK_NULL_HANDLE;
     VkAllocationCallbacks* callbacks = nullptr;
-    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
-    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+    PFN_vkCreateDebugUtilsMessengerEXT local_vkCreateDebugUtilsMessengerEXT = nullptr;
+    PFN_vkDestroyDebugUtilsMessengerEXT local_vkDestroyDebugUtilsMessengerEXT = nullptr;
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
 };
 
@@ -653,3 +707,6 @@ struct FrameworkEnvironment {
 VkResult create_surface(InstWrapper& inst, VkSurfaceKHR& out_surface, const char* api_selection = nullptr);
 // Alternate parameter list for allocation callback tests
 VkResult create_surface(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface, const char* api_selection = nullptr);
+
+VkResult create_debug_callback(InstWrapper& inst, const VkDebugReportCallbackCreateInfoEXT& create_info,
+                               VkDebugReportCallbackEXT& callback);
