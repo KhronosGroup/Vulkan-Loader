@@ -28,7 +28,7 @@
             "build_dir": "detours",
             "install_dir": "detours",
             "build_step": "skip",
-            "commit": "v4.0.1",
+            "commit": "4b8c659f549b0ab21cf649377c7a84eb708f5e68",
             "optional": [
                 "tests"
             ],
