@@ -138,8 +138,7 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDev
     // sufficient
     if (!strcmp(name, "GetDeviceQueue2")) {
         struct loader_device *dev = NULL;
-        uint32_t index = 0;
-        struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &index);
+        struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
         if (NULL != icd_term && dev != NULL) {
             const struct loader_instance *inst = icd_term->this_instance;
             uint32_t api_version =
@@ -769,6 +768,10 @@ out:
 
             free_loader_settings(ptr_instance, &ptr_instance->settings);
 
+            loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->surfaces_list);
+            loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->debug_utils_messengers_list);
+            loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->debug_report_callbacks_list);
+
             loader_instance_heap_free(ptr_instance, ptr_instance->disp);
             // Remove any created VK_EXT_debug_report or VK_EXT_debug_utils items
             destroy_debug_callbacks_chain(ptr_instance, pAllocator);
@@ -841,6 +844,10 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     disp->DestroyInstance(ptr_instance->instance, pAllocator);
 
     free_loader_settings(ptr_instance, &ptr_instance->settings);
+
+    loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->surfaces_list);
+    loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->debug_utils_messengers_list);
+    loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->debug_report_callbacks_list);
 
     loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->expanded_activated_layer_list);
     loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->app_activated_layer_list);

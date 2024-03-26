@@ -256,7 +256,6 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
             VkPhysicalDeviceProperties dev_props = {};
 
             sorted_device_info[index].physical_device = icd_devices[icd_idx].physical_devices[phys_dev];
-            sorted_device_info[index].icd_index = icd_idx;
             sorted_device_info[index].icd_term = icd_term;
             sorted_device_info[index].has_pci_bus_info = false;
 
@@ -330,7 +329,6 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     // Add all others after (they've already been sorted)
     for (uint32_t dev = 0; dev < phys_dev_count; ++dev) {
         sorted_device_term[dev]->this_icd_term = sorted_device_info[dev].icd_term;
-        sorted_device_term[dev]->icd_index = sorted_device_info[dev].icd_index;
         sorted_device_term[dev]->phys_dev = sorted_device_info[dev].physical_device;
         loader_set_dispatch((void *)sorted_device_term[dev], inst->disp);
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s  %s", dev,

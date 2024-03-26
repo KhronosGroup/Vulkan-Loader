@@ -209,7 +209,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkSetInstanceDispatch(VkInstance instance, void *
 
 VKAPI_ATTR VkResult VKAPI_CALL vkSetDeviceDispatch(VkDevice device, void *object) {
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, NULL);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
 
     if (NULL == icd_term || NULL == dev) {
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -714,9 +714,56 @@ VkResult loader_init_generic_list(const struct loader_instance *inst, struct loa
     return VK_SUCCESS;
 }
 
+VkResult loader_resize_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info) {
+    list_info->list = loader_instance_heap_realloc(inst, list_info->list, list_info->capacity, list_info->capacity * 2,
+                                                   VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (list_info->list == NULL) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_resize_generic_list: Failed to allocate space for generic list");
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    list_info->capacity = list_info->capacity * 2;
+    return VK_SUCCESS;
+}
+
 void loader_destroy_generic_list(const struct loader_instance *inst, struct loader_generic_list *list) {
     loader_instance_heap_free(inst, list->list);
     memset(list, 0, sizeof(struct loader_generic_list));
+}
+
+VkResult loader_get_next_available_entry(const struct loader_instance *inst, struct loader_used_object_list *list_info,
+                                         uint32_t *free_index) {
+    if (NULL == list_info->list) {
+        VkResult res = loader_init_generic_list(inst, (struct loader_generic_list *)list_info, sizeof(VkBool32));
+        if (VK_SUCCESS != res) {
+            return res;
+        }
+    }
+    for (uint32_t i = 0; i < list_info->capacity / sizeof(VkBool32); i++) {
+        if (list_info->list[i] == VK_FALSE) {
+            list_info->list[i] = VK_TRUE;
+            *free_index = i;
+            return VK_SUCCESS;
+        }
+    }
+    // No free space, must resize
+
+    size_t old_capacity = list_info->capacity;
+    VkResult res = loader_resize_generic_list(inst, (struct loader_generic_list *)list_info);
+    if (VK_SUCCESS != res) {
+        return res;
+    }
+    uint32_t new_index = (uint32_t)(old_capacity / sizeof(VkBool32));
+    // Zero out the newly allocated back half of list.
+    memset(&list_info->list[new_index], 0, old_capacity);
+    list_info->list[new_index] = VK_TRUE;
+    *free_index = new_index;
+    return VK_SUCCESS;
+}
+
+void loader_release_object_from_list(struct loader_used_object_list *list_info, uint32_t index_to_free) {
+    if (list_info->list && list_info->capacity > index_to_free * sizeof(VkBool32)) {
+        list_info->list[index_to_free] = VK_FALSE;
+    }
 }
 
 // Append non-duplicate extension properties defined in props to the given ext_list.
@@ -1228,7 +1275,7 @@ out:
     return res;
 }
 
-struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index) {
+struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev) {
     VkLayerDispatchTable *dispatch_table_device = loader_get_dispatch(device);
     if (NULL == dispatch_table_device) {
         *found_dev = NULL;
@@ -1238,21 +1285,16 @@ struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loa
     *found_dev = NULL;
 
     for (struct loader_instance *inst = loader.instances; inst; inst = inst->next) {
-        uint32_t index = 0;
         for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
             for (struct loader_device *dev = icd_term->logical_device_list; dev; dev = dev->next) {
                 // Value comparison of device prevents object wrapping by layers
                 if (loader_get_dispatch(dev->icd_device) == dispatch_table_device ||
                     (dev->chain_device != VK_NULL_HANDLE && loader_get_dispatch(dev->chain_device) == dispatch_table_device)) {
                     *found_dev = dev;
-                    if (NULL != icd_index) {
-                        *icd_index = index;
-                    }
                     loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
                     return icd_term;
                 }
             }
-            index++;
         }
     }
     loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
@@ -1317,6 +1359,37 @@ void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term
         loader_destroy_logical_device(dev, pAllocator);
         dev = next_dev;
     }
+
+    for (uint32_t i = 0; i < icd_term->surface_list.capacity / sizeof(VkSurfaceKHR); i++) {
+        if (ptr_inst->surfaces_list.capacity > i * sizeof(VkBool32) && ptr_inst->surfaces_list.list[i] == VK_TRUE &&
+            NULL != icd_term->surface_list.list && icd_term->surface_list.list[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+            icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[i], pAllocator);
+            icd_term->surface_list.list[i] = (VkSurfaceKHR)(uintptr_t)NULL;
+        }
+    }
+    loader_destroy_generic_list(ptr_inst, (struct loader_generic_list *)&icd_term->surface_list);
+
+    for (uint32_t i = 0; i < icd_term->debug_utils_messenger_list.capacity / sizeof(VkDebugUtilsMessengerEXT); i++) {
+        if (ptr_inst->debug_utils_messengers_list.capacity > i * sizeof(VkBool32) &&
+            ptr_inst->debug_utils_messengers_list.list[i] == VK_TRUE && NULL != icd_term->debug_utils_messenger_list.list &&
+            icd_term->debug_utils_messenger_list.list[i] && NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
+            icd_term->dispatch.DestroyDebugUtilsMessengerEXT(icd_term->instance, icd_term->debug_utils_messenger_list.list[i],
+                                                             pAllocator);
+            icd_term->debug_utils_messenger_list.list[i] = (VkDebugUtilsMessengerEXT)(uintptr_t)NULL;
+        }
+    }
+    loader_destroy_generic_list(ptr_inst, (struct loader_generic_list *)&icd_term->debug_utils_messenger_list);
+
+    for (uint32_t i = 0; i < icd_term->debug_report_callback_list.capacity / sizeof(VkDebugReportCallbackEXT); i++) {
+        if (ptr_inst->debug_report_callbacks_list.capacity > i * sizeof(VkBool32) &&
+            ptr_inst->debug_report_callbacks_list.list[i] == VK_TRUE && NULL != icd_term->debug_report_callback_list.list &&
+            icd_term->debug_report_callback_list.list[i] && NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
+            icd_term->dispatch.DestroyDebugReportCallbackEXT(icd_term->instance, icd_term->debug_report_callback_list.list[i],
+                                                             pAllocator);
+            icd_term->debug_report_callback_list.list[i] = (VkDebugReportCallbackEXT)(uintptr_t)NULL;
+        }
+    }
+    loader_destroy_generic_list(ptr_inst, (struct loader_generic_list *)&icd_term->debug_report_callback_list);
 
     loader_instance_heap_free(ptr_inst, icd_term);
 }
@@ -4065,7 +4138,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_device_terminator(VkDevice device, const char *pName) {
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, NULL);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
 
     // Return this function if a layer above here is asking for the vkGetDeviceProcAddr.
     // This is so we can properly intercept any device commands needing a terminator.
@@ -4394,7 +4467,7 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
         return;
     }
 
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, NULL);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
 
     destroyFunction(device, pAllocator);
     if (NULL != dev) {
@@ -6113,7 +6186,6 @@ VkResult check_and_add_to_new_phys_devs(struct loader_instance *inst, VkPhysical
 
     loader_set_dispatch((void *)new_phys_devs[idx], inst->disp);
     new_phys_devs[idx]->this_icd_term = dev_array->icd_term;
-    new_phys_devs[idx]->icd_index = (uint8_t)(dev_array->icd_index);
     new_phys_devs[idx]->phys_dev = physical_device;
 
     // Increment the count of new physical devices
@@ -6214,7 +6286,6 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
             icd_phys_dev_array[icd_idx].physical_devices = 0;
         }
         icd_phys_dev_array[icd_idx].icd_term = icd_term;
-        icd_phys_dev_array[icd_idx].icd_index = icd_idx;
         icd_term->physical_device_count = icd_phys_dev_array[icd_idx].device_count;
         icd_term = icd_term->next;
         ++icd_idx;
@@ -6959,7 +7030,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 
         cur_icd_group_count = 0;
         icd_term = inst->icd_terms;
-        for (uint8_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
+        while (NULL != icd_term) {
             uint32_t count_this_time = total_count - cur_icd_group_count;
 
             // Get the function pointer to use to call into the ICD. This could be the core or KHR version
@@ -6995,7 +7066,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                 for (uint32_t indiv_gpu = 0; indiv_gpu < count_this_time; indiv_gpu++) {
                     uint32_t cur_index = indiv_gpu + cur_icd_group_count;
                     local_phys_dev_groups[cur_index].this_icd_term = icd_term;
-                    local_phys_dev_groups[cur_index].icd_index = icd_idx;
                     local_phys_dev_groups[cur_index].group_props.physicalDeviceCount = 1;
                     local_phys_dev_groups[cur_index].group_props.physicalDevices[0] = phys_dev_array[indiv_gpu];
                 }
@@ -7026,7 +7096,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                         uint32_t cur_index = group + cur_icd_group_count;
                         local_phys_dev_groups[cur_index].group_props = pPhysicalDeviceGroupProperties[cur_index];
                         local_phys_dev_groups[cur_index].this_icd_term = icd_term;
-                        local_phys_dev_groups[cur_index].icd_index = icd_idx;
                     }
                 } else {
                     // There's not enough space in the callee's allocated pPhysicalDeviceGroupProperties structs,
@@ -7057,7 +7126,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                         uint32_t cur_index = group + cur_icd_group_count;
                         local_phys_dev_groups[cur_index].group_props = tmp_group_props[group];
                         local_phys_dev_groups[cur_index].this_icd_term = icd_term;
-                        local_phys_dev_groups[cur_index].icd_index = icd_idx;
                     }
                 }
                 if (VK_SUCCESS != res) {
@@ -7070,6 +7138,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             }
 
             cur_icd_group_count += count_this_time;
+            icd_term = icd_term->next;
         }
 
 #if defined(LOADER_ENABLE_LINUX_SORT)

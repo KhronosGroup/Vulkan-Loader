@@ -40,7 +40,7 @@
 VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
     struct loader_device *found_dev;
     // The device going in is a trampoline device
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(dev, &found_dev, NULL);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(dev, &found_dev);
 
     if (icd_term)
         loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
@@ -5075,9 +5075,8 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) {
-    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "DebugMarkerSetObjectTagEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -5092,8 +5091,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
     } else if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->object;
-            if (NULL != icd_surface->real_icd_surfaces) {
-                local_tag_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
+            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
+                && icd_term->surface_list.list[icd_surface->surface_index]) {
+                local_tag_info.object = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -5134,9 +5134,8 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) {
-    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "DebugMarkerSetObjectNameEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -5151,8 +5150,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
     } else if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->object;
-            if (NULL != icd_surface->real_icd_surfaces) {
-                local_name_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
+            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
+                && icd_term->surface_list.list[icd_surface->surface_index]) {
+                local_name_info.object = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -5725,9 +5725,8 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) {
-    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "SetDebugUtilsObjectNameEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -5742,8 +5741,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
     } else if (pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->objectHandle;
-            if (NULL != icd_surface->real_icd_surfaces) {
-                local_name_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
+            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
+                && icd_term->surface_list.list[icd_surface->surface_index]) {
+                local_name_info.objectHandle = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -5788,9 +5788,8 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) {
-    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "SetDebugUtilsObjectTagEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -5805,8 +5804,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
     } else if (pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->objectHandle;
-            if (NULL != icd_surface->real_icd_surfaces) {
-                local_tag_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
+            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
+                && icd_term->surface_list.list[icd_surface->surface_index]) {
+                local_tag_info.objectHandle = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.

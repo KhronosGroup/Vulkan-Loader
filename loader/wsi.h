@@ -66,7 +66,7 @@ typedef struct {
     uint32_t platform_size;        // Size of corresponding VkIcdSurfaceXXX
     uint32_t non_platform_offset;  // Start offset to base_size
     uint32_t entire_size;          // Size of entire VkIcdSurface
-    VkSurfaceKHR *real_icd_surfaces;
+    uint32_t surface_index;        // This surface's index into each drivers list of created surfaces
 } VkIcdSurface;
 
 bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr);
