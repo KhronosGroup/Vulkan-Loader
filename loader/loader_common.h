@@ -90,6 +90,30 @@ struct loader_device_extension_list {
     struct loader_dev_ext_props *list;
 };
 
+struct loader_used_object_list {
+    size_t capacity;
+    uint32_t padding;  // count variable isn't used
+    VkBool32 *list;
+};
+
+struct loader_surface_list {
+    size_t capacity;
+    uint32_t padding;  // count variable isn't used
+    VkSurfaceKHR *list;
+};
+
+struct loader_debug_utils_messenger_list {
+    size_t capacity;
+    uint32_t padding;  // count variable isn't used
+    VkDebugUtilsMessengerEXT *list;
+};
+
+struct loader_debug_report_callback_list {
+    size_t capacity;
+    uint32_t padding;  // count variable isn't used
+    VkDebugReportCallbackEXT *list;
+};
+
 struct loader_name_value {
     char *name;
     char *value;
@@ -231,6 +255,10 @@ struct loader_icd_term {
     bool supports_get_dev_prop_2;
 
     uint32_t physical_device_count;
+
+    struct loader_surface_list surface_list;
+    struct loader_debug_utils_messenger_list debug_utils_messenger_list;
+    struct loader_debug_report_callback_list debug_report_callback_list;
 };
 
 // Per ICD library structure
@@ -308,6 +336,11 @@ struct loader_instance {
 
     struct loader_extension_list ext_list;  // icds and loaders extensions
     struct loader_instance_extension_enables enabled_known_extensions;
+
+    // Indicates which indices in the array are in-use and which are free to be reused
+    struct loader_used_object_list surfaces_list;
+    struct loader_used_object_list debug_utils_messengers_list;
+    struct loader_used_object_list debug_report_callbacks_list;
 
     // Stores debug callbacks - used in the log.
     VkLayerDbgFunctionNode *current_dbg_function_head;        // Current head
@@ -399,7 +432,6 @@ struct loader_physical_device_tramp {
 struct loader_physical_device_term {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
     struct loader_icd_term *this_icd_term;
-    uint8_t icd_index;
     VkPhysicalDevice phys_dev;  // object from ICD
 };
 
@@ -413,7 +445,6 @@ struct LinuxSortedDeviceInfo {
     bool default_device;
 
     // Loader specific items about the driver providing support for this physical device
-    uint32_t icd_index;
     struct loader_icd_term *icd_term;
 
     // Some generic device properties
@@ -434,7 +465,6 @@ struct LinuxSortedDeviceInfo {
 // Per enumerated PhysicalDeviceGroup structure, used to wrap in terminator code
 struct loader_physical_device_group_term {
     struct loader_icd_term *this_icd_term;
-    uint8_t icd_index;
     VkPhysicalDeviceGroupProperties group_props;
 #if defined(LOADER_ENABLE_LINUX_SORT)
     struct LinuxSortedDeviceInfo internal_device_info[VK_MAX_DEVICE_GROUP_SIZE];
@@ -469,7 +499,6 @@ enum loader_data_files_type {
 struct loader_icd_physical_devices {
     uint32_t device_count;
     VkPhysicalDevice *physical_devices;
-    uint32_t icd_index;
     struct loader_icd_term *icd_term;
 #if defined(WIN32)
     LUID windows_adapter_luid;

@@ -119,6 +119,10 @@ VkResult copy_str_to_string_list(const struct loader_instance *inst, struct load
 void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list);
 
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
+VkResult loader_resize_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info);
+VkResult loader_get_next_available_entry(const struct loader_instance *inst, struct loader_used_object_list *list_info,
+                                         uint32_t *free_index);
+void loader_release_object_from_list(struct loader_used_object_list *list_info, uint32_t index_to_free);
 bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, const uint32_t count,
                                      const VkExtensionProperties *ext_array);
 bool has_vk_extension_property(const VkExtensionProperties *vk_ext_prop, const struct loader_extension_list *ext_list);
@@ -161,7 +165,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
                                          const struct loader_envvar_all_filters *layer_filters);
 VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                                                    struct loader_extension_list *inst_exts);
-struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev, uint32_t *icd_index);
+struct loader_icd_term *loader_get_icd_and_device(const void *device, struct loader_device **found_dev);
 struct loader_instance *loader_get_instance(const VkInstance instance);
 struct loader_device *loader_create_logical_device(const struct loader_instance *inst, const VkAllocationCallbacks *pAllocator);
 void loader_add_logical_device(struct loader_icd_term *icd_term, struct loader_device *found_dev);

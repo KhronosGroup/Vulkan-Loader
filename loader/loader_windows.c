@@ -795,8 +795,8 @@ out:
     return vk_result;
 }
 
-VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct loader_icd_term *icd_term, uint32_t icd_idx,
-                                            LUID luid, uint32_t *icd_phys_devs_array_count,
+VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct loader_icd_term *icd_term, LUID luid,
+                                            uint32_t *icd_phys_devs_array_count,
                                             struct loader_icd_physical_devices *icd_phys_devs_array) {
     uint32_t count = 0;
     VkResult res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL);
@@ -856,7 +856,6 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
     }
     if (!already_enumerated) {
         next_icd_phys_devs->device_count = count;
-        next_icd_phys_devs->icd_index = icd_idx;
         next_icd_phys_devs->icd_term = icd_term;
         next_icd_phys_devs->windows_adapter_luid = luid;
         (*icd_phys_devs_array_count)++;
@@ -982,18 +981,20 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
         (*icd_phys_devs_array)[*icd_phys_devs_array_count].physical_devices = NULL;
 
         icd_term = inst->icd_terms;
-        for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
+        while (NULL != icd_term) {
             // This is the new behavior, which cannot be run unless the ICD provides EnumerateAdapterPhysicalDevices
             if (icd_term->scanned_icd->EnumerateAdapterPhysicalDevices == NULL) {
+                icd_term = icd_term->next;
                 continue;
             }
 
-            res = enumerate_adapter_physical_devices(inst, icd_term, icd_idx, description.AdapterLuid, icd_phys_devs_array_count,
+            res = enumerate_adapter_physical_devices(inst, icd_term, description.AdapterLuid, icd_phys_devs_array_count,
                                                      *icd_phys_devs_array);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
                 adapter->lpVtbl->Release(adapter);
                 goto out;
             }
+            icd_term = icd_term->next;
         }
 
         adapter->lpVtbl->Release(adapter);

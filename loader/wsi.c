@@ -180,8 +180,6 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroySurfaceKHR(VkInstance instance
     loader_inst->disp->layer_inst_disp.DestroySurfaceKHR(loader_inst->instance, surface, pAllocator);
 }
 
-// TODO probably need to lock around all the loader_get_instance() calls.
-
 // This is the instance chain terminator function for DestroySurfaceKHR
 VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                         const VkAllocationCallbacks *pAllocator) {
@@ -189,25 +187,21 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
     if (NULL != icd_surface) {
-        if (NULL != icd_surface->real_icd_surfaces) {
-            uint32_t i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-                    if (NULL != icd_term->dispatch.DestroySurfaceKHR &&
-                        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[i]) {
-                        icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_surface->real_icd_surfaces[i], pAllocator);
-                        icd_surface->real_icd_surfaces[i] = (VkSurfaceKHR)(uintptr_t)NULL;
-                    }
-                } else {
-                    // The real_icd_surface for any ICD not supporting the
-                    // proper interface version should be NULL.  If not, then
-                    // we have a problem.
-                    assert((VkSurfaceKHR)(uintptr_t)NULL == icd_surface->real_icd_surfaces[i]);
+        for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
+            if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
+                if (NULL != icd_term->dispatch.DestroySurfaceKHR && icd_term->surface_list.list[icd_surface->surface_index]) {
+                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance,
+                                                         icd_term->surface_list.list[icd_surface->surface_index], pAllocator);
+                    icd_term->surface_list.list[icd_surface->surface_index] = (VkSurfaceKHR)(uintptr_t)NULL;
                 }
+            } else {
+                // The real_icd_surface for any ICD not supporting the
+                // proper interface version should be NULL.  If not, then
+                // we have a problem.
+                assert((VkSurfaceKHR)(uintptr_t)NULL == icd_term->surface_list.list[icd_surface->surface_index]);
             }
-            loader_instance_heap_free(loader_inst, icd_surface->real_icd_surfaces);
         }
-
+        loader_release_object_from_list(&loader_inst->surfaces_list, icd_surface->surface_index);
         loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
     }
 }
@@ -259,10 +253,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceSupportKHR(VkP
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces &&
-        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
+    if (NULL != icd_term->surface_list.list &&
+        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        icd_term->surface_list.list[icd_surface->surface_index]) {
         return icd_term->dispatch.GetPhysicalDeviceSurfaceSupportKHR(
-            phys_dev_term->phys_dev, queueFamilyIndex, icd_surface->real_icd_surfaces[phys_dev_term->icd_index], pSupported);
+            phys_dev_term->phys_dev, queueFamilyIndex, icd_term->surface_list.list[icd_surface->surface_index], pSupported);
     }
 
     return icd_term->dispatch.GetPhysicalDeviceSurfaceSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex, surface, pSupported);
@@ -313,10 +308,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilitiesKH
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces &&
-        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
+    if (NULL != phys_dev_term->this_icd_term->surface_list.list &&
+        phys_dev_term->this_icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index]) {
         return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(
-            phys_dev_term->phys_dev, icd_surface->real_icd_surfaces[phys_dev_term->icd_index], pSurfaceCapabilities);
+            phys_dev_term->phys_dev, phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index],
+            pSurfaceCapabilities);
     }
 
     return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface, pSurfaceCapabilities);
@@ -369,11 +366,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormatsKHR(VkP
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces &&
-        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
-        return icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev,
-                                                                     icd_surface->real_icd_surfaces[phys_dev_term->icd_index],
-                                                                     pSurfaceFormatCount, pSurfaceFormats);
+    if (NULL != phys_dev_term->this_icd_term->surface_list.list &&
+        phys_dev_term->this_icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index]) {
+        return icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(
+            phys_dev_term->phys_dev, phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index],
+            pSurfaceFormatCount, pSurfaceFormats);
     }
 
     return icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface, pSurfaceFormatCount,
@@ -427,10 +425,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces &&
-        (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[phys_dev_term->icd_index]) {
+    if (NULL != phys_dev_term->this_icd_term->surface_list.list &&
+        phys_dev_term->this_icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index]) {
         return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModesKHR(
-            phys_dev_term->phys_dev, icd_surface->real_icd_surfaces[phys_dev_term->icd_index], pPresentModeCount, pPresentModes);
+            phys_dev_term->phys_dev, phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index], pPresentModeCount,
+            pPresentModes);
     }
 
     return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModesKHR(phys_dev_term->phys_dev, surface, pPresentModeCount,
@@ -462,9 +462,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSwapchainKHR(VkDevice devic
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) {
-    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSwapchainKHR Terminator: device handle. This is likely the result of a "
@@ -485,20 +484,19 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSwapchainKHR(VkDevice device, co
         return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfo->surface;
-    if (NULL != icd_surface->real_icd_surfaces) {
-        if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-            // We found the ICD, and there is an ICD KHR surface
-            // associated with it, so copy the CreateInfo struct
-            // and point it at the ICD's surface.
-            VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR));
-            if (NULL == pCreateCopy) {
-                return VK_ERROR_OUT_OF_HOST_MEMORY;
-            }
-            memcpy(pCreateCopy, pCreateInfo, sizeof(VkSwapchainCreateInfoKHR));
-            pCreateCopy->surface = icd_surface->real_icd_surfaces[icd_index];
-            return dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR(device, pCreateCopy, pAllocator,
-                                                                                         pSwapchain);
+    if (NULL != icd_term->surface_list.list &&
+        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        icd_term->surface_list.list[icd_surface->surface_index]) {
+        // We found the ICD, and there is an ICD KHR surface
+        // associated with it, so copy the CreateInfo struct
+        // and point it at the ICD's surface.
+        VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR));
+        if (NULL == pCreateCopy) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
+        memcpy(pCreateCopy, pCreateInfo, sizeof(VkSwapchainCreateInfoKHR));
+        pCreateCopy->surface = icd_term->surface_list.list[icd_surface->surface_index];
+        return dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR(device, pCreateCopy, pAllocator, pSwapchain);
     }
     return dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
 }
@@ -550,25 +548,72 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkQueuePresentKHR(VkQueue queue, co
     return disp->QueuePresentKHR(queue, pPresentInfo);
 }
 
-VkIcdSurface *AllocateIcdSurfaceStruct(struct loader_instance *instance, size_t base_size, size_t platform_size) {
-    // Next, if so, proceed with the implementation of this function:
-    VkIcdSurface *pIcdSurface = loader_instance_heap_alloc(instance, sizeof(VkIcdSurface), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-    if (pIcdSurface != NULL) {
-        // Setup the new sizes and offsets so we can grow the structures in the
-        // future without having problems
-        pIcdSurface->base_size = (uint32_t)base_size;
-        pIcdSurface->platform_size = (uint32_t)platform_size;
-        pIcdSurface->non_platform_offset = (uint32_t)((uint8_t *)(&pIcdSurface->base_size) - (uint8_t *)pIcdSurface);
-        pIcdSurface->entire_size = sizeof(VkIcdSurface);
+VkResult allocate_icd_surface_struct(struct loader_instance *instance, size_t base_size, size_t platform_size,
+                                     VkIcdSurface **out_icd_surface) {
+    uint32_t next_index = 0;
+    VkIcdSurface *icd_surface = NULL;
+    VkResult res = loader_get_next_available_entry(instance, &instance->surfaces_list, &next_index);
+    if (res != VK_SUCCESS) {
+        goto out;
+    }
 
-        pIcdSurface->real_icd_surfaces = loader_instance_heap_calloc(instance, sizeof(VkSurfaceKHR) * instance->icd_terms_count,
-                                                                     VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-        if (pIcdSurface->real_icd_surfaces == NULL) {
-            loader_instance_heap_free(instance, pIcdSurface);
-            pIcdSurface = NULL;
+    // Next, if so, proceed with the implementation of this function:
+    icd_surface = loader_instance_heap_alloc(instance, sizeof(VkIcdSurface), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+    if (icd_surface == NULL) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    // Setup the new sizes and offsets so we can grow the structures in the
+    // future without having problems
+    icd_surface->base_size = (uint32_t)base_size;
+    icd_surface->platform_size = (uint32_t)platform_size;
+    icd_surface->non_platform_offset = (uint32_t)((uint8_t *)(&icd_surface->base_size) - (uint8_t *)icd_surface);
+    icd_surface->entire_size = sizeof(VkIcdSurface);
+    icd_surface->surface_index = next_index;
+
+    for (struct loader_icd_term *icd_term = instance->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
+        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
+            if (icd_term->surface_list.list == NULL) {
+                res =
+                    loader_init_generic_list(instance, (struct loader_generic_list *)&icd_term->surface_list, sizeof(VkSurfaceKHR));
+                if (res != VK_SUCCESS) {
+                    goto out;
+                }
+            } else if (icd_term->surface_list.capacity <= next_index * sizeof(VkSurfaceKHR)) {
+                res = loader_resize_generic_list(instance, (struct loader_generic_list *)&icd_term->surface_list);
+                if (res != VK_SUCCESS) {
+                    goto out;
+                }
+            }
         }
     }
-    return pIcdSurface;
+
+    *out_icd_surface = icd_surface;
+out:
+    if (res != VK_SUCCESS) {
+        loader_instance_heap_free(instance, icd_surface);
+        // cleanup of icd_term->surface_list is done during instance destruction
+    }
+    return res;
+}
+
+void cleanup_surface_creation(struct loader_instance *loader_inst, VkResult result, VkIcdSurface *icd_surface,
+                              const VkAllocationCallbacks *pAllocator) {
+    if (VK_SUCCESS != result && NULL != icd_surface) {
+        for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
+            if (NULL != icd_term->surface_list.list &&
+                icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+                icd_term->surface_list.list[icd_surface->surface_index] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+                icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[icd_surface->surface_index],
+                                                     pAllocator);
+            }
+        }
+        if (loader_inst->surfaces_list.list &&
+            loader_inst->surfaces_list.capacity > icd_surface->surface_index * sizeof(VkBool32)) {
+            loader_inst->surfaces_list.list[icd_surface->surface_index] = VK_FALSE;
+        }
+        loader_instance_heap_free(loader_inst, icd_surface);
+    }
 }
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -592,9 +637,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWin32SurfaceKHR(VkInstance 
 // This is the instance chain terminator function for CreateWin32SurfaceKHR
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // Initialize pSurface to NULL just to be safe.
     *pSurface = VK_NULL_HANDLE;
@@ -603,53 +648,40 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
     if (!loader_inst->wsi_win32_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_win32_surface extension not enabled. vkCreateWin32SurfaceKHR not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->win_surf.base), sizeof(pIcdSurface->win_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result =
+        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->win_surf.base), sizeof(icd_surface->win_surf), &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->win_surf.base.platform = VK_ICD_WSI_PLATFORM_WIN32;
-    pIcdSurface->win_surf.hinstance = pCreateInfo->hinstance;
-    pIcdSurface->win_surf.hwnd = pCreateInfo->hwnd;
+    icd_surface->win_surf.base.platform = VK_ICD_WSI_PLATFORM_WIN32;
+    icd_surface->win_surf.hinstance = pCreateInfo->hinstance;
+    icd_surface->win_surf.hwnd = pCreateInfo->hwnd;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateWin32SurfaceKHR) {
-                vkRes = icd_term->dispatch.CreateWin32SurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                 &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateWin32SurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                                  &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
-
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
+    return result;
 }
 
 // This is the trampoline entrypoint for
@@ -713,62 +745,50 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWaylandSurfaceKHR(VkInstanc
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance instance,
                                                                   const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_wayland_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_wayland_surface extension not enabled. vkCreateWaylandSurfaceKHR not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->wayland_surf.base), sizeof(pIcdSurface->wayland_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->wayland_surf.base), sizeof(icd_surface->wayland_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->wayland_surf.base.platform = VK_ICD_WSI_PLATFORM_WAYLAND;
-    pIcdSurface->wayland_surf.display = pCreateInfo->display;
-    pIcdSurface->wayland_surf.surface = pCreateInfo->surface;
+    icd_surface->wayland_surf.base.platform = VK_ICD_WSI_PLATFORM_WAYLAND;
+    icd_surface->wayland_surf.display = pCreateInfo->display;
+    icd_surface->wayland_surf.surface = pCreateInfo->surface;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateWaylandSurfaceKHR) {
-                vkRes = icd_term->dispatch.CreateWaylandSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                   &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateWaylandSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                                    &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 // This is the trampoline entrypoint for
@@ -835,62 +855,50 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateXcbSurfaceKHR(VkInstance in
 // This is the instance chain terminator function for CreateXcbSurfaceKHR
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_xcb_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_xcb_surface extension not enabled. vkCreateXcbSurfaceKHR not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->xcb_surf.base), sizeof(pIcdSurface->xcb_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result =
+        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->xcb_surf.base), sizeof(icd_surface->xcb_surf), &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->xcb_surf.base.platform = VK_ICD_WSI_PLATFORM_XCB;
-    pIcdSurface->xcb_surf.connection = pCreateInfo->connection;
-    pIcdSurface->xcb_surf.window = pCreateInfo->window;
+    icd_surface->xcb_surf.base.platform = VK_ICD_WSI_PLATFORM_XCB;
+    icd_surface->xcb_surf.connection = pCreateInfo->connection;
+    icd_surface->xcb_surf.window = pCreateInfo->window;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateXcbSurfaceKHR) {
-                vkRes = icd_term->dispatch.CreateXcbSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                               &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateXcbSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                                &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 // This is the trampoline entrypoint for
@@ -960,62 +968,50 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateXlibSurfaceKHR(VkInstance i
 // This is the instance chain terminator function for CreateXlibSurfaceKHR
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_xlib_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_xlib_surface extension not enabled. vkCreateXlibSurfaceKHR not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->xlib_surf.base), sizeof(pIcdSurface->xlib_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result =
+        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->xlib_surf.base), sizeof(icd_surface->xlib_surf), &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->xlib_surf.base.platform = VK_ICD_WSI_PLATFORM_XLIB;
-    pIcdSurface->xlib_surf.dpy = pCreateInfo->dpy;
-    pIcdSurface->xlib_surf.window = pCreateInfo->window;
+    icd_surface->xlib_surf.base.platform = VK_ICD_WSI_PLATFORM_XLIB;
+    icd_surface->xlib_surf.dpy = pCreateInfo->dpy;
+    icd_surface->xlib_surf.window = pCreateInfo->window;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateXlibSurfaceKHR) {
-                vkRes = icd_term->dispatch.CreateXlibSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateXlibSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                                 &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 // This is the trampoline entrypoint for
@@ -1084,63 +1080,50 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance in
                                                                    const VkDirectFBSurfaceCreateInfoEXT *pCreateInfo,
                                                                    const VkAllocationCallbacks *pAllocator,
                                                                    VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_directfb_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_EXT_directfb_surface extension not enabled. vkCreateDirectFBSurfaceEXT not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface =
-        AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->directfb_surf.base), sizeof(pIcdSurface->directfb_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->directfb_surf.base), sizeof(icd_surface->directfb_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->directfb_surf.base.platform = VK_ICD_WSI_PLATFORM_DIRECTFB;
-    pIcdSurface->directfb_surf.dfb = pCreateInfo->dfb;
-    pIcdSurface->directfb_surf.surface = pCreateInfo->surface;
+    icd_surface->directfb_surf.base.platform = VK_ICD_WSI_PLATFORM_DIRECTFB;
+    icd_surface->directfb_surf.dfb = pCreateInfo->dfb;
+    icd_surface->directfb_surf.surface = pCreateInfo->surface;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateDirectFBSurfaceEXT) {
-                vkRes = icd_term->dispatch.CreateDirectFBSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
-                                                                    &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateDirectFBSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
+                                                                     &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 // This is the trampoline entrypoint for
@@ -1219,16 +1202,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
     }
 
     // Next, if so, proceed with the implementation of this function:
-    VkIcdSurfaceAndroid *pIcdSurface =
+    VkIcdSurfaceAndroid *icd_surface =
         loader_instance_heap_alloc(loader_inst, sizeof(VkIcdSurfaceAndroid), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-    if (pIcdSurface == NULL) {
+    if (icd_surface == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_ANDROID;
-    pIcdSurface->window = pCreateInfo->window;
+    icd_surface->base.platform = VK_ICD_WSI_PLATFORM_ANDROID;
+    icd_surface->window = pCreateInfo->window;
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
     return VK_SUCCESS;
 }
@@ -1254,58 +1237,47 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
                                                                    const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
                                                                    const VkAllocationCallbacks *pAllocator,
                                                                    VkSurfaceKHR *pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
-    VkIcdSurface *pIcdSurface = NULL;
-    VkResult vkRes = VK_SUCCESS;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
-    if (!inst->wsi_headless_surface_enabled) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+    // First, check to ensure the appropriate extension was enabled:
+    struct loader_instance *loader_inst = loader_get_instance(instance);
+    if (!loader_inst->wsi_headless_surface_enabled) {
+        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_EXT_headless_surface extension not enabled.  "
                    "vkCreateHeadlessSurfaceEXT not executed!");
         return VK_SUCCESS;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(inst, sizeof(pIcdSurface->headless_surf.base), sizeof(pIcdSurface->headless_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->headless_surf.base), sizeof(icd_surface->headless_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->headless_surf.base.platform = VK_ICD_WSI_PLATFORM_HEADLESS;
+    icd_surface->headless_surf.base.platform = VK_ICD_WSI_PLATFORM_HEADLESS;
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateHeadlessSurfaceEXT) {
-                vkRes = icd_term->dispatch.CreateHeadlessSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
-                                                                    &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateHeadlessSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
+                                                                     &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 // Ensure we are properly setting VK_USE_PLATFORM_METAL_EXT, VK_USE_PLATFORM_IOS_MVK, and VK_USE_PLATFORM_MACOS_MVK.
@@ -1356,61 +1328,49 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateMacOSSurfaceMVK(VkInstance 
 // This is the instance chain terminator function for CreateMacOSSurfaceKHR
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_macos_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_MVK_macos_surface extension not enabled. vkCreateMacOSSurfaceMVK not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->macos_surf.base), sizeof(pIcdSurface->macos_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->macos_surf.base), sizeof(icd_surface->macos_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->macos_surf.base.platform = VK_ICD_WSI_PLATFORM_MACOS;
-    pIcdSurface->macos_surf.pView = pCreateInfo->pView;
+    icd_surface->macos_surf.base.platform = VK_ICD_WSI_PLATFORM_MACOS;
+    icd_surface->macos_surf.pView = pCreateInfo->pView;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateMacOSSurfaceMVK) {
-                vkRes = icd_term->dispatch.CreateMacOSSurfaceMVK(icd_term->instance, pCreateInfo, pAllocator,
-                                                                 &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateMacOSSurfaceMVK(icd_term->instance, pCreateInfo, pAllocator,
+                                                                  &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 #endif  // VK_USE_PLATFORM_MACOS_MVK
@@ -1447,16 +1407,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instanc
     }
 
     // Next, if so, proceed with the implementation of this function:
-    VkIcdSurfaceIOS *pIcdSurface =
+    VkIcdSurfaceIOS *icd_surface =
         loader_instance_heap_alloc(loader_inst, sizeof(VkIcdSurfaceIOS), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-    if (pIcdSurface == NULL) {
+    if (icd_surface == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_IOS;
-    pIcdSurface->pView = pCreateInfo->pView;
+    icd_surface->base.platform = VK_ICD_WSI_PLATFORM_IOS;
+    icd_surface->pView = pCreateInfo->pView;
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
     return VK_SUCCESS;
 }
@@ -1486,60 +1446,49 @@ vkCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptor
 VKAPI_ATTR VkResult VKAPI_CALL
 terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_ggp_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_GGP_stream_descriptor_surface extension not enabled. vkCreateStreamDescriptorSurfaceGGP not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->ggp_surf.base), sizeof(pIcdSurface->ggp_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result =
+        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->ggp_surf.base), sizeof(icd_surface->ggp_surf), &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->ggp_surf.base.platform = VK_ICD_WSI_PLATFORM_GGP;
-    pIcdSurface->ggp_surf.streamDescriptor = pCreateInfo->streamDescriptor;
+    icd_surface->ggp_surf.base.platform = VK_ICD_WSI_PLATFORM_GGP;
+    icd_surface->ggp_surf.streamDescriptor = pCreateInfo->streamDescriptor;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateStreamDescriptorSurfaceGGP) {
-                vkRes = icd_term->dispatch.CreateStreamDescriptorSurfaceGGP(icd_term->instance, pCreateInfo, pAllocator,
-                                                                            &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateStreamDescriptorSurfaceGGP(
+                    icd_term->instance, pCreateInfo, pAllocator, &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-    return vkRes;
+    return result;
 }
 
 #endif  // VK_USE_PLATFORM_GGP
@@ -1563,7 +1512,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
     VkResult result = VK_SUCCESS;
     VkIcdSurface *icd_surface = NULL;
-    uint32_t i;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
@@ -1573,9 +1522,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
     }
 
     // Next, if so, proceed with the implementation of this function:
-    icd_surface = AllocateIcdSurfaceStruct(loader_inst, sizeof(icd_surface->metal_surf.base), sizeof(icd_surface->metal_surf));
-    if (icd_surface == NULL) {
-        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->metal_surf.base), sizeof(icd_surface->metal_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
@@ -1583,13 +1532,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
     icd_surface->metal_surf.pLayer = pCreateInfo->pLayer;
 
     // Loop through each ICD and determine if they need to create a surface
-    i = 0;
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, ++i) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (icd_term->dispatch.CreateMetalSurfaceEXT != NULL) {
+            if (NULL != icd_term->dispatch.CreateMetalSurfaceEXT) {
                 result = icd_term->dispatch.CreateMetalSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
-                                                                  &icd_surface->real_icd_surfaces[i]);
-                if (result != VK_SUCCESS) {
+                                                                  &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
@@ -1598,18 +1546,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
     *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
-    if (result != VK_SUCCESS && icd_surface != NULL) {
-        if (icd_surface->real_icd_surfaces != NULL) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, ++i) {
-                if (icd_surface->real_icd_surfaces[i] == VK_NULL_HANDLE && icd_term->dispatch.DestroySurfaceKHR != NULL) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_surface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, icd_surface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, icd_surface);
-    }
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
+
     return result;
 }
 
@@ -1635,62 +1574,50 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance instance,
                                                                  const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_screen_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_QNX_screen_surface extension not enabled. vkCreateScreenSurfaceQNX not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->screen_surf.base), sizeof(pIcdSurface->screen_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->screen_surf.base), sizeof(icd_surface->screen_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->screen_surf.base.platform = VK_ICD_WSI_PLATFORM_SCREEN;
-    pIcdSurface->screen_surf.context = pCreateInfo->context;
-    pIcdSurface->screen_surf.window = pCreateInfo->window;
+    icd_surface->screen_surf.base.platform = VK_ICD_WSI_PLATFORM_SCREEN;
+    icd_surface->screen_surf.context = pCreateInfo->context;
+    icd_surface->screen_surf.window = pCreateInfo->window;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateScreenSurfaceQNX) {
-                vkRes = icd_term->dispatch.CreateScreenSurfaceQNX(icd_term->instance, pCreateInfo, pAllocator,
-                                                                  &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateScreenSurfaceQNX(icd_term->instance, pCreateInfo, pAllocator,
+                                                                   &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 // This is the trampoline entrypoint for
@@ -1755,61 +1682,49 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateViSurfaceNN(VkInstance inst
 // This is the instance chain terminator function for CreateViSurfaceNN
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_vi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_NN_vi_surface extension not enabled. vkCreateViSurfaceNN not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->vi_surf.base), sizeof(pIcdSurface->vi_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result =
+        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->vi_surf.base), sizeof(icd_surface->vi_surf), &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->vi_surf.base.platform = VK_ICD_WSI_PLATFORM_VI;
-    pIcdSurface->vi_surf.window = pCreateInfo->window;
+    icd_surface->vi_surf.base.platform = VK_ICD_WSI_PLATFORM_VI;
+    icd_surface->vi_surf.window = pCreateInfo->window;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateViSurfaceNN) {
-                vkRes = icd_term->dispatch.CreateViSurfaceNN(icd_term->instance, pCreateInfo, pAllocator,
-                                                             &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateViSurfaceNN(icd_term->instance, pCreateInfo, pAllocator,
+                                                              &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 #endif  // VK_USE_PLATFORM_VI_NN
@@ -2081,66 +1996,55 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
                                                                        const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
                                                                        const VkAllocationCallbacks *pAllocator,
                                                                        VkSurfaceKHR *pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
-    VkIcdSurface *pIcdSurface = NULL;
-    VkResult vkRes = VK_SUCCESS;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
 
-    if (!inst->wsi_display_enabled) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+    // First, check to ensure the appropriate extension was enabled:
+    struct loader_instance *loader_inst = loader_get_instance(instance);
+    if (!loader_inst->wsi_display_enabled) {
+        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_surface extension not enabled. vkCreateDisplayPlaneSurfaceKHR not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface = AllocateIcdSurfaceStruct(inst, sizeof(pIcdSurface->display_surf.base), sizeof(pIcdSurface->display_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->display_surf.base), sizeof(icd_surface->display_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->display_surf.base.platform = VK_ICD_WSI_PLATFORM_DISPLAY;
-    pIcdSurface->display_surf.displayMode = pCreateInfo->displayMode;
-    pIcdSurface->display_surf.planeIndex = pCreateInfo->planeIndex;
-    pIcdSurface->display_surf.planeStackIndex = pCreateInfo->planeStackIndex;
-    pIcdSurface->display_surf.transform = pCreateInfo->transform;
-    pIcdSurface->display_surf.globalAlpha = pCreateInfo->globalAlpha;
-    pIcdSurface->display_surf.alphaMode = pCreateInfo->alphaMode;
-    pIcdSurface->display_surf.imageExtent = pCreateInfo->imageExtent;
+    icd_surface->display_surf.base.platform = VK_ICD_WSI_PLATFORM_DISPLAY;
+    icd_surface->display_surf.displayMode = pCreateInfo->displayMode;
+    icd_surface->display_surf.planeIndex = pCreateInfo->planeIndex;
+    icd_surface->display_surf.planeStackIndex = pCreateInfo->planeStackIndex;
+    icd_surface->display_surf.transform = pCreateInfo->transform;
+    icd_surface->display_surf.globalAlpha = pCreateInfo->globalAlpha;
+    icd_surface->display_surf.alphaMode = pCreateInfo->alphaMode;
+    icd_surface->display_surf.imageExtent = pCreateInfo->imageExtent;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateDisplayPlaneSurfaceKHR) {
-                vkRes = icd_term->dispatch.CreateDisplayPlaneSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                        &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateDisplayPlaneSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                                         &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 
 // EXT_display_swapchain Extension command
@@ -2162,9 +2066,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
                                                                     const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                                     const VkAllocationCallbacks *pAllocator,
                                                                     VkSwapchainKHR *pSwapchains) {
-    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSharedSwapchainsKHR Terminator: Invalid device handle. This is likely the result of a "
@@ -2179,7 +2082,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
         return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
-    if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+    if (NULL != icd_term->surface_list.list &&
+        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        icd_term->surface_list.list[icd_surface->surface_index]) {
         // We found the ICD, and there is an ICD KHR surface
         // associated with it, so copy the CreateInfo struct
         // and point it at the ICD's surface.
@@ -2189,7 +2094,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
         }
         memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
         for (uint32_t sc = 0; sc < swapchainCount; sc++) {
-            pCreateCopy[sc].surface = icd_surface->real_icd_surfaces[icd_index];
+            pCreateCopy[sc].surface = icd_term->surface_list.list[icd_surface->surface_index];
         }
         return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy,
                                                                                             pAllocator, pSwapchains);
@@ -2224,9 +2129,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceGroupSurfacePresentModes
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
                                                                                VkDeviceGroupPresentModeFlagsKHR *pModes) {
-    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDeviceGroupSurfacePresentModesKHR: Invalid device "
@@ -2241,9 +2145,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(V
         return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+    if (NULL != icd_term->surface_list.list &&
+        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        icd_term->surface_list.list[icd_surface->surface_index]) {
         return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR(
-            device, icd_surface->real_icd_surfaces[icd_index], pModes);
+            device, icd_term->surface_list.list[icd_surface->surface_index], pModes);
     }
     return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
 }
@@ -2278,10 +2184,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDevicePresentRectanglesKHR(
         return VK_SUCCESS;
     }
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
-    uint8_t icd_index = phys_dev_term->icd_index;
-    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
+    if (NULL != icd_term->surface_list.list &&
+        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+        icd_term->surface_list.list[icd_surface->surface_index]) {
         return icd_term->dispatch.GetPhysicalDevicePresentRectanglesKHR(
-            phys_dev_term->phys_dev, icd_surface->real_icd_surfaces[icd_index], pRectCount, pRects);
+            phys_dev_term->phys_dev, icd_term->surface_list.list[icd_surface->surface_index], pRectCount, pRects);
     }
     return icd_term->dispatch.GetPhysicalDevicePresentRectanglesKHR(phys_dev_term->phys_dev, surface, pRectCount, pRects);
 }
@@ -2532,9 +2439,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
                                                                         const VkImagePipeSurfaceCreateInfoFUCHSIA *pCreateInfo,
                                                                         const VkAllocationCallbacks *pAllocator,
                                                                         VkSurfaceKHR *pSurface) {
-    VkResult vkRes = VK_SUCCESS;
-    VkIcdSurface *pIcdSurface = NULL;
-    uint32_t i = 0;
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
 
     // Initialize pSurface to NULL just to be safe.
     *pSurface = VK_NULL_HANDLE;
@@ -2544,52 +2450,38 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_FUCHSIA_imagepipe_surface extension not enabled.  "
                    "vkCreateImagePipeSurfaceFUCHSIA not executed!");
-        vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    pIcdSurface =
-        AllocateIcdSurfaceStruct(loader_inst, sizeof(pIcdSurface->imagepipe_surf.base), sizeof(pIcdSurface->imagepipe_surf));
-    if (pIcdSurface == NULL) {
-        vkRes = VK_ERROR_OUT_OF_HOST_MEMORY;
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->imagepipe_surf.base), sizeof(icd_surface->imagepipe_surf),
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
         goto out;
     }
 
-    pIcdSurface->imagepipe_surf.base.platform = VK_ICD_WSI_PLATFORM_FUCHSIA;
+    icd_surface->imagepipe_surf.base.platform = VK_ICD_WSI_PLATFORM_FUCHSIA;
 
     // Loop through each ICD and determine if they need to create a surface
-    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
+    for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
         if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (NULL != icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA) {
-                vkRes = icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA(icd_term->instance, pCreateInfo, pAllocator,
-                                                                         &pIcdSurface->real_icd_surfaces[i]);
-                if (VK_SUCCESS != vkRes) {
+                result = icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA(icd_term->instance, pCreateInfo, pAllocator,
+                                                                          &icd_term->surface_list.list[icd_surface->surface_index]);
+                if (VK_SUCCESS != result) {
                     goto out;
                 }
             }
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
 
-    if (VK_SUCCESS != vkRes && NULL != pIcdSurface) {
-        if (NULL != pIcdSurface->real_icd_surfaces) {
-            i = 0;
-            for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next, i++) {
-                if ((VkSurfaceKHR)(uintptr_t)NULL != pIcdSurface->real_icd_surfaces[i] &&
-                    NULL != icd_term->dispatch.DestroySurfaceKHR) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, pIcdSurface->real_icd_surfaces[i], pAllocator);
-                }
-            }
-            loader_instance_heap_free(loader_inst, pIcdSurface->real_icd_surfaces);
-        }
-        loader_instance_heap_free(loader_inst, pIcdSurface);
-    }
-
-    return vkRes;
+    return result;
 }
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
@@ -2614,15 +2506,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pSurfaceInfo->surface;
 
     if (!loader_inst->wsi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceCapabilities2KHR not executed!");
         return VK_SUCCESS;
     }
-
-    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
-    uint8_t icd_index = phys_dev_term->icd_index;
 
     if (icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2KHR != NULL) {
         VkBaseOutStructure *pNext = (VkBaseOutStructure *)pSurfaceCapabilities->pNext;
@@ -2637,9 +2527,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
         }
 
         // Pass the call to the driver, possibly unwrapping the ICD surface
-        if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)icd_surface->real_icd_surfaces[icd_index]) {
+        if (NULL != icd_term->surface_list.list &&
+            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+            icd_term->surface_list.list[icd_surface->surface_index]) {
             VkPhysicalDeviceSurfaceInfo2KHR info_copy = *pSurfaceInfo;
-            info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
+            info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
             return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev_term->phys_dev, &info_copy,
                                                                                pSurfaceCapabilities);
         } else {
@@ -2661,8 +2553,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
 
         // Write to the VkSurfaceCapabilities2KHR struct
         VkSurfaceKHR surface = pSurfaceInfo->surface;
-        if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
-            surface = icd_surface->real_icd_surfaces[icd_index];
+        if (NULL != icd_term->surface_list.list &&
+            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+            icd_term->surface_list.list[icd_surface->surface_index]) {
+            surface = icd_term->surface_list.list[icd_surface->surface_index];
         }
 
         // If the icd doesn't support VK_KHR_surface, then there are no capabilities
@@ -2714,13 +2608,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
     }
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
-    uint8_t icd_index = phys_dev_term->icd_index;
 
     if (icd_term->dispatch.GetPhysicalDeviceSurfaceFormats2KHR != NULL) {
         // Pass the call to the driver, possibly unwrapping the ICD surface
-        if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
+        if (NULL != icd_term->surface_list.list &&
+            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+            icd_term->surface_list.list[icd_surface->surface_index]) {
             VkPhysicalDeviceSurfaceInfo2KHR info_copy = *pSurfaceInfo;
-            info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
+            info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
             return icd_term->dispatch.GetPhysicalDeviceSurfaceFormats2KHR(phys_dev_term->phys_dev, &info_copy, pSurfaceFormatCount,
                                                                           pSurfaceFormats);
         } else {
@@ -2740,8 +2635,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
         }
 
         VkSurfaceKHR surface = pSurfaceInfo->surface;
-        if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
-            surface = icd_surface->real_icd_surfaces[icd_index];
+        if (NULL != icd_term->surface_list.list &&
+            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+            icd_term->surface_list.list[icd_surface->surface_index]) {
+            surface = icd_term->surface_list.list[icd_surface->surface_index];
         }
 
         // If the icd doesn't support VK_KHR_surface, then there are no formats

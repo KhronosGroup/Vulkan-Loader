@@ -542,7 +542,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos += 'VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {\n'
         protos += '    struct loader_device *found_dev;\n'
         protos += '    // The device going in is a trampoline device\n'
-        protos += '    struct loader_icd_term *icd_term = loader_get_icd_and_device(dev, &found_dev, NULL);\n'
+        protos += '    struct loader_icd_term *icd_term = loader_get_icd_and_device(dev, &found_dev);\n'
         protos += '\n'
         protos += '    if (icd_term)\n'
         protos += '        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,\n'
@@ -1087,14 +1087,14 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     requires_terminator = 1
                     always_use_param_name = False
                     surface_type_to_replace = 'VkSurfaceKHR'
-                    surface_name_replacement = 'icd_surface->real_icd_surfaces[icd_index]'
+                    surface_name_replacement = 'icd_term->surface_list[icd_surface->surface_index]'
                 if param.type == 'VkPhysicalDeviceSurfaceInfo2KHR':
                     has_surface = 1
                     surface_var_name = param.name + '->surface'
                     requires_terminator = 1
                     update_structure_surface = 1
                     update_structure_string = '        VkPhysicalDeviceSurfaceInfo2KHR info_copy = *pSurfaceInfo;\n'
-                    update_structure_string += '        info_copy.surface = icd_surface->real_icd_surfaces[icd_index];\n'
+                    update_structure_string += '        info_copy.surface = icd_term->surface_list[icd_surface->surface_index];\n'
                     always_use_param_name = False
                     surface_type_to_replace = 'VkPhysicalDeviceSurfaceInfo2KHR'
                     surface_name_replacement = '&info_copy'
@@ -1255,9 +1255,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    }\n'
 
                     if has_surface == 1:
-                        funcs += '    VkIcdSurface *icd_surface = (VkIcdSurface *)(%s);\n' % (surface_var_name)
-                        funcs += '    uint8_t icd_index = phys_dev_term->icd_index;\n'
-                        funcs += '    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)icd_surface->real_icd_surfaces[icd_index]) {\n'
+                        funcs += '    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(%s);\n' % (surface_var_name)
+                        funcs += '    if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) && icd_term->surface_list[icd_surface->surface_index]) {\n'
 
                         # If there's a structure with a surface, we need to update its internals with the correct surface for the ICD
                         if update_structure_surface == 1:
@@ -1324,10 +1323,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         phys_dev_check = 'VK_OBJECT_TYPE_PHYSICAL_DEVICE' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT'
                         surf_check = 'VK_OBJECT_TYPE_SURFACE_KHR' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT'
                         inst_check = 'VK_OBJECT_TYPE_INSTANCE' if is_debug_utils else 'VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT'
-                        funcs += '    uint32_t icd_index = 0;\n'
                         funcs += '    struct loader_device *dev;\n'
-                        funcs += f'    struct loader_icd_term *icd_term = loader_get_icd_and_device({ ext_cmd.params[0].name}, &dev, &icd_index);\n'
-                        funcs += f'    if (NULL == icd_term || NULL == dev) {{\n'
+                        funcs += f'    struct loader_icd_term *icd_term = loader_get_icd_and_device({ ext_cmd.params[0].name}, &dev);\n'
+                        funcs += '    if (NULL == icd_term || NULL == dev) {\n'
                         funcs += f'        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.name[2:]}: Invalid device handle");\n'
                         funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                         funcs += '    }\n'
@@ -1341,8 +1339,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += f'    }} else if ({debug_struct_name}->objectType == {surf_check}) {{\n'
                         funcs += '        if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {\n'
                         funcs += f'            VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t){debug_struct_name}->{member_name};\n'
-                        funcs += '            if (NULL != icd_surface->real_icd_surfaces) {\n'
-                        funcs += f'                {local_struct}.{member_name} = (uint64_t)icd_surface->real_icd_surfaces[icd_index];\n'
+                        funcs += '            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)\n'
+                        funcs += '                && icd_term->surface_list.list[icd_surface->surface_index]) {\n'
+                        funcs += f'                {local_struct}.{member_name} = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];\n'
                         funcs += '            }\n'
                         funcs += '        }\n'
                         funcs += '    // If this is an instance we have to replace it with the proper one for the next call.\n'
@@ -1355,7 +1354,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         dispatch = 'dev->loader_dispatch.'
                     else:
                         funcs += f'    struct loader_dev_dispatch_table *dispatch_table = loader_get_dev_dispatch({ext_cmd.params[0].name});\n'
-                        funcs += f'    if (NULL == dispatch_table) {{\n'
+                        funcs += '    if (NULL == dispatch_table) {\n'
                         funcs += f'        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{ext_cmd.ext_name}: Invalid device handle");\n'
                         funcs += '        abort(); /* Intentionally fail so user can correct issue. */\n'
                         funcs += '    }\n'
@@ -1374,7 +1373,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         if param.type == 'VkPhysicalDevice':
                             funcs += 'phys_dev_term->phys_dev'
                         elif param.type == 'VkSurfaceKHR':
-                            funcs += 'icd_surface->real_icd_surfaces[icd_index]'
+                            funcs += 'icd_term->surface_list[icd_surface->surface_index]'
                         elif ('DebugMarkerSetObject' in ext_cmd.name or 'SetDebugUtilsObject' in ext_cmd.name) and param.name == 'pNameInfo':
                             funcs += '&local_name_info'
                         elif ('DebugMarkerSetObject' in ext_cmd.name or 'SetDebugUtilsObject' in ext_cmd.name) and param.name == 'pTagInfo':
