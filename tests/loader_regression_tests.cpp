@@ -1898,19 +1898,10 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, group_props_2.data()));
         ASSERT_EQ(2U, returned_group_count);
 
-        // Make sure the incomplete group items appear in the complete group
-        for (uint32_t inc_group = 0; inc_group < 1; ++inc_group) {
-            bool found = false;
-            for (uint32_t full_group = 0; full_group < 2; ++full_group) {
-                if (group_props[inc_group].physicalDeviceCount == group_props_2[full_group].physicalDeviceCount &&
-                    group_props[inc_group].physicalDevices[0] == group_props_2[full_group].physicalDevices[0] &&
-                    group_props[inc_group].physicalDevices[1] == group_props_2[full_group].physicalDevices[1]) {
-                    found = true;
-                    break;
-                }
-            }
-            ASSERT_EQ(true, found);
-        }
+        ASSERT_EQ(group_props[0].physicalDeviceCount, group_props_2[0].physicalDeviceCount);
+        ASSERT_EQ(group_props[0].physicalDevices[0], group_props_2[0].physicalDevices[0]);
+        ASSERT_EQ(group_props[0].physicalDevices[1], group_props_2[0].physicalDevices[1]);
+
         for (auto& group : group_props) {
             VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
@@ -1948,19 +1939,10 @@ TEST(EnumeratePhysicalDeviceGroups, TwoCallIncomplete) {
         ASSERT_EQ(VK_SUCCESS, vkEnumeratePhysicalDeviceGroupsKHR(inst, &returned_group_count, group_props_2.data()));
         ASSERT_EQ(2U, returned_group_count);
 
-        // Make sure the incomplete group items appear in the complete group
-        for (uint32_t inc_group = 0; inc_group < 1; ++inc_group) {
-            bool found = false;
-            for (uint32_t full_group = 0; full_group < 2; ++full_group) {
-                if (group_props[inc_group].physicalDeviceCount == group_props_2[full_group].physicalDeviceCount &&
-                    group_props[inc_group].physicalDevices[0] == group_props_2[full_group].physicalDevices[0] &&
-                    group_props[inc_group].physicalDevices[1] == group_props_2[full_group].physicalDevices[1]) {
-                    found = true;
-                    break;
-                }
-            }
-            ASSERT_EQ(true, found);
-        }
+        ASSERT_EQ(group_props[0].physicalDeviceCount, group_props_2[0].physicalDeviceCount);
+        ASSERT_EQ(group_props[0].physicalDevices[0], group_props_2[0].physicalDevices[0]);
+        ASSERT_EQ(group_props[0].physicalDevices[1], group_props_2[0].physicalDevices[1]);
+
         for (auto& group : group_props) {
             VkDeviceGroupDeviceCreateInfo group_info{};
             group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
@@ -3154,52 +3136,31 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data()));
     ASSERT_EQ(device_count, max_phys_devs);
 
-    // Make sure the devices are not in the sorted order.  The order is really undefined, but the chances of
-    // it being exactly the expected sorted is very low.
-    bool sorted = true;
-    for (uint32_t dev = 0; dev < device_count; ++dev) {
-        VkPhysicalDeviceProperties props{};
-        instance->vkGetPhysicalDeviceProperties(physical_devices[dev], &props);
+    // make sure the order is what we started with - but its a bit wonky due to the loader reading physical devices "backwards"
+    VkPhysicalDeviceProperties props{};
+    instance->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
+    ASSERT_STREQ(props.deviceName, "pd5");
 
-        switch (dev) {
-            case 0:
-                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd4", props.deviceName)) {
-                    sorted = false;
-                }
-                break;
-            case 1:
-                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd0", props.deviceName)) {
-                    sorted = false;
-                }
-                break;
-            case 2:
-                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd3", props.deviceName)) {
-                    sorted = false;
-                }
-                break;
-            case 3:
-                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU || strcmp("pd1", props.deviceName)) {
-                    sorted = false;
-                }
-                break;
-            case 4:
-                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU || strcmp("pd5", props.deviceName)) {
-                    sorted = false;
-                }
-                break;
-            case 5:
-                if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU || strcmp("pd2", props.deviceName)) {
-                    sorted = false;
-                }
-                break;
-            default:
-                ASSERT_EQ(false, true);
-        }
-        if (!sorted) {
-            break;
-        }
-    }
-    ASSERT_EQ(false, sorted);
+    instance->vkGetPhysicalDeviceProperties(physical_devices[1], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd3");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[2], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd4");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[3], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
+    ASSERT_STREQ(props.deviceName, "pd2");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[4], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd0");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[5], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
+    ASSERT_STREQ(props.deviceName, "pd1");
 
     // Make sure if we call enumerate again, the information is the same
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices_again;
@@ -3501,64 +3462,39 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups.data()));
     ASSERT_EQ(group_count, max_phys_dev_groups);
 
-    // Make sure the devices are not in the sorted order.  The order is really undefined, but the chances of
-    // it being exactly the expected sorted is very low.
-    bool sorted = true;
-    uint32_t cur_dev = 0;
-    for (uint32_t group = 0; group < max_phys_dev_groups; ++group) {
-        for (uint32_t dev = 0; dev < physical_device_groups[group].physicalDeviceCount; ++dev) {
-            VkPhysicalDeviceProperties props{};
-            inst->vkGetPhysicalDeviceProperties(physical_device_groups[group].physicalDevices[dev], &props);
-            switch (cur_dev++) {
-                case 0:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd4", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                case 1:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd6", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                case 2:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd5", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                case 3:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd2", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                case 4:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || strcmp("pd0", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                case 5:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU || strcmp("pd1", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                case 6:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU || strcmp("pd7", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                case 7:
-                    if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU || strcmp("pd3", props.deviceName)) {
-                        sorted = false;
-                    }
-                    break;
-                default:
-                    ASSERT_EQ(false, true);
-            }
-        }
-        if (!sorted) {
-            break;
-        }
-    }
-    ASSERT_EQ(false, sorted);
+    // make sure the order is what we started with - but its a bit wonky due to the loader reading physical devices "backwards"
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
+    ASSERT_STREQ(props.deviceName, "pd7");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[1], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd4");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[2], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd5");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[3], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd6");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[4], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
+    ASSERT_STREQ(props.deviceName, "pd3");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[5], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd0");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[6], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
+    ASSERT_STREQ(props.deviceName, "pd1");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[7], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd2");
 
     // Make sure if we call enumerate again, the information is the same
     std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups_again{};
