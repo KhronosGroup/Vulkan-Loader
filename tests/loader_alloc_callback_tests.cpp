@@ -870,7 +870,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
     size_t fail_index = 0;
     bool reached_the_end = false;
     uint32_t starting_physical_dev_count = 3;
-    while (!reached_the_end && fail_index <= 100) {
+    while (!reached_the_end && fail_index <= 10000) {
         fail_index++;  // applies to the next loop
         uint32_t physical_dev_count = starting_physical_dev_count;
         VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;

@@ -710,7 +710,7 @@ TEST(UnknownFunction, DeviceFromGIPAWithLayerImplementation) {
 }
 
 TEST(UnknownFunction, DeviceFromGIPAWithLayerInterception) {
-    unknown_function_test_impl<VkInstance, VkDevice>({TestConfig::add_layer_implementation});
+    unknown_function_test_impl<VkInstance, VkDevice>({TestConfig::add_layer_interception});
 }
 
 TEST(UnknownFunction, DeviceFromGIPAWithLayerInterceptionAndLayerImplementation) {
@@ -741,7 +741,7 @@ TEST(UnknownFunction, CommandBufferFromGIPAWithLayerImplementation) {
 }
 
 TEST(UnknownFunction, CommandBufferFromGIPAWithLayerInterception) {
-    unknown_function_test_impl<VkInstance, VkCommandBuffer>({TestConfig::add_layer_implementation});
+    unknown_function_test_impl<VkInstance, VkCommandBuffer>({TestConfig::add_layer_interception});
 }
 
 TEST(UnknownFunction, CommandBufferFromGIPAWithLayerInterceptionAndLayerImplementation) {
@@ -772,7 +772,7 @@ TEST(UnknownFunction, QueueFromGIPAWithLayer) {
 }
 
 TEST(UnknownFunction, QueueFromGIPAWithLayerInterception) {
-    unknown_function_test_impl<VkInstance, VkQueue>({TestConfig::add_layer_implementation});
+    unknown_function_test_impl<VkInstance, VkQueue>({TestConfig::add_layer_interception});
 }
 
 TEST(UnknownFunction, QueueFromGIPAWithLayerInterceptionAndLayerImplementation) {
