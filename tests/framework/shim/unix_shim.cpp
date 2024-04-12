@@ -135,7 +135,7 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
     }
     DIR* dir;
     if (platform_shim.is_fake_path(path_name)) {
-        auto real_path_name = platform_shim.get_real_path_from_fake_path(fs::path(path_name));
+        auto real_path_name = platform_shim.get_real_path_from_fake_path(std::filesystem::path(path_name));
         dir = real_opendir(real_path_name.c_str());
         platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, 0, true});
     } else if (platform_shim.is_known_path(path_name)) {
@@ -175,7 +175,7 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
         }
         auto real_path = it->folder_path;
         if (it->is_fake_path) {
-            real_path = platform_shim.redirection_map.at(it->folder_path).str();
+            real_path = platform_shim.redirection_map.at(it->folder_path);
         }
         auto filenames = get_folder_contents(platform_shim.folders, real_path);
 
@@ -215,13 +215,13 @@ FRAMEWORK_EXPORT int ACCESS_FUNC_NAME(const char* in_pathname, int mode) {
 #if !defined(__APPLE__)
     if (!real_access) real_access = (PFN_ACCESS)dlsym(RTLD_NEXT, "access");
 #endif
-    fs::path path{in_pathname};
+    std::filesystem::path path{in_pathname};
     if (!path.has_parent_path()) {
         return real_access(in_pathname, mode);
     }
 
     if (platform_shim.is_fake_path(path.parent_path())) {
-        fs::path real_path = platform_shim.get_real_path_from_fake_path(path.parent_path());
+        std::filesystem::path real_path = platform_shim.get_real_path_from_fake_path(path.parent_path());
         real_path /= path.filename();
         return real_access(real_path.c_str(), mode);
     }
@@ -232,7 +232,7 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
 #if !defined(__APPLE__)
     if (!real_fopen) real_fopen = (PFN_FOPEN)dlsym(RTLD_NEXT, "fopen");
 #endif
-    fs::path path{in_filename};
+    std::filesystem::path path{in_filename};
     if (!path.has_parent_path()) {
         return real_fopen(in_filename, mode);
     }

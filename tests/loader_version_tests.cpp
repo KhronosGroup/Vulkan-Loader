@@ -1380,7 +1380,8 @@ TEST(DriverManifest, VersionMismatchWithEnumerateInstanceVersion) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
 
-    ASSERT_TRUE(env.debug_log.find(std::string("terminator_CreateInstance: Manifest ICD for \"") + env.get_test_icd_path().str() +
+    ASSERT_TRUE(env.debug_log.find(std::string("terminator_CreateInstance: Manifest ICD for \"") +
+                                   env.get_test_icd_path().string() +
                                    "\" contained a 1.1 or greater API version, but "
                                    "vkEnumerateInstanceVersion returned 1.0, treating as a 1.0 ICD"));
 }
@@ -1397,7 +1398,8 @@ TEST(DriverManifest, EnumerateInstanceVersionNotSupported) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
 
-    ASSERT_TRUE(env.debug_log.find(std::string("terminator_CreateInstance: Manifest ICD for \"") + env.get_test_icd_path().str() +
+    ASSERT_TRUE(env.debug_log.find(std::string("terminator_CreateInstance: Manifest ICD for \"") +
+                                   env.get_test_icd_path().string() +
                                    "\" contained a 1.1 or greater API version, but does "
                                    "not support vkEnumerateInstanceVersion, treating as a 1.0 ICD"));
 }

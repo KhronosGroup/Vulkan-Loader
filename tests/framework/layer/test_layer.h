@@ -89,7 +89,7 @@ struct TestLayer;
 using FP_layer_callback = VkResult (*)(TestLayer& layer, void* data);
 
 struct TestLayer {
-    fs::path manifest_file_path;
+    std::filesystem::path manifest_file_path;
     uint32_t manifest_version = VK_MAKE_API_VERSION(0, 1, 1, 2);
 
     BUILDER_VALUE(TestLayer, bool, is_meta_layer, false)

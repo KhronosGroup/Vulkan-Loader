@@ -27,11 +27,11 @@
 
 #include "test_environment.h"
 
-fs::path get_loader_path() {
-    auto loader_path = fs::path(FRAMEWORK_VULKAN_LIBRARY_PATH);
+std::filesystem::path get_loader_path() {
+    auto loader_path = std::filesystem::path(FRAMEWORK_VULKAN_LIBRARY_PATH);
     auto env_var_res = get_env_var("VK_LOADER_TEST_LOADER_PATH", false);
     if (!env_var_res.empty()) {
-        loader_path = fs::path(env_var_res);
+        loader_path = std::filesystem::path(env_var_res);
     }
     return loader_path;
 }
@@ -356,7 +356,7 @@ PlatformShimWrapper::PlatformShimWrapper(std::vector<fs::FolderManager>* folders
 PlatformShimWrapper::~PlatformShimWrapper() noexcept { platform_shim->reset(); }
 
 TestICDHandle::TestICDHandle() noexcept {}
-TestICDHandle::TestICDHandle(fs::path const& icd_path) noexcept : icd_library(icd_path) {
+TestICDHandle::TestICDHandle(std::filesystem::path const& icd_path) noexcept : icd_library(icd_path) {
     proc_addr_get_test_icd = icd_library.get_symbol(GET_TEST_ICD_FUNC_STR);
     proc_addr_reset_icd = icd_library.get_symbol(RESET_ICD_FUNC_STR);
 }
@@ -368,12 +368,12 @@ TestICD& TestICDHandle::reset_icd() noexcept {
     assert(proc_addr_reset_icd != NULL && "symbol must be loaded before use");
     return *proc_addr_reset_icd();
 }
-fs::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
-fs::path TestICDHandle::get_icd_manifest_path() noexcept { return manifest_path; }
-fs::path TestICDHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
+std::filesystem::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
+std::filesystem::path TestICDHandle::get_icd_manifest_path() noexcept { return manifest_path; }
+std::filesystem::path TestICDHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
 TestLayerHandle::TestLayerHandle() noexcept {}
-TestLayerHandle::TestLayerHandle(fs::path const& layer_path) noexcept : layer_library(layer_path) {
+TestLayerHandle::TestLayerHandle(std::filesystem::path const& layer_path) noexcept : layer_library(layer_path) {
     proc_addr_get_test_layer = layer_library.get_symbol(GET_TEST_LAYER_FUNC_STR);
     proc_addr_reset_layer = layer_library.get_symbol(RESET_LAYER_FUNC_STR);
 }
@@ -385,9 +385,9 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
     assert(proc_addr_reset_layer != NULL && "symbol must be loaded before use");
     return *proc_addr_reset_layer();
 }
-fs::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
-fs::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
-fs::path TestLayerHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
+std::filesystem::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
+std::filesystem::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
+std::filesystem::path TestLayerHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
 FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
 FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
@@ -470,42 +470,44 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         folder = &get_folder(ManifestLocation::null);
     }
     if (!icd_details.is_fake) {
-        fs::path new_driver_name = fs::path(icd_details.icd_manifest.lib_path).stem() + "_" + std::to_string(cur_icd_index) +
-                                   fs::path(icd_details.icd_manifest.lib_path).extension();
-
-        auto new_driver_location = folder->copy_file(icd_details.icd_manifest.lib_path, new_driver_name.str());
+        std::filesystem::path new_lib_name = icd_details.icd_manifest.lib_path.stem();
+        new_lib_name += "_";
+        new_lib_name += std::to_string(cur_icd_index);
+        new_lib_name += icd_details.icd_manifest.lib_path.extension();
+        auto new_driver_location = folder->copy_file(icd_details.icd_manifest.lib_path, new_lib_name);
 
 #if COMMON_UNIX_PLATFORMS
         if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
-            platform_shim->redirect_dlopen_name(new_driver_name, new_driver_location);
+            platform_shim->redirect_dlopen_name(new_lib_name, new_driver_location);
         } else if (icd_details.library_path_type == LibraryPathType::relative) {
-            platform_shim->redirect_dlopen_name(fs::path(SYSCONFDIR) / "vulkan" / "icd.d" / "." / new_driver_name,
+            platform_shim->redirect_dlopen_name(std::filesystem::path(SYSCONFDIR) / "vulkan" / "icd.d" / "." / new_lib_name,
                                                 new_driver_location);
         }
 #endif
 #if defined(WIN32)
         if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
             SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
-            AddDllDirectory(conver_str_to_wstr(new_driver_location.parent_path().str()).c_str());
+            AddDllDirectory(new_driver_location.parent_path().native().c_str());
         }
 #endif
         icds.push_back(TestICDHandle(new_driver_location));
         icds.back().reset_icd();
         if (icd_details.library_path_type == LibraryPathType::relative) {
-            icd_details.icd_manifest.lib_path = fs::path(".") / new_driver_name;
+            icd_details.icd_manifest.lib_path = std::filesystem::path(".") / new_lib_name;
         } else if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
-            icd_details.icd_manifest.lib_path = new_driver_name.str();
+            icd_details.icd_manifest.lib_path = new_lib_name;
         } else {
-            icd_details.icd_manifest.lib_path = new_driver_location.str();
+            icd_details.icd_manifest.lib_path = new_driver_location;
         }
     }
     if (icd_details.discovery_type != ManifestDiscoveryType::none) {
-        std::string full_json_name = icd_details.json_name;
+        std::filesystem::path new_manifest_path = icd_details.json_name.stem();
         if (!icd_details.disable_icd_inc) {
-            full_json_name += "_" + std::to_string(cur_icd_index);
+            new_manifest_path += "_";
+            new_manifest_path += std::to_string(cur_icd_index);
         }
-        full_json_name += ".json";
-        icds.back().manifest_path = folder->write_manifest(full_json_name, icd_details.icd_manifest.get_manifest_str());
+        new_manifest_path += ".json";
+        icds.back().manifest_path = folder->write_manifest(new_manifest_path, icd_details.icd_manifest.get_manifest_str());
         icds.back().shimmed_manifest_path = icds.back().manifest_path;
         switch (icd_details.discovery_type) {
             default:
@@ -513,22 +515,22 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
                 platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
 #if COMMON_UNIX_PLATFORMS
                 icds.back().shimmed_manifest_path =
-                    platform_shim->query_default_redirect_path(ManifestCategory::icd) / full_json_name;
+                    platform_shim->query_default_redirect_path(ManifestCategory::icd) / new_manifest_path;
 #endif
                 break;
             case (ManifestDiscoveryType::env_var):
                 if (icd_details.is_dir) {
-                    env_var_vk_icd_filenames.add_to_list(folder->location().str());
+                    env_var_vk_icd_filenames.add_to_list(narrow(folder->location()));
                 } else {
-                    env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                    env_var_vk_icd_filenames.add_to_list(narrow(folder->location() / new_manifest_path));
                 }
                 platform_shim->add_known_path(folder->location());
                 break;
             case (ManifestDiscoveryType::add_env_var):
                 if (icd_details.is_dir) {
-                    add_env_var_vk_icd_filenames.add_to_list(folder->location().str());
+                    add_env_var_vk_icd_filenames.add_to_list(narrow(folder->location()));
                 } else {
-                    add_env_var_vk_icd_filenames.add_to_list((folder->location() / full_json_name).str());
+                    add_env_var_vk_icd_filenames.add_to_list(narrow(folder->location() / new_manifest_path));
                 }
                 platform_shim->add_known_path(folder->location());
                 break;
@@ -579,18 +581,18 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
         case (ManifestDiscoveryType::env_var):
             fs_ptr = &get_folder(ManifestLocation::explicit_layer_env_var);
             if (layer_details.is_dir) {
-                env_var_vk_layer_paths.add_to_list(fs_ptr->location().str());
+                env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location()));
             } else {
-                env_var_vk_layer_paths.add_to_list((fs_ptr->location() / layer_details.json_name).str());
+                env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
             }
             platform_shim->add_known_path(fs_ptr->location());
             break;
         case (ManifestDiscoveryType::add_env_var):
             fs_ptr = &get_folder(ManifestLocation::explicit_layer_add_env_var);
             if (layer_details.is_dir) {
-                add_env_var_vk_layer_paths.add_to_list(fs_ptr->location().str());
+                add_env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location()));
             } else {
-                add_env_var_vk_layer_paths.add_to_list((fs_ptr->location() / layer_details.json_name).str());
+                add_env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
             }
             platform_shim->add_known_path(fs_ptr->location());
             break;
@@ -614,39 +616,43 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
     auto& folder = *fs_ptr;
     size_t new_layers_start = layers.size();
     for (auto& layer : layer_details.layer_manifest.layers) {
-        if (!layer.lib_path.str().empty()) {
-            fs::path layer_binary_name =
-                layer.lib_path.filename().stem() + "_" + std::to_string(layers.size()) + layer.lib_path.filename().extension();
+        if (!layer.lib_path.empty()) {
+            std::filesystem::path new_lib_path = layer.lib_path.stem();
+            new_lib_path += "_";
+            new_lib_path += std::to_string(layers.size());
+            new_lib_path += layer.lib_path.extension();
 
-            auto new_layer_location = folder.copy_file(layer.lib_path, layer_binary_name.str());
+            auto new_layer_location = folder.copy_file(layer.lib_path, new_lib_path);
 
 #if COMMON_UNIX_PLATFORMS
             if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
-                platform_shim->redirect_dlopen_name(layer_binary_name, new_layer_location);
+                platform_shim->redirect_dlopen_name(new_lib_path, new_layer_location);
             }
             if (layer_details.library_path_type == LibraryPathType::relative) {
                 platform_shim->redirect_dlopen_name(
-                    fs::path(SYSCONFDIR) / "vulkan" / category_path_name(category) / "." / layer_binary_name, new_layer_location);
+                    std::filesystem::path(SYSCONFDIR) / "vulkan" / category_path_name(category) / "." / new_lib_path,
+                    new_layer_location);
             }
 #endif
 #if defined(WIN32)
             if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
                 SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
-                AddDllDirectory(conver_str_to_wstr(new_layer_location.parent_path().str()).c_str());
+                AddDllDirectory(new_layer_location.parent_path().native().c_str());
             }
 #endif
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
             if (!layer_details.is_fake &&
-                layer.lib_path.stem().str().find(fs::path(TEST_LAYER_WRAP_OBJECTS).stem().str()) == std::string::npos) {
+                layer.lib_path.stem().string().find(std::filesystem::path(TEST_LAYER_WRAP_OBJECTS).stem().string()) ==
+                    std::string::npos) {
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset_layer();
             }
             if (layer_details.library_path_type == LibraryPathType::relative) {
-                layer.lib_path = fs::path(".") / layer_binary_name;
+                layer.lib_path = std::filesystem::path(".") / new_lib_path;
             } else if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
-                layer.lib_path = layer_binary_name;
+                layer.lib_path = new_lib_path;
             } else {
                 layer.lib_path = new_layer_location;
             }
@@ -706,7 +712,7 @@ std::string get_loader_settings_file_contents(const LoaderSettings& loader_setti
             for (const auto& config : setting.layer_configurations) {
                 writer.StartObject();
                 writer.AddKeyedString("name", config.name);
-                writer.AddKeyedString("path", fs::fixup_backslashes_in_path(config.path));
+                writer.AddKeyedString("path", escape_backslashes_for_json(config.path));
                 writer.AddKeyedString("control", config.control);
                 writer.AddKeyedBool("treat_as_implicit_manifest", config.treat_as_implicit_manifest);
                 writer.EndObject();
@@ -767,17 +773,23 @@ void FrameworkEnvironment::remove_loader_settings() {
 
 TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
 TestICD& FrameworkEnvironment::reset_icd(size_t index) noexcept { return icds[index].reset_icd(); }
-fs::path FrameworkEnvironment::get_test_icd_path(size_t index) noexcept { return icds[index].get_icd_full_path(); }
-fs::path FrameworkEnvironment::get_icd_manifest_path(size_t index) noexcept { return icds[index].get_icd_manifest_path(); }
-fs::path FrameworkEnvironment::get_shimmed_icd_manifest_path(size_t index) noexcept {
+std::filesystem::path FrameworkEnvironment::get_test_icd_path(size_t index) noexcept { return icds[index].get_icd_full_path(); }
+std::filesystem::path FrameworkEnvironment::get_icd_manifest_path(size_t index) noexcept {
+    return icds[index].get_icd_manifest_path();
+}
+std::filesystem::path FrameworkEnvironment::get_shimmed_icd_manifest_path(size_t index) noexcept {
     return icds[index].get_shimmed_manifest_path();
 }
 
 TestLayer& FrameworkEnvironment::get_test_layer(size_t index) noexcept { return layers[index].get_test_layer(); }
 TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return layers[index].reset_layer(); }
-fs::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept { return layers[index].get_layer_full_path(); }
-fs::path FrameworkEnvironment::get_layer_manifest_path(size_t index) noexcept { return layers[index].get_layer_manifest_path(); }
-fs::path FrameworkEnvironment::get_shimmed_layer_manifest_path(size_t index) noexcept {
+std::filesystem::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept {
+    return layers[index].get_layer_full_path();
+}
+std::filesystem::path FrameworkEnvironment::get_layer_manifest_path(size_t index) noexcept {
+    return layers[index].get_layer_manifest_path();
+}
+std::filesystem::path FrameworkEnvironment::get_shimmed_layer_manifest_path(size_t index) noexcept {
     return layers[index].get_shimmed_manifest_path();
 }
 
@@ -790,7 +802,7 @@ fs::FolderManager const& FrameworkEnvironment::get_folder(ManifestLocation locat
 }
 #if defined(__APPLE__)
 void FrameworkEnvironment::setup_macos_bundle() noexcept {
-    platform_shim->bundle_contents = get_folder(ManifestLocation::macos_bundle).location().str();
+    platform_shim->bundle_contents = get_folder(ManifestLocation::macos_bundle).location();
 }
 #endif
 

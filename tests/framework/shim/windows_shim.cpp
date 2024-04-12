@@ -326,12 +326,13 @@ LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName,
     const auto &location = *location_ptr;
     if (dwIndex >= location.size()) return ERROR_NO_MORE_ITEMS;
 
-    if (*lpcchValueName < location[dwIndex].name.size()) return ERROR_NO_MORE_ITEMS;
-    for (size_t i = 0; i < location[dwIndex].name.size(); i++) {
-        lpValueName[i] = location[dwIndex].name[i];
+    std::string name = narrow(location[dwIndex].name);
+    if (*lpcchValueName < name.size()) return ERROR_NO_MORE_ITEMS;
+    for (size_t i = 0; i < name.size(); i++) {
+        lpValueName[i] = name[i];
     }
-    lpValueName[location[dwIndex].name.size()] = '\0';
-    *lpcchValueName = static_cast<DWORD>(location[dwIndex].name.size() + 1);
+    lpValueName[name.size()] = '\0';
+    *lpcchValueName = static_cast<DWORD>(name.size() + 1);
     if (*lpcbData < sizeof(DWORD)) return ERROR_NO_MORE_ITEMS;
     DWORD *lpcbData_dword = reinterpret_cast<DWORD *>(lpData);
     *lpcbData_dword = location[dwIndex].value;

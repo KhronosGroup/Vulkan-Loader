@@ -3844,7 +3844,7 @@ TEST(DuplicateRegistryEntries, Layers) {
 
     auto null_path = env.get_folder(ManifestLocation::null).location() / "test_layer.json";
 
-    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, null_path.str());
+    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, null_path);
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -3862,7 +3862,7 @@ TEST(DuplicateRegistryEntries, Layers) {
 TEST(DuplicateRegistryEntries, Drivers) {
     FrameworkEnvironment env{};
     auto null_path = env.get_folder(ManifestLocation::null).location() / "test_icd_0.json";
-    env.platform_shim->add_manifest(ManifestCategory::icd, null_path.str());
+    env.platform_shim->add_manifest(ManifestCategory::icd, null_path);
 
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::null_dir))
         .add_physical_device("physical_device_0")
@@ -3872,7 +3872,7 @@ TEST(DuplicateRegistryEntries, Drivers) {
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find(std::string("Skipping adding of json file \"") + null_path.str() +
+    ASSERT_TRUE(env.debug_log.find(std::string("Skipping adding of json file \"") + null_path.string() +
                                    "\" from registry \"HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC
                                    "\" to the list due to duplication"));
 }
@@ -3880,8 +3880,8 @@ TEST(DuplicateRegistryEntries, Drivers) {
 
 TEST(LibraryLoading, SystemLocations) {
     FrameworkEnvironment env{};
-    EnvVarWrapper ld_library_path("LD_LIBRARY_PATH", env.get_folder(ManifestLocation::driver).location().str());
-    ld_library_path.add_to_list(env.get_folder(ManifestLocation::explicit_layer).location().str());
+    EnvVarWrapper ld_library_path("LD_LIBRARY_PATH", env.get_folder(ManifestLocation::driver).location().string());
+    ld_library_path.add_to_list(narrow(env.get_folder(ManifestLocation::explicit_layer).location()));
 
     auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_library_path_type(LibraryPathType::default_search_paths))
                        .add_physical_device({});
@@ -3920,11 +3920,11 @@ TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
         .add_physical_device({});
     auto driver_path = env.get_icd_manifest_path(0);
     std::string symlink_name = "symlink_to_driver.json";
-    fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
+    std::filesystem::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
     env.get_folder(ManifestLocation::driver_env_var).add_existing_file(symlink_name);
     int res = symlink(driver_path.c_str(), symlink_path.c_str());
     ASSERT_EQ(res, 0);
-    EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", symlink_path.str()};
+    EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", symlink_path};
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -3939,7 +3939,7 @@ TEST(ManifestDiscovery, ValidSymlink) {
 
     auto driver_path = env.get_icd_manifest_path(0);
     std::string symlink_name = "symlink_to_driver.json";
-    fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
+    std::filesystem::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
     env.get_folder(ManifestLocation::driver_env_var).add_existing_file(symlink_name);
     int res = symlink(driver_path.c_str(), symlink_path.c_str());
     ASSERT_EQ(res, 0);
@@ -3955,13 +3955,13 @@ TEST(ManifestDiscovery, ValidSymlink) {
 TEST(ManifestDiscovery, InvalidSymlinkXDGEnvVar) {
     FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
     std::string symlink_name = "symlink_to_nothing.json";
-    fs::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
-    fs::path invalid_driver_path = env.get_folder(ManifestLocation::driver).location() / "nothing_here.json";
+    std::filesystem::path symlink_path = env.get_folder(ManifestLocation::driver_env_var).location() / symlink_name;
+    std::filesystem::path invalid_driver_path = env.get_folder(ManifestLocation::driver).location() / "nothing_here.json";
     int res = symlink(invalid_driver_path.c_str(), symlink_path.c_str());
     ASSERT_EQ(res, 0);
     env.get_folder(ManifestLocation::driver_env_var).add_existing_file(symlink_name);
 
-    EnvVarWrapper xdg_config_dirs_env_var{symlink_path.str()};
+    EnvVarWrapper xdg_config_dirs_env_var{symlink_path};
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -3972,8 +3972,8 @@ TEST(ManifestDiscovery, InvalidSymlinkXDGEnvVar) {
 TEST(ManifestDiscovery, InvalidSymlink) {
     FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
     std::string symlink_name = "symlink_to_nothing.json";
-    fs::path symlink_path = env.get_folder(ManifestLocation::driver).location() / symlink_name;
-    fs::path invalid_driver_path = env.get_folder(ManifestLocation::driver_env_var).location() / "nothing_here.json";
+    std::filesystem::path symlink_path = env.get_folder(ManifestLocation::driver).location() / symlink_name;
+    std::filesystem::path invalid_driver_path = env.get_folder(ManifestLocation::driver_env_var).location() / "nothing_here.json";
     int res = symlink(invalid_driver_path.c_str(), symlink_path.c_str());
     ASSERT_EQ(res, 0);
     env.get_folder(ManifestLocation::driver).add_existing_file(symlink_name);
@@ -4201,7 +4201,7 @@ TEST(InvalidManifest, ICD) {
 
     for (size_t i = 0; i < invalid_jsons.size(); i++) {
         auto file_name = std::string("invalid_driver_") + std::to_string(i) + ".json";
-        fs::path new_path = env.get_folder(ManifestLocation::driver).write_manifest(file_name, invalid_jsons[i]);
+        std::filesystem::path new_path = env.get_folder(ManifestLocation::driver).write_manifest(file_name, invalid_jsons[i]);
         env.platform_shim->add_manifest(ManifestCategory::icd, new_path);
     }
 
@@ -4225,7 +4225,8 @@ TEST(InvalidManifest, Layer) {
 
     for (size_t i = 0; i < invalid_jsons.size(); i++) {
         auto file_name = std::string("invalid_implicit_layer_") + std::to_string(i) + ".json";
-        fs::path new_path = env.get_folder(ManifestLocation::implicit_layer).write_manifest(file_name, invalid_jsons[i]);
+        std::filesystem::path new_path =
+            env.get_folder(ManifestLocation::implicit_layer).write_manifest(file_name, invalid_jsons[i]);
         env.platform_shim->add_manifest(ManifestCategory::implicit_layer, new_path);
     }
 
@@ -4233,13 +4234,13 @@ TEST(InvalidManifest, Layer) {
     inst.CheckCreate();
 }
 #if defined(WIN32)
-void add_dxgi_adapter(FrameworkEnvironment& env, const char* name, LUID luid, uint32_t vendor_id) {
+void add_dxgi_adapter(FrameworkEnvironment& env, std::filesystem::path const& name, LUID luid, uint32_t vendor_id) {
     auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_6).set_discovery_type(ManifestDiscoveryType::null_dir));
     driver.set_min_icd_interface_version(5);
     driver.set_max_icd_interface_version(6);
     driver.setup_WSI();
     driver.set_icd_api_version(VK_API_VERSION_1_1);
-    driver.physical_devices.emplace_back(name);
+    driver.physical_devices.emplace_back(name.string());
     auto& pd0 = driver.physical_devices.back();
     pd0.properties.apiVersion = VK_API_VERSION_1_1;
     driver.set_adapterLUID(luid);
@@ -4258,8 +4259,7 @@ void add_dxgi_adapter(FrameworkEnvironment& env, const char* name, LUID luid, ui
         DXGI_ADAPTER_DESC1 desc{};
         desc.VendorId = known_driver_list.at(vendor_id).vendor_id;
         desc.AdapterLuid = luid;
-        auto wide_name = conver_str_to_wstr(name);
-        wcsncpy_s(desc.Description, 128, wide_name.c_str(), wide_name.size());
+        wcsncpy_s(desc.Description, 128, name.c_str(), name.native().size());
         env.platform_shim->add_dxgi_adapter(GpuType::discrete, desc);
 
         env.platform_shim->add_d3dkmt_adapter(

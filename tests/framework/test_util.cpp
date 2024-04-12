@@ -28,6 +28,7 @@
 #include "test_util.h"
 
 #if defined(WIN32)
+#include <wchar.h>
 #include <strsafe.h>
 const char* win_api_error_str(LSTATUS status) {
     if (status == ERROR_INVALID_FUNCTION) return "ERROR_INVALID_FUNCTION";
@@ -113,8 +114,16 @@ void print_array_of_t(JsonWriter& writer, const char* object_name, std::vector<T
 void print_vector_of_strings(JsonWriter& writer, const char* object_name, std::vector<std::string> const& strings) {
     if (strings.size() == 0) return;
     writer.StartKeyedArray(object_name);
-    for (auto& str : strings) {
-        writer.AddString(fs::fixup_backslashes_in_path(str));
+    for (auto const& str : strings) {
+        writer.AddString(escape_backslashes_for_json(str));
+    }
+    writer.EndArray();
+}
+void print_vector_of_strings(JsonWriter& writer, const char* object_name, std::vector<std::filesystem::path> const& paths) {
+    if (paths.size() == 0) return;
+    writer.StartKeyedArray(object_name);
+    for (auto const& path : paths) {
+        writer.AddString(escape_backslashes_for_json(path));
     }
     writer.EndArray();
 }
@@ -126,7 +135,7 @@ std::string ManifestICD::get_manifest_str() const {
     writer.StartObject();
     writer.AddKeyedString("file_format_version", file_format_version.get_version_str());
     writer.StartKeyedObject("ICD");
-    writer.AddKeyedString("library_path", fs::fixup_backslashes_in_path(lib_path).str());
+    writer.AddKeyedString("library_path", escape_backslashes_for_json(lib_path));
     writer.AddKeyedString("api_version", version_to_string(api_version));
     writer.AddKeyedBool("is_portability_driver", is_portability_driver);
     if (!library_arch.empty()) writer.AddKeyedString("library_arch", library_arch);
@@ -147,8 +156,8 @@ void ManifestLayer::LayerDescription::Extension::get_manifest_str(JsonWriter& wr
 void ManifestLayer::LayerDescription::get_manifest_str(JsonWriter& writer) const {
     writer.AddKeyedString("name", name);
     writer.AddKeyedString("type", get_type_str(type));
-    if (!lib_path.str().empty()) {
-        writer.AddKeyedString("library_path", fs::fixup_backslashes_in_path(lib_path.str()));
+    if (!lib_path.empty()) {
+        writer.AddKeyedString("library_path", escape_backslashes_for_json(lib_path));
     }
     writer.AddKeyedString("api_version", version_to_string(api_version));
     writer.AddKeyedString("implementation_version", std::to_string(implementation_version));
@@ -206,30 +215,8 @@ std::string ManifestLayer::get_manifest_str() const {
     return writer.output;
 }
 
-namespace fs {
-std::string make_native(std::string const& in_path) {
-    std::string out;
-#if defined(WIN32)
-    for (auto& c : in_path) {
-        if (c == '/')
-            out += "\\";
-        else
-            out += c;
-    }
-#elif COMMON_UNIX_PLATFORMS
-    for (size_t i = 0; i < in_path.size(); i++) {
-        if (i + 1 < in_path.size() && in_path[i] == '\\' && in_path[i + 1] == '\\') {
-            out += '/';
-            i++;
-        } else
-            out += in_path[i];
-    }
-#endif
-    return out;
-}
-
 // Json doesn't allow `\` in strings, it must be escaped. Thus we have to convert '\\' to '\\\\' in strings
-std::string fixup_backslashes_in_path(std::string const& in_path) {
+std::string escape_backslashes_for_json(std::string const& in_path) {
     std::string out;
     for (auto& c : in_path) {
         if (c == '\\')
@@ -239,137 +226,38 @@ std::string fixup_backslashes_in_path(std::string const& in_path) {
     }
     return out;
 }
-fs::path fixup_backslashes_in_path(fs::path const& in_path) { return fixup_backslashes_in_path(in_path.str()); }
-
-path& path::operator+=(path const& in) {
-    contents += in.contents;
-    return *this;
+std::string escape_backslashes_for_json(std::filesystem::path const& in_path) {
+    return escape_backslashes_for_json(narrow(in_path.native()));
 }
-path& path::operator+=(std::string const& in) {
-    contents += in;
-    return *this;
-}
-path& path::operator+=(const char* in) {
-    contents += std::string{in};
-    return *this;
-}
-path& path::operator/=(path const& in) {
-    if (contents.back() != path_separator && in.contents.front() != path_separator) contents += path_separator;
-    contents += in.contents;
-    return *this;
-}
-path& path::operator/=(std::string const& in) {
-    if (contents.back() != path_separator && in.front() != path_separator) contents += path_separator;
-    contents += in;
-    return *this;
-}
-path& path::operator/=(const char* in) {
-    std::string in_str{in};
-    if (contents.back() != path_separator && in_str.front() != path_separator) contents += path_separator;
-    contents += in_str;
-    return *this;
-}
-path path::operator+(path const& in) const {
-    path new_path = contents;
-    new_path += in;
-    return new_path;
-}
-path path::operator+(std::string const& in) const {
-    path new_path = contents;
-    new_path += in;
-    return new_path;
-}
-path path::operator+(const char* in) const {
-    path new_path(contents);
-    new_path += in;
-    return new_path;
-}
-
-path path::operator/(path const& in) const {
-    path new_path = contents;
-    new_path /= in;
-    return new_path;
-}
-path path::operator/(std::string const& in) const {
-    path new_path = contents;
-    new_path /= in;
-    return new_path;
-}
-path path::operator/(const char* in) const {
-    path new_path(contents);
-    new_path /= in;
-    return new_path;
-}
-
-path path::parent_path() const {
-    auto last_div = contents.rfind(path_separator);
-    if (last_div == std::string::npos) return "";
-    return path(contents.substr(0, last_div));
-}
-bool path::has_parent_path() const {
-    auto last_div = contents.rfind(path_separator);
-    return last_div != std::string::npos;
-}
-path path::filename() const {
-    auto last_div = contents.rfind(path_separator);
-    return path(contents.substr(last_div + 1, contents.size() - last_div + 1));
-}
-
-path path::extension() const {
-    auto last_div = contents.rfind(path_separator);
-    auto ext_div = contents.rfind('.');
-    // Make sure to not get the special `.` and `..`, as well as any filename that being with a dot, like .profile
-    if (last_div + 1 == ext_div || (last_div + 2 == ext_div && contents[last_div + 1] == '.')) return path("");
-    path temp = path(contents.substr(ext_div, contents.size() - ext_div + 1));
-
-    return path(contents.substr(ext_div, contents.size() - ext_div + 1));
-}
-
-path path::stem() const {
-    auto last_div = contents.rfind(path_separator);
-    auto ext_div = contents.rfind('.');
-    if (last_div + 1 == ext_div || (last_div + 2 == ext_div && contents[last_div + 1] == '.')) {
-        return path(contents.substr(last_div + 1, contents.size() - last_div + 1));
-    }
-    return path(contents.substr(last_div + 1, ext_div - last_div - 1));
-}
-
-path& path::replace_filename(path const& replacement) {
-    *this = parent_path() / replacement.str();
-    return *this;
-}
-
+namespace fs {
 // internal implementation helper for per-platform creating & destroying folders
-int create_folder(path const& path) {
+int create_folder(std::filesystem::path const& path) {
 #if defined(WIN32)
-    return _wmkdir(widen(path.str()).c_str());
+    return _wmkdir(path.c_str());
 #else
     mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     return 0;
 #endif
 }
 
-int delete_folder_contents(path const& folder) {
+int delete_folder_contents(std::filesystem::path const& folder) {
 #if defined(WIN32)
-    std::wstring folder_utf16 = widen(folder.str());
-    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(folder_utf16.c_str()) && GetLastError() == ERROR_FILE_NOT_FOUND) {
+    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(folder.c_str()) && GetLastError() == ERROR_FILE_NOT_FOUND) {
         // nothing to delete
         return 0;
     }
-    std::wstring search_path = folder_utf16 + L"/*.*";
-    std::string s_p = folder.str() + "/";
+    std::filesystem::path search_path = folder / "*.*";
     WIN32_FIND_DATAW fd;
     HANDLE hFind = ::FindFirstFileW(search_path.c_str(), &fd);
     if (hFind != INVALID_HANDLE_VALUE) {
         do {
-            std::string file_name_utf8 = narrow(fd.cFileName);
+            std::filesystem::path file_name = fd.cFileName;
             if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                if (!string_eq(file_name_utf8.c_str(), ".") && !string_eq(file_name_utf8.c_str(), "..")) {
-                    delete_folder(s_p + file_name_utf8);
+                if (file_name != "." && file_name != "..") {
+                    delete_folder(fd.cFileName);
                 }
             } else {
-                std::string child_name = s_p + file_name_utf8;
-                DeleteFileW(widen(child_name).c_str());
+                DeleteFileW((folder / fd.cFileName).native().c_str());
             }
         } while (::FindNextFileW(hFind, &fd));
         ::FindClose(hFind);
@@ -388,7 +276,7 @@ int delete_folder_contents(path const& folder) {
         /* Skip the names "." and ".." as we don't want to recurse on them. */
         if (string_eq(file->d_name, ".") || string_eq(file->d_name, "..")) continue;
 
-        path file_path = folder / file->d_name;
+        std::filesystem::path file_path = folder / file->d_name;
         struct stat statbuf;
         if (!stat(file_path.c_str(), &statbuf)) {
             if (S_ISDIR(statbuf.st_mode))
@@ -404,29 +292,23 @@ int delete_folder_contents(path const& folder) {
 #endif
 }
 
-int delete_folder(path const& folder) {
+int delete_folder(std::filesystem::path const& folder) {
     int ret = delete_folder_contents(folder);
     if (ret != 0) return ret;
 #if defined(WIN32)
-    _wrmdir(widen(folder.str()).c_str());
+    _wrmdir(folder.native().c_str());
     return 0;
 #else
     return rmdir(folder.c_str());
 #endif
 }
 
-#if defined(WIN32)
-std::wstring native_path(const std::string& utf8) { return widen(utf8); }
-#else
-const std::string& native_path(const std::string& utf8) { return utf8; }
-#endif
-
-FolderManager::FolderManager(path root_path, std::string name) noexcept : folder(root_path / name) {
+FolderManager::FolderManager(std::filesystem::path root_path, std::string name) noexcept : folder(root_path / name) {
     delete_folder_contents(folder);
     create_folder(folder);
 }
 FolderManager::~FolderManager() noexcept {
-    if (folder.str().empty()) return;
+    if (folder.empty()) return;
     auto list_of_files_to_delete = files;
     // remove(file) modifies the files variable, copy the list before deleting it
     // Note: the allocation tests currently leak the loaded driver handles because in an OOM scenario the loader doesn't bother
@@ -437,70 +319,72 @@ FolderManager::~FolderManager() noexcept {
     }
     delete_folder(folder);
 }
-FolderManager::FolderManager(FolderManager&& other) noexcept : folder(other.folder), files(other.files) {
-    other.folder.str().clear();
-}
+FolderManager::FolderManager(FolderManager&& other) noexcept : folder(other.folder), files(other.files) { other.folder.clear(); }
 FolderManager& FolderManager::operator=(FolderManager&& other) noexcept {
     folder = other.folder;
     files = other.files;
-    other.folder.str().clear();
+    other.folder.clear();
     return *this;
 }
 
-path FolderManager::write_manifest(std::string const& name, std::string const& contents) {
-    path out_path = folder / name;
+std::filesystem::path FolderManager::write_manifest(std::filesystem::path const& name, std::string const& contents) {
+    std::filesystem::path out_path = folder / name;
     auto found = std::find(files.begin(), files.end(), name);
     if (found != files.end()) {
         std::cout << "Overwriting manifest " << name << ". Was this intended?\n";
     } else {
         files.emplace_back(name);
     }
-    auto file = std::ofstream(native_path(out_path.str()), std::ios_base::trunc | std::ios_base::out);
+    auto file = std::ofstream(out_path, std::ios_base::trunc | std::ios_base::out);
     if (!file) {
-        std::cerr << "Failed to create manifest " << name << " at " << out_path.str() << "\n";
+        std::cerr << "Failed to create manifest " << name << " at " << out_path << "\n";
         return out_path;
     }
     file << contents << std::endl;
     return out_path;
 }
-void FolderManager::add_existing_file(std::string const& file_name) { files.emplace_back(file_name); }
+void FolderManager::add_existing_file(std::filesystem::path const& file_name) { files.emplace_back(file_name); }
 
 // close file handle, delete file, remove `name` from managed file list.
-void FolderManager::remove(std::string const& name) {
-    path out_path = folder / name;
+void FolderManager::remove(std::filesystem::path const& name) {
+    std::filesystem::path out_path = folder / name;
     auto found = std::find(files.begin(), files.end(), name);
     if (found != files.end()) {
+#if defined(WIN32)
+        int rc = _wremove(out_path.c_str());
+#else
         int rc = std::remove(out_path.c_str());
+#endif
         if (rc != 0) {
-            std::cerr << "Failed to remove file " << name << " at " << out_path.str() << "\n";
+            std::cerr << "Failed to remove file " << name << " at " << out_path << "\n";
         }
 
         files.erase(found);
 
     } else {
-        std::cout << "Couldn't remove file " << name << " at " << out_path.str() << ".\n";
+        std::cout << "Couldn't remove file " << name << " at " << out_path << ".\n";
     }
 }
 
 // copy file into this folder
-path FolderManager::copy_file(path const& file, std::string const& new_name) {
+std::filesystem::path FolderManager::copy_file(std::filesystem::path const& file, std::filesystem::path const& new_name) {
     auto new_filepath = folder / new_name;
     auto found = std::find(files.begin(), files.end(), new_name);
     if (found != files.end()) {
         std::cout << "File location already contains" << new_name << ". Is this a bug?\n";
-    } else if (file.str() == new_filepath.str()) {
+    } else if (file == new_filepath) {
         std::cout << "Trying to copy " << new_name << " into itself. Is this a bug?\n";
     } else {
         files.emplace_back(new_name);
     }
-    std::ifstream src(native_path(file.str()), std::ios::binary);
+    std::ifstream src(file, std::ios::binary);
     if (!src) {
-        std::cerr << "Failed to create file " << file.str() << " for copying from\n";
+        std::cerr << "Failed to create file " << file << " for copying from\n";
         return new_filepath;
     }
-    std::ofstream dst(native_path(new_filepath.str()), std::ios::binary);
+    std::ofstream dst(new_filepath, std::ios::binary);
     if (!dst) {
-        std::cerr << "Failed to create file " << new_filepath.str() << " for copying to\n";
+        std::cerr << "Failed to create file " << new_filepath << " for copying to\n";
         return new_filepath;
     }
     dst << src.rdbuf();
@@ -660,4 +544,7 @@ std::wstring widen(const std::string& utf8) {
     }
     return utf16;
 }
+#else
+std::string narrow(const std::string& utf16) { return utf16; }
+std::string widen(const std::string& utf8) { return utf8; }
 #endif
