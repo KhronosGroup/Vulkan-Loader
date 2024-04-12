@@ -6160,27 +6160,47 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     icd_term = inst->icd_terms;
     while (NULL != icd_term) {
         res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &icd_phys_dev_array[icd_idx].device_count, NULL);
-        if (VK_SUCCESS != res) {
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error 0x%08x",
+                       "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code "
+                       "VK_ERROR_OUT_OF_HOST_MEMORY",
+                       icd_idx);
+            goto out;
+        } else if (VK_SUCCESS == res) {
+            icd_phys_dev_array[icd_idx].physical_devices =
+                (VkPhysicalDevice *)loader_stack_alloc(icd_phys_dev_array[icd_idx].device_count * sizeof(VkPhysicalDevice));
+            if (NULL == icd_phys_dev_array[icd_idx].physical_devices) {
+                loader_log(
+                    inst, VULKAN_LOADER_ERROR_BIT, 0,
+                    "setup_loader_term_phys_devs:  Failed to allocate temporary ICD Physical device array for ICD %d of size %d",
+                    icd_idx, icd_phys_dev_array[icd_idx].device_count);
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+
+            res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &(icd_phys_dev_array[icd_idx].device_count),
+                                                              icd_phys_dev_array[icd_idx].physical_devices);
+            if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                           "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code "
+                           "VK_ERROR_OUT_OF_HOST_MEMORY",
+                           icd_idx);
+                goto out;
+            }
+            if (VK_SUCCESS != res) {
+                loader_log(
+                    inst, VULKAN_LOADER_ERROR_BIT, 0,
+                    "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code %d",
+                    icd_idx, res);
+                icd_phys_dev_array[icd_idx].device_count = 0;
+                icd_phys_dev_array[icd_idx].physical_devices = 0;
+            }
+        } else {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                       "setup_loader_term_phys_devs:  Call to ICD %d's \'vkEnumeratePhysicalDevices\' failed with error code %d",
                        icd_idx, res);
-            goto out;
-        }
-
-        icd_phys_dev_array[icd_idx].physical_devices =
-            (VkPhysicalDevice *)loader_stack_alloc(icd_phys_dev_array[icd_idx].device_count * sizeof(VkPhysicalDevice));
-        if (NULL == icd_phys_dev_array[icd_idx].physical_devices) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "setup_loader_term_phys_devs:  Failed to allocate temporary ICD Physical device array for ICD %d of size %d",
-                       icd_idx, icd_phys_dev_array[icd_idx].device_count);
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-
-        res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &(icd_phys_dev_array[icd_idx].device_count),
-                                                          icd_phys_dev_array[icd_idx].physical_devices);
-        if (VK_SUCCESS != res) {
-            goto out;
+            icd_phys_dev_array[icd_idx].device_count = 0;
+            icd_phys_dev_array[icd_idx].physical_devices = 0;
         }
         icd_phys_dev_array[icd_idx].icd_term = icd_term;
         icd_phys_dev_array[icd_idx].icd_index = icd_idx;

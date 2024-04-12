@@ -139,6 +139,9 @@ struct TestICD {
 
     VkInstanceCreateFlags passed_in_instance_create_flags{};
 
+    BUILDER_VALUE(TestICD, VkResult, enum_physical_devices_return_code, VK_SUCCESS);
+    BUILDER_VALUE(TestICD, VkResult, enum_adapter_physical_devices_return_code, VK_SUCCESS);
+
     PhysicalDevice& GetPhysDevice(VkPhysicalDevice physicalDevice) {
         for (auto& phys_dev : physical_devices) {
             if (phys_dev.vk_physical_device.handle == physicalDevice) return phys_dev;

@@ -214,6 +214,9 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance([[maybe_unused]] VkInstance in
 // VK_SUCCESS,VK_INCOMPLETE
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices([[maybe_unused]] VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                                VkPhysicalDevice* pPhysicalDevices) {
+    if (icd.enum_physical_devices_return_code != VK_SUCCESS) {
+        return icd.enum_physical_devices_return_code;
+    }
     if (pPhysicalDevices == nullptr) {
         *pPhysicalDeviceCount = static_cast<uint32_t>(icd.physical_devices.size());
     } else {
@@ -1104,6 +1107,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetCalibratedTimestampsEXT(VkDevice, uint3
 VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
                                                                           uint32_t* pPhysicalDeviceCount,
                                                                           VkPhysicalDevice* pPhysicalDevices) {
+    if (icd.enum_adapter_physical_devices_return_code != VK_SUCCESS) {
+        return icd.enum_adapter_physical_devices_return_code;
+    }
     if (adapterLUID.LowPart != icd.adapterLUID.LowPart || adapterLUID.HighPart != icd.adapterLUID.HighPart) {
         *pPhysicalDeviceCount = 0;
         return VK_ERROR_INCOMPATIBLE_DRIVER;
