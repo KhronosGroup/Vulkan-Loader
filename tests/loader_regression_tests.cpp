@@ -1163,6 +1163,66 @@ TEST(EnumeratePhysicalDevices, MultipleAddRemoves) {
     ASSERT_GE(found_items[6], 4U);
 }
 
+TEST(EnumeratePhysicalDevices, OneDriverWithWrongErrorCodes) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    {
+        env.get_test_icd().set_enum_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+                  env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 0);
+    }
+    {
+        env.get_test_icd().set_enum_physical_devices_return_code(VK_ERROR_INCOMPATIBLE_DRIVER);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+                  env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 0);
+    }
+    {
+        env.get_test_icd().set_enum_physical_devices_return_code(VK_ERROR_SURFACE_LOST_KHR);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+                  env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 0);
+    }
+}
+
+TEST(EnumeratePhysicalDevices, TwoDriversOneWithWrongErrorCodes) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    TestICD& icd1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    {
+        icd1.set_enum_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 1);
+    }
+    {
+        icd1.set_enum_physical_devices_return_code(VK_ERROR_INCOMPATIBLE_DRIVER);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 1);
+    }
+    {
+        icd1.set_enum_physical_devices_return_code(VK_ERROR_SURFACE_LOST_KHR);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 1);
+    }
+}
+
 TEST(CreateDevice, ExtensionNotPresent) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
@@ -4362,5 +4422,66 @@ TEST(EnumerateAdapterPhysicalDevices, SameAdapterLUID_same_order) {
 
     env.vulkan_functions.vkGetPhysicalDeviceProperties2(physical_device_handles[2], &props2);
     EXPECT_EQ(layered_driver_properties_msft.underlyingAPI, VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT);
+}
+
+TEST(EnumerateAdapterPhysicalDevices, WrongErrorCodes) {
+    FrameworkEnvironment env;
+
+    add_dxgi_adapter(env, "physical_device_0", LUID{10, 100}, 2);
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.setup_WSI().set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+    // TestICD only fails in EnumAdapters, so shouldn't fail to query VkPhysicalDevices
+    {
+        env.get_test_icd().set_enum_adapter_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 1);
+    }
+    {
+        env.get_test_icd().set_enum_adapter_physical_devices_return_code(VK_ERROR_INCOMPATIBLE_DRIVER);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 1);
+    }
+    {
+        env.get_test_icd().set_enum_adapter_physical_devices_return_code(VK_ERROR_SURFACE_LOST_KHR);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 1);
+    }
+
+    // TestICD fails in EnumPhysDevs, should return VK_ERROR_INCOMPATIBLE_DRIVER
+    auto check_icds = [&env, &inst] {
+        env.get_test_icd().set_enum_adapter_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+        uint32_t returned_physical_count = 0;
+        EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+                  env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 0);
+
+        env.get_test_icd().set_enum_adapter_physical_devices_return_code(VK_ERROR_INCOMPATIBLE_DRIVER);
+        returned_physical_count = 0;
+        EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+                  env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 0);
+
+        env.get_test_icd().set_enum_adapter_physical_devices_return_code(VK_ERROR_SURFACE_LOST_KHR);
+        returned_physical_count = 0;
+        EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+                  env.vulkan_functions.vkEnumeratePhysicalDevices(inst.inst, &returned_physical_count, nullptr));
+        EXPECT_EQ(returned_physical_count, 0);
+    };
+
+    // TestICD fails in EnumPhysDevs, should return VK_ERROR_INCOMPATIBLE_DRIVER
+    env.get_test_icd().set_enum_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+    check_icds();
+
+    // TestICD fails in EnumPhysDevs, should return VK_ERROR_INCOMPATIBLE_DRIVER
+    env.get_test_icd().set_enum_physical_devices_return_code(VK_ERROR_INCOMPATIBLE_DRIVER);
+    check_icds();
+
+    // TestICD fails in EnumPhysDevs, should return VK_ERROR_INCOMPATIBLE_DRIVER
+    env.get_test_icd().set_enum_physical_devices_return_code(VK_ERROR_SURFACE_LOST_KHR);
+    check_icds();
 }
 #endif  // defined(WIN32)

@@ -802,14 +802,12 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
     VkResult res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         return res;
-    } else if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
+    } else if (res == VK_ERROR_INCOMPATIBLE_DRIVER || res == VK_ERROR_INITIALIZATION_FAILED || 0 == count) {
         return VK_SUCCESS;  // This driver doesn't support the adapter
     } else if (res != VK_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code");
-        return res;
-    } else if (0 == count) {
-        return VK_SUCCESS;  // This driver doesn't support the adapter
+                   "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code: %d", res);
+        return VK_SUCCESS;
     }
 
     // Take a pointer to the last element of icd_phys_devs_array to simplify usage
