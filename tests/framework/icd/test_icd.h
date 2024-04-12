@@ -75,7 +75,7 @@ inline std::ostream& operator<<(std::ostream& os, const InterfaceVersionCheck& r
 // clang-format on
 
 struct TestICD {
-    fs::path manifest_file_path;
+    std::filesystem::path manifest_file_path;
 
     BUILDER_VALUE(TestICD, bool, exposes_vk_icdNegotiateLoaderICDInterfaceVersion, true)
     BUILDER_VALUE(TestICD, bool, exposes_vkEnumerateInstanceExtensionProperties, true)

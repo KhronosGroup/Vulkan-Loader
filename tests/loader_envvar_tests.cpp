@@ -78,9 +78,9 @@ TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa)
 // export vk_icdNegotiateLoaderICDInterfaceVersion and vk_icdGetInstanceProcAddr
 TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa_unicode) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_UNICODE)
+    env.add_icd(TestICDDetails(widen(TEST_ICD_PATH_VERSION_2_UNICODE))
                     .set_discovery_type(ManifestDiscoveryType::env_var)
-                    .set_json_name(TEST_JSON_NAME_VERSION_2_UNICODE));
+                    .set_json_name(widen(TEST_JSON_NAME_VERSION_2_UNICODE)));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -203,8 +203,8 @@ TEST(EnvVarICDOverrideSetup, XDG) {
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
-    fs::path HOME = "/home/fake_home";
-    EnvVarWrapper home_env_var{"HOME", HOME.str()};
+    std::filesystem::path HOME = "/home/fake_home";
+    EnvVarWrapper home_env_var{"HOME", HOME};
     EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", ":/tmp/goober:::::/tmp/goober/::::"};
     EnvVarWrapper xdg_config_home_env_var{"XDG_CONFIG_HOME", ":/tmp/goober:::::/tmp/goober2/::::"};
     EnvVarWrapper xdg_data_dirs_env_var{"XDG_DATA_DIRS", "::::/tmp/goober3:/tmp/goober4/with spaces:::"};
@@ -218,10 +218,10 @@ TEST(EnvVarICDOverrideSetup, XDG) {
     inst.CheckCreate();
 
     auto check_paths = [](DebugUtilsLogger const& debug_log, ManifestCategory category) {
-        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober/vulkan") / category_path_name(category)).str()));
-        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober2/vulkan") / category_path_name(category)).str()));
-        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober3/vulkan") / category_path_name(category)).str()));
-        EXPECT_TRUE(debug_log.find((fs::path("/tmp/goober4/with spaces/vulkan") / category_path_name(category)).str()));
+        EXPECT_TRUE(debug_log.find((std::filesystem::path("/tmp/goober/vulkan") / category_path_name(category))));
+        EXPECT_TRUE(debug_log.find((std::filesystem::path("/tmp/goober2/vulkan") / category_path_name(category))));
+        EXPECT_TRUE(debug_log.find((std::filesystem::path("/tmp/goober3/vulkan") / category_path_name(category))));
+        EXPECT_TRUE(debug_log.find((std::filesystem::path("/tmp/goober4/with spaces/vulkan") / category_path_name(category))));
     };
     check_paths(env.debug_log, ManifestCategory::icd);
     check_paths(env.debug_log, ManifestCategory::implicit_layer);
@@ -307,10 +307,10 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     // Now set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
-    fs::path HOME = "/home/fake_home";
-    EnvVarWrapper home_env_var{"HOME", HOME.str()};
+    std::filesystem::path HOME = "/home/fake_home";
+    EnvVarWrapper home_env_var{"HOME", HOME};
     std::string vk_layer_path = ":/tmp/carol::::/:";
-    vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
+    vk_layer_path += (HOME / "/ with spaces/:::::/tandy:");
     EnvVarWrapper layer_path_env_var{"VK_LAYER_PATH", vk_layer_path};
     InstWrapper inst1{env.vulkan_functions};
     inst1.create_info.add_layer(layer_name);
@@ -320,7 +320,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
     // look for VK_LAYER_PATHS
     EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
     EXPECT_TRUE(env.debug_log.find("/tandy"));
-    EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/").str()));
+    EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/")));
 
     env.debug_log.clear();
 
@@ -352,10 +352,10 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
     // Need to redirect the 'home' directory
-    fs::path HOME = "/home/fake_home";
-    EnvVarWrapper home_env_var{"HOME", HOME.str()};
+    std::filesystem::path HOME = "/home/fake_home";
+    EnvVarWrapper home_env_var{"HOME", HOME};
     std::string vk_layer_path = ":/tmp/carol::::/:";
-    vk_layer_path += (HOME / "/ with spaces/:::::/tandy:").str();
+    vk_layer_path += (HOME / "/ with spaces/:::::/tandy:");
     EnvVarWrapper add_layer_path_env_var{"VK_ADD_LAYER_PATH", vk_layer_path};
 
     InstWrapper inst1{env.vulkan_functions};
@@ -366,7 +366,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     // look for VK_ADD_LAYER_PATHS
     EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
     EXPECT_TRUE(env.debug_log.find("/tandy"));
-    EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/").str()));
+    EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/")));
 
     env.debug_log.clear();
 

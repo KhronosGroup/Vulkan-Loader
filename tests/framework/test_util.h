@@ -31,7 +31,6 @@
  * All the standard library includes and main platform specific includes
  * Dll export macro
  * Manifest ICD & Layer structs
- * path abstraction class - modelled after C++17's filesystem::path
  * FolderManager - manages the contents of a folder, cleaning up when needed
  * per-platform library loading - mirrors the vk_loader_platform
  * LibraryWrapper - RAII wrapper for a library
@@ -53,6 +52,7 @@
 #include <utility>
 #include <memory>
 #include <functional>
+#include <filesystem>
 
 #include <cassert>
 #include <cstring>
@@ -180,75 +180,16 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
 struct ManifestICD;    // forward declaration for FolderManager::write
 struct ManifestLayer;  // forward declaration for FolderManager::write
 
+std::string escape_backslashes_for_json(std::string const& in_path);
+std::string escape_backslashes_for_json(std::filesystem::path const& in_path);
 namespace fs {
-std::string make_native(std::string const&);
 
-struct path {
-#if defined(WIN32)
-    static const char path_separator = '\\';
-#elif COMMON_UNIX_PLATFORMS
-    static const char path_separator = '/';
-#endif
-
-   public:
-    path() {}
-    path(std::string const& in) : contents(make_native(in)) {}
-    path(const char* in) : contents(make_native(std::string(in))) {}
-
-    // concat paths without directoryseperator
-    path& operator+=(path const& in);
-    path& operator+=(std::string const& in);
-    path& operator+=(const char* in);
-
-    // append paths with directoryseperator
-    path& operator/=(path const& in);
-    path& operator/=(std::string const& in);
-    path& operator/=(const char* in);
-
-    // concat paths without directory seperator
-    path operator+(path const& in) const;
-    path operator+(std::string const& in) const;
-    path operator+(const char* in) const;
-
-    // append paths with directory seperator
-    path operator/(path const& in) const;
-    path operator/(std::string const& in) const;
-    path operator/(const char* in) const;
-
-    // accessors
-    path parent_path() const;      // Everything before the last path separator, if there is one.
-    bool has_parent_path() const;  // True if the path contains more than just a filename.
-    path filename() const;         // Everything after the last path separator.
-    path extension() const;        // The file extension, if it has one.
-    path stem() const;             // The filename minus the extension.
-
-    // modifiers
-    path& replace_filename(path const& replacement);
-
-    // get c style string
-    const char* c_str() const { return contents.c_str(); }
-    // get C++ style string
-    std::string const& str() const { return contents; }
-    std::string& str() { return contents; }
-    size_t size() const { return contents.size(); }
-
-    // equality
-    bool operator==(path const& other) const noexcept { return contents == other.contents; }
-    bool operator!=(path const& other) const noexcept { return !(*this == other); }
-
-   private:
-    std::string contents;
-};
-
-std::string fixup_backslashes_in_path(std::string const& in_path);
-fs::path fixup_backslashes_in_path(fs::path const& in_path);
-
-int create_folder(path const& path);
-int delete_folder(path const& folder);
+int create_folder(std::filesystem::path const& path);
+int delete_folder(std::filesystem::path const& folder);
 
 class FolderManager {
    public:
-    explicit FolderManager(path root_path, std::string name) noexcept;
+    explicit FolderManager(std::filesystem::path root_path, std::string name) noexcept;
     ~FolderManager() noexcept;
     FolderManager(FolderManager const&) = delete;
     FolderManager& operator=(FolderManager const&) = delete;
@@ -256,25 +197,25 @@ class FolderManager {
     FolderManager& operator=(FolderManager&& other) noexcept;
 
     // Add a manifest to the folder
-    path write_manifest(std::string const& name, std::string const& contents);
+    std::filesystem::path write_manifest(std::filesystem::path const& name, std::string const& contents);
 
     // Add an already existing file to the manager, so it will be cleaned up automatically
-    void add_existing_file(std::string const& file_name);
+    void add_existing_file(std::filesystem::path const& file_name);
 
     // close file handle, delete file, remove `name` from managed file list.
-    void remove(std::string const& name);
+    void remove(std::filesystem::path const& name);
 
     // copy file into this folder with name `new_name`. Returns the full path of the file that was copied
-    path copy_file(path const& file, std::string const& new_name);
+    std::filesystem::path copy_file(std::filesystem::path const& file, std::filesystem::path const& new_name);
 
     // location of the managed folder
-    path location() const { return folder; }
+    std::filesystem::path location() const { return folder; }
 
-    std::vector<std::string> get_files() const { return files; }
+    std::vector<std::filesystem::path> get_files() const { return files; }
 
    private:
-    path folder;
-    std::vector<std::string> files;
+    std::filesystem::path folder;
+    std::vector<std::filesystem::path> files;
 };
 }  // namespace fs
 
@@ -289,25 +230,26 @@ inline void copy_string_to_char_array(std::string const& src, char* dst, size_t 
 std::string narrow(const std::wstring& utf16);
 // Convert an UTF-8 string to an UTF-16 wstring
 std::wstring widen(const std::string& utf8);
+#else
+// Do nothing passthrough for the sake of Windows & UTF-16
+std::string narrow(const std::string& utf16);
+// Do nothing passthrough for the sake of Windows & UTF-16
+std::string widen(const std::string& utf8);
 #endif
 
 #if defined(WIN32)
 typedef HMODULE loader_platform_dl_handle;
-inline loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
-    std::wstring lib_path_utf16 = widen(lib_path);
+inline loader_platform_dl_handle loader_platform_open_library(const wchar_t* lib_path) {
     // Try loading the library the original way first.
-    loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path_utf16.c_str());
+    loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path);
     if (lib_handle == nullptr && GetLastError() == ERROR_MOD_NOT_FOUND) {
         // If that failed, then try loading it with broader search folders.
-        lib_handle =
-            LoadLibraryExW(lib_path_utf16.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        lib_handle = LoadLibraryExW(lib_path, nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     }
     return lib_handle;
 }
-inline char* loader_platform_open_library_error(const char* libPath) {
-    static char errorMsg[164];
-    snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
-    return errorMsg;
+inline void loader_platform_open_library_print_error(std::filesystem::path const& libPath) {
+    std::wcerr << L"Unable to open library: " << libPath << L" due to: " << std::to_wstring(GetLastError()) << L"\n";
 }
 inline void loader_platform_close_library(loader_platform_dl_handle library) { FreeLibrary(library); }
 inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
@@ -327,7 +269,9 @@ typedef void* loader_platform_dl_handle;
 inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
 }
-inline const char* loader_platform_open_library_error([[maybe_unused]] const char* libPath) { return dlerror(); }
+inline void loader_platform_open_library_print_error(std::filesystem::path const& libPath) {
+    std::wcerr << "Unable to open library: " << libPath << " due to: " << dlerror() << "\n";
+}
 inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
 inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
@@ -353,11 +297,10 @@ class FromVoidStarFunc {
 
 struct LibraryWrapper {
     explicit LibraryWrapper() noexcept {}
-    explicit LibraryWrapper(fs::path const& lib_path) noexcept : lib_path(lib_path) {
-        lib_handle = loader_platform_open_library(lib_path.c_str());
+    explicit LibraryWrapper(std::filesystem::path const& lib_path) noexcept : lib_path(lib_path) {
+        lib_handle = loader_platform_open_library(lib_path.native().c_str());
         if (lib_handle == nullptr) {
-            fprintf(stderr, "Unable to open library %s: %s\n", lib_path.c_str(),
-                    loader_platform_open_library_error(lib_path.c_str()));
+            loader_platform_open_library_print_error(lib_path);
             assert(lib_handle != nullptr && "Must be able to open library");
         }
     }
@@ -396,7 +339,7 @@ struct LibraryWrapper {
     explicit operator bool() const noexcept { return lib_handle != nullptr; }
 
     loader_platform_dl_handle lib_handle = nullptr;
-    fs::path lib_path;
+    std::filesystem::path lib_path;
 };
 
 template <typename T>
@@ -597,7 +540,7 @@ struct ManifestVersion {
 struct ManifestICD {
     BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, {})
     BUILDER_VALUE(ManifestICD, uint32_t, api_version, 0)
-    BUILDER_VALUE(ManifestICD, fs::path, lib_path, {})
+    BUILDER_VALUE(ManifestICD, std::filesystem::path, lib_path, {})
     BUILDER_VALUE(ManifestICD, bool, is_portability_driver, false)
     BUILDER_VALUE(ManifestICD, std::string, library_arch, "")
     std::string get_manifest_str() const;
@@ -632,7 +575,7 @@ struct ManifestLayer {
         };
         BUILDER_VALUE(LayerDescription, std::string, name, {})
         BUILDER_VALUE(LayerDescription, Type, type, Type::INSTANCE)
-        BUILDER_VALUE(LayerDescription, fs::path, lib_path, {})
+        BUILDER_VALUE(LayerDescription, std::filesystem::path, lib_path, {})
         BUILDER_VALUE(LayerDescription, uint32_t, api_version, VK_API_VERSION_1_0)
         BUILDER_VALUE(LayerDescription, uint32_t, implementation_version, 0)
         BUILDER_VALUE(LayerDescription, std::string, description, {})
@@ -643,7 +586,7 @@ struct ManifestLayer {
         BUILDER_VALUE(LayerDescription, std::string, disable_environment, {})
         BUILDER_VECTOR(LayerDescription, std::string, component_layers, component_layer)
         BUILDER_VECTOR(LayerDescription, std::string, blacklisted_layers, blacklisted_layer)
-        BUILDER_VECTOR(LayerDescription, std::string, override_paths, override_path)
+        BUILDER_VECTOR(LayerDescription, std::filesystem::path, override_paths, override_path)
         BUILDER_VECTOR(LayerDescription, FunctionOverride, pre_instance_functions, pre_instance_function)
         BUILDER_VECTOR(LayerDescription, std::string, app_keys, app_key)
         BUILDER_VALUE(LayerDescription, std::string, library_arch, "")
@@ -1033,14 +976,6 @@ inline std::string test_platform_executable_path() {
     buffer.resize(ret);
     buffer[ret] = '\0';
     return buffer;
-}
-
-inline std::wstring conver_str_to_wstr(std::string const& input) {
-    std::wstring output{};
-    output.resize(input.size());
-    size_t characters_converted = 0;
-    mbstowcs_s(&characters_converted, &output[0], output.size() + 1, input.c_str(), input.size());
-    return output;
 }
 
 #endif

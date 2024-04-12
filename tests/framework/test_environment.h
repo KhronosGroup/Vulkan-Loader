@@ -478,7 +478,7 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrap
 
 struct LoaderSettingsLayerConfiguration {
     BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, name, {})
-    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, path, {})
+    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::filesystem::path, path, {})
     BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, control, {})
     BUILDER_VALUE(LoaderSettingsLayerConfiguration, bool, treat_as_implicit_manifest, false)
 };
@@ -529,35 +529,39 @@ struct PlatformShimWrapper {
 
 struct TestICDHandle {
     TestICDHandle() noexcept;
-    TestICDHandle(fs::path const& icd_path) noexcept;
+    TestICDHandle(std::filesystem::path const& icd_path) noexcept;
     TestICD& reset_icd() noexcept;
     TestICD& get_test_icd() noexcept;
-    fs::path get_icd_full_path() noexcept;
-    fs::path get_icd_manifest_path() noexcept;
-    fs::path get_shimmed_manifest_path() noexcept;
+    std::filesystem::path get_icd_full_path() noexcept;
+    std::filesystem::path get_icd_manifest_path() noexcept;
+    std::filesystem::path get_shimmed_manifest_path() noexcept;
 
     // Must use statically
     LibraryWrapper icd_library;
     GetTestICDFunc proc_addr_get_test_icd = nullptr;
     GetNewTestICDFunc proc_addr_reset_icd = nullptr;
-    fs::path manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
-    fs::path shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
+    std::filesystem::path
+        manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
+    std::filesystem::path
+        shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
 };
 struct TestLayerHandle {
     TestLayerHandle() noexcept;
-    TestLayerHandle(fs::path const& layer_path) noexcept;
+    TestLayerHandle(std::filesystem::path const& layer_path) noexcept;
     TestLayer& reset_layer() noexcept;
     TestLayer& get_test_layer() noexcept;
-    fs::path get_layer_full_path() noexcept;
-    fs::path get_layer_manifest_path() noexcept;
-    fs::path get_shimmed_manifest_path() noexcept;
+    std::filesystem::path get_layer_full_path() noexcept;
+    std::filesystem::path get_layer_manifest_path() noexcept;
+    std::filesystem::path get_shimmed_manifest_path() noexcept;
 
     // Must use statically
     LibraryWrapper layer_library;
     GetTestLayerFunc proc_addr_get_test_layer = nullptr;
     GetNewTestLayerFunc proc_addr_reset_layer = nullptr;
-    fs::path manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
-    fs::path shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
+    std::filesystem::path
+        manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
+    std::filesystem::path
+        shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
 };
 
 // Controls whether to create a manifest and where to put it
@@ -581,11 +585,11 @@ enum class LibraryPathType {
 
 struct TestICDDetails {
     TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
-    TestICDDetails(fs::path icd_binary_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
-        icd_manifest.set_lib_path(icd_binary_path.str()).set_api_version(api_version);
+    TestICDDetails(std::filesystem::path icd_binary_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
+        icd_manifest.set_lib_path(icd_binary_path).set_api_version(api_version);
     }
     BUILDER_VALUE(TestICDDetails, ManifestICD, icd_manifest, {});
-    BUILDER_VALUE(TestICDDetails, std::string, json_name, "test_icd");
+    BUILDER_VALUE(TestICDDetails, std::filesystem::path, json_name, "test_icd");
     // Uses the json_name without modification - default is to append _1 in the json file to distinguish drivers
     BUILDER_VALUE(TestICDDetails, bool, disable_icd_inc, false);
     BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
@@ -655,15 +659,15 @@ struct FrameworkEnvironment {
 
     TestICD& get_test_icd(size_t index = 0) noexcept;
     TestICD& reset_icd(size_t index = 0) noexcept;
-    fs::path get_test_icd_path(size_t index = 0) noexcept;
-    fs::path get_icd_manifest_path(size_t index = 0) noexcept;
-    fs::path get_shimmed_icd_manifest_path(size_t index = 0) noexcept;
+    std::filesystem::path get_test_icd_path(size_t index = 0) noexcept;
+    std::filesystem::path get_icd_manifest_path(size_t index = 0) noexcept;
+    std::filesystem::path get_shimmed_icd_manifest_path(size_t index = 0) noexcept;
 
     TestLayer& get_test_layer(size_t index = 0) noexcept;
     TestLayer& reset_layer(size_t index = 0) noexcept;
-    fs::path get_test_layer_path(size_t index = 0) noexcept;
-    fs::path get_layer_manifest_path(size_t index = 0) noexcept;
-    fs::path get_shimmed_layer_manifest_path(size_t index = 0) noexcept;
+    std::filesystem::path get_test_layer_path(size_t index = 0) noexcept;
+    std::filesystem::path get_layer_manifest_path(size_t index = 0) noexcept;
+    std::filesystem::path get_shimmed_layer_manifest_path(size_t index = 0) noexcept;
 
     fs::FolderManager& get_folder(ManifestLocation location) noexcept;
     fs::FolderManager const& get_folder(ManifestLocation location) const noexcept;

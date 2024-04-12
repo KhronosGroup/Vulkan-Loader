@@ -136,7 +136,6 @@ There are many utilities that the test framework and tests have access to. These
 * Environment Variable Wrapper: `EnvVarWrapper` for creating, setting, getting, and removing environment variables in a RAII manner
 * Windows API error handling helpers
 * filesystem abstractions:
-  * `fs::path` - wrapper around std::string that has a similar API to C++17's `filesystem::path` library
   * `create_folder`/`delete_folder`
   * `FolderManager`
     * Creates a new folder with the given name at construction time.

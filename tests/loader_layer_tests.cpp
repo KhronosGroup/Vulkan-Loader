@@ -988,7 +988,7 @@ TEST(ImplicitLayers, DuplicateLayers) {
 #if defined(WIN32)
     env.platform_shim->add_manifest(ManifestCategory::implicit_layer, env.get_folder(ManifestLocation::override_layer).location());
 #elif COMMON_UNIX_PLATFORMS
-    env.platform_shim->redirect_path(fs::path(USER_LOCAL_SHARE_DIR "/vulkan/implicit_layer.d"),
+    env.platform_shim->redirect_path(std::filesystem::path(USER_LOCAL_SHARE_DIR "/vulkan/implicit_layer.d"),
                                      env.get_folder(ManifestLocation::override_layer).location());
 #endif
 
@@ -1512,14 +1512,14 @@ TEST(OverrideMetaLayer, BasicOverridePaths) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
-                               ManifestLayer::LayerDescription{}
-                                   .set_name(lunarg_meta_layer_name)
-                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                   .add_component_layer(regular_layer_name)
-                                   .set_disable_environment("DisableMeIfYouCan")
-                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
-                           "meta_test_layer.json");
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(regular_layer_name)
+                                                                         .set_disable_environment("DisableMeIfYouCan")
+                                                                         .add_override_path(override_layer_folder.location())),
+        "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
@@ -1551,14 +1551,14 @@ TEST(OverrideMetaLayer, BasicOverridePathsIgnoreOtherLayers) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
-                               ManifestLayer::LayerDescription{}
-                                   .set_name(lunarg_meta_layer_name)
-                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                   .add_component_layer(special_layer_name)
-                                   .set_disable_environment("DisableMeIfYouCan")
-                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
-                           "meta_test_layer.json");
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(special_layer_name)
+                                                                         .set_disable_environment("DisableMeIfYouCan")
+                                                                         .add_override_path(override_layer_folder.location())),
+        "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
@@ -1598,7 +1598,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
                                    .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                    .add_component_layer(regular_layer_name)
                                    .set_disable_environment("DisableMeIfYouCan")
-                                   .add_override_path(env.get_folder(ManifestLocation::override_layer).location().str())),
+                                   .add_override_path(env.get_folder(ManifestLocation::override_layer).location())),
                            "meta_test_layer.json");
 
     auto meta_layer_path = env.get_folder(ManifestLocation::override_layer).location();
@@ -1613,7 +1613,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
         std::string("Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
                     "VK_LAYER_PATH is set to ") +
         env.env_var_vk_layer_paths.value()));
-    ASSERT_TRUE(env.debug_log.find("Override layer has override paths set to " + meta_layer_path.str()));
+    ASSERT_TRUE(env.debug_log.find("Override layer has override paths set to " + meta_layer_path.string()));
 
     env.layers.clear();
 }
@@ -1646,7 +1646,7 @@ TEST(OverrideMetaLayer, OverridePathsEnableImplicitLayerInDefaultPaths) {
                                    .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                    .add_component_layers({regular_layer_name, implicit_layer_name})
                                    .set_disable_environment("DisableMeIfYouCan")
-                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
+                                   .add_override_path(override_layer_folder.location())),
                            "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
@@ -1672,14 +1672,14 @@ TEST(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 0, 0}).add_layer(
-                               ManifestLayer::LayerDescription{}
-                                   .set_name(lunarg_meta_layer_name)
-                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                   .add_component_layer(regular_layer_name)
-                                   .set_disable_environment("DisableMeIfYouCan")
-                                   .add_override_path(fs::make_native(override_layer_folder.location().str()))),
-                           "meta_test_layer.json");
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 0, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(regular_layer_name)
+                                                                         .set_disable_environment("DisableMeIfYouCan")
+                                                                         .add_override_path(override_layer_folder.location())),
+        "meta_test_layer.json");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 1, 0);
@@ -1767,15 +1767,15 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    auto override_folder_location = fs::make_native(override_layer_folder.location().str());
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
-                                                ManifestLayer::LayerDescription{}
-                                                    .set_name(lunarg_meta_layer_name)
-                                                    .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                    .add_component_layer(regular_layer_name)
-                                                    .set_disable_environment("DisableMeIfYouCan")
-                                                    .add_override_path(fs::make_native(override_layer_folder.location().str()))),
-                                            "meta_test_layer.json"});
+    auto override_folder_location = override_layer_folder.location().string();
+    env.add_implicit_layer(TestLayerDetails{
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(regular_layer_name)
+                                                                         .set_disable_environment("DisableMeIfYouCan")
+                                                                         .add_override_path(override_layer_folder.location())),
+        "meta_test_layer.json"});
 
     {  // try with no elevated privileges
         auto layer_props = env.GetLayerProperties(2);
@@ -1822,14 +1822,14 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
                                              .get_manifest_str());
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
-                                                ManifestLayer::LayerDescription{}
-                                                    .set_name(lunarg_meta_layer_name)
-                                                    .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                    .add_component_layer(regular_layer_name)
-                                                    .set_disable_environment("DisableMeIfYouCan")
-                                                    .add_override_path(fs::make_native(override_layer_folder.location().str()))),
-                                            "meta_test_layer.json"}
+    env.add_implicit_layer(TestLayerDetails{
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(regular_layer_name)
+                                                                         .set_disable_environment("DisableMeIfYouCan")
+                                                                         .add_override_path(override_layer_folder.location())),
+        "meta_test_layer.json"}
                                .set_discovery_type(ManifestDiscoveryType::unsecured_generic));
 
     {  // try with no elevated privileges
@@ -1939,7 +1939,7 @@ TEST(ExplicitLayers, LayerSettingsPreInstanceFunctions) {
         LoaderSettingsLayerConfiguration{}
             .set_name(explicit_layer_name)
             .set_control("on")
-            .set_path(env.get_shimmed_layer_manifest_path(0).str())
+            .set_path(env.get_shimmed_layer_manifest_path(0))
             .set_treat_as_implicit_manifest(false)));
     env.update_loader_settings(env.loader_settings);
 
@@ -2279,7 +2279,7 @@ TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
     auto& layer1 = env.get_test_layer(0);
     layer1.set_description("actually_layer_1");
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
-    env.env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().str());
+    env.env_var_vk_layer_paths.add_to_list(narrow(env.get_folder(ManifestLocation::override_layer).location()));
 
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)
@@ -2354,7 +2354,7 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
     auto& layer1 = env.get_test_layer(0);
     layer1.set_description("actually_layer_1");
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
-    env.add_env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().str());
+    env.add_env_var_vk_layer_paths.add_to_list(narrow(env.get_folder(ManifestLocation::override_layer).location()));
 
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)
@@ -2503,7 +2503,7 @@ TEST(ExplicitLayers, DuplicateLayersInVkLayerPath) {
                                .set_is_dir(true));
     auto& layer2 = env.get_test_layer(1);
     layer2.set_description("actually_layer_2");
-    env.env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().str());
+    env.env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().string());
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -5124,7 +5124,7 @@ TEST(TestLayers, AllowFilterWithExplicitLayer) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("on")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_path(env.get_shimmed_layer_manifest_path(0))
                 .set_treat_as_implicit_manifest(false)));
         env.update_loader_settings(env.loader_settings);
 
@@ -5206,7 +5206,7 @@ TEST(TestLayers, AllowFilterWithImplicitLayer) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("on")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_path(env.get_shimmed_layer_manifest_path(0))
                 .set_treat_as_implicit_manifest(true)));
         env.update_loader_settings(env.loader_settings);
 
@@ -5278,7 +5278,7 @@ TEST(TestLayers, AllowFilterWithImplicitLayer) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("on")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_path(env.get_shimmed_layer_manifest_path(0))
                 .set_treat_as_implicit_manifest(true)));
         env.update_loader_settings(env.loader_settings);
 
@@ -5358,7 +5358,7 @@ TEST(TestLayers, AllowFilterWithConditionallyImlicitLayer) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("on")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_path(env.get_shimmed_layer_manifest_path(0))
                 .set_treat_as_implicit_manifest(true)));
         env.update_loader_settings(env.loader_settings);
 
@@ -5431,7 +5431,7 @@ TEST(TestLayers, AllowFilterWithConditionallyImlicitLayer) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("on")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_path(env.get_shimmed_layer_manifest_path(0))
                 .set_treat_as_implicit_manifest(true)));
         env.update_loader_settings(env.loader_settings);
 
@@ -5476,15 +5476,14 @@ TEST(TestLayers, AllowFilterWithConditionallyImlicitLayerWithOverrideLayer) {
                                             "test_layer_all.json"}
                                .set_discovery_type(ManifestDiscoveryType::override_folder));
 
-    env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
-            ManifestLayer::LayerDescription{}
-                .set_name(lunarg_meta_layer_name)
-                .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                .add_component_layer(layer_name)
-                .set_disable_environment("DisableMeIfYouCan")
-                .add_override_path(fs::make_native(env.get_folder(ManifestLocation::override_layer).location().str()))),
-        "meta_test_layer.json");
+    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(
+                               ManifestLayer::LayerDescription{}
+                                   .set_name(lunarg_meta_layer_name)
+                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                   .add_component_layer(layer_name)
+                                   .set_disable_environment("DisableMeIfYouCan")
+                                   .add_override_path(env.get_folder(ManifestLocation::override_layer).location().string())),
+                           "meta_test_layer.json");
 
     EnvVarWrapper allow{"VK_LOADER_LAYERS_ALLOW", layer_name};
 
@@ -5531,7 +5530,7 @@ TEST(TestLayers, AllowFilterWithConditionallyImlicitLayerWithOverrideLayer) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("on")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str())
+                .set_path(env.get_shimmed_layer_manifest_path(0))
                 .set_treat_as_implicit_manifest(true)));
         env.update_loader_settings(env.loader_settings);
 
