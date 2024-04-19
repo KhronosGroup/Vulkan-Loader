@@ -18,7 +18,7 @@
 # ~~~
 cmake_minimum_required(VERSION 3.17.2)
 
-project(VULKAN_LOADER VERSION 1.3.282 LANGUAGES C)
+project(VULKAN_LOADER VERSION 1.3.283 LANGUAGES C)
 
 option(CODE_COVERAGE "Enable Code Coverage" OFF)
 if (CODE_COVERAGE)
