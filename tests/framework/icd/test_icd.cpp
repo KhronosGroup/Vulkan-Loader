@@ -873,9 +873,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormats2KHR(VkPhys
     return VK_SUCCESS;
 }
 // VK_KHR_display_swapchain
-VkResult test_vkCreateSharedSwapchainsKHR([[maybe_unused]] VkDevice device, uint32_t swapchainCount,
-                                          [[maybe_unused]] const VkSwapchainCreateInfoKHR* pCreateInfos,
-                                          [[maybe_unused]] const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSharedSwapchainsKHR([[maybe_unused]] VkDevice device, uint32_t swapchainCount,
+                                                                [[maybe_unused]] const VkSwapchainCreateInfoKHR* pCreateInfos,
+                                                                [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                                VkSwapchainKHR* pSwapchains) {
     for (uint32_t i = 0; i < swapchainCount; i++) {
         common_nondispatch_handle_creation(icd.swapchain_handles, &pSwapchains[i]);
     }
@@ -1129,7 +1130,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInst
 }
 #endif  // defined(WIN32)
 
-VkResult test_vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
     if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called &&
         icd.called_negotiate_interface == CalledNegotiateInterface::not_called)
         icd.called_negotiate_interface = CalledNegotiateInterface::vk_icd_negotiate;
@@ -1314,7 +1315,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
     if (ret_phys_dev_wsi != nullptr) return ret_phys_dev_wsi;
     return nullptr;
 }
-PFN_vkVoidFunction get_physical_device_func([[maybe_unused]] VkInstance instance, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func([[maybe_unused]] VkInstance instance, const char* pName) {
     if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
     if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
         return to_vkVoidFunction(test_vkEnumerateDeviceExtensionProperties);
