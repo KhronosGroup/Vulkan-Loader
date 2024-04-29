@@ -2454,6 +2454,51 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayers) {
         ASSERT_TRUE(string_eq(layer_name_1, enabled_layer_props[1].layerName));
     }
 }
+// Test to make sure order layers are found in VK_LAYER_PATH is what decides which layer is loaded
+TEST(ExplicitLayers, DuplicateLayersInVkLayerPath) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    const char* layer_name = "VK_LAYER_RegularLayer1";
+    env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_description("actually_layer_1")
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                                            "layer.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var)
+                               .set_is_dir(true));
+    auto& layer1 = env.get_test_layer(0);
+    layer1.set_description("actually_layer_1");
+
+    env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_description("actually_layer_2")
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                                            "layer.json")
+                               // putting it in a separate folder then manually adding the folder to VK_LAYER_PATH
+                               .set_discovery_type(ManifestDiscoveryType::override_folder)
+                               .set_is_dir(true));
+    auto& layer2 = env.get_test_layer(1);
+    layer2.set_description("actually_layer_2");
+    env.env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().str());
+
+    auto layer_props = env.GetLayerProperties(2);
+    ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
+    ASSERT_TRUE(string_eq(layer_name, layer_props[1].layerName));
+    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
+
+    EnvVarWrapper inst_layers_env_var{"VK_INSTANCE_LAYERS"};
+    inst_layers_env_var.add_to_list(layer_name);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    // Expect the first layer added to be found
+    auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layer_name, enabled_layer_props[0].layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[0].description));
+}
 
 TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayersFromSystemLocations) {
     FrameworkEnvironment env;
