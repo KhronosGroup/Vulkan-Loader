@@ -90,7 +90,7 @@
 #include <vulkan/vk_icd.h>
 #include <vulkan/vk_layer.h>
 
-#include "framework_config.h"
+#include FRAMEWORK_CONFIG_HEADER
 
 #if defined(__GNUC__) && __GNUC__ >= 4
 #define FRAMEWORK_EXPORT __attribute__((visibility("default")))

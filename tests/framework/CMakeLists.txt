@@ -74,21 +74,11 @@ add_subdirectory(layer)
 #setup framework_config_temp.h.in in the current binary directory
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/framework_config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/framework_config_temp.h.in")
 
-# setup framework_config.h.in using framework_config_temp.h.in as a source
+# setup framework_config_$<CONFIG> using framework_config_temp.h.in as a source
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/framework_config_$<CONFIG>.h" INPUT "${CMAKE_CURRENT_BINARY_DIR}/framework_config_temp.h.in")
 
-# copy framework_config_$<CONFIG> to the loader build directory
-add_custom_command(
-    PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} "-E" "copy_if_different" "${CMAKE_CURRENT_BINARY_DIR}/framework_config_$<CONFIG>.h" "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h"
-    VERBATIM
-    DEPENDS  "${CMAKE_CURRENT_BINARY_DIR}/framework_config_$<CONFIG>.h"
-    OUTPUT   "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h"
-    COMMENT  "creating framework_config.h file ({event: PRE_BUILD}, {filename: framework_config.h })"
-    )
-add_custom_target (generate_framework_config DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h")
-add_dependencies (generate_framework_config vulkan)
-add_dependencies (testing_framework_util generate_framework_config)
+# Add a compiler definition for the path to framework_config.h with the correct config
+target_compile_definitions(testing_framework_util PUBLIC FRAMEWORK_CONFIG_HEADER="framework_config_$<CONFIG>.h")
 
 add_library(testing_dependencies STATIC test_environment.cpp test_environment.h)
 target_link_libraries(testing_dependencies
