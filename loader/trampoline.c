@@ -177,7 +177,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
                 .version = VK_CURRENT_CHAIN_VERSION,
                 .size = sizeof(chain_tail),
             },
-        .pfnNextLayer = &terminator_EnumerateInstanceExtensionProperties,
+        .pfnNextLayer = &terminator_pre_instance_EnumerateInstanceExtensionProperties,
         .pNextLink = NULL,
     };
     VkEnumerateInstanceExtensionPropertiesChain *chain_head = &chain_tail;
@@ -283,7 +283,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
                 .version = VK_CURRENT_CHAIN_VERSION,
                 .size = sizeof(chain_tail),
             },
-        .pfnNextLayer = &terminator_EnumerateInstanceLayerProperties,
+        .pfnNextLayer = &terminator_pre_instance_EnumerateInstanceLayerProperties,
         .pNextLink = NULL,
     };
     VkEnumerateInstanceLayerPropertiesChain *chain_head = &chain_tail;
@@ -396,7 +396,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
                 .version = VK_CURRENT_CHAIN_VERSION,
                 .size = sizeof(chain_tail),
             },
-        .pfnNextLayer = &terminator_EnumerateInstanceVersion,
+        .pfnNextLayer = &terminator_pre_instance_EnumerateInstanceVersion,
         .pNextLink = NULL,
     };
     VkEnumerateInstanceVersionChain *chain_head = &chain_tail;

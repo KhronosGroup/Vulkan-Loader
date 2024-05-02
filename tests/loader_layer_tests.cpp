@@ -2011,6 +2011,29 @@ TEST(ExplicitLayers, ContainsPreInstanceFunctions) {
     ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
 }
 
+TEST(ExplicitLayers, CallsPreInstanceFunctionsInCreateInstance) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    const char* explicit_layer_name = "VK_LAYER_enabled_by_override";
+
+    env.add_explicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer.json");
+
+    auto& layer = env.get_test_layer(0);
+    layer.set_query_vkEnumerateInstanceLayerProperties(true);
+    layer.set_query_vkEnumerateInstanceExtensionProperties(true);
+    layer.set_query_vkEnumerateInstanceVersion(true);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_layer(explicit_layer_name);
+    inst.CheckCreate();
+
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
+}
+
 // This test makes sure that any layer calling GetPhysicalDeviceProperties2 inside of CreateInstance
 // succeeds and doesn't crash.
 TEST(LayerCreateInstance, GetPhysicalDeviceProperties2) {
