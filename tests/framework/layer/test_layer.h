@@ -195,6 +195,10 @@ struct TestLayer {
     // Clober the data pointed to by pDevice to overwrite the magic value
     BUILDER_VALUE(TestLayer, bool, clobber_pDevice, false)
 
+    BUILDER_VALUE(TestLayer, bool, query_vkEnumerateInstanceLayerProperties, false)
+    BUILDER_VALUE(TestLayer, bool, query_vkEnumerateInstanceExtensionProperties, false)
+    BUILDER_VALUE(TestLayer, bool, query_vkEnumerateInstanceVersion, false)
+
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
     PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;

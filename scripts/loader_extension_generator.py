@@ -799,15 +799,21 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 mod_string = new_terminator.replace("VKAPI_CALL vk", "VKAPI_CALL terminator_")
 
                 if cur_cmd.name in PRE_INSTANCE_FUNCTIONS:
+                    pre_instance_basic_version = mod_string
+                    mod_string = mod_string.replace("terminator_", "terminator_pre_instance_")
                     mod_string = mod_string.replace(cur_cmd.name[2:] + '(\n', cur_cmd.name[2:] + '(\n    const Vk' + cur_cmd.name[2:] + 'Chain* chain,\n')
 
-                if (cur_cmd.protect is not None):
+                if cur_cmd.protect is not None:
                     terminators += '#if defined(%s)\n' % cur_cmd.protect
+
+                if cur_cmd.name in PRE_INSTANCE_FUNCTIONS:
+                    terminators += pre_instance_basic_version
+                    terminators += '\n'
 
                 terminators += mod_string
                 terminators += '\n'
 
-                if (cur_cmd.protect is not None):
+                if cur_cmd.protect is not None:
                     terminators += '#endif // %s\n' % cur_cmd.protect
 
         terminators += '\n'

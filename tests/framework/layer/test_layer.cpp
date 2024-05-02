@@ -280,6 +280,37 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     if (layer.clobber_pInstance) {
         memset(*pInstance, 0, 128);
     }
+    PFN_vkEnumerateInstanceLayerProperties fpEnumerateInstanceLayerProperties{};
+    PFN_vkEnumerateInstanceExtensionProperties fpEnumerateInstanceExtensionProperties{};
+    PFN_vkEnumerateInstanceVersion fpEnumerateInstanceVersion{};
+
+    if (layer.query_vkEnumerateInstanceLayerProperties) {
+        fpEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(
+            fpGetInstanceProcAddr(nullptr, "vkEnumerateInstanceLayerProperties"));
+        uint32_t count = 0;
+        fpEnumerateInstanceLayerProperties(&count, nullptr);
+        if (count == 0) return VK_ERROR_LAYER_NOT_PRESENT;
+        std::vector<VkLayerProperties> layers{count, VkLayerProperties{}};
+        fpEnumerateInstanceLayerProperties(&count, layers.data());
+        if (count == 0) return VK_ERROR_LAYER_NOT_PRESENT;
+    }
+    if (layer.query_vkEnumerateInstanceExtensionProperties) {
+        fpEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
+            fpGetInstanceProcAddr(nullptr, "vkEnumerateInstanceExtensionProperties"));
+        uint32_t count = 0;
+        fpEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+        if (count == 0) return VK_ERROR_LAYER_NOT_PRESENT;
+        std::vector<VkExtensionProperties> extensions{count, VkExtensionProperties{}};
+        fpEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data());
+        if (count == 0) return VK_ERROR_LAYER_NOT_PRESENT;
+    }
+    if (layer.query_vkEnumerateInstanceVersion) {
+        fpEnumerateInstanceVersion =
+            reinterpret_cast<PFN_vkEnumerateInstanceVersion>(fpGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
+        uint32_t version = 0;
+        fpEnumerateInstanceVersion(&version);
+        if (version == 0) return VK_ERROR_LAYER_NOT_PRESENT;
+    }
 
     // Continue call down the chain
     VkResult result = fpCreateInstance(create_info_pointer, pAllocator, pInstance);

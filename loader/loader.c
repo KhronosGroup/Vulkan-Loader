@@ -4051,6 +4051,17 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
     if (!strcmp(pName, "vkCreateInstance")) {
         return (PFN_vkVoidFunction)terminator_CreateInstance;
     }
+    // If a layer is querying pre-instance functions using vkGetInstanceProcAddr, we need to return function pointers that match the
+    // Vulkan API
+    if (!strcmp(pName, "vkEnumerateInstanceLayerProperties")) {
+        return (PFN_vkVoidFunction)terminator_EnumerateInstanceLayerProperties;
+    }
+    if (!strcmp(pName, "vkEnumerateInstanceExtensionProperties")) {
+        return (PFN_vkVoidFunction)terminator_EnumerateInstanceExtensionProperties;
+    }
+    if (!strcmp(pName, "vkEnumerateInstanceVersion")) {
+        return (PFN_vkVoidFunction)terminator_EnumerateInstanceVersion;
+    }
 
     // While the spec is very clear that querying vkCreateDevice requires a valid VkInstance, because the loader allowed querying
     // with a NULL VkInstance handle for a long enough time, it is impractical to fix this bug in the loader
@@ -6772,19 +6783,21 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain,
-                                                                   uint32_t *pApiVersion) {
-    (void)chain;
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(uint32_t *pApiVersion) {
     // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
     // prefers us crashing.
     *pApiVersion = VK_HEADER_VERSION_COMPLETE;
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL
-terminator_EnumerateInstanceExtensionProperties(const VkEnumerateInstanceExtensionPropertiesChain *chain, const char *pLayerName,
-                                                uint32_t *pPropertyCount, VkExtensionProperties *pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain,
+                                                                                uint32_t *pApiVersion) {
     (void)chain;
+    return terminator_EnumerateInstanceVersion(pApiVersion);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pPropertyCount,
+                                                                               VkExtensionProperties *pProperties) {
     struct loader_extension_list *global_ext_list = NULL;
     struct loader_layer_list instance_layers;
     struct loader_extension_list local_ext_list;
@@ -6879,10 +6892,15 @@ out:
     return res;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(const VkEnumerateInstanceLayerPropertiesChain *chain,
-                                                                           uint32_t *pPropertyCount,
-                                                                           VkLayerProperties *pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceExtensionProperties(
+    const VkEnumerateInstanceExtensionPropertiesChain *chain, const char *pLayerName, uint32_t *pPropertyCount,
+    VkExtensionProperties *pProperties) {
     (void)chain;
+    return terminator_EnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(uint32_t *pPropertyCount,
+                                                                           VkLayerProperties *pProperties) {
     VkResult result = VK_SUCCESS;
     struct loader_layer_list instance_layer_list;
     struct loader_envvar_all_filters layer_filters = {0};
@@ -6937,6 +6955,12 @@ out:
 
     loader_delete_layer_list_and_properties(NULL, &instance_layer_list);
     return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceLayerProperties(
+    const VkEnumerateInstanceLayerPropertiesChain *chain, uint32_t *pPropertyCount, VkLayerProperties *pProperties) {
+    (void)chain;
+    return terminator_EnumerateInstanceLayerProperties(pPropertyCount, pProperties);
 }
 
 // ---- Vulkan Core 1.1 terminators
