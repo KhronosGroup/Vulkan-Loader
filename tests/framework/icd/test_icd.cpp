@@ -320,9 +320,16 @@ test_vkEnumeratePhysicalDeviceGroups([[maybe_unused]] VkInstance instance, uint3
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(
     [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-    [[maybe_unused]] const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger) {
+    const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger) {
     if (nullptr != pMessenger) {
-        uint64_t fake_msgr_handle = reinterpret_cast<uint64_t>(new uint8_t);
+        uint8_t* new_handle_ptr = nullptr;
+        if (pAllocator) {
+            new_handle_ptr =
+                (uint8_t*)pAllocator->pfnAllocation(pAllocator->pUserData, sizeof(uint8_t*), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+        } else {
+            new_handle_ptr = new uint8_t;
+        }
+        uint64_t fake_msgr_handle = reinterpret_cast<uint64_t>(new_handle_ptr);
         icd.messenger_handles.push_back(fake_msgr_handle);
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
     defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
@@ -336,7 +343,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT([[maybe_unused]] VkInstance instance,
                                                                 VkDebugUtilsMessengerEXT messenger,
-                                                                [[maybe_unused]] const VkAllocationCallbacks* pAllocator) {
+                                                                const VkAllocationCallbacks* pAllocator) {
     if (messenger != VK_NULL_HANDLE) {
         uint64_t fake_msgr_handle = (uint64_t)(messenger);
         auto found_iter = std::find(icd.messenger_handles.begin(), icd.messenger_handles.end(), fake_msgr_handle);
@@ -344,9 +351,60 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT([[maybe_unused]]
             // Remove it from the list
             icd.messenger_handles.erase(found_iter);
             // Delete the handle
-            delete (uint8_t*)(fake_msgr_handle);
+            if (pAllocator) {
+                pAllocator->pfnFree(pAllocator->pUserData, (uint8_t*)fake_msgr_handle);
+            } else {
+                delete (uint8_t*)(fake_msgr_handle);
+            }
         } else {
             std::cerr << "Messenger not found during destroy!\n";
+            abort();
+        }
+    }
+}
+
+// debug report create/destroy
+
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugReportCallbackEXT(
+    [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
+    if (nullptr != pCallback) {
+        uint8_t* new_handle_ptr = nullptr;
+        if (pAllocator) {
+            new_handle_ptr =
+                (uint8_t*)pAllocator->pfnAllocation(pAllocator->pUserData, sizeof(uint8_t*), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+        } else {
+            new_handle_ptr = new uint8_t;
+        }
+        uint64_t fake_msgr_handle = reinterpret_cast<uint64_t>(new_handle_ptr);
+        icd.callback_handles.push_back(fake_msgr_handle);
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+        *pCallback = reinterpret_cast<VkDebugReportCallbackEXT>(fake_msgr_handle);
+#else
+        *pCallback = fake_msgr_handle;
+#endif
+    }
+    return VK_SUCCESS;
+}
+
+VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugReportCallbackEXT([[maybe_unused]] VkInstance instance,
+                                                                VkDebugReportCallbackEXT callback,
+                                                                const VkAllocationCallbacks* pAllocator) {
+    if (callback != VK_NULL_HANDLE) {
+        uint64_t fake_msgr_handle = (uint64_t)(callback);
+        auto found_iter = std::find(icd.callback_handles.begin(), icd.callback_handles.end(), fake_msgr_handle);
+        if (found_iter != icd.callback_handles.end()) {
+            // Remove it from the list
+            icd.callback_handles.erase(found_iter);
+            // Delete the handle
+            if (pAllocator) {
+                pAllocator->pfnFree(pAllocator->pUserData, (uint8_t*)fake_msgr_handle);
+            } else {
+                delete (uint8_t*)(fake_msgr_handle);
+            }
+        } else {
+            std::cerr << "callback not found during destroy!\n";
             abort();
         }
     }
@@ -1308,6 +1366,14 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
         }
         if (string_eq(pName, "vkDestroyDebugUtilsMessengerEXT")) {
             return to_vkVoidFunction(test_vkDestroyDebugUtilsMessengerEXT);
+        }
+    }
+    if (IsInstanceExtensionEnabled(VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+        if (string_eq(pName, "vkCreateDebugReportCallbackEXT")) {
+            return to_vkVoidFunction(test_vkCreateDebugReportCallbackEXT);
+        }
+        if (string_eq(pName, "vkDestroyDebugReportCallbackEXT")) {
+            return to_vkVoidFunction(test_vkDestroyDebugReportCallbackEXT);
         }
     }
 
