@@ -549,10 +549,10 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkQueuePresentKHR(VkQueue queue, co
 }
 
 VkResult allocate_icd_surface_struct(struct loader_instance *instance, size_t base_size, size_t platform_size,
-                                     VkIcdSurface **out_icd_surface) {
+                                     const VkAllocationCallbacks *pAllocator, VkIcdSurface **out_icd_surface) {
     uint32_t next_index = 0;
     VkIcdSurface *icd_surface = NULL;
-    VkResult res = loader_get_next_available_entry(instance, &instance->surfaces_list, &next_index);
+    VkResult res = loader_get_next_available_entry(instance, &instance->surfaces_list, &next_index, pAllocator);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -609,8 +609,11 @@ void cleanup_surface_creation(struct loader_instance *loader_inst, VkResult resu
             }
         }
         if (loader_inst->surfaces_list.list &&
-            loader_inst->surfaces_list.capacity > icd_surface->surface_index * sizeof(VkBool32)) {
-            loader_inst->surfaces_list.list[icd_surface->surface_index] = VK_FALSE;
+            loader_inst->surfaces_list.capacity > icd_surface->surface_index * sizeof(struct loader_used_object_status)) {
+            loader_inst->surfaces_list.list[icd_surface->surface_index].status = VK_FALSE;
+            if (NULL != pAllocator) {
+                loader_inst->surfaces_list.list[icd_surface->surface_index].allocation_callbacks = *pAllocator;
+            }
         }
         loader_instance_heap_free(loader_inst, icd_surface);
     }
@@ -653,8 +656,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
     }
 
     // Next, if so, proceed with the implementation of this function:
-    result =
-        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->win_surf.base), sizeof(icd_surface->win_surf), &icd_surface);
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->win_surf.base), sizeof(icd_surface->win_surf), pAllocator,
+                                         &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -760,7 +763,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance ins
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->wayland_surf.base), sizeof(icd_surface->wayland_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -869,8 +872,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXcbSurfaceKHR(VkInstance instanc
     }
 
     // Next, if so, proceed with the implementation of this function:
-    result =
-        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->xcb_surf.base), sizeof(icd_surface->xcb_surf), &icd_surface);
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->xcb_surf.base), sizeof(icd_surface->xcb_surf), pAllocator,
+                                         &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -982,8 +985,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instan
     }
 
     // Next, if so, proceed with the implementation of this function:
-    result =
-        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->xlib_surf.base), sizeof(icd_surface->xlib_surf), &icd_surface);
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->xlib_surf.base), sizeof(icd_surface->xlib_surf),
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -1095,7 +1098,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance in
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->directfb_surf.base), sizeof(icd_surface->directfb_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -1252,7 +1255,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->headless_surf.base), sizeof(icd_surface->headless_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -1343,7 +1346,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance insta
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->macos_surf.base), sizeof(icd_surface->macos_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -1460,8 +1463,8 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
     }
 
     // Next, if so, proceed with the implementation of this function:
-    result =
-        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->ggp_surf.base), sizeof(icd_surface->ggp_surf), &icd_surface);
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->ggp_surf.base), sizeof(icd_surface->ggp_surf), pAllocator,
+                                         &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -1523,7 +1526,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->metal_surf.base), sizeof(icd_surface->metal_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -1589,7 +1592,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance inst
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->screen_surf.base), sizeof(icd_surface->screen_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -1696,8 +1699,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance,
     }
 
     // Next, if so, proceed with the implementation of this function:
-    result =
-        allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->vi_surf.base), sizeof(icd_surface->vi_surf), &icd_surface);
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->vi_surf.base), sizeof(icd_surface->vi_surf), pAllocator,
+                                         &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -2011,7 +2014,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->display_surf.base), sizeof(icd_surface->display_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }
@@ -2456,7 +2459,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
 
     // Next, if so, proceed with the implementation of this function:
     result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->imagepipe_surf.base), sizeof(icd_surface->imagepipe_surf),
-                                         &icd_surface);
+                                         pAllocator, &icd_surface);
     if (VK_SUCCESS != result) {
         goto out;
     }

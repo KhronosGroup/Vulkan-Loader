@@ -184,7 +184,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugUtilsMessengerEXT(VkInstanc
         goto out;
     }
 
-    res = loader_get_next_available_entry(inst, &inst->debug_utils_messengers_list, &next_index);
+    res = loader_get_next_available_entry(inst, &inst->debug_utils_messengers_list, &next_index, pAllocator);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -248,8 +248,11 @@ out:
             }
         }
         if (inst->debug_utils_messengers_list.list &&
-            inst->debug_utils_messengers_list.capacity > (*pNextIndex) * sizeof(VkBool32)) {
-            inst->debug_utils_messengers_list.list[*pNextIndex] = VK_FALSE;
+            inst->debug_utils_messengers_list.capacity > (*pNextIndex) * sizeof(struct loader_used_object_status)) {
+            inst->debug_utils_messengers_list.list[*pNextIndex].status = VK_FALSE;
+            if (NULL != pAllocator) {
+                inst->debug_utils_messengers_list.list[*pNextIndex].allocation_callbacks = *pAllocator;
+            }
         }
         loader_free_with_instance_fallback(pAllocator, inst, new_dbg_func_node);
         loader_free_with_instance_fallback(pAllocator, inst, pNextIndex);
@@ -278,8 +281,11 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
 
     util_DestroyDebugUtilsMessenger(inst, messenger, pAllocator);
     if (inst->debug_utils_messengers_list.list &&
-        inst->debug_utils_messengers_list.capacity > (*debug_messenger_index) * sizeof(VkBool32)) {
-        inst->debug_utils_messengers_list.list[*debug_messenger_index] = VK_FALSE;
+        inst->debug_utils_messengers_list.capacity > (*debug_messenger_index) * sizeof(struct loader_used_object_status)) {
+        inst->debug_utils_messengers_list.list[*debug_messenger_index].status = VK_FALSE;
+        if (NULL != pAllocator) {
+            inst->debug_utils_messengers_list.list[*debug_messenger_index].allocation_callbacks = *pAllocator;
+        }
     }
 
     loader_free_with_instance_fallback(pAllocator, inst, debug_messenger_index);
@@ -454,7 +460,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugReportCallbackEXT(VkInstanc
         goto out;
     }
 
-    res = loader_get_next_available_entry(inst, &inst->debug_report_callbacks_list, &next_index);
+    res = loader_get_next_available_entry(inst, &inst->debug_report_callbacks_list, &next_index, pAllocator);
     if (res != VK_SUCCESS) {
         goto out;
     }
@@ -518,8 +524,11 @@ out:
             }
         }
         if (inst->debug_report_callbacks_list.list &&
-            inst->debug_report_callbacks_list.capacity > (*pNextIndex) * sizeof(VkBool32)) {
-            inst->debug_report_callbacks_list.list[*pNextIndex] = VK_FALSE;
+            inst->debug_report_callbacks_list.capacity > (*pNextIndex) * sizeof(struct loader_used_object_status)) {
+            inst->debug_report_callbacks_list.list[*pNextIndex].status = VK_FALSE;
+            if (NULL != pAllocator) {
+                inst->debug_report_callbacks_list.list[*pNextIndex].allocation_callbacks = *pAllocator;
+            }
         }
         loader_free_with_instance_fallback(pAllocator, inst, new_dbg_func_node);
         loader_free_with_instance_fallback(pAllocator, inst, pNextIndex);
@@ -547,8 +556,11 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugReportCallbackEXT(VkInstance i
 
     util_DestroyDebugReportCallback(inst, callback, pAllocator);
     if (inst->debug_report_callbacks_list.list &&
-        inst->debug_report_callbacks_list.capacity > (*debug_report_index) * sizeof(VkBool32)) {
-        inst->debug_report_callbacks_list.list[*debug_report_index] = VK_FALSE;
+        inst->debug_report_callbacks_list.capacity > (*debug_report_index) * sizeof(struct loader_used_object_status)) {
+        inst->debug_report_callbacks_list.list[*debug_report_index].status = VK_FALSE;
+        if (NULL != pAllocator) {
+            inst->debug_report_callbacks_list.list[*debug_report_index].allocation_callbacks = *pAllocator;
+        }
     }
     loader_free_with_instance_fallback(pAllocator, inst, debug_report_index);
 }

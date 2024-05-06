@@ -731,16 +731,22 @@ void loader_destroy_generic_list(const struct loader_instance *inst, struct load
 }
 
 VkResult loader_get_next_available_entry(const struct loader_instance *inst, struct loader_used_object_list *list_info,
-                                         uint32_t *free_index) {
+                                         uint32_t *free_index, const VkAllocationCallbacks *pAllocator) {
     if (NULL == list_info->list) {
-        VkResult res = loader_init_generic_list(inst, (struct loader_generic_list *)list_info, sizeof(VkBool32));
+        VkResult res =
+            loader_init_generic_list(inst, (struct loader_generic_list *)list_info, sizeof(struct loader_used_object_status));
         if (VK_SUCCESS != res) {
             return res;
         }
     }
-    for (uint32_t i = 0; i < list_info->capacity / sizeof(VkBool32); i++) {
-        if (list_info->list[i] == VK_FALSE) {
-            list_info->list[i] = VK_TRUE;
+    for (uint32_t i = 0; i < list_info->capacity / sizeof(struct loader_used_object_status); i++) {
+        if (list_info->list[i].status == VK_FALSE) {
+            list_info->list[i].status = VK_TRUE;
+            if (pAllocator) {
+                list_info->list[i].allocation_callbacks = *pAllocator;
+            } else {
+                memset(&list_info->list[i].allocation_callbacks, 0, sizeof(VkAllocationCallbacks));
+            }
             *free_index = i;
             return VK_SUCCESS;
         }
@@ -752,17 +758,23 @@ VkResult loader_get_next_available_entry(const struct loader_instance *inst, str
     if (VK_SUCCESS != res) {
         return res;
     }
-    uint32_t new_index = (uint32_t)(old_capacity / sizeof(VkBool32));
+    uint32_t new_index = (uint32_t)(old_capacity / sizeof(struct loader_used_object_status));
     // Zero out the newly allocated back half of list.
     memset(&list_info->list[new_index], 0, old_capacity);
-    list_info->list[new_index] = VK_TRUE;
+    list_info->list[new_index].status = VK_TRUE;
+    if (pAllocator) {
+        list_info->list[new_index].allocation_callbacks = *pAllocator;
+    } else {
+        memset(&list_info->list[new_index].allocation_callbacks, 0, sizeof(VkAllocationCallbacks));
+    }
     *free_index = new_index;
     return VK_SUCCESS;
 }
 
 void loader_release_object_from_list(struct loader_used_object_list *list_info, uint32_t index_to_free) {
-    if (list_info->list && list_info->capacity > index_to_free * sizeof(VkBool32)) {
-        list_info->list[index_to_free] = VK_FALSE;
+    if (list_info->list && list_info->capacity > index_to_free * sizeof(struct loader_used_object_status)) {
+        list_info->list[index_to_free].status = VK_FALSE;
+        memset(&list_info->list[index_to_free].allocation_callbacks, 0, sizeof(VkAllocationCallbacks));
     }
 }
 
@@ -1351,6 +1363,46 @@ void loader_remove_logical_device(struct loader_icd_term *icd_term, struct loade
     loader_destroy_logical_device(found_dev, pAllocator);
 }
 
+const VkAllocationCallbacks *ignore_null_callback(const VkAllocationCallbacks *callbacks) {
+    return NULL != callbacks->pfnAllocation && NULL != callbacks->pfnFree && NULL != callbacks->pfnReallocation &&
+                   NULL != callbacks->pfnInternalAllocation && NULL != callbacks->pfnInternalFree
+               ? callbacks
+               : NULL;
+}
+
+// Try to close any open objects on the loader_icd_term - this must be done before destroying the instance
+void loader_icd_close_objects(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term) {
+    for (uint32_t i = 0; i < icd_term->surface_list.capacity / sizeof(VkSurfaceKHR); i++) {
+        if (ptr_inst->surfaces_list.capacity > i * sizeof(struct loader_used_object_status) &&
+            ptr_inst->surfaces_list.list[i].status == VK_TRUE && NULL != icd_term->surface_list.list &&
+            icd_term->surface_list.list[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
+            icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[i],
+                                                 ignore_null_callback(&(ptr_inst->surfaces_list.list[i].allocation_callbacks)));
+            icd_term->surface_list.list[i] = (VkSurfaceKHR)(uintptr_t)NULL;
+        }
+    }
+    for (uint32_t i = 0; i < icd_term->debug_utils_messenger_list.capacity / sizeof(VkDebugUtilsMessengerEXT); i++) {
+        if (ptr_inst->debug_utils_messengers_list.capacity > i * sizeof(struct loader_used_object_status) &&
+            ptr_inst->debug_utils_messengers_list.list[i].status == VK_TRUE && NULL != icd_term->debug_utils_messenger_list.list &&
+            icd_term->debug_utils_messenger_list.list[i] && NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
+            icd_term->dispatch.DestroyDebugUtilsMessengerEXT(
+                icd_term->instance, icd_term->debug_utils_messenger_list.list[i],
+                ignore_null_callback(&(ptr_inst->debug_utils_messengers_list.list[i].allocation_callbacks)));
+            icd_term->debug_utils_messenger_list.list[i] = (VkDebugUtilsMessengerEXT)(uintptr_t)NULL;
+        }
+    }
+    for (uint32_t i = 0; i < icd_term->debug_report_callback_list.capacity / sizeof(VkDebugReportCallbackEXT); i++) {
+        if (ptr_inst->debug_report_callbacks_list.capacity > i * sizeof(struct loader_used_object_status) &&
+            ptr_inst->debug_report_callbacks_list.list[i].status == VK_TRUE && NULL != icd_term->debug_report_callback_list.list &&
+            icd_term->debug_report_callback_list.list[i] && NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
+            icd_term->dispatch.DestroyDebugReportCallbackEXT(
+                icd_term->instance, icd_term->debug_report_callback_list.list[i],
+                ignore_null_callback(&(ptr_inst->debug_report_callbacks_list.list[i].allocation_callbacks)));
+            icd_term->debug_report_callback_list.list[i] = (VkDebugReportCallbackEXT)(uintptr_t)NULL;
+        }
+    }
+}
+// Free resources allocated inside the loader_icd_term
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
                         const VkAllocationCallbacks *pAllocator) {
     ptr_inst->icd_terms_count--;
@@ -1360,35 +1412,8 @@ void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term
         dev = next_dev;
     }
 
-    for (uint32_t i = 0; i < icd_term->surface_list.capacity / sizeof(VkSurfaceKHR); i++) {
-        if (ptr_inst->surfaces_list.capacity > i * sizeof(VkBool32) && ptr_inst->surfaces_list.list[i] == VK_TRUE &&
-            NULL != icd_term->surface_list.list && icd_term->surface_list.list[i] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
-            icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[i], pAllocator);
-            icd_term->surface_list.list[i] = (VkSurfaceKHR)(uintptr_t)NULL;
-        }
-    }
     loader_destroy_generic_list(ptr_inst, (struct loader_generic_list *)&icd_term->surface_list);
-
-    for (uint32_t i = 0; i < icd_term->debug_utils_messenger_list.capacity / sizeof(VkDebugUtilsMessengerEXT); i++) {
-        if (ptr_inst->debug_utils_messengers_list.capacity > i * sizeof(VkBool32) &&
-            ptr_inst->debug_utils_messengers_list.list[i] == VK_TRUE && NULL != icd_term->debug_utils_messenger_list.list &&
-            icd_term->debug_utils_messenger_list.list[i] && NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
-            icd_term->dispatch.DestroyDebugUtilsMessengerEXT(icd_term->instance, icd_term->debug_utils_messenger_list.list[i],
-                                                             pAllocator);
-            icd_term->debug_utils_messenger_list.list[i] = (VkDebugUtilsMessengerEXT)(uintptr_t)NULL;
-        }
-    }
     loader_destroy_generic_list(ptr_inst, (struct loader_generic_list *)&icd_term->debug_utils_messenger_list);
-
-    for (uint32_t i = 0; i < icd_term->debug_report_callback_list.capacity / sizeof(VkDebugReportCallbackEXT); i++) {
-        if (ptr_inst->debug_report_callbacks_list.capacity > i * sizeof(VkBool32) &&
-            ptr_inst->debug_report_callbacks_list.list[i] == VK_TRUE && NULL != icd_term->debug_report_callback_list.list &&
-            icd_term->debug_report_callback_list.list[i] && NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
-            icd_term->dispatch.DestroyDebugReportCallbackEXT(icd_term->instance, icd_term->debug_report_callback_list.list[i],
-                                                             pAllocator);
-            icd_term->debug_report_callback_list.list[i] = (VkDebugReportCallbackEXT)(uintptr_t)NULL;
-        }
-    }
     loader_destroy_generic_list(ptr_inst, (struct loader_generic_list *)&icd_term->debug_report_callback_list);
 
     loader_instance_heap_free(ptr_inst, icd_term);
@@ -5589,6 +5614,7 @@ out:
             icd_term = ptr_instance->icd_terms;
             ptr_instance->icd_terms = icd_term->next;
             if (NULL != icd_term->instance) {
+                loader_icd_close_objects(ptr_instance, icd_term);
                 icd_term->dispatch.DestroyInstance(icd_term->instance, pAllocator);
             }
             loader_icd_destroy(ptr_instance, icd_term, pAllocator);
@@ -5636,6 +5662,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     struct loader_icd_term *icd_terms = ptr_instance->icd_terms;
     while (NULL != icd_terms) {
         if (icd_terms->instance) {
+            loader_icd_close_objects(ptr_instance, icd_terms);
             icd_terms->dispatch.DestroyInstance(icd_terms->instance, pAllocator);
         }
         struct loader_icd_term *next_icd_term = icd_terms->next;
@@ -6486,11 +6513,14 @@ void unload_drivers_without_physical_devices(struct loader_instance *inst) {
             if (cur_scanned_icd_index != UINT32_MAX) {
                 loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                            "Removing driver %s due to not having any physical devices", cur_icd_term->scanned_icd->lib_name);
+
+                const VkAllocationCallbacks *allocation_callbacks = ignore_null_callback(&(inst->alloc_callbacks));
                 if (cur_icd_term->instance) {
-                    cur_icd_term->dispatch.DestroyInstance(cur_icd_term->instance, &(inst->alloc_callbacks));
+                    loader_icd_close_objects(inst, cur_icd_term);
+                    cur_icd_term->dispatch.DestroyInstance(cur_icd_term->instance, allocation_callbacks);
                 }
                 cur_icd_term->instance = VK_NULL_HANDLE;
-                loader_icd_destroy(inst, cur_icd_term, &(inst->alloc_callbacks));
+                loader_icd_destroy(inst, cur_icd_term, allocation_callbacks);
                 cur_icd_term = NULL;
                 struct loader_scanned_icd *scanned_icd_to_remove = &inst->icd_tramp_list.scanned_list[cur_scanned_icd_index];
                 // Iterate through preloaded ICDs and remove the corresponding driver from that list
