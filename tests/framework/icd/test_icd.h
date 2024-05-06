@@ -118,6 +118,7 @@ struct TestICD {
     std::vector<DispatchableHandle<VkDevice>> device_handles;
     std::vector<uint64_t> surface_handles;
     std::vector<uint64_t> messenger_handles;
+    std::vector<uint64_t> callback_handles;
     std::vector<uint64_t> swapchain_handles;
 
     BUILDER_VALUE(TestICD, bool, can_query_vkEnumerateInstanceVersion, true);
