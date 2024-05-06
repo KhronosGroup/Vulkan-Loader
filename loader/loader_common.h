@@ -90,10 +90,20 @@ struct loader_device_extension_list {
     struct loader_dev_ext_props *list;
 };
 
+struct loader_used_object_status {
+    VkBool32 status;
+    VkAllocationCallbacks allocation_callbacks;
+};
+
 struct loader_used_object_list {
     size_t capacity;
     uint32_t padding;  // count variable isn't used
-    VkBool32 *list;
+    struct loader_used_object_status *list;
+};
+
+struct loader_surface_allocation {
+    VkSurfaceKHR surface;
+    VkAllocationCallbacks allocation_callbacks;
 };
 
 struct loader_surface_list {

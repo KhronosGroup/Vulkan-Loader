@@ -792,6 +792,7 @@ out:
                 // Call destroy Instance on each driver in case we successfully called down the chain but failed on
                 // our way back out of it.
                 if (icd_term->instance) {
+                    loader_icd_close_objects(ptr_instance, icd_term);
                     icd_term->dispatch.DestroyInstance(icd_term->instance, pAllocator);
                 }
                 icd_term->instance = VK_NULL_HANDLE;

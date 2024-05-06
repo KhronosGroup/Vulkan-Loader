@@ -121,7 +121,7 @@ void free_string_list(const struct loader_instance *inst, struct loader_string_l
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
 VkResult loader_resize_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info);
 VkResult loader_get_next_available_entry(const struct loader_instance *inst, struct loader_used_object_list *list_info,
-                                         uint32_t *free_index);
+                                         uint32_t *free_index, const VkAllocationCallbacks *pAllocator);
 void loader_release_object_from_list(struct loader_used_object_list *list_info, uint32_t index_to_free);
 bool has_vk_extension_property_array(const VkExtensionProperties *vk_ext_prop, const uint32_t count,
                                      const VkExtensionProperties *ext_array);
@@ -157,6 +157,7 @@ VkResult loader_init_scanned_icd_list(const struct loader_instance *inst, struct
 void loader_clear_scanned_icd_list(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
 VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list,
                          const VkInstanceCreateInfo *pCreateInfo, bool *skipped_portability_drivers);
+void loader_icd_close_objects(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term);
 void loader_icd_destroy(struct loader_instance *ptr_inst, struct loader_icd_term *icd_term,
                         const VkAllocationCallbacks *pAllocator);
 VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
