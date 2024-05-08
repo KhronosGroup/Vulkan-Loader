@@ -6527,8 +6527,21 @@ void unload_drivers_without_physical_devices(struct loader_instance *inst) {
                 loader_platform_thread_lock_mutex(&loader_preload_icd_lock);
                 if (NULL != preloaded_icds.scanned_list) {
                     for (uint32_t i = 0; i < preloaded_icds.count; i++) {
-                        if (strcmp(preloaded_icds.scanned_list[i].lib_name, scanned_icd_to_remove->lib_name) == 0) {
+                        if (NULL != preloaded_icds.scanned_list[i].lib_name && NULL != scanned_icd_to_remove->lib_name &&
+                            strcmp(preloaded_icds.scanned_list[i].lib_name, scanned_icd_to_remove->lib_name) == 0) {
                             loader_unload_scanned_icd(inst, &preloaded_icds.scanned_list[i]);
+                            // condense the list so that it doesn't contain empty elements.
+                            if (i < preloaded_icds.count - 1) {
+                                memcpy((void *)&preloaded_icds.scanned_list[i],
+                                       (void *)&preloaded_icds.scanned_list[preloaded_icds.count - 1],
+                                       sizeof(struct loader_scanned_icd));
+                                memset((void *)&preloaded_icds.scanned_list[preloaded_icds.count - 1], 0,
+                                       sizeof(struct loader_scanned_icd));
+                            }
+                            if (i > 0) {
+                                preloaded_icds.count--;
+                            }
+
                             break;
                         }
                     }
