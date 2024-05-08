@@ -4679,6 +4679,35 @@ TEST(DriverUnloadingFromZeroPhysDevs, AtFrontAndBack) {
     }
 }
 
+TEST(DriverUnloadingFromZeroPhysDevs, MultipleEnumerateCalls) {
+    FrameworkEnvironment env{};
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+    add_empty_driver_for_unloading_testing(env);
+
+    uint32_t extension_count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, 0));
+    ASSERT_EQ(extension_count, 6U);  // default extensions + surface extensions
+    std::array<VkExtensionProperties, 6> extensions;
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto phys_devs1 = inst.GetPhysDevs();
+        auto phys_devs2 = inst.GetPhysDevs();
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto phys_devs1 = inst.GetPhysDevs();
+        auto phys_devs2 = inst.GetPhysDevs();
+    }
+}
 TEST(DriverUnloadingFromZeroPhysDevs, NoPhysicalDevices) {
     FrameworkEnvironment env{};
     add_empty_driver_for_unloading_testing(env);
