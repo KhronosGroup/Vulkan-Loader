@@ -135,7 +135,6 @@ if (!is_android) {
       "loader/vk_loader_layer.h",
 
       # TODO(jmadill): Use assembler where available.
-      "loader/unknown_ext_chain.c",
       "loader/vk_loader_platform.h",
       "loader/wsi.c",
       "loader/wsi.h",
