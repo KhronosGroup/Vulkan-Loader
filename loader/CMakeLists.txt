@@ -32,18 +32,6 @@ if(WIN32)
     endif()
 
     # ~~~
-    # Build dev_ext_trampoline.c and unknown_ext_chain.c with /O2 to allow tail-call optimization.
-    # Setup two CMake targets (loader-norm and loader-opt) for the different compilation flags.
-    # ~~~
-    set(MODIFIED_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-
-    string(REPLACE "/Od" "/O2" MODIFIED_C_FLAGS_DEBUG ${MODIFIED_C_FLAGS_DEBUG})
-    string(REPLACE "/Ob0" "/Ob2" MODIFIED_C_FLAGS_DEBUG ${MODIFIED_C_FLAGS_DEBUG})
-    string(REGEX REPLACE "/RTC." "" MODIFIED_C_FLAGS_DEBUG ${MODIFIED_C_FLAGS_DEBUG})  #remove run-time error checks
-
-    separate_arguments(MODIFIED_C_FLAGS_DEBUG WINDOWS_COMMAND ${MODIFIED_C_FLAGS_DEBUG})
-
-    # ~~~
     # Only generate the loader.rc file with CMake if BUILD_DLL_VERSIONINFO was set.
     # This feature is for the Vulkan Runtime build
     # Otherwise rely on the checked in loader.rc from the python script
@@ -121,15 +109,11 @@ endif()
 
 set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
 
-# Check for assembler support
-set(ASM_FAILURE_MSG "The build will fall back on building with C code\n")
-set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG}Note that this may be unsafe, as the C code requires tail-call optimizations to remove")
-set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} the stack frame for certain calls. If the compiler does not do this, then unknown device")
-set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted stack.")
+set(ASM_FAILURE_MSG "Support for unknown physical device and device functions is disabled due to missing the required assembly support code. \
+To support unknown functions, assembly must be added for the platform.\n")
 
-if (APPLE_UNIVERSAL_BINARY)
-    set(USE_ASSEMBLY_FALLBACK ON)
-elseif(WIN32 AND NOT USE_GAS)
+# Check for assembler support
+if(WIN32 AND NOT USE_GAS)
     option(USE_MASM "Use MASM" ON)
     if(USE_MASM AND MINGW)
         find_program(JWASM_FOUND NAMES jwasm uasm)
@@ -211,8 +195,9 @@ end
         target_link_libraries(loader-unknown-chain Vulkan::Headers)
         target_include_directories(loader-unknown-chain PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
         add_dependencies(loader-unknown-chain loader_asm_gen_files)
+        set(LOADER_UNKNOWN_CHAIN_LIBRARY $<TARGET_OBJECTS:loader-unknown-chain>)
+        set(UNKNOWN_FUNCTIONS_SUPPORTED ON)
     else()
-        set(USE_ASSEMBLY_FALLBACK ON)
         message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
     endif()
 elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Windows using Clang-CL
@@ -312,8 +297,8 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
         if (APPLE)
             set(MODIFY_UNKNOWN_FUNCTION_DECLS ON)
         endif()
+        set(UNKNOWN_FUNCTIONS_SUPPORTED ON)
     else()
-        set(USE_ASSEMBLY_FALLBACK ON)
         if(USE_GAS)
             message(WARNING "Could not find working ${ASM_OFFSET_SYSTEM_PROCESSOR} GAS assembler\n${ASM_FAILURE_MSG}")
         else()
@@ -322,31 +307,16 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
     endif()
 endif()
 
-if(USE_ASSEMBLY_FALLBACK)
-    add_custom_target(loader_asm_gen_files)
-    if (MSVC)
-        add_library(loader-unknown-chain OBJECT unknown_ext_chain.c)
-        target_link_libraries(loader-unknown-chain loader_specific_options)
-        set_target_properties(loader-unknown-chain PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
-    else()
-        set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
-        set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
-    endif()
+if(UNKNOWN_FUNCTIONS_SUPPORTED)
+    list(APPEND NORMAL_LOADER_SRCS ${OPT_LOADER_SRCS})
 endif()
 
 if(WIN32)
-    add_library(loader-opt STATIC ${OPT_LOADER_SRCS})
-    target_link_libraries(loader-opt PUBLIC loader_specific_options)
-    add_dependencies(loader-opt loader_asm_gen_files)
-    set_target_properties(loader-opt PROPERTIES CMAKE_C_FLAGS_DEBUG "${MODIFIED_C_FLAGS_DEBUG}")
-
     # If BUILD_DLL_VERSIONINFO was set, use the loader.rc in the build dir, otherwise use the checked in file
     set(RC_FILE_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/loader.rc)
     if (NOT "$CACHE{BUILD_DLL_VERSIONINFO}" STREQUAL "")
         set(RC_FILE_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
     endif()
-
-    set(LOADER_UNKNOWN_CHAIN_LIBRARY $<$<TARGET_EXISTS:loader-unknown-chain>:$<TARGET_OBJECTS:loader-unknown-chain>>)
 
     add_library(vulkan
                 SHARED
@@ -355,7 +325,7 @@ if(WIN32)
                 ${CMAKE_CURRENT_SOURCE_DIR}/${API_TYPE}-1.def
                 ${RC_FILE_LOCATION})
 
-    target_link_libraries(vulkan PRIVATE loader_specific_options loader-opt)
+    target_link_libraries(vulkan PRIVATE loader_specific_options)
 
     # when adding the suffix the import and runtime library names must be consistent
     # mingw: libvulkan-1.dll.a / vulkan-1.dll
@@ -377,8 +347,6 @@ if(WIN32)
        target_link_libraries(vulkan PRIVATE cfgmgr32)
     endif()
 
-    add_dependencies(vulkan loader_asm_gen_files)
-
 else()
     if(APPLE)
         option(APPLE_STATIC_LOADER "Build a loader that can be statically linked. Intended for Chromium usage/testing.")
@@ -395,9 +363,7 @@ else()
         add_library(vulkan SHARED)
     endif()
 
-    target_sources(vulkan PRIVATE ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-
-    add_dependencies(vulkan loader_asm_gen_files)
+    target_sources(vulkan PRIVATE ${NORMAL_LOADER_SRCS})
 
     set_target_properties(vulkan PROPERTIES
         SOVERSION "1"
@@ -432,9 +398,12 @@ else()
         file(GLOB_RECURSE CONFIGURE_DEPENDS FRAMEWORK_HEADERS ${VulkanHeaders_INCLUDE_DIRS})
 
         add_library(vulkan-framework SHARED)
-        target_sources(vulkan-framework PRIVATE ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        target_sources(vulkan-framework PRIVATE ${NORMAL_LOADER_SRCS} ${FRAMEWORK_HEADERS})
 
-        add_dependencies(vulkan-framework loader_asm_gen_files)
+        if (UNKNOWN_FUNCTIONS_SUPPORTED)
+            add_dependencies(vulkan-framework loader_asm_gen_files)
+        endif()
+
         target_link_libraries(vulkan-framework ${CMAKE_DL_LIBS} Threads::Threads -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework loader_specific_options)
 
@@ -487,6 +456,11 @@ target_link_libraries(vulkan PRIVATE loader_specific_options)
 
 target_link_libraries(vulkan PRIVATE Vulkan::Headers)
 add_library(Vulkan::Loader ALIAS vulkan)
+
+if (UNKNOWN_FUNCTIONS_SUPPORTED)
+    target_compile_definitions(vulkan PRIVATE UNKNOWN_FUNCTIONS_SUPPORTED)
+    add_dependencies(vulkan loader_asm_gen_files)
+endif()
 
 if (APPLE_STATIC_LOADER)
     # TLDR: This feature only exists at the request of Google for Chromium. No other project should use this!

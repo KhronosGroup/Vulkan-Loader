@@ -24,6 +24,44 @@
 
 #include "unknown_function_handling.h"
 
+// If the assembly code necessary for unknown functions isn't supported, then replace all of the functions with stubs.
+// This way, if an application queries for an unknown function, they receive NULL and can act accordingly.
+// Previously, there was a fallback path written in C. However, it depended on the compiler optimizing the functions
+// in such a way as to not disturb the callstack. This reliance on implementation defined behavior is unsustainable and was only
+// known to work with GCC.
+#if !defined(UNKNOWN_FUNCTIONS_SUPPORTED)
+
+void loader_init_dispatch_dev_ext(struct loader_instance *inst, struct loader_device *dev) {
+    (void)inst;
+    (void)dev;
+}
+void *loader_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
+    (void)inst;
+    (void)funcName;
+    return NULL;
+}
+void *loader_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
+    (void)inst;
+    (void)funcName;
+    return NULL;
+}
+
+void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
+    (void)inst;
+    (void)funcName;
+    return NULL;
+}
+void *loader_phys_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
+    (void)inst;
+    (void)funcName;
+    return NULL;
+}
+
+void loader_free_dev_ext_table(struct loader_instance *inst) { (void)inst; }
+void loader_free_phys_dev_ext_table(struct loader_instance *inst) { (void)inst; }
+
+#else
+
 #include "allocation.h"
 #include "log.h"
 
@@ -337,3 +375,5 @@ void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *fu
 void *loader_phys_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
     return loader_phys_dev_ext_gpa_impl(inst, funcName, false);
 }
+
+#endif
