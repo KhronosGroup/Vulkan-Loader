@@ -155,7 +155,7 @@ end
     endif ()
     if(MINGW)
         set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} ${JWASM_FLAGS})
-    elseif(NOT CMAKE_CL_64 AND NOT JWASM_FOUND)
+    elseif(NOT CMAKE_CL_64 AND NOT JWASM_FOUND AND CMAKE_SIZEOF_VOID_P EQUAL 4) # /safeseh is only needed in x86
         set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} /safeseh)
     endif()
     # try_compile does not work here due to the same reasons as static above.
@@ -191,12 +191,15 @@ end
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
-        add_library(loader-unknown-chain OBJECT unknown_ext_chain_masm.asm)
-        target_link_libraries(loader-unknown-chain Vulkan::Headers)
+        add_library(loader-unknown-chain STATIC unknown_ext_chain_masm.asm)
         target_include_directories(loader-unknown-chain PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
         add_dependencies(loader-unknown-chain loader_asm_gen_files)
-        set(LOADER_UNKNOWN_CHAIN_LIBRARY $<TARGET_OBJECTS:loader-unknown-chain>)
         set(UNKNOWN_FUNCTIONS_SUPPORTED ON)
+
+        # Work around bug in CMake Ninja + MSVC/clang-cl, see https://discourse.cmake.org/t/building-lib-file-from-asm-cmake-bug/1959
+        if (CMAKE_C_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+            set(CMAKE_ASM_MASM_CREATE_STATIC_LIBRARY "<CMAKE_AR> /OUT:<TARGET> <LINK_FLAGS> <OBJECTS>")
+        endif()
     else()
         message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
     endif()
@@ -321,11 +324,14 @@ if(WIN32)
     add_library(vulkan
                 SHARED
                 ${NORMAL_LOADER_SRCS}
-                ${LOADER_UNKNOWN_CHAIN_LIBRARY}
                 ${CMAKE_CURRENT_SOURCE_DIR}/${API_TYPE}-1.def
                 ${RC_FILE_LOCATION})
 
     target_link_libraries(vulkan PRIVATE loader_specific_options)
+
+    if(UNKNOWN_FUNCTIONS_SUPPORTED)
+        target_link_libraries(vulkan PRIVATE loader-unknown-chain)
+    endif()
 
     # when adding the suffix the import and runtime library names must be consistent
     # mingw: libvulkan-1.dll.a / vulkan-1.dll
