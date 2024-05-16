@@ -184,12 +184,16 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVer
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
                                                      [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
                                                      VkInstance* pInstance) {
-    if (pCreateInfo == nullptr || pCreateInfo->pApplicationInfo == nullptr) {
+    if (pCreateInfo == nullptr) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    uint32_t default_api_version = VK_API_VERSION_1_0;
+    uint32_t api_version =
+        (pCreateInfo->pApplicationInfo == nullptr) ? default_api_version : pCreateInfo->pApplicationInfo->apiVersion;
+
     if (icd.icd_api_version < VK_API_VERSION_1_1) {
-        if (pCreateInfo->pApplicationInfo->apiVersion > VK_API_VERSION_1_0) {
+        if (api_version > VK_API_VERSION_1_0) {
             return VK_ERROR_INCOMPATIBLE_DRIVER;
         }
     }
