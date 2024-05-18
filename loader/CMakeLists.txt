@@ -332,7 +332,7 @@ if(WIN32)
 
     target_link_libraries(vulkan PRIVATE loader_specific_options)
 
-    if(UNKNOWN_FUNCTIONS_SUPPORTED)
+    if(UNKNOWN_FUNCTIONS_SUPPORTED AND TARGET loader-unknown-chain)
         target_link_libraries(vulkan PRIVATE loader-unknown-chain)
     endif()
 
