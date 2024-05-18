@@ -205,6 +205,8 @@ end
     endif()
 elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Windows using Clang-CL
 
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_PROCESSOR)
+
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)
         if (APPLE_UNIVERSAL_BINARY)
@@ -216,7 +218,7 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
         set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
         set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-        if(WIN32 AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "ARM64")
+        if(WIN32 AND ${SYSTEM_PROCESSOR} MATCHES "arm64")
             # In this particular case, we are using the same approach as for NASM
             # This specifically avoids CMake issue #18889
             execute_process(COMMAND ${CMAKE_ASM_COMPILER} ${CMAKE_ASM_FLAGS} -c -o ${CMAKE_CURRENT_BINARY_DIR}/asm_test_aarch64.obj ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S
@@ -229,13 +231,13 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
             endif()
-        elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64|arm64")
+        elseif (${SYSTEM_PROCESSOR} MATCHES "aarch64|arm64")
             try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S OUTPUT_VARIABLE TRY_COMPILE_OUTPUT)
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
             endif()
         # Covers x86_64, amd64, x86, i386, i686, I386, I686
-        elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "amd64|86")
+        elseif(${SYSTEM_PROCESSOR} MATCHES "amd64|86")
             check_include_file("cet.h" HAVE_CET_H)
             if(HAVE_CET_H)
                 target_compile_definitions(loader_specific_options INTERFACE HAVE_CET_H)
@@ -252,7 +254,8 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
     # Instead, check the size of void* and if its 4, set ASM_OFFSET_SYSTEM_PROCESSOR to x86
     # Note - there is no 32 bit arm assembly code, so this only applies to x86 currently.
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        set(ASM_OFFSET_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}) # x86_64 or aarch64/arm64
+        set(ASM_OFFSET_SYSTEM_PROCESSOR ${SYSTEM_PROCESSOR}) # x86_64 or aarch64/arm64
+        string(REPLACE amd64 x86_64 ASM_OFFSET_SYSTEM_PROCESSOR "${ASM_OFFSET_SYSTEM_PROCESSOR}")
     else()
         set(ASM_OFFSET_SYSTEM_PROCESSOR "x86")
     endif()
