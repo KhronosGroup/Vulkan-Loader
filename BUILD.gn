@@ -109,7 +109,8 @@ if (!is_android) {
       "loader/cJSON.h",
       "loader/debug_utils.c",
       "loader/debug_utils.h",
-      "loader/dev_ext_trampoline.c",
+      # Should only be linked when assembler is used
+      # "loader/dev_ext_trampoline.c",
       "loader/extension_manual.c",
       "loader/extension_manual.h",
       "loader/generated/vk_layer_dispatch_table.h",
@@ -124,7 +125,8 @@ if (!is_android) {
       "loader/loader.h",
       "loader/log.c",
       "loader/log.h",
-      "loader/phys_dev_ext.c",
+      # Should only be linked when assembler is used
+      # "loader/phys_dev_ext.c",
       "loader/settings.c",
       "loader/settings.h",
       "loader/stack_allocation.h",
