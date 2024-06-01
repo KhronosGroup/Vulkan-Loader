@@ -985,10 +985,12 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
     }
     // NOTE: We can't just use fseek(file, 0, SEEK_END) because that isn't guaranteed to be supported on all systems
     size_t fread_ret_count = 0;
-    do {
-        char buffer[256];
-        fread_ret_count = fread(buffer, 1, 256, file);
-    } while (fread_ret_count == 256 && !feof(file));
+    if (-1 == fseek(file, 0, SEEK_END)) {
+      do {
+          char buffer[256];
+          fread_ret_count = fread(buffer, 1, 256, file);
+      } while (fread_ret_count == 256 && !feof(file));
+    }
     len = ftell(file);
     fseek(file, 0, SEEK_SET);
     json_buf = (char *)loader_instance_heap_calloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
