@@ -173,6 +173,8 @@ jobs:
               working-directory: build/
 
     windows_vs:
+        # https://github.com/actions/runner-images/issues/10004
+        if: false
         runs-on: windows-latest
         strategy:
             matrix:
@@ -192,6 +194,8 @@ jobs:
             - run: ctest --output-on-failure -C ${{matrix.config}} --test-dir build/
 
     windows_vs-no-asm:
+        # https://github.com/actions/runner-images/issues/10004
+        if: false
         runs-on: windows-latest
         strategy:
             matrix:
@@ -211,6 +215,8 @@ jobs:
 
     # Test both clang and clang-cl (Chromium project uses clang-cl)
     windows_clang:
+      # https://github.com/actions/runner-images/issues/10001
+      if: false
       runs-on: windows-2022
       strategy:
         matrix:
