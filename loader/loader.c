@@ -6529,7 +6529,7 @@ void unload_drivers_without_physical_devices(struct loader_instance *inst) {
                     for (uint32_t i = 0; i < preloaded_icds.count; i++) {
                         if (NULL != preloaded_icds.scanned_list[i].lib_name && NULL != scanned_icd_to_remove->lib_name &&
                             strcmp(preloaded_icds.scanned_list[i].lib_name, scanned_icd_to_remove->lib_name) == 0) {
-                            loader_unload_scanned_icd(inst, &preloaded_icds.scanned_list[i]);
+                            loader_unload_scanned_icd(NULL, &preloaded_icds.scanned_list[i]);
                             // condense the list so that it doesn't contain empty elements.
                             if (i < preloaded_icds.count - 1) {
                                 memcpy((void *)&preloaded_icds.scanned_list[i],
