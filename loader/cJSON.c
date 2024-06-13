@@ -954,7 +954,6 @@ cJSON *loader_cJSON_GetObjectItem(cJSON *object, const char *string) {
 #ifdef _WIN32
 static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
     FILE *file = NULL;
-    struct stat stats = {0};
     VkResult res = VK_SUCCESS;
     DWORD len = 0;
 
@@ -970,7 +969,7 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
             }
         }
     }
-    if (NULL == (*out_buff = (char *)loader_instance_heap_calloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) {
+    if (NULL == (*out_buff = (char *)loader_instance_heap_calloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND))) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read file size of JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -985,7 +984,7 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-    (*out_buff)[stats.st_size] = '\0';
+    (*out_buff)[len] = '\0';
 
 out:
     if (NULL != file) {
