@@ -996,16 +996,16 @@ out:
 #include <fcntl.h>
 #include <sys/stat.h>
 static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
-    int fd = 0;
+    FILE* file = NULL;
     struct stat stats = {0};
     VkResult res = VK_SUCCESS;
 
-    if (-1 == (fd = open(filename, O_RDONLY))) {
+    if (NULL == (file = fopen(filename, "rb"))) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-    if (-1 == fstat(fd, &stats)) {
+    if (-1 == fstat(fileno(file), &stats)) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read file size of JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -1015,17 +1015,16 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    if (stats.st_size != read(fd, *out_buff, stats.st_size)) {
+    if (stats.st_size != (long int)fread(*out_buff, sizeof(char), stats.st_size, file)) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read entire JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
     (*out_buff)[stats.st_size] = '\0';
-    goto out;
 
 out:
-    if (-1 != fd) {
-        close(fd);
+    if (NULL != file) {
+        fclose(file);
     }
     return res;
 }
