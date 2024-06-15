@@ -961,14 +961,22 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
     HANDLE file_handle = INVALID_HANDLE_VALUE;
     DWORD len = 0, read_len = 0;
     VkResult res = VK_SUCCESS;
+    BOOL read_ok = false;
 
-    file_handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    int filename_utf16_size = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+    if (filename_utf16_size > 0) {
+        wchar_t *filename_utf16 = (wchar_t *)loader_stack_alloc(filename_utf16_size * sizeof(wchar_t));
+        if (MultiByteToWideChar(CP_UTF8, 0, filename, -1, filename_utf16, filename_utf16_size) == filename_utf16_size) {
+            file_handle =
+                CreateFileW(filename_utf16, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        }
+    }
     if (INVALID_HANDLE_VALUE == file_handle) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-    len = GetFileSize(file, NULL);
+    len = GetFileSize(file_handle, NULL);
     if (INVALID_FILE_SIZE == len) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read file size of JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
@@ -980,8 +988,8 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    ReadFile(file_handle, *out_buff, len, &read_len, NULL);
-    if (len != read_len) {
+    read_ok = ReadFile(file_handle, *out_buff, len, &read_len, NULL);
+    if (len != read_len || false == read_ok) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read entire JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -989,7 +997,7 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
     (*out_buff)[len] = '\0';
 
 out:
-    if (NULL != file) {
+    if (INVALID_HANDLE_VALUE != file_handle) {
         CloseHandle(file_handle);
     }
     return res;
