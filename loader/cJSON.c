@@ -40,6 +40,11 @@
 #include "loader.h"
 #include "log.h"
 
+#if COMMON_UNIX_PLATFORMS
+#include <fcntl.h>
+#include <sys/stat.h>
+#endif
+
 static void *cJSON_malloc(const VkAllocationCallbacks *pAllocator, size_t size) {
     return loader_calloc(pAllocator, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
 }
@@ -993,8 +998,6 @@ out:
     return res;
 }
 #elif COMMON_UNIX_PLATFORMS
-#include <fcntl.h>
-#include <sys/stat.h>
 static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
     FILE* file = NULL;
     struct stat stats = {0};
