@@ -958,33 +958,30 @@ cJSON *loader_cJSON_GetObjectItem(cJSON *object, const char *string) {
 
 #ifdef _WIN32
 static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
-    FILE *file = NULL;
+    HANDLE file_handle = INVALID_HANDLE_VALUE;
+    DWORD len = 0, read_len = 0;
     VkResult res = VK_SUCCESS;
-    DWORD len = 0;
 
-    int filename_utf16_size = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
-    if (filename_utf16_size > 0) {
-        wchar_t *filename_utf16 = (wchar_t *)loader_stack_alloc(filename_utf16_size * sizeof(wchar_t));
-        if (MultiByteToWideChar(CP_UTF8, 0, filename, -1, filename_utf16, filename_utf16_size) == filename_utf16_size) {
-            errno_t wfopen_error = _wfopen_s(&file, filename_utf16, L"rb");
-            if (0 != wfopen_error) {
-                loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
-                res = VK_ERROR_INITIALIZATION_FAILED;
-                goto out;
-            }
-        }
+    file_handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (INVALID_HANDLE_VALUE == file_handle) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
     }
-    if (NULL == (*out_buff = (char *)loader_instance_heap_calloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND))) {
+    len = GetFileSize(file, NULL);
+    if (INVALID_FILE_SIZE == len) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read file size of JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-    if (INVALID_FILE_SIZE == (len = GetFileSize(file, NULL))) {
+    *out_buff = (char *)loader_instance_heap_calloc(inst, len + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == *out_buff) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to allocate memory to read JSON file %s", filename);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    if (len != fread(*out_buff, sizeof(char), len, file)) {
+    ReadFile(file_handle, *out_buff, len, &read_len, NULL);
+    if (len != read_len) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to read entire JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -993,7 +990,7 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
 
 out:
     if (NULL != file) {
-        fclose(file);
+        CloseHandle(file_handle);
     }
     return res;
 }
