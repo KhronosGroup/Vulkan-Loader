@@ -999,7 +999,7 @@ out:
 }
 #elif COMMON_UNIX_PLATFORMS
 static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
-    FILE* file = NULL;
+    FILE *file = NULL;
     struct stat stats = {0};
     VkResult res = VK_SUCCESS;
 
