@@ -233,7 +233,7 @@ jobs:
           - run: cmake --install build --prefix build/install
 
     mac:
-        runs-on: macos-11
+        runs-on: macos-12
         strategy:
             matrix:
                 config: [ Debug, Release ]
