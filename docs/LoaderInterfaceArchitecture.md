@@ -202,7 +202,7 @@ These files are found in different locations based on your platform:
   </tr>
   <tr>
     <td>Vulkan Layer Settings</td>
-    <td>(registry) HKEY_CURRENT_USER\Software\Khronos\Vulkan\Settings</td>
+    <td>(registry) HKEY_CURRENT_USER\Software\Khronos\Vulkan\LoaderSettings</td>
   </tr>
   <tr>
     <td>VkConfig Configuration Settings</td>
