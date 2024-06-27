@@ -27,6 +27,7 @@ VKConfig.h
 *.files
 *.includes
 .vscode/
+.cache
 .DS_Store
 _out64
 out32/*
