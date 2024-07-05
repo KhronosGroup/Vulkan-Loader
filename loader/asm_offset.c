@@ -132,9 +132,13 @@ int main(int argc, char **argv) {
 #if defined(__x86_64__)
         fprintf(file, ".set X86_64, 1\n");
 #endif  // defined(__x86_64__)
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) || defined(__arm__)
         const char *comment_delimiter = "//";
+#if defined(__aarch64__)
         fprintf(file, ".set AARCH_64, 1\n");
+#else
+        fprintf(file, ".set AARCH_64, 0\n");
+#endif
 #else
         // Default comment delimiter
         const char *comment_delimiter = "#";

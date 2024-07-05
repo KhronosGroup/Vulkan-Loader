@@ -1,5 +1,7 @@
 //
 // Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// Copyright (c) 2024 Valve Corporation
+// Copyright (c) 2024 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +16,7 @@
 // limitations under the License.
 //
 // Author: Eric Sullivan <esullivan@nvidia.com>
+// Author: Charles Giessen <charles@lunarg.com>
 //
 
 // This code is used to pass on device (including physical device) extensions through the call chain. It must do this without
@@ -76,6 +79,67 @@ vkdev_ext\num:
     mov     x10, (EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * \num)) // Offset of the desired function in the dispatch table
     ldr     x11, [x9, x10]                                        // Load the function address
     br      x11
+.endm
+
+.else // AARCH_32
+
+.macro PhysDevExtTramp num
+.global vkPhysDevExtTramp\num
+#if defined(__ELF__)
+ .hidden vkPhysDevExtTramp\num
+#endif
+.balign 4
+
+vkPhysDevExtTrampDispatchEntry\num: .word PHYS_DEV_OFFSET_INST_DISPATCH + (PTR_SIZE * \num)
+vkPhysDevExtTramp\num:
+    ldr     r4, [r0]                                                 // Load the loader_instance_dispatch_table* into r4
+    ldr     r0, [r0, #PHYS_DEV_OFFSET_PHYS_DEV_TRAMP]                 // Load the unwrapped VkPhysicalDevice into r0
+    ldr     r5, vkPhysDevExtTrampDispatchEntry\num // Put the offset of the entry in the dispatch table for the function
+    ldr     r6, [r4, r5]                                           // Load the address to branch to out of the dispatch table
+    bx      r6                                                      // Branch to the next member of the dispatch chain
+
+.endm
+
+.macro PhysDevExtTermin num
+.global vkPhysDevExtTermin\num
+#if defined(__ELF__)
+ .hidden vkPhysDevExtTermin\num
+#endif
+.balign 4
+vkPhysDevExtTerminDispatchEntry\num: .word DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num)
+vkPhysDevExtTerminFunctionNameEntry\num: .word FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num)
+vkPhysDevExtTermin\num:
+    ldr     r4, [r0, #ICD_TERM_OFFSET_PHYS_DEV_TERM] // Load the loader_icd_term* in r4
+    ldr     r6, vkPhysDevExtTerminDispatchEntry\num // Put the offset into the dispatch table in r6
+    ldr     r5, [r4, r6]                           // Load the address of the next function in the dispatch chain
+    cmp     r5, #0
+    beq     terminError\num                          // Go to the error section if the next function in the chain is NULL
+    ldr     r0, [r0, #PHYS_DEV_OFFSET_PHYS_DEV_TERM] // Unwrap the VkPhysicalDevice in r0
+    bx      r5                                      // Jump to the next function in the chain
+terminError\num:
+    ldr     r5, vkPhysDevExtTerminFunctionNameEntry\num // Offset of the function name string in the instance
+    ldr     r6, [r4, #INSTANCE_OFFSET_ICD_TERM]         // Load the instance pointer
+    mov     r0, r6                                      // Vulkan instance pointer (first arg)
+    mov     r1, #VULKAN_LOADER_ERROR_BIT                 // The error logging bit (second arg)
+    mov     r2, #0                                       // Zero (third arg)
+    ldr     r3, [r6, r5]                               // The function name (fourth arg)
+    bl      loader_log_asm_function_not_supported        // Log the error message before we crash
+    mov     r0, #0
+    bx      r0                                           // Crash intentionally by jumping to address zero
+.endm
+
+.macro DevExtTramp num
+.global vkdev_ext\num
+#if defined(__ELF__)
+ .hidden vkdev_ext\num
+#endif
+.balign 4
+vkdev_ext_dispatch_entry\num: .word EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * \num)
+vkdev_ext\num:
+    ldr     r4, [r0]                          // Load the loader_instance_dispatch_table* into r4
+    ldr     r5, vkdev_ext_dispatch_entry\num // Offset of the desired function in the dispatch table
+    ldr     r6, [r4, r5]                    // Load the function address
+    bx      r6
 .endm
 
 .endif

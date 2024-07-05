@@ -229,12 +229,17 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
             endif()
 
             if(ASSEMBLER_WORKS)
-                set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
+                set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch.S)
             endif()
         elseif (${SYSTEM_PROCESSOR} MATCHES "aarch64|arm64")
             try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch64.S OUTPUT_VARIABLE TRY_COMPILE_OUTPUT)
             if(ASSEMBLER_WORKS)
-                set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch64.S)
+                set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch.S)
+            endif()
+        elseif (${SYSTEM_PROCESSOR} MATCHES "aarch32|armhf")
+            try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch32.S OUTPUT_VARIABLE TRY_COMPILE_OUTPUT)
+            if(ASSEMBLER_WORKS)
+                set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch.S)
             endif()
         # Covers x86_64, amd64, x86, i386, i686, I386, I686
         elseif(${SYSTEM_PROCESSOR} MATCHES "amd64|86")
@@ -251,13 +256,16 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
     endif()
 
     # When compiling for x86 on x64, we can't use CMAKE_SYSTEM_PROCESSOR to determine which architecture to use,
-    # Instead, check the size of void* and if its 4, set ASM_OFFSET_SYSTEM_PROCESSOR to x86
-    # Note - there is no 32 bit arm assembly code, so this only applies to x86 currently.
+    # Instead, check the size of void* and if its 4, set ASM_OFFSET_SYSTEM_PROCESSOR to x86 if we aren't on arm
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
         set(ASM_OFFSET_SYSTEM_PROCESSOR ${SYSTEM_PROCESSOR}) # x86_64 or aarch64/arm64
         string(REPLACE amd64 x86_64 ASM_OFFSET_SYSTEM_PROCESSOR "${ASM_OFFSET_SYSTEM_PROCESSOR}")
     else()
-        set(ASM_OFFSET_SYSTEM_PROCESSOR "x86")
+        if(${SYSTEM_PROCESSOR} MATCHES "86")
+            set(ASM_OFFSET_SYSTEM_PROCESSOR "x86")
+        else()
+            set(ASM_OFFSET_SYSTEM_PROCESSOR ${SYSTEM_PROCESSOR})
+        endif()
     endif()
 
     if(ASSEMBLER_WORKS)
@@ -289,6 +297,7 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
             else()
                 message(FATAL_ERROR "C_COMPILER_ID not supported!")
             endif()
+            message(STATUS "CMAKE_CROSSCOMPILING FALSE")
 
             find_package(Python3 REQUIRED QUIET)
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
