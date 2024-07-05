@@ -16,6 +16,7 @@ Instructions for building this repository on Linux, Windows, and MacOS.
     - [Repository Dependencies](#repository-dependencies)
       - [Vulkan-Headers](#vulkan-headers)
       - [Test Dependencies](#test-dependencies)
+    - [Warnings as errors off by default!](#warnings-as-errors-off-by-default)
     - [Build and Install Directory Locations](#build-and-install-directory-locations)
     - [Building Dependent Repositories with Known-Good Revisions](#building-dependent-repositories-with-known-good-revisions)
       - [Automatically](#automatically)
@@ -54,7 +55,6 @@ Instructions for building this repository on Linux, Windows, and MacOS.
   - [Cross Compilation](#cross-compilation)
     - [Unknown function handling which requires explicit assembly implementations](#unknown-function-handling-which-requires-explicit-assembly-implementations)
       - [Platforms which fully support unknown function handling](#platforms-which-fully-support-unknown-function-handling)
-    - [Link Time Optimization](#link-time-optimization)
   - [Tests](#tests)
 
 
@@ -633,6 +633,8 @@ can be manually disabled by setting `USE_GAS` or `USE_MASM` to `OFF`.
 * 64 bit Linux (x64)
 * 32 bit Linux (x86)
 * 64 bit Arm (aarch64)
+* 32 bit Arm (aarch32)
+
 
 Platforms not listed will use a fallback C Code path that relies on tail-call optimization to work.
 No guarantees are made about the use of the fallback code paths.
