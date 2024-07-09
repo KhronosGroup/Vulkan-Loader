@@ -46,8 +46,10 @@ if (UNIX)
 endif()
 
 if (MSVC)
-# silence hidden class member warnings in test framework
+    # silence hidden class member warnings in test framework
     target_compile_options(testing_framework_util PUBLIC /wd4458)
+    # Make sure exception handling is enabled for the test framework
+    target_compile_options(testing_framework_util PUBLIC /EHsc)
 endif()
 
 function(AddSharedLibrary LIBRARY_NAME)
