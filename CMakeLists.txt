@@ -148,6 +148,8 @@ target_link_libraries(loader_common_options INTERFACE platform_wsi)
 # Enable beta Vulkan extensions
 target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)
 
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_PROCESSOR)
+
 option(BUILD_WERROR "Enable warnings as errors")
 
 # Set warnings as errors and the main diagnostic flags
@@ -199,6 +201,11 @@ if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" A
 
     # Prevent <windows.h> from polluting the code. guards against things like MIN and MAX
     target_compile_definitions(loader_common_options INTERFACE WIN32_LEAN_AND_MEAN)
+
+    # For some reason Advapi32.lib needs to be explicitely linked to when building for Arm (32 bit) on Windows, but isn't required on any other architecture
+    if (SYSTEM_PROCESSOR MATCHES "arm" AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+        target_link_libraries(loader_common_options INTERFACE Advapi32)
+    endif()
 endif()
 
 # DEBUG enables runtime loader ICD verification
