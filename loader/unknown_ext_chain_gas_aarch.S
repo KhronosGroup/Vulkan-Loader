@@ -26,6 +26,31 @@
 
 .include "gen_defines.asm"
 
+/*
+ * References:
+ *  - https://developer.arm.com/documentation/101028/0012/5--Feature-test-macros
+ *  - https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
+ */
+#if defined(__ARM_FEATURE_BTI_DEFAULT) && __ARM_FEATURE_BTI_DEFAULT == 1
+  #define BTI_J  hint 36 /* bti j: for jumps, IE br instructions */
+  #define BTI_C  hint 34 /* bti c: for calls, IE bl instructions */
+  #define GNU_PROPERTY_AARCH64_BTI 1 /* bit 0 GNU Notes is for BTI support */
+#else
+  #define BTI_J
+  #define BTI_C
+  #define GNU_PROPERTY_AARCH64_BTI 0
+#endif
+
+/*
+ * We just need PAC added to GNU Notes for auditing features, the assembly itself does
+ * not need pac augmentation at this time because it doesn't make use of the SP aka x30.
+ */
+#if defined(__ARM_FEATURE_PAC_DEFAULT)
+  #define GNU_PROPERTY_AARCH64_POINTER_AUTH 2 /* bit 1 GNU Notes is for PAC support */
+#else
+  #define GNU_PROPERTY_AARCH64_POINTER_AUTH 0
+#endif
+
 .if AARCH_64
 
 .macro PhysDevExtTramp num
@@ -35,12 +60,18 @@
 #endif
 .balign 4
 
+/*
+ * NOTE: x16 is used for the br register so the pstate.btype is 01 and can
+ * land on 'bti c' that would be inserted by the compiler in C/C++ functions.
+ * See: https://developer.arm.com/documentation/102433/0200/Jump-oriented-programming
+ */
 vkPhysDevExtTramp\num:
+    BTI_C
     ldr     x9, [x0]                                                 // Load the loader_instance_dispatch_table* into x9
     ldr     x0, [x0, PHYS_DEV_OFFSET_PHYS_DEV_TRAMP]                 // Load the unwrapped VkPhysicalDevice into x0
     mov     x10, (PHYS_DEV_OFFSET_INST_DISPATCH + (PTR_SIZE * \num)) // Put the offset of the entry in the dispatch table for the function
-    ldr     x11, [x9, x10]                                           // Load the address to branch to out of the dispatch table
-    br      x11                                                      // Branch to the next member of the dispatch chain
+    ldr     x16, [x9, x10]                                           // Load the address to branch to out of the dispatch table
+    br      x16                                                      // Branch to the next member of the dispatch chain
 .endm
 
 .macro PhysDevExtTermin num
@@ -50,13 +81,15 @@ vkPhysDevExtTramp\num:
 #endif
 .balign 4
 vkPhysDevExtTermin\num:
+    BTI_C
     ldr     x9, [x0, ICD_TERM_OFFSET_PHYS_DEV_TERM]             // Load the loader_icd_term* in x9
     mov     x11, (DISPATCH_OFFSET_ICD_TERM + (PTR_SIZE * \num)) // Put the offset into the dispatch table in x11
-    ldr     x10, [x9, x11]                                      // Load the address of the next function in the dispatch chain
-    cbz     x10, terminError\num                                // Go to the error section if the next function in the chain is NULL
+    ldr     x16, [x9, x11]                                      // Load the address of the next function in the dispatch chain
+    cbz     x16, terminError\num                                // Go to the error section if the next function in the chain is NULL
     ldr     x0, [x0, PHYS_DEV_OFFSET_PHYS_DEV_TERM]             // Unwrap the VkPhysicalDevice in x0
-    br      x10                                                 // Jump to the next function in the chain
+    br      x16                                           // Jump to the next function in the chain
 terminError\num:
+    BTI_J
     mov     x10, (FUNCTION_OFFSET_INSTANCE + (CHAR_PTR_SIZE * \num)) // Offset of the function name string in the instance
     ldr     x11, [x9, INSTANCE_OFFSET_ICD_TERM]   // Load the instance pointer
     mov     x0, x11                               // Vulkan instance pointer (first arg)
@@ -75,10 +108,11 @@ terminError\num:
 #endif
 .balign 4
 vkdev_ext\num:
+    BTI_C
     ldr     x9, [x0]                                              // Load the loader_instance_dispatch_table* into x9
     mov     x10, (EXT_OFFSET_DEVICE_DISPATCH + (PTR_SIZE * \num)) // Offset of the desired function in the dispatch table
-    ldr     x11, [x9, x10]                                        // Load the function address
-    br      x11
+    ldr     x16, [x9, x10]                                        // Load the function address
+    br      x16
 .endm
 
 .else // AARCH_32
@@ -146,6 +180,20 @@ vkdev_ext\num:
 
 #if defined(__ELF__)
 .section .note.GNU-stack,"",%progbits
+/* Add the PAC and BTI support to GNU Notes section for ELF object files */
+#if GNU_PROPERTY_AARCH64_BTI != 0 || GNU_PROPERTY_AARCH64_POINTER_AUTH != 0
+    .pushsection .note.gnu.property, "a"; /* Start a new allocatable section */
+    .balign 8; /* align it on a byte boundry */
+    .long 4; /* size of "GNU\0" */
+    .long 0x10; /* size of descriptor */
+    .long 0x5; /* NT_GNU_PROPERTY_TYPE_0 */
+    .asciz "GNU";
+    .long 0xc0000000; /* GNU_PROPERTY_AARCH64_FEATURE_1_AND */
+    .long 4; /* Four bytes of data */
+    .long (GNU_PROPERTY_AARCH64_BTI|GNU_PROPERTY_AARCH64_POINTER_AUTH); /* BTI or PAC is enabled */
+    .long 0; /* padding for 8 byte alignment */
+    .popsection; /* end the section */
+#endif
 #endif
 
 .data
