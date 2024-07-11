@@ -346,7 +346,8 @@ LSTATUS __stdcall ShimRegCloseKey(HKEY hKey) {
             return ERROR_SUCCESS;
         }
     }
-    return ERROR_SUCCESS;
+    // means that RegCloseKey was called with an invalid key value (one that doesn't exist or has already been closed)
+    exit(-1);
 }
 
 // Windows app package shims
