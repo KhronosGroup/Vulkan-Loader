@@ -295,7 +295,7 @@ def run_cmake_command(cmake_cmd):
     # NOTE: Because CMake is an exectuable that runs executables
     # stdout/stderr are mixed together. So this combines the outputs
     # and prints them properly in case there is a non-zero exit code.
-    result = subprocess.run(cmake_cmd, 
+    result = subprocess.run(cmake_cmd,
         stdout = subprocess.PIPE,
         stderr = subprocess.STDOUT,
         text = True
@@ -508,6 +508,8 @@ class GoodRepo(object):
                 cmake_cmd.append('x64')
             elif self._args.arch == 'arm64':
                 cmake_cmd.append('arm64')
+            elif self._args.arch == 'arm':
+                cmake_cmd.append('arm')
             else:
                 cmake_cmd.append('Win32')
 
@@ -684,7 +686,7 @@ def main():
     parser.add_argument(
         '--arch',
         dest='arch',
-        choices=['32', '64', 'x86', 'x64', 'win32', 'win64', 'arm64'],
+        choices=['32', '64', 'x86', 'x64', 'win32', 'win64', 'arm', 'arm64'],
         type=str.lower,
         help="Set build files architecture (Visual Studio Generator Only)",
         default='64')
