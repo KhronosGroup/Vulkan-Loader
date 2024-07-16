@@ -77,11 +77,9 @@ void windows_initialization(void) {
         loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Using Vulkan Loader %s", dll_location);
     }
 
-    SetDllDirectory("");  // Remove current directory from default DLL search order
     // This is needed to ensure that newer APIs are available right away
     // and not after the first call that has been statically linked
     LoadLibrary("gdi32.dll");
-    SetDllDirectory(NULL);  // Restores the default search order
 
     wchar_t systemPath[MAX_PATH] = L"";
     GetSystemDirectoryW(systemPath, MAX_PATH);
