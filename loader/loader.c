@@ -2573,7 +2573,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         result = loader_parse_json_string(functions, "vkGetInstanceProcAddr", &props.functions.str_gipa);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
-        if (props.functions.str_gipa && loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
+        if (NULL == props.functions.str_negotiate_interface && props.functions.str_gipa &&
+            loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "Layer \"%s\" using deprecated \'vkGetInstanceProcAddr\' tag which was deprecated starting with JSON "
                        "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
@@ -2584,7 +2585,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         result = loader_parse_json_string(functions, "vkGetDeviceProcAddr", &props.functions.str_gdpa);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
-        if (props.functions.str_gdpa && loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
+        if (NULL == props.functions.str_negotiate_interface && props.functions.str_gdpa &&
+            loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "Layer \"%s\" using deprecated \'vkGetDeviceProcAddr\' tag which was deprecated starting with JSON "
                        "file version 1.1.0. The new vkNegotiateLoaderLayerInterfaceVersion function is preferred, though for "
