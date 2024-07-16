@@ -79,7 +79,7 @@ void windows_initialization(void) {
 
     // This is needed to ensure that newer APIs are available right away
     // and not after the first call that has been statically linked
-    LoadLibrary("gdi32.dll");
+    LoadLibraryEx("gdi32.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
 
     wchar_t systemPath[MAX_PATH] = L"";
     GetSystemDirectoryW(systemPath, MAX_PATH);
