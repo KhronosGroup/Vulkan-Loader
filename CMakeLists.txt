@@ -170,7 +170,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(loader_common_options INTERFACE -Wno-missing-field-initializers)
 
     # need to prepend /clang: to compiler arguments when using clang-cl
-    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_CXX_SIMULATE_ID}" MATCHES "MSVC")
+    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND "${CMAKE_C_COMPILER_FRONTEND_VARIANT}" MATCHES "MSVC")
         target_compile_options(loader_common_options INTERFACE /clang:-fno-strict-aliasing)
     else()
         target_compile_options(loader_common_options INTERFACE -fno-strict-aliasing)
