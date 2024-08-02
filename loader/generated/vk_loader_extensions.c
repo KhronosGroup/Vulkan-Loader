@@ -1145,6 +1145,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->BindOpticalFlowSessionImageNV = (PFN_vkBindOpticalFlowSessionImageNV)gdpa(dev, "vkBindOpticalFlowSessionImageNV");
     table->CmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)gdpa(dev, "vkCmdOpticalFlowExecuteNV");
 
+    // ---- VK_AMD_anti_lag extension commands
+    table->AntiLagUpdateAMD = (PFN_vkAntiLagUpdateAMD)gdpa(dev, "vkAntiLagUpdateAMD");
+
     // ---- VK_EXT_shader_object extension commands
     table->CreateShadersEXT = (PFN_vkCreateShadersEXT)gdpa(dev, "vkCreateShadersEXT");
     table->DestroyShaderEXT = (PFN_vkDestroyShaderEXT)gdpa(dev, "vkDestroyShaderEXT");
@@ -2899,6 +2902,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "DestroyOpticalFlowSessionNV")) return (void *)table->DestroyOpticalFlowSessionNV;
     if (!strcmp(name, "BindOpticalFlowSessionImageNV")) return (void *)table->BindOpticalFlowSessionImageNV;
     if (!strcmp(name, "CmdOpticalFlowExecuteNV")) return (void *)table->CmdOpticalFlowExecuteNV;
+
+    // ---- VK_AMD_anti_lag extension commands
+    if (!strcmp(name, "AntiLagUpdateAMD")) return (void *)table->AntiLagUpdateAMD;
 
     // ---- VK_EXT_shader_object extension commands
     if (!strcmp(name, "CreateShadersEXT")) return (void *)table->CreateShadersEXT;
@@ -9193,6 +9199,22 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(
 }
 
 
+// ---- VK_AMD_anti_lag extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL AntiLagUpdateAMD(
+    VkDevice                                    device,
+    const VkAntiLagDataAMD*                     pData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkAntiLagUpdateAMD: Invalid device "
+                   "[VUID-vkAntiLagUpdateAMD-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->AntiLagUpdateAMD(device, pData);
+}
+
+
 // ---- VK_EXT_shader_object extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
@@ -11637,6 +11659,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdOpticalFlowExecuteNV", name)) {
         *addr = (void *)CmdOpticalFlowExecuteNV;
+        return true;
+    }
+
+    // ---- VK_AMD_anti_lag extension commands
+    if (!strcmp("vkAntiLagUpdateAMD", name)) {
+        *addr = (void *)AntiLagUpdateAMD;
         return true;
     }
 
