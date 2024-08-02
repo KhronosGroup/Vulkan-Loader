@@ -1104,6 +1104,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkBindOpticalFlowSessionImageNV BindOpticalFlowSessionImageNV;
     PFN_vkCmdOpticalFlowExecuteNV CmdOpticalFlowExecuteNV;
 
+    // ---- VK_AMD_anti_lag extension commands
+    PFN_vkAntiLagUpdateAMD AntiLagUpdateAMD;
+
     // ---- VK_EXT_shader_object extension commands
     PFN_vkCreateShadersEXT CreateShadersEXT;
     PFN_vkDestroyShaderEXT DestroyShaderEXT;
