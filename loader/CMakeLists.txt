@@ -111,6 +111,8 @@ set(OPT_LOADER_SRCS dev_ext_trampoline.c phys_dev_ext.c)
 
 set(ASM_FAILURE_MSG "Support for unknown physical device and device functions is disabled due to missing the required assembly support code. \
 To support unknown functions, assembly must be added for the platform.\n")
+set(ARMASM_CMAKE_FAILURE_MSG "Support for unknown physical device and device functions is disabled due to the CMake version ${CMAKE_VERSION} \
+being older than 3.26. Please update CMake to version 3.26 or newer.\n")
 
 # Check for assembler support
 if(WIN32 AND NOT USE_GAS)
@@ -131,12 +133,42 @@ if(WIN32 AND NOT USE_GAS)
         endif()
     endif()
     if (USE_MASM)
-        enable_language(ASM_MASM)
+        if(SYSTEM_PROCESSOR MATCHES "arm")
+            if(CMAKE_VERSION VERSION_LESS "3.26.0")
+                set(ASM_FAILURE_MSG ${ARMASM_CMAKE_FAILURE_MSG})
+            else()
+                enable_language(ASM_MARMASM)
+                set(LOADER_ASM_DIALECT "MARMASM")
+            endif()
+        else()
+            enable_language(ASM_MASM)
+            set(LOADER_ASM_DIALECT "MASM")
+        endif()
     endif()
+
     # Test if the detected compiler actually works.
     # Unfortunately, CMake's detection of ASM_MASM is not reliable, so we need to do this ourselves.
-    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
+    if(SYSTEM_PROCESSOR MATCHES "arm")
+        if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
+test_func FUNCTION
+    mov r0, #0
+    bx lr
+    ENDFUNC
+    END
+]=])
+        else()
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
+test_func FUNCTION
+    mov x1, 26
+    ldr x0, [x0, x1]
+    ENDFUNC
+    END
+]=])
+        endif()
+    else()
+        if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
 .model flat
 .code
 extrn _start:near
@@ -144,36 +176,48 @@ extrn _start:near
     ret
 end
 ]=])
-    else()
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
+        else()
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm [=[
 .code
 extrn start:near
     xor rax, rax
     ret
 end
 ]=])
+        endif()
     endif ()
+
     if(MINGW)
         set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} ${JWASM_FLAGS})
-    elseif(NOT CMAKE_CL_64 AND NOT JWASM_FOUND AND CMAKE_SIZEOF_VOID_P EQUAL 4) # /safeseh is only needed in x86
-        set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} /safeseh)
+        set(CMAKE_ASM_MARMASM_FLAGS ${CMAKE_ASM_MARMASM_FLAGS} ${JWASM_FLAGS})
+    elseif(NOT CMAKE_CL_64 AND NOT JWASM_FOUND AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+        set(CMAKE_ASM_MASM_FLAGS ${CMAKE_ASM_MASM_FLAGS} /safeseh) # /safeseh is only needed in x86
     endif()
+
     # try_compile does not work here due to the same reasons as static above.
-    execute_process(COMMAND ${CMAKE_ASM_MASM_COMPILER} ${CMAKE_ASM_MASM_FLAGS} -c -Fo ${CMAKE_CURRENT_BINARY_DIR}/masm_check.obj ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm
-        RESULT_VARIABLE CMAKE_ASM_MASM_COMPILER_WORKS
-        OUTPUT_QUIET ERROR_QUIET)
-    # Convert the return code to a boolean
-    if(CMAKE_ASM_MASM_COMPILER_WORKS EQUAL 0)
-        set(CMAKE_ASM_MASM_COMPILER_WORKS true)
+    if(SYSTEM_PROCESSOR MATCHES "arm")
+        execute_process(COMMAND ${CMAKE_ASM_MARMASM_COMPILER} ${CMAKE_ASM_MARMASM_FLAGS} ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm
+            RESULT_VARIABLE ASM_COMPILER_WORKS
+            OUTPUT_QUIET ERROR_QUIET)
     else()
-        set(CMAKE_ASM_MASM_COMPILER_WORKS false)
+        execute_process(COMMAND ${CMAKE_ASM_MASM_COMPILER} ${CMAKE_ASM_MASM_FLAGS} -c -Fo ${CMAKE_CURRENT_BINARY_DIR}/masm_check.obj ${CMAKE_CURRENT_BINARY_DIR}/masm_check.asm
+            RESULT_VARIABLE ASM_COMPILER_WORKS
+            OUTPUT_QUIET ERROR_QUIET)
     endif()
-    if(CMAKE_ASM_MASM_COMPILER_WORKS)
+
+    # Convert the return code to a boolean
+    if(ASM_COMPILER_WORKS EQUAL 0)
+        set(ASM_COMPILER_WORKS true)
+    else()
+        set(ASM_COMPILER_WORKS false)
+    endif()
+
+    if(ASM_COMPILER_WORKS)
         add_executable(asm_offset asm_offset.c)
         target_link_libraries(asm_offset PRIVATE loader_specific_options)
         # If am emulator is provided (Like Wine), or running on native, run asm_offset to generate gen_defines.asm
         if (CMAKE_CROSSCOMPILING_EMULATOR OR NOT CMAKE_CROSSCOMPILING)
-            add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset MASM)
+            add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset ${LOADER_ASM_DIALECT})
         else()
             # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
             target_compile_options(asm_offset PRIVATE "/Fa$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" /FA)
@@ -184,14 +228,18 @@ end
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
             add_custom_command(TARGET asm_offset POST_BUILD
                 COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
-                    "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "MASM" "${CMAKE_C_COMPILER_ID}" "${CMAKE_SYSTEM_PROCESSOR}"
+                    "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "${LOADER_ASM_DIALECT}" "${CMAKE_C_COMPILER_ID}" "${SYSTEM_PROCESSOR}"
                 BYPRODUCTS gen_defines.asm
             )
         endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
         set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
-        add_library(loader-unknown-chain STATIC unknown_ext_chain_masm.asm)
+        if(SYSTEM_PROCESSOR MATCHES "arm")
+            add_library(loader-unknown-chain STATIC unknown_ext_chain_marmasm.asm)
+        else()
+            add_library(loader-unknown-chain STATIC unknown_ext_chain_masm.asm)
+        endif()
         target_include_directories(loader-unknown-chain PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
         add_dependencies(loader-unknown-chain loader_asm_gen_files)
         set(UNKNOWN_FUNCTIONS_SUPPORTED ON)
@@ -201,11 +249,9 @@ end
             set(CMAKE_ASM_MASM_CREATE_STATIC_LIBRARY "<CMAKE_AR> /OUT:<TARGET> <LINK_FLAGS> <OBJECTS>")
         endif()
     else()
-        message(WARNING "Could not find working MASM assembler\n${ASM_FAILURE_MSG}")
+        message(WARNING "Could not find working ${} assembler\n${ASM_FAILURE_MSG}")
     endif()
 elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Windows using Clang-CL
-
-    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_PROCESSOR)
 
     option(USE_GAS "Use GAS" ON)
     if(USE_GAS)

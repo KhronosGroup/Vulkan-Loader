@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017-2021 The Khronos Group Inc.
- * Copyright (c) 2017-2021 Valve Corporation
- * Copyright (c) 2017-2021 LunarG, Inc.
+ * Copyright (c) 2017-2024 The Khronos Group Inc.
+ * Copyright (c) 2017-2024 Valve Corporation
+ * Copyright (c) 2017-2024 LunarG, Inc.
  * Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,19 +78,28 @@ struct ValueInfo {
     const char *comment;
 };
 
+enum Assembler {
+    UNKNOWN = 0,
+    MASM = 1,
+    MARMASM = 2,
+    GAS = 3,
+};
+
 // This file can both be executed to produce gen_defines.asm and contains all the relevant data which
 // the parse_asm_values.py script needs to write gen_defines.asm, necessary for cross compilation
 int main(int argc, char **argv) {
-    const char *assembler = NULL;
+    enum Assembler assembler = UNKNOWN;
     for (int i = 0; i < argc; ++i) {
         if (!strcmp(argv[i], "MASM")) {
-            assembler = "MASM";
+            assembler = MASM;
+        } else if (!strcmp(argv[i], "MARMASM")) {
+            assembler = MARMASM;
         } else if (!strcmp(argv[i], "GAS")) {
-            assembler = "GAS";
+            assembler = GAS;
         }
     }
-    if (assembler == NULL) {
-        return 1;
+    if (assembler == UNKNOWN) {
+        return -1;
     }
 
     struct ValueInfo values[] = {
@@ -98,7 +107,7 @@ int main(int argc, char **argv) {
         { .name = "VULKAN_LOADER_ERROR_BIT", .value = (size_t) VULKAN_LOADER_ERROR_BIT,
             .comment = "The numerical value of the enum value 'VULKAN_LOADER_ERROR_BIT'" },
         { .name = "PTR_SIZE", .value = sizeof(void*),
-            .comment = "The size of a pointer" },
+                    .comment = "The size of a pointer" },
         { .name = "CHAR_PTR_SIZE", .value = sizeof(char *),
             .comment = "The size of a 'const char *' struct" },
         { .name = "FUNCTION_OFFSET_INSTANCE", .value = offsetof(struct loader_instance, phys_dev_ext_disp_functions),
@@ -122,11 +131,22 @@ int main(int argc, char **argv) {
 
     FILE *file = loader_fopen("gen_defines.asm", "w");
     fprintf(file, "\n");
-    if (!strcmp(assembler, "MASM")) {
+    if (assembler == MASM) {
         for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
             fprintf(file, "%-32s equ " SIZE_T_FMT "; %s\n", values[i].name, values[i].value, values[i].comment);
         }
-    } else if (!strcmp(assembler, "GAS")) {
+    } else if (assembler == MARMASM) {
+        fprintf(file, "    AREA    loader_structs_details, DATA,READONLY\n");
+#if defined(__aarch64__) || defined(_M_ARM64)
+        fprintf(file, "AARCH_64 EQU 1\n");
+#else
+        fprintf(file, "AARCH_64 EQU 0\n");
+#endif
+        for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
+            fprintf(file, "%-32s EQU " SIZE_T_FMT "; %s\n", values[i].name, values[i].value, values[i].comment);
+        }
+        fprintf(file, "    END\n");
+    } else if (assembler == GAS) {
 #if defined(__x86_64__) || defined(__i386__)
         const char *comment_delimiter = "#";
 #if defined(__x86_64__)
