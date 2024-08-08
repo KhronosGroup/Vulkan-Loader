@@ -33,7 +33,7 @@
 #endif
 
 .intel_syntax noprefix
-.include "gen_defines.asm"
+#include "gen_defines.asm"
 
 .ifdef X86_64
 
