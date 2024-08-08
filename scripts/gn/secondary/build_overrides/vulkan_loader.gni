@@ -21,3 +21,5 @@ vulkan_gen_subdir = ""
 # Vulkan loader build options
 vulkan_loader_shared = true
 
+# Path to ar or llvm-ar
+ar_path = ""

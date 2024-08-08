@@ -24,7 +24,7 @@
 // VkPhysicalDevice or a dispatchable object it can unwrap the object, possibly overwriting the wrapped physical device, and then
 // jump to the next function in the call chain
 
-.include "gen_defines.asm"
+#include "gen_defines.asm"
 
 /*
  * References:
@@ -56,6 +56,7 @@
 .macro PhysDevExtTramp num
 .global vkPhysDevExtTramp\num
 #if defined(__ELF__)
+ .type vkPhysDevExtTramp\num, @function
  .hidden vkPhysDevExtTramp\num
 #endif
 .balign 4
@@ -77,6 +78,7 @@ vkPhysDevExtTramp\num:
 .macro PhysDevExtTermin num
 .global vkPhysDevExtTermin\num
 #if defined(__ELF__)
+ .type vkPhysDevExtTermin\num, @function
  .hidden vkPhysDevExtTermin\num
 #endif
 .balign 4

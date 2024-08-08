@@ -25,6 +25,8 @@ import sys
 import os.path
 from os.path import exists
 import re
+import subprocess
+import traceback
 
 
 # Where to write the "gen_defines.asm" file
@@ -57,12 +59,23 @@ defines = ["VULKAN_LOADER_ERROR_BIT",
             "DISPATCH_OFFSET_ICD_TERM",
             "EXT_OFFSET_DEVICE_DISPATCH" ]
 
-try:
-    with open(source_asm_file, 'r') as f:
-        asm_intermediate_file = f.read()
-except IOError:
-    print("Could not open assembler file:", source_asm_file)
-    sys.exit(1)
+if os.path.splitext(source_asm_file)[1] == ".a":
+    try:
+        ar_path = sys.argv[6]
+        asm_archive_member = sys.argv[7]
+        subprocess_result = subprocess.Popen([ar_path, "p", source_asm_file, asm_archive_member], stdout=subprocess.PIPE)
+        asm_intermediate_file = subprocess_result.stdout.read().decode("utf-8")
+    except IOError:
+        print("Could not open assembler archive file:", source_asm_file)
+        traceback.print_exc()
+        sys.exit(1)
+else:
+    try:
+        with open(source_asm_file, 'r') as f:
+            asm_intermediate_file = f.read()
+    except IOError:
+        print("Could not open assembler file:", source_asm_file)
+        sys.exit(1)
 
 with open(destination_file, "w", encoding="utf-8") as dest:
     if assembler_type == "MASM":
