@@ -98,7 +98,7 @@ if (!is_android) {
     library_type = "static_library"
   }
   support_unknown_function_handling = false
-  if (ar_path != "" && !is_win && (current_cpu == "arm64" || current_cpu == "x86_64")) {
+  if (defined(ar_path) && ar_path != "" && !is_win && (current_cpu == "arm64" || current_cpu == "x86_64")) {
     support_unknown_function_handling = true
     static_library("asm_offset") {
       sources = [ "loader/asm_offset.c" ]
