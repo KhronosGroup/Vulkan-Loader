@@ -25,48 +25,7 @@
 #include "loader_common.h"
 
 typedef struct {
-    union {
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-        VkIcdSurfaceWayland wayland_surf;
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-        VkIcdSurfaceWin32 win_surf;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-        VkIcdSurfaceXcb xcb_surf;
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-        VkIcdSurfaceXlib xlib_surf;
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-        VkIcdSurfaceDirectFB directfb_surf;
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#if defined(VK_USE_PLATFORM_MACOS_MVK)
-        VkIcdSurfaceMacOS macos_surf;
-#endif  // VK_USE_PLATFORM_MACOS_MVK
-#if defined(VK_USE_PLATFORM_GGP)
-        VkIcdSurfaceGgp ggp_surf;
-#endif  // VK_USE_PLATFORM_GGP
-#if defined(VK_USE_PLATFORM_FUCHSIA)
-        VkIcdSurfaceImagePipe imagepipe_surf;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-        VkIcdSurfaceMetal metal_surf;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#if defined(VK_USE_PLATFORM_SCREEN_QNX)
-        VkIcdSurfaceScreen screen_surf;
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#if defined(VK_USE_PLATFORM_VI_NN)
-        VkIcdSurfaceVi vi_surf;
-#endif  // VK_USE_PLATFORM_VI_NN
-        VkIcdSurfaceDisplay display_surf;
-        VkIcdSurfaceHeadless headless_surf;
-    };
-    uint32_t base_size;            // Size of VkIcdSurfaceBase
-    uint32_t platform_size;        // Size of corresponding VkIcdSurfaceXXX
-    uint32_t non_platform_offset;  // Start offset to base_size
-    uint32_t entire_size;          // Size of entire VkIcdSurface
-    uint32_t surface_index;        // This surface's index into each drivers list of created surfaces
+    uint32_t surface_index;  // This surface's index into each drivers list of created surfaces
 } VkIcdSurface;
 
 bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr);
