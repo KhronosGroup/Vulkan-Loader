@@ -2078,31 +2078,32 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
                    "[VUID-vkCreateSharedSwapchainsKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
+    if (NULL != icd_term->surface_list.list) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
+                   "vkCreateSharedSwapchainsKHR Terminator: No VkSurfaceKHR objects were created, indicating an application "
+                   "bug. Returning VK_SUCCESS. ");
+        return VK_SUCCESS;
+    }
     if (NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
-                   "vkCreateSharedSwapchainsKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the "
+                   "vkCreateSharedSwapchainsKHR Terminator: Driver's function pointer was NULL, returning VK_SUCCESS. Was the "
                    "VK_KHR_display_swapchain extension enabled?");
         return VK_SUCCESS;
     }
-    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
-    if (NULL != icd_term->surface_list.list &&
-        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
-        icd_term->surface_list.list[icd_surface->surface_index]) {
-        // We found the ICD, and there is an ICD KHR surface
-        // associated with it, so copy the CreateInfo struct
-        // and point it at the ICD's surface.
-        VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
-        if (NULL == pCreateCopy) {
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
-        memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
-        for (uint32_t sc = 0; sc < swapchainCount; sc++) {
+
+    VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
+    if (NULL == pCreateCopy) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
+    for (uint32_t sc = 0; sc < swapchainCount; sc++) {
+        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateCopy[sc].surface;
+        if (icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+            icd_term->surface_list.list[icd_surface->surface_index]) {
             pCreateCopy[sc].surface = icd_term->surface_list.list[icd_surface->surface_index];
         }
-        return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy,
-                                                                                            pAllocator, pSwapchains);
     }
-    return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos,
+    return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy,
                                                                                         pAllocator, pSwapchains);
 }
 

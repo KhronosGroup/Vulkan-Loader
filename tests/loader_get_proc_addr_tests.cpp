@@ -213,6 +213,9 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     VkSurfaceKHR surface{};
     ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
 
+    VkSurfaceKHR surface2{};
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface2));
+
     DebugUtilsWrapper log{inst};
     ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));
     auto phys_dev = inst.GetPhysDev();
@@ -286,9 +289,15 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
         VkDeviceGroupPresentModeFlagsKHR modes{};
         GetDeviceGroupSurfacePresentModesKHR(dev.dev, surface, &modes);
 
-        CreateSharedSwapchainsKHR(dev.dev, 1, &info, nullptr, &swapchain);
+        std::array<VkSwapchainCreateInfoKHR, 2> infos{};
+        infos[0] = info;
+        infos[1].sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        infos[1].surface = surface2;
+
+        ASSERT_EQ(VK_SUCCESS, CreateSharedSwapchainsKHR(dev.dev, 2, infos.data(), nullptr, &swapchain));
     }
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
+    env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface2, nullptr);
 }
 
 // Verify that the various ways to get vkGetDeviceProcAddr return the same value
