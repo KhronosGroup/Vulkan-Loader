@@ -474,6 +474,16 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 name = noneStr(elem.text)
         return (type, name)
 
+    # Convert an XML dependency expression to a C expression, taking a callback to replace extension names
+    # See https://registry.khronos.org/vulkan/specs/1.3/registry.html#depends-expressions
+    @staticmethod
+    def ConvertDependencyExpression(expr, replace_func):
+        # '(' and ')' can pass through unchanged
+        expr = re.sub(',', ' || ', expr)
+        expr = re.sub(r'\+', ' && ', expr)
+        expr = re.sub(r'\w+', lambda match: replace_func(match.group()), expr)
+        return expr
+
     def OutputPrototypesInHeader(self):
         protos = ''
         protos += '// Structures defined externally, but used here\n'
@@ -1562,7 +1572,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 term_func += f'    if (!strcmp(name, "{ext_cmd.name[2:]}")) {{\n'
                 term_func += f'        *found_name = true;\n'
                 if ext_cmd.require:
-                    term_func += f'        return dev->driver_extensions.{ext_cmd.ext_name[3:].lower()}_enabled && dev->driver_extensions.{ext_cmd.require[3:].lower()}_enabled ?\n'
+                    dep_expr = self.ConvertDependencyExpression(ext_cmd.require, lambda ext_name: f'dev->driver_extensions.{ext_name[3:].lower()}_enabled')
+                    term_func += f'        return (dev->driver_extensions.{ext_cmd.ext_name[3:].lower()}_enabled && ({dep_expr})) ?\n'
                 else:
                     term_func += f'        return dev->driver_extensions.{ext_cmd.ext_name[3:].lower()}_enabled ?\n'
                 term_func += f'            (PFN_vkVoidFunction)terminator_{(ext_cmd.name[2:])} : NULL;\n'
@@ -1662,7 +1673,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
 
                 if ext_cmd.require:
-                    term_func += f'    if (dev->driver_extensions.{ext_cmd.ext_name[3:].lower()}_enabled && dev->driver_extensions.{ext_cmd.require[3:].lower()}_enabled)\n'
+                    dep_expr = self.ConvertDependencyExpression(ext_cmd.require, lambda ext_name: f'dev->driver_extensions.{ext_name[3:].lower()}_enabled')
+                    term_func += f'    if (dev->driver_extensions.{ext_cmd.ext_name[3:].lower()}_enabled && ({dep_expr}))\n'
                     term_func += f'       dispatch->{ext_cmd.name[2:]} = (PFN_{(ext_cmd.name)})gpda(dev->icd_device, "{(ext_cmd.name)}");\n'
                 else:
                     term_func += f'    if (dev->driver_extensions.{ext_cmd.ext_name[3:].lower()}_enabled)\n'
