@@ -5938,8 +5938,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
             dev->driver_extensions.khr_device_group_enabled = true;
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
             dev->driver_extensions.ext_debug_marker_enabled = true;
-        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], "VK_EXT_full_screen_exclusive")) {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME)) {
             dev->driver_extensions.ext_full_screen_exclusive_enabled = true;
+#endif
         } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_MAINTENANCE_5_EXTENSION_NAME) &&
                    maintenance5_feature_enabled) {
             dev->should_ignore_device_commands_from_newer_version = true;
@@ -5950,10 +5952,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
     VkPhysicalDeviceProperties properties;
     icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
-    if (!dev->driver_extensions.khr_device_group_enabled) {
-        if (properties.apiVersion >= VK_API_VERSION_1_1) {
-            dev->driver_extensions.khr_device_group_enabled = true;
-        }
+    if (properties.apiVersion >= VK_API_VERSION_1_1) {
+        dev->driver_extensions.version_1_1_enabled = true;
+    }
+    if (properties.apiVersion >= VK_API_VERSION_1_2) {
+        dev->driver_extensions.version_1_2_enabled = true;
+    }
+    if (properties.apiVersion >= VK_API_VERSION_1_3) {
+        dev->driver_extensions.version_1_3_enabled = true;
     }
 
     loader_log(icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,

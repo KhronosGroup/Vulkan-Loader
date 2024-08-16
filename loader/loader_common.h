@@ -239,6 +239,9 @@ struct loader_device {
         bool ext_debug_marker_enabled;
         bool ext_debug_utils_enabled;
         bool ext_full_screen_exclusive_enabled;
+        bool version_1_1_enabled;
+        bool version_1_2_enabled;
+        bool version_1_3_enabled;
     } driver_extensions;
 
     struct loader_device *next;
