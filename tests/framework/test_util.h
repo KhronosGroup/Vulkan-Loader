@@ -475,6 +475,10 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
             return os << "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
         case (VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT):
             return os << "VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT";
+        case (VK_PIPELINE_BINARY_MISSING_KHR):
+            return os << "VK_PIPELINE_BINARY_MISSING_KHR";
+        case (VK_ERROR_NOT_ENOUGH_SPACE_KHR):
+            return os << "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
     }
     return os << static_cast<int32_t>(result);
 }
