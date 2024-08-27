@@ -1,9 +1,9 @@
 
 ;;;; Begin Copyright Notice ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Copyright (c) 2015-2021 The Khronos Group Inc.
-; Copyright (c) 2015-2021 Valve Corporation
-; Copyright (c) 2015-2021 LunarG, Inc.
+; Copyright (c) 2015-2024 The Khronos Group Inc.
+; Copyright (c) 2015-2024 Valve Corporation
+; Copyright (c) 2015-2024 LunarG, Inc.
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -276,3 +276,23 @@ EXPORTS
    vkGetDeviceBufferMemoryRequirements
    vkGetDeviceImageMemoryRequirements
    vkGetDeviceImageSparseMemoryRequirements
+
+   vkCmdSetLineStipple
+   vkMapMemory2
+   vkUnmapMemory2
+   vkCmdBindIndexBuffer2
+   vkGetRenderingAreaGranularity
+   vkGetDeviceImageSubresourceLayout
+   vkGetImageSubresourceLayout2
+   vkCmdPushDescriptorSet
+   vkCmdPushDescriptorSetWithTemplate
+   vkCmdSetRenderingAttachmentLocations
+   vkCmdSetRenderingInputAttachmentIndices
+   vkCmdBindDescriptorSets2
+   vkCmdPushConstants2
+   vkCmdPushDescriptorSet2
+   vkCmdPushDescriptorSetWithTemplate2
+   vkCopyMemoryToImage
+   vkCopyImageToMemory
+   vkCopyImageToImage
+   vkTransitionImageLayout

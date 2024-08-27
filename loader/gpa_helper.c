@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -248,6 +248,27 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     if (!strcmp(funcName, "vkGetDeviceBufferMemoryRequirements")) return vkGetDeviceBufferMemoryRequirements;
     if (!strcmp(funcName, "vkGetDeviceImageMemoryRequirements")) return vkGetDeviceImageMemoryRequirements;
     if (!strcmp(funcName, "vkGetDeviceImageSparseMemoryRequirements")) return vkGetDeviceImageSparseMemoryRequirements;
+
+    // Core 1.4 functions
+    if (!strcmp(funcName, "vkCmdSetLineStipple")) return vkCmdSetLineStipple;
+    if (!strcmp(funcName, "vkMapMemory2")) return vkMapMemory2;
+    if (!strcmp(funcName, "vkUnmapMemory2")) return vkUnmapMemory2;
+    if (!strcmp(funcName, "vkCmdBindIndexBuffer2")) return vkCmdBindIndexBuffer2;
+    if (!strcmp(funcName, "vkGetRenderingAreaGranularity")) return vkGetRenderingAreaGranularity;
+    if (!strcmp(funcName, "vkGetDeviceImageSubresourceLayout")) return vkGetDeviceImageSubresourceLayout;
+    if (!strcmp(funcName, "vkGetImageSubresourceLayout2")) return vkGetImageSubresourceLayout2;
+    if (!strcmp(funcName, "vkCmdPushDescriptorSet")) return vkCmdPushDescriptorSet;
+    if (!strcmp(funcName, "vkCmdPushDescriptorSetWithTemplate")) return vkCmdPushDescriptorSetWithTemplate;
+    if (!strcmp(funcName, "vkCmdSetRenderingAttachmentLocations")) return vkCmdSetRenderingAttachmentLocations;
+    if (!strcmp(funcName, "vkCmdSetRenderingInputAttachmentIndices")) return vkCmdSetRenderingInputAttachmentIndices;
+    if (!strcmp(funcName, "vkCmdBindDescriptorSets2")) return vkCmdBindDescriptorSets2;
+    if (!strcmp(funcName, "vkCmdPushConstants2")) return vkCmdPushConstants2;
+    if (!strcmp(funcName, "vkCmdPushDescriptorSet2")) return vkCmdPushDescriptorSet2;
+    if (!strcmp(funcName, "vkCmdPushDescriptorSetWithTemplate2")) return vkCmdPushDescriptorSetWithTemplate2;
+    if (!strcmp(funcName, "vkCopyMemoryToImage")) return vkCopyMemoryToImage;
+    if (!strcmp(funcName, "vkCopyImageToMemory")) return vkCopyImageToMemory;
+    if (!strcmp(funcName, "vkCopyImageToImage")) return vkCopyImageToImage;
+    if (!strcmp(funcName, "vkTransitionImageLayout")) return vkTransitionImageLayout;
 
     // Instance extensions
     void *addr;

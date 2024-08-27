@@ -483,7 +483,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         return (t, n)
 
     # Convert an XML dependency expression to a C expression, taking a callback to replace extension names
-    # See https://registry.khronos.org/vulkan/specs/1.3/registry.html#depends-expressions
+    # See https://registry.khronos.org/vulkan/specs/1.4/registry.html#depends-expressions
     @staticmethod
     def ConvertDependencyExpression(expr, replace_func):
         # '(' and ')' can pass through unchanged
