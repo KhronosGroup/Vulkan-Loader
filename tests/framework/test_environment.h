@@ -67,10 +67,11 @@
 
 #include "shim/shim.h"
 
-#include "icd/physical_device.h"
 #include "icd/test_icd.h"
 
 #include "layer/test_layer.h"
+
+#include FRAMEWORK_CONFIG_HEADER
 
 // Useful defines
 #if COMMON_UNIX_PLATFORMS

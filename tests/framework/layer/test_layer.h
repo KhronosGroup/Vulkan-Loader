@@ -29,6 +29,8 @@
 
 #include "test_util.h"
 
+#include <functional>
+
 #include "layer/layer_util.h"
 
 #include "loader/generated/vk_layer_dispatch_table.h"

@@ -27,9 +27,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <stack>
 #include <string>
-#include <utility>
 
 // Utility class to simplify the writing of JSON manifest files
 

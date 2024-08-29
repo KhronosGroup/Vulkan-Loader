@@ -28,8 +28,6 @@
 
 #include "test_environment.h"
 
-#include <algorithm>
-
 // These tests are all instance extension tests that touch physical devices.  This was
 // before the idea that physical device extensions were more appropriately found in the
 // list of device extensions.  Because of that, all these tests need to support devices

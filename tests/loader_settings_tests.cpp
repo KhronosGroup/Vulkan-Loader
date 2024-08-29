@@ -27,6 +27,8 @@
 
 #include "test_environment.h"
 
+#include <fstream>
+
 std::string get_settings_location_log_message([[maybe_unused]] FrameworkEnvironment const& env,
                                               [[maybe_unused]] bool use_secure = false) {
     std::string s = "Using layer configurations found in loader settings from ";

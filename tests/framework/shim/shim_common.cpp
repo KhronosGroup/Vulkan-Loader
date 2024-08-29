@@ -27,8 +27,6 @@
 
 #include "shim.h"
 
-#include <random>
-
 void PlatformShim::redirect_all_paths(std::filesystem::path const& path) {
     redirect_category(path, ManifestCategory::implicit_layer);
     redirect_category(path, ManifestCategory::explicit_layer);
