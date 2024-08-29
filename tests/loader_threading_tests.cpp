@@ -27,9 +27,7 @@
 
 #include "test_environment.h"
 
-#include <mutex>
 #include <thread>
-#include <atomic>
 
 void create_destroy_instance_loop_with_function_queries(FrameworkEnvironment* env, uint32_t num_loops_create_destroy_instance,
                                                         uint32_t num_loops_try_get_instance_proc_addr,

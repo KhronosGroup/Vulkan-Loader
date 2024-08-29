@@ -26,8 +26,6 @@
  */
 
 #include "test_environment.h"
-#include <functional>
-#include <tuple>
 
 enum class TestConfig {
     add_layer_implementation,
