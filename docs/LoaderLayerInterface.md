@@ -986,7 +986,15 @@ ignore `instance` when `pName` is `vkCreateDevice`.
   - The specification **requires** `NULL` to be returned from
 `vkGetInstanceProcAddr` and `vkGetDeviceProcAddr` for disabled functions.
     - A layer may return `NULL` itself or rely on the following layers to do so.
-
+  - A layer's implementation `vkGetInstanceProcAddr` **should**, when querying for
+`vkCreateInstance`, return a valid function pointer regardless of the value of the
+`instance` parameter.
+    - The specification **requires** that the `instance` parameter **must** be NULL.
+However, older versions of the specification did not have this requirement, allowing
+for non-NULL `instance` handles to be passed in and return a valid `vkCreateInstance`
+function pointer. The Vulkan-Loader itself does this and will continue to do so to
+maintain compatibility with layers which were released before this specification
+change was made.
 
 ## Layer Dispatch Initialization
 

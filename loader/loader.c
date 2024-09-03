@@ -4751,6 +4751,11 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     feature_flags = windows_initialize_dxgi();
 #endif
 
+    // The following line of code is actually invalid at least according to the Vulkan spec with header update 1.2.193 and onwards.
+    // The update required calls to vkGetInstanceProcAddr querying "global" functions (which includes vkCreateInstance) to pass NULL
+    // for the instance parameter. Because it wasn't required to be NULL before, there may be layers which expect the loader's
+    // behavior of passing a non-NULL value into vkGetInstanceProcAddr.
+    // In an abundance of caution, the incorrect code remains as is, with a big comment to indicate that its wrong
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)next_gipa(*created_instance, "vkCreateInstance");
     if (fpCreateInstance) {
         VkLayerInstanceCreateInfo instance_dispatch;
