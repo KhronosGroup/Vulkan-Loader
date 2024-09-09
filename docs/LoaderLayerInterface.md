@@ -256,8 +256,18 @@ of search folders and will therefore be searched first.
 If `VK_LAYER_PATH` is present, then `VK_ADD_LAYER_PATH` will not be used by the
 loader and any values will be ignored.
 
-For security reasons, both `VK_LAYER_PATH` and `VK_ADD_LAYER_PATH` are ignored
-if running with elevated privileges.
+If `VK_IMPLICIT_LAYER_PATH` is defined, then the loader will look at the paths
+defined by that variable for implicit layer manifest files instead of using the
+information provided by the implicit layer registry keys.
+
+If `VK_ADD_IMPLICIT_LAYER_PATH` is defined, then the loader will look at the provided
+paths for implicit layer manifest files in addition to using the information
+provided by the implicit layer registry keys.
+The paths provided by `VK_ADD_IMPLICIT_LAYER_PATH` are added before the standard list
+of search folders and will therefore be searched first.
+
+For security reasons, `VK_LAYER_PATH`, `VK_ADD_LAYER_PATH`, `VK_IMPLICIT_LAYER_PATH`,
+and `VK_ADD_IMPLICIT_LAYER_PATH` are ignored if running with elevated privileges.
 See [Exception for Elevated Privileges](#exception-for-elevated-privileges)
 for more info.
 
@@ -353,8 +363,21 @@ of search folders and will therefore be searched first.
 If `VK_LAYER_PATH` is present, then `VK_ADD_LAYER_PATH` will not be used by the
 loader and any values will be ignored.
 
-For security reasons, both `VK_LAYER_PATH` and `VK_ADD_LAYER_PATH` are ignored
-if running with elevated privileges.
+If `VK_IMPLICIT_LAYER_PATH` is defined, then the loader will look at the paths
+defined by that variable for implicit layer manifest files instead of using the
+information provided by the standard implicit layer paths mentioned above.
+
+If `VK_ADD_IMPLICIT_LAYER_PATH` is defined, then the loader will look at the
+provided paths for implicit layer manifest files in addition to using the
+information provided by the standard implicit layer paths mentioned above.
+The paths provided by `VK_ADD_IMPLICIT_LAYER_PATH` are added before the standard
+list of search folders and will therefore be searched first.
+
+If `VK_IMPLICIT_LAYER_PATH` is present, then `VK_ADD_IMPLICIT_LAYER_PATH` will
+not be used by the loader and any values will be ignored.
+
+For security reasons, `VK_LAYER_PATH`, `VK_ADD_LAYER_PATH`, `VK_IMPLICIT_LAYER_PATH`,
+and `VK_ADD_IMPLICIT_LAYER_PATH` are ignored if running with elevated privileges.
 See [Exception for Elevated Privileges](#exception-for-elevated-privileges)
 for more info.
 
@@ -367,10 +390,10 @@ See
 in the [LoaderApplicationInterface.md document](LoaderApplicationInterface.md)
 for more information on this.
 
-It is also important to note that while both `VK_LAYER_PATH` and
-`VK_ADD_LAYER_PATH` will point the loader paths to search for finding the
-manifest files, it does not guarantee the library files mentioned by the
-manifest will immediately be found.
+It is also important to note that while `VK_LAYER_PATH`, `VK_ADD_LAYER_PATH`,
+`VK_IMPLICIT_LAYER_PATH`, and `VK_ADD_IMPLICIT_LAYER_PATH` will point the
+loader at paths to search for finding the manifest files, it does not guarantee
+the library files mentioned by the manifest will immediately be found.
 Often, the layer manifest file will point to the library file using a relative
 or absolute path.
 When a relative or absolute path is used, the loader can typically find the
@@ -438,8 +461,8 @@ following:
 The loader supports filter environment variables which can forcibly enable and
 disable known layers.
 Known layers are those that are already found by the loader taking into account
-default search paths and other environment variables
-(like `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`).
+default search paths and environment variables `VK_LAYER_PATH`, `VK_ADD_LAYER_PATH`,
+`VK_IMPLICIT_LAYER_PATH`, and `VK_ADD_IMPLICIT_LAYER_PATH`.
 
 The filter variables will be compared against the layer name provided in the
 layer's manifest file.
@@ -548,8 +571,9 @@ override any disables supplied in `VK_LOADER_LAYERS_DISABLE`.
 
 ### Exception for Elevated Privileges
 
-For security reasons, `VK_LAYER_PATH` and `VK_ADD_LAYER_PATH` are ignored if
-running the Vulkan application with elevated privileges.
+For security reasons, `VK_LAYER_PATH`, `VK_ADD_LAYER_PATH`, `VK_IMPLICIT_LAYER_PATH`
+and `VK_ADD_IMPLICIT_LAYER_PATH` are ignored if running the Vulkan application
+with elevated privileges.
 This is because they may insert new libraries into the executable process that
 are not normally found by the loader.
 Because of this, these environment variables can only be used for applications
@@ -2696,9 +2720,9 @@ Android Vulkan documentation</a>.
   <tr>
     <td><small><b>LLP_LOADER_13</b></small></td>
     <td>A loader <b>must</b> not load from user-defined paths (including the
-        use of either <i>VK_LAYER_PATH</i> or <i>VK_ADD_LAYER_PATH</i>
-        environment variables) when running elevated (Administrator/Super-user)
-        applications.<br/>
+        use of <i>VK_LAYER_PATH</i>, <i>VK_ADD_LAYER_PATH</i>, <i>VK_IMPLICIT_LAYER_PATH</i>,
+        or <i>VK_ADD_IMPLICIT_LAYER_PATH</i> environment variables) when running
+        elevated (Administrator/Super-user) applications.<br/>
         <b>This is for security reasons.</b>
     </td>
     <td>The behavior is undefined and may result in computer security lapses,

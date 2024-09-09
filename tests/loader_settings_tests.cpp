@@ -1086,6 +1086,185 @@ TEST(SettingsFile, EnvVarsWork_VK_ADD_LAYER_PATH) {
     }
 }
 
+TEST(SettingsFile, EnvVarsWork_VK_IMPLICIT_LAYER_PATH) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer1.json"}
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("Domierigato")),
+                           "implicit_layer1.json");
+    const char* settings_layer_path = "VK_LAYER_Regular_TestLayer2";
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(settings_layer_path)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Domierigato")),
+                                            "implicit_test_layer2.json"});
+
+    {
+        auto layer_props = env.GetLayerProperties(3);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, settings_layer_path));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_name1));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, settings_layer_path));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.create_info.add_layer(explicit_layer_name1);
+        inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, settings_layer_path));
+        ASSERT_TRUE(string_eq(layers.at(2).layerName, explicit_layer_name1));
+    }
+    env.update_loader_settings(env.loader_settings.add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(settings_layer_path)
+                                         .set_control("on")
+                                         .set_path(env.get_shimmed_layer_manifest_path(2))
+                                         .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))));
+    {
+        auto layer_props = env.GetLayerProperties(3);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, settings_layer_path));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_name1));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, settings_layer_path));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, implicit_layer_name1));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.create_info.add_layer(explicit_layer_name1);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, settings_layer_path));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layers.at(2).layerName, explicit_layer_name1));
+    }
+}
+
+TEST(SettingsFile, EnvVarsWork_VK_ADD_IMPLICIT_LAYER_PATH) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("Domierigato")),
+                           "implicit_layer1.json");
+    const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer1.json"}
+                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+    const char* settings_layer_name = "VK_LAYER_Regular_TestLayer2";
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(settings_layer_name)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("gozaimasu")),
+                                            "implicit_test_layer2.json"});
+
+    {
+        auto layer_props = env.GetLayerProperties(3);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, settings_layer_name));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_name1));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, settings_layer_name));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.create_info.add_layer(explicit_layer_name1);
+        inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_name1));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, settings_layer_name));
+        ASSERT_TRUE(string_eq(layers.at(2).layerName, explicit_layer_name1));
+    }
+
+    env.update_loader_settings(env.loader_settings.add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_name1)
+                                         .set_control("on")
+                                         .set_path(env.get_shimmed_layer_manifest_path(1)))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(settings_layer_name)
+                                         .set_control("on")
+                                         .set_path(env.get_shimmed_layer_manifest_path(2))
+                                         .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(implicit_layer_name1)
+                                         .set_control("on")
+                                         .set_path(env.get_shimmed_layer_manifest_path(0))
+                                         .set_treat_as_implicit_manifest(true))));
+    {
+        auto layer_props = env.GetLayerProperties(3);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, settings_layer_name));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, implicit_layer_name1));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name1));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, settings_layer_name));
+        ASSERT_TRUE(string_eq(layers.at(2).layerName, implicit_layer_name1));
+    }
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.create_info.add_layer(explicit_layer_name1);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name1));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, settings_layer_name));
+        ASSERT_TRUE(string_eq(layers.at(2).layerName, implicit_layer_name1));
+    }
+}
+
 TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});

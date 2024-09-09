@@ -472,18 +472,23 @@ This can be accomplished in one of two ways:
 [VkConfig](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
 tool shipped with the Vulkan SDK.
  2. Directing the loader to look for layers in specific files and/or folders by using the
-`VK_LAYER_PATH` environment variable.
+`VK_LAYER_PATH` and/or `VK_IMPLICIT_LAYER_PATH` environment variables.
 
-The `VK_LAYER_PATH` environment variable can contain multiple paths separated by
-the operating-system specific path separator.
+The `VK_LAYER_PATH` and `VK_IMPLICIT_LAYER_PATH` environment variables can contain multiple
+paths separated by the operating-system specific path separator.
 On Windows, this is a semicolon (`;`), while on Linux and macOS it is a colon
 (`:`).
 
 If `VK_LAYER_PATH` exists, the files and/or folders listed will be scanned for explicit
 layer manifest files.
 Implicit layer discovery is unaffected by this environment variable.
-Each directory listed should be the full pathname of a folder containing layer
-manifest files.
+
+If `VK_IMPLICIT_LAYER_PATH` exists, the files and/or folders listed will be scanned for
+implicit layer manifest files.
+Explicit layer discovery is unaffected by this environment variable.
+
+Each directory listed in `VK_LAYER_PATH` and `VK_IMPLICIT_LAYER_PATH` should be the full
+pathname of a folder containing layer manifest files.
 
 See the
 [Table of Debug Environment Variables](LoaderInterfaceArchitecture.md#table-of-debug-environment-variables)
@@ -493,9 +498,9 @@ for more details.
 
 #### Exception for Elevated Privileges
 
-For security reasons, `VK_LAYER_PATH` is ignored if running with elevated
-privileges.
-Because of this, `VK_LAYER_PATH` can only be used for applications that do not
+For security reasons, `VK_LAYER_PATH` and `VK_IMPLICIT_LAYER_PATH` are ignored if running
+with elevated privileges.
+Because of this, the environment variables can only be used for applications that do not
 use elevated privileges.
 
 For more information see

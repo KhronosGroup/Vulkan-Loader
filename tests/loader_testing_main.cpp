@@ -73,6 +73,8 @@ int main(int argc, char** argv) {
     EnvVarWrapper vk_add_driver_files_env_var{"VK_ADD_DRIVER_FILES"};
     EnvVarWrapper vk_layer_path_env_var{"VK_LAYER_PATH"};
     EnvVarWrapper vk_add_layer_path_env_var{"VK_ADD_LAYER_PATH"};
+    EnvVarWrapper vk_implicit_layer_path_env_var{"VK_IMPLICIT_LAYER_PATH"};
+    EnvVarWrapper vk_add_implicit_layer_path_env_var{"VK_ADD_IMPLICIT_LAYER_PATH"};
     EnvVarWrapper vk_instance_layers_env_var{"VK_INSTANCE_LAYERS"};
     EnvVarWrapper vk_loader_drivers_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
     EnvVarWrapper vk_loader_drivers_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};

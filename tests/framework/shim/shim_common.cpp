@@ -219,6 +219,9 @@ void PlatformShim::redirect_category(std::filesystem::path const& new_path, Mani
     if (category == ManifestCategory::explicit_layer) {
         parse_and_add_env_var_override(paths, get_env_var("VK_LAYER_PATH", false));  // don't report failure
     }
+    if (category == ManifestCategory::implicit_layer) {
+        parse_and_add_env_var_override(paths, get_env_var("VK_IMPLICIT_LAYER_PATH", false));  // don't report failure
+    }
     parse_and_add_env_var_override(paths, FALLBACK_DATA_DIRS);
     parse_and_add_env_var_override(paths, FALLBACK_CONFIG_DIRS);
 
