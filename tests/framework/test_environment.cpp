@@ -400,6 +400,8 @@ FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) no
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("explicit_env_var_layer_folder"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("explicit_add_env_var_layer_folder"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("implicit_layer_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("implicit_env_var_layer_manifests"));
+    folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("implicit_add_env_var_layer_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("override_layer_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("app_package_manifests"));
     folders.emplace_back(FRAMEWORK_BUILD_DIRECTORY, std::string("macos_bundle"));
@@ -579,20 +581,40 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             if (category == ManifestCategory::implicit_layer) fs_ptr = &get_folder(ManifestLocation::implicit_layer);
             break;
         case (ManifestDiscoveryType::env_var):
-            fs_ptr = &get_folder(ManifestLocation::explicit_layer_env_var);
-            if (layer_details.is_dir) {
-                env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location()));
-            } else {
-                env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
+            if (category == ManifestCategory::explicit_layer) {
+                fs_ptr = &get_folder(ManifestLocation::explicit_layer_env_var);
+                if (layer_details.is_dir) {
+                    env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location()));
+                } else {
+                    env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
+                }
+            }
+            if (category == ManifestCategory::implicit_layer) {
+                fs_ptr = &get_folder(ManifestLocation::implicit_layer_env_var);
+                if (layer_details.is_dir) {
+                    env_var_vk_implicit_layer_paths.add_to_list(narrow(fs_ptr->location()));
+                } else {
+                    env_var_vk_implicit_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
+                }
             }
             platform_shim->add_known_path(fs_ptr->location());
             break;
         case (ManifestDiscoveryType::add_env_var):
-            fs_ptr = &get_folder(ManifestLocation::explicit_layer_add_env_var);
-            if (layer_details.is_dir) {
-                add_env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location()));
-            } else {
-                add_env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
+            if (category == ManifestCategory::explicit_layer) {
+                fs_ptr = &get_folder(ManifestLocation::explicit_layer_add_env_var);
+                if (layer_details.is_dir) {
+                    add_env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location()));
+                } else {
+                    add_env_var_vk_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
+                }
+            }
+            if (category == ManifestCategory::implicit_layer) {
+                fs_ptr = &get_folder(ManifestLocation::implicit_layer_add_env_var);
+                if (layer_details.is_dir) {
+                    add_env_var_vk_implicit_layer_paths.add_to_list(narrow(fs_ptr->location()));
+                } else {
+                    add_env_var_vk_implicit_layer_paths.add_to_list(narrow(fs_ptr->location() / layer_details.json_name));
+                }
             }
             platform_shim->add_known_path(fs_ptr->location());
             break;

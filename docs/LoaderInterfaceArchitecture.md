@@ -430,6 +430,8 @@ These behaviors also result in ignoring certain environment variables, such as:
   * `VK_ADD_DRIVER_FILES`
   * `VK_LAYER_PATH`
   * `VK_ADD_LAYER_PATH`
+  * `VK_IMPLICIT_LAYER_PATH`
+  * `VK_ADD_IMPLICIT_LAYER_PATH`
   * `XDG_CONFIG_HOME` (Linux/Mac-specific)
   * `XDG_DATA_HOME` (Linux/Mac-specific)
 
@@ -625,6 +627,31 @@ discovery.
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;</small>
     </td>
   </tr>
+    <tr>
+    <td><small>
+        <i>VK_ADD_IMPLICIT_LAYER_PATH</i>
+    </small></td>
+    <td><small>
+        Provide a list of additional paths that the loader will use to search
+        for implicit layers in addition to the loader's standard layer library
+        search paths when looking for layer manifest files.
+        The paths will be added first, prior to the list of folders that would
+        be searched normally.
+    </small></td>
+    <td><small>
+        <a href="#elevated-privilege-caveats">
+            Ignored when running Vulkan application with elevated privileges.
+        </a>
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_ADD_IMPLICIT_LAYER_PATH=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;:&lt;path_b&gt;<br/><br/>
+        set<br/>
+        &nbsp;&nbsp;VK_ADD_IMPLICIT_LAYER_PATH=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;</small>
+    </td>
+  </tr>
   <tr>
     <td><small>
         <i>VK_DRIVER_FILES</i>
@@ -675,6 +702,27 @@ discovery.
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;:&lt;path_b&gt;<br/><br/>
         set<br/>
         &nbsp;&nbsp;VK_LAYER_PATH=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;
+    </small></td>
+  </tr>
+  <tr>
+    <td><small>
+        <i>VK_IMPLICIT_LAYER_PATH</i></small></td>
+    <td><small>
+        Override the loader's standard implicit layer search paths and use the
+        provided delimited files and/or folders to locate layer manifest files.
+    </small></td>
+    <td><small>
+        <a href="#elevated-privilege-caveats">
+            Ignored when running Vulkan application with elevated privileges.
+        </a>
+    </small></td>
+    <td><small>
+        export<br/>
+        &nbsp;&nbsp;VK_IMPLICIT_LAYER_PATH=<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;:&lt;path_b&gt;<br/><br/>
+        set<br/>
+        &nbsp;&nbsp;VK_IMPLICIT_LAYER_PATH=<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;path_a&gt;;&lt;path_b&gt;
     </small></td>
   </tr>

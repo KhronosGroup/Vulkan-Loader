@@ -1009,6 +1009,177 @@ TEST(ImplicitLayers, DuplicateLayers) {
     ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
 }
 
+TEST(ImplicitLayers, VkImplicitLayerPathEnvVar) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    // verify layer loads successfully when setting VK_IMPLICIT_LAYER_PATH to a full filepath
+    const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(regular_layer_name_1)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Yikes")),
+                                            "regular_layer_1.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var)
+                               .set_is_dir(false));
+
+    InstWrapper inst(env.vulkan_functions);
+    inst.CheckCreate();
+    auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name_1));
+}
+
+TEST(ImplicitLayers, VkImplicitLayerPathEnvVarContainsMultipleFilePaths) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    // verify layers load successfully when setting VK_IMPLICIT_LAYER_PATH to multiple full filepaths
+    const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(regular_layer_name_1)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Yikes")),
+                                            "regular_layer_1.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var)
+                               .set_is_dir(false));
+
+    const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(regular_layer_name_2)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Yikes")),
+                                            "regular_layer_2.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var)
+                               .set_is_dir(false));
+
+    InstWrapper inst(env.vulkan_functions);
+    inst.CheckCreate();
+    auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
+}
+
+TEST(ImplicitLayers, VkImplicitLayerPathEnvVarIsDirectory) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    // verify layers load successfully when setting VK_IMPLICIT_LAYER_PATH to a directory
+    const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(regular_layer_name_1)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Yikes")),
+                                            "regular_layer_1.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(regular_layer_name_2)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Yikes")),
+                                            "regular_layer_2.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    InstWrapper inst(env.vulkan_functions);
+    inst.CheckCreate();
+    auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
+}
+
+// Test to make sure order layers are found in VK_IMPLICIT_LAYER_PATH is what decides which layer is loaded
+TEST(ImplicitLayers, DuplicateLayersInVkImplicitLayerPath) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    const char* layer_name = "VK_LAYER_RegularLayer1";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_description("actually_layer_1")
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Boo!")),
+                                            "layer.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var)
+                               .set_is_dir(true));
+    auto& layer1 = env.get_test_layer(0);
+    layer1.set_description("actually_layer_1");
+
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_description("actually_layer_2")
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Ah!")),
+                                            "layer.json")
+                               // putting it in a separate folder then manually adding the folder to VK_IMPLICIT_LAYER_PATH
+                               .set_discovery_type(ManifestDiscoveryType::override_folder)
+                               .set_is_dir(true));
+    auto& layer2 = env.get_test_layer(1);
+    layer2.set_description("actually_layer_2");
+    env.env_var_vk_implicit_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().string());
+
+    auto layer_props = env.GetLayerProperties(2);
+    ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
+    ASSERT_TRUE(string_eq(layer_name, layer_props[1].layerName));
+    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
+
+    EnvVarWrapper inst_layers_env_var{"VK_INSTANCE_LAYERS"};
+    inst_layers_env_var.add_to_list(layer_name);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    // Expect the first layer added to be found
+    auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layer_name, enabled_layer_props[0].layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props[0].description));
+}
+
+TEST(ImplicitLayers, DuplicateLayersInVK_ADD_IMPLICIT_LAYER_PATH) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    const char* same_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(same_layer_name_1)
+                                                                          .set_description("actually_layer_1")
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Red")),
+                                            "regular_layer_1.json")
+                               // use override folder as just a folder and manually set the VK_ADD_IMPLICIT_LAYER_PATH env-var to it
+                               .set_discovery_type(ManifestDiscoveryType::override_folder)
+                               .set_is_dir(true));
+    auto& layer1 = env.get_test_layer(0);
+    layer1.set_description("actually_layer_1");
+    layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
+    env.add_env_var_vk_implicit_layer_paths.add_to_list(narrow(env.get_folder(ManifestLocation::override_layer).location()));
+
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(same_layer_name_1)
+                                                                          .set_description("actually_layer_2")
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("Blue")),
+                                            "regular_layer_1.json")
+                               .set_discovery_type(ManifestDiscoveryType::add_env_var)
+                               .set_is_dir(true));
+    auto& layer2 = env.get_test_layer(1);
+    layer2.set_description("actually_layer_2");
+    layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
+
+    auto layer_props = env.GetLayerProperties(2);
+    ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
+    ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
+    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(same_layer_name_1, enabled_layer_props.at(0).layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
+    ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
+    ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
+}
+
 // Meta layer which contains component layers that do not exist.
 TEST(MetaLayers, InvalidComponentLayer) {
     FrameworkEnvironment env;

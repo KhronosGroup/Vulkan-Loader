@@ -3148,6 +3148,8 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 #endif
             break;
         case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
+            override_env = loader_secure_getenv(VK_IMPLICIT_LAYER_PATH_ENV_VAR, inst);
+            additional_env = loader_secure_getenv(VK_ADDITIONAL_IMPLICIT_LAYER_PATH_ENV_VAR, inst);
 #if COMMON_UNIX_PLATFORMS
             relative_location = VK_ILAYERS_INFO_RELATIVE_DIR;
 #endif
@@ -3156,8 +3158,8 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 #endif
             break;
         case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
-            override_env = loader_secure_getenv(VK_LAYER_PATH_ENV_VAR, inst);
-            additional_env = loader_secure_getenv(VK_ADDITIONAL_LAYER_PATH_ENV_VAR, inst);
+            override_env = loader_secure_getenv(VK_EXPLICIT_LAYER_PATH_ENV_VAR, inst);
+            additional_env = loader_secure_getenv(VK_ADDITIONAL_EXPLICIT_LAYER_PATH_ENV_VAR, inst);
 #if COMMON_UNIX_PLATFORMS
             relative_location = VK_ELAYERS_INFO_RELATIVE_DIR;
 #endif

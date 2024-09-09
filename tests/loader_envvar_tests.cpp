@@ -382,6 +382,107 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
     env.platform_shim->set_elevated_privilege(false);
 }
 
+// Test VK_IMPLICIT_LAYER_PATH environment variable
+TEST(EnvVarICDOverrideSetup, TestOnlyImplicitLayerEnvVar) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
+    env.platform_shim->redirect_path("/tmp/carol", env.get_folder(ManifestLocation::implicit_layer_env_var).location());
+
+    const char* layer_name = "TestLayer";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("DISABLE_ENV")),
+                                            "test_layer.json")
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    // Now set up a layer path that includes default and user-specified locations,
+    // so that the test app can find them.  Include some badly specified elements as well.
+    // Need to redirect the 'home' directory
+    std::filesystem::path HOME = "/home/fake_home";
+    EnvVarWrapper home_env_var{"HOME", HOME};
+    std::string vk_implicit_layer_path = ":/tmp/carol::::/:";
+    vk_implicit_layer_path += (HOME / "/ with spaces/:::::/tandy:");
+    EnvVarWrapper implicit_layer_path_env_var{"VK_IMPLICIT_LAYER_PATH", vk_implicit_layer_path};
+    InstWrapper inst1{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    auto active_layers1 = inst1.GetActiveLayers(inst1.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(active_layers1.at(0).layerName, layer_name));
+
+    // look for VK_IMPLICIT_LAYER_PATHS
+    EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
+    EXPECT_TRUE(env.debug_log.find("/tandy"));
+    EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/")));
+
+    env.debug_log.clear();
+
+    env.platform_shim->set_elevated_privilege(true);
+
+    InstWrapper inst2{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    auto active_layers2 = inst2.GetActiveLayers(inst2.GetPhysDev(), 0);
+    ASSERT_TRUE(active_layers2.empty());
+
+    EXPECT_FALSE(env.debug_log.find("/tmp/carol"));
+
+    env.platform_shim->set_elevated_privilege(false);
+}
+
+// Test VK_ADD_IMPLICIT_LAYER_PATH environment variable
+TEST(EnvVarICDOverrideSetup, TestOnlyAddImplicitLayerEnvVar) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
+    env.platform_shim->redirect_path("/tmp/carol", env.get_folder(ManifestLocation::implicit_layer_add_env_var).location());
+
+    const char* layer_name = "TestLayer";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("DISABLE_ENV")),
+                                            "test_layer.json")
+                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+
+    // Set up a layer path that includes default and user-specified locations,
+    // so that the test app can find them.  Include some badly specified elements as well.
+    // Need to redirect the 'home' directory
+    std::filesystem::path HOME = "/home/fake_home";
+    EnvVarWrapper home_env_var{"HOME", HOME};
+    std::string vk_add_implicit_layer_path = ":/tmp/carol::::/:";
+    vk_add_implicit_layer_path += (HOME / "/ with spaces/:::::/tandy:");
+    EnvVarWrapper add_implicit_layer_path_env_var{"VK_ADD_LAYER_PATH", vk_add_implicit_layer_path};
+
+    InstWrapper inst1{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst1.create_info, env.debug_log);
+    inst1.CheckCreate();
+
+    auto active_layers1 = inst1.GetActiveLayers(inst1.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(active_layers1.at(0).layerName, layer_name));
+
+    // look for VK_ADD_IMPLICIT_LAYER_PATHS
+    EXPECT_TRUE(env.debug_log.find("/tmp/carol"));
+    EXPECT_TRUE(env.debug_log.find("/tandy"));
+    EXPECT_TRUE(env.debug_log.find((HOME / "/ with spaces/")));
+
+    env.debug_log.clear();
+
+    env.platform_shim->set_elevated_privilege(true);
+
+    InstWrapper inst2{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst2.create_info, env.debug_log);
+    inst2.CheckCreate();
+
+    auto active_layers2 = inst2.GetActiveLayers(inst2.GetPhysDev(), 0);
+    ASSERT_TRUE(active_layers2.empty());
+
+    EXPECT_FALSE(env.debug_log.find("/tmp/carol"));
+
+    env.platform_shim->set_elevated_privilege(false);
+}
+
 #endif
 
 // Test that the driver filter select will only enable driver manifest files that match the filter
