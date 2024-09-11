@@ -394,7 +394,7 @@ TEST(EnumerateDeviceExtensionProperties, ZeroPhysicalDeviceExtensions) {
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0));
-    inst.CheckCreate(VK_SUCCESS);
+    inst.CheckCreate();
 
     auto phys_dev = inst.GetPhysDev();
     DeviceWrapper dev{inst};
@@ -810,7 +810,7 @@ TEST(EnumeratePhysicalDevices, ZeroPhysicalDevices) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0));
-    inst.CheckCreate(VK_SUCCESS);
+    inst.CheckCreate();
 
     uint32_t count = 0;
     ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &count, nullptr));
@@ -1460,7 +1460,7 @@ TEST(TryLoadWrongBinaries, WrongImplicit) {
 
     // We don't want to return VK_ERROR_LAYER_NOT_PRESENT for missing implicit layers because it's not the
     // application asking for them.
-    inst.CheckCreate(VK_SUCCESS);
+    inst.CheckCreate();
 
 #if !defined(__APPLE__)
     // Should get an info message for the bad implicit layer
@@ -1593,7 +1593,7 @@ TEST(TryLoadWrongBinaries, BadImplicit) {
 
     // We don't want to return VK_ERROR_LAYER_NOT_PRESENT for missing implicit layers because it's not the
     // application asking for them.
-    inst.CheckCreate(VK_SUCCESS);
+    inst.CheckCreate();
 
     // Should get an info message for the bad implicit
     ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" failed to load.")));
