@@ -608,8 +608,8 @@ discovery.
     </small></td>
     <td><small>
         Provide a list of additional paths that the loader will use to search
-        for layers in addition to the loader's standard Layer library search
-        folder when looking for explicit layer manifest files.
+        for explicit layers in addition to the loader's standard layer library
+        search paths when looking for layer manifest files.
         The paths will be added first, prior to the list of folders that would
         be searched normally.
     </small></td>
@@ -690,8 +690,8 @@ discovery.
     <td><small>
         <i>VK_LAYER_PATH</i></small></td>
     <td><small>
-        Override the loader's standard Layer library search folders and use the
-        provided delimited file and/or folders to locate explicit layer manifest files.
+        Override the loader's standard explicit layer search paths and use the
+        provided delimited files and/or folders to locate layer manifest files.
     </small></td>
     <td><small>
         <a href="#elevated-privilege-caveats">
