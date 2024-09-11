@@ -1565,7 +1565,7 @@ TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {
         {
             InstWrapper inst{env.vulkan_functions};
             FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-            inst.CheckCreate(VK_SUCCESS);
+            inst.CheckCreate();
             if (check_for_enable) {
                 ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + implicit_layer_name));
                 auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);

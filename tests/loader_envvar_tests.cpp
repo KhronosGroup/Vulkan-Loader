@@ -239,7 +239,7 @@ TEST(EnvVarICDOverrideSetup, XDGContainsJsonFile) {
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-    inst.CheckCreate(VK_SUCCESS);
+    inst.CheckCreate();
 }
 #endif
 

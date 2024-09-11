@@ -31,7 +31,7 @@ void CheckLogForLayerString(FrameworkEnvironment& env, const char* implicit_laye
     {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate(VK_SUCCESS);
+        inst.CheckCreate();
         if (check_for_enable) {
             ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + implicit_layer_name));
         } else {
@@ -119,7 +119,7 @@ TEST(ImplicitLayers, OnlyDisableEnvVar) {
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.add_layer(implicit_layer_name);
-        inst.CheckCreate(VK_SUCCESS);
+        inst.CheckCreate();
         ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + implicit_layer_name));
     }
 }
@@ -962,7 +962,6 @@ TEST(ImplicitLayers, DuplicateLayers) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
     const char* same_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)
@@ -1249,13 +1248,13 @@ TEST(MetaLayers, ExplicitMetaLayer) {
     }
     {  // don't enable the layer, shouldn't find any layers when calling vkEnumerateDeviceLayerProperties
         InstWrapper inst{env.vulkan_functions};
-        inst.CheckCreate(VK_SUCCESS);
+        inst.CheckCreate();
         ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
     {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_layer(meta_layer_name);
-        inst.CheckCreate(VK_SUCCESS);
+        inst.CheckCreate();
         auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         EXPECT_TRUE(check_permutation({regular_layer_name, meta_layer_name}, layer_props));
     }
@@ -2283,7 +2282,6 @@ TEST(ExplicitLayers, MultipleLayersInSingleManifest) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
     const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
     const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
     const char* regular_layer_name_3 = "VK_LAYER_RegularLayer3";
@@ -2367,70 +2365,81 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    {
-        // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
-        const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
-        env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                              .set_name(regular_layer_name_1)
-                                                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                                "regular_layer_1.json")
-                                   .set_discovery_type(ManifestDiscoveryType::env_var)
-                                   .set_is_dir(false));
+    // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
+    const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_explicit_layer(
+        TestLayerDetails(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_1.json")
+            .set_discovery_type(ManifestDiscoveryType::env_var)
+            .set_is_dir(false));
 
-        InstWrapper inst(env.vulkan_functions);
-        inst.create_info.add_layer(regular_layer_name_1);
-        inst.CheckCreate(VK_SUCCESS);
-        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
-        EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name_1));
-    }
-    {
-        // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
-        const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
-        env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                              .set_name(regular_layer_name_1)
-                                                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                                "regular_layer_1.json")
-                                   .set_discovery_type(ManifestDiscoveryType::env_var)
-                                   .set_is_dir(false));
+    InstWrapper inst(env.vulkan_functions);
+    inst.create_info.add_layer(regular_layer_name_1);
+    inst.CheckCreate();
+    auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name_1));
+}
 
-        const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
-        env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                              .set_name(regular_layer_name_2)
-                                                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                                "regular_layer_2.json")
-                                   .set_discovery_type(ManifestDiscoveryType::env_var)
-                                   .set_is_dir(false));
+TEST(ExplicitLayers, VkLayerPathEnvVarContainsMultipleFilepaths) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-        InstWrapper inst(env.vulkan_functions);
-        inst.create_info.add_layer(regular_layer_name_1);
-        inst.create_info.add_layer(regular_layer_name_2);
-        inst.CheckCreate(VK_SUCCESS);
-        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-        EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
-    }
-    {
-        // verify layers load successfully when setting VK_LAYER_PATH to a directory
-        const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
-        env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                              .set_name(regular_layer_name_1)
-                                                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                                "regular_layer_1.json")
-                                   .set_discovery_type(ManifestDiscoveryType::env_var));
+    // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
+    const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_explicit_layer(
+        TestLayerDetails(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_1.json")
+            .set_discovery_type(ManifestDiscoveryType::env_var)
+            .set_is_dir(false));
 
-        const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
-        env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                              .set_name(regular_layer_name_2)
-                                                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                                "regular_layer_2.json")
-                                   .set_discovery_type(ManifestDiscoveryType::env_var));
+    const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
+    env.add_explicit_layer(
+        TestLayerDetails(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_2.json")
+            .set_discovery_type(ManifestDiscoveryType::env_var)
+            .set_is_dir(false));
 
-        InstWrapper inst(env.vulkan_functions);
-        inst.create_info.add_layer(regular_layer_name_1);
-        inst.create_info.add_layer(regular_layer_name_2);
-        inst.CheckCreate(VK_SUCCESS);
-        auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-        EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
-    }
+    InstWrapper inst(env.vulkan_functions);
+    inst.create_info.add_layer(regular_layer_name_1);
+    inst.create_info.add_layer(regular_layer_name_2);
+    inst.CheckCreate();
+    auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
+}
+
+TEST(ExplicitLayers, VkLayerPathEnvVarIsDirectory) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    // verify layers load successfully when setting VK_LAYER_PATH to a directory
+    const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_explicit_layer(
+        TestLayerDetails(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_1.json")
+            .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
+    env.add_explicit_layer(
+        TestLayerDetails(
+            ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+            "regular_layer_2.json")
+            .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    InstWrapper inst(env.vulkan_functions);
+    inst.create_info.add_layer(regular_layer_name_1);
+    inst.create_info.add_layer(regular_layer_name_2);
+    inst.CheckCreate();
+    auto layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    EXPECT_TRUE(check_permutation({regular_layer_name_1, regular_layer_name_2}, layer_props));
 }
 
 TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
@@ -2512,7 +2521,6 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
     const char* same_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)
@@ -2587,7 +2595,6 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayers) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
     const char* layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(layer_name_1)
@@ -2698,7 +2705,6 @@ TEST(ExplicitLayers, CorrectOrderOfEnvVarEnabledLayersFromSystemLocations) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
     const char* layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(layer_name_1)
@@ -2758,7 +2764,6 @@ TEST(ExplicitLayers, CorrectOrderOfApplicationEnabledLayers) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
     const char* layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(layer_name_1)
