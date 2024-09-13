@@ -640,7 +640,9 @@ discovery.
         continue to work.
     </small></td>
     <td><small>
-        If a relative path not used, issues may be encountered.
+        It is recommended to use absolute paths to JSON files.
+        Relative paths may have issues due to how the loader transforms relative library
+        paths into absolute ones.
         <br/> <br/>
         <a href="#elevated-privilege-caveats">
             Ignored when running Vulkan application with elevated privileges.
