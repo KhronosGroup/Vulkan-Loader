@@ -31,6 +31,7 @@
 #include "loader.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2952,21 +2953,16 @@ out:
 VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files,
                         bool use_first_found_manifest) {
     VkResult vk_result = VK_SUCCESS;
-    DIR *dir_stream = NULL;
-    struct dirent *dir_entry;
-    char *cur_file;
-    char *next_file;
-    char *name;
     char full_path[2048];
 #if !defined(_WIN32)
     char temp_path[2048];
 #endif
 
     // Now, parse the paths
-    next_file = search_path;
+    char *next_file = search_path;
     while (NULL != next_file && *next_file != '\0') {
-        name = NULL;
-        cur_file = next_file;
+        char *name = NULL;
+        char *cur_file = next_file;
         next_file = loader_get_next_path(cur_file);
 
         // Is this a JSON file, then try to open it.
@@ -3005,12 +3001,19 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
                 break;
             }
         } else {  // Otherwise, treat it as a directory
-            dir_stream = loader_opendir(inst, cur_file);
+            DIR *dir_stream = loader_opendir(inst, cur_file);
             if (NULL == dir_stream) {
                 continue;
             }
             while (1) {
-                dir_entry = readdir(dir_stream);
+                errno = 0;
+                struct dirent *dir_entry = readdir(dir_stream);
+#if !defined(WIN32)  // Windows doesn't use readdir, don't check errors on functions which aren't called
+                if (errno != 0) {
+                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "readdir failed with %d: %s", errno, strerror(errno));
+                    break;
+                }
+#endif
                 if (NULL == dir_entry) {
                     break;
                 }

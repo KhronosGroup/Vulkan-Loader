@@ -150,7 +150,15 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
 
 FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
 #if !defined(__APPLE__)
-    if (!real_readdir) real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
+    if (!real_readdir) {
+        if (sizeof(void*) == 8) {
+            real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
+        } else {
+            // Necessary to specify the 64 bit readdir version since that is what is linked in when using _FILE_OFFSET_BITS
+            real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir64");
+        }
+    }
+
 #endif
     if (platform_shim.is_during_destruction) {
         return real_readdir(dir_stream);
@@ -166,9 +174,18 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
         std::vector<struct dirent*> folder_contents;
         std::vector<std::string> dirent_filenames;
         while (true) {
+            errno = 0;
             struct dirent* dir_entry = real_readdir(dir_stream);
+            if (errno != 0) {
+                std::cerr << "Readdir failed: errno has value of " << std::to_string(errno) << "\n";
+            }
             if (NULL == dir_entry) {
                 break;
+            }
+            // skip . and .. entries
+            if ((dir_entry->d_name[0] == '.' && dir_entry->d_name[1] == '.' && dir_entry->d_name[2] == '\0') ||
+                (dir_entry->d_name[0] == '.' && dir_entry->d_name[1] == '\0')) {
+                continue;
             }
             folder_contents.push_back(dir_entry);
             dirent_filenames.push_back(&dir_entry->d_name[0]);

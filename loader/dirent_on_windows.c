@@ -92,6 +92,10 @@ struct dirent *readdir(DIR *dir) {
             result = &dir->result;
             result->d_name = dir->info.name;
         }
+        // _findnext sets errno to ENOENT when no more matching files could be found, does not indicate an error
+        if (errno == ENOENT) {
+            errno = 0;
+        }
     } else {
         errno = EBADF;
     }
