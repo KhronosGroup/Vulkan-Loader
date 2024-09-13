@@ -186,6 +186,11 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     endif()
 
     target_compile_options(loader_common_options INTERFACE -Wpointer-arith)
+
+    # Force GLIBC to use the 64 bit interface for file operations instead of 32 bit - More info in issue #1551
+    if("${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
+        target_compile_definitions(loader_common_options INTERFACE _FILE_OFFSET_BITS=64)
+    endif()
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
