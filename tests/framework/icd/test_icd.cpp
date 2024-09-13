@@ -663,15 +663,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceXlibPresentationSupportKH
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
 #if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT(VkInstance instance,
-                                                               const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
-                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT([[maybe_unused]] VkInstance instance,
+                                                               [[maybe_unused]] const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
+                                                               [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                               VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
-                                                                                      uint32_t queueFamilyIndex, IDirectFB* dfb) {
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice, uint32_t, IDirectFB*) {
     return VK_TRUE;
 }
 
@@ -698,10 +698,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK([[maybe_unused]] VkIns
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
 #if defined(VK_USE_PLATFORM_GGP)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(VkInstance instance,
-                                                                       const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
-                                                                       const VkAllocationCallbacks* pAllocator,
-                                                                       VkSurfaceKHR* pSurface) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(
+    [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
+    [[maybe_unused]] const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -718,15 +717,16 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT([[maybe_unused]] VkI
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
-VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
-                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX([[maybe_unused]] VkInstance instance,
+                                                             [[maybe_unused]] const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
+                                                             [[maybe_unused]] const VkAllocationCallbacks* pAllocator,
+                                                             VkSurfaceKHR* pSurface) {
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
-                                                                                    uint32_t queueFamilyIndex,
-                                                                                    struct _screen_window* window) {
+VKAPI_ATTR VkBool32 VKAPI_CALL test_vkGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice, uint32_t,
+                                                                                    struct _screen_window*) {
     return VK_TRUE;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
