@@ -46,7 +46,7 @@ AddSharedLibrary(test_icd_version_7_without_exports DEF_FILE test_icd_7_without_
     SOURCES test_icd.cpp
     DEFINITIONS TEST_ICD_EXPORT_VERSION_7=0 TEST_ICD_EXPORT_ICD_GPDPA=1
         TEST_ICD_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES=1 ${TEST_ICD_VERSION_2_DEFINES})
-AddSharedLibrary(test_unicode DEF_FILE test_icd_2
+AddSharedLibrary(test_unicode DEF_FILE 🌋
     SOURCES test_icd.cpp
     DEFINITIONS ${TEST_ICD_VERSION_2_DEFINES})
 set_target_properties(test_unicode PROPERTIES OUTPUT_NAME "🌋") # Test unicode library
