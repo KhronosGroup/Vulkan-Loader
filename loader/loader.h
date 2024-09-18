@@ -94,7 +94,11 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
                                              const struct loader_envvar_all_filters *layer_filters,
                                              const VkInstanceCreateInfo *pCreateInfo);
 
+#if defined(_WIN32)
+BOOL __stdcall loader_initialize(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context);
+#else
 void loader_initialize(void);
+#endif
 void loader_release(void);
 void loader_preload_icds(void);
 void loader_unload_preloaded_icds(void);
