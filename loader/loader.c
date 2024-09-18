@@ -1932,12 +1932,18 @@ out:
     return res;
 }
 
+#if defined(_WIN32)
+BOOL __stdcall loader_initialize(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context) {
+    (void)InitOnce;
+    (void)Parameter;
+    (void)Context;
+#else
 void loader_initialize(void) {
-    // initialize mutexes
     loader_platform_thread_create_mutex(&loader_lock);
     loader_platform_thread_create_mutex(&loader_preload_icd_lock);
     loader_platform_thread_create_mutex(&loader_global_instance_list_lock);
     init_global_loader_settings();
+#endif
 
     // initialize logging
     loader_init_global_debug_level();
@@ -1963,6 +1969,9 @@ void loader_initialize(void) {
     loader_free_getenv(loader_disable_dynamic_library_unloading_env_var, NULL);
 #if defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: unsafe searching is enabled");
+#endif
+#if defined(_WIN32)
+    return TRUE;
 #endif
 }
 

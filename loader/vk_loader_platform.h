@@ -232,9 +232,14 @@ extern bool loader_disable_dynamic_library_unloading;
 // Returns true if the DIRECTORY_SYMBOL is contained within path
 static inline bool loader_platform_is_path(const char *path) { return strchr(path, DIRECTORY_SYMBOL) != NULL; }
 
-// The once init functionality is not used when building a DLL on Windows. This is because there is no way to clean up the
-// resources allocated by anything allocated by once init. This isn't a problem for static libraries, but it is for dynamic
-// ones. When building a DLL, we use DllMain() instead to allow properly cleaning up resources.
+// The loader has various initialization tasks which it must do before user code can run. This includes initializing synchronization
+// objects, determining the log level, writing the version of the loader to the log, and loading dll's (on windows). On linux, the
+// solution is simply running the initialization code in  __attribute__((constructor)), which MacOS uses when the loader is
+// dynamically linked. When statically linking on MacOS, the setup code instead uses pthread_once to run the logic a single time
+// regardless of which API function the application calls first. On Windows, the equivalent way to run code at dll load time is
+// DllMain which has many limitations placed upon it. Instead, the Windows code follows MacOS and does initialization in the first
+// API call made, using InitOnceExecuteOnce, except for initialization primitives which must be done in DllMain. This is because
+// there is no way to clean up the resources allocated by anything allocated by once init.
 
 #if defined(APPLE_STATIC_LOADER)
 static inline void loader_platform_thread_once_fn(pthread_once_t *ctl, void (*func)(void)) {
@@ -245,6 +250,13 @@ static inline void loader_platform_thread_once_fn(pthread_once_t *ctl, void (*fu
 #define LOADER_PLATFORM_THREAD_ONCE_DECLARATION(var) pthread_once_t var = PTHREAD_ONCE_INIT;
 #define LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(var) extern pthread_once_t var;
 #define LOADER_PLATFORM_THREAD_ONCE(ctl, func) loader_platform_thread_once_fn(ctl, func);
+#elif defined(WIN32)
+static inline void loader_platform_thread_win32_once_fn(INIT_ONCE *ctl, PINIT_ONCE_FN func) {
+    InitOnceExecuteOnce(ctl, func, NULL, NULL);
+}
+#define LOADER_PLATFORM_THREAD_ONCE_DECLARATION(var) INIT_ONCE var = INIT_ONCE_STATIC_INIT;
+#define LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(var) extern INIT_ONCE var;
+#define LOADER_PLATFORM_THREAD_ONCE(ctl, func) loader_platform_thread_win32_once_fn(ctl, func);
 #else
 #define LOADER_PLATFORM_THREAD_ONCE_DECLARATION(var)
 #define LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(var)
