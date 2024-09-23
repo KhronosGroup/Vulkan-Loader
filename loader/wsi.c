@@ -2439,6 +2439,65 @@ vkGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice, cons
     return disp->GetPhysicalDeviceSurfaceCapabilities2KHR(unwrapped_phys_dev, pSurfaceInfo, pSurfaceCapabilities);
 }
 
+void emulate_VK_EXT_surface_maintenance1(struct loader_icd_term *icd_term, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                         VkSurfaceCapabilities2KHR *pSurfaceCapabilities) {
+    // Because VK_EXT_surface_maintenance1 is an instance extension, applications will use it to query info on drivers which do
+    // not support the extension. Thus we need to emulate the driver filling out the structs in that case.
+    if (!icd_term->supports_ext_surface_maintenance_1) {
+        VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
+        const void *void_pNext = pSurfaceInfo->pNext;
+        while (void_pNext) {
+            VkBaseOutStructure out_structure = {0};
+            memcpy(&out_structure, void_pNext, sizeof(VkBaseOutStructure));
+            if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT) {
+                VkSurfacePresentModeEXT *surface_present_mode = (VkSurfacePresentModeEXT *)void_pNext;
+                present_mode = surface_present_mode->presentMode;
+            } else {
+                loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+                           "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulation found unrecognized structure type in "
+                           "pSurfaceInfo->pNext - this struct will be ignored");
+            }
+            void_pNext = out_structure.pNext;
+        }
+        // If no VkSurfacePresentModeEXT was present, return
+        if (present_mode == VK_PRESENT_MODE_MAX_ENUM_KHR) {
+            return;
+        }
+
+        void_pNext = pSurfaceCapabilities->pNext;
+        while (void_pNext) {
+            VkBaseOutStructure out_structure = {0};
+            memcpy(&out_structure, void_pNext, sizeof(VkBaseOutStructure));
+            if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT) {
+                VkSurfacePresentModeCompatibilityEXT *surface_present_mode_compatibility =
+                    (VkSurfacePresentModeCompatibilityEXT *)void_pNext;
+                if (surface_present_mode_compatibility->pPresentModes) {
+                    surface_present_mode_compatibility->pPresentModes[0] = present_mode;
+                }
+                surface_present_mode_compatibility->presentModeCount = 1;
+
+            } else if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT) {
+                // Because there is no way to fill out the information faithfully, set scaled max/min image extent to the
+                // surface capabilities max/min extent and the rest to zero.
+                VkSurfacePresentScalingCapabilitiesEXT *surface_present_scaling_capabilities =
+                    (VkSurfacePresentScalingCapabilitiesEXT *)void_pNext;
+                surface_present_scaling_capabilities->supportedPresentScaling = 0;
+                surface_present_scaling_capabilities->supportedPresentGravityX = 0;
+                surface_present_scaling_capabilities->supportedPresentGravityY = 0;
+                surface_present_scaling_capabilities->maxScaledImageExtent =
+                    pSurfaceCapabilities->surfaceCapabilities.maxImageExtent;
+                surface_present_scaling_capabilities->minScaledImageExtent =
+                    pSurfaceCapabilities->surfaceCapabilities.minImageExtent;
+            } else {
+                loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+                           "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulation found unrecognized structure type in "
+                           "pSurfaceCapabilities->pNext - this struct will be ignored");
+            }
+            void_pNext = out_structure.pNext;
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
     VkSurfaceCapabilities2KHR *pSurfaceCapabilities) {
@@ -2465,30 +2524,34 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
             pNext = (VkBaseOutStructure *)pNext->pNext;
         }
 
+        VkResult res = VK_SUCCESS;
+
         // Pass the call to the driver, possibly unwrapping the ICD surface
         if (NULL != icd_term->surface_list.list &&
             icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
             icd_term->surface_list.list[icd_surface->surface_index]) {
             VkPhysicalDeviceSurfaceInfo2KHR info_copy = *pSurfaceInfo;
             info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
-            return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev_term->phys_dev, &info_copy,
-                                                                               pSurfaceCapabilities);
+            res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev_term->phys_dev, &info_copy,
+                                                                              pSurfaceCapabilities);
         } else {
-            return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev_term->phys_dev, pSurfaceInfo,
-                                                                               pSurfaceCapabilities);
+            res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev_term->phys_dev, pSurfaceInfo,
+                                                                              pSurfaceCapabilities);
         }
+
+        // Because VK_EXT_surface_maintenance1 is an instance extension, applications will use it to query info on drivers which do
+        // not support the extension. Thus we need to emulate the driver filling out the structs in that case.
+        if (!icd_term->supports_ext_surface_maintenance_1) {
+            emulate_VK_EXT_surface_maintenance1(icd_term, pSurfaceInfo, pSurfaceCapabilities);
+        }
+
+        return res;
     } else {
         // Emulate the call
         loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
                    "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulating call in ICD \"%s\" using "
                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
                    icd_term->scanned_icd->lib_name);
-
-        if (pSurfaceInfo->pNext != NULL) {
-            loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
-                       "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulation found unrecognized structure type in "
-                       "pSurfaceInfo->pNext - this struct will be ignored");
-        }
 
         // Write to the VkSurfaceCapabilities2KHR struct
         VkSurfaceKHR surface = pSurfaceInfo->surface;
@@ -2508,11 +2571,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
         VkResult res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface,
                                                                                   &pSurfaceCapabilities->surfaceCapabilities);
 
-        if (pSurfaceCapabilities->pNext != NULL) {
-            loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
-                       "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulation found unrecognized structure type in "
-                       "pSurfaceCapabilities->pNext - this struct will be ignored");
-        }
+        emulate_VK_EXT_surface_maintenance1(icd_term, pSurfaceInfo, pSurfaceCapabilities);
         return res;
     }
 }

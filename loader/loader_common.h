@@ -266,6 +266,7 @@ struct loader_icd_term {
 
     PFN_PhysDevExt phys_dev_ext[MAX_NUM_UNKNOWN_EXTS];
     bool supports_get_dev_prop_2;
+    bool supports_ext_surface_maintenance_1;
 
     uint32_t physical_device_count;
 
