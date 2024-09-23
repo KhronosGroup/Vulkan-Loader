@@ -292,8 +292,8 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
             if (sorted_device_info[index].has_pci_bus_info) {
                 VkPhysicalDevicePCIBusInfoPropertiesEXT pci_props = (VkPhysicalDevicePCIBusInfoPropertiesEXT){
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
-                VkPhysicalDeviceProperties2 dev_props2 = (VkPhysicalDeviceProperties2){
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = (VkBaseInStructure *)&pci_props};
+                VkPhysicalDeviceProperties2 dev_props2 =
+                    (VkPhysicalDeviceProperties2){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &pci_props};
 
                 PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
                 if (app_is_vulkan_1_1 && device_is_1_1_capable) {
@@ -394,8 +394,8 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
             if (sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info) {
                 VkPhysicalDevicePCIBusInfoPropertiesEXT pci_props = (VkPhysicalDevicePCIBusInfoPropertiesEXT){
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
-                VkPhysicalDeviceProperties2 dev_props2 = (VkPhysicalDeviceProperties2){
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = (VkBaseInStructure *)&pci_props};
+                VkPhysicalDeviceProperties2 dev_props2 =
+                    (VkPhysicalDeviceProperties2){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &pci_props};
 
                 PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
                 if (app_is_vulkan_1_1 && device_is_1_1_capable) {

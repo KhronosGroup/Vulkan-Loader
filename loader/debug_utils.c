@@ -134,7 +134,9 @@ VkResult util_CreateDebugUtilsMessengers(struct loader_instance *inst, const voi
                                          const VkAllocationCallbacks *pAllocator) {
     const void *pNext = pChain;
     while (pNext) {
-        if (((const VkBaseInStructure *)pNext)->sType == VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT) {
+        VkBaseInStructure in_structure = {0};
+        memcpy(&in_structure, pNext, sizeof(VkBaseInStructure));
+        if (in_structure.sType == VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT) {
             // Assign a unique handle to each messenger (just use the address of the VkDebugUtilsMessengerCreateInfoEXT)
             // This is only being used this way due to it being for an 'anonymous' callback during instance creation
             VkDebugUtilsMessengerEXT messenger_handle = (VkDebugUtilsMessengerEXT)(uintptr_t)pNext;
@@ -144,7 +146,7 @@ VkResult util_CreateDebugUtilsMessengers(struct loader_instance *inst, const voi
                 return ret;
             }
         }
-        pNext = (void *)((VkBaseInStructure *)pNext)->pNext;
+        pNext = in_structure.pNext;
     }
     return VK_SUCCESS;
 }
@@ -409,7 +411,9 @@ VkResult util_CreateDebugReportCallbacks(struct loader_instance *inst, const voi
                                          const VkAllocationCallbacks *pAllocator) {
     const void *pNext = pChain;
     while (pNext) {
-        if (((VkBaseInStructure *)pNext)->sType == VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT) {
+        VkBaseInStructure in_structure = {0};
+        memcpy(&in_structure, pNext, sizeof(VkBaseInStructure));
+        if (in_structure.sType == VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT) {
             // Assign a unique handle to each callback (just use the address of the VkDebugReportCallbackCreateInfoEXT):
             // This is only being used this way due to it being for an 'anonymous' callback during instance creation
             VkDebugReportCallbackEXT report_handle = (VkDebugReportCallbackEXT)(uintptr_t)pNext;
@@ -419,7 +423,7 @@ VkResult util_CreateDebugReportCallbacks(struct loader_instance *inst, const voi
                 return ret;
             }
         }
-        pNext = (void *)((VkBaseInStructure *)pNext)->pNext;
+        pNext = in_structure.pNext;
     }
     return VK_SUCCESS;
 }

@@ -1667,13 +1667,15 @@ VkResult loader_scan_for_direct_drivers(const struct loader_instance *inst, cons
     }
     const VkDirectDriverLoadingListLUNARG *ddl_list = NULL;
     // Find the VkDirectDriverLoadingListLUNARG struct in the pNext chain of vkInstanceCreateInfo
-    const VkBaseOutStructure *chain = pCreateInfo->pNext;
-    while (chain) {
-        if (chain->sType == VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG) {
-            ddl_list = (VkDirectDriverLoadingListLUNARG *)chain;
+    const void *pNext = pCreateInfo->pNext;
+    while (pNext) {
+        VkBaseInStructure out_structure = {0};
+        memcpy(&out_structure, pNext, sizeof(VkBaseInStructure));
+        if (out_structure.sType == VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG) {
+            ddl_list = (VkDirectDriverLoadingListLUNARG *)pNext;
             break;
         }
-        chain = (const VkBaseOutStructure *)chain->pNext;
+        pNext = out_structure.pNext;
     }
     if (NULL == ddl_list) {
         if (direct_driver_loading_enabled) {
@@ -5866,7 +5868,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     {
         const void *pNext = localCreateInfo.pNext;
         while (pNext != NULL) {
-            switch (*(VkStructureType *)pNext) {
+            VkBaseInStructure pNext_in_structure = {0};
+            memcpy(&pNext_in_structure, pNext, sizeof(VkBaseInStructure));
+            switch (pNext_in_structure.sType) {
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2: {
                     const VkPhysicalDeviceFeatures2KHR *features = pNext;
 
@@ -5918,8 +5922,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                 // Multiview properties are also allowed, but since VK_KHX_multiview is a device extension, we'll just let the
                 // ICD handle that error when the user enables the extension here
                 default: {
-                    const VkBaseInStructure *header = pNext;
-                    pNext = header->pNext;
+                    pNext = pNext_in_structure.pNext;
                     break;
                 }
             }
@@ -5931,7 +5934,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     {
         const void *pNext = localCreateInfo.pNext;
         while (pNext != NULL) {
-            switch (*(VkStructureType *)pNext) {
+            VkBaseInStructure pNext_in_structure = {0};
+            memcpy(&pNext_in_structure, pNext, sizeof(VkBaseInStructure));
+            switch (pNext_in_structure.sType) {
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR: {
                     const VkPhysicalDeviceMaintenance5FeaturesKHR *maintenance_features = pNext;
                     if (maintenance_features->maintenance5 == VK_TRUE) {
@@ -5942,8 +5947,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                 }
 
                 default: {
-                    const VkBaseInStructure *header = pNext;
-                    pNext = header->pNext;
+                    pNext = pNext_in_structure.pNext;
                     break;
                 }
             }
