@@ -5468,14 +5468,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 #endif  // LOADER_ENABLE_LINUX_SORT
 
         // Determine if vkGetPhysicalDeviceProperties2 is available to this Instance
+        // Also determine if VK_EXT_surface_maintenance1 is available on the ICD
         if (icd_term->scanned_icd->api_version >= VK_API_VERSION_1_1) {
             icd_term->supports_get_dev_prop_2 = true;
-        } else {
-            for (uint32_t j = 0; j < icd_create_info.enabledExtensionCount; j++) {
-                if (!strcmp(filtered_extension_names[j], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-                    icd_term->supports_get_dev_prop_2 = true;
-                    break;
-                }
+        }
+        for (uint32_t j = 0; j < icd_create_info.enabledExtensionCount; j++) {
+            if (!strcmp(filtered_extension_names[j], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+                icd_term->supports_get_dev_prop_2 = true;
+                continue;
+            }
+            if (!strcmp(filtered_extension_names[j], VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME)) {
+                icd_term->supports_ext_surface_maintenance_1 = true;
+                continue;
             }
         }
 

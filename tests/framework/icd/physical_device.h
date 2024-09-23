@@ -55,6 +55,10 @@ struct PhysicalDevice {
     BUILDER_VALUE(PhysicalDevice, VkSurfaceCapabilitiesKHR, surface_capabilities, {})
     BUILDER_VECTOR(PhysicalDevice, VkSurfaceFormatKHR, surface_formats, surface_format)
     BUILDER_VECTOR(PhysicalDevice, VkPresentModeKHR, surface_present_modes, surface_present_mode)
+    BUILDER_VALUE(PhysicalDevice, VkSurfacePresentScalingCapabilitiesEXT, surface_present_scaling_capabilities, {})
+    // No good way to make this a builder value. Each std::vector<VkPresentModeKHR> corresponds to each surface_present_modes
+    // element
+    std::vector<std::vector<VkPresentModeKHR>> surface_present_mode_compatibility{};
 
     BUILDER_VECTOR(PhysicalDevice, VkDisplayPropertiesKHR, display_properties, display_properties)
     BUILDER_VECTOR(PhysicalDevice, VkDisplayPlanePropertiesKHR, display_plane_properties, display_plane_properties)
