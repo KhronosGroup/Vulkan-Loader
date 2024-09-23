@@ -156,9 +156,11 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
         // Write to the VkPhysicalDeviceFeatures2 struct
         icd_term->dispatch.GetPhysicalDeviceFeatures(phys_dev_term->phys_dev, &pFeatures->features);
 
-        const VkBaseInStructure *pNext = pFeatures->pNext;
+        void *pNext = pFeatures->pNext;
         while (pNext != NULL) {
-            switch (pNext->sType) {
+            VkBaseOutStructure pNext_in_structure = {0};
+            memcpy(&pNext_in_structure, pNext, sizeof(VkBaseOutStructure));
+            switch (pNext_in_structure.sType) {
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: {
                     // Skip the check if VK_KHR_multiview is enabled because it's a device extension
                     // Write to the VkPhysicalDeviceMultiviewFeaturesKHR struct
@@ -175,7 +177,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
                                "vkGetPhysicalDeviceFeatures2: Emulation found unrecognized structure type in pFeatures->pNext - "
                                "this struct will be ignored");
 
-                    pNext = pNext->pNext;
+                    pNext = pNext_in_structure.pNext;
                     break;
                 }
             }
@@ -212,9 +214,11 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
         // Write to the VkPhysicalDeviceProperties2 struct
         icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &pProperties->properties);
 
-        const VkBaseInStructure *pNext = pProperties->pNext;
+        void *pNext = pProperties->pNext;
         while (pNext != NULL) {
-            switch (pNext->sType) {
+            VkBaseOutStructure pNext_in_structure = {0};
+            memcpy(&pNext_in_structure, pNext, sizeof(VkBaseOutStructure));
+            switch (pNext_in_structure.sType) {
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES: {
                     VkPhysicalDeviceIDPropertiesKHR *id_properties = (VkPhysicalDeviceIDPropertiesKHR *)pNext;
 
@@ -238,7 +242,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
                                "vkGetPhysicalDeviceProperties2KHR: Emulation found unrecognized structure type in "
                                "pProperties->pNext - this struct will be ignored");
 
-                    pNext = pNext->pNext;
+                    pNext = pNext_in_structure.pNext;
                     break;
                 }
             }

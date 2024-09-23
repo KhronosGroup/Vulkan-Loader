@@ -2454,15 +2454,17 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
     }
 
     if (icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2KHR != NULL) {
-        VkBaseOutStructure *pNext = (VkBaseOutStructure *)pSurfaceCapabilities->pNext;
+        void *pNext = pSurfaceCapabilities->pNext;
         while (pNext != NULL) {
-            if ((int)pNext->sType == VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR) {
+            VkBaseOutStructure pNext_out_structure = {0};
+            memcpy(&pNext_out_structure, pNext, sizeof(VkBaseOutStructure));
+            if (pNext_out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR) {
                 // Not all ICDs may be supporting VK_KHR_surface_protected_capabilities
                 // Initialize VkSurfaceProtectedCapabilitiesKHR.supportsProtected to false and
                 // if an ICD supports protected surfaces, it will reset it to true accordingly.
                 ((VkSurfaceProtectedCapabilitiesKHR *)pNext)->supportsProtected = VK_FALSE;
             }
-            pNext = (VkBaseOutStructure *)pNext->pNext;
+            pNext = pNext_out_structure.pNext;
         }
 
         // Pass the call to the driver, possibly unwrapping the ICD surface
