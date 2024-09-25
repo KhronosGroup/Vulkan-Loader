@@ -964,20 +964,6 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
             continue;
         }
 
-        if (icd_phys_devs_array_size <= i) {
-            uint32_t old_size = icd_phys_devs_array_size * sizeof(struct loader_icd_physical_devices);
-            *icd_phys_devs_array = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
-                                                                VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-            if (*icd_phys_devs_array == NULL) {
-                adapter->lpVtbl->Release(adapter);
-                res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                goto out;
-            }
-            icd_phys_devs_array_size *= 2;
-        }
-        (*icd_phys_devs_array)[*icd_phys_devs_array_count].device_count = 0;
-        (*icd_phys_devs_array)[*icd_phys_devs_array_count].physical_devices = NULL;
-
         icd_term = inst->icd_terms;
         while (NULL != icd_term) {
             // This is the new behavior, which cannot be run unless the ICD provides EnumerateAdapterPhysicalDevices
@@ -985,6 +971,20 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
                 icd_term = icd_term->next;
                 continue;
             }
+
+            if (icd_phys_devs_array_size <= *icd_phys_devs_array_count) {
+                uint32_t old_size = icd_phys_devs_array_size * sizeof(struct loader_icd_physical_devices);
+                *icd_phys_devs_array = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
+                                                                    VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                if (*icd_phys_devs_array == NULL) {
+                    adapter->lpVtbl->Release(adapter);
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                }
+                icd_phys_devs_array_size *= 2;
+            }
+            (*icd_phys_devs_array)[*icd_phys_devs_array_count].device_count = 0;
+            (*icd_phys_devs_array)[*icd_phys_devs_array_count].physical_devices = NULL;
 
             res = enumerate_adapter_physical_devices(inst, icd_term, description.AdapterLuid, icd_phys_devs_array_count,
                                                      *icd_phys_devs_array);
