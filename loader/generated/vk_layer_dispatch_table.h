@@ -1119,6 +1119,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkDestroyShaderEXT DestroyShaderEXT;
     PFN_vkGetShaderBinaryDataEXT GetShaderBinaryDataEXT;
     PFN_vkCmdBindShadersEXT CmdBindShadersEXT;
+    PFN_vkCmdSetDepthClampRangeEXT CmdSetDepthClampRangeEXT;
 
     // ---- VK_QCOM_tile_properties extension commands
     PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
@@ -1138,6 +1139,17 @@ typedef struct VkLayerDispatchTable_ {
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_EXT_device_generated_commands extension commands
+    PFN_vkGetGeneratedCommandsMemoryRequirementsEXT GetGeneratedCommandsMemoryRequirementsEXT;
+    PFN_vkCmdPreprocessGeneratedCommandsEXT CmdPreprocessGeneratedCommandsEXT;
+    PFN_vkCmdExecuteGeneratedCommandsEXT CmdExecuteGeneratedCommandsEXT;
+    PFN_vkCreateIndirectCommandsLayoutEXT CreateIndirectCommandsLayoutEXT;
+    PFN_vkDestroyIndirectCommandsLayoutEXT DestroyIndirectCommandsLayoutEXT;
+    PFN_vkCreateIndirectExecutionSetEXT CreateIndirectExecutionSetEXT;
+    PFN_vkDestroyIndirectExecutionSetEXT DestroyIndirectExecutionSetEXT;
+    PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEXT;
+    PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
 
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
