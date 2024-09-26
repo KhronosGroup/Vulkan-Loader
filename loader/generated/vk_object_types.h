@@ -89,7 +89,9 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeMicromapEXT = 49,
     kVulkanObjectTypeOpticalFlowSessionNV = 50,
     kVulkanObjectTypeShaderEXT = 51,
-    kVulkanObjectTypeMax = 52,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 52,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 53,
+    kVulkanObjectTypeMax = 54,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
@@ -150,6 +152,8 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "MicromapEXT",
     "OpticalFlowSessionNV",
     "ShaderEXT",
+    "IndirectExecutionSetEXT",
+    "IndirectCommandsLayoutEXT",
 };
 
 // Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version
@@ -206,6 +210,8 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeMicromapEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeShaderEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectExecutionSetEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutEXT
 };
 
 // Helper array to get Official Vulkan VkObjectType enum from the internal layers version
@@ -262,6 +268,8 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_MICROMAP_EXT,   // kVulkanObjectTypeMicromapEXT
     VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_OBJECT_TYPE_SHADER_EXT,   // kVulkanObjectTypeShaderEXT
+    VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT,   // kVulkanObjectTypeIndirectExecutionSetEXT
+    VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutEXT
 };
 
 // Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType
