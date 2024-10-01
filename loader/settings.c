@@ -27,7 +27,9 @@
 #include "cJSON.h"
 #include "loader.h"
 #include "loader_environment.h"
+#if defined(WIN32)
 #include "loader_windows.h"
+#endif
 #include "log.h"
 #include "stack_allocation.h"
 #include "vk_loader_platform.h"

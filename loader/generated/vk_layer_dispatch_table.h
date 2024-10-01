@@ -27,6 +27,8 @@
 // clang-format off
 #pragma once
 
+#include <vulkan/vulkan.h>
+
 #if !defined(PFN_GetPhysicalDeviceProcAddr)
 typedef PFN_vkVoidFunction (VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char* pName);
 #endif

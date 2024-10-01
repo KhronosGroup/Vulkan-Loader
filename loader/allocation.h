@@ -29,7 +29,6 @@
 #pragma once
 
 #include "loader_common.h"
-#include "stack_allocation.h"
 
 void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocation_scope);
 void *loader_instance_heap_calloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocation_scope);

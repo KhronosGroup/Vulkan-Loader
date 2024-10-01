@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vk_loader_platform.h"
 #include "loader.h"
 #include "vk_loader_extensions.h"
 #include <vulkan/vk_icd.h>

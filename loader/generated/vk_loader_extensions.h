@@ -27,6 +27,12 @@
 // clang-format off
 #pragma once
 
+#include <stdbool.h>
+#include <vulkan/vulkan.h>
+#include <vulkan/vk_layer.h>
+#include "vk_layer_dispatch_table.h"
+
+
 // Structures defined externally, but used here
 struct loader_instance;
 struct loader_device;

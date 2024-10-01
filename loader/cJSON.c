@@ -26,7 +26,6 @@
 /* cJSON */
 /* JSON parser in C. */
 
-#include <ctype.h>
 #include <float.h>
 #include <limits.h>
 #include <math.h>

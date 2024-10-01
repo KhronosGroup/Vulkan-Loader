@@ -33,6 +33,7 @@
 #include "loader_environment.h"
 #include "loader.h"
 #include "log.h"
+#include "stack_allocation.h"
 
 // Determine a priority based on device type with the higher value being higher priority.
 uint32_t determine_priority_type_value(VkPhysicalDeviceType type) {

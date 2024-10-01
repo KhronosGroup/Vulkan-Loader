@@ -30,7 +30,6 @@
 
 #include "loader.h"
 
-#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -55,10 +54,10 @@
 #endif  // _WIN32
 
 #include "allocation.h"
+#include "stack_allocation.h"
 #include "cJSON.h"
 #include "debug_utils.h"
 #include "loader_environment.h"
-#include "gpa_helper.h"
 #include "log.h"
 #include "unknown_function_handling.h"
 #include "vk_loader_platform.h"
