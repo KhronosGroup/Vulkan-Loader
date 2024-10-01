@@ -31,6 +31,7 @@
 #include "allocation.h"
 #include "loader.h"
 #include "log.h"
+#include "stack_allocation.h"
 
 #include <ctype.h>
 

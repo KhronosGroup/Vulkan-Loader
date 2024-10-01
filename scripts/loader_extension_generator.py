@@ -231,12 +231,18 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
         if self.genOpts.filename == 'vk_loader_extensions.h':
             preamble += '#pragma once\n'
+            preamble += '\n'
+            preamble += '#include <stdbool.h>\n'
+            preamble += '#include <vulkan/vulkan.h>\n'
+            preamble += '#include <vulkan/vk_layer.h>\n'
+            preamble += '#include "vk_layer_dispatch_table.h"\n'
+            preamble += '\n'
+
 
         elif self.genOpts.filename == 'vk_loader_extensions.c':
             preamble += '#include <stdio.h>\n'
             preamble += '#include <stdlib.h>\n'
             preamble += '#include <string.h>\n'
-            preamble += '#include "vk_loader_platform.h"\n'
             preamble += '#include "loader.h"\n'
             preamble += '#include "vk_loader_extensions.h"\n'
             preamble += '#include <vulkan/vk_icd.h>\n'
@@ -246,6 +252,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
         elif self.genOpts.filename == 'vk_layer_dispatch_table.h':
             preamble += '#pragma once\n'
+            preamble += '\n'
+            preamble += '#include <vulkan/vulkan.h>\n'
             preamble += '\n'
             preamble += '#if !defined(PFN_GetPhysicalDeviceProcAddr)\n'
             preamble += 'typedef PFN_vkVoidFunction (VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char* pName);\n'

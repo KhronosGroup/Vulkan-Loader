@@ -203,9 +203,9 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 
     // Justifies the output to at least 19 spaces
     if (num_used < 19) {
-        const char *space_buffer = "                   ";
+        const char space_buffer[] = "                   ";
         // Only write (19 - num_used) spaces
-        loader_strncat(cmd_line_msg + num_used, cmd_line_size - num_used, space_buffer, 19 - num_used);
+        loader_strncat(cmd_line_msg + num_used, cmd_line_size - num_used, space_buffer, sizeof(space_buffer) - 1 - num_used);
         num_used += sizeof(space_buffer) - 1 - num_used;
     }
     // Assert that we didn't write more than what is available in cmd_line_msg

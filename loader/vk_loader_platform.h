@@ -71,9 +71,9 @@
 #include <io.h>
 #include <shlwapi.h>
 #include <direct.h>
-#endif  // defined(_WIN32)
 
 #include "stack_allocation.h"
+#endif  // defined(_WIN32)
 
 #if defined(APPLE_STATIC_LOADER) && !defined(__APPLE__)
 #error "APPLE_STATIC_LOADER can only be defined on Apple platforms!"

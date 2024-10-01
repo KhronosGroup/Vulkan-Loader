@@ -28,7 +28,7 @@
 // unknown to the loader, it will use this code.  Technically, this is not trampoline
 // code since we don't want to optimize it out.
 
-#include "loader.h"
+#include <vulkan/vulkan.h>
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC optimize(3)  // force gcc to use tail-calls

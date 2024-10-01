@@ -27,7 +27,6 @@
 #include <string.h>
 
 #include "allocation.h"
-#include "debug_utils.h"
 #include "loader.h"
 #include "log.h"
 #include "wsi.h"

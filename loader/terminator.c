@@ -31,10 +31,10 @@
 // Terminators which have simple logic belong here, since they are mostly "pass through"
 // Function declarations are in vk_loader_extensions.h, thus not needed here
 
-#include "allocation.h"
 #include "loader_common.h"
 #include "loader.h"
 #include "log.h"
+#include "stack_allocation.h"
 
 // Terminators for 1.0 functions
 

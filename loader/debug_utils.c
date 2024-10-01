@@ -27,11 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if !defined(WIN32)
-#include <signal.h>
-#endif
 
-#include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
 
 #include "allocation.h"
