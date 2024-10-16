@@ -246,7 +246,11 @@ end
 
         # Work around bug in CMake Ninja + MSVC/clang-cl, see https://discourse.cmake.org/t/building-lib-file-from-asm-cmake-bug/1959
         if (CMAKE_C_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
-            set(CMAKE_ASM_MASM_CREATE_STATIC_LIBRARY "<CMAKE_AR> /OUT:<TARGET> <LINK_FLAGS> <OBJECTS>")
+            if(SYSTEM_PROCESSOR MATCHES "arm")
+                set(CMAKE_ASM_MARMASM_CREATE_STATIC_LIBRARY "<CMAKE_AR> /OUT:<TARGET> <LINK_FLAGS> <OBJECTS>")
+            else()
+                set(CMAKE_ASM_MASM_CREATE_STATIC_LIBRARY "<CMAKE_AR> /OUT:<TARGET> <LINK_FLAGS> <OBJECTS>")
+            endif()
         endif()
     else()
         message(WARNING "Could not find working ${} assembler\n${ASM_FAILURE_MSG}")
