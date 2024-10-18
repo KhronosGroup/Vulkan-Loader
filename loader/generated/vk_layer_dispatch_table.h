@@ -656,8 +656,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdPipelineBarrier2KHR CmdPipelineBarrier2KHR;
     PFN_vkCmdWriteTimestamp2KHR CmdWriteTimestamp2KHR;
     PFN_vkQueueSubmit2KHR QueueSubmit2KHR;
-    PFN_vkCmdWriteBufferMarker2AMD CmdWriteBufferMarker2AMD;
-    PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
 
     // ---- VK_KHR_copy_commands2 extension commands
     PFN_vkCmdCopyBuffer2KHR CmdCopyBuffer2KHR;
@@ -843,6 +841,7 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_AMD_buffer_marker extension commands
     PFN_vkCmdWriteBufferMarkerAMD CmdWriteBufferMarkerAMD;
+    PFN_vkCmdWriteBufferMarker2AMD CmdWriteBufferMarker2AMD;
 
     // ---- VK_EXT_calibrated_timestamps extension commands
     PFN_vkGetCalibratedTimestampsEXT GetCalibratedTimestampsEXT;
@@ -859,6 +858,7 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_NV_device_diagnostic_checkpoints extension commands
     PFN_vkCmdSetCheckpointNV CmdSetCheckpointNV;
     PFN_vkGetQueueCheckpointDataNV GetQueueCheckpointDataNV;
+    PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
 
     // ---- VK_INTEL_performance_query extension commands
     PFN_vkInitializePerformanceApiINTEL InitializePerformanceApiINTEL;
