@@ -233,7 +233,7 @@ jobs:
           - run: cmake --install build --prefix build/install
 
     mac:
-        runs-on: macos-12
+        runs-on: macos-13
         strategy:
             matrix:
                 config: [ Debug, Release ]
@@ -262,7 +262,7 @@ jobs:
 
     apple-cross-compile:
       name: ${{ matrix.CMAKE_SYSTEM_NAME }}
-      runs-on: macos-12
+      runs-on: macos-13
       strategy:
           matrix:
             CMAKE_SYSTEM_NAME: [ iOS, tvOS ]
