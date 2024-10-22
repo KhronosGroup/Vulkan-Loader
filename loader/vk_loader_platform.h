@@ -159,22 +159,11 @@
 #endif
 #endif
 
-// C99:
-#define PRINTF_SIZE_T_SPECIFIER "%zu"
-
 // Dynamic Loading of libraries:
 typedef void *loader_platform_dl_handle;
 
-// Threads:
-typedef pthread_t loader_platform_thread;
-
-// Thread IDs:
-typedef pthread_t loader_platform_thread_id;
-
 // Thread mutex:
 typedef pthread_mutex_t loader_platform_thread_mutex;
-
-typedef pthread_cond_t loader_platform_thread_cond;
 
 #elif defined(_WIN32)
 /* Windows-specific common code: */
@@ -199,21 +188,11 @@ typedef pthread_cond_t loader_platform_thread_cond;
 #define VK_ILAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\ImplicitLayers"
 #define VK_SETTINGS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\LoaderSettings"
 
-#define PRINTF_SIZE_T_SPECIFIER "%Iu"
-
 // Dynamic Loading:
 typedef HMODULE loader_platform_dl_handle;
 
-// Threads:
-typedef HANDLE loader_platform_thread;
-
-// Thread IDs:
-typedef DWORD loader_platform_thread_id;
-
 // Thread mutex:
 typedef CRITICAL_SECTION loader_platform_thread_mutex;
-
-typedef CONDITION_VARIABLE loader_platform_thread_cond;
 
 #else
 
