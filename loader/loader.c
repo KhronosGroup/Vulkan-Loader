@@ -5471,18 +5471,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         // Determine if vkGetPhysicalDeviceProperties2 is available to this Instance
         // Also determine if VK_EXT_surface_maintenance1 is available on the ICD
         if (icd_term->scanned_icd->api_version >= VK_API_VERSION_1_1) {
-            icd_term->supports_get_dev_prop_2 = true;
+            icd_term->enabled_instance_extensions.khr_get_physical_device_properties2 = true;
         }
-        for (uint32_t j = 0; j < icd_create_info.enabledExtensionCount; j++) {
-            if (!strcmp(filtered_extension_names[j], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-                icd_term->supports_get_dev_prop_2 = true;
-                continue;
-            }
-            if (!strcmp(filtered_extension_names[j], VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME)) {
-                icd_term->supports_ext_surface_maintenance_1 = true;
-                continue;
-            }
-        }
+        fill_out_enabled_instance_extensions(icd_create_info.enabledExtensionCount, (const char *const *)filtered_extension_names,
+                                             &icd_term->enabled_instance_extensions);
 
         loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&icd_exts);
 
@@ -5605,18 +5597,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
     // For vkGetPhysicalDeviceProperties2, at least one ICD needs to support the extension for the
     // instance to have it
-    if (ptr_instance->supports_get_dev_prop_2) {
+    if (ptr_instance->enabled_known_extensions.khr_get_physical_device_properties2) {
         bool at_least_one_supports = false;
         icd_term = ptr_instance->icd_terms;
         while (icd_term != NULL) {
-            if (icd_term->supports_get_dev_prop_2) {
+            if (icd_term->enabled_instance_extensions.khr_get_physical_device_properties2) {
                 at_least_one_supports = true;
                 break;
             }
             icd_term = icd_term->next;
         }
         if (!at_least_one_supports) {
-            ptr_instance->supports_get_dev_prop_2 = false;
+            ptr_instance->enabled_known_extensions.khr_get_physical_device_properties2 = false;
         }
     }
 
@@ -5654,9 +5646,8 @@ out:
         // This is why we don't clear inside of these function calls.
         // The clearing should actually be handled by the overall memset of the pInstance structure in the
         // trampoline.
-        wsi_create_instance(ptr_instance, pCreateInfo);
-        check_for_enabled_debug_extensions(ptr_instance, pCreateInfo);
-        extensions_create_instance(ptr_instance, pCreateInfo);
+        fill_out_enabled_instance_extensions(pCreateInfo->enabledExtensionCount, pCreateInfo->ppEnabledExtensionNames,
+                                             &ptr_instance->enabled_known_extensions);
     }
 
     return res;

@@ -738,9 +738,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         // are enabled than what's down in the terminator.
         // This is why we don't clear inside of these function calls.
         // The clearing should actually be handled by the overall memset of the pInstance structure above.
-        wsi_create_instance(ptr_instance, &ici);
-        check_for_enabled_debug_extensions(ptr_instance, &ici);
-        extensions_create_instance(ptr_instance, &ici);
+        fill_out_enabled_instance_extensions(ici.enabledExtensionCount, ici.ppEnabledExtensionNames,
+                                             &ptr_instance->enabled_known_extensions);
 
         *pInstance = (VkInstance)ptr_instance;
 

@@ -30,7 +30,6 @@ typedef struct {
 
 bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr);
 
-void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo);
 bool wsi_unsupported_instance_extension(const VkExtensionProperties *ext_prop);
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance instance,

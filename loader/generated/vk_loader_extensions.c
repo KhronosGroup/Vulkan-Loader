@@ -12169,58 +12169,77 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     return false;
 }
 
-// A function that can be used to query enabled extensions during a vkCreateInstance call
-void extensions_create_instance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo) {
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-
-    // ---- VK_KHR_get_physical_device_properties2 extension commands
-        if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.khr_get_physical_device_properties2 = 1;
-
-    // ---- VK_KHR_device_group_creation extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.khr_device_group_creation = 1;
-
-    // ---- VK_KHR_external_memory_capabilities extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.khr_external_memory_capabilities = 1;
-
-    // ---- VK_KHR_external_semaphore_capabilities extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.khr_external_semaphore_capabilities = 1;
-
-    // ---- VK_KHR_external_fence_capabilities extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.khr_external_fence_capabilities = 1;
-
-    // ---- VK_NV_external_memory_capabilities extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.nv_external_memory_capabilities = 1;
-
-    // ---- VK_EXT_direct_mode_display extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.ext_direct_mode_display = 1;
-
-    // ---- VK_EXT_acquire_xlib_display extension commands
+void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *const * extension_list, struct loader_instance_extension_enables* enables) {
+    for(uint32_t i = 0; i < extension_count; i++) {
+        if (strcmp(extension_list[i], VK_KHR_SURFACE_EXTENSION_NAME) == 0) { enables->khr_surface = true; }
+        if (strcmp(extension_list[i], VK_KHR_DISPLAY_EXTENSION_NAME) == 0) { enables->khr_display = true; }
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+        if (strcmp(extension_list[i], VK_KHR_XLIB_SURFACE_EXTENSION_NAME) == 0) { enables->khr_xlib_surface = true; }
+#endif // defined(VK_USE_PLATFORM_XLIB_KHR)
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+        if (strcmp(extension_list[i], VK_KHR_XCB_SURFACE_EXTENSION_NAME) == 0) { enables->khr_xcb_surface = true; }
+#endif // defined(VK_USE_PLATFORM_XCB_KHR)
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+        if (strcmp(extension_list[i], VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) == 0) { enables->khr_wayland_surface = true; }
+#endif // defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+        if (strcmp(extension_list[i], VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) == 0) { enables->khr_android_surface = true; }
+#endif // defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+        if (strcmp(extension_list[i], VK_KHR_WIN32_SURFACE_EXTENSION_NAME) == 0) { enables->khr_win32_surface = true; }
+#endif // defined(VK_USE_PLATFORM_WIN32_KHR)
+        if (strcmp(extension_list[i], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) == 0) { enables->khr_get_physical_device_properties2 = true; }
+        if (strcmp(extension_list[i], VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME) == 0) { enables->khr_device_group_creation = true; }
+        if (strcmp(extension_list[i], VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME) == 0) { enables->khr_external_memory_capabilities = true; }
+        if (strcmp(extension_list[i], VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME) == 0) { enables->khr_external_semaphore_capabilities = true; }
+        if (strcmp(extension_list[i], VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME) == 0) { enables->khr_external_fence_capabilities = true; }
+        if (strcmp(extension_list[i], VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME) == 0) { enables->khr_get_surface_capabilities2 = true; }
+        if (strcmp(extension_list[i], VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME) == 0) { enables->khr_get_display_properties2 = true; }
+        if (strcmp(extension_list[i], VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME) == 0) { enables->khr_surface_protected_capabilities = true; }
+        if (strcmp(extension_list[i], VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0) { enables->khr_portability_enumeration = true; }
+        if (strcmp(extension_list[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME) == 0) { enables->ext_debug_report = true; }
+#if defined(VK_USE_PLATFORM_GGP)
+        if (strcmp(extension_list[i], VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME) == 0) { enables->ggp_stream_descriptor_surface = true; }
+#endif // defined(VK_USE_PLATFORM_GGP)
+        if (strcmp(extension_list[i], VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME) == 0) { enables->nv_external_memory_capabilities = true; }
+        if (strcmp(extension_list[i], VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME) == 0) { enables->ext_validation_flags = true; }
+#if defined(VK_USE_PLATFORM_VI_NN)
+        if (strcmp(extension_list[i], VK_NN_VI_SURFACE_EXTENSION_NAME) == 0) { enables->nn_vi_surface = true; }
+#endif // defined(VK_USE_PLATFORM_VI_NN)
+        if (strcmp(extension_list[i], VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME) == 0) { enables->ext_direct_mode_display = true; }
 #if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.ext_acquire_xlib_display = 1;
-#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
-    // ---- VK_EXT_display_surface_counter extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.ext_display_surface_counter = 1;
-
-    // ---- VK_EXT_debug_utils extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.ext_debug_utils = 1;
-
-    // ---- VK_EXT_acquire_drm_display extension commands
-        } else if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME)) {
-            ptr_instance->enabled_known_extensions.ext_acquire_drm_display = 1;
-        }
+        if (strcmp(extension_list[i], VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME) == 0) { enables->ext_acquire_xlib_display = true; }
+#endif // defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
+        if (strcmp(extension_list[i], VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME) == 0) { enables->ext_display_surface_counter = true; }
+        if (strcmp(extension_list[i], VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME) == 0) { enables->ext_swapchain_colorspace = true; }
+#if defined(VK_USE_PLATFORM_IOS_MVK)
+        if (strcmp(extension_list[i], VK_MVK_IOS_SURFACE_EXTENSION_NAME) == 0) { enables->mvk_ios_surface = true; }
+#endif // defined(VK_USE_PLATFORM_IOS_MVK)
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
+        if (strcmp(extension_list[i], VK_MVK_MACOS_SURFACE_EXTENSION_NAME) == 0) { enables->mvk_macos_surface = true; }
+#endif // defined(VK_USE_PLATFORM_MACOS_MVK)
+        if (strcmp(extension_list[i], VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0) { enables->ext_debug_utils = true; }
+#if defined(VK_USE_PLATFORM_FUCHSIA)
+        if (strcmp(extension_list[i], VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME) == 0) { enables->fuchsia_imagepipe_surface = true; }
+#endif // defined(VK_USE_PLATFORM_FUCHSIA)
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+        if (strcmp(extension_list[i], VK_EXT_METAL_SURFACE_EXTENSION_NAME) == 0) { enables->ext_metal_surface = true; }
+#endif // defined(VK_USE_PLATFORM_METAL_EXT)
+        if (strcmp(extension_list[i], VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME) == 0) { enables->ext_validation_features = true; }
+        if (strcmp(extension_list[i], VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) == 0) { enables->ext_headless_surface = true; }
+        if (strcmp(extension_list[i], VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME) == 0) { enables->ext_surface_maintenance1 = true; }
+        if (strcmp(extension_list[i], VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME) == 0) { enables->ext_acquire_drm_display = true; }
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
+        if (strcmp(extension_list[i], VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME) == 0) { enables->ext_directfb_surface = true; }
+#endif // defined(VK_USE_PLATFORM_DIRECTFB_EXT)
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+        if (strcmp(extension_list[i], VK_QNX_SCREEN_SURFACE_EXTENSION_NAME) == 0) { enables->qnx_screen_surface = true; }
+#endif // defined(VK_USE_PLATFORM_SCREEN_QNX)
+        if (strcmp(extension_list[i], VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME) == 0) { enables->google_surfaceless_query = true; }
+        if (strcmp(extension_list[i], VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME) == 0) { enables->lunarg_direct_driver_loading = true; }
+        if (strcmp(extension_list[i], VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) == 0) { enables->ext_layer_settings = true; }
     }
-}
+};
 
 // Some device commands still need a terminator because the loader needs to unwrap something about them.
 // In many cases, the item needing unwrapping is a VkPhysicalDevice or VkSurfaceKHR object.  But there may be other items
@@ -12581,6 +12600,9 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
                                                   VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+                                                  VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_ANDROID_KHR
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
                                                   VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_WIN32_KHR
