@@ -88,7 +88,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
             switch (icd_surface->base.platform) {
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
                 case VK_ICD_WSI_PLATFORM_WAYLAND:
-                    if (NULL != icd_term->dispatch.CreateWaylandSurfaceKHR) {
+                    if (NULL != icd_term->dispatch.CreateWaylandSurfaceKHR &&
+                        icd_term->enabled_instance_extensions.khr_wayland_surface) {
                         result = icd_term->dispatch.CreateWaylandSurfaceKHR(
                             icd_term->instance, (const VkWaylandSurfaceCreateInfoKHR *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -100,7 +101,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
                 case VK_ICD_WSI_PLATFORM_WIN32:
-                    if (NULL != icd_term->dispatch.CreateWin32SurfaceKHR) {
+                    if (NULL != icd_term->dispatch.CreateWin32SurfaceKHR &&
+                        icd_term->enabled_instance_extensions.khr_win32_surface) {
                         result = icd_term->dispatch.CreateWin32SurfaceKHR(
                             icd_term->instance, (const VkWin32SurfaceCreateInfoKHR *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -112,7 +114,7 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
                 case VK_ICD_WSI_PLATFORM_XCB:
-                    if (NULL != icd_term->dispatch.CreateXcbSurfaceKHR) {
+                    if (NULL != icd_term->dispatch.CreateXcbSurfaceKHR && icd_term->enabled_instance_extensions.khr_xcb_surface) {
                         result = icd_term->dispatch.CreateXcbSurfaceKHR(
                             icd_term->instance, (const VkXcbSurfaceCreateInfoKHR *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -124,7 +126,7 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
                 case VK_ICD_WSI_PLATFORM_XLIB:
-                    if (NULL != icd_term->dispatch.CreateXlibSurfaceKHR) {
+                    if (NULL != icd_term->dispatch.CreateXlibSurfaceKHR && icd_term->enabled_instance_extensions.khr_xlib_surface) {
                         result = icd_term->dispatch.CreateXlibSurfaceKHR(
                             icd_term->instance, (const VkXlibSurfaceCreateInfoKHR *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -136,7 +138,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
                 case VK_ICD_WSI_PLATFORM_MACOS:
-                    if (NULL != icd_term->dispatch.CreateMacOSSurfaceMVK) {
+                    if (NULL != icd_term->dispatch.CreateMacOSSurfaceMVK &&
+                        icd_term->enabled_instance_extensions.mvk_macos_surface) {
                         result = icd_term->dispatch.CreateMacOSSurfaceMVK(
                             icd_term->instance, (const VkMacOSSurfaceCreateInfoMVK *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -147,7 +150,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
                 case VK_ICD_WSI_PLATFORM_DISPLAY:
-                    if (NULL != icd_term->dispatch.CreateDisplayPlaneSurfaceKHR) {
+                    if (NULL != icd_term->dispatch.CreateDisplayPlaneSurfaceKHR &&
+                        icd_term->enabled_instance_extensions.khr_display) {
                         result = icd_term->dispatch.CreateDisplayPlaneSurfaceKHR(
                             icd_term->instance, (const VkDisplaySurfaceCreateInfoKHR *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -157,7 +161,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
                     break;
 
                 case VK_ICD_WSI_PLATFORM_HEADLESS:
-                    if (NULL != icd_term->dispatch.CreateHeadlessSurfaceEXT) {
+                    if (NULL != icd_term->dispatch.CreateHeadlessSurfaceEXT &&
+                        icd_term->enabled_instance_extensions.ext_headless_surface) {
                         result = icd_term->dispatch.CreateHeadlessSurfaceEXT(
                             icd_term->instance, (const VkHeadlessSurfaceCreateInfoEXT *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -168,7 +173,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
                 case VK_ICD_WSI_PLATFORM_METAL:
-                    if (NULL != icd_term->dispatch.CreateMetalSurfaceEXT) {
+                    if (NULL != icd_term->dispatch.CreateMetalSurfaceEXT &&
+                        icd_term->enabled_instance_extensions.ext_metal_surface) {
                         result = icd_term->dispatch.CreateMetalSurfaceEXT(
                             icd_term->instance, (const VkMetalSurfaceCreateInfoEXT *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -180,7 +186,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
                 case VK_ICD_WSI_PLATFORM_DIRECTFB:
-                    if (NULL != icd_term->dispatch.CreateDirectFBSurfaceEXT) {
+                    if (NULL != icd_term->dispatch.CreateDirectFBSurfaceEXT &&
+                        icd_term->enabled_instance_extensions.ext_directfb_surface) {
                         result = icd_term->dispatch.CreateDirectFBSurfaceEXT(
                             icd_term->instance, (const VkDirectFBSurfaceCreateInfoEXT *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -192,7 +199,7 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_VI_NN)
                 case VK_ICD_WSI_PLATFORM_VI:
-                    if (NULL != icd_term->dispatch.CreateViSurfaceNN) {
+                    if (NULL != icd_term->dispatch.CreateViSurfaceNN && icd_term->enabled_instance_extensions.nn_vi_surface) {
                         result = icd_term->dispatch.CreateViSurfaceNN(
                             icd_term->instance, (const VkViSurfaceCreateInfoNN *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -204,7 +211,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_GGP)
                 case VK_ICD_WSI_PLATFORM_GGP:
-                    if (NULL != icd_term->dispatch.CreateStreamDescriptorSurfaceGGP) {
+                    if (NULL != icd_term->dispatch.CreateStreamDescriptorSurfaceGGP &&
+                        icd_term->enabled_instance_extensions.qnx_screen_surface) {
                         result = icd_term->dispatch.CreateStreamDescriptorSurfaceGGP(
                             icd_term->instance, (const VkStreamDescriptorSurfaceCreateInfoGGP *)icd_surface->create_info,
                             pAllocator, &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -216,7 +224,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
                 case VK_ICD_WSI_PLATFORM_SCREEN:
-                    if (NULL != icd_term->dispatch.CreateScreenSurfaceQNX) {
+                    if (NULL != icd_term->dispatch.CreateScreenSurfaceQNX &&
+                        icd_term->enabled_instance_extensions.qnx_screen_surface) {
                         result = icd_term->dispatch.CreateScreenSurfaceQNX(
                             icd_term->instance, (const VkScreenSurfaceCreateInfoQNX *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -228,7 +237,8 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 
 #if defined(VK_USE_PLATFORM_FUCHSIA)
                 case VK_ICD_WSI_PLATFORM_FUCHSIA:
-                    if (NULL != icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA) {
+                    if (NULL != icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA &&
+                        icd_term->enabled_instance_extensions.fuchsia_imagepipe_surface) {
                         result = icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA(
                             icd_term->instance, (const VkImagePipeSurfaceCreateInfoFUCHSIA *)icd_surface->create_info, pAllocator,
                             &icd_term->surface_list.list[icd_surface->surface_index]);
@@ -302,12 +312,13 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
     if (NULL != icd_surface) {
         for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-            if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-                if (NULL != icd_term->dispatch.DestroySurfaceKHR && icd_term->surface_list.list[icd_surface->surface_index]) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance,
-                                                         icd_term->surface_list.list[icd_surface->surface_index], pAllocator);
-                    icd_term->surface_list.list[icd_surface->surface_index] = (VkSurfaceKHR)(uintptr_t)NULL;
-                }
+            if (icd_term->enabled_instance_extensions.khr_surface &&
+                icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+                NULL != icd_term->dispatch.DestroySurfaceKHR && icd_term->surface_list.list[icd_surface->surface_index]) {
+                icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[icd_surface->surface_index],
+                                                     pAllocator);
+                icd_term->surface_list.list[icd_surface->surface_index] = (VkSurfaceKHR)(uintptr_t)NULL;
+
             } else {
                 // The real_icd_surface for any ICD not supporting the
                 // proper interface version should be NULL.  If not, then
@@ -671,7 +682,8 @@ VkResult allocate_icd_surface_struct(struct loader_instance *instance, size_t ba
     icd_surface->create_info = NULL;
 
     for (struct loader_icd_term *icd_term = instance->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
+        if (icd_term->enabled_instance_extensions.khr_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (icd_term->surface_list.list == NULL) {
                 res =
                     loader_init_generic_list(instance, (struct loader_generic_list *)&icd_term->surface_list, sizeof(VkSurfaceKHR));
@@ -756,7 +768,7 @@ void cleanup_surface_creation(struct loader_instance *loader_inst, VkResult resu
                               const VkAllocationCallbacks *pAllocator) {
     if (VK_SUCCESS != result && NULL != icd_surface) {
         for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-            if (NULL != icd_term->surface_list.list &&
+            if (icd_term->enabled_instance_extensions.khr_surface && NULL != icd_term->surface_list.list &&
                 icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
                 icd_term->surface_list.list[icd_surface->surface_index] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
                 icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[icd_surface->surface_index],
