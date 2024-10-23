@@ -90,12 +90,13 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
     if (NULL != icd_surface) {
         for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-            if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-                if (NULL != icd_term->dispatch.DestroySurfaceKHR && icd_term->surface_list.list[icd_surface->surface_index]) {
-                    icd_term->dispatch.DestroySurfaceKHR(icd_term->instance,
-                                                         icd_term->surface_list.list[icd_surface->surface_index], pAllocator);
-                    icd_term->surface_list.list[icd_surface->surface_index] = (VkSurfaceKHR)(uintptr_t)NULL;
-                }
+            if (icd_term->enabled_instance_extensions.khr_surface &&
+                icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+                NULL != icd_term->dispatch.DestroySurfaceKHR && icd_term->surface_list.list[icd_surface->surface_index]) {
+                icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[icd_surface->surface_index],
+                                                     pAllocator);
+                icd_term->surface_list.list[icd_surface->surface_index] = (VkSurfaceKHR)(uintptr_t)NULL;
+
             } else {
                 // The real_icd_surface for any ICD not supporting the
                 // proper interface version should be NULL.  If not, then
@@ -470,7 +471,8 @@ VkResult allocate_icd_surface_struct(struct loader_instance *instance, const VkA
     icd_surface->surface_index = next_index;
 
     for (struct loader_icd_term *icd_term = instance->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
+        if (icd_term->enabled_instance_extensions.khr_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
             if (icd_term->surface_list.list == NULL) {
                 res =
                     loader_init_generic_list(instance, (struct loader_generic_list *)&icd_term->surface_list, sizeof(VkSurfaceKHR));
@@ -499,7 +501,7 @@ void cleanup_surface_creation(struct loader_instance *loader_inst, VkResult resu
                               const VkAllocationCallbacks *pAllocator) {
     if (VK_SUCCESS != result && NULL != icd_surface) {
         for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-            if (NULL != icd_term->surface_list.list &&
+            if (icd_term->enabled_instance_extensions.khr_surface && NULL != icd_term->surface_list.list &&
                 icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
                 icd_term->surface_list.list[icd_surface->surface_index] && NULL != icd_term->dispatch.DestroySurfaceKHR) {
                 icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[icd_surface->surface_index],
@@ -561,13 +563,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateWin32SurfaceKHR) {
-                result = icd_term->dispatch.CreateWin32SurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                  &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.khr_win32_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateWin32SurfaceKHR) {
+            result = icd_term->dispatch.CreateWin32SurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                              &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -662,13 +664,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance ins
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateWaylandSurfaceKHR) {
-                result = icd_term->dispatch.CreateWaylandSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                    &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.khr_wayland_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateWaylandSurfaceKHR) {
+            result = icd_term->dispatch.CreateWaylandSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                                &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -767,13 +769,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXcbSurfaceKHR(VkInstance instanc
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateXcbSurfaceKHR) {
-                result = icd_term->dispatch.CreateXcbSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.khr_xcb_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateXcbSurfaceKHR) {
+            result = icd_term->dispatch.CreateXcbSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                            &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -875,13 +877,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instan
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateXlibSurfaceKHR) {
-                result = icd_term->dispatch.CreateXlibSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
-                                                                 &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.khr_xlib_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateXlibSurfaceKHR) {
+            result = icd_term->dispatch.CreateXlibSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
+                                                             &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -982,13 +984,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance in
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateDirectFBSurfaceEXT) {
-                result = icd_term->dispatch.CreateDirectFBSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
-                                                                     &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.ext_directfb_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateDirectFBSurfaceEXT) {
+            result = icd_term->dispatch.CreateDirectFBSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
+                                                                 &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -1134,13 +1136,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateHeadlessSurfaceEXT) {
-                result = icd_term->dispatch.CreateHeadlessSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
-                                                                     &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.ext_headless_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateHeadlessSurfaceEXT) {
+            result = icd_term->dispatch.CreateHeadlessSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
+                                                                 &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -1223,13 +1225,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance insta
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateMacOSSurfaceMVK) {
-                result = icd_term->dispatch.CreateMacOSSurfaceMVK(icd_term->instance, pCreateInfo, pAllocator,
-                                                                  &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.mvk_macos_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateMacOSSurfaceMVK) {
+            result = icd_term->dispatch.CreateMacOSSurfaceMVK(icd_term->instance, pCreateInfo, pAllocator,
+                                                              &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -1337,13 +1339,13 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateStreamDescriptorSurfaceGGP) {
-                result = icd_term->dispatch.CreateStreamDescriptorSurfaceGGP(
-                    icd_term->instance, pCreateInfo, pAllocator, &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.ggp_stream_descriptor_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateStreamDescriptorSurfaceGGP) {
+            result = icd_term->dispatch.CreateStreamDescriptorSurfaceGGP(icd_term->instance, pCreateInfo, pAllocator,
+                                                                         &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -1395,13 +1397,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateMetalSurfaceEXT) {
-                result = icd_term->dispatch.CreateMetalSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
-                                                                  &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.ext_metal_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateMetalSurfaceEXT) {
+            result = icd_term->dispatch.CreateMetalSurfaceEXT(icd_term->instance, pCreateInfo, pAllocator,
+                                                              &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -1457,13 +1459,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance inst
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateScreenSurfaceQNX) {
-                result = icd_term->dispatch.CreateScreenSurfaceQNX(icd_term->instance, pCreateInfo, pAllocator,
-                                                                   &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.qnx_screen_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateScreenSurfaceQNX) {
+            result = icd_term->dispatch.CreateScreenSurfaceQNX(icd_term->instance, pCreateInfo, pAllocator,
+                                                               &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -1560,13 +1562,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance,
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateViSurfaceNN) {
-                result = icd_term->dispatch.CreateViSurfaceNN(icd_term->instance, pCreateInfo, pAllocator,
-                                                              &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.nn_vi_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateViSurfaceNN) {
+            result = icd_term->dispatch.CreateViSurfaceNN(icd_term->instance, pCreateInfo, pAllocator,
+                                                          &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
@@ -1870,13 +1872,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateDisplayPlaneSurfaceKHR) {
+        if (icd_term->enabled_instance_extensions.khr_display &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            icd_term->dispatch.CreateDisplayPlaneSurfaceKHR) {
             result = icd_term->dispatch.CreateDisplayPlaneSurfaceKHR(icd_term->instance, pCreateInfo, pAllocator,
                                                                      &icd_term->surface_list.list[icd_surface->surface_index]);
             if (VK_SUCCESS != result) {
                 goto out;
-                }
             }
         }
     }
@@ -2306,13 +2308,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
 
     // Loop through each ICD and determine if they need to create a surface
     for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-        if (icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) {
-            if (NULL != icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA) {
-                result = icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA(icd_term->instance, pCreateInfo, pAllocator,
-                                                                          &icd_term->surface_list.list[icd_surface->surface_index]);
-                if (VK_SUCCESS != result) {
-                    goto out;
-                }
+        if (icd_term->enabled_instance_extensions.fuchsia_imagepipe_surface &&
+            icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
+            NULL != icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA) {
+            result = icd_term->dispatch.CreateImagePipeSurfaceFUCHSIA(icd_term->instance, pCreateInfo, pAllocator,
+                                                                      &icd_term->surface_list.list[icd_surface->surface_index]);
+            if (VK_SUCCESS != result) {
+                goto out;
             }
         }
     }
