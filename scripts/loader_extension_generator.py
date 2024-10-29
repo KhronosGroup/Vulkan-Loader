@@ -284,6 +284,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             file_data += self.CreateTrampTermFuncs()
             file_data += self.InstExtensionGPA()
             file_data += self.OutputInstanceExtensionEnableStructDefinition()
+            file_data += self.OutputCheckInstanceExtensionIsEnabledFunc()
             file_data += self.DeviceExtensionGetTerminator()
             file_data += self.InitInstLoaderExtensionDispatchTable()
             file_data += self.OutputInstantExtensionWhitelistArray()
@@ -507,6 +508,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos += '// detect and enable any instance extension information for extensions we know\n'
         protos += '// about.\n'
         protos += 'void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *const * extension_list, struct loader_instance_extension_enables* enables);\n\n'
+        protos += '\n'
+        protos += 'bool check_if_instance_extension_is_available(const struct loader_instance_extension_enables* enabled, const struct loader_instance_extension_enables* desired);\n'
         protos += '\n'
         protos += '// Extension interception for vkGetDeviceProcAddr function, so we can return\n'
         protos += '// an appropriate terminator if this is one of those few device commands requiring\n'
@@ -808,6 +811,21 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             if ext.protect is not None:
                 out += f'#endif // defined({ext.protect})\n'
         out += '    }\n'
+        out += '};\n\n'
+
+        return out
+
+    def OutputCheckInstanceExtensionIsEnabledFunc(self):
+        out = 'bool check_if_instance_extension_is_available(const struct loader_instance_extension_enables* enabled, const struct loader_instance_extension_enables* desired) {\n'
+        for ext in self.extensions:
+            if self.getAPIVersion(ext.name) or ext.type == 'device':
+                continue
+            if ext.protect is not None:
+                out += f'#if defined({ext.protect})\n'
+            out += f'    if (desired->{ext.name[3:].lower()} && !enabled->{ext.name[3:].lower()}) return false;\n'
+            if ext.protect is not None:
+                out += f'#endif // defined({ext.protect})\n'
+        out += '    return true;\n'
         out += '};\n\n'
 
         return out

@@ -26,6 +26,9 @@
 
 typedef struct {
     uint32_t surface_index;  // This surface's index into each drivers list of created surfaces
+
+    // Defines the 'active' WSI extension used - only one member should be true
+    struct loader_instance_extension_enables wsi_extension_used;
 } VkIcdSurface;
 
 bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr);

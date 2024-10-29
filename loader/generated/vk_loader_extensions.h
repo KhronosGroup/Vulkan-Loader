@@ -53,6 +53,8 @@ struct loader_instance_extension_enables; // Forward declaration
 void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *const * extension_list, struct loader_instance_extension_enables* enables);
 
 
+bool check_if_instance_extension_is_available(const struct loader_instance_extension_enables* enabled, const struct loader_instance_extension_enables* desired);
+
 // Extension interception for vkGetDeviceProcAddr function, so we can return
 // an appropriate terminator if this is one of those few device commands requiring
 // a terminator.

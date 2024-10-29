@@ -12241,6 +12241,77 @@ void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *
     }
 };
 
+bool check_if_instance_extension_is_available(const struct loader_instance_extension_enables* enabled, const struct loader_instance_extension_enables* desired) {
+    if (desired->khr_surface && !enabled->khr_surface) return false;
+    if (desired->khr_display && !enabled->khr_display) return false;
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    if (desired->khr_xlib_surface && !enabled->khr_xlib_surface) return false;
+#endif // defined(VK_USE_PLATFORM_XLIB_KHR)
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    if (desired->khr_xcb_surface && !enabled->khr_xcb_surface) return false;
+#endif // defined(VK_USE_PLATFORM_XCB_KHR)
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    if (desired->khr_wayland_surface && !enabled->khr_wayland_surface) return false;
+#endif // defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    if (desired->khr_android_surface && !enabled->khr_android_surface) return false;
+#endif // defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (desired->khr_win32_surface && !enabled->khr_win32_surface) return false;
+#endif // defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (desired->khr_get_physical_device_properties2 && !enabled->khr_get_physical_device_properties2) return false;
+    if (desired->khr_device_group_creation && !enabled->khr_device_group_creation) return false;
+    if (desired->khr_external_memory_capabilities && !enabled->khr_external_memory_capabilities) return false;
+    if (desired->khr_external_semaphore_capabilities && !enabled->khr_external_semaphore_capabilities) return false;
+    if (desired->khr_external_fence_capabilities && !enabled->khr_external_fence_capabilities) return false;
+    if (desired->khr_get_surface_capabilities2 && !enabled->khr_get_surface_capabilities2) return false;
+    if (desired->khr_get_display_properties2 && !enabled->khr_get_display_properties2) return false;
+    if (desired->khr_surface_protected_capabilities && !enabled->khr_surface_protected_capabilities) return false;
+    if (desired->khr_portability_enumeration && !enabled->khr_portability_enumeration) return false;
+    if (desired->ext_debug_report && !enabled->ext_debug_report) return false;
+#if defined(VK_USE_PLATFORM_GGP)
+    if (desired->ggp_stream_descriptor_surface && !enabled->ggp_stream_descriptor_surface) return false;
+#endif // defined(VK_USE_PLATFORM_GGP)
+    if (desired->nv_external_memory_capabilities && !enabled->nv_external_memory_capabilities) return false;
+    if (desired->ext_validation_flags && !enabled->ext_validation_flags) return false;
+#if defined(VK_USE_PLATFORM_VI_NN)
+    if (desired->nn_vi_surface && !enabled->nn_vi_surface) return false;
+#endif // defined(VK_USE_PLATFORM_VI_NN)
+    if (desired->ext_direct_mode_display && !enabled->ext_direct_mode_display) return false;
+#if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
+    if (desired->ext_acquire_xlib_display && !enabled->ext_acquire_xlib_display) return false;
+#endif // defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
+    if (desired->ext_display_surface_counter && !enabled->ext_display_surface_counter) return false;
+    if (desired->ext_swapchain_colorspace && !enabled->ext_swapchain_colorspace) return false;
+#if defined(VK_USE_PLATFORM_IOS_MVK)
+    if (desired->mvk_ios_surface && !enabled->mvk_ios_surface) return false;
+#endif // defined(VK_USE_PLATFORM_IOS_MVK)
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
+    if (desired->mvk_macos_surface && !enabled->mvk_macos_surface) return false;
+#endif // defined(VK_USE_PLATFORM_MACOS_MVK)
+    if (desired->ext_debug_utils && !enabled->ext_debug_utils) return false;
+#if defined(VK_USE_PLATFORM_FUCHSIA)
+    if (desired->fuchsia_imagepipe_surface && !enabled->fuchsia_imagepipe_surface) return false;
+#endif // defined(VK_USE_PLATFORM_FUCHSIA)
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (desired->ext_metal_surface && !enabled->ext_metal_surface) return false;
+#endif // defined(VK_USE_PLATFORM_METAL_EXT)
+    if (desired->ext_validation_features && !enabled->ext_validation_features) return false;
+    if (desired->ext_headless_surface && !enabled->ext_headless_surface) return false;
+    if (desired->ext_surface_maintenance1 && !enabled->ext_surface_maintenance1) return false;
+    if (desired->ext_acquire_drm_display && !enabled->ext_acquire_drm_display) return false;
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
+    if (desired->ext_directfb_surface && !enabled->ext_directfb_surface) return false;
+#endif // defined(VK_USE_PLATFORM_DIRECTFB_EXT)
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+    if (desired->qnx_screen_surface && !enabled->qnx_screen_surface) return false;
+#endif // defined(VK_USE_PLATFORM_SCREEN_QNX)
+    if (desired->google_surfaceless_query && !enabled->google_surfaceless_query) return false;
+    if (desired->lunarg_direct_driver_loading && !enabled->lunarg_direct_driver_loading) return false;
+    if (desired->ext_layer_settings && !enabled->ext_layer_settings) return false;
+    return true;
+};
+
 // Some device commands still need a terminator because the loader needs to unwrap something about them.
 // In many cases, the item needing unwrapping is a VkPhysicalDevice or VkSurfaceKHR object.  But there may be other items
 // in the future.
