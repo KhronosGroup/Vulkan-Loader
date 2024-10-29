@@ -1859,7 +1859,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->enabled_known_extensions.khr_display) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkCreateDisplayPlaneSurfaceKHR not executed!");
+                   "VK_KHR_display extension not enabled. vkCreateDisplayPlaneSurfaceKHR not executed!");
         result = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
