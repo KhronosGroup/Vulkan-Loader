@@ -181,10 +181,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         self.ext_device_dispatch_list = []    # List of extension entries for device dispatch list
         self.core_commands = []               # List of CommandData records for core Vulkan commands
         self.ext_commands = []                # List of CommandData records for extension Vulkan commands
+        self.extensions = []                  # List of ExtensionData records
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'cdecl'])
         self.CommandData = namedtuple('CommandData', ['name', 'ext_name', 'ext_type', 'require', 'protect', 'return_type', 'handle_type', 'params', 'cdecl'])
-        self.instanceExtensions = []
-        self.ExtensionData = namedtuple('ExtensionData', ['name', 'type', 'protect', 'define', 'num_commands'])
+        self.ExtensionData = namedtuple('ExtensionData', ['name', 'type', 'protect', 'define'])
 
     #
     # Called once at the beginning of each run
@@ -314,7 +314,6 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 self.name_definition = name_definition
 
         self.type = interface.get('type')
-        self.num_commands = 0
         name = interface.get('name')
         self.currentExtension = name
 
@@ -327,18 +326,15 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         params = cmdinfo.elem.findall('param')
         info = self.getTypeNameTuple(params[0])
 
-        self.num_commands += 1
-
         if 'android' not in name:
             self.AddCommandToDispatchList(self.currentExtension, self.type, name, cmdinfo, info[0])
 
     def endFeature(self):
 
-        self.instanceExtensions.append(self.ExtensionData(name=self.currentExtension,
+        self.extensions.append(self.ExtensionData(name=self.currentExtension,
                                                               type=self.type,
                                                               protect=self.featureExtraProtect,
-                                                              define=self.name_definition,
-                                                              num_commands=self.num_commands))
+                                                              define=self.name_definition))
 
         # Finish processing in superclass
         OutputGenerator.endFeature(self)
@@ -788,7 +784,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
     # Create a struct which holds bools for each enabled instance extension
     def OutputInstanceExtensionEnableStructDeclaration(self):
         out = 'struct loader_instance_extension_enables {\n'
-        for ext in self.instanceExtensions:
+        for ext in self.extensions:
             if self.getAPIVersion(ext.name) or ext.type == 'device':
                 continue
             if ext.protect is not None:
@@ -803,7 +799,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
     def OutputInstanceExtensionEnableStructDefinition(self):
         out = 'void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *const * extension_list, struct loader_instance_extension_enables* enables) {\n'
         out += '    for(uint32_t i = 0; i < extension_count; i++) {\n'
-        for ext in self.instanceExtensions:
+        for ext in self.extensions:
             if self.getAPIVersion(ext.name) or ext.type == 'device':
                 continue
             if ext.protect is not None:
@@ -1719,15 +1715,13 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
     #
     # Create the extension name whitelist array
     def OutputInstantExtensionWhitelistArray(self):
-        extensions = self.instanceExtensions
-
         table = ''
         table += '// A null-terminated list of all of the instance extensions supported by the loader.\n'
         table += '// If an instance extension name is not in this list, but it is exported by one or more of the\n'
         table += '// ICDs detected by the loader, then the extension name not in the list will be filtered out\n'
         table += '// before passing the list of extensions to the application.\n'
         table += 'const char *const LOADER_INSTANCE_EXTENSIONS[] = {\n'
-        for ext in extensions:
+        for ext in self.extensions:
             if ext.type == 'device' or self.getAPIVersion(ext.name):
                 continue
 
