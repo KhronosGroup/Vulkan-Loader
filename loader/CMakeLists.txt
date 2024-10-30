@@ -286,7 +286,7 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch.S)
             endif()
-        elseif (${SYSTEM_PROCESSOR} MATCHES "aarch32|armhf")
+        elseif (${SYSTEM_PROCESSOR} MATCHES "aarch32|armhf|armv7l|armv8l")
             try_compile(ASSEMBLER_WORKS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/asm_test_aarch32.S OUTPUT_VARIABLE TRY_COMPILE_OUTPUT)
             if(ASSEMBLER_WORKS)
                 set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain_gas_aarch.S)
