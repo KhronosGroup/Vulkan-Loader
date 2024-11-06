@@ -726,6 +726,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
     if (vk_instance_layers_env != NULL) {
         vk_instance_layers_env_len = strlen(vk_instance_layers_env) + 1;
         vk_instance_layers_env_copy = loader_stack_alloc(vk_instance_layers_env_len);
+        memset(vk_instance_layers_env_copy, 0, vk_instance_layers_env_len);
 
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers: %s",
                    ENABLED_LAYERS_ENV, vk_instance_layers_env);
@@ -761,13 +762,14 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
             loader_strncpy(vk_instance_layers_env_copy, vk_instance_layers_env_len, vk_instance_layers_env,
                            vk_instance_layers_env_len);
 
-            while (vk_instance_layers_env_copy && *vk_instance_layers_env_copy) {
-                char* next = loader_get_next_path(vk_instance_layers_env_copy);
-                if (0 == strcmp(vk_instance_layers_env_copy, props->info.layerName)) {
+            char* instance_layers_env_iter = vk_instance_layers_env_copy;
+            while (instance_layers_env_iter && *instance_layers_env_iter) {
+                char* next = loader_get_next_path(instance_layers_env_iter);
+                if (0 == strcmp(instance_layers_env_iter, props->info.layerName)) {
                     enable_layer = true;
                     break;
                 }
-                vk_instance_layers_env_copy = next;
+                instance_layers_env_iter = next;
             }
         }
 
