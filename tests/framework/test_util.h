@@ -268,7 +268,13 @@ inline loader_platform_dl_handle loader_platform_open_library(const char* libPat
 inline void loader_platform_open_library_print_error(std::filesystem::path const& libPath) {
     std::wcerr << "Unable to open library: " << libPath << " due to: " << dlerror() << "\n";
 }
-inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
+inline void loader_platform_close_library(loader_platform_dl_handle library) {
+    char* loader_disable_dynamic_library_unloading_env_var = getenv("VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING");
+    if (NULL == loader_disable_dynamic_library_unloading_env_var ||
+        0 != strncmp(loader_disable_dynamic_library_unloading_env_var, "1", 2)) {
+    }
+    dlclose(library);
+}
 inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
