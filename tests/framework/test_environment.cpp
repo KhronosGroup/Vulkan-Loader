@@ -198,11 +198,13 @@ InstWrapper& InstWrapper::operator=(InstWrapper&& other) noexcept {
 }
 
 void InstWrapper::CheckCreate(VkResult result_to_check) {
+    handle_assert_null(inst);
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
     functions->load_instance_functions(inst);
 }
 
 void InstWrapper::CheckCreateWithInfo(InstanceCreateInfo& create_info, VkResult result_to_check) {
+    handle_assert_null(inst);
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
     functions->load_instance_functions(inst);
 }
@@ -297,10 +299,12 @@ DeviceWrapper& DeviceWrapper::operator=(DeviceWrapper&& other) noexcept {
 }
 
 void DeviceWrapper::CheckCreate(VkPhysicalDevice phys_dev, VkResult result_to_check) {
+    handle_assert_null(dev);
     ASSERT_EQ(result_to_check, functions->vkCreateDevice(phys_dev, create_info.get(), callbacks, &dev));
 }
 
 VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils) {
+    handle_assert_null(debug_utils.messenger);
     return debug_utils.local_vkCreateDebugUtilsMessengerEXT(debug_utils.inst, debug_utils.get(), debug_utils.callbacks,
                                                             &debug_utils.messenger);
 }
