@@ -31,6 +31,9 @@
 #include <ntstatus.h>
 #endif
 
+#include <windows.h>
+#include <debugapi.h>
+
 #include "shim.h"
 
 #include "detours.h"
@@ -405,6 +408,15 @@ LONG WINAPI ShimGetPackagePathByFullName(_In_ PCWSTR packageFullName, _Inout_ UI
     return 0;
 }
 
+using PFN_OutputDebugStringA = void(__stdcall *)(LPCSTR lpOutputString);
+static PFN_OutputDebugStringA fp_OutputDebugStringA = OutputDebugStringA;
+
+void __stdcall intercept_OutputDebugStringA(LPCSTR lpOutputString) {
+    if (lpOutputString != nullptr) {
+        platform_shim.fputs_stderr_log += lpOutputString;
+    }
+}
+
 // Initialization
 void WINAPI DetourFunctions() {
     if (!gdi32_dll) {
@@ -454,6 +466,7 @@ void WINAPI DetourFunctions() {
     DetourAttach(&(PVOID &)fpRegCloseKey, (PVOID)ShimRegCloseKey);
     DetourAttach(&(PVOID &)fpGetPackagesByPackageFamily, (PVOID)ShimGetPackagesByPackageFamily);
     DetourAttach(&(PVOID &)fpGetPackagePathByFullName, (PVOID)ShimGetPackagePathByFullName);
+    DetourAttach(&(PVOID &)fp_OutputDebugStringA, (PVOID)intercept_OutputDebugStringA);
     LONG error = DetourTransactionCommit();
 
     if (error != NO_ERROR) {
@@ -483,6 +496,7 @@ void DetachFunctions() {
     DetourDetach(&(PVOID &)fpRegCloseKey, (PVOID)ShimRegCloseKey);
     DetourDetach(&(PVOID &)fpGetPackagesByPackageFamily, (PVOID)ShimGetPackagesByPackageFamily);
     DetourDetach(&(PVOID &)fpGetPackagePathByFullName, (PVOID)ShimGetPackagePathByFullName);
+    DetourDetach(&(PVOID &)fp_OutputDebugStringA, (PVOID)intercept_OutputDebugStringA);
     DetourTransactionCommit();
 }
 

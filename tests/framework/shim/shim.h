@@ -134,11 +134,14 @@ struct FrameworkEnvironment;  // forward declaration
 // Necessary to have inline definitions as shim is a dll and thus functions
 // defined in the .cpp wont be found by the rest of the application
 struct PlatformShim {
-    PlatformShim() = default;
-    PlatformShim(std::vector<fs::FolderManager>* folders) : folders(folders) {}
+    PlatformShim() { fputs_stderr_log.reserve(65536); }
+    PlatformShim(std::vector<fs::FolderManager>* folders) : folders(folders) { fputs_stderr_log.reserve(65536); }
 
     // Used to get info about which drivers & layers have been added to folders
     std::vector<fs::FolderManager>* folders;
+
+    // Captures the output to stderr from fputs & fputc - aka the output of loader_log()
+    std::string fputs_stderr_log;
 
     // Test Framework interface
     void reset();
@@ -155,6 +158,9 @@ struct PlatformShim {
 
     void add_manifest(ManifestCategory category, std::filesystem::path const& path);
     void add_unsecured_manifest(ManifestCategory category, std::filesystem::path const& path);
+
+    void clear_logs() { fputs_stderr_log.clear(); }
+    bool find_in_log(std::string const& search_text) const { return fputs_stderr_log.find(search_text) != std::string::npos; }
 
 // platform specific shim interface
 #if defined(WIN32)

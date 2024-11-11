@@ -63,6 +63,9 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #if defined(HAVE___SECURE_GETENV)
 #define __SECURE_GETENV_FUNC_NAME __secure_getenv
 #endif
+#define PRINTF_FUNC_NAME printf
+#define FPUTS_FUNC_NAME fputs
+#define FPUTC_FUNC_NAME fputc
 #elif defined(__APPLE__)
 #define OPENDIR_FUNC_NAME my_opendir
 #define READDIR_FUNC_NAME my_readdir
@@ -80,6 +83,8 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #define __SECURE_GETENV_FUNC_NAME my__secure_getenv
 #endif
 #endif
+#define FPUTS_FUNC_NAME my_fputs
+#define FPUTC_FUNC_NAME my_fputc
 #endif
 
 using PFN_OPENDIR = DIR* (*)(const char* path_name);
@@ -93,6 +98,8 @@ using PFN_GETEGID = gid_t (*)(void);
 #if defined(HAVE_SECURE_GETENV) || defined(HAVE___SECURE_GETENV)
 using PFN_SEC_GETENV = char* (*)(const char* name);
 #endif
+using PFN_FPUTS = int (*)(const char* str, FILE* stream);
+using PFN_FPUTC = int (*)(int c, FILE* stream);
 
 #if defined(__APPLE__)
 #define real_opendir opendir
@@ -109,6 +116,8 @@ using PFN_SEC_GETENV = char* (*)(const char* name);
 #if defined(HAVE___SECURE_GETENV)
 #define real__secure_getenv __secure_getenv
 #endif
+#define real_fputs fputs
+#define real_fputc fputc
 #else
 PFN_OPENDIR real_opendir = nullptr;
 PFN_READDIR real_readdir = nullptr;
@@ -124,6 +133,8 @@ PFN_SEC_GETENV real_secure_getenv = nullptr;
 #if defined(HAVE___SECURE_GETENV)
 PFN_SEC_GETENV real__secure_getenv = nullptr;
 #endif
+PFN_FPUTS real_fputs = nullptr;
+PFN_FPUTC real_fputc = nullptr;
 #endif
 
 FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
@@ -327,6 +338,27 @@ FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char* name) {
 }
 #endif
 #endif
+
+FRAMEWORK_EXPORT int FPUTS_FUNC_NAME(const char* str, FILE* stream) {
+#if !defined(__APPLE__)
+    if (!real_fputs) real_fputs = (PFN_FPUTS)dlsym(RTLD_NEXT, "fputs");
+#endif
+    if (stream == stderr) {
+        platform_shim.fputs_stderr_log += str;
+    }
+    return real_fputs(str, stream);
+}
+
+FRAMEWORK_EXPORT int FPUTC_FUNC_NAME(int ch, FILE* stream) {
+#if !defined(__APPLE__)
+    if (!real_fputc) real_fputc = (PFN_FPUTC)dlsym(RTLD_NEXT, "fputc");
+#endif
+    if (stream == stderr) {
+        platform_shim.fputs_stderr_log += ch;
+    }
+    return real_fputc(ch, stream);
+}
+
 #if defined(__APPLE__)
 FRAMEWORK_EXPORT CFBundleRef my_CFBundleGetMainBundle() {
     static CFBundleRef global_bundle{};
@@ -383,6 +415,8 @@ __attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB =
                                                                                   VOIDP_CAST(__secure_getenv)};
 #endif
 #endif
+__attribute__((used)) static Interposer _interpose_fputs MACOS_ATTRIB = {VOIDP_CAST(my_fputs), VOIDP_CAST(fputs)};
+__attribute__((used)) static Interposer _interpose_fputc MACOS_ATTRIB = {VOIDP_CAST(my_fputc), VOIDP_CAST(fputc)};
 __attribute__((used)) static Interposer _interpose_CFBundleGetMainBundle MACOS_ATTRIB = {VOIDP_CAST(my_CFBundleGetMainBundle),
                                                                                          VOIDP_CAST(CFBundleGetMainBundle)};
 __attribute__((used)) static Interposer _interpose_CFBundleCopyResourcesDirectoryURL MACOS_ATTRIB = {
