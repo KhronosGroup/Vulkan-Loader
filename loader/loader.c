@@ -6986,8 +6986,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(uint3
 
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
 
-    uint32_t copy_size;
-
     result = parse_layer_environment_var_filters(NULL, &layer_filters);
     if (VK_SUCCESS != result) {
         goto out;
@@ -7000,35 +6998,34 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(uint3
         goto out;
     }
 
-    uint32_t active_layer_count = 0;
+    uint32_t layers_to_write_out = 0;
     for (uint32_t i = 0; i < instance_layer_list.count; i++) {
         if (instance_layer_list.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_ON ||
             instance_layer_list.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_DEFAULT) {
-            active_layer_count++;
+            layers_to_write_out++;
         }
     }
 
     if (pProperties == NULL) {
-        *pPropertyCount = active_layer_count;
+        *pPropertyCount = layers_to_write_out;
         goto out;
     }
 
-    copy_size = (*pPropertyCount < active_layer_count) ? *pPropertyCount : active_layer_count;
     uint32_t output_properties_index = 0;
-    for (uint32_t i = 0; i < copy_size; i++) {
-        if (instance_layer_list.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_ON ||
-            instance_layer_list.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_DEFAULT) {
+    for (uint32_t i = 0; i < instance_layer_list.count; i++) {
+        if (output_properties_index < *pPropertyCount &&
+            (instance_layer_list.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_ON ||
+             instance_layer_list.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_DEFAULT)) {
             memcpy(&pProperties[output_properties_index], &instance_layer_list.list[i].info, sizeof(VkLayerProperties));
             output_properties_index++;
         }
     }
-
-    *pPropertyCount = copy_size;
-
-    if (copy_size < instance_layer_list.count) {
+    if (output_properties_index < layers_to_write_out) {
+        // Indicates that we had more elements to write but ran out of room
         result = VK_INCOMPLETE;
-        goto out;
     }
+
+    *pPropertyCount = output_properties_index;
 
 out:
 
