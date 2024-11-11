@@ -1893,154 +1893,153 @@ TEST(SettingsFile, StderrLogFilters) {
                 LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("on"))));
 
     std::string expected_output_verbose;
-    expected_output_verbose += "Layer Configurations count = 2\n";
-    expected_output_verbose += "---- Layer Configuration [0] ----\n";
-    expected_output_verbose += std::string("Name: ") + explicit_layer_name + "\n";
-    expected_output_verbose += "Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
-    expected_output_verbose += "Control: on\n";
-    expected_output_verbose += "---- Layer Configuration [1] ----\n";
-    expected_output_verbose += "Name: VK_LAYER_missing\n";
-    expected_output_verbose += "Path: /road/to/nowhere\n";
-    expected_output_verbose += "Control: on\n";
-    expected_output_verbose += "---------------------------------\n";
+    expected_output_verbose += "DEBUG:             Layer Configurations count = 2\n";
+    expected_output_verbose += "DEBUG:             ---- Layer Configuration [0] ----\n";
+    expected_output_verbose += std::string("DEBUG:             Name: ") + explicit_layer_name + "\n";
+    expected_output_verbose += "DEBUG:             Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
+    expected_output_verbose += "DEBUG:             Control: on\n";
+    expected_output_verbose += "DEBUG:             ---- Layer Configuration [1] ----\n";
+    expected_output_verbose += "DEBUG:             Name: VK_LAYER_missing\n";
+    expected_output_verbose += "DEBUG:             Path: /road/to/nowhere\n";
+    expected_output_verbose += "DEBUG:             Control: on\n";
+    expected_output_verbose += "DEBUG:             ---------------------------------\n";
 
-    std::string expected_output_info = get_settings_location_log_message(env) + "\n";
+    std::string expected_output_info = std::string("INFO:              ") + get_settings_location_log_message(env) + "\n";
 
     std::string expected_output_warning =
-        "Layer name Regular_TestLayer1 does not conform to naming standard (Policy #LLP_LAYER_3)\n";
+        "WARNING:           Layer name Regular_TestLayer1 does not conform to naming standard (Policy #LLP_LAYER_3)\n";
 
-    std::string expected_output_error = "loader_get_json: Failed to open JSON file /road/to/nowhere\n";
+    std::string expected_output_error = "ERROR:             loader_get_json: Failed to open JSON file /road/to/nowhere\n";
 
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"all"};
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_TRUE(env.debug_log.find(expected_output_verbose));
-        ASSERT_TRUE(env.debug_log.find(expected_output_info));
-        ASSERT_TRUE(env.debug_log.find(expected_output_warning));
-        ASSERT_TRUE(env.debug_log.find(expected_output_error));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
-    env.debug_log.clear();
-    env.debug_log.create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+    env.platform_shim->clear_logs();
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"error", "warn", "info", "debug"};
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_TRUE(env.debug_log.find(expected_output_verbose));
-        ASSERT_TRUE(env.debug_log.find(expected_output_info));
-        ASSERT_TRUE(env.debug_log.find(expected_output_warning));
-        ASSERT_TRUE(env.debug_log.find(expected_output_error));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
-    env.debug_log.clear();
-    env.debug_log.create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    env.platform_shim->clear_logs();
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"warn", "info", "debug"};
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_TRUE(env.debug_log.find(expected_output_verbose));
-        ASSERT_TRUE(env.debug_log.find(expected_output_info));
-        ASSERT_TRUE(env.debug_log.find(expected_output_warning));
-        ASSERT_FALSE(env.debug_log.find(expected_output_error));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
-    env.debug_log.clear();
-    env.debug_log.create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+    env.platform_shim->clear_logs();
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"debug"};
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_TRUE(env.debug_log.find(expected_output_verbose));
-        ASSERT_FALSE(env.debug_log.find(expected_output_info));
-        ASSERT_FALSE(env.debug_log.find(expected_output_warning));
-        ASSERT_FALSE(env.debug_log.find(expected_output_error));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
-    env.debug_log.clear();
-    env.debug_log.create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+    env.platform_shim->clear_logs();
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"info"};
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_FALSE(env.debug_log.find(expected_output_verbose));
-        ASSERT_TRUE(env.debug_log.find(expected_output_info));
-        ASSERT_FALSE(env.debug_log.find(expected_output_warning));
-        ASSERT_FALSE(env.debug_log.find(expected_output_error));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
-    env.debug_log.clear();
-    env.debug_log.create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    env.platform_shim->clear_logs();
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"warn"};
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_FALSE(env.debug_log.find(expected_output_verbose));
-        ASSERT_FALSE(env.debug_log.find(expected_output_info));
-        ASSERT_TRUE(env.debug_log.find(expected_output_warning));
-        ASSERT_FALSE(env.debug_log.find(expected_output_error));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
-    env.debug_log.clear();
-    env.debug_log.create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    env.platform_shim->clear_logs();
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"error"};
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_FALSE(env.debug_log.find(expected_output_verbose));
-        ASSERT_FALSE(env.debug_log.find(expected_output_info));
-        ASSERT_FALSE(env.debug_log.find(expected_output_warning));
-        ASSERT_TRUE(env.debug_log.find(expected_output_error));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
-    env.debug_log.clear();
-    env.debug_log.create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    env.loader_settings.app_specific_settings.at(0).stderr_log = {""};
+    env.platform_shim->clear_logs();
+    env.loader_settings.app_specific_settings.at(0).stderr_log = {""};  // Empty string shouldn't be misinterpreted
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        ASSERT_FALSE(env.debug_log.find(expected_output_verbose));
-        ASSERT_FALSE(env.debug_log.find(expected_output_info));
-        ASSERT_FALSE(env.debug_log.find(expected_output_warning));
-        ASSERT_TRUE(env.debug_log.find(expected_output_error));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_error));
+        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
+    }
+    env.platform_shim->clear_logs();
+    env.loader_settings.app_specific_settings.at(0).stderr_log = {};  // No string in the log
+    env.update_loader_settings(env.loader_settings);
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
+        ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_error));
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
 }
 
 // Settings can say which filters to use - make sure the lack of this filter works correctly with VK_LOADER_DEBUG
-TEST(SettingsFile, StderrLog_VK_LOADER_DEBUG) {
+TEST(SettingsFile, StderrLog_NoOutput) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     const char* explicit_layer_name = "Regular_TestLayer1";
@@ -2061,9 +2060,8 @@ TEST(SettingsFile, StderrLog_VK_LOADER_DEBUG) {
 
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        EXPECT_TRUE(env.debug_log.returned_output.empty());
+        EXPECT_TRUE(env.platform_shim->fputs_stderr_log.empty());
 
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 0);
         EXPECT_TRUE(active_layer_props.size() == 0);
@@ -2073,10 +2071,9 @@ TEST(SettingsFile, StderrLog_VK_LOADER_DEBUG) {
     env.update_loader_settings(env.loader_settings);
     {
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        EXPECT_TRUE(env.debug_log.returned_output.empty());
+        EXPECT_TRUE(env.platform_shim->fputs_stderr_log.empty());
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 0);
         EXPECT_TRUE(active_layer_props.size() == 0);
     }
@@ -2087,9 +2084,8 @@ TEST(SettingsFile, StderrLog_VK_LOADER_DEBUG) {
         EnvVarWrapper instance_layers{"VK_INSTANCE_LAYERS", explicit_layer_name};
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        EXPECT_TRUE(env.debug_log.returned_output.empty());
+        EXPECT_TRUE(env.platform_shim->fputs_stderr_log.empty());
 
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
@@ -2099,10 +2095,9 @@ TEST(SettingsFile, StderrLog_VK_LOADER_DEBUG) {
         EnvVarWrapper instance_layers{"VK_LOADER_LAYERS_ENABLE", explicit_layer_name};
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        EXPECT_TRUE(env.debug_log.returned_output.empty());
+        EXPECT_TRUE(env.platform_shim->fputs_stderr_log.empty());
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
@@ -2112,9 +2107,8 @@ TEST(SettingsFile, StderrLog_VK_LOADER_DEBUG) {
         EnvVarWrapper instance_layers{"VK_INSTANCE_LAYERS", explicit_layer_name};
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
-        EXPECT_TRUE(env.debug_log.returned_output.empty());
+        EXPECT_TRUE(env.platform_shim->fputs_stderr_log.empty());
 
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
@@ -2124,10 +2118,9 @@ TEST(SettingsFile, StderrLog_VK_LOADER_DEBUG) {
         EnvVarWrapper instance_layers{"VK_LOADER_LAYERS_ENABLE", explicit_layer_name};
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
 
-        EXPECT_TRUE(env.debug_log.returned_output.empty());
+        EXPECT_TRUE(env.platform_shim->fputs_stderr_log.empty());
         auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name));
     }
