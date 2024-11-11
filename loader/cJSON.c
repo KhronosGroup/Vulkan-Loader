@@ -951,7 +951,7 @@ cJSON *loader_cJSON_GetArrayItem(cJSON *array, int item) {
 }
 cJSON *loader_cJSON_GetObjectItem(cJSON *object, const char *string) {
     cJSON *c = object->child;
-    while (c && strcmp(c->string, string)) c = c->next;
+    while (c && NULL != c->string && strcmp(c->string, string)) c = c->next;
     return c;
 }
 
