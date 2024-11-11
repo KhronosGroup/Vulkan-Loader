@@ -1716,8 +1716,35 @@ TEST(SettingsFile, PreInstanceFunctions) {
 // If an implicit layer's disable environment variable is set, but the settings file says to turn the layer on, the layer should be
 // activated.
 TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {
-    auto check_log_for_insert_instance_layer_string = [](FrameworkEnvironment& env, const char* implicit_layer_name,
-                                                         bool check_for_enable) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+
+    const char* filler_layer_name = "VK_LAYER_filler";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(filler_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer.json");
+
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")
+                                                         .set_enable_environment("ENABLE_ME")),
+                           "implicit_test_layer.json");
+    env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configurations(
+        {LoaderSettingsLayerConfiguration{}
+             .set_name(filler_layer_name)
+             .set_path(env.get_shimmed_layer_manifest_path(0))
+             .set_control("auto")
+             .set_treat_as_implicit_manifest(false),
+         LoaderSettingsLayerConfiguration{}
+             .set_name(implicit_layer_name)
+             .set_path(env.get_shimmed_layer_manifest_path(1))
+             .set_control("auto")
+             .set_treat_as_implicit_manifest(true)}));
+
+    auto check_log_for_insert_instance_layer_string = [&env, implicit_layer_name](bool check_for_enable) {
         {
             InstWrapper inst{env.vulkan_functions};
             FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1734,112 +1761,99 @@ TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {
         env.debug_log.clear();
     };
 
-    FrameworkEnvironment env;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
-    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
-
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .set_enable_environment("ENABLE_ME")),
-                           "implicit_test_layer.json");
-    env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
-        LoaderSettingsLayerConfiguration{}
-            .set_name(implicit_layer_name)
-            .set_path(env.get_shimmed_layer_manifest_path(0))
-            .set_treat_as_implicit_manifest(true)));
-
     // control is set to on
-    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("on");
+    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(1).set_control("on");
     env.update_loader_settings(env.loader_settings);
     {
         EnvVarWrapper enable_env_var{"ENABLE_ME"};
         EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
-        auto layers = env.GetLayerProperties(1);
-        ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
+        auto layers = env.GetLayerProperties(2);
+        ASSERT_TRUE(string_eq(layers[0].layerName, filler_layer_name));
+        ASSERT_TRUE(string_eq(layers[1].layerName, implicit_layer_name));
 
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, true);
+        check_log_for_insert_instance_layer_string(true);
 
         enable_env_var.set_new_value("0");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, true);
+        check_log_for_insert_instance_layer_string(true);
 
         enable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, true);
+        check_log_for_insert_instance_layer_string(true);
 
         enable_env_var.remove_value();
 
         disable_env_var.set_new_value("0");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, true);
+        check_log_for_insert_instance_layer_string(true);
 
         disable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, true);
+        check_log_for_insert_instance_layer_string(true);
 
         enable_env_var.set_new_value("1");
         disable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, true);
+        check_log_for_insert_instance_layer_string(true);
     }
 
     // control is set to off
-    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
-    env.update_loader_settings(env.loader_settings);
-    {
-        EnvVarWrapper enable_env_var{"ENABLE_ME"};
-        EnvVarWrapper disable_env_var{"DISABLE_ME"};
-
-        ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
-
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
-
-        enable_env_var.set_new_value("0");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
-
-        enable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
-
-        enable_env_var.remove_value();
-
-        disable_env_var.set_new_value("0");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
-
-        disable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
-
-        enable_env_var.set_new_value("1");
-        disable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
-    }
-
-    // control is set to auto
-    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(1).set_control("off");
     env.update_loader_settings(env.loader_settings);
     {
         EnvVarWrapper enable_env_var{"ENABLE_ME"};
         EnvVarWrapper disable_env_var{"DISABLE_ME"};
 
         auto layers = env.GetLayerProperties(1);
-        ASSERT_TRUE(string_eq(layers[0].layerName, implicit_layer_name));
+        ASSERT_TRUE(string_eq(layers[0].layerName, filler_layer_name));
 
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
+        check_log_for_insert_instance_layer_string(false);
 
         enable_env_var.set_new_value("0");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
+        check_log_for_insert_instance_layer_string(false);
 
         enable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, true);
+        check_log_for_insert_instance_layer_string(false);
 
         enable_env_var.remove_value();
 
         disable_env_var.set_new_value("0");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
+        check_log_for_insert_instance_layer_string(false);
 
         disable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
+        check_log_for_insert_instance_layer_string(false);
 
         enable_env_var.set_new_value("1");
         disable_env_var.set_new_value("1");
-        check_log_for_insert_instance_layer_string(env, implicit_layer_name, false);
+        check_log_for_insert_instance_layer_string(false);
+    }
+
+    // control is set to auto
+    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(1).set_control("auto");
+    env.update_loader_settings(env.loader_settings);
+    {
+        EnvVarWrapper enable_env_var{"ENABLE_ME"};
+        EnvVarWrapper disable_env_var{"DISABLE_ME"};
+
+        auto layers = env.GetLayerProperties(2);
+        ASSERT_TRUE(string_eq(layers[0].layerName, filler_layer_name));
+        ASSERT_TRUE(string_eq(layers[1].layerName, implicit_layer_name));
+
+        check_log_for_insert_instance_layer_string(false);
+
+        enable_env_var.set_new_value("0");
+        check_log_for_insert_instance_layer_string(false);
+
+        enable_env_var.set_new_value("1");
+        check_log_for_insert_instance_layer_string(true);
+
+        enable_env_var.remove_value();
+
+        disable_env_var.set_new_value("0");
+        check_log_for_insert_instance_layer_string(false);
+
+        disable_env_var.set_new_value("1");
+        check_log_for_insert_instance_layer_string(false);
+
+        enable_env_var.set_new_value("1");
+        disable_env_var.set_new_value("1");
+        check_log_for_insert_instance_layer_string(false);
     }
 }
 
