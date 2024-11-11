@@ -1357,13 +1357,20 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
             ManifestLayer::LayerDescription{}.set_name(explicit_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "explicit_test_layer2.json"});
 
+    const char* explicit_layer_name3 = "VK_LAYER_Regular_TestLayer3";
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer3.json"});
+
     EnvVarWrapper vk_instance_layers{"VK_INSTANCE_LAYERS"};
     vk_instance_layers.add_to_list(explicit_layer_name2);
     vk_instance_layers.add_to_list(explicit_layer_name1);
     {
-        auto layer_props = env.GetLayerProperties(2);
+        auto layer_props = env.GetLayerProperties(3);
         ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name1));
         ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name2));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1381,10 +1388,15 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
          LoaderSettingsLayerConfiguration{}
              .set_name(explicit_layer_name2)
              .set_control("off")
-             .set_path(env.get_shimmed_layer_manifest_path(1))}));
+             .set_path(env.get_shimmed_layer_manifest_path(1)),
+         LoaderSettingsLayerConfiguration{}
+             .set_name(explicit_layer_name3)
+             .set_control("auto")
+             .set_path(env.get_shimmed_layer_manifest_path(2))}));
     env.update_loader_settings(env.loader_settings);
     {
-        ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
+        auto layer_props = env.GetLayerProperties(1);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1395,8 +1407,9 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
     env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).control = "auto";
     env.update_loader_settings(env.loader_settings);
     {
-        auto layer_props = env.GetLayerProperties(1);
+        auto layer_props = env.GetLayerProperties(2);
         ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1408,8 +1421,9 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
     env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).control = "on";
     env.update_loader_settings(env.loader_settings);
     {
-        auto layer_props = env.GetLayerProperties(1);
+        auto layer_props = env.GetLayerProperties(2);
         ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1421,8 +1435,9 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
     env.loader_settings.app_specific_settings.at(0).layer_configurations.at(1).control = "auto";
     env.update_loader_settings(env.loader_settings);
     {
-        auto layer_props = env.GetLayerProperties(1);
+        auto layer_props = env.GetLayerProperties(2);
         ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name2));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1434,8 +1449,9 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
     env.loader_settings.app_specific_settings.at(0).layer_configurations.at(1).control = "on";
     env.update_loader_settings(env.loader_settings);
     {
-        auto layer_props = env.GetLayerProperties(1);
+        auto layer_props = env.GetLayerProperties(2);
         ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name2));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1443,12 +1459,12 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name2));
     }
-    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).control = "auto";
+    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(1).control = "auto";
     env.update_loader_settings(env.loader_settings);
     {
         auto layer_props = env.GetLayerProperties(2);
-        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name1));
-        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name2));
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name2));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -1459,9 +1475,10 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
     env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).control = "on";
     env.update_loader_settings(env.loader_settings);
     {
-        auto layer_props = env.GetLayerProperties(2);
+        auto layer_props = env.GetLayerProperties(3);
         ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name1));
         ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name2));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
         FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
