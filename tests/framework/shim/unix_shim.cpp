@@ -397,8 +397,7 @@ struct Interposer {
 };
 
 __attribute__((used)) static Interposer _interpose_opendir MACOS_ATTRIB = {VOIDP_CAST(my_opendir), VOIDP_CAST(opendir)};
-// don't intercept readdir as it crashes when using ASAN with macOS
-// __attribute__((used)) static Interposer _interpose_readdir MACOS_ATTRIB = {VOIDP_CAST(my_readdir), VOIDP_CAST(readdir)};
+__attribute__((used)) static Interposer _interpose_readdir MACOS_ATTRIB = {VOIDP_CAST(my_readdir), VOIDP_CAST(readdir)};
 __attribute__((used)) static Interposer _interpose_closedir MACOS_ATTRIB = {VOIDP_CAST(my_closedir), VOIDP_CAST(closedir)};
 __attribute__((used)) static Interposer _interpose_access MACOS_ATTRIB = {VOIDP_CAST(my_access), VOIDP_CAST(access)};
 __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_CAST(my_fopen), VOIDP_CAST(fopen)};
