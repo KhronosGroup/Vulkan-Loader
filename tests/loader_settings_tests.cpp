@@ -731,6 +731,123 @@ TEST(SettingsFile, MismatchedLayerNameAndManifestPath) {
 }
 
 // Settings file should take precedence over the meta layer, if present
+TEST(SettingsFile, ImplicitLayerWithEnableEnvironment) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    const char* explicit_layer_1 = "VK_LAYER_Regular_TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer1.json");
+
+    const char* implicit_layer_1 = "VK_LAYER_RegularImplicit_TestLayer";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_1)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("AndISaidHey")
+                                                         .set_enable_environment("WhatsGoingOn")),
+                           "implicit_layer1.json");
+
+    const char* explicit_layer_2 = "VK_LAYER_Regular_TestLayer1";
+    env.add_explicit_layer(TestLayerDetails(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer2.json"));
+
+    const char* implicit_layer_2 = "VK_LAYER_RegularImplicit_TestLayer2";
+    env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(implicit_layer_2)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("HeyHeyHeyyaya")
+                                                                          .set_enable_environment("HeyHeyHeyhey")),
+                                            "implicit_layer2.json"));
+    const char* explicit_layer_3 = "VK_LAYER_Regular_TestLayer3";
+    env.add_explicit_layer(TestLayerDetails(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer3.json"));
+    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_1)
+                                         .set_path(env.get_shimmed_layer_manifest_path(0))
+                                         .set_control("auto")
+                                         .set_treat_as_implicit_manifest(false))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(implicit_layer_1)
+                                         .set_path(env.get_shimmed_layer_manifest_path(1))
+                                         .set_control("auto")
+                                         .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_2)
+                                         .set_path(env.get_shimmed_layer_manifest_path(2))
+                                         .set_control("auto")
+                                         .set_treat_as_implicit_manifest(false))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(implicit_layer_2)
+                                         .set_path(env.get_shimmed_layer_manifest_path(3))
+                                         .set_control("auto")
+                                         .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_3)
+                                         .set_path(env.get_shimmed_layer_manifest_path(4))
+                                         .set_control("on")
+                                         .set_treat_as_implicit_manifest(false))));
+    {
+        auto layer_props = env.GetLayerProperties(5);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, implicit_layer_1));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_2));
+        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, implicit_layer_2));
+        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, explicit_layer_3));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_3));
+    }
+    {
+        EnvVarWrapper enable_meta_layer{"WhatsGoingOn", "1"};
+        auto layer_props = env.GetLayerProperties(5);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, implicit_layer_1));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_2));
+        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, implicit_layer_2));
+        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, explicit_layer_3));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_1));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, explicit_layer_3));
+    }
+    {
+        EnvVarWrapper enable_meta_layer{"HeyHeyHeyhey", "1"};
+        auto layer_props = env.GetLayerProperties(5);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_1));
+        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, implicit_layer_1));
+        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_2));
+        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, implicit_layer_2));
+        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, explicit_layer_3));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_2));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, explicit_layer_3));
+    }
+}
+
+// Settings file should take precedence over the meta layer, if present
 TEST(SettingsFile, MetaLayerAlsoActivates) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
