@@ -82,6 +82,8 @@ struct activated_layer_info {
     char *library;
     bool is_implicit;
     char *disable_env;
+    char *enable_name_env;
+    char *enable_value_env;
 };
 
 // thread safety lock for accessing global data structures such as "loader"
@@ -4695,6 +4697,8 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             activated_layers[num_activated_layers].is_implicit = !(layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER);
             if (activated_layers[num_activated_layers].is_implicit) {
                 activated_layers[num_activated_layers].disable_env = layer_prop->disable_env_var.name;
+                activated_layers[num_activated_layers].enable_name_env = layer_prop->enable_env_var.name;
+                activated_layers[num_activated_layers].enable_value_env = layer_prop->enable_env_var.value;
             }
 
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Insert instance layer \"%s\" (%s)",
@@ -4809,6 +4813,11 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             if (activated_layers[index].is_implicit) {
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
                            activated_layers[index].disable_env);
+                if (activated_layers[index].enable_name_env) {
+                    loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0,
+                               "               This layer was enabled because Env Var %s was set to Value %s",
+                               activated_layers[index].enable_name_env, activated_layers[index].enable_value_env);
+                }
             }
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Manifest: %s", activated_layers[index].manifest);
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Library:  %s", activated_layers[index].library);
