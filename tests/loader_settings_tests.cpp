@@ -41,25 +41,40 @@ std::string get_settings_location_log_message([[maybe_unused]] FrameworkEnvironm
         return s + "/home/fake_home/.local/share/vulkan/loader_settings.d/vk_loader_settings.json";
 #endif
 }
-
-const char* add_layer_and_settings(FrameworkEnvironment& env, const char* layer_name, bool implicit_layer, const char* control) {
-    if (implicit_layer) {
-        env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(layer_name)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                             .set_disable_environment("BADGER")),
-                               std::string(layer_name) + std::to_string(env.layers.size()) + ".json");
-    } else {
+enum class LayerType {
+    exp,
+    imp,
+    imp_with_enable_env,
+};
+const char* add_layer_and_settings(FrameworkEnvironment& env, const char* layer_name, LayerType layer_type, const char* control) {
+    if (layer_type == LayerType::imp) {
+        env.add_implicit_layer(
+            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                          .set_name(layer_name)
+                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                          .set_disable_environment("BADGER" + std::to_string(env.layers.size()))),
+            std::string(layer_name) + std::to_string(env.layers.size()) + ".json");
+    } else if (layer_type == LayerType::imp_with_enable_env) {
+        env.add_implicit_layer(
+            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                          .set_name(layer_name)
+                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                          .set_disable_environment("BADGER" + std::to_string(env.layers.size()))
+                                          .set_enable_environment("MUSHROOM" + std::to_string(env.layers.size()))),
+            std::string(layer_name) + std::to_string(env.layers.size()) + ".json");
+    } else if (layer_type == LayerType::exp) {
         env.add_explicit_layer(TestLayerDetails{
             ManifestLayer{}.add_layer(
                 ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
             std::string(layer_name) + std::to_string(env.layers.size()) + ".json"});
+    } else {
+        abort();
     }
     env.loader_settings.app_specific_settings.back().add_layer_configuration(
         LoaderSettingsLayerConfiguration{}
             .set_name(layer_name)
             .set_control(control)
-            .set_treat_as_implicit_manifest(implicit_layer)
+            .set_treat_as_implicit_manifest(layer_type != LayerType::exp)
             .set_path(env.get_shimmed_layer_manifest_path(env.layers.size() - 1)));
     return layer_name;
 }
@@ -69,7 +84,7 @@ TEST(SettingsFile, FileExist) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all"));
-    const char* regular_layer_name = add_layer_and_settings(env, "VK_LAYER_TestLayer_0", false, "on");
+    const char* regular_layer_name = add_layer_and_settings(env, "VK_LAYER_TestLayer_0", LayerType::exp, "on");
     env.update_loader_settings(env.loader_settings);
     {
         auto layer_props = env.GetLayerProperties(1);
@@ -453,7 +468,6 @@ TEST(SettingsFile, ApplicationEnablesIgnored) {
     {
         ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.create_info.add_layer(explicit_layer_name);
         ASSERT_NO_FATAL_FAILURE(inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT));
     }
@@ -1480,7 +1494,6 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS) {
         ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name));
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
@@ -1572,7 +1585,6 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
         ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name1));
@@ -1600,7 +1612,6 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
         ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name2));
@@ -1613,7 +1624,6 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
         ASSERT_TRUE(string_eq(layer_props.at(1).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name2));
@@ -1627,7 +1637,6 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
         ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_name3));
 
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name1));
@@ -1641,7 +1650,7 @@ TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_ENABLE) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
 
     env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all"));
-    const char* explicit_layer_name = add_layer_and_settings(env, "VK_LAYER_Regular_TestLayer1", false, "off");
+    const char* explicit_layer_name = add_layer_and_settings(env, "VK_LAYER_Regular_TestLayer1", LayerType::exp, "off");
     env.update_loader_settings(env.loader_settings);
 
     EnvVarWrapper vk_instance_layers{"VK_LOADER_LAYERS_ENABLE", explicit_layer_name};
@@ -1659,20 +1668,20 @@ TEST(SettingsFile, settings_disable_layer_enabled_by_env_vars) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all"));
     std::vector<const char*> layer_names;
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_alpha", true, "auto"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_bravo", true, "auto"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_charlie", true, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_alpha", LayerType::imp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_bravo", LayerType::imp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_charlie", LayerType::imp, "auto"));
     env.loader_settings.app_specific_settings.back().add_layer_configuration(
         LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_delta", false, "auto"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_echo", false, "auto"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_foxtrot", false, "auto"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_gamma", false, "auto"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_indigo", false, "auto"));
-    auto disable_layer_name = add_layer_and_settings(env, "VK_LAYER_juniper", false, "off");
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_kangaroo", false, "on"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_lima", false, "auto"));
-    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_mango", false, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_delta", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_echo", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_foxtrot", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_gamma", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_indigo", LayerType::exp, "auto"));
+    auto disable_layer_name = add_layer_and_settings(env, "VK_LAYER_juniper", LayerType::exp, "off");
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_kangaroo", LayerType::exp, "on"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_lima", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_mango", LayerType::exp, "auto"));
 
     env.update_loader_settings(env.loader_settings);
     {
@@ -1682,7 +1691,6 @@ TEST(SettingsFile, settings_disable_layer_enabled_by_env_vars) {
             ASSERT_TRUE(string_eq(layer_names.at(i), layer_props.at(i).layerName));
         }
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 4);
         ASSERT_TRUE(string_eq(layer_names.at(0), layers.at(0).layerName));
@@ -1697,7 +1705,6 @@ TEST(SettingsFile, settings_disable_layer_enabled_by_env_vars) {
             ASSERT_TRUE(string_eq(layer_names.at(i), layer_props.at(i).layerName));
         }
         InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 4);
         ASSERT_TRUE(string_eq(layer_names.at(0), layers.at(0).layerName));
@@ -1712,7 +1719,6 @@ TEST(SettingsFile, settings_disable_layer_enabled_by_env_vars) {
         }
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_layer(disable_layer_name);
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
         inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
     }
 }
@@ -2076,6 +2082,67 @@ TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {
     }
 }
 
+TEST(SettingsFile, ImplicitLayersNotAccidentallyEnabled) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all"));
+    std::vector<const char*> layer_names;
+
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_alpha", LayerType::imp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_bravo", LayerType::imp_with_enable_env, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_charlie", LayerType::imp_with_enable_env, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_delta", LayerType::imp_with_enable_env, "auto"));
+
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_echo", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_foxtrot", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_gamma", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_indigo", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_juniper", LayerType::exp, "auto"));
+
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_kangaroo", LayerType::exp, "on"));
+
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_lima", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_mango", LayerType::exp, "auto"));
+    layer_names.push_back(add_layer_and_settings(env, "VK_LAYER_niagara", LayerType::exp, "auto"));
+
+    env.update_loader_settings(env.loader_settings);
+    {
+        auto layer_props = env.GetLayerProperties(13);
+        for (size_t i = 0; i < layer_props.size(); i++) {
+            ASSERT_TRUE(string_eq(layer_names.at(i), layer_props.at(i).layerName));
+        }
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_names.at(0)));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, layer_names.at(9)));
+    }
+
+    {
+        EnvVarWrapper env_var{"MUSHROOM1", "1"};
+        auto layer_props = env.GetLayerProperties(13);
+        for (size_t i = 0; i < layer_props.size(); i++) {
+            ASSERT_TRUE(string_eq(layer_names.at(i), layer_props.at(i).layerName));
+        }
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_names.at(0)));
+        ASSERT_TRUE(string_eq(layers.at(1).layerName, layer_names.at(1)));
+        ASSERT_TRUE(string_eq(layers.at(2).layerName, layer_names.at(9)));
+    }
+    {
+        EnvVarWrapper env_var{"BADGER0", "1"};
+        auto layer_props = env.GetLayerProperties(13);
+        for (size_t i = 0; i < layer_props.size(); i++) {
+            ASSERT_TRUE(string_eq(layer_names.at(i), layer_props.at(i).layerName));
+        }
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_names.at(9)));
+    }
+}
 // Settings can say which filters to use - make sure those are propagated & treated correctly
 TEST(SettingsFile, StderrLogFilters) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
@@ -2444,7 +2511,6 @@ TEST(SettingsFile, ManyLayersEnabledInManyWays) {
     ASSERT_TRUE(string_eq(layers[4].layerName, layer5));
 
     InstWrapper inst{env.vulkan_functions};
-    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
 
     auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 3);
