@@ -143,9 +143,11 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 
     // Always log to stderr if this is a fatal error
     if (0 == (msg_type & VULKAN_LOADER_FATAL_ERROR_BIT)) {
-        // Exit early if the current instance settings do not ask for logging to stderr
-        if (inst && inst->settings.settings_active && 0 == (msg_type & inst->settings.debug_level)) {
-            return;
+        if (inst && inst->settings.settings_active && inst->settings.debug_level > 0) {
+            // Exit early if the current instance settings have some debugging options but do match the current msg_type
+            if (0 == (msg_type & inst->settings.debug_level)) {
+                return;
+            }
             // Check the global settings and if that doesn't say to skip, check the environment variable
         } else if (0 == (msg_type & g_loader_debug)) {
             return;
