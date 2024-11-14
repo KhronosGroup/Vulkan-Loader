@@ -27,6 +27,8 @@
 
 #include "test_environment.h"
 
+#include <fstream>
+
 std::filesystem::path get_loader_path() {
     auto loader_path = std::filesystem::path(FRAMEWORK_VULKAN_LIBRARY_PATH);
     auto env_var_res = get_env_var("VK_LOADER_TEST_LOADER_PATH", false);
@@ -795,6 +797,20 @@ void FrameworkEnvironment::update_loader_settings(const LoaderSettings& settings
 }
 void FrameworkEnvironment::remove_loader_settings() {
     get_folder(ManifestLocation::settings_location).remove("vk_loader_settings.json");
+}
+void FrameworkEnvironment::write_file_from_source(const char* source_file, ManifestCategory category, ManifestLocation location,
+                                                  std::string const& file_name) {
+    std::fstream file{source_file, std::ios_base::in};
+    ASSERT_TRUE(file.is_open());
+    std::stringstream file_stream;
+    file_stream << file.rdbuf();
+
+    auto out_path = get_folder(location).write_manifest(file_name, file_stream.str());
+
+    if (settings.secure_loader_settings)
+        platform_shim->add_manifest(category, out_path);
+    else
+        platform_shim->add_unsecured_manifest(category, out_path);
 }
 
 TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
