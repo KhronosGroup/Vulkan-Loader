@@ -579,6 +579,9 @@ VkResult get_settings_layers(const struct loader_instance* inst, struct loader_l
             continue;
         }
 
+        // Makes it possible to know if a new layer was added or not, since the only return value is VkResult
+        size_t count_before_adding = settings_layers->count;
+
         local_res =
             loader_add_layer_properties(inst, settings_layers, json, layer_config->treat_as_implicit_manifest, layer_config->path);
         loader_cJSON_Delete(json);
@@ -587,7 +590,11 @@ VkResult get_settings_layers(const struct loader_instance* inst, struct loader_l
         if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
+        } else if (local_res != VK_SUCCESS || count_before_adding == settings_layers->count) {
+            // Indicates something was wrong with the layer, can't add it to the list
+            continue;
         }
+
         struct loader_layer_properties* newly_added_layer = &settings_layers->list[settings_layers->count - 1];
         newly_added_layer->settings_control_value = layer_config->control;
         // If the manifest file found has a name that differs from the one in the settings, remove this layer from consideration
@@ -618,15 +625,23 @@ out:
 }
 
 // Check if layers has an element with the same name.
+// LAYER_CONTROL_OFF layers are missing some fields, just make sure the layerName is the same
+// If layer_property is a meta layer, just make sure the layerName is the same
+// Skip comparing to UNORDERED_LAYER_LOCATION
 // If layer_property is a regular layer, check if the lib_path is the same.
-// If layer_property is a meta layer, just use the layerName
+// Make sure that the lib_name pointers are non-null before calling strcmp.
 bool check_if_layer_is_in_list(struct loader_layer_list* layer_list, struct loader_layer_properties* layer_property) {
     // If the layer is a meta layer, just check against the name
     for (uint32_t i = 0; i < layer_list->count; i++) {
         if (0 == strncmp(layer_list->list[i].info.layerName, layer_property->info.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
-            if (0 == (layer_property->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
-                strcmp(layer_list->list[i].lib_name, layer_property->lib_name) == 0) {
+            if (layer_list->list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_OFF) {
                 return true;
+            }
+            if (VK_LAYER_TYPE_FLAG_META_LAYER == (layer_property->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
+                return true;
+            }
+            if (layer_list->list[i].lib_name && layer_property->lib_name) {
+                return strcmp(layer_list->list[i].lib_name, layer_property->lib_name) == 0;
             }
         }
     }
