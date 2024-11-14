@@ -71,6 +71,8 @@
 #define COMPLEX_JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/data/VkLayer_complex_file.json"
 #define FUZZER_OUTPUT_JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/data/fuzzer_output.json"
 
+#define CLUSTERFUZZ_TESTCASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/fuzz_test_minimized_test_cases"
+
 // Dummy Binaries
 #if _WIN32 || _WIN64
 #define DUMMY_BINARY_WINDOWS_64 "${CMAKE_CURRENT_SOURCE_DIR}/data/binaries/dummy_library_pe_64.dll"

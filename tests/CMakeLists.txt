@@ -84,6 +84,7 @@ add_executable(
         loader_envvar_tests.cpp
         loader_get_proc_addr_tests.cpp
         loader_debug_ext_tests.cpp
+        loader_fuzz_tests.cpp
         loader_handle_validation_tests.cpp
         loader_layer_tests.cpp
         loader_regression_tests.cpp
