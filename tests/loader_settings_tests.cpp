@@ -2243,6 +2243,61 @@ TEST(SettingsFile, StderrLog_NoOutput) {
     }
 }
 
+// Settings can say which filters to use - make sure the lack of this filter works correctly with VK_LOADER_DEBUG
+TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("all")};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    const char* explicit_layer_name = "Regular_TestLayer1";
+
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer1.json"});
+
+    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_name)
+                                         .set_path(env.get_shimmed_layer_manifest_path())
+                                         .set_control("auto"))
+            .add_layer_configuration(
+                LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("auto"))));
+    env.loader_settings.app_specific_settings.at(0).stderr_log = {};
+    env.update_loader_settings(env.loader_settings);
+
+    std::string expected_output_verbose;
+    expected_output_verbose += "DEBUG:             Layer Configurations count = 2\n";
+    expected_output_verbose += "DEBUG:             ---- Layer Configuration [0] ----\n";
+    expected_output_verbose += std::string("DEBUG:             Name: ") + explicit_layer_name + "\n";
+    expected_output_verbose += "DEBUG:             Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
+    expected_output_verbose += "DEBUG:             Control: auto\n";
+    expected_output_verbose += "DEBUG:             ---- Layer Configuration [1] ----\n";
+    expected_output_verbose += "DEBUG:             Name: VK_LAYER_missing\n";
+    expected_output_verbose += "DEBUG:             Path: /road/to/nowhere\n";
+    expected_output_verbose += "DEBUG:             Control: auto\n";
+    expected_output_verbose += "DEBUG:             ---------------------------------\n";
+
+    std::string expected_output_info = std::string("INFO:              ") + get_settings_location_log_message(env) + "\n";
+
+    std::string expected_output_warning =
+        "WARNING:           Layer name Regular_TestLayer1 does not conform to naming standard (Policy #LLP_LAYER_3)\n";
+
+    std::string expected_output_error = "ERROR:             loader_get_json: Failed to open JSON file /road/to/nowhere\n";
+
+    env.platform_shim->clear_logs();
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        EXPECT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
+        EXPECT_TRUE(env.platform_shim->find_in_log(expected_output_info));
+        EXPECT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
+        EXPECT_TRUE(env.platform_shim->find_in_log(expected_output_error));
+
+        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        EXPECT_TRUE(active_layer_props.size() == 0);
+    }
+}
 TEST(SettingsFile, ManyLayersEnabledInManyWays) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
