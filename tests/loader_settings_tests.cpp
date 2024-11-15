@@ -2143,6 +2143,220 @@ TEST(SettingsFile, ImplicitLayersNotAccidentallyEnabled) {
         ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_names.at(9)));
     }
 }
+
+TEST(SettingsFile, ImplicitLayersPreInstanceEnumInstLayerProps) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
+
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(implicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .set_disable_environment("DISABLE_ME")
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))),
+        "implicit_test_layer.json");
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(implicit_layer_name)
+                .set_path(env.get_shimmed_layer_manifest_path(0))
+                .set_control("auto")
+                .set_treat_as_implicit_manifest(true))));
+
+    uint32_t layer_props = 43;
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_layer_props(layer_props);
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, layer_props);
+}
+
+TEST(SettingsFile, EnableEnvironmentImplicitLayersPreInstanceEnumInstLayerProps) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
+
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(implicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .set_disable_environment("DISABLE_ME")
+                .set_enable_environment("ENABLE_ME")
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))),
+        "implicit_test_layer.json");
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(implicit_layer_name)
+                .set_path(env.get_shimmed_layer_manifest_path(0))
+                .set_control("auto")
+                .set_treat_as_implicit_manifest(true))));
+
+    uint32_t layer_props = 43;
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_layer_props(layer_props);
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr));
+    ASSERT_EQ(count, 1U);
+    std::array<VkLayerProperties, 1> layers{};
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, layers.data()));
+    ASSERT_EQ(count, 1U);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_name));
+}
+
+TEST(SettingsFile, ImplicitLayersPreInstanceEnumInstExtProps) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
+
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(implicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .set_disable_environment("DISABLE_ME")
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))),
+        "implicit_test_layer.json");
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(implicit_layer_name)
+                .set_path(env.get_shimmed_layer_manifest_path(0))
+                .set_control("auto")
+                .set_treat_as_implicit_manifest(true))));
+
+    uint32_t ext_props = 52;
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_extension_props(ext_props);
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+    ASSERT_EQ(count, ext_props);
+}
+
+TEST(SettingsFile, EnableEnvironmentImplicitLayersPreInstanceEnumInstExtProps) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
+
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+            ManifestLayer::LayerDescription{}
+                .set_name(implicit_layer_name)
+                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                .set_disable_environment("DISABLE_ME")
+                .set_enable_environment("ENABLE_ME")
+                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))),
+        "implicit_test_layer.json");
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(implicit_layer_name)
+                .set_path(env.get_shimmed_layer_manifest_path(0))
+                .set_control("auto")
+                .set_treat_as_implicit_manifest(true))));
+
+    uint32_t ext_props = 52;
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_extension_props(ext_props);
+
+    auto extensions = env.GetInstanceExtensions(4);
+    EXPECT_TRUE(string_eq(extensions.at(0).extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(1).extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(2).extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME));
+    EXPECT_TRUE(string_eq(extensions.at(3).extensionName, VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME));
+}
+
+TEST(SettingsFile, ImplicitLayersPreInstanceVersion) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+        .add_physical_device({})
+        .set_icd_api_version(VK_MAKE_API_VERSION(0, 1, 2, 3));
+
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
+
+    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+                               ManifestLayer::LayerDescription{}
+                                   .set_name(implicit_layer_name)
+                                   .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 2, 3))
+                                   .set_disable_environment("DISABLE_ME")
+                                   .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                                  .set_vk_func("vkEnumerateInstanceVersion")
+                                                                  .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
+                           "implicit_test_layer.json");
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(implicit_layer_name)
+                .set_path(env.get_shimmed_layer_manifest_path(0))
+                .set_control("auto")
+                .set_treat_as_implicit_manifest(true))));
+
+    uint32_t layer_version = VK_MAKE_API_VERSION(1, 2, 3, 4);
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_instance_version(layer_version);
+
+    uint32_t version = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceVersion(&version));
+    ASSERT_EQ(version, layer_version);
+}
+
+TEST(SettingsFile, EnableEnvironmentImplicitLayersPreInstanceVersion) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+        .add_physical_device({})
+        .set_icd_api_version(VK_MAKE_API_VERSION(0, 1, 2, 3));
+
+    const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
+
+    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+                               ManifestLayer::LayerDescription{}
+                                   .set_name(implicit_layer_name)
+                                   .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                   .set_api_version(VK_MAKE_API_VERSION(0, 1, 2, 3))
+                                   .set_disable_environment("DISABLE_ME")
+                                   .set_enable_environment("ENABLE_ME")
+                                   .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                                  .set_vk_func("vkEnumerateInstanceVersion")
+                                                                  .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
+                           "implicit_test_layer.json");
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(implicit_layer_name)
+                .set_path(env.get_shimmed_layer_manifest_path(0))
+                .set_control("auto")
+                .set_treat_as_implicit_manifest(true))));
+
+    uint32_t layer_version = VK_MAKE_API_VERSION(1, 2, 3, 4);
+    auto& layer = env.get_test_layer(0);
+    layer.set_reported_instance_version(layer_version);
+
+    uint32_t version = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceVersion(&version));
+    ASSERT_EQ(version, VK_HEADER_VERSION_COMPLETE);
+}
+
 // Settings can say which filters to use - make sure those are propagated & treated correctly
 TEST(SettingsFile, StderrLogFilters) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
