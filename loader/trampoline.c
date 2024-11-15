@@ -184,8 +184,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
 
     // Get the implicit layers
     struct loader_layer_list layers = {0};
-    loader_platform_dl_handle *libs = NULL;
-    size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
     struct loader_envvar_all_filters layer_filters = {0};
 
@@ -199,11 +197,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         return res;
     }
 
-    res = loader_init_library_list(&layers, &libs);
-    if (VK_SUCCESS != res) {
-        return res;
-    }
-
     // Prepend layers onto the chain if they implement this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
         // Skip this layer if it doesn't expose the entry-point
@@ -211,15 +204,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
             continue;
         }
 
-        loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
-        if (layer_lib == NULL) {
-            loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__, layers.list[i].lib_name);
+        loader_open_layer_file(NULL, &layers.list[i]);
+        if (layers.list[i].lib_handle == NULL) {
             continue;
         }
 
-        libs[lib_count++] = layer_lib;
-        void *pfn = loader_platform_get_proc_address(layer_lib,
+        void *pfn = loader_platform_get_proc_address(layers.list[i].lib_handle,
                                                      layers.list[i].pre_instance_functions.enumerate_instance_extension_properties);
         if (pfn == NULL) {
             loader_log(NULL, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -259,12 +249,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         loader_free(NULL, holder);
     }
 
-    // Close the dl handles
-    for (size_t i = 0; i < lib_count; ++i) {
-        loader_platform_close_library(libs[i]);
-    }
-    loader_free(NULL, libs);
-
     return res;
 }
 
@@ -290,8 +274,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 
     // Get the implicit layers
     struct loader_layer_list layers;
-    loader_platform_dl_handle *libs = NULL;
-    size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
     struct loader_envvar_all_filters layer_filters = {0};
 
@@ -305,11 +287,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         return res;
     }
 
-    res = loader_init_library_list(&layers, &libs);
-    if (VK_SUCCESS != res) {
-        return res;
-    }
-
     // Prepend layers onto the chain if they implement this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
         // Skip this layer if it doesn't expose the entry-point
@@ -317,16 +294,13 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
             continue;
         }
 
-        loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
-        if (layer_lib == NULL) {
-            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
-                       layers.list[i].lib_name);
+        loader_open_layer_file(NULL, &layers.list[i]);
+        if (layers.list[i].lib_handle == NULL) {
             continue;
         }
 
-        libs[lib_count++] = layer_lib;
-        void *pfn =
-            loader_platform_get_proc_address(layer_lib, layers.list[i].pre_instance_functions.enumerate_instance_layer_properties);
+        void *pfn = loader_platform_get_proc_address(layers.list[i].lib_handle,
+                                                     layers.list[i].pre_instance_functions.enumerate_instance_layer_properties);
         if (pfn == NULL) {
             loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"",
                        __FUNCTION__, layers.list[i].pre_instance_functions.enumerate_instance_layer_properties,
@@ -365,12 +339,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         loader_free(NULL, holder);
     }
 
-    // Close the dl handles
-    for (size_t i = 0; i < lib_count; ++i) {
-        loader_platform_close_library(libs[i]);
-    }
-    loader_free(NULL, libs);
-
     return res;
 }
 
@@ -403,8 +371,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
 
     // Get the implicit layers
     struct loader_layer_list layers;
-    loader_platform_dl_handle *libs = NULL;
-    size_t lib_count = 0;
     memset(&layers, 0, sizeof(layers));
     struct loader_envvar_all_filters layer_filters = {0};
 
@@ -418,11 +384,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
         return res;
     }
 
-    res = loader_init_library_list(&layers, &libs);
-    if (VK_SUCCESS != res) {
-        return res;
-    }
-
     // Prepend layers onto the chain if they implement this entry point
     for (uint32_t i = 0; i < layers.count; ++i) {
         // Skip this layer if it doesn't expose the entry-point
@@ -430,15 +391,13 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
             continue;
         }
 
-        loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
-        if (layer_lib == NULL) {
-            loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to load implicit layer library \"%s\"", __FUNCTION__,
-                       layers.list[i].lib_name);
+        loader_open_layer_file(NULL, &layers.list[i]);
+        if (layers.list[i].lib_handle == NULL) {
             continue;
         }
 
-        libs[lib_count++] = layer_lib;
-        void *pfn = loader_platform_get_proc_address(layer_lib, layers.list[i].pre_instance_functions.enumerate_instance_version);
+        void *pfn = loader_platform_get_proc_address(layers.list[i].lib_handle,
+                                                     layers.list[i].pre_instance_functions.enumerate_instance_version);
         if (pfn == NULL) {
             loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"",
                        __FUNCTION__, layers.list[i].pre_instance_functions.enumerate_instance_version, layers.list[i].lib_name);
@@ -475,12 +434,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
         chain_head = (VkEnumerateInstanceVersionChain *)chain_head->pNextLink;
         loader_free(NULL, holder);
     }
-
-    // Close the dl handles
-    for (size_t i = 0; i < lib_count; ++i) {
-        loader_platform_close_library(libs[i]);
-    }
-    loader_free(NULL, libs);
 
     return res;
 }
