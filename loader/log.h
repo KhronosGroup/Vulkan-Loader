@@ -54,6 +54,10 @@ void loader_init_global_debug_level(void);
 // Sets the global debug level - used by global settings files
 void loader_set_global_debug_level(uint32_t new_loader_debug);
 
+// Writes a stringified version of enum vulkan_loader_debug_flags into cmd_line_msg, and writes the number of characters written in
+// num_used
+void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_line_msg, size_t *num_used);
+
 // The asm declaration prevents name mangling which is necessary for macOS
 #if defined(MODIFY_UNKNOWN_FUNCTION_DECLS)
 #define ASM_NAME(name) __asm(name)

@@ -278,12 +278,25 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Using layer configurations found in loader settings from %s",
                settings->settings_file_path);
 
+    char cmd_line_msg[64];
+    size_t cmd_line_size = sizeof(cmd_line_msg);
+    size_t num_used = 0;
+
+    cmd_line_msg[0] = '\0';
+
+    generate_debug_flag_str(settings->debug_level, cmd_line_size, cmd_line_msg, &num_used);
+if (num_used > 0) {
+    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Loader Settings Filters for Logging to Standard Error: %s", cmd_line_msg);
+}
+
     loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Layer Configurations count = %d", settings->layer_configuration_count);
     for (uint32_t i = 0; i < settings->layer_configuration_count; i++) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "---- Layer Configuration [%d] ----", i);
         if (settings->layer_configurations[i].control != LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Name: %s", settings->layer_configurations[i].name);
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Path: %s", settings->layer_configurations[i].path);
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Layer Type: %s",
+                       settings->layer_configurations[i].treat_as_implicit_manifest ? "Implicit" : "Explicit");
         }
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Control: %s",
                    loader_settings_layer_control_to_string(settings->layer_configurations[i].control));
