@@ -487,7 +487,7 @@ VkResult update_global_loader_settings(void) {
         }
 
         memcpy(&global_loader_settings, &settings, sizeof(loader_settings));
-        if (global_loader_settings.settings_active) {
+        if (global_loader_settings.settings_active && global_loader_settings.debug_level > 0) {
             loader_set_global_debug_level(global_loader_settings.debug_level);
         }
     }
