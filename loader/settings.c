@@ -315,12 +315,16 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 #if defined(WIN32)
     res = windows_get_loader_settings_file_path(inst, &settings_file_path);
     if (res != VK_SUCCESS) {
+        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                   "No valid vk_loader_settings.json file found, no loader settings will be active");
         goto out;
     }
 
 #elif COMMON_UNIX_PLATFORMS
     res = get_unix_settings_path(inst, &settings_file_path);
     if (res != VK_SUCCESS) {
+        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                   "No valid vk_loader_settings.json file found, no loader settings will be active");
         goto out;
     }
 #else

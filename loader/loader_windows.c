@@ -1194,12 +1194,15 @@ VkResult get_settings_path_if_exists_in_registry_key(const struct loader_instanc
             }
         }
 
-        // Make sure the path exists first
-        if (*out_path && !loader_platform_file_exists(name)) {
-            return VK_ERROR_INITIALIZATION_FAILED;
-        }
-
         if (strcmp(VK_LOADER_SETTINGS_FILENAME, &(name[start_of_path_filename])) == 0) {
+            // Make sure the path exists first
+            if (!loader_platform_file_exists(name)) {
+                loader_log(
+                    inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                    "Registry contained entry to vk_loader_settings.json but the corresponding file does not exist, ignoring");
+                return VK_ERROR_INITIALIZATION_FAILED;
+            }
+
             *out_path = loader_instance_heap_calloc(inst, name_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (*out_path == NULL) {
                 return VK_ERROR_OUT_OF_HOST_MEMORY;
