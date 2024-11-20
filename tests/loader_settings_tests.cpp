@@ -2825,3 +2825,165 @@ TEST(SettingsFile, TooManyLayers) {
         }
     }
 }
+
+TEST(SettingsFile, EnvVarsWorkTogether) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device(PhysicalDevice{}.set_deviceName("regular").finish());
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::env_var))
+        .add_physical_device(PhysicalDevice{}.set_deviceName("env_var").finish());
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::add_env_var))
+        .add_physical_device(PhysicalDevice{}.set_deviceName("add_env_var").finish());
+
+    const char* regular_explicit_layer = "VK_LAYER_regular_explicit_layer";
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(regular_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_explicit_layer.json"});
+    const char* regular_explicit_layer_settings_file_set_on = "VK_LAYER_regular_explicit_layer_settings_file_set_on";
+    env.add_explicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(regular_explicit_layer_settings_file_set_on)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                                            "regular_explicit_layer_settings_file_set_on.json"});
+
+    const char* env_var_explicit_layer = "VK_LAYER_env_var_explicit_layer";
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(env_var_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "env_var_explicit_layer.json"}
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    const char* add_env_var_explicit_layer = "VK_LAYER_add_env_var_explicit_layer";
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(add_env_var_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "add_env_var_explicit_layer.json"}
+                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+
+    const char* regular_implicit_layer = "VK_LAYER_regular_implicit_layer";
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_disable_environment("A")
+                                                                          .set_name(regular_implicit_layer)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                                            "regular_implicit_layer.json"});
+
+    const char* env_var_implicit_layer = "VK_LAYER_env_var_implicit_layer";
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_disable_environment("B")
+                                                                          .set_name(env_var_implicit_layer)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                                            "env_var_implicit_layer.json"}
+                               .set_discovery_type(ManifestDiscoveryType::env_var));
+
+    const char* add_env_var_implicit_layer = "VK_LAYER_add_env_var_implicit_layer";
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_disable_environment("C")
+                                                                          .set_name(add_env_var_implicit_layer)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+                                            "add_env_var_implicit_layer.json"}
+                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+
+    // Settings file only contains the one layer it wants enabled
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(regular_implicit_layer)
+                                         .set_path(env.get_shimmed_layer_manifest_path(4))
+                                         .set_control("auto")
+                                         .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(regular_explicit_layer)
+                                         .set_path(env.get_shimmed_layer_manifest_path(0))
+                                         .set_control("auto"))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(regular_explicit_layer_settings_file_set_on)
+                                         .set_path(env.get_shimmed_layer_manifest_path(1))
+                                         .set_control("on"))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location")));
+    env.update_loader_settings(env.loader_settings);
+
+    {  // VK_INSTANCE_LAYERS
+        EnvVarWrapper instance_layers{"VK_INSTANCE_LAYERS", regular_explicit_layer};
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 4);
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(2).layerName, regular_explicit_layer_settings_file_set_on));
+        EXPECT_TRUE(string_eq(layers.at(3).layerName, env_var_implicit_layer));
+    }
+    {  // VK_LOADER_LAYERS_ENABLE
+        EnvVarWrapper env_var_enable{"VK_LOADER_LAYERS_ENABLE", regular_explicit_layer};
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 4);
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(2).layerName, regular_explicit_layer_settings_file_set_on));
+        EXPECT_TRUE(string_eq(layers.at(3).layerName, env_var_implicit_layer));
+    }
+    {                                                                        // VK_LOADER_LAYERS_DISABLE
+        EnvVarWrapper env_var_disable{"VK_LOADER_LAYERS_DISABLE", "~all~"};  // ignored by settings file
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_explicit_layer_settings_file_set_on));
+    }
+    {  // VK_LOADER_LAYERS_ALLOW
+        EnvVarWrapper env_var_allow{"VK_LOADER_LAYERS_ALLOW", regular_implicit_layer};
+        // Allow only makes sense when the disable env-var is also set
+        EnvVarWrapper env_var_disable{"VK_LOADER_LAYERS_DISABLE", "~implicit~"};
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        // The regular_implicit_layer is set to "auto" so is affected by environment variables
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
+    }
+    {  // VK_LAYER_PATH
+        // VK_LAYER_PATH is set by add_explicit_layer()
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(env_var_explicit_layer);
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 4);
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
+        EXPECT_TRUE(string_eq(layers.at(2).layerName, env_var_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(3).layerName, env_var_explicit_layer));
+    }
+    {  // VK_IMPLICIT_LAYER_PATH
+        // VK_IMPLICIT_LAYER_PATH is set by add_implicit_layer()
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
+        EXPECT_TRUE(string_eq(layers.at(2).layerName, env_var_implicit_layer));
+    }
+    {  // VK_ADD_LAYER_PATH
+        // VK_ADD_LAYER_PATH is set by add_explicit_layer(), but we need to disable VK_LAYER_PATH
+        // since VK_LAYER_PATH overrides VK_ADD_LAYER_PATH
+        EnvVarWrapper env_var_vk_layer_path{"VK_LAYER_PATH", ""};
+        env_var_vk_layer_path.remove_value();
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(add_env_var_explicit_layer);
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 4);
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
+        EXPECT_TRUE(string_eq(layers.at(2).layerName, env_var_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(3).layerName, add_env_var_explicit_layer));
+    }
+    {  // VK_ADD_IMPLICIT_LAYER_PATH
+        // VK_ADD_IMPLICIT_LAYER_PATH is set by add_explicit_layer(), but we need to disable VK_LAYER_PATH
+        // since VK_IMPLICIT_LAYER_PATH overrides VK_ADD_IMPLICIT_LAYER_PATH
+        EnvVarWrapper env_var_vk_layer_path{"VK_IMPLICIT_LAYER_PATH", ""};
+        env_var_vk_layer_path.remove_value();
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 3);
+        EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
+        EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
+        EXPECT_TRUE(string_eq(layers.at(2).layerName, add_env_var_implicit_layer));
+    }
+}
