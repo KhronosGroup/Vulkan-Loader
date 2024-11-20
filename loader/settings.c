@@ -285,9 +285,9 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
     cmd_line_msg[0] = '\0';
 
     generate_debug_flag_str(settings->debug_level, cmd_line_size, cmd_line_msg, &num_used);
-if (num_used > 0) {
-    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Loader Settings Filters for Logging to Standard Error: %s", cmd_line_msg);
-}
+    if (num_used > 0) {
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Loader Settings Filters for Logging to Standard Error: %s", cmd_line_msg);
+    }
 
     loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Layer Configurations count = %d", settings->layer_configuration_count);
     for (uint32_t i = 0; i < settings->layer_configuration_count; i++) {
@@ -770,13 +770,13 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         // Force enable it based on settings
         if (props->settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_ON) {
             enable_layer = true;
-        }
-
-        // Check if disable filter needs to skip the layer
-        if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
-             check_name_matches_filter_environment_var(props->info.layerName, &filters->disable_filter.additional_filters)) &&
-            !check_name_matches_filter_environment_var(props->info.layerName, &filters->allow_filter)) {
-            continue;
+        } else {
+            // Check if disable filter needs to skip the layer
+            if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
+                 check_name_matches_filter_environment_var(props->info.layerName, &filters->disable_filter.additional_filters)) &&
+                !check_name_matches_filter_environment_var(props->info.layerName, &filters->allow_filter)) {
+                continue;
+            }
         }
         // Check the enable filter
         if (!enable_layer && check_name_matches_filter_environment_var(props->info.layerName, &filters->enable_filter)) {
