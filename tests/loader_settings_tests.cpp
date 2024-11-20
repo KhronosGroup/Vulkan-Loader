@@ -2380,10 +2380,12 @@ TEST(SettingsFile, StderrLogFilters) {
     expected_output_verbose += "DEBUG:             ---- Layer Configuration [0] ----\n";
     expected_output_verbose += std::string("DEBUG:             Name: ") + explicit_layer_name + "\n";
     expected_output_verbose += "DEBUG:             Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
+    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
     expected_output_verbose += "DEBUG:             Control: on\n";
     expected_output_verbose += "DEBUG:             ---- Layer Configuration [1] ----\n";
     expected_output_verbose += "DEBUG:             Name: VK_LAYER_missing\n";
     expected_output_verbose += "DEBUG:             Path: /road/to/nowhere\n";
+    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
     expected_output_verbose += "DEBUG:             Control: on\n";
     expected_output_verbose += "DEBUG:             ---------------------------------\n";
 
@@ -2400,6 +2402,9 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_TRUE(
+            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: ERROR | "
+                                           "WARNING | INFO | DEBUG | PERF | DRIVER | LAYER\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2414,6 +2419,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_TRUE(env.platform_shim->find_in_log(
+            "DEBUG:             Loader Settings Filters for Logging to Standard Error: ERROR | WARNING | INFO | DEBUG\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2428,6 +2435,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_TRUE(env.platform_shim->find_in_log(
+            "DEBUG:             Loader Settings Filters for Logging to Standard Error: WARNING | INFO | DEBUG\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2442,6 +2451,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_TRUE(
+            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: DEBUG\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2456,6 +2467,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_FALSE(
+            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: INFO\n"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2470,6 +2483,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_FALSE(
+            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: WARNING\n"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2484,6 +2499,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_FALSE(
+            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: ERROR\n"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2498,6 +2515,7 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_FALSE(env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error:"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2512,6 +2530,7 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
+        ASSERT_FALSE(env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error:"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2637,10 +2656,12 @@ TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
     expected_output_verbose += "DEBUG:             ---- Layer Configuration [0] ----\n";
     expected_output_verbose += std::string("DEBUG:             Name: ") + explicit_layer_name + "\n";
     expected_output_verbose += "DEBUG:             Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
+    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
     expected_output_verbose += "DEBUG:             Control: auto\n";
     expected_output_verbose += "DEBUG:             ---- Layer Configuration [1] ----\n";
     expected_output_verbose += "DEBUG:             Name: VK_LAYER_missing\n";
     expected_output_verbose += "DEBUG:             Path: /road/to/nowhere\n";
+    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
     expected_output_verbose += "DEBUG:             Control: auto\n";
     expected_output_verbose += "DEBUG:             ---------------------------------\n";
 
