@@ -339,6 +339,12 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 
     res = loader_parse_json_string(json, "file_format_version", &file_format_version_string);
     if (res != VK_SUCCESS) {
+        if (res != VK_ERROR_OUT_OF_HOST_MEMORY) {
+            loader_log(
+                inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                "Loader settings file from %s missing required field file_format_version - no loader settings will be active",
+                settings_file_path);
+        }
         goto out;
     }
     uint32_t settings_array_count = 0;
@@ -350,6 +356,13 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
         settings_array_count = loader_cJSON_GetArraySize(settings_array);
     } else if (NULL != single_settings_object) {
         settings_array_count = 1;
+    } else if (settings_array == NULL && single_settings_object) {
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                   "Loader settings file from %s missing required settings objects: Either one of the \"settings\" or "
+                   "\"settings_array\" objects must be present - no loader settings will be active",
+                   settings_file_path);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
     }
 
     // Corresponds to the settings object that has no app keys
@@ -399,6 +412,10 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     // No app specific settings match - either use global settings or exit
     if (index_to_use == -1) {
         if (global_settings_index == -1) {
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                       "Loader settings file from %s missing global settings and none of the app specific settings matched the "
+                       "current application - no loader settings will be active",
+                       settings_file_path, settings_file_path);
             goto out;  // No global settings were found - exit
         } else {
             index_to_use = global_settings_index;  // Global settings are present - use it
@@ -410,6 +427,10 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     if (has_multi_setting_file) {
         single_settings_object = loader_cJSON_GetArrayItem(settings_array, index_to_use);
         if (NULL == single_settings_object) {
+            loader_log(
+                inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                "Loader settings file from %s failed to get the settings object at index %d - no loader settings will be active ",
+                settings_file_path, index_to_use);
             res = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
