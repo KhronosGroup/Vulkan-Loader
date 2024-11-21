@@ -765,6 +765,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_NVX_image_view_handle extension commands
     table->GetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)gdpa(dev, "vkGetImageViewHandleNVX");
+    table->GetImageViewHandle64NVX = (PFN_vkGetImageViewHandle64NVX)gdpa(dev, "vkGetImageViewHandle64NVX");
     table->GetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)gdpa(dev, "vkGetImageViewAddressNVX");
 
     // ---- VK_AMD_draw_indirect_count extension commands
@@ -2545,6 +2546,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NVX_image_view_handle extension commands
     if (!strcmp(name, "GetImageViewHandleNVX")) return (void *)table->GetImageViewHandleNVX;
+    if (!strcmp(name, "GetImageViewHandle64NVX")) return (void *)table->GetImageViewHandle64NVX;
     if (!strcmp(name, "GetImageViewAddressNVX")) return (void *)table->GetImageViewAddressNVX;
 
     // ---- VK_AMD_draw_indirect_count extension commands
@@ -5491,6 +5493,19 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->GetImageViewHandleNVX(device, pInfo);
+}
+
+VKAPI_ATTR uint64_t VKAPI_CALL GetImageViewHandle64NVX(
+    VkDevice                                    device,
+    const VkImageViewHandleInfoNVX*             pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetImageViewHandle64NVX: Invalid device "
+                   "[VUID-vkGetImageViewHandle64NVX-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetImageViewHandle64NVX(device, pInfo);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(
@@ -10820,6 +10835,10 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)GetImageViewHandleNVX;
         return true;
     }
+    if (!strcmp("vkGetImageViewHandle64NVX", name)) {
+        *addr = (void *)GetImageViewHandle64NVX;
+        return true;
+    }
     if (!strcmp("vkGetImageViewAddressNVX", name)) {
         *addr = (void *)GetImageViewAddressNVX;
         return true;
@@ -12685,5 +12704,6 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME,
                                                   VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME,
                                                   VK_EXT_LAYER_SETTINGS_EXTENSION_NAME,
+                                                  VK_NV_DISPLAY_STEREO_EXTENSION_NAME,
                                                   NULL };
 // clang-format on
