@@ -2910,7 +2910,10 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer));
         EXPECT_TRUE(string_eq(layers.at(2).layerName, regular_explicit_layer_settings_file_set_on));
         EXPECT_TRUE(string_eq(layers.at(3).layerName, env_var_implicit_layer));
+        EXPECT_TRUE(env.platform_shim->find_in_log(
+            "env var 'VK_INSTANCE_LAYERS' defined and adding layers: VK_LAYER_regular_explicit_layer"));
     }
+    env.platform_shim->clear_logs();
     {  // VK_LOADER_LAYERS_ENABLE
         EnvVarWrapper env_var_enable{"VK_LOADER_LAYERS_ENABLE", regular_explicit_layer};
         InstWrapper inst{env.vulkan_functions};
@@ -2920,14 +2923,22 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer));
         EXPECT_TRUE(string_eq(layers.at(2).layerName, regular_explicit_layer_settings_file_set_on));
         EXPECT_TRUE(string_eq(layers.at(3).layerName, env_var_implicit_layer));
+        EXPECT_TRUE(env.platform_shim->find_in_log(
+            "Layer \"VK_LAYER_regular_explicit_layer\" forced enabled due to env var 'VK_LOADER_LAYERS_ENABLE'"));
     }
+    env.platform_shim->clear_logs();
     {                                                                        // VK_LOADER_LAYERS_DISABLE
         EnvVarWrapper env_var_disable{"VK_LOADER_LAYERS_DISABLE", "~all~"};  // ignored by settings file
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_explicit_layer_settings_file_set_on));
+        EXPECT_TRUE(
+            env.platform_shim->find_in_log("Layer \"VK_LAYER_env_var_implicit_layer\" forced disabled because name matches filter "
+                                           "of env var 'VK_LOADER_LAYERS_DISABLE'"));
     }
+    env.platform_shim->clear_logs();
+
     {  // VK_LOADER_LAYERS_ALLOW
         EnvVarWrapper env_var_allow{"VK_LOADER_LAYERS_ALLOW", regular_implicit_layer};
         // Allow only makes sense when the disable env-var is also set
@@ -2939,7 +2950,13 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         // The regular_implicit_layer is set to "auto" so is affected by environment variables
         EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
         EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
+
+        EXPECT_TRUE(
+            env.platform_shim->find_in_log("Layer \"VK_LAYER_env_var_implicit_layer\" forced disabled because name matches filter "
+                                           "of env var 'VK_LOADER_LAYERS_DISABLE'"));
     }
+    env.platform_shim->clear_logs();
+
     {  // VK_LAYER_PATH
         // VK_LAYER_PATH is set by add_explicit_layer()
         InstWrapper inst{env.vulkan_functions};
@@ -2950,7 +2967,9 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
         EXPECT_TRUE(string_eq(layers.at(2).layerName, env_var_implicit_layer));
         EXPECT_TRUE(string_eq(layers.at(3).layerName, env_var_explicit_layer));
+        EXPECT_TRUE(env.platform_shim->find_in_log("Insert instance layer \"VK_LAYER_env_var_explicit_layer\""));
     }
+    env.platform_shim->clear_logs();
     {  // VK_IMPLICIT_LAYER_PATH
         // VK_IMPLICIT_LAYER_PATH is set by add_implicit_layer()
         InstWrapper inst{env.vulkan_functions};
@@ -2959,7 +2978,9 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
         EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
         EXPECT_TRUE(string_eq(layers.at(2).layerName, env_var_implicit_layer));
+        EXPECT_TRUE(env.platform_shim->find_in_log("Insert instance layer \"VK_LAYER_env_var_implicit_layer\""));
     }
+    env.platform_shim->clear_logs();
     {  // VK_ADD_LAYER_PATH
         // VK_ADD_LAYER_PATH is set by add_explicit_layer(), but we need to disable VK_LAYER_PATH
         // since VK_LAYER_PATH overrides VK_ADD_LAYER_PATH
@@ -2973,7 +2994,9 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
         EXPECT_TRUE(string_eq(layers.at(2).layerName, env_var_implicit_layer));
         EXPECT_TRUE(string_eq(layers.at(3).layerName, add_env_var_explicit_layer));
+        EXPECT_TRUE(env.platform_shim->find_in_log("Insert instance layer \"VK_LAYER_add_env_var_explicit_layer\""));
     }
+    env.platform_shim->clear_logs();
     {  // VK_ADD_IMPLICIT_LAYER_PATH
         // VK_ADD_IMPLICIT_LAYER_PATH is set by add_explicit_layer(), but we need to disable VK_LAYER_PATH
         // since VK_IMPLICIT_LAYER_PATH overrides VK_ADD_IMPLICIT_LAYER_PATH
@@ -2985,5 +3008,6 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         EXPECT_TRUE(string_eq(layers.at(0).layerName, regular_implicit_layer));
         EXPECT_TRUE(string_eq(layers.at(1).layerName, regular_explicit_layer_settings_file_set_on));
         EXPECT_TRUE(string_eq(layers.at(2).layerName, add_env_var_implicit_layer));
+        EXPECT_TRUE(env.platform_shim->find_in_log("Insert instance layer \"VK_LAYER_add_env_var_implicit_layer\""));
     }
 }
