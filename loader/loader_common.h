@@ -163,6 +163,16 @@ enum layer_type_flags {
     VK_LAYER_TYPE_FLAG_META_LAYER = 0x4,      // If not set, indicates standard layer
 };
 
+enum loader_layer_enabled_by_what {
+    ENABLED_BY_WHAT_UNSET,  // default value indicates this field hasn't been filled in
+    ENABLED_BY_WHAT_LOADER_SETTINGS_FILE,
+    ENABLED_BY_WHAT_IMPLICIT_LAYER,
+    ENABLED_BY_WHAT_VK_INSTANCE_LAYERS,
+    ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE,
+    ENABLED_BY_WHAT_IN_APPLICATION_API,
+    ENABLED_BY_WHAT_META_LAYER,
+};
+
 struct loader_layer_properties {
     VkLayerProperties info;
     enum layer_type_flags type_flags;
@@ -172,6 +182,7 @@ struct loader_layer_properties {
     char *manifest_file_name;
     char *lib_name;
     enum loader_layer_library_status lib_status;
+    enum loader_layer_enabled_by_what enabled_by_what;
     loader_platform_dl_handle lib_handle;
     struct loader_layer_functions functions;
     struct loader_extension_list instance_extension_list;

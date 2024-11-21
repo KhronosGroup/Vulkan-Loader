@@ -81,6 +81,7 @@ struct activated_layer_info {
     char *manifest;
     char *library;
     bool is_implicit;
+    enum loader_layer_enabled_by_what enabled_by_what;
     char *disable_env;
     char *enable_name_env;
     char *enable_value_env;
@@ -140,6 +141,29 @@ bool loader_check_version_meets_required(loader_api_version required, loader_api
            (version.major == required.major && version.minor > required.minor) ||
            // major and minor version are equal, patch version is greater or equal to minimum patch
            (version.major == required.major && version.minor == required.minor && version.patch >= required.patch);
+}
+
+const char *get_enabled_by_what_str(enum loader_layer_enabled_by_what enabled_by_what) {
+    switch (enabled_by_what) {
+        default:
+            assert(true && "Shouldn't reach this");
+            return "Unknown";
+        case (ENABLED_BY_WHAT_UNSET):
+            assert(true && "Shouldn't reach this");
+            return "Unknown";
+        case (ENABLED_BY_WHAT_LOADER_SETTINGS_FILE):
+            return "Loader Settings File (Vulkan Configurator)";
+        case (ENABLED_BY_WHAT_IMPLICIT_LAYER):
+            return "Implicit Layer";
+        case (ENABLED_BY_WHAT_VK_INSTANCE_LAYERS):
+            return "Environment Variable VK_INSTANCE_LAYERS";
+        case (ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE):
+            return "Environment Variable VK_LOADER_LAYERS_ENABLE";
+        case (ENABLED_BY_WHAT_IN_APPLICATION_API):
+            return "By the Application";
+        case (ENABLED_BY_WHAT_META_LAYER):
+            return "Meta Layer (Vulkan Configurator)";
+    }
 }
 
 // Wrapper around opendir so that the dirent_on_windows gets the instance it needs
@@ -980,6 +1004,7 @@ VkResult loader_add_layer_names_to_list(const struct loader_instance *inst, cons
 
         // If not a meta-layer, simply add it.
         if (0 == (layer_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
+            layer_prop->enabled_by_what = ENABLED_BY_WHAT_IN_APPLICATION_API;
             err = loader_add_layer_properties_to_list(inst, output_list, layer_prop);
             if (err == VK_ERROR_OUT_OF_HOST_MEMORY) return err;
             err = loader_add_layer_properties_to_list(inst, expanded_output_list, layer_prop);
@@ -1090,7 +1115,7 @@ VkResult loader_add_implicit_layer(const struct loader_instance *inst, struct lo
             if (loader_find_layer_name_in_list(&prop->info.layerName[0], target_list)) {
                 return result;
             }
-
+            prop->enabled_by_what = ENABLED_BY_WHAT_IMPLICIT_LAYER;
             result = loader_add_layer_properties_to_list(inst, target_list, prop);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
             if (NULL != expanded_target_list) {
@@ -1135,17 +1160,20 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
             // If the component layer is itself an implicit layer, we need to do the implicit layer enable
             // checks
             if (0 == (search_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
+                search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
                 result = loader_add_implicit_layer(inst, search_prop, filters, target_list, expanded_target_list, source_list);
                 if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
             } else {
                 if (0 != (search_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
                     bool found_layers_in_component_meta_layer = true;
+                    search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
                     result = loader_add_meta_layer(inst, filters, search_prop, target_list, expanded_target_list, source_list,
                                                    &found_layers_in_component_meta_layer);
                     if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
                     if (!found_layers_in_component_meta_layer) found_all_component_layers = false;
                 } else if (!loader_find_layer_name_in_list(&search_prop->info.layerName[0], target_list)) {
                     // Make sure the layer isn't already in the output_list, skip adding it if it is.
+                    search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
                     result = loader_add_layer_properties_to_list(inst, target_list, search_prop);
                     if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
                     if (NULL != expanded_target_list) {
@@ -1164,6 +1192,7 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
 
     // Add this layer to the overall target list (not the expanded one)
     if (found_all_component_layers) {
+        prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
         result = loader_add_layer_properties_to_list(inst, target_list, prop);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
         // Write the result to out_found_all_component_layers in case this function is being recursed
@@ -4706,6 +4735,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             activated_layers[num_activated_layers].manifest = layer_prop->manifest_file_name;
             activated_layers[num_activated_layers].library = layer_prop->lib_name;
             activated_layers[num_activated_layers].is_implicit = !(layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER);
+            activated_layers[num_activated_layers].enabled_by_what = layer_prop->enabled_by_what;
             if (activated_layers[num_activated_layers].is_implicit) {
                 activated_layers[num_activated_layers].disable_env = layer_prop->disable_env_var.name;
                 activated_layers[num_activated_layers].enable_name_env = layer_prop->enable_env_var.name;
@@ -4821,6 +4851,8 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
                        activated_layers[index].is_implicit ? "Implicit" : "Explicit");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Enabled By: %s",
+                       get_enabled_by_what_str(activated_layers[index].enabled_by_what));
             if (activated_layers[index].is_implicit) {
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
                            activated_layers[index].disable_env);
@@ -5055,6 +5087,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             activated_layers[num_activated_layers].manifest = layer_prop->manifest_file_name;
             activated_layers[num_activated_layers].library = layer_prop->lib_name;
             activated_layers[num_activated_layers].is_implicit = !(layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER);
+            activated_layers[num_activated_layers].enabled_by_what = layer_prop->enabled_by_what;
             if (activated_layers[num_activated_layers].is_implicit) {
                 activated_layers[num_activated_layers].disable_env = layer_prop->disable_env_var.name;
             }
@@ -5089,6 +5122,8 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "   %s", activated_layers[index].name);
             loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Type: %s",
                        activated_layers[index].is_implicit ? "Implicit" : "Explicit");
+            loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "           Enabled By: %s",
+                       get_enabled_by_what_str(activated_layers[index].enabled_by_what));
             if (activated_layers[index].is_implicit) {
                 loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "               Disable Env Var:  %s",
                            activated_layers[index].disable_env);

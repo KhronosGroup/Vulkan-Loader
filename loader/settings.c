@@ -774,6 +774,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         // Force enable it based on settings
         if (props->settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_ON) {
             enable_layer = true;
+            props->enabled_by_what = ENABLED_BY_WHAT_LOADER_SETTINGS_FILE;
         } else {
             // Check if disable filter needs to skip the layer
             if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
@@ -785,6 +786,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         // Check the enable filter
         if (!enable_layer && check_name_matches_filter_environment_var(props->info.layerName, &filters->enable_filter)) {
             enable_layer = true;
+            props->enabled_by_what = ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE;
         }
 
         // First look for the old-fashion layers forced on with VK_INSTANCE_LAYERS
@@ -799,6 +801,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
                 char* next = loader_get_next_path(instance_layers_env_iter);
                 if (0 == strcmp(instance_layers_env_iter, props->info.layerName)) {
                     enable_layer = true;
+                    props->enabled_by_what = ENABLED_BY_WHAT_VK_INSTANCE_LAYERS;
                     break;
                 }
                 instance_layers_env_iter = next;
@@ -810,6 +813,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
             for (uint32_t j = 0; j < app_enabled_name_count; j++) {
                 if (strcmp(props->info.layerName, app_enabled_names[j]) == 0) {
                     enable_layer = true;
+                    props->enabled_by_what = ENABLED_BY_WHAT_IN_APPLICATION_API;
                     break;
                 }
             }
@@ -819,6 +823,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         if (!enable_layer && (0 == (props->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) &&
             loader_implicit_layer_is_enabled(inst, filters, props)) {
             enable_layer = true;
+            props->enabled_by_what = ENABLED_BY_WHAT_IMPLICIT_LAYER;
         }
 
         if (enable_layer) {
