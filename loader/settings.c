@@ -767,6 +767,11 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         bool enable_layer = false;
         struct loader_layer_properties* props = &instance_layers->list[i];
 
+        // Skip the sentinel unordered layer location
+        if (props->settings_control_value == LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION) {
+            continue;
+        }
+
         // Do not enable the layer if the settings have it set as off
         if (props->settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_OFF) {
             continue;
@@ -780,6 +785,11 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
             if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
                  check_name_matches_filter_environment_var(props->info.layerName, &filters->disable_filter.additional_filters)) &&
                 !check_name_matches_filter_environment_var(props->info.layerName, &filters->allow_filter)) {
+                // Report a message that we've forced off a layer if it would have been enabled normally.
+                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                           "Layer \"%s\" forced disabled because name matches filter of env var \'%s\'.", props->info.layerName,
+                           VK_LAYERS_DISABLE_ENV_VAR);
+
                 continue;
             }
         }
@@ -787,6 +797,8 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         if (!enable_layer && check_name_matches_filter_environment_var(props->info.layerName, &filters->enable_filter)) {
             enable_layer = true;
             props->enabled_by_what = ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE;
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "Layer \"%s\" forced enabled due to env var \'%s\'.", props->info.layerName, VK_LAYERS_ENABLE_ENV_VAR);
         }
 
         // First look for the old-fashion layers forced on with VK_INSTANCE_LAYERS
