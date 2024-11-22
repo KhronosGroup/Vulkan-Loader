@@ -27,6 +27,7 @@
 #include "cJSON.h"
 #include "loader.h"
 #include "loader_environment.h"
+#include "loader_json.h"
 #if defined(WIN32)
 #include "loader_windows.h"
 #endif
