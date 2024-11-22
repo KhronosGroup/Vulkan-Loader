@@ -26,7 +26,7 @@
 #pragma once
 
 #include <stdint.h>
-
+#include <stdbool.h>
 #include <vulkan/vulkan_core.h>
 
 /* cJSON Types: */
@@ -62,6 +62,9 @@ typedef struct cJSON {
     VkAllocationCallbacks *pAllocator;
 } cJSON;
 
+/* Supply a block of JSON, and this returns a cJSON object you can interrogate.
+ * Call cJSON_Delete when finished. */
+cJSON *cJSON_Parse(const VkAllocationCallbacks *pAllocator, const char *value, bool *out_of_memory);
 /* Render a cJSON entity to text for transfer/storage. Free the char* when
  * finished. */
 char *loader_cJSON_Print(cJSON *item);
@@ -83,29 +86,3 @@ cJSON *loader_cJSON_GetObjectItem(cJSON *object, const char *string);
  * too. */
 #define cJSON_SetIntValue(object, val) ((object) ? (object)->valueint = (object)->valuedouble = (val) : (val))
 #define cJSON_SetNumberValue(object, val) ((object) ? (object)->valueint = (object)->valuedouble = (val) : (val))
-
-// Helper functions to using JSON
-
-struct loader_instance;
-struct loader_string_list;
-
-// Read a JSON file into a buffer.
-//
-// @return -  A pointer to a cJSON object representing the JSON parse tree.
-//            This returned buffer should be freed by caller.
-VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json);
-
-// Given a cJSON object, find the string associated with the key and puts an pre-allocated string into out_string.
-// Length is given by out_str_len, and this function truncates the string with a null terminator if it the provided space isn't
-// large enough.
-VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *inst, cJSON *object, const char *key,
-                                                  size_t out_str_len, char *out_string);
-
-// Given a cJSON object, find the string associated with the key and puts an allocated string into out_string.
-// It is the callers responsibility to free out_string.
-VkResult loader_parse_json_string(cJSON *object, const char *key, char **out_string);
-
-// Given a cJSON object, find the array of strings associated with they key and writes the count into out_count and data into
-// out_array_of_strings. It is the callers responsibility to free out_array_of_strings.
-VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key,
-                                            struct loader_string_list *string_list);

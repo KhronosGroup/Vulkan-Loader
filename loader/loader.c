@@ -58,6 +58,7 @@
 #include "cJSON.h"
 #include "debug_utils.h"
 #include "loader_environment.h"
+#include "loader_json.h"
 #include "log.h"
 #include "unknown_function_handling.h"
 #include "vk_loader_platform.h"

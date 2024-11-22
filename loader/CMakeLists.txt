@@ -82,6 +82,8 @@ set(NORMAL_LOADER_SRCS
     loader.h
     log.c
     log.h
+    loader_json.c
+    loader_json.h
     settings.c
     settings.h
     terminator.c
