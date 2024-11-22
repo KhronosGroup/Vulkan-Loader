@@ -2649,11 +2649,14 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     //   }
 
     cJSON *instance_extensions = loader_cJSON_GetObjectItem(layer_node, "instance_extensions");
-    if (instance_extensions != NULL) {
-        int count = loader_cJSON_GetArraySize(instance_extensions);
-        for (int i = 0; i < count; i++) {
+    if (instance_extensions != NULL && instance_extensions->type == cJSON_Array) {
+        cJSON *ext_item = NULL;
+        cJSON_ArrayForEach(ext_item, instance_extensions) {
+            if (ext_item->type != cJSON_Object) {
+                continue;
+            }
+
             VkExtensionProperties ext_prop = {0};
-            cJSON *ext_item = loader_cJSON_GetArrayItem(instance_extensions, i);
             result = loader_parse_json_string_to_existing_str(inst, ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE,
                                                               ext_prop.extensionName);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
@@ -2679,13 +2682,14 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     //     entrypoints
     //   }
     cJSON *device_extensions = loader_cJSON_GetObjectItem(layer_node, "device_extensions");
-    if (device_extensions != NULL) {
-        int count = loader_cJSON_GetArraySize(device_extensions);
-        for (int i = 0; i < count; i++) {
+    if (device_extensions != NULL && device_extensions->type == cJSON_Array) {
+        cJSON *ext_item = NULL;
+        cJSON_ArrayForEach(ext_item, device_extensions) {
+            if (ext_item->type != cJSON_Object) {
+                continue;
+            }
+
             VkExtensionProperties ext_prop = {0};
-
-            cJSON *ext_item = loader_cJSON_GetArrayItem(device_extensions, i);
-
             result = loader_parse_json_string_to_existing_str(inst, ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE,
                                                               ext_prop.extensionName);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
@@ -2823,14 +2827,12 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
     //   - If more than one "layer" object are used, then the "layers" array is
     //     required
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
-    cJSON *item, *layers_node, *layer_node;
-    loader_api_version json_version = {0, 0, 0};
     char *file_vers = NULL;
     // Make sure sure the top level json value is an object
     if (!json || json->type != cJSON_Object) {
         goto out;
     }
-    item = loader_cJSON_GetObjectItem(json, "file_format_version");
+    cJSON *item = loader_cJSON_GetObjectItem(json, "file_format_version");
     if (item == NULL) {
         goto out;
     }
@@ -2840,10 +2842,15 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
     if (out_of_memory) {
         result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
+    } else if (NULL == file_vers) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                   "loader_add_layer_properties: Manifest %s missing required field file_format_version", filename);
+        goto out;
     }
+
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Found manifest file %s (file version %s)", filename, file_vers);
     // Get the major/minor/and patch as integers for easier comparison
-    json_version = loader_make_full_version(loader_parse_version_string(file_vers));
+    loader_api_version json_version = loader_make_full_version(loader_parse_version_string(file_vers));
 
     if (!is_valid_layer_json_version(&json_version)) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -2852,9 +2859,8 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
     }
 
     // If "layers" is present, read in the array of layer objects
-    layers_node = loader_cJSON_GetObjectItem(json, "layers");
+    cJSON *layers_node = loader_cJSON_GetObjectItem(json, "layers");
     if (layers_node != NULL) {
-        int numItems = loader_cJSON_GetArraySize(layers_node);
         // Supported versions started in 1.0.1, so anything newer
         if (!loader_check_version_meets_required(loader_combine_version(1, 0, 1), json_version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -2862,20 +2868,21 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
                        "version %s",
                        filename, file_vers);
         }
-        for (int curLayer = 0; curLayer < numItems; curLayer++) {
-            layer_node = loader_cJSON_GetArrayItem(layers_node, curLayer);
-            if (layer_node == NULL) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                           "loader_add_layer_properties: Can not find 'layers' array element %d object in manifest JSON file %s.  "
-                           "Skipping this file",
-                           curLayer, filename);
+        cJSON *layer_node = NULL;
+        cJSON_ArrayForEach(layer_node, layers_node) {
+            if (layer_node->type != cJSON_Object) {
+                loader_log(
+                    inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                    "loader_add_layer_properties: Array element in \"layers\" field in manifest JSON file %s is not an object.  "
+                    "Skipping this file",
+                    filename);
                 goto out;
             }
             result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, is_implicit, filename);
         }
     } else {
         // Otherwise, try to read in individual layers
-        layer_node = loader_cJSON_GetObjectItem(json, "layer");
+        cJSON *layer_node = loader_cJSON_GetObjectItem(json, "layer");
         if (layer_node == NULL) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "loader_add_layer_properties: Can not find 'layer' object in manifest JSON file %s.  Skipping this file.",

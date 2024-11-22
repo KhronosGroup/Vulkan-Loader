@@ -181,13 +181,14 @@ VkResult parse_layer_configurations(const struct loader_instance* inst, cJSON* s
         goto out;
     }
 
-    for (uint32_t i = 0; i < layer_configurations_count; i++) {
-        cJSON* layer = loader_cJSON_GetArrayItem(layer_configurations, i);
-        if (NULL == layer) {
+    cJSON* layer = NULL;
+    size_t i = 0;
+    cJSON_ArrayForEach(layer, layer_configurations) {
+        if (layer->type != cJSON_Object) {
             res = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
-        res = parse_layer_configuration(inst, layer, &(loader_settings->layer_configurations[i]));
+        res = parse_layer_configuration(inst, layer, &(loader_settings->layer_configurations[i++]));
         if (VK_SUCCESS != res) {
             goto out;
         }
@@ -195,8 +196,8 @@ VkResult parse_layer_configurations(const struct loader_instance* inst, cJSON* s
 out:
     if (res != VK_SUCCESS) {
         if (loader_settings->layer_configurations) {
-            for (uint32_t i = 0; i < loader_settings->layer_configuration_count; i++) {
-                free_layer_configuration(inst, &(loader_settings->layer_configurations[i]));
+            for (size_t index = 0; index < loader_settings->layer_configuration_count; index++) {
+                free_layer_configuration(inst, &(loader_settings->layer_configurations[index]));
             }
             loader_settings->layer_configuration_count = 0;
             loader_instance_heap_free(inst, loader_settings->layer_configurations);
@@ -334,7 +335,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 
     res = loader_get_json(inst, settings_file_path, &json);
     // Make sure sure the top level json value is an object
-    if (res != VK_SUCCESS || NULL == json || json->type != 6) {
+    if (res != VK_SUCCESS || NULL == json || json->type != cJSON_Object) {
         goto out;
     }
 
@@ -348,15 +349,17 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
         }
         goto out;
     }
-    uint32_t settings_array_count = 0;
-    bool has_multi_setting_file = false;
+
+    // Because the file may contain either a "settings_array" or a single "settings" object, we need to create a cJSON so that we
+    // can iterate on both cases with common code
+    cJSON settings_iter_parent = {0};
+
     cJSON* settings_array = loader_cJSON_GetObjectItem(json, "settings_array");
     cJSON* single_settings_object = loader_cJSON_GetObjectItem(json, "settings");
     if (NULL != settings_array) {
-        has_multi_setting_file = true;
-        settings_array_count = loader_cJSON_GetArraySize(settings_array);
+        memcpy(&settings_iter_parent, settings_array, sizeof(cJSON));
     } else if (NULL != single_settings_object) {
-        settings_array_count = 1;
+        settings_iter_parent.child = single_settings_object;
     } else if (settings_array == NULL && single_settings_object) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                    "Loader settings file from %s missing required settings objects: Either one of the \"settings\" or "
@@ -367,31 +370,33 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     }
 
     // Corresponds to the settings object that has no app keys
-    int global_settings_index = -1;
+    cJSON* global_settings = NULL;
     // Corresponds to the settings object which has a matching app key
-    int index_to_use = -1;
+    cJSON* settings_to_use = NULL;
 
     char current_process_path[1024];
     bool valid_exe_path = NULL != loader_platform_executable_path(current_process_path, 1024);
 
-    for (int i = 0; i < (int)settings_array_count; i++) {
-        if (has_multi_setting_file) {
-            single_settings_object = loader_cJSON_GetArrayItem(settings_array, i);
+    cJSON* settings_object_iter = NULL;
+    cJSON_ArrayForEach(settings_object_iter, &settings_iter_parent) {
+        if (settings_object_iter->type != cJSON_Object) {
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                       "Loader settings file from %s has a settings element that is not an object", settings_file_path);
+            break;
         }
-        cJSON* app_keys = loader_cJSON_GetObjectItem(single_settings_object, "app_keys");
+        cJSON* app_keys = loader_cJSON_GetObjectItem(settings_object_iter, "app_keys");
         if (NULL == app_keys) {
-            if (global_settings_index == -1) {
-                global_settings_index = i;  // use the first 'global' settings that has no app keys as the global one
+            if (global_settings == NULL) {
+                global_settings = settings_object_iter;  // use the first 'global' settings that has no app keys as the global one
             }
             continue;
         } else if (valid_exe_path) {
-            int app_key_count = loader_cJSON_GetArraySize(app_keys);
-            if (app_key_count == 0) {
+            if (loader_cJSON_GetArraySize(app_keys) == 0) {
                 continue;  // empty array
             }
-            for (int j = 0; j < app_key_count; j++) {
-                cJSON* app_key_json = loader_cJSON_GetArrayItem(app_keys, j);
-                if (NULL == app_key_json) {
+            cJSON* app_key_json = NULL;
+            cJSON_ArrayForEach(app_key_json, app_keys) {
+                if (app_key_json->type != cJSON_String) {
                     continue;
                 }
                 bool out_of_memory = false;
@@ -405,10 +410,10 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
                 }
 
                 if (strcmp(current_process_path, app_key) == 0) {
-                    index_to_use = i;
+                    settings_to_use = settings_object_iter;
                 }
-                loader_instance_heap_free(inst, app_key);
-                if (index_to_use == i) {
+                loader_instance_heap_free(inst, (void*)app_key);
+                if (settings_to_use != NULL) {
                     break;  // break only after freeing the app key
                 }
             }
@@ -416,29 +421,15 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     }
 
     // No app specific settings match - either use global settings or exit
-    if (index_to_use == -1) {
-        if (global_settings_index == -1) {
+    if (settings_to_use == NULL) {
+        if (global_settings == NULL) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                        "Loader settings file from %s missing global settings and none of the app specific settings matched the "
                        "current application - no loader settings will be active",
                        settings_file_path);
             goto out;  // No global settings were found - exit
         } else {
-            index_to_use = global_settings_index;  // Global settings are present - use it
-        }
-    }
-
-    // Now get the actual settings object to use - already have it if there is only one settings object
-    // If there are multiple settings, just need to set single_settings_object to the desired settings object
-    if (has_multi_setting_file) {
-        single_settings_object = loader_cJSON_GetArrayItem(settings_array, index_to_use);
-        if (NULL == single_settings_object) {
-            loader_log(
-                inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                "Loader settings file from %s failed to get the settings object at index %d - no loader settings will be active ",
-                settings_file_path, index_to_use);
-            res = VK_ERROR_INITIALIZATION_FAILED;
-            goto out;
+            settings_to_use = global_settings;  // Global settings are present - use it
         }
     }
 
@@ -446,7 +437,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     cJSON* stderr_filter = loader_cJSON_GetObjectItem(single_settings_object, "stderr_log");
     if (NULL != stderr_filter) {
         struct loader_string_list stderr_log = {0};
-        res = loader_parse_json_array_of_strings(inst, single_settings_object, "stderr_log", &stderr_log);
+        res = loader_parse_json_array_of_strings(inst, settings_to_use, "stderr_log", &stderr_log);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
             goto out;
         }
@@ -455,30 +446,27 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     }
 
     // optional
-    cJSON* logs_to_use = loader_cJSON_GetObjectItem(single_settings_object, "log_locations");
+    cJSON* logs_to_use = loader_cJSON_GetObjectItem(settings_to_use, "log_locations");
     if (NULL != logs_to_use) {
-        int log_count = loader_cJSON_GetArraySize(logs_to_use);
-        for (int i = 0; i < log_count; i++) {
-            cJSON* log_element = loader_cJSON_GetArrayItem(logs_to_use, i);
+        cJSON* log_element = NULL;
+        cJSON_ArrayForEach(log_element, logs_to_use) {
             // bool is_valid = true;
-            if (NULL != log_element) {
-                struct loader_string_list log_destinations = {0};
-                res = loader_parse_json_array_of_strings(inst, log_element, "destinations", &log_destinations);
-                if (res != VK_SUCCESS) {
-                    // is_valid = false;
-                }
-                free_string_list(inst, &log_destinations);
-                struct loader_string_list log_filters = {0};
-                res = loader_parse_json_array_of_strings(inst, log_element, "filters", &log_filters);
-                if (res != VK_SUCCESS) {
-                    // is_valid = false;
-                }
-                free_string_list(inst, &log_filters);
+            struct loader_string_list log_destinations = {0};
+            res = loader_parse_json_array_of_strings(inst, log_element, "destinations", &log_destinations);
+            if (res != VK_SUCCESS) {
+                // is_valid = false;
             }
+            free_string_list(inst, &log_destinations);
+            struct loader_string_list log_filters = {0};
+            res = loader_parse_json_array_of_strings(inst, log_element, "filters", &log_filters);
+            if (res != VK_SUCCESS) {
+                // is_valid = false;
+            }
+            free_string_list(inst, &log_filters);
         }
     }
 
-    res = parse_layer_configurations(inst, single_settings_object, loader_settings);
+    res = parse_layer_configurations(inst, settings_to_use, loader_settings);
     if (res != VK_SUCCESS) {
         goto out;
     }

@@ -225,9 +225,9 @@ VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, 
     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
         goto out;
     }
-    for (uint32_t i = 0; i < count; i++) {
-        cJSON *element = loader_cJSON_GetArrayItem(item, i);
-        if (element == NULL) {
+    cJSON *element = NULL;
+    cJSON_ArrayForEach(element, item) {
+        if (element->type != cJSON_String) {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
         bool out_of_memory = false;
