@@ -1077,7 +1077,7 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
         loader_free_getenv(env_value, inst);
     } else if ((prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER) == 0) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                   "Implicit layer \"%s\" missing disabled environment variable!", prop->info.layerName, VK_LAYERS_DISABLE_ENV_VAR);
+                   "Implicit layer \"%s\" missing disabled environment variable!", prop->info.layerName);
     }
 
     // Enable this layer if it is included in the override layer
@@ -1778,8 +1778,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
     // This shouldn't happen, but the check is necessary because dlopen returns a handle to the main program when
     // filename is NULL
     if (filename == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_scanned_icd_add: A NULL filename was used, skipping this ICD",
-                   filename);
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_scanned_icd_add: A NULL filename was used, skipping this ICD");
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }

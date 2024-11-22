@@ -142,7 +142,8 @@ void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_l
 #undef STRNCAT_TO_BUFFER
 }
 
-void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
+void DECORATE_PRINTF(4, 5)
+    loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
     (void)msg_code;
     char msg[512] = {0};
 
