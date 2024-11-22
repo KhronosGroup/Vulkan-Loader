@@ -421,7 +421,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                        "Loader settings file from %s missing global settings and none of the app specific settings matched the "
                        "current application - no loader settings will be active",
-                       settings_file_path, settings_file_path);
+                       settings_file_path);
             goto out;  // No global settings were found - exit
         } else {
             index_to_use = global_settings_index;  // Global settings are present - use it

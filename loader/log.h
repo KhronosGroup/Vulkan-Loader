@@ -65,10 +65,18 @@ void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_l
 #define ASM_NAME(name)
 #endif
 
+#if defined(__clang__)
+#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(printf, _fmt_argnum, _first_param_num)))
+#elif defined(__GNUC__)
+#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(gnu_printf, _fmt_argnum, _first_param_num)))
+#else
+#define DECORATE_PRINTF(_fmt_num, _first_param_num)
+#endif
+
 // Logs a message to stderr
 // May output to DebugUtils if the instance isn't null and the extension is enabled.
-void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...)
-    ASM_NAME("loader_log");
+void DECORATE_PRINTF(4, 5) loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format,
+                                      ...) ASM_NAME("loader_log");
 
 // Used for the assembly code to emit an specific error message
 // This is a work around for linux 32 bit error handling not passing relocatable strings correctly
