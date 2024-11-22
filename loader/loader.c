@@ -221,7 +221,7 @@ void loader_handle_load_library_error(const struct loader_instance *inst, const 
     } else if (NULL != lib_status) {
         *lib_status = LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD;
     }
-    loader_log(inst, err_flag, 0, error_message);
+    loader_log(inst, err_flag, 0, "%s", error_message);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL vkSetInstanceDispatch(VkInstance instance, void *object) {
@@ -2586,7 +2586,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             goto out;
         }
 
-        if (!disable_environment->child || disable_environment->child->type != cJSON_String) {
+        if (!disable_environment->child || disable_environment->child->type != cJSON_String ||
+            !disable_environment->child->string || !disable_environment->child->valuestring) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Didn't find required layer child value disable_environment in manifest JSON file, skipping this layer "
                        "(Policy #LLP_LAYER_9)");
@@ -2827,7 +2828,7 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
     loader_api_version json_version = {0, 0, 0};
     char *file_vers = NULL;
     // Make sure sure the top level json value is an object
-    if (!json || json->type != 6) {
+    if (!json || json->type != cJSON_Object) {
         goto out;
     }
     item = loader_cJSON_GetObjectItem(json, "file_format_version");
