@@ -2205,6 +2205,16 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
             return false;
         }
         if (comp_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
+            for (uint32_t sub_comp_layer = 0; sub_comp_layer < comp_prop->component_layer_names.count; sub_comp_layer++) {
+                if (!strcmp(prop->info.layerName, comp_prop->component_layer_names.list[sub_comp_layer])) {
+                    loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                               "verify_meta_layer_component_layers: Recursive depedency between Meta-layer %s and  Meta-layer %s.  "
+                               "Skipping this layer.",
+                               prop->info.layerName, prop->component_layer_names.list[comp_layer]);
+                    return false;
+                }
+            }
+
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "verify_meta_layer_component_layers: Adding meta-layer %s which also contains meta-layer %s",
                        prop->info.layerName, comp_prop->info.layerName);
