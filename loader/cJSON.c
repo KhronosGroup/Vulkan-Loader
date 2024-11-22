@@ -691,11 +691,10 @@ static cJSON_bool print_string_ptr(const unsigned char *const input, printbuffer
 
     /* empty string */
     if (input == NULL) {
-        output = ensure(output_buffer, sizeof("\"\""));
+        output = ensure(output_buffer, 0);
         if (output == NULL) {
             return false;
         }
-        strcpy((char *)output, "\"\"");
 
         return true;
     }
@@ -723,23 +722,20 @@ static cJSON_bool print_string_ptr(const unsigned char *const input, printbuffer
     }
     output_length = (size_t)(input_pointer - input) + escape_characters;
 
-    output = ensure(output_buffer, output_length + sizeof("\"\""));
+    output = ensure(output_buffer, output_length + 1);
     if (output == NULL) {
         return false;
     }
 
     /* no characters have to be escaped */
     if (escape_characters == 0) {
-        output[0] = '\"';
-        memcpy(output + 1, input, output_length);
-        output[output_length + 1] = '\"';
-        output[output_length + 2] = '\0';
+        memcpy(output, input, output_length);
+        output[output_length] = '\0';
 
         return true;
     }
 
-    output[0] = '\"';
-    output_pointer = output + 1;
+    output_pointer = output;
     /* copy the string */
     for (input_pointer = input; *input_pointer != '\0'; (void)input_pointer++, output_pointer++) {
         if ((*input_pointer > 31) && (*input_pointer != '\"') && (*input_pointer != '\\')) {
@@ -778,8 +774,7 @@ static cJSON_bool print_string_ptr(const unsigned char *const input, printbuffer
             }
         }
     }
-    output[output_length + 1] = '\"';
-    output[output_length + 2] = '\0';
+    output[output_length] = '\0';
 
     return true;
 }
