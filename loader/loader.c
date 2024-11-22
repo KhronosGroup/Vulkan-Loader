@@ -2440,7 +2440,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     // Add list entry
     if (!strcmp(type, "DEVICE")) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Device layers are deprecated. Skipping this layer");
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Device layers are deprecated. Skipping layer %s",
+                   filename);
         result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
@@ -2513,9 +2514,11 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     if (NULL != library_path) {
         if (NULL != loader_cJSON_GetObjectItem(layer_node, "component_layers")) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Indicating meta-layer-specific component_layers, but also defining layer library path.  Both are not "
-                       "compatible, so skipping this layer");
+            loader_log(
+                inst, VULKAN_LOADER_WARN_BIT, 0,
+                "Layer \"%s\" contains meta-layer-specific component_layers, but also defining layer library path.  Both are not "
+                "compatible, so skipping this layer",
+                filename);
             result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
@@ -2531,7 +2534,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         }
         if (NULL == library_path_str) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Skipping layer due to problem accessing the library_path value in manifest JSON file %s", filename);
+                       "Skipping layer \"%s\" due to problem accessing the library_path value in the manifest JSON file", filename);
+            result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
 
@@ -2545,7 +2549,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     if (NULL == library_path) {
         if (!loader_check_version_meets_required(LOADER_VERSION_1_1_0, version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Indicating meta-layer-specific component_layers, but using older JSON file version.");
+                       "Layer \"%s\" contains meta-layer-specific component_layers, but using older JSON file version.", filename);
         }
 
         result = loader_parse_json_array_of_strings(inst, layer_node, "component_layers", &(props.component_layer_names));
@@ -2554,8 +2558,9 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         }
         if (VK_ERROR_INITIALIZATION_FAILED == result) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Layer missing both library_path and component_layers fields.  One or the other MUST be defined.  Skipping "
-                       "this layer");
+                       "Layer \"%s\" is missing both library_path and component_layers fields.  One or the other MUST be defined.  "
+                       "Skipping this layer",
+                       filename);
             goto out;
         }
         // This is now, officially, a meta-layer
@@ -2581,7 +2586,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     }
     if (NULL != props.override_paths.list && !loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "Indicating meta-layer-specific override paths, but using older JSON file version.");
+                   "Layer \"%s\" contains meta-layer-specific override paths, but using older JSON file version.", filename);
     }
 
     // Parse disable_environment
@@ -2590,7 +2595,9 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         cJSON *disable_environment = loader_cJSON_GetObjectItem(layer_node, "disable_environment");
         if (disable_environment == NULL) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Didn't find required layer object disable_environment in manifest JSON file, skipping this layer");
+                       "Layer \"%s\" doesn't contain required layer object disable_environment in the manifest JSON file, skipping "
+                       "this layer",
+                       filename);
             result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
@@ -2598,8 +2605,9 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         if (!disable_environment->child || disable_environment->child->type != cJSON_String ||
             !disable_environment->child->string || !disable_environment->child->valuestring) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Didn't find required layer child value disable_environment in manifest JSON file, skipping this layer "
-                       "(Policy #LLP_LAYER_9)");
+                       "Layer \"%s\" doesn't contain required child value in object disable_environment in the manifest JSON file, "
+                       "skipping this layer (Policy #LLP_LAYER_9)",
+                       filename);
             result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
@@ -2786,7 +2794,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         if ((strncmp(library_arch, "32", 2) == 0 && sizeof(void *) != 4) ||
             (strncmp(library_arch, "64", 2) == 0 && sizeof(void *) != 8)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                       "Layer library architecture doesn't match the current running architecture, skipping this layer");
+                       "The library architecture in layer %s doesn't match the current running architecture, skipping this layer",
+                       filename);
             loader_instance_heap_free(inst, library_arch);
             result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
