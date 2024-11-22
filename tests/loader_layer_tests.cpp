@@ -1856,7 +1856,8 @@ TEST(OverrideMetaLayer, ManifestFileFormatVersionTooOld) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
     ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-    ASSERT_TRUE(env.debug_log.find("Indicating meta-layer-specific override paths, but using older JSON file version."));
+    ASSERT_TRUE(env.debug_log.find(std::string("Layer \"") + lunarg_meta_layer_name +
+                                   "\" contains meta-layer-specific override paths, but using older JSON file version."));
     env.layers.clear();
 }
 

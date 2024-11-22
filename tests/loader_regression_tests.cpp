@@ -1663,7 +1663,8 @@ TEST(TryLoadWrongBinaries, WrongArchLayer) {
     FillDebugUtilsCreateDetails(inst.create_info, log);
     inst.create_info.add_layer(layer_name);
     inst.CheckCreate(VK_ERROR_LAYER_NOT_PRESENT);
-    ASSERT_TRUE(log.find("Layer library architecture doesn't match the current running architecture, skipping this layer"));
+    ASSERT_TRUE(log.find(std::string("The library architecture in layer ") + env.get_shimmed_layer_manifest_path(0).string() +
+                         " doesn't match the current running architecture, skipping this layer"));
 }
 
 TEST(EnumeratePhysicalDeviceGroups, OneCall) {
