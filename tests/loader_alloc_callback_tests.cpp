@@ -104,7 +104,10 @@ class MemoryTracker {
     void free(void* pMemory) {
         if (pMemory == nullptr) return;
         auto elem = allocations.find(pMemory);
-        if (elem == allocations.end()) return;
+        if (elem == allocations.end()) {
+            assert(false && "Should never be freeing memory that wasn't allocated by the MemoryTracker!");
+            return;
+        }
         allocations.erase(elem);
         assert(allocation_count != 0 && "Cant free when there are no valid allocations");
         allocation_count--;
