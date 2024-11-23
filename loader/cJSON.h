@@ -144,14 +144,8 @@ typedef int cJSON_bool;
 #define CJSON_CIRCULAR_LIMIT 10000
 #endif
 
-/* returns the version of cJSON as a string */
-CJSON_PUBLIC(const char *) cJSON_Version(void);
-
-/* Supply malloc, realloc and free functions to cJSON */
-CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks *hooks);
-
-/* Memory Management: the caller is always responsible to free the results from all variants of cJSON_Parse (with cJSON_Delete) and
- * cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or cJSON_free as appropriate). The exception is cJSON_PrintPreallocated,
+/* Memory Management: the caller is always responsible to free instthe results from all variants of cJSON_Parse (with cJSON_Delete)
+ * and cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or cJSON_free as appropriate). The exception is cJSON_PrintPreallocated,
  * where the caller has full responsibility of the buffer. */
 /* Supply a block of JSON, and this returns a cJSON object you can interrogate. */
 CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value);
@@ -208,110 +202,9 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON *const item);
 CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON *const item);
 CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON *const item);
 
-/* These calls create a cJSON item of the appropriate type. */
-CJSON_PUBLIC(cJSON *) cJSON_CreateNull(void);
-CJSON_PUBLIC(cJSON *) cJSON_CreateTrue(void);
-CJSON_PUBLIC(cJSON *) cJSON_CreateFalse(void);
-CJSON_PUBLIC(cJSON *) cJSON_CreateBool(cJSON_bool boolean);
-CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num);
-CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string);
-/* raw json */
-CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw);
-CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void);
-CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void);
-
-/* Create a string where valuestring references a string so
- * it will not be freed by cJSON_Delete */
-CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string);
-/* Create an object/array that only references it's elements so
- * they will not be freed by cJSON_Delete */
-CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child);
-CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child);
-
-/* These utilities create an Array of count items.
- * The parameter count cannot be greater than the number of elements in the number array, otherwise array access will be out of
- * bounds.*/
-CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count);
-CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count);
-CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count);
-CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int count);
-
-/* Append item to the specified array/object. */
-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToArray(cJSON *array, cJSON *item);
-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
-/* Use this when string is definitely const (i.e. a literal, or as good as), and will definitely survive the cJSON object.
- * WARNING: When this function was used, make sure to always check that (item->type & cJSON_StringIsConst) is zero before
- * writing to `item->string` */
-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
-/* Append reference to item to the specified array/object. Use this when you want to add an existing cJSON to a new cJSON, but don't
- * want to corrupt your existing cJSON. */
-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item);
-
-/* Remove/Detach items from Arrays/Objects. */
-CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON *const item);
-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromArray(cJSON *array, int which);
-CJSON_PUBLIC(void) cJSON_DeleteItemFromArray(cJSON *array, int which);
-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObject(cJSON *object, const char *string);
-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string);
-CJSON_PUBLIC(void) cJSON_DeleteItemFromObject(cJSON *object, const char *string);
-CJSON_PUBLIC(void) cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string);
-
-/* Update array items. */
-CJSON_PUBLIC(cJSON_bool)
-cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem); /* Shifts pre-existing items to the right. */
-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON *const parent, cJSON *const item, cJSON *replacement);
-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem);
-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object, const char *string, cJSON *newitem);
-
-/* Duplicate a cJSON item */
-CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse);
-/* Duplicate will create a new, identical cJSON item to the one you pass, in new memory that will
- * need to be released. With recurse!=0, it will duplicate any children connected to the item.
- * The item->next and ->prev pointers are always zero on return from Duplicate. */
-/* Recursively compare two cJSON items for equality. If either a or b is NULL or invalid, they will be considered unequal.
- * case_sensitive determines if object keys are treated case sensitive (1) or case insensitive (0) */
-CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON *const a, const cJSON *const b, const cJSON_bool case_sensitive);
-
-/* Minify a strings, remove blank characters(such as ' ', '\t', '\r', '\n') from strings.
- * The input pointer json cannot point to a read-only address area, such as a string constant,
- * but should point to a readable and writable address area. */
-CJSON_PUBLIC(void) cJSON_Minify(char *json);
-
-/* Helper functions for creating and adding items to an object at the same time.
- * They return the added item or NULL on failure. */
-CJSON_PUBLIC(cJSON *) cJSON_AddNullToObject(cJSON *const object, const char *const name);
-CJSON_PUBLIC(cJSON *) cJSON_AddTrueToObject(cJSON *const object, const char *const name);
-CJSON_PUBLIC(cJSON *) cJSON_AddFalseToObject(cJSON *const object, const char *const name);
-CJSON_PUBLIC(cJSON *) cJSON_AddBoolToObject(cJSON *const object, const char *const name, const cJSON_bool boolean);
-CJSON_PUBLIC(cJSON *) cJSON_AddNumberToObject(cJSON *const object, const char *const name, const double number);
-CJSON_PUBLIC(cJSON *) cJSON_AddStringToObject(cJSON *const object, const char *const name, const char *const string);
-CJSON_PUBLIC(cJSON *) cJSON_AddRawToObject(cJSON *const object, const char *const name, const char *const raw);
-CJSON_PUBLIC(cJSON *) cJSON_AddObjectToObject(cJSON *const object, const char *const name);
-CJSON_PUBLIC(cJSON *) cJSON_AddArrayToObject(cJSON *const object, const char *const name);
-
-/* When assigning an integer value, it needs to be propagated to valuedouble too. */
-#define cJSON_SetIntValue(object, number) ((object) ? (object)->valueint = (object)->valuedouble = (number) : (number))
-/* helper for the cJSON_SetNumberValue macro */
-CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number);
-#define cJSON_SetNumberValue(object, number) ((object != NULL) ? cJSON_SetNumberHelper(object, (double)number) : (number))
-/* Change the valuestring of a cJSON_String object, only takes effect when type of object is cJSON_String */
-CJSON_PUBLIC(char *) cJSON_SetValuestring(cJSON *object, const char *valuestring);
-
-/* If the object is not a boolean type this does nothing and returns cJSON_Invalid else it returns the new type*/
-#define cJSON_SetBoolValue(object, boolValue)                                                                           \
-    ((object != NULL && ((object)->type & (cJSON_False | cJSON_True)))                                                  \
-         ? (object)->type = ((object)->type & (~(cJSON_False | cJSON_True))) | ((boolValue) ? cJSON_True : cJSON_False) \
-         : cJSON_Invalid)
-
 /* Macro for iterating over an array or object */
 #define cJSON_ArrayForEach(element, array) \
     for (element = (array != NULL) ? (array)->child : NULL; element != NULL; element = element->next)
-
-/* malloc/free objects using the malloc/free functions that have been set with cJSON_InitHooks */
-CJSON_PUBLIC(void *) cJSON_malloc(size_t size);
-CJSON_PUBLIC(void) cJSON_free(void *object);
 
 #ifdef __cplusplus
 }
