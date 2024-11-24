@@ -394,7 +394,12 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
                 if (NULL == app_key_json) {
                     continue;
                 }
-                char* app_key = loader_cJSON_Print(app_key_json);
+                bool out_of_memory = false;
+                char* app_key = loader_cJSON_Print(app_key_json, &out_of_memory);
+                if (out_of_memory) {
+                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                    goto out;
+                }
                 if (NULL == app_key) {
                     continue;
                 }

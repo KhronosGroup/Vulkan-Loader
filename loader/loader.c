@@ -2514,11 +2514,15 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         result = loader_copy_to_new_str(inst, filename, &props.manifest_file_name);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
-        char *library_path_str = loader_cJSON_Print(library_path);
+        bool out_of_memory = false;
+        char *library_path_str = loader_cJSON_Print(library_path, &out_of_memory);
+        if (out_of_memory) {
+            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
         if (NULL == library_path_str) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Skipping layer due to problem accessing the library_path value in manifest JSON file %s", filename);
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
 
@@ -2830,8 +2834,10 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
     if (item == NULL) {
         goto out;
     }
-    file_vers = loader_cJSON_PrintUnformatted(item);
-    if (NULL == file_vers) {
+
+    bool out_of_memory = false;
+    file_vers = loader_cJSON_PrintUnformatted(item, &out_of_memory);
+    if (out_of_memory) {
         result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
@@ -3571,8 +3577,9 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    file_vers_str = loader_cJSON_Print(item);
-    if (NULL == file_vers_str) {
+    bool out_of_memory = false;
+    file_vers_str = loader_cJSON_Print(item, &out_of_memory);
+    if (out_of_memory) {
         // Only reason the print can fail is if there was an allocation issue
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'file_format_version\' field. Skipping ICD JSON",
@@ -3608,8 +3615,9 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
-    char *library_path = loader_cJSON_Print(item);
-    if (!library_path) {
+
+    char *library_path = loader_cJSON_Print(item, &out_of_memory);
+    if (out_of_memory) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'library_path\' field. Skipping ICD JSON.", file_str);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -3638,8 +3646,8 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
-    version_str = loader_cJSON_Print(item);
-    if (NULL == version_str) {
+    version_str = loader_cJSON_Print(item, &out_of_memory);
+    if (out_of_memory) {
         // Only reason the print can fail is if there was an allocation issue
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'api_version\' field. Skipping ICD JSON.", file_str);
@@ -3671,7 +3679,11 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 
     item = loader_cJSON_GetObjectItem(itemICD, "library_arch");
     if (item != NULL) {
-        library_arch_str = loader_cJSON_Print(item);
+        library_arch_str = loader_cJSON_Print(item, &out_of_memory);
+        if (out_of_memory) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
         if (NULL != library_arch_str) {
             // cJSON includes the quotes by default, so we need to look for those here
             if ((strncmp(library_arch_str, "32", 4) == 0 && sizeof(void *) != 4) ||
@@ -3682,9 +3694,6 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
                 res = VK_ERROR_INCOMPATIBLE_DRIVER;
                 goto out;
             }
-        } else {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
         }
     }
 out:
