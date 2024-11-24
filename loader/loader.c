@@ -312,6 +312,7 @@ VkResult append_str_to_string_list(const struct loader_instance *inst, struct lo
         string_list->list =
             loader_instance_heap_calloc(inst, sizeof(char *) * string_list->allocated_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == string_list->list) {
+            loader_instance_heap_free(inst, str);  // Must clean up in case of failure
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
     } else if (string_list->count + 1 > string_list->allocated_count) {
@@ -319,6 +320,7 @@ VkResult append_str_to_string_list(const struct loader_instance *inst, struct lo
         string_list->list = loader_instance_heap_realloc(inst, string_list->list, sizeof(char *) * string_list->allocated_count,
                                                          sizeof(char *) * new_allocated_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == string_list->list) {
+            loader_instance_heap_free(inst, str);  // Must clean up in case of failure
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
         // Null out the new space
@@ -338,12 +340,7 @@ VkResult copy_str_to_string_list(const struct loader_instance *inst, struct load
     }
     loader_strncpy(new_str, sizeof(char *) * str_len + 1, str, str_len);
     new_str[str_len] = '\0';
-    VkResult res = append_str_to_string_list(inst, string_list, new_str);
-    if (res != VK_SUCCESS) {
-        // Cleanup new_str if the append failed - as append_str_to_string_list takes ownership but not if the function fails
-        loader_instance_heap_free(inst, new_str);
-    }
-    return res;
+    return append_str_to_string_list(inst, string_list, new_str);
 }
 
 void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list) {
