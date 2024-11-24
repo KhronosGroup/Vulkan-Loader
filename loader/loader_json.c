@@ -195,8 +195,12 @@ VkResult loader_parse_json_string_to_existing_str(cJSON *object, const char *key
 }
 
 VkResult loader_parse_json_string(cJSON *object, const char *key, char **out_string) {
+    if (NULL == key) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
     cJSON *item = loader_cJSON_GetObjectItem(object, key);
-    if (NULL == item) {
+    if (NULL == item || NULL == item->valuestring) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -212,7 +216,9 @@ VkResult loader_parse_json_string(cJSON *object, const char *key, char **out_str
 }
 VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key,
                                             struct loader_string_list *string_list) {
-    VkResult res = VK_SUCCESS;
+    if (NULL == key) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
     cJSON *item = loader_cJSON_GetObjectItem(object, key);
     if (NULL == item) {
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -223,7 +229,7 @@ VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, 
         return VK_SUCCESS;
     }
 
-    res = create_string_list(inst, count, string_list);
+    VkResult res = create_string_list(inst, count, string_list);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
         goto out;
     }
