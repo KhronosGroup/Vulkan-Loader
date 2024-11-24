@@ -2397,16 +2397,18 @@ void remove_all_non_valid_override_layers(struct loader_instance *inst, struct l
 VkResult loader_read_layer_json(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list,
                                 cJSON *layer_node, loader_api_version version, bool is_implicit, char *filename) {
     assert(layer_instance_list);
-    char *type = NULL;
-    char *api_version = NULL;
-    char *implementation_version = NULL;
+    char *library_path = NULL;
     VkResult result = VK_SUCCESS;
     struct loader_layer_properties props = {0};
+
+    result = loader_copy_to_new_str(inst, filename, &props.manifest_file_name);
+    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
 
     // Parse name
 
     result = loader_parse_json_string_to_existing_str(layer_node, "name", VK_MAX_EXTENSION_NAME_SIZE, props.info.layerName);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "Layer located at %s didn't find required layer value \"name\" in manifest JSON file, skipping this layer",
@@ -2425,10 +2427,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     }
 
     // Parse type
-
-    result = loader_parse_json_string(layer_node, "type", &type);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
-    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+    char *type = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(layer_node, "type"));
+    if (NULL == type) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "Layer located at %s didn't find required layer value \"type\" in manifest JSON file, skipping this layer",
                    filename);
@@ -2438,7 +2438,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     // Add list entry
     if (!strcmp(type, "DEVICE")) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Device layers are deprecated. Skipping layer %s",
-                   filename);
+                   props.info.layerName);
         result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
@@ -2455,10 +2455,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     }
 
     // Parse api_version
-
-    result = loader_parse_json_string(layer_node, "api_version", &api_version);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
-    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+    char *api_version = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(layer_node, "api_version"));
+    if (NULL == api_version) {
         loader_log(
             inst, VULKAN_LOADER_WARN_BIT, 0,
             "Layer located at %s didn't find required layer value \"api_version\" in manifest JSON file, skipping this layer",
@@ -2479,10 +2477,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     }
 
     // Parse implementation_version
-
-    result = loader_parse_json_string(layer_node, "implementation_version", &implementation_version);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
-    if (VK_ERROR_INITIALIZATION_FAILED == result) {
+    char *implementation_version = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(layer_node, "implementation_version"));
+    if (NULL == implementation_version) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "Layer located at %s didn't find required layer value \"implementation_version\" in manifest JSON file, "
                    "skipping this layer",
@@ -2495,7 +2491,6 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     result =
         loader_parse_json_string_to_existing_str(layer_node, "description", VK_MAX_EXTENSION_NAME_SIZE, props.info.description);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(
             inst, VULKAN_LOADER_WARN_BIT, 0,
@@ -2507,37 +2502,34 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     // Parse library_path
 
     // Library path no longer required unless component_layers is also not defined
-    cJSON *library_path = loader_cJSON_GetObjectItem(layer_node, "library_path");
-
+    result = loader_parse_json_string(layer_node, "library_path", &library_path);
+    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "Skipping layer \"%s\" due to problem accessing the library_path value in the manifest JSON file",
+                   props.info.layerName);
+        result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
     if (NULL != library_path) {
         if (NULL != loader_cJSON_GetObjectItem(layer_node, "component_layers")) {
             loader_log(
                 inst, VULKAN_LOADER_WARN_BIT, 0,
                 "Layer \"%s\" contains meta-layer-specific component_layers, but also defining layer library path.  Both are not "
                 "compatible, so skipping this layer",
-                filename);
+                props.info.layerName);
             result = VK_ERROR_INITIALIZATION_FAILED;
+            loader_instance_heap_free(inst, library_path);
             goto out;
         }
 
         result = loader_copy_to_new_str(inst, filename, &props.manifest_file_name);
-        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-
-        bool out_of_memory = false;
-        char *library_path_str = loader_cJSON_Print(library_path, &out_of_memory);
-        if (out_of_memory) {
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-        if (NULL == library_path_str) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Skipping layer \"%s\" due to problem accessing the library_path value in the manifest JSON file", filename);
-            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            loader_instance_heap_free(inst, library_path);
             goto out;
         }
 
         // This function takes ownership of library_path_str - so we don't need to clean it up
-        result = combine_manifest_directory_and_library_path(inst, library_path_str, filename, &props.lib_name);
+        result = combine_manifest_directory_and_library_path(inst, library_path, filename, &props.lib_name);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
     }
 
@@ -2546,7 +2538,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     if (NULL == library_path) {
         if (!loader_check_version_meets_required(LOADER_VERSION_1_1_0, version)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Layer \"%s\" contains meta-layer-specific component_layers, but using older JSON file version.", filename);
+                       "Layer \"%s\" contains meta-layer-specific component_layers, but using older JSON file version.",
+                       props.info.layerName);
         }
 
         result = loader_parse_json_array_of_strings(inst, layer_node, "component_layers", &(props.component_layer_names));
@@ -2557,7 +2550,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Layer \"%s\" is missing both library_path and component_layers fields.  One or the other MUST be defined.  "
                        "Skipping this layer",
-                       filename);
+                       props.info.layerName);
             goto out;
         }
         // This is now, officially, a meta-layer
@@ -2583,7 +2576,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     }
     if (NULL != props.override_paths.list && !loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "Layer \"%s\" contains meta-layer-specific override paths, but using older JSON file version.", filename);
+                   "Layer \"%s\" contains meta-layer-specific override paths, but using older JSON file version.",
+                   props.info.layerName);
     }
 
     // Parse disable_environment
@@ -2594,7 +2588,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Layer \"%s\" doesn't contain required layer object disable_environment in the manifest JSON file, skipping "
                        "this layer",
-                       filename);
+                       props.info.layerName);
             result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
@@ -2604,7 +2598,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                        "Layer \"%s\" doesn't contain required child value in object disable_environment in the manifest JSON file, "
                        "skipping this layer (Policy #LLP_LAYER_9)",
-                       filename);
+                       props.info.layerName);
             result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
@@ -2673,8 +2667,9 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
             VkExtensionProperties ext_prop = {0};
             result = loader_parse_json_string_to_existing_str(ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE, ext_prop.extensionName);
-            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-            if (result == VK_ERROR_INITIALIZATION_FAILED) continue;
+            if (result == VK_ERROR_INITIALIZATION_FAILED) {
+                continue;
+            }
             char *spec_version = NULL;
             result = loader_parse_json_string(ext_item, "spec_version", &spec_version);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
@@ -2705,7 +2700,9 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
             VkExtensionProperties ext_prop = {0};
             result = loader_parse_json_string_to_existing_str(ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE, ext_prop.extensionName);
-            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
+            if (result == VK_ERROR_INITIALIZATION_FAILED) {
+                continue;
+            }
 
             char *spec_version = NULL;
             result = loader_parse_json_string(ext_item, "spec_version", &spec_version);
@@ -2782,20 +2779,16 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
     }
 
-    char *library_arch = NULL;
-    result = loader_parse_json_string(layer_node, "library_arch", &library_arch);
-    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-    if (library_arch != NULL) {
+    char *library_arch = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(layer_node, "library_arch"));
+    if (NULL != library_arch) {
         if ((strncmp(library_arch, "32", 2) == 0 && sizeof(void *) != 4) ||
             (strncmp(library_arch, "64", 2) == 0 && sizeof(void *) != 8)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "The library architecture in layer %s doesn't match the current running architecture, skipping this layer",
                        filename);
-            loader_instance_heap_free(inst, library_arch);
             result = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
-        loader_instance_heap_free(inst, library_arch);
     }
 
     result = VK_SUCCESS;
@@ -2809,9 +2802,6 @@ out:
     if (VK_SUCCESS != result) {
         loader_free_layer_properties(inst, &props);
     }
-    loader_instance_heap_free(inst, type);
-    loader_instance_heap_free(inst, api_version);
-    loader_instance_heap_free(inst, implementation_version);
     return result;
 }
 
@@ -2841,22 +2831,12 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
     //   - If more than one "layer" object are used, then the "layers" array is
     //     required
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
-    char *file_vers = NULL;
     // Make sure sure the top level json value is an object
     if (!json || json->type != cJSON_Object) {
         goto out;
     }
-    cJSON *item = loader_cJSON_GetObjectItem(json, "file_format_version");
-    if (item == NULL) {
-        goto out;
-    }
-
-    bool out_of_memory = false;
-    file_vers = loader_cJSON_PrintUnformatted(item, &out_of_memory);
-    if (out_of_memory) {
-        result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    } else if (NULL == file_vers) {
+    char *file_vers = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(json, "file_format_version"));
+    if (NULL == file_vers) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                    "loader_add_layer_properties: Manifest %s missing required field file_format_version", filename);
         goto out;
@@ -2929,7 +2909,6 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
     }
 
 out:
-    loader_instance_heap_free(inst, file_vers);
 
     return result;
 }
@@ -3571,26 +3550,23 @@ struct ICDManifestInfo {
 VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *file_str, struct ICDManifestInfo *icd,
                                    bool *skipped_portability_drivers) {
     VkResult res = VK_SUCCESS;
-    cJSON *json = NULL;
-    char *file_vers_str = NULL;
-    char *library_arch_str = NULL;
-    char *version_str = NULL;
+    cJSON *icd_manifest_json = NULL;
 
     if (file_str == NULL) {
         goto out;
     }
 
-    res = loader_get_json(inst, file_str, &json);
+    res = loader_get_json(inst, file_str, &icd_manifest_json);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         goto out;
     }
-    if (res != VK_SUCCESS || NULL == json) {
+    if (res != VK_SUCCESS || NULL == icd_manifest_json) {
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
-    cJSON *item = loader_cJSON_GetObjectItem(json, "file_format_version");
-    if (item == NULL) {
+    cJSON *file_format_version_json = loader_cJSON_GetObjectItem(icd_manifest_json, "file_format_version");
+    if (file_format_version_json == NULL) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: ICD JSON %s does not have a \'file_format_version\' field. Skipping ICD JSON.",
                    file_str);
@@ -3598,14 +3574,12 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    bool out_of_memory = false;
-    file_vers_str = loader_cJSON_Print(item, &out_of_memory);
-    if (out_of_memory) {
+    char *file_vers_str = loader_cJSON_GetStringValue(file_format_version_json);
+    if (NULL == file_vers_str) {
         // Only reason the print can fail is if there was an allocation issue
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'file_format_version\' field. Skipping ICD JSON",
                    file_str);
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
     loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Found ICD manifest file %s, version %s", file_str, file_vers_str);
@@ -3620,7 +3594,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
                    json_file_version.major, json_file_version.minor, json_file_version.patch);
     }
 
-    cJSON *itemICD = loader_cJSON_GetObjectItem(json, "ICD");
+    cJSON *itemICD = loader_cJSON_GetObjectItem(icd_manifest_json, "ICD");
     if (itemICD == NULL) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Can not find \'ICD\' object in ICD JSON file %s. Skipping ICD JSON", file_str);
@@ -3628,16 +3602,16 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    item = loader_cJSON_GetObjectItem(itemICD, "library_path");
-    if (item == NULL) {
+    cJSON *library_path_json = loader_cJSON_GetObjectItem(itemICD, "library_path");
+    if (library_path_json == NULL) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed to find \'library_path\' object in ICD JSON file %s. Skipping ICD JSON.",
                    file_str);
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
-
-    char *library_path = loader_cJSON_Print(item, &out_of_memory);
+    bool out_of_memory = false;
+    char *library_path = loader_cJSON_Print(library_path_json, &out_of_memory);
     if (out_of_memory) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'library_path\' field. Skipping ICD JSON.", file_str);
@@ -3645,7 +3619,7 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    if (strlen(library_path) == 0) {
+    if (!library_path || strlen(library_path) == 0) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: ICD JSON %s \'library_path\' field is empty. Skipping ICD JSON.", file_str);
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
@@ -3660,20 +3634,19 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    item = loader_cJSON_GetObjectItem(itemICD, "api_version");
-    if (item == NULL) {
+    cJSON *api_version_json = loader_cJSON_GetObjectItem(itemICD, "api_version");
+    if (api_version_json == NULL) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: ICD JSON %s does not have an \'api_version\' field. Skipping ICD JSON.", file_str);
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
-    version_str = loader_cJSON_Print(item, &out_of_memory);
-    if (out_of_memory) {
+    char *version_str = loader_cJSON_GetStringValue(api_version_json);
+    if (NULL == version_str) {
         // Only reason the print can fail is if there was an allocation issue
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'api_version\' field. Skipping ICD JSON.", file_str);
 
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
     icd->version = loader_parse_version_string(version_str);
@@ -3689,8 +3662,8 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 
     // Skip over ICD's which contain a true "is_portability_driver" value whenever the application doesn't enable
     // portability enumeration.
-    item = loader_cJSON_GetObjectItem(itemICD, "is_portability_driver");
-    if (item != NULL && item->type == cJSON_True && inst && !inst->portability_enumeration_enabled) {
+    cJSON *is_portability_driver_json = loader_cJSON_GetObjectItem(itemICD, "is_portability_driver");
+    if (loader_cJSON_IsTrue(is_portability_driver_json) && inst && !inst->portability_enumeration_enabled) {
         if (skipped_portability_drivers) {
             *skipped_portability_drivers = true;
         }
@@ -3698,30 +3671,20 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    item = loader_cJSON_GetObjectItem(itemICD, "library_arch");
-    if (item != NULL) {
-        library_arch_str = loader_cJSON_Print(item, &out_of_memory);
-        if (out_of_memory) {
-            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+    char *library_arch_str = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(itemICD, "library_arch"));
+    if (library_arch_str != NULL) {
+        // cJSON includes the quotes by default, so we need to look for those here
+        if ((strncmp(library_arch_str, "32", 4) == 0 && sizeof(void *) != 4) ||
+            (strncmp(library_arch_str, "64", 4) == 0 && sizeof(void *) != 8)) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "loader_parse_icd_manifest: Driver library architecture doesn't match the current running "
+                       "architecture, skipping this driver");
+            res = VK_ERROR_INCOMPATIBLE_DRIVER;
             goto out;
-        }
-        if (NULL != library_arch_str) {
-            // cJSON includes the quotes by default, so we need to look for those here
-            if ((strncmp(library_arch_str, "32", 4) == 0 && sizeof(void *) != 4) ||
-                (strncmp(library_arch_str, "64", 4) == 0 && sizeof(void *) != 8)) {
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                           "loader_parse_icd_manifest: Driver library architecture doesn't match the current running "
-                           "architecture, skipping this driver");
-                res = VK_ERROR_INCOMPATIBLE_DRIVER;
-                goto out;
-            }
         }
     }
 out:
-    loader_cJSON_Delete(json);
-    loader_instance_heap_free(inst, file_vers_str);
-    loader_instance_heap_free(inst, version_str);
-    loader_instance_heap_free(inst, library_arch_str);
+    loader_cJSON_Delete(icd_manifest_json);
     return res;
 }
 
