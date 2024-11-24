@@ -384,39 +384,31 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
                        "Loader settings file from %s has a settings element that is not an object", settings_file_path);
             break;
         }
+
         cJSON* app_keys = loader_cJSON_GetObjectItem(settings_object_iter, "app_keys");
         if (NULL == app_keys) {
+            // use the first 'global' settings that has no app keys as the global one
             if (global_settings == NULL) {
-                global_settings = settings_object_iter;  // use the first 'global' settings that has no app keys as the global one
+                global_settings = settings_object_iter;
             }
             continue;
-        } else if (valid_exe_path) {
-            if (loader_cJSON_GetArraySize(app_keys) == 0) {
-                continue;  // empty array
+        }
+        // No sense iterating if we couldn't get the executable path
+        if (!valid_exe_path) {
+            break;
+        }
+        cJSON* app_key = NULL;
+        cJSON_ArrayForEach(app_keys, settings_object_iter) {
+            char* app_key_str = loader_cJSON_GetStringValue(app_key);
+            if (strcmp(current_process_path, app_key_str) == 0) {
+                settings_to_use = settings_object_iter;
+                break;
             }
-            cJSON* app_key_json = NULL;
-            cJSON_ArrayForEach(app_key_json, app_keys) {
-                if (app_key_json->type != cJSON_String) {
-                    continue;
-                }
-                bool out_of_memory = false;
-                char* app_key = loader_cJSON_Print(app_key_json, &out_of_memory);
-                if (out_of_memory) {
-                    res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                    goto out;
-                }
-                if (NULL == app_key) {
-                    continue;
-                }
+        }
 
-                if (strcmp(current_process_path, app_key) == 0) {
-                    settings_to_use = settings_object_iter;
-                }
-                loader_instance_heap_free(inst, (void*)app_key);
-                if (settings_to_use != NULL) {
-                    break;  // break only after freeing the app key
-                }
-            }
+        // Break if we have found a matching current_process_path
+        if (NULL != settings_to_use) {
+            break;
         }
     }
 
@@ -434,7 +426,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     }
 
     // optional
-    cJSON* stderr_filter = loader_cJSON_GetObjectItem(single_settings_object, "stderr_log");
+    cJSON* stderr_filter = loader_cJSON_GetObjectItem(settings_to_use, "stderr_log");
     if (NULL != stderr_filter) {
         struct loader_string_list stderr_log = {0};
         res = loader_parse_json_array_of_strings(inst, settings_to_use, "stderr_log", &stderr_log);
@@ -629,7 +621,8 @@ VkResult get_settings_layers(const struct loader_instance* inst, struct loader_l
 
         struct loader_layer_properties* newly_added_layer = &settings_layers->list[settings_layers->count - 1];
         newly_added_layer->settings_control_value = layer_config->control;
-        // If the manifest file found has a name that differs from the one in the settings, remove this layer from consideration
+        // If the manifest file found has a name that differs from the one in the settings, remove this layer from
+        // consideration
         bool should_remove = false;
         if (strncmp(newly_added_layer->info.layerName, layer_config->name, VK_MAX_EXTENSION_NAME_SIZE) != 0) {
             should_remove = true;
@@ -819,7 +812,8 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         // First look for the old-fashion layers forced on with VK_INSTANCE_LAYERS
         if (!enable_layer && vk_instance_layers_env && vk_instance_layers_env_copy && vk_instance_layers_env_len > 0) {
             // Copy the env-var on each iteration, so that loader_get_next_path can correctly find the separators
-            // This solution only needs one stack allocation ahead of time rather than an allocation per layer in the env-var
+            // This solution only needs one stack allocation ahead of time rather than an allocation per layer in the
+            // env-var
             loader_strncpy(vk_instance_layers_env_copy, vk_instance_layers_env_len, vk_instance_layers_env,
                            vk_instance_layers_env_len);
 
