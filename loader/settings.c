@@ -109,17 +109,15 @@ uint32_t parse_log_filters_from_strings(struct loader_string_list* log_filters) 
     return filters;
 }
 
-bool parse_json_enable_disable_option(const struct loader_instance* inst, cJSON* object, const char* key) {
-    char* str = NULL;
-    VkResult res = loader_parse_json_string(object, key, &str);
-    if (res != VK_SUCCESS || NULL == str) {
+bool parse_json_enable_disable_option(cJSON* object) {
+    char* str = loader_cJSON_GetStringValue(object);
+    if (NULL == str) {
         return false;
     }
     bool enable = false;
     if (strcmp(str, "enabled") == 0) {
         enable = true;
     }
-    loader_instance_heap_free(inst, str);
     return enable;
 }
 
@@ -398,9 +396,9 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
             break;
         }
         cJSON* app_key = NULL;
-        cJSON_ArrayForEach(app_keys, settings_object_iter) {
+        cJSON_ArrayForEach(app_key, app_keys) {
             char* app_key_str = loader_cJSON_GetStringValue(app_key);
-            if (strcmp(current_process_path, app_key_str) == 0) {
+            if (app_key_str && strcmp(current_process_path, app_key_str) == 0) {
                 settings_to_use = settings_object_iter;
                 break;
             }
