@@ -86,6 +86,7 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
 #define CJSON_VERSION_PATCH 18
 
 #include <stddef.h>
+#include <stdbool.h>
 
 /* cJSON Types: */
 #define cJSON_Invalid (0)
@@ -100,6 +101,10 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
 
 #define cJSON_IsReference 256
 #define cJSON_StringIsConst 512
+
+/* loader type declarations for allocation hooks */
+typedef struct VkAllocationCallbacks VkAllocationCallbacks;
+struct loader_instance;
 
 /* The cJSON structure: */
 typedef struct cJSON {
@@ -121,14 +126,9 @@ typedef struct cJSON {
 
     /* The item's name string, if this item is the child of, or is in the list of subitems of an object. */
     char *string;
+    /* pointer to the allocation callbacks to use */
+    const VkAllocationCallbacks *pAllocator;
 } cJSON;
-
-typedef struct cJSON_Hooks {
-    /* malloc/free are CDECL on Windows regardless of the default calling convention of the compiler, so ensure the hooks allow
-     * passing those functions directly. */
-    void *(CJSON_CDECL *malloc_fn)(size_t sz);
-    void(CJSON_CDECL *free_fn)(void *ptr);
-} cJSON_Hooks;
 
 typedef int cJSON_bool;
 
@@ -144,63 +144,68 @@ typedef int cJSON_bool;
 #define CJSON_CIRCULAR_LIMIT 10000
 #endif
 
-/* Memory Management: the caller is always responsible to free instthe results from all variants of cJSON_Parse (with cJSON_Delete)
- * and cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or cJSON_free as appropriate). The exception is cJSON_PrintPreallocated,
- * where the caller has full responsibility of the buffer. */
+/* Memory Management: the caller is always responsible to free instthe results from all variants of loader_cJSON_Parse (with
+ * loader_cJSON_Delete) and loader_loader_cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or cJSON_free as appropriate). The
+ * exception is cJSON_PrintPreallocated, where the caller has full responsibility of the buffer. */
 /* Supply a block of JSON, and this returns a cJSON object you can interrogate. */
-CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value);
-CJSON_PUBLIC(cJSON *) cJSON_ParseWithLength(const char *value, size_t buffer_length);
+CJSON_PUBLIC(cJSON *) loader_cJSON_Parse(const VkAllocationCallbacks *pAllocator, const char *value, bool *out_of_memory);
+CJSON_PUBLIC(cJSON *)
+loader_cJSON_ParseWithLength(const VkAllocationCallbacks *pAllocator, const char *value, size_t buffer_length, bool *out_of_memory);
 /* ParseWithOpts allows you to require (and check) that the JSON is null terminated, and to retrieve the pointer to the final byte
  * parsed. */
 /* If you supply a ptr in return_parse_end and parsing fails, then return_parse_end will contain a pointer to the error so will
  * match cJSON_GetErrorPtr(). */
-CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated);
 CJSON_PUBLIC(cJSON *)
-cJSON_ParseWithLengthOpts(const char *value, size_t buffer_length, const char **return_parse_end,
-                          cJSON_bool require_null_terminated);
+loader_cJSON_ParseWithOpts(const VkAllocationCallbacks *pAllocator, const char *value, const char **return_parse_end,
+                           cJSON_bool require_null_terminated, bool *out_of_memory);
+CJSON_PUBLIC(cJSON *)
+loader_cJSON_ParseWithLengthOpts(const VkAllocationCallbacks *pAllocator, const char *value, size_t buffer_length,
+                                 const char **return_parse_end, cJSON_bool require_null_terminated, bool *out_of_memory);
 
 /* Render a cJSON entity to text for transfer/storage. */
-CJSON_PUBLIC(char *) cJSON_Print(const cJSON *item);
+CJSON_PUBLIC(char *) loader_cJSON_Print(const cJSON *item, bool *out_of_memory);
 /* Render a cJSON entity to text for transfer/storage without any formatting. */
-CJSON_PUBLIC(char *) cJSON_PrintUnformatted(const cJSON *item);
+CJSON_PUBLIC(char *) loader_cJSON_PrintUnformatted(const cJSON *item, bool *out_of_memory);
 /* Render a cJSON entity to text using a buffered strategy. prebuffer is a guess at the final size. guessing well reduces
  * reallocation. fmt=0 gives unformatted, =1 gives formatted */
-CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt);
+CJSON_PUBLIC(char *)
+loader_cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt, bool *out_of_memory);
 /* Render a cJSON entity to text using a buffer already allocated in memory with given length. Returns 1 on success and 0 on
  * failure. */
 /* NOTE: cJSON is not always 100% accurate in estimating how much memory it will use, so to be safe allocate 5 bytes more than you
  * actually need */
-CJSON_PUBLIC(cJSON_bool) cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format);
+CJSON_PUBLIC(cJSON_bool)
+loader_cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format);
 /* Delete a cJSON entity and all subentities. */
-CJSON_PUBLIC(void) cJSON_Delete(cJSON *item);
+CJSON_PUBLIC(void) loader_cJSON_Delete(cJSON *item);
 
 /* Returns the number of items in an array (or object). */
-CJSON_PUBLIC(int) cJSON_GetArraySize(const cJSON *array);
+CJSON_PUBLIC(int) loader_cJSON_GetArraySize(const cJSON *array);
 /* Retrieve item number "index" from array "array". Returns NULL if unsuccessful. */
-CJSON_PUBLIC(cJSON *) cJSON_GetArrayItem(const cJSON *array, int index);
+CJSON_PUBLIC(cJSON *) loader_cJSON_GetArrayItem(const cJSON *array, int index);
 /* Get item "string" from object. Case insensitive. */
-CJSON_PUBLIC(cJSON *) cJSON_GetObjectItem(const cJSON *const object, const char *const string);
-CJSON_PUBLIC(cJSON *) cJSON_GetObjectItemCaseSensitive(const cJSON *const object, const char *const string);
-CJSON_PUBLIC(cJSON_bool) cJSON_HasObjectItem(const cJSON *object, const char *string);
+CJSON_PUBLIC(cJSON *) loader_cJSON_GetObjectItem(const cJSON *const object, const char *const string);
+CJSON_PUBLIC(cJSON *) loader_cJSON_GetObjectItemCaseSensitive(const cJSON *const object, const char *const string);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_HasObjectItem(const cJSON *object, const char *string);
 /* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make
- * sense of it. Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
+ * sense of it. Defined when loader_cJSON_Parse() returns 0. 0 when loader_cJSON_Parse() succeeds. */
 CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void);
 
 /* Check item type and return its value */
-CJSON_PUBLIC(char *) cJSON_GetStringValue(const cJSON *const item);
-CJSON_PUBLIC(double) cJSON_GetNumberValue(const cJSON *const item);
+CJSON_PUBLIC(char *) loader_cJSON_GetStringValue(const cJSON *const item);
+CJSON_PUBLIC(double) loader_cJSON_GetNumberValue(const cJSON *const item);
 
 /* These functions check the type of an item */
-CJSON_PUBLIC(cJSON_bool) cJSON_IsInvalid(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsFalse(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsTrue(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsBool(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsNull(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsNumber(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsString(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON *const item);
-CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsInvalid(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsFalse(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsTrue(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsBool(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsNull(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsNumber(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsString(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsArray(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsObject(const cJSON *const item);
+CJSON_PUBLIC(cJSON_bool) loader_cJSON_IsRaw(const cJSON *const item);
 
 /* Macro for iterating over an array or object */
 #define cJSON_ArrayForEach(element, array) \

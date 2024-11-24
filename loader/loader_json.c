@@ -44,7 +44,8 @@
 #endif
 
 #ifdef _WIN32
-static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
+static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, size_t *out_len,
+                                        char **out_buff) {
     HANDLE file_handle = INVALID_HANDLE_VALUE;
     DWORD len = 0, read_len = 0;
     VkResult res = VK_SUCCESS;
@@ -81,6 +82,7 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
+    *out_len = len + 1;
     (*out_buff)[len] = '\0';
 
 out:
@@ -90,7 +92,8 @@ out:
     return res;
 }
 #elif COMMON_UNIX_PLATFORMS
-static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
+static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, size_t *out_len,
+                                        char **out_buff) {
     FILE *file = NULL;
     struct stat stats = {0};
     VkResult res = VK_SUCCESS;
@@ -117,6 +120,7 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
+    *out_len = stats.st_size + 1;
     (*out_buff)[stats.st_size] = '\0';
 
 out:
@@ -127,7 +131,7 @@ out:
 }
 #else
 #warning fopen not available on this platform
-VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, char **out_buff) {
+VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, size_t *out_len, char **out_buff) {
     return VK_ERROR_INITIALIZATION_FAILED;
 }
 #endif
@@ -138,13 +142,15 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
 
     assert(json != NULL);
 
+    size_t json_len = 0;
     *json = NULL;
-    res = loader_read_entire_file(inst, filename, &json_buf);
-    if (VK_SUCCESS != res) goto out;
-
-    // Parse text from file
+    res = loader_read_entire_file(inst, filename, &json_len, &json_buf);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
     bool out_of_memory = false;
-    *json = cJSON_Parse(inst ? &inst->alloc_callbacks : NULL, json_buf, &out_of_memory);
+    // Parse text from file
+    *json = loader_cJSON_ParseWithLength(inst ? &inst->alloc_callbacks : NULL, json_buf, json_len, &out_of_memory);
     if (out_of_memory) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Out of Memory error occurred while parsing JSON file %s.",
                    filename);
@@ -171,9 +177,9 @@ VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *
     if (NULL == item) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-
-    char *str = loader_cJSON_Print(item);
-    if (str == NULL) {
+    bool out_of_memory = false;
+    char *str = loader_cJSON_Print(item, &out_of_memory);
+    if (out_of_memory) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     if (NULL != out_string) {
@@ -192,8 +198,9 @@ VkResult loader_parse_json_string(cJSON *object, const char *key, char **out_str
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    char *str = loader_cJSON_Print(item);
-    if (str == NULL) {
+    bool out_of_memory = false;
+    char *str = loader_cJSON_Print(item, &out_of_memory);
+    if (out_of_memory || NULL == str) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
     if (NULL != out_string) {
@@ -223,8 +230,9 @@ VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, 
         if (element == NULL) {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
-        char *out_data = loader_cJSON_Print(element);
-        if (out_data == NULL) {
+        bool out_of_memory = false;
+        char *out_data = loader_cJSON_Print(element, &out_of_memory);
+        if (out_of_memory) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
