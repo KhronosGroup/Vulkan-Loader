@@ -43,8 +43,7 @@ VkResult loader_get_json(const struct loader_instance *inst, const char *filenam
 // Given a cJSON object, find the string associated with the key and puts an pre-allocated string into out_string.
 // Length is given by out_str_len, and this function truncates the string with a null terminator if it the provided space isn't
 // large enough.
-VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *inst, cJSON *object, const char *key,
-                                                  size_t out_str_len, char *out_string);
+VkResult loader_parse_json_string_to_existing_str(cJSON *object, const char *key, size_t out_str_len, char *out_string);
 
 // Given a cJSON object, find the string associated with the key and puts an allocated string into out_string.
 // It is the callers responsibility to free out_string.
