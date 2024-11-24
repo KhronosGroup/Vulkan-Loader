@@ -2408,7 +2408,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     // Parse name
 
-    result = loader_parse_json_string_to_existing_str(inst, layer_node, "name", VK_MAX_EXTENSION_NAME_SIZE, props.info.layerName);
+    result = loader_parse_json_string_to_existing_str(layer_node, "name", VK_MAX_EXTENSION_NAME_SIZE, props.info.layerName);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
@@ -2496,8 +2496,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
 
     // Parse description
 
-    result = loader_parse_json_string_to_existing_str(inst, layer_node, "description", VK_MAX_EXTENSION_NAME_SIZE,
-                                                      props.info.description);
+    result =
+        loader_parse_json_string_to_existing_str(layer_node, "description", VK_MAX_EXTENSION_NAME_SIZE, props.info.description);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == result) goto out;
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(
@@ -2675,8 +2675,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             }
 
             VkExtensionProperties ext_prop = {0};
-            result = loader_parse_json_string_to_existing_str(inst, ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE,
-                                                              ext_prop.extensionName);
+            result = loader_parse_json_string_to_existing_str(ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE, ext_prop.extensionName);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (result == VK_ERROR_INITIALIZATION_FAILED) continue;
             char *spec_version = NULL;
@@ -2708,8 +2707,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             }
 
             VkExtensionProperties ext_prop = {0};
-            result = loader_parse_json_string_to_existing_str(inst, ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE,
-                                                              ext_prop.extensionName);
+            result = loader_parse_json_string_to_existing_str(ext_item, "name", VK_MAX_EXTENSION_NAME_SIZE, ext_prop.extensionName);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
             char *spec_version = NULL;

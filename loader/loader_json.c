@@ -171,24 +171,26 @@ out:
     return res;
 }
 
-VkResult loader_parse_json_string_to_existing_str(const struct loader_instance *inst, cJSON *object, const char *key,
-                                                  size_t out_str_len, char *out_string) {
+VkResult loader_parse_json_string_to_existing_str(cJSON *object, const char *key, size_t out_str_len, char *out_string) {
+    if (NULL == key) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
     cJSON *item = loader_cJSON_GetObjectItem(object, key);
     if (NULL == item) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+
+    if (item->type != cJSON_String || item->valuestring == NULL) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
     bool out_of_memory = false;
-    char *str = loader_cJSON_Print(item, &out_of_memory);
+    bool success = loader_cJSON_PrintPreallocated(item, out_string, (int)out_str_len, cJSON_False);
     if (out_of_memory) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    if (NULL != out_string) {
-        loader_strncpy(out_string, out_str_len, str, out_str_len);
-        if (out_str_len > 0) {
-            out_string[out_str_len - 1] = '\0';
-        }
+    if (!success) {
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
-    loader_instance_heap_free(inst, str);
     return VK_SUCCESS;
 }
 
