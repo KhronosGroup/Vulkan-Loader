@@ -539,9 +539,10 @@ void loader_remove_layer_in_list(const struct loader_instance *inst, struct load
 
     // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
     // overlapping the source and destination addresses.
-    memmove(&layer_list->list[layer_to_remove], &layer_list->list[layer_to_remove + 1],
-            sizeof(struct loader_layer_properties) * (layer_list->count - 1 - layer_to_remove));
-
+    if (layer_to_remove + 1 <= layer_list->count) {
+        memmove(&layer_list->list[layer_to_remove], &layer_list->list[layer_to_remove + 1],
+                sizeof(struct loader_layer_properties) * (layer_list->count - 1 - layer_to_remove));
+    }
     // Decrement the count (because we now have one less) and decrement the loop index since we need to
     // re-check this index.
     layer_list->count--;
@@ -2522,12 +2523,6 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             goto out;
         }
 
-        result = loader_copy_to_new_str(inst, filename, &props.manifest_file_name);
-        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-            loader_instance_heap_free(inst, library_path);
-            goto out;
-        }
-
         // This function takes ownership of library_path_str - so we don't need to clean it up
         result = combine_manifest_directory_and_library_path(inst, library_path, filename, &props.lib_name);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
@@ -4002,7 +3997,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
         goto out;
     }
 
-    // Remove layers from settings file that are off, are implicit, or are implicit layers that aren't active
+    // Remove layers from settings file that are off, are explicit, or are implicit layers that aren't active
     for (uint32_t i = 0; i < settings_layers.count; ++i) {
         if (settings_layers.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_OFF ||
             settings_layers.list[i].settings_control_value == LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION ||
