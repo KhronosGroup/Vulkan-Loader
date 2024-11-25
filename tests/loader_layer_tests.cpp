@@ -1149,7 +1149,7 @@ TEST(ImplicitLayers, DuplicateLayersInVK_ADD_IMPLICIT_LAYER_PATH) {
     auto& layer1 = env.get_test_layer(0);
     layer1.set_description("actually_layer_1");
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
-    env.add_env_var_vk_implicit_layer_paths.add_to_list(narrow(env.get_folder(ManifestLocation::override_layer).location()));
+    env.add_env_var_vk_implicit_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location());
 
     env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)
@@ -2460,7 +2460,7 @@ TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
     auto& layer1 = env.get_test_layer(0);
     layer1.set_description("actually_layer_1");
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
-    env.env_var_vk_layer_paths.add_to_list(narrow(env.get_folder(ManifestLocation::override_layer).location()));
+    env.env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location());
 
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)
@@ -2534,7 +2534,7 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
     auto& layer1 = env.get_test_layer(0);
     layer1.set_description("actually_layer_1");
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
-    env.add_env_var_vk_layer_paths.add_to_list(narrow(env.get_folder(ManifestLocation::override_layer).location()));
+    env.add_env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location());
 
     env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(same_layer_name_1)

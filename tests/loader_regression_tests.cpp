@@ -3882,7 +3882,7 @@ TEST(DuplicateRegistryEntries, Drivers) {
 TEST(LibraryLoading, SystemLocations) {
     FrameworkEnvironment env{};
     EnvVarWrapper ld_library_path("LD_LIBRARY_PATH", env.get_folder(ManifestLocation::driver).location().string());
-    ld_library_path.add_to_list(narrow(env.get_folder(ManifestLocation::explicit_layer).location()));
+    ld_library_path.add_to_list(env.get_folder(ManifestLocation::explicit_layer).location());
 
     auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_library_path_type(LibraryPathType::default_search_paths))
                        .add_physical_device({});
