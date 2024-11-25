@@ -3612,12 +3612,11 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'library_path\' field. Skipping ICD JSON.", file_str);
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
-    }
-
-    if (!library_path || strlen(library_path) == 0) {
+    } else if (!library_path || strlen(library_path) == 0) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: ICD JSON %s \'library_path\' field is empty. Skipping ICD JSON.", file_str);
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
+        loader_instance_heap_free(inst, library_path);
         goto out;
     }
 
