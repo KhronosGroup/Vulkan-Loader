@@ -117,7 +117,7 @@ void print_vector_of_strings(JsonWriter& writer, const char* object_name, std::v
     if (strings.size() == 0) return;
     writer.StartKeyedArray(object_name);
     for (auto const& str : strings) {
-        writer.AddString(escape_backslashes_for_json(str));
+        writer.AddString(std::filesystem::path(str).native());
     }
     writer.EndArray();
 }
@@ -125,7 +125,7 @@ void print_vector_of_strings(JsonWriter& writer, const char* object_name, std::v
     if (paths.size() == 0) return;
     writer.StartKeyedArray(object_name);
     for (auto const& path : paths) {
-        writer.AddString(escape_backslashes_for_json(path));
+        writer.AddString(path.native());
     }
     writer.EndArray();
 }
@@ -137,7 +137,7 @@ std::string ManifestICD::get_manifest_str() const {
     writer.StartObject();
     writer.AddKeyedString("file_format_version", file_format_version.get_version_str());
     writer.StartKeyedObject("ICD");
-    writer.AddKeyedString("library_path", escape_backslashes_for_json(lib_path));
+    writer.AddKeyedString("library_path", lib_path.native());
     writer.AddKeyedString("api_version", version_to_string(api_version));
     writer.AddKeyedBool("is_portability_driver", is_portability_driver);
     if (!library_arch.empty()) writer.AddKeyedString("library_arch", library_arch);
@@ -159,7 +159,7 @@ void ManifestLayer::LayerDescription::get_manifest_str(JsonWriter& writer) const
     writer.AddKeyedString("name", name);
     writer.AddKeyedString("type", get_type_str(type));
     if (!lib_path.empty()) {
-        writer.AddKeyedString("library_path", escape_backslashes_for_json(lib_path));
+        writer.AddKeyedString("library_path", lib_path.native());
     }
     writer.AddKeyedString("api_version", version_to_string(api_version));
     writer.AddKeyedString("implementation_version", std::to_string(implementation_version));
@@ -217,20 +217,6 @@ std::string ManifestLayer::get_manifest_str() const {
     return writer.output;
 }
 
-// Json doesn't allow `\` in strings, it must be escaped. Thus we have to convert '\\' to '\\\\' in strings
-std::string escape_backslashes_for_json(std::string const& in_path) {
-    std::string out;
-    for (auto& c : in_path) {
-        if (c == '\\')
-            out += "\\\\";
-        else
-            out += c;
-    }
-    return out;
-}
-std::string escape_backslashes_for_json(std::filesystem::path const& in_path) {
-    return escape_backslashes_for_json(narrow(in_path.native()));
-}
 namespace fs {
 // internal implementation helper for per-platform creating & destroying folders
 int create_folder(std::filesystem::path const& path) {

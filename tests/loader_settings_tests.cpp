@@ -243,7 +243,7 @@ TEST(SettingsFile, SupportsMultipleSettingsSimultaneously) {
     }
     env.debug_log.clear();
     // Set one set to contain the current executable path
-    env.loader_settings.app_specific_settings.at(0).add_app_key(escape_backslashes_for_json(test_platform_executable_path()));
+    env.loader_settings.app_specific_settings.at(0).add_app_key(test_platform_executable_path());
     env.update_loader_settings(env.loader_settings);
     {
         auto layer_props = env.GetLayerProperties(1);

@@ -98,6 +98,19 @@
 #define FRAMEWORK_EXPORT
 #endif
 
+// Define it here so that json_writer.h has access to these functions
+#if defined(WIN32)
+// Convert an UTF-16 wstring to an UTF-8 string
+std::string narrow(const std::wstring& utf16);
+// Convert an UTF-8 string to an UTF-16 wstring
+std::wstring widen(const std::string& utf8);
+#else
+// Do nothing passthrough for the sake of Windows & UTF-16
+std::string narrow(const std::string& utf16);
+// Do nothing passthrough for the sake of Windows & UTF-16
+std::string widen(const std::string& utf8);
+#endif
+
 #include "json_writer.h"
 
 // get_env_var() - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
@@ -145,6 +158,15 @@ struct EnvVarWrapper {
         cur_value += list_item;
         set_env_var();
     }
+#if defined(WIN32)
+    void add_to_list(std::wstring const& list_item) {
+        if (!cur_value.empty()) {
+            cur_value += OS_ENV_VAR_LIST_SEPARATOR;
+        }
+        cur_value += narrow(list_item);
+        set_env_var();
+    }
+#endif
     void remove_value() const { remove_env_var(); }
     const char* get() const { return name.c_str(); }
     const char* value() const { return cur_value.c_str(); }
@@ -176,8 +198,6 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
 struct ManifestICD;    // forward declaration for FolderManager::write
 struct ManifestLayer;  // forward declaration for FolderManager::write
 
-std::string escape_backslashes_for_json(std::string const& in_path);
-std::string escape_backslashes_for_json(std::filesystem::path const& in_path);
 namespace fs {
 
 int create_folder(std::filesystem::path const& path);
@@ -220,18 +240,6 @@ class FolderManager {
 // dst - char array to write to
 // size_dst - number of characters in the dst array
 inline void copy_string_to_char_array(std::string const& src, char* dst, size_t size_dst) { dst[src.copy(dst, size_dst - 1)] = 0; }
-
-#if defined(WIN32)
-// Convert an UTF-16 wstring to an UTF-8 string
-std::string narrow(const std::wstring& utf16);
-// Convert an UTF-8 string to an UTF-16 wstring
-std::wstring widen(const std::string& utf8);
-#else
-// Do nothing passthrough for the sake of Windows & UTF-16
-std::string narrow(const std::string& utf16);
-// Do nothing passthrough for the sake of Windows & UTF-16
-std::string widen(const std::string& utf8);
-#endif
 
 #if defined(WIN32)
 typedef HMODULE loader_platform_dl_handle;
@@ -993,7 +1001,7 @@ inline std::string test_platform_executable_path() {
     if (ret > buffer.size()) return NULL;
     buffer.resize(ret);
     buffer[ret] = '\0';
-    return buffer;
+    return narrow(std::filesystem::path(buffer).native());
 }
 
 #endif
