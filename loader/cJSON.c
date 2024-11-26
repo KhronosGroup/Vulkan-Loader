@@ -742,8 +742,11 @@ static cJSON_bool print_string_ptr(const unsigned char *const input, printbuffer
             /* normal character, copy */
             *output_pointer = *input_pointer;
         } else {
+            // Loader specific modification - don't add a backslash because that will 'double up' any existing back slashes.
+            // This change was added right after vulkan's public release, so while it may not be a problem, there are plenty
+            // of API calls made which might not work if the paths have "\\"" in them
             /* character needs to be escaped */
-            *output_pointer++ = '\\';
+            //*output_pointer++ = '\\';
             switch (*input_pointer) {
                 case '\\':
                     *output_pointer = '\\';
@@ -752,19 +755,19 @@ static cJSON_bool print_string_ptr(const unsigned char *const input, printbuffer
                     *output_pointer = '\"';
                     break;
                 case '\b':
-                    *output_pointer = 'b';
+                    *output_pointer = '\b';
                     break;
                 case '\f':
-                    *output_pointer = 'f';
+                    *output_pointer = '\f';
                     break;
                 case '\n':
-                    *output_pointer = 'n';
+                    *output_pointer = '\n';
                     break;
                 case '\r':
-                    *output_pointer = 'r';
+                    *output_pointer = '\r';
                     break;
                 case '\t':
-                    *output_pointer = 't';
+                    *output_pointer = '\t';
                     break;
                 default:
                     /* escape and print as unicode codepoint */
