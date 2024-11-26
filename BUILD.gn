@@ -144,6 +144,23 @@ if (!is_android) {
     }
   }
 
+  if (is_win) {
+    action("gen_loader_rc") {
+      script = "scripts/generate_loader_rc.py"
+      inputs = [
+        "loader/loader.rc",
+      ]
+      args = [
+        rebase_path("loader/loader.rc", root_build_dir),
+        rebase_path("$target_gen_dir/loader.rc", root_build_dir),
+      ]
+      if (is_official_build) {
+        args += [ "--is_official" ]
+      }
+      outputs = [ "$target_gen_dir/loader.rc" ]
+    }
+  }
+
   target(library_type, "libvulkan") {
     sources = [
       "loader/adapters.h",
@@ -199,13 +216,14 @@ if (!is_android) {
       }
     }
 
+    deps = []
     if (is_win) {
       sources += [
         "loader/dirent_on_windows.c",
         "loader/dirent_on_windows.h",
         "loader/loader_windows.c",
         "loader/loader_windows.h",
-        "loader/loader.rc",
+        "$target_gen_dir/loader.rc",
         "loader/vulkan-1.def",
       ]
       if (!is_clang) {
@@ -228,6 +246,7 @@ if (!is_android) {
         cflags = [ "-Wno-incompatible-pointer-types" ]
       }
       libs = [ "Cfgmgr32.lib" ]
+      deps += [ ":gen_loader_rc" ]
     }
     if (is_linux || is_chromeos) {
       sources += [
@@ -252,7 +271,7 @@ if (!is_android) {
       # which can be obtained separately from the loader implementation itself.
       no_headers = true
 
-      deps = [
+      deps += [
         ":dlopen_fuchsia",
         "//sdk/lib/fdio",
       ]
