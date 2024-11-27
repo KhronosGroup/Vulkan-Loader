@@ -167,6 +167,8 @@ if (!is_android) {
       "loader/loader_environment.h",
       "loader/loader.c",
       "loader/loader.h",
+      "loader/loader_json.c",
+      "loader/loader_json.h",
       "loader/log.c",
       "loader/log.h",
       # Should only be linked when assembler is used
