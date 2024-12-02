@@ -3147,6 +3147,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceToolProperties(V
                                                                                VkPhysicalDeviceToolProperties *pToolProperties) {
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     const VkLayerInstanceDispatchTable *disp = loader_get_instance_layer_dispatch(physicalDevice);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceToolProperties: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceToolProperties-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
 
     return disp->GetPhysicalDeviceToolProperties(unwrapped_phys_dev, pToolCount, pToolProperties);
 }
@@ -3155,6 +3161,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceToolProperties(V
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBeginRendering: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginRendering-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBeginRendering(commandBuffer, pRenderingInfo);
 }
 
@@ -3163,122 +3175,254 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBindVertexBuffers2(VkCommandBuffer
                                                                  const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                  const VkDeviceSize *pStrides) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBindVertexBuffers2: Invalid commandBuffer "
+                   "[VUID-vkCmdBindVertexBuffers2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBlitImage2: Invalid commandBuffer "
+                   "[VUID-vkCmdBlitImage2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdBlitImage2(commandBuffer, pBlitImageInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyBuffer2: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyBuffer2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                                                  const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyBufferToImage2: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyBufferToImage2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyImage2: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyImage2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyImage2(commandBuffer, pCopyImageInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                                  const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyImageToBuffer2: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyImageToBuffer2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdEndRendering(VkCommandBuffer commandBuffer) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdEndRendering: Invalid commandBuffer "
+                   "[VUID-vkCmdEndRendering-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdEndRendering(commandBuffer);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
                                                                const VkDependencyInfo *pDependencyInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdPipelineBarrier2: Invalid commandBuffer "
+                   "[VUID-vkCmdPipelineBarrier2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdPipelineBarrier2(commandBuffer, pDependencyInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                           VkPipelineStageFlags2 stageMask) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdResetEvent2: Invalid commandBuffer "
+                   "[VUID-vkCmdResetEvent2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdResetEvent2(commandBuffer, event, stageMask);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdResolveImage2(VkCommandBuffer commandBuffer,
                                                             const VkResolveImageInfo2 *pResolveImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdResolveImage2: Invalid commandBuffer "
+                   "[VUID-vkCmdResolveImage2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdResolveImage2(commandBuffer, pResolveImageInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetCullMode: Invalid commandBuffer "
+                   "[VUID-vkCmdSetCullMode-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetCullMode(commandBuffer, cullMode);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthBiasEnable: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthBiasEnable-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer,
                                                                        VkBool32 depthBoundsTestEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthBoundsTestEnable: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthBoundsTestEnable-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthCompareOp: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthCompareOp-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthCompareOp(commandBuffer, depthCompareOp);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthTestEnable: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthTestEnable-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthTestEnable(commandBuffer, depthTestEnable);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDepthWriteEnable: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDepthWriteEnable-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                         const VkDependencyInfo *pDependencyInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetEvent2: Invalid commandBuffer "
+                   "[VUID-vkCmdSetEvent2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetEvent2(commandBuffer, event, pDependencyInfo);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetFrontFace: Invalid commandBuffer "
+                   "[VUID-vkCmdSetFrontFace-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetFrontFace(commandBuffer, frontFace);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer,
                                                                         VkBool32 primitiveRestartEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetPrimitiveRestartEnable: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPrimitiveRestartEnable-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer,
                                                                    VkPrimitiveTopology primitiveTopology) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetPrimitiveTopology: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPrimitiveTopology-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer,
                                                                          VkBool32 rasterizerDiscardEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetRasterizerDiscardEnable: Invalid commandBuffer "
+                   "[VUID-vkCmdSetRasterizerDiscardEnable-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                                   const VkRect2D *pScissors) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetScissorWithCount: Invalid commandBuffer "
+                   "[VUID-vkCmdSetScissorWithCount-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
 }
 
@@ -3286,29 +3430,59 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetStencilOp(VkCommandBuffer comma
                                                            VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp,
                                                            VkCompareOp compareOp) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetStencilOp: Invalid commandBuffer "
+                   "[VUID-vkCmdSetStencilOp-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetStencilTestEnable: Invalid commandBuffer "
+                   "[VUID-vkCmdSetStencilTestEnable-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                    const VkViewport *pViewports) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetViewportWithCount: Invalid commandBuffer "
+                   "[VUID-vkCmdSetViewportWithCount-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount,
                                                           const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfos) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdWaitEvents2: Invalid commandBuffer "
+                   "[VUID-vkCmdWaitEvents2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
                                                               VkQueryPool queryPool, uint32_t query) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdWriteTimestamp2: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteTimestamp2-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->CmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
 }
 
@@ -3317,12 +3491,24 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreatePrivateDataSlot(VkDevice de
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkPrivateDataSlot *pPrivateDataSlot) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreatePrivateDataSlot: Invalid device "
+                   "[VUID-vkCreatePrivateDataSlot-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->CreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
                                                                   const VkAllocationCallbacks *pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkDestroyPrivateDataSlot: Invalid device "
+                   "[VUID-vkDestroyPrivateDataSlot-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
 }
 
@@ -3330,6 +3516,12 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceBufferMemoryRequirements(VkD
                                                                              const VkDeviceBufferMemoryRequirements *pInfo,
                                                                              VkMemoryRequirements2 *pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceBufferMemoryRequirements: Invalid device "
+                   "[VUID-vkGetDeviceBufferMemoryRequirements-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
 }
 
@@ -3337,6 +3529,12 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceImageMemoryRequirements(VkDe
                                                                             const VkDeviceImageMemoryRequirements *pInfo,
                                                                             VkMemoryRequirements2 *pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceImageMemoryRequirements: Invalid device "
+                   "[VUID-vkGetDeviceImageMemoryRequirements-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
 }
 
@@ -3344,23 +3542,47 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceImageSparseMemoryRequirement
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceImageSparseMemoryRequirements: Invalid device "
+                   "[VUID-vkGetDeviceImageSparseMemoryRequirements-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                                           VkPrivateDataSlot privateDataSlot, uint64_t *pData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPrivateData: Invalid device "
+                   "[VUID-vkGetPrivateData-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     disp->GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                                               VkPrivateDataSlot privateDataSlot, uint64_t data) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkSetPrivateData: Invalid device "
+                   "[VUID-vkSetPrivateData-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->SetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
                                                             VkFence fence) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkQueueSubmit2: Invalid queue "
+                   "[VUID-vkQueueSubmit2-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
     return disp->QueueSubmit2(queue, submitCount, pSubmits, fence);
 }
