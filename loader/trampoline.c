@@ -2572,15 +2572,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
 
     inst = loader_get_instance(instance);
     if (NULL == inst) {
-        loader_log(
-            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-            "vkEnumeratePhysicalDeviceGroupsKHR: Invalid instance [VUID-vkEnumeratePhysicalDeviceGroups-instance-parameter]");
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkEnumeratePhysicalDeviceGroups: Invalid instance [VUID-vkEnumeratePhysicalDeviceGroups-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
     if (NULL == pPhysicalDeviceGroupCount) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "vkEnumeratePhysicalDeviceGroupsKHR: Received NULL pointer for physical "
+                   "vkEnumeratePhysicalDeviceGroups: Received NULL pointer for physical "
                    "device group count return value.");
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
