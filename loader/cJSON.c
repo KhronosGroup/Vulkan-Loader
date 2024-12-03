@@ -914,6 +914,7 @@ static unsigned char *print(const cJSON *const item, cJSON_bool format, bool *ou
     buffer->format = format;
     buffer->pAllocator = item->pAllocator;
     if (buffer->buffer == NULL) {
+        *out_of_memory = true;
         goto fail;
     }
 
