@@ -168,6 +168,11 @@ TEST(BadJsonInput, ClusterFuzzTestCase_5801855065915392) {
     // Causes a leak - instance_create_fuzzer: Direct-leak in print_string_ptr
     execute_instance_create_fuzzer("clusterfuzz-testcase-minimized-instance_create_fuzzer-5801855065915392");
 }
+TEST(BadJsonInput, ClusterFuzzTestCase_6353004288081920) {
+    // Does crash with ASAN and UBSAN
+    // Stack overflow due to recursive meta layers
+    execute_instance_create_fuzzer("clusterfuzz-testcase-minimized-instance_create_fuzzer-6353004288081920");
+}
 TEST(BadJsonInput, ClusterFuzzTestCase_6465902356791296) {
     // Does crash with UBSAN
     // Doesn't crash with ASAN
