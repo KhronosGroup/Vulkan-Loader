@@ -2165,9 +2165,23 @@ void loader_get_fullpath(const char *file, const char *in_dirs, size_t out_size,
 }
 
 // Verify that all component layers in a meta-layer are valid.
-bool verify_meta_layer_component_layers(const struct loader_instance *inst, struct loader_layer_properties *prop,
-                                        struct loader_layer_list *instance_layers) {
+// This function is potentially recursive so we pass in an array of "already checked" (length of the instance_layers->count) meta
+// layers, preventing a stack overflow verifying  meta layers that are each other's component layers
+bool verify_meta_layer_component_layers(const struct loader_instance *inst, size_t prop_index,
+                                        struct loader_layer_list *instance_layers, bool *already_checked_meta_layers) {
+    struct loader_layer_properties *prop = &instance_layers->list[prop_index];
     loader_api_version meta_layer_version = loader_make_version(prop->info.specVersion);
+
+    if (NULL == already_checked_meta_layers) {
+        already_checked_meta_layers = loader_stack_alloc(sizeof(bool) * instance_layers->count);
+        if (already_checked_meta_layers == NULL) {
+            return false;
+        }
+        memset(already_checked_meta_layers, 0, sizeof(bool) * instance_layers->count);
+    }
+
+    // Mark this meta layer as 'already checked', indicating which layers have already been recursed.
+    already_checked_meta_layers[prop_index] = true;
 
     for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
         struct loader_layer_properties *comp_prop =
@@ -2203,14 +2217,19 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
             return false;
         }
         if (comp_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-            for (uint32_t sub_comp_layer = 0; sub_comp_layer < comp_prop->component_layer_names.count; sub_comp_layer++) {
-                if (!strcmp(prop->info.layerName, comp_prop->component_layer_names.list[sub_comp_layer])) {
-                    loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                               "verify_meta_layer_component_layers: Recursive depedency between Meta-layer %s and  Meta-layer %s.  "
-                               "Skipping this layer.",
-                               prop->info.layerName, prop->component_layer_names.list[comp_layer]);
-                    return false;
+            size_t comp_prop_index = INT32_MAX;
+            // Make sure we haven't verified this meta layer before
+            for (uint32_t i = 0; i < instance_layers->count; i++) {
+                if (strcmp(comp_prop->info.layerName, instance_layers->list[i].info.layerName) == 0) {
+                    comp_prop_index = i;
                 }
+            }
+            if (comp_prop_index != INT32_MAX && already_checked_meta_layers[comp_prop_index]) {
+                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                           "verify_meta_layer_component_layers: Recursive depedency between Meta-layer %s and  Meta-layer %s.  "
+                           "Skipping this layer.",
+                           instance_layers->list[prop_index].info.layerName, comp_prop->info.layerName);
+                return false;
             }
 
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
@@ -2218,7 +2237,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, stru
                        prop->info.layerName, comp_prop->info.layerName);
 
             // Make sure if the layer is using a meta-layer in its component list that we also verify that.
-            if (!verify_meta_layer_component_layers(inst, comp_prop, instance_layers)) {
+            if (!verify_meta_layer_component_layers(inst, comp_prop_index, instance_layers, already_checked_meta_layers)) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                            "Meta-layer %s component layer %s can not find all component layers."
                            "  Skipping this layer.",
@@ -2292,7 +2311,7 @@ VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loade
 
         // If this is a meta-layer, make sure it is valid
         if (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-            if (verify_meta_layer_component_layers(inst, prop, instance_layers)) {
+            if (verify_meta_layer_component_layers(inst, i, instance_layers, NULL)) {
                 // If any meta layer is valid, update its extension list to include the extensions from its component layers.
                 res = update_meta_layer_extensions_from_component_layers(inst, prop, instance_layers);
                 if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
