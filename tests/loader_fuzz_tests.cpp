@@ -109,6 +109,12 @@ TEST(BadJsonInput, ClusterFuzzTestCase_6308459683315712) {
     // combine_settings_layers_with_regular_layers
     execute_instance_enumerate_fuzzer("clusterfuzz-testcase-instance_enumerate_fuzzer-6308459683315712");
 }
+TEST(BadJsonInput, ClusterFuzzTestCase_6583684169269248) {
+    // Crashes ASAN
+    // Nullptr dereference in loader_copy_to_new_str
+    execute_instance_enumerate_fuzzer("clusterfuzz-testcase-minimized-instance_enumerate_fuzzer-6583684169269248");
+}
+
 TEST(BadJsonInput, ClusterFuzzTestCase_5258042868105216) {
     // Doesn't crash with ASAN or UBSAN
     // Doesn't reproducibly crash - json_load_fuzzer: Abrt in loader_cJSON_Delete
