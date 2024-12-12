@@ -2744,7 +2744,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         cJSON *enable_environment = loader_cJSON_GetObjectItem(layer_node, "enable_environment");
 
         // enable_environment is optional
-        if (enable_environment && enable_environment->child && enable_environment->child->type == cJSON_String) {
+        if (enable_environment && enable_environment->child && enable_environment->child->type == cJSON_String &&
+            enable_environment->child->string && enable_environment->child->valuestring) {
             result = loader_copy_to_new_str(inst, enable_environment->child->string, &(props.enable_env_var.name));
             if (VK_SUCCESS != result) goto out;
             result = loader_copy_to_new_str(inst, enable_environment->child->valuestring, &(props.enable_env_var.value));
