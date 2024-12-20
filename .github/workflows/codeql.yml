@@ -73,7 +73,7 @@ jobs:
     - uses: actions/setup-python@v5
       if: matrix.language == 'cpp'
       with:
-        python-version: '3.7'
+        python-version: '3.11'
     - uses: lukka/get-cmake@latest
       if: matrix.language == 'cpp'
       with:
