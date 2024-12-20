@@ -130,6 +130,7 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D SYSCONFDIR=/etc/not_vulkan \
+                -D PKG_CONFIG_EXECUTABLE=/usr/bin/i686-linux-gnu-pkg-config \
                 -G Ninja
               env:
                 CFLAGS: -m32
@@ -166,6 +167,7 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
+                -D PKG_CONFIG_EXECUTABLE=/usr/bin/i686-linux-gnu-pkg-config \
                 -G Ninja
               env:
                 CFLAGS: -m32
