@@ -2453,10 +2453,6 @@ void emulate_VK_EXT_surface_maintenance1(struct loader_icd_term *icd_term, const
             if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT) {
                 VkSurfacePresentModeEXT *surface_present_mode = (VkSurfacePresentModeEXT *)void_pNext;
                 present_mode = surface_present_mode->presentMode;
-            } else {
-                loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
-                           "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulation found unrecognized structure type in "
-                           "pSurfaceInfo->pNext - this struct will be ignored");
             }
             void_pNext = out_structure.pNext;
         }
@@ -2489,10 +2485,6 @@ void emulate_VK_EXT_surface_maintenance1(struct loader_icd_term *icd_term, const
                     pSurfaceCapabilities->surfaceCapabilities.maxImageExtent;
                 surface_present_scaling_capabilities->minScaledImageExtent =
                     pSurfaceCapabilities->surfaceCapabilities.minImageExtent;
-            } else {
-                loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
-                           "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulation found unrecognized structure type in "
-                           "pSurfaceCapabilities->pNext - this struct will be ignored");
             }
             void_pNext = out_structure.pNext;
         }
