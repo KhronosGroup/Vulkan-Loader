@@ -136,7 +136,7 @@ VkResult loader_read_entire_file(const struct loader_instance *inst, const char 
 }
 #endif
 
-VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json) {
+TEST_FUNCTION_EXPORT VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json) {
     char *json_buf = NULL;
     VkResult res = VK_SUCCESS;
 

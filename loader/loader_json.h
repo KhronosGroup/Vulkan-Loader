@@ -38,7 +38,7 @@ struct loader_string_list;
 //
 // @return -  A pointer to a cJSON object representing the JSON parse tree.
 //            This returned buffer should be freed by caller.
-VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json);
+TEST_FUNCTION_EXPORT VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json);
 
 // Given a cJSON object, find the string associated with the key and puts an pre-allocated string into out_string.
 // Length is given by out_str_len, and this function truncates the string with a null terminator if it the provided space isn't

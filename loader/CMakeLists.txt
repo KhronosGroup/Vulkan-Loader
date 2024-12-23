@@ -517,6 +517,10 @@ if (UNKNOWN_FUNCTIONS_SUPPORTED)
     add_dependencies(vulkan loader_asm_gen_files)
 endif()
 
+if (BUILD_TESTS)
+    target_compile_definitions(vulkan PRIVATE SHOULD_EXPORT_TEST_FUNCTIONS)
+endif()
+
 if (APPLE_STATIC_LOADER)
     # TLDR: This feature only exists at the request of Google for Chromium. No other project should use this!
     message(NOTICE "Apple STATIC lib: it will be built but not installed, and vulkan.pc and VulkanLoaderConfig.cmake won't be generated!")

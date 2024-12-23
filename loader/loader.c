@@ -508,7 +508,8 @@ bool loader_find_layer_name_in_blacklist(const char *layer_name, struct loader_l
 }
 
 // Remove all layer properties entries from the list
-void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
+TEST_FUNCTION_EXPORT void loader_delete_layer_list_and_properties(const struct loader_instance *inst,
+                                                                  struct loader_layer_list *layer_list) {
     uint32_t i;
     if (!layer_list) return;
 

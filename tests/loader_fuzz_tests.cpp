@@ -27,6 +27,12 @@
 
 #include "test_environment.h"
 
+extern "C" {
+#include "loader.h"
+#include "loader_json.h"
+#include "settings.h"
+}
+
 void execute_instance_enumerate_fuzzer(std::filesystem::path const& filename) {
     FrameworkEnvironment env{};
     env.write_file_from_source((std::filesystem::path(CLUSTERFUZZ_TESTCASE_DIRECTORY) / filename).string().c_str(),
@@ -75,13 +81,25 @@ void execute_instance_create_fuzzer(std::filesystem::path const& filename) {
     env.vulkan_functions.vkDestroyInstance(inst, NULL);
 }
 
-void execute_json_load_fuzzer(std::filesystem::path const& filename) {
+void execute_json_load_fuzzer(std::string const& filename) {
     FrameworkEnvironment env{};
 
-    env.write_file_from_source((std::filesystem::path(CLUSTERFUZZ_TESTCASE_DIRECTORY) / filename).string().c_str(),
-                               ManifestCategory::explicit_layer, ManifestLocation::explicit_layer, "complex_layer.json");
-    uint32_t count = 0;
-    env.vulkan_functions.vkEnumerateInstanceLayerProperties(&count, nullptr);
+    cJSON* json = NULL;
+    loader_get_json(NULL, filename.c_str(), &json);
+
+    if (json == NULL) {
+        return;
+    }
+    bool out_of_mem = false;
+    char* json_data = loader_cJSON_Print(json, &out_of_mem);
+
+    if (json_data != NULL) {
+        free(json_data);
+    }
+
+    if (json != NULL) {
+        loader_cJSON_Delete(json);
+    }
 }
 void execute_setting_fuzzer(std::filesystem::path const& filename) {
     FrameworkEnvironment env{};
@@ -89,8 +107,11 @@ void execute_setting_fuzzer(std::filesystem::path const& filename) {
     env.write_file_from_source((std::filesystem::path(CLUSTERFUZZ_TESTCASE_DIRECTORY) / filename).string().c_str(),
                                ManifestCategory::settings, ManifestLocation::settings_location, "vk_loader_settings.json");
 
-    uint32_t version = 0;
-    env.vulkan_functions.vkEnumerateInstanceVersion(&version);
+    update_global_loader_settings();
+    struct loader_layer_list settings_layers = {0};
+    bool should_search_for_other_layers = true;
+    get_settings_layers(NULL, &settings_layers, &should_search_for_other_layers);
+    loader_delete_layer_list_and_properties(NULL, &settings_layers);
 }
 
 TEST(BadJsonInput, ClusterFuzzTestCase_5599244505186304) {

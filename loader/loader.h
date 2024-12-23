@@ -154,7 +154,8 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
 void loader_destroy_generic_list(const struct loader_instance *inst, struct loader_generic_list *list);
 void loader_destroy_pointer_layer_list(const struct loader_instance *inst, struct loader_pointer_layer_list *layer_list);
-void loader_delete_layer_list_and_properties(const struct loader_instance *inst, struct loader_layer_list *layer_list);
+TEST_FUNCTION_EXPORT void loader_delete_layer_list_and_properties(const struct loader_instance *inst,
+                                                                  struct loader_layer_list *layer_list);
 void loader_remove_layer_in_list(const struct loader_instance *inst, struct loader_layer_list *layer_list,
                                  uint32_t layer_to_remove);
 VkResult loader_init_scanned_icd_list(const struct loader_instance *inst, struct loader_icd_tramp_list *icd_tramp_list);
