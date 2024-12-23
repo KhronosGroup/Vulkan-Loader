@@ -98,6 +98,10 @@ void *loader_realloc(const VkAllocationCallbacks *pAllocator, void *pMemory, siz
 #endif
     } else {
         pNewMem = realloc(pMemory, size);
+        // Clear out the newly allocated memory
+        if (size > orig_size) {
+            memset((uint8_t *)pNewMem + orig_size, 0, size - orig_size);
+        }
     }
     return pNewMem;
 }

@@ -200,6 +200,9 @@ TEST(BadJsonInput, ClusterFuzzTestCase_6353004288081920) {
     // Stack overflow due to recursive meta layers
     execute_instance_create_fuzzer("clusterfuzz-testcase-minimized-instance_create_fuzzer-6353004288081920");
 }
+TEST(BadJsonInput, ClusterFuzzTestCase_5817896795701248) {
+    execute_instance_create_fuzzer("clusterfuzz-testcase-instance_create_fuzzer-5817896795701248");
+}
 TEST(BadJsonInput, ClusterFuzzTestCase_6465902356791296) {
     // Does crash with UBSAN
     // Doesn't crash with ASAN
