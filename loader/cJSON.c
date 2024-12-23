@@ -150,7 +150,7 @@ static cJSON *cJSON_New_Item(const VkAllocationCallbacks *pAllocator) {
 }
 
 /* Delete a cJSON structure. */
-CJSON_PUBLIC(void) loader_cJSON_Delete(cJSON *item) {
+TEST_FUNCTION_EXPORT CJSON_PUBLIC(void) loader_cJSON_Delete(cJSON *item) {
     cJSON *next = NULL;
     while (item != NULL) {
         next = item->next;
@@ -949,7 +949,9 @@ fail:
 }
 
 /* Render a cJSON item/entity/structure to text. */
-CJSON_PUBLIC(char *) loader_cJSON_Print(const cJSON *item, bool *out_of_memory) { return (char *)print(item, true, out_of_memory); }
+TEST_FUNCTION_EXPORT CJSON_PUBLIC(char *) loader_cJSON_Print(const cJSON *item, bool *out_of_memory) {
+    return (char *)print(item, true, out_of_memory);
+}
 
 CJSON_PUBLIC(char *) loader_cJSON_PrintUnformatted(const cJSON *item, bool *out_of_memory) {
     return (char *)print(item, false, out_of_memory);

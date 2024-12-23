@@ -83,7 +83,6 @@ add_executable(
         loader_envvar_tests.cpp
         loader_get_proc_addr_tests.cpp
         loader_debug_ext_tests.cpp
-        loader_fuzz_tests.cpp
         loader_handle_validation_tests.cpp
         loader_layer_tests.cpp
         loader_regression_tests.cpp
@@ -94,6 +93,14 @@ add_executable(
         loader_wsi_tests.cpp)
 target_link_libraries(test_regression PUBLIC testing_dependencies)
 target_compile_definitions(test_regression PUBLIC VK_NO_PROTOTYPES)
+
+add_executable(
+    test_fuzzing
+        loader_testing_main.cpp
+        loader_fuzz_tests.cpp
+)
+target_link_libraries(test_fuzzing PUBLIC testing_dependencies vulkan)
+target_include_directories(test_fuzzing PUBLIC ${CMAKE_SOURCE_DIR}/loader ${CMAKE_SOURCE_DIR}/loader/generated)
 
 # Threading tests live in separate executabe just for threading tests as it'll need support
 # in the test harness to enable in CI, as thread sanitizer doesn't work with address sanitizer enabled.
@@ -110,10 +117,10 @@ if (ENABLE_LIVE_VERIFICATION_TESTS)
 endif()
 
 if(WIN32)
-    # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
+    # Copy vulkan-1.dll to the test_fuzzing build directory so that the test_fuzzing exe can find it.
     if(TARGET vulkan)
-        add_custom_command(TARGET test_regression POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:test_regression>)
+        add_custom_command(TARGET test_fuzzing POST_BUILD
+                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:test_fuzzing>)
     endif()
 endif()
 
@@ -128,8 +135,10 @@ endif()
 # must happen after the dll's get copied over
 if(NOT CMAKE_CROSSCOMPILING)
     gtest_discover_tests(test_regression PROPERTIES DISCOVERY_TIMEOUT 100)
+    gtest_discover_tests(test_fuzzing PROPERTIES DISCOVERY_TIMEOUT 100)
 else()
     gtest_add_tests(TARGET test_regression)
+    gtest_add_tests(TARGET test_fuzzing)
 endif()
 
 # When APPLE_STATIC_LOADER is ON installation is disabled
@@ -163,4 +172,5 @@ set_tests_properties(integration.find_package PROPERTIES DEPENDS integration.ins
 
 if (CODE_COVERAGE)
     target_code_coverage(test_regression AUTO ALL )
+    target_code_coverage(test_fuzzing AUTO ALL )
 endif()

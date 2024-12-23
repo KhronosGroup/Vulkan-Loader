@@ -89,6 +89,17 @@
 #define LOADER_EXPORT
 #endif
 
+// For testing purposes, we want to expose some functions not normally callable on the library
+#if defined(SHOULD_EXPORT_TEST_FUNCTIONS)
+#if defined(_WIN32)
+#define TEST_FUNCTION_EXPORT __declspec(dllexport)
+#else
+#define TEST_FUNCTION_EXPORT LOADER_EXPORT
+#endif
+#else
+#define TEST_FUNCTION_EXPORT
+#endif
+
 #define MAX_STRING_SIZE 1024
 
 // This is defined in vk_layer.h, but if there's problems we need to create the define
