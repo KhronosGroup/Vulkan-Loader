@@ -323,8 +323,6 @@ VkResult append_str_to_string_list(const struct loader_instance *inst, struct lo
             loader_instance_heap_free(inst, str);  // Must clean up in case of failure
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
-        // Null out the new space
-        memset(string_list->list + string_list->allocated_count, 0, string_list->allocated_count);
         string_list->allocated_count *= 2;
     }
     string_list->list[string_list->count++] = str;
@@ -439,7 +437,6 @@ VkResult loader_append_layer_property(const struct loader_instance *inst, struct
             goto out;
         }
         layer_list->list = new_ptr;
-        memset((uint8_t *)layer_list->list + layer_list->capacity, 0, layer_list->capacity);
         layer_list->capacity *= 2;
     }
     memcpy(&layer_list->list[layer_list->count], layer_property, sizeof(struct loader_layer_properties));
