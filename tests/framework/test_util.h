@@ -242,26 +242,26 @@ class FolderManager {
 inline void copy_string_to_char_array(std::string const& src, char* dst, size_t size_dst) { dst[src.copy(dst, size_dst - 1)] = 0; }
 
 #if defined(WIN32)
-typedef HMODULE loader_platform_dl_handle;
-inline loader_platform_dl_handle loader_platform_open_library(const wchar_t* lib_path) {
+typedef HMODULE test_platform_dl_handle;
+inline test_platform_dl_handle test_platform_open_library(const wchar_t* lib_path) {
     // Try loading the library the original way first.
-    loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path);
+    test_platform_dl_handle lib_handle = LoadLibraryW(lib_path);
     if (lib_handle == nullptr && GetLastError() == ERROR_MOD_NOT_FOUND) {
         // If that failed, then try loading it with broader search folders.
         lib_handle = LoadLibraryExW(lib_path, nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     }
     return lib_handle;
 }
-inline void loader_platform_open_library_print_error(std::filesystem::path const& libPath) {
+inline void test_platform_open_library_print_error(std::filesystem::path const& libPath) {
     std::wcerr << L"Unable to open library: " << libPath << L" due to: " << std::to_wstring(GetLastError()) << L"\n";
 }
-inline void loader_platform_close_library(loader_platform_dl_handle library) { FreeLibrary(library); }
-inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
+inline void test_platform_close_library(test_platform_dl_handle library) { FreeLibrary(library); }
+inline void* test_platform_get_proc_address(test_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return reinterpret_cast<void*>(GetProcAddress(library, name));
 }
-inline char* loader_platform_get_proc_address_error(const char* name) {
+inline char* test_platform_get_proc_address_error(const char* name) {
     static char errorMsg[120];
     snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
     return errorMsg;
@@ -269,26 +269,24 @@ inline char* loader_platform_get_proc_address_error(const char* name) {
 
 #elif COMMON_UNIX_PLATFORMS
 
-typedef void* loader_platform_dl_handle;
-inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
-    return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
-}
-inline void loader_platform_open_library_print_error(std::filesystem::path const& libPath) {
+typedef void* test_platform_dl_handle;
+inline test_platform_dl_handle test_platform_open_library(const char* libPath) { return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL); }
+inline void test_platform_open_library_print_error(std::filesystem::path const& libPath) {
     std::wcerr << "Unable to open library: " << libPath << " due to: " << dlerror() << "\n";
 }
-inline void loader_platform_close_library(loader_platform_dl_handle library) {
+inline void test_platform_close_library(test_platform_dl_handle library) {
     char* loader_disable_dynamic_library_unloading_env_var = getenv("VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING");
     if (NULL == loader_disable_dynamic_library_unloading_env_var ||
         0 != strncmp(loader_disable_dynamic_library_unloading_env_var, "1", 2)) {
         dlclose(library);
     }
 }
-inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
+inline void* test_platform_get_proc_address(test_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return dlsym(library, name);
 }
-inline const char* loader_platform_get_proc_address_error([[maybe_unused]] const char* name) { return dlerror(); }
+inline const char* test_platform_get_proc_address_error([[maybe_unused]] const char* name) { return dlerror(); }
 #endif
 
 class FromVoidStarFunc {
@@ -308,15 +306,15 @@ class FromVoidStarFunc {
 struct LibraryWrapper {
     explicit LibraryWrapper() noexcept {}
     explicit LibraryWrapper(std::filesystem::path const& lib_path) noexcept : lib_path(lib_path) {
-        lib_handle = loader_platform_open_library(lib_path.native().c_str());
+        lib_handle = test_platform_open_library(lib_path.native().c_str());
         if (lib_handle == nullptr) {
-            loader_platform_open_library_print_error(lib_path);
+            test_platform_open_library_print_error(lib_path);
             assert(lib_handle != nullptr && "Must be able to open library");
         }
     }
     ~LibraryWrapper() noexcept {
         if (lib_handle != nullptr) {
-            loader_platform_close_library(lib_handle);
+            test_platform_close_library(lib_handle);
             lib_handle = nullptr;
         }
     }
@@ -328,7 +326,7 @@ struct LibraryWrapper {
     LibraryWrapper& operator=(LibraryWrapper&& wrapper) noexcept {
         if (this != &wrapper) {
             if (lib_handle != nullptr) {
-                loader_platform_close_library(lib_handle);
+                test_platform_close_library(lib_handle);
             }
             lib_handle = wrapper.lib_handle;
             lib_path = wrapper.lib_path;
@@ -338,9 +336,9 @@ struct LibraryWrapper {
     }
     FromVoidStarFunc get_symbol(const char* symbol_name) const {
         assert(lib_handle != nullptr && "Cannot get symbol with null library handle");
-        void* symbol = loader_platform_get_proc_address(lib_handle, symbol_name);
+        void* symbol = test_platform_get_proc_address(lib_handle, symbol_name);
         if (symbol == nullptr) {
-            fprintf(stderr, "Unable to open symbol %s: %s\n", symbol_name, loader_platform_get_proc_address_error(symbol_name));
+            fprintf(stderr, "Unable to open symbol %s: %s\n", symbol_name, test_platform_get_proc_address_error(symbol_name));
             assert(symbol != nullptr && "Must be able to get symbol");
         }
         return FromVoidStarFunc(symbol);
@@ -348,7 +346,7 @@ struct LibraryWrapper {
 
     explicit operator bool() const noexcept { return lib_handle != nullptr; }
 
-    loader_platform_dl_handle lib_handle = nullptr;
+    test_platform_dl_handle lib_handle = nullptr;
     std::filesystem::path lib_path;
 };
 
