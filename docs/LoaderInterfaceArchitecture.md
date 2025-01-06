@@ -667,6 +667,8 @@ discovery.
         continue to work.
     </small></td>
     <td><small>
+        This functionality is only available with Loaders built with version
+        1.3.207 of the Vulkan headers and later.<br/>
         It is recommended to use absolute paths to JSON files.
         Relative paths may have issues due to how the loader transforms relative library
         paths into absolute ones.
