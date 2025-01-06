@@ -32,7 +32,6 @@ if (IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}/googletest")
     set(BUILD_GTEST ON)
     set(BUILD_GMOCK OFF)
     set(gtest_force_shared_crt ON)
-    set(BUILD_SHARED_LIBS ON)
     set(INSTALL_GTEST OFF)
     add_subdirectory("${GOOGLETEST_INSTALL_DIR}" ${CMAKE_CURRENT_BINARY_DIR}/gtest)
 else()
@@ -111,19 +110,10 @@ if (ENABLE_LIVE_VERIFICATION_TESTS)
 endif()
 
 if(WIN32)
-    # Copy loader and googletest (gtest) libs to test dir so the test executable can find them.
-    add_custom_command(TARGET test_regression POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gtest> $<TARGET_FILE_DIR:test_regression>)
     # Copy the loader shared lib (if built) to the test application directory so the test app finds it.
     if(TARGET vulkan)
         add_custom_command(TARGET test_regression POST_BUILD
                            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vulkan> $<TARGET_FILE_DIR:test_regression>)
-    endif()
-
-    # Copy the gtest shared lib (if built) to the live verification tests directory so the tests finds it.
-    if(ENABLE_LIVE_VERIFICATION_TESTS)
-        add_custom_command(TARGET test_regression POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gtest> $<TARGET_FILE_DIR:dynamic_rendering_get_proc_addr>)
     endif()
 endif()
 
