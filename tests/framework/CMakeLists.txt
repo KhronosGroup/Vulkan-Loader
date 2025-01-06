@@ -86,7 +86,6 @@ add_library(testing_dependencies STATIC test_environment.cpp test_environment.h)
 target_link_libraries(testing_dependencies
     PUBLIC gtest Vulkan::Headers testing_framework_util shim-library)
 target_include_directories(testing_dependencies PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_compile_definitions(testing_dependencies PUBLIC "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 if (APPLE_STATIC_LOADER)
     target_compile_definitions(testing_dependencies PUBLIC "APPLE_STATIC_LOADER=1")
     target_link_libraries(testing_dependencies PUBLIC vulkan)
