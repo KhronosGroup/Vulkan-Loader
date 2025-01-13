@@ -362,7 +362,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormatsKHR(VkP
         // Zero out the format count as this driver doesn't support WSI functionality
         *pSurfaceFormatCount = 0;
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceFormatsKHR!");
         return VK_SUCCESS;
     }
 
