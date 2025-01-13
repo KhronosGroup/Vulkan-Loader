@@ -1277,8 +1277,11 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    }\n'
 
                     if has_surface == 1:
-                        funcs += f'    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)({surface_var_name});\n'
-                        funcs += '    if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) && icd_term->surface_list[icd_surface->surface_index]) {\n'
+                        funcs += '    VkIcdSurface *icd_surface = NULL;\n'
+                        funcs += f'    if (NULL != {surface_var_name}) {{\n'
+                        funcs += f'        icd_surface = (VkIcdSurface *)(uintptr_t)({surface_var_name});\n'
+                        funcs += '    }\n'
+                        funcs += '    if (NULL != icd_surface && NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) && icd_term->surface_list[icd_surface->surface_index]) {\n'
 
                         # If there's a structure with a surface, we need to update its internals with the correct surface for the ICD
                         if update_structure_surface == 1:

@@ -140,7 +140,6 @@ void init_vulkan_functions(VulkanFunctions& funcs) {
     funcs.vkCreateWin32SurfaceKHR = GPA(vkCreateWin32SurfaceKHR);
     funcs.vkGetPhysicalDeviceWin32PresentationSupportKHR = GPA(vkGetPhysicalDeviceWin32PresentationSupportKHR);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-
     funcs.vkDestroyDevice = GPA(vkDestroyDevice);
     funcs.vkGetDeviceQueue = GPA(vkGetDeviceQueue);
 #undef GPA

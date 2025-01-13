@@ -758,6 +758,68 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
 }
 #endif
 
+TEST(WsiTests, GoogleSurfaceslessQuery) {
+    std::vector<VkPresentModeKHR> present_modes{VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR,
+                                                VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR};
+    VkSurfaceFormatKHR surface_format = {VK_FORMAT_R8G8B8A8_SRGB, VK_COLORSPACE_SRGB_NONLINEAR_KHR};
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .setup_WSI()
+        .add_instance_extension("VK_GOOGLE_surfaceless_query")
+        .add_instance_extension("VK_KHR_get_surface_capabilities2")
+        .add_physical_device(PhysicalDevice{}
+                                 .add_extension("VK_KHR_swapchain")
+#if defined(WIN32)
+                                 .add_extension("VK_EXT_full_screen_exclusive")
+#endif
+                                 .add_surface_format(surface_format)
+                                 .add_surface_present_modes(present_modes)
+                                 .finish());
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension("VK_KHR_surface");
+    inst.create_info.add_extension("VK_GOOGLE_surfaceless_query");
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+
+    uint32_t present_mode_count = 4;
+    std::vector<VkPresentModeKHR> queried_present_modes{present_mode_count};
+    inst->vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, VK_NULL_HANDLE, &present_mode_count,
+                                                    queried_present_modes.data());
+    ASSERT_EQ(present_modes, queried_present_modes);
+
+    uint32_t surface_format_count = 1;
+    std::vector<VkSurfaceFormatKHR> queried_surface_formats{surface_format_count};
+    inst->vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, VK_NULL_HANDLE, &surface_format_count,
+                                               queried_surface_formats.data());
+    ASSERT_EQ(std::vector<VkSurfaceFormatKHR>{surface_format}, queried_surface_formats);
+
+    uint32_t surface_format2_count = 1;
+    std::vector<VkSurfaceFormat2KHR> queried_surface_formats2{surface_format2_count};
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info{};
+    surface_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
+    surface_info.surface = VK_NULL_HANDLE;
+    inst->vkGetPhysicalDeviceSurfaceFormats2KHR(physical_device, &surface_info, &surface_format_count,
+                                                queried_surface_formats2.data());
+    ASSERT_EQ(std::vector<VkSurfaceFormatKHR>{surface_format}, queried_surface_formats2);
+
+    VkSurfaceCapabilities2KHR surface_caps2{};
+    surface_caps2.sType = VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR;
+
+    ASSERT_EQ(VK_SUCCESS,
+              env.vulkan_functions.vkGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device, &surface_info, &surface_caps2));
+
+#if defined(WIN32)
+    PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT pfn_vkGetPhysicalDeviceSurfacePresentModes2EXT =
+        inst.load("vkGetPhysicalDeviceSurfacePresentModes2EXT");
+    ASSERT_EQ(VK_SUCCESS, pfn_vkGetPhysicalDeviceSurfacePresentModes2EXT(physical_device, &surface_info, &present_mode_count,
+                                                                         queried_present_modes.data()));
+    ASSERT_EQ(present_modes, queried_present_modes);
+
+#endif
+}
+
 TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
