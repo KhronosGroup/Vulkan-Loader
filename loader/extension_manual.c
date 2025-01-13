@@ -274,16 +274,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModes2E
                    "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSurfacePresentModes2EXT");
         abort();
     }
-    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
-    if (NULL != icd_term->surface_list.list &&
-        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
-        icd_term->surface_list.list[icd_surface->surface_index]) {
-        VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
-        surface_info_copy.sType = pSurfaceInfo->sType;
-        surface_info_copy.pNext = pSurfaceInfo->pNext;
-        surface_info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
-        return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, &surface_info_copy,
-                                                                           pPresentModeCount, pPresentModes);
+    if (VK_NULL_HANDLE != pSurfaceInfo->surface) {
+        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
+        if (NULL != icd_surface && NULL != icd_term->surface_list.list &&
+            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+            icd_term->surface_list.list[icd_surface->surface_index]) {
+            VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
+            surface_info_copy.sType = pSurfaceInfo->sType;
+            surface_info_copy.pNext = pSurfaceInfo->pNext;
+            surface_info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
+            return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, &surface_info_copy,
+                                                                               pPresentModeCount, pPresentModes);
+        }
     }
     return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, pSurfaceInfo, pPresentModeCount,
                                                                        pPresentModes);
@@ -321,16 +323,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(
                    "[VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
-    if (NULL != icd_term->surface_list.list &&
-        icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
-        icd_term->surface_list.list[icd_surface->surface_index]) {
-        VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
-        surface_info_copy.sType = pSurfaceInfo->sType;
-        surface_info_copy.pNext = pSurfaceInfo->pNext;
-        surface_info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
-        return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, &surface_info_copy,
-                                                                                                        pModes);
+    if (VK_NULL_HANDLE != pSurfaceInfo->surface) {
+        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
+        if (NULL != icd_surface && NULL != icd_term->surface_list.list &&
+            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
+            icd_term->surface_list.list[icd_surface->surface_index]) {
+            VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
+            surface_info_copy.sType = pSurfaceInfo->sType;
+            surface_info_copy.pNext = pSurfaceInfo->pNext;
+            surface_info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
+            return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(
+                device, &surface_info_copy, pModes);
+        }
     }
     return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
 }

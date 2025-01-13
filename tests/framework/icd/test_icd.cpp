@@ -838,6 +838,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysi
             assert(false && "Surface not found during GetPhysicalDeviceSurfaceFormatsKHR query!");
             return VK_ERROR_UNKNOWN;
         }
+    } else {
+        if (!IsInstanceExtensionEnabled(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
+            assert(false && "Surface is NULL but VK_GOOGLE_surfaceless_query was not enabled!");
+            return VK_ERROR_UNKNOWN;
+        }
     }
     FillCountPtr(icd.GetPhysDevice(physicalDevice).surface_formats, pSurfaceFormatCount, pSurfaceFormats);
     return VK_SUCCESS;
@@ -852,10 +857,38 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModesKHR(Vk
             assert(false && "Surface not found during GetPhysicalDeviceSurfacePresentModesKHR query!");
             return VK_ERROR_UNKNOWN;
         }
+    } else {
+        if (!IsInstanceExtensionEnabled(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
+            assert(false && "Surface is NULL but VK_GOOGLE_surfaceless_query was not enabled!");
+            return VK_ERROR_UNKNOWN;
+        }
     }
     FillCountPtr(icd.GetPhysDevice(physicalDevice).surface_present_modes, pPresentModeCount, pPresentModes);
     return VK_SUCCESS;
 }
+
+#if defined(WIN32)
+VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                               const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                               uint32_t* pPresentModeCount,
+                                                                               VkPresentModeKHR* pPresentModes) {
+    if (pSurfaceInfo->surface != VK_NULL_HANDLE) {
+        uint64_t fake_surf_handle = (uint64_t)(pSurfaceInfo->surface);
+        auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), fake_surf_handle);
+        if (found_iter == icd.surface_handles.end()) {
+            assert(false && "Surface not found during GetPhysicalDeviceSurfacePresentModesKHR query!");
+            return VK_ERROR_UNKNOWN;
+        }
+    } else {
+        if (!IsInstanceExtensionEnabled(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
+            assert(false && "Surface is NULL but VK_GOOGLE_surfaceless_query was not enabled!");
+            return VK_ERROR_UNKNOWN;
+        }
+    }
+    FillCountPtr(icd.GetPhysDevice(physicalDevice).surface_present_modes, pPresentModeCount, pPresentModes);
+    return VK_SUCCESS;
+}
+#endif
 
 // VK_KHR_display
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
@@ -1310,6 +1343,12 @@ PFN_vkVoidFunction get_physical_device_func_wsi([[maybe_unused]] VkInstance inst
         if (string_eq(pName, "vkGetPhysicalDeviceSurfacePresentModesKHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfacePresentModesKHR);
     }
+#if defined(WIN32)
+    if (IsPhysicalDeviceExtensionAvailable("VK_EXT_full_screen_exclusive")) {
+        if (string_eq(pName, "vkGetPhysicalDeviceSurfacePresentModes2EXT"))
+            return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfacePresentModes2EXT);
+    }
+#endif
     if (IsInstanceExtensionEnabled("VK_KHR_get_surface_capabilities2")) {
         if (string_eq(pName, "vkGetPhysicalDeviceSurfaceCapabilities2KHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfaceCapabilities2KHR);
