@@ -2469,9 +2469,13 @@ void emulate_VK_EXT_surface_maintenance1(struct loader_icd_term *icd_term, const
                 VkSurfacePresentModeCompatibilityEXT *surface_present_mode_compatibility =
                     (VkSurfacePresentModeCompatibilityEXT *)void_pNext;
                 if (surface_present_mode_compatibility->pPresentModes) {
-                    surface_present_mode_compatibility->pPresentModes[0] = present_mode;
+                    if (surface_present_mode_compatibility->presentModeCount != 0) {
+                        surface_present_mode_compatibility->pPresentModes[0] = present_mode;
+                        surface_present_mode_compatibility->presentModeCount = 1;
+                    }
+                } else {
+                    surface_present_mode_compatibility->presentModeCount = 1;
                 }
-                surface_present_mode_compatibility->presentModeCount = 1;
 
             } else if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT) {
                 // Because there is no way to fill out the information faithfully, set scaled max/min image extent to the
