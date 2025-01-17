@@ -25,6 +25,10 @@
 #include "loader_common.h"
 
 typedef struct {
+    // This union holds the data that drivers which use ICD interface version 2 and before expect. This is so they can dereference
+    // VkSurfaceKHR to get this struct and access the creation parameters used in subsequent API calls, such as get surface formats
+    // & get surface present modes.
+    // Thus, these members need to stay here in order to preserve ABI compatibility.
     union {
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
         VkIcdSurfaceWayland wayland_surf;
