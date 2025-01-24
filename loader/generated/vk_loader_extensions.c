@@ -1216,6 +1216,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->UpdateIndirectExecutionSetPipelineEXT = (PFN_vkUpdateIndirectExecutionSetPipelineEXT)gdpa(dev, "vkUpdateIndirectExecutionSetPipelineEXT");
     table->UpdateIndirectExecutionSetShaderEXT = (PFN_vkUpdateIndirectExecutionSetShaderEXT)gdpa(dev, "vkUpdateIndirectExecutionSetShaderEXT");
 
+    // ---- VK_EXT_external_memory_metal extension commands
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    table->GetMemoryMetalHandleEXT = (PFN_vkGetMemoryMetalHandleEXT)gdpa(dev, "vkGetMemoryMetalHandleEXT");
+#endif // VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    table->GetMemoryMetalHandlePropertiesEXT = (PFN_vkGetMemoryMetalHandlePropertiesEXT)gdpa(dev, "vkGetMemoryMetalHandlePropertiesEXT");
+#endif // VK_USE_PLATFORM_METAL_EXT
+
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gdpa(dev, "vkDestroyAccelerationStructureKHR");
@@ -3074,6 +3082,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "DestroyIndirectExecutionSetEXT")) return (void *)table->DestroyIndirectExecutionSetEXT;
     if (!strcmp(name, "UpdateIndirectExecutionSetPipelineEXT")) return (void *)table->UpdateIndirectExecutionSetPipelineEXT;
     if (!strcmp(name, "UpdateIndirectExecutionSetShaderEXT")) return (void *)table->UpdateIndirectExecutionSetShaderEXT;
+
+    // ---- VK_EXT_external_memory_metal extension commands
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (!strcmp(name, "GetMemoryMetalHandleEXT")) return (void *)table->GetMemoryMetalHandleEXT;
+#endif // VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (!strcmp(name, "GetMemoryMetalHandlePropertiesEXT")) return (void *)table->GetMemoryMetalHandlePropertiesEXT;
+#endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -9838,6 +9854,42 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixFlex
 }
 
 
+// ---- VK_EXT_external_memory_metal extension trampoline/terminators
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandleEXT(
+    VkDevice                                    device,
+    const VkMemoryGetMetalHandleInfoEXT*        pGetMetalHandleInfo,
+    void**                                      pHandle) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetMemoryMetalHandleEXT: Invalid device "
+                   "[VUID-vkGetMemoryMetalHandleEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle);
+}
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandlePropertiesEXT(
+    VkDevice                                    device,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    const void*                                 pHandle,
+    VkMemoryMetalHandlePropertiesEXT*           pMemoryMetalHandleProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetMemoryMetalHandlePropertiesEXT: Invalid device "
+                   "[VUID-vkGetMemoryMetalHandlePropertiesEXT-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetMemoryMetalHandlePropertiesEXT(device, handleType, pHandle, pMemoryMetalHandleProperties);
+}
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -12226,6 +12278,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
         return true;
     }
+
+    // ---- VK_EXT_external_memory_metal extension commands
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (!strcmp("vkGetMemoryMetalHandleEXT", name)) {
+        *addr = (void *)GetMemoryMetalHandleEXT;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (!strcmp("vkGetMemoryMetalHandlePropertiesEXT", name)) {
+        *addr = (void *)GetMemoryMetalHandlePropertiesEXT;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {

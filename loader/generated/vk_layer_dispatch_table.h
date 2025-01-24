@@ -1178,6 +1178,14 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEXT;
     PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
 
+    // ---- VK_EXT_external_memory_metal extension commands
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    PFN_vkGetMemoryMetalHandleEXT GetMemoryMetalHandleEXT;
+#endif // VK_USE_PLATFORM_METAL_EXT
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    PFN_vkGetMemoryMetalHandlePropertiesEXT GetMemoryMetalHandlePropertiesEXT;
+#endif // VK_USE_PLATFORM_METAL_EXT
+
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
