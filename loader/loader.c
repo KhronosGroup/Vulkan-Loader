@@ -4426,9 +4426,14 @@ bool loader_get_layer_interface_version(PFN_vkNegotiateLoaderLayerInterfaceVersi
 void setup_logical_device_enabled_layer_extensions(const struct loader_instance *inst, struct loader_device *dev,
                                                    const struct loader_extension_list *icd_exts,
                                                    const VkDeviceCreateInfo *pCreateInfo) {
+    // no enabled extensions, early exit
+    if (pCreateInfo->ppEnabledExtensionNames == NULL) {
+        return;
+    }
     // Can only setup debug marker as debug utils is an instance extensions.
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
-        if (!strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+        if (pCreateInfo->ppEnabledExtensionNames[i] &&
+            !strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
             // Check if its supported by the driver
             for (uint32_t j = 0; j < icd_exts->count; ++j) {
                 if (!strcmp(icd_exts->list[j].extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
@@ -5349,7 +5354,14 @@ out:
 VkResult loader_validate_device_extensions(struct loader_instance *this_instance,
                                            const struct loader_pointer_layer_list *activated_device_layers,
                                            const struct loader_extension_list *icd_exts, const VkDeviceCreateInfo *pCreateInfo) {
+    // Early out to prevent nullptr dereference
+    if (pCreateInfo->enabledExtensionCount == 0 || pCreateInfo->ppEnabledExtensionNames == NULL) {
+        return VK_SUCCESS;
+    }
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        if (pCreateInfo->ppEnabledExtensionNames[i] == NULL) {
+            continue;
+        }
         VkStringErrorFlags result = vk_string_validate(MaxLoaderStringLength, pCreateInfo->ppEnabledExtensionNames[i]);
         if (result != VK_STRING_ERROR_NONE) {
             loader_log(this_instance, VULKAN_LOADER_ERROR_BIT, 0,
@@ -5861,7 +5873,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     }
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        if (pCreateInfo->ppEnabledExtensionNames == NULL) {
+            continue;
+        }
         const char *extension_name = pCreateInfo->ppEnabledExtensionNames[i];
+        if (extension_name == NULL) {
+            continue;
+        }
         VkExtensionProperties *prop = get_extension_property(extension_name, &icd_exts);
         if (prop) {
             filtered_extension_names[localCreateInfo.enabledExtensionCount] = (char *)extension_name;
