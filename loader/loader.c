@@ -5915,10 +5915,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
                     // Before calling down, replace the incoming physical device values (which are really loader terminator
                     // physical devices) with the ICDs physical device values.
-                    struct loader_physical_device_term *cur_term;
+                    struct loader_physical_device_tramp *cur_tramp;
                     for (uint32_t phys_dev = 0; phys_dev < cur_struct->physicalDeviceCount; phys_dev++) {
-                        cur_term = (struct loader_physical_device_term *)cur_struct->pPhysicalDevices[phys_dev];
-                        phys_dev_array[phys_dev] = cur_term->phys_dev;
+                        cur_tramp = (struct loader_physical_device_tramp *)cur_struct->pPhysicalDevices[phys_dev];
+                        phys_dev_array[phys_dev] = cur_tramp->phys_dev;
                     }
                     temp_struct->pPhysicalDevices = phys_dev_array;
 
