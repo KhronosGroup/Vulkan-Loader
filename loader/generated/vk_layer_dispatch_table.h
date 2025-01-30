@@ -291,6 +291,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
     // ---- VK_NV_optical_flow extension commands
     PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
 
+    // ---- VK_NV_cooperative_vector extension commands
+    PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV GetPhysicalDeviceCooperativeVectorPropertiesNV;
+
     // ---- VK_NV_cooperative_matrix2 extension commands
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 } VkLayerInstanceDispatchTable;
@@ -1152,6 +1155,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
     PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
 
+    // ---- VK_NV_cooperative_vector extension commands
+    PFN_vkConvertCooperativeVectorMatrixNV ConvertCooperativeVectorMatrixNV;
+    PFN_vkCmdConvertCooperativeVectorMatrixNV CmdConvertCooperativeVectorMatrixNV;
+
     // ---- VK_NV_low_latency2 extension commands
     PFN_vkSetLatencySleepModeNV SetLatencySleepModeNV;
     PFN_vkLatencySleepNV LatencySleepNV;
@@ -1166,6 +1173,14 @@ typedef struct VkLayerDispatchTable_ {
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_cluster_acceleration_structure extension commands
+    PFN_vkGetClusterAccelerationStructureBuildSizesNV GetClusterAccelerationStructureBuildSizesNV;
+    PFN_vkCmdBuildClusterAccelerationStructureIndirectNV CmdBuildClusterAccelerationStructureIndirectNV;
+
+    // ---- VK_NV_partitioned_acceleration_structure extension commands
+    PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV GetPartitionedAccelerationStructuresBuildSizesNV;
+    PFN_vkCmdBuildPartitionedAccelerationStructuresNV CmdBuildPartitionedAccelerationStructuresNV;
 
     // ---- VK_EXT_device_generated_commands extension commands
     PFN_vkGetGeneratedCommandsMemoryRequirementsEXT GetGeneratedCommandsMemoryRequirementsEXT;
