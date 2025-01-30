@@ -312,6 +312,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     // ---- VK_NV_optical_flow extension commands
     LOOKUP_GIPA(GetPhysicalDeviceOpticalFlowImageFormatsNV);
 
+    // ---- VK_NV_cooperative_vector extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceCooperativeVectorPropertiesNV);
+
     // ---- VK_NV_cooperative_matrix2 extension commands
     LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV);
 
@@ -1190,6 +1193,10 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetFramebufferTilePropertiesQCOM = (PFN_vkGetFramebufferTilePropertiesQCOM)gdpa(dev, "vkGetFramebufferTilePropertiesQCOM");
     table->GetDynamicRenderingTilePropertiesQCOM = (PFN_vkGetDynamicRenderingTilePropertiesQCOM)gdpa(dev, "vkGetDynamicRenderingTilePropertiesQCOM");
 
+    // ---- VK_NV_cooperative_vector extension commands
+    table->ConvertCooperativeVectorMatrixNV = (PFN_vkConvertCooperativeVectorMatrixNV)gdpa(dev, "vkConvertCooperativeVectorMatrixNV");
+    table->CmdConvertCooperativeVectorMatrixNV = (PFN_vkCmdConvertCooperativeVectorMatrixNV)gdpa(dev, "vkCmdConvertCooperativeVectorMatrixNV");
+
     // ---- VK_NV_low_latency2 extension commands
     table->SetLatencySleepModeNV = (PFN_vkSetLatencySleepModeNV)gdpa(dev, "vkSetLatencySleepModeNV");
     table->LatencySleepNV = (PFN_vkLatencySleepNV)gdpa(dev, "vkLatencySleepNV");
@@ -1204,6 +1211,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)gdpa(dev, "vkGetScreenBufferPropertiesQNX");
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_cluster_acceleration_structure extension commands
+    table->GetClusterAccelerationStructureBuildSizesNV = (PFN_vkGetClusterAccelerationStructureBuildSizesNV)gdpa(dev, "vkGetClusterAccelerationStructureBuildSizesNV");
+    table->CmdBuildClusterAccelerationStructureIndirectNV = (PFN_vkCmdBuildClusterAccelerationStructureIndirectNV)gdpa(dev, "vkCmdBuildClusterAccelerationStructureIndirectNV");
+
+    // ---- VK_NV_partitioned_acceleration_structure extension commands
+    table->GetPartitionedAccelerationStructuresBuildSizesNV = (PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV)gdpa(dev, "vkGetPartitionedAccelerationStructuresBuildSizesNV");
+    table->CmdBuildPartitionedAccelerationStructuresNV = (PFN_vkCmdBuildPartitionedAccelerationStructuresNV)gdpa(dev, "vkCmdBuildPartitionedAccelerationStructuresNV");
 
     // ---- VK_EXT_device_generated_commands extension commands
     table->GetGeneratedCommandsMemoryRequirementsEXT = (PFN_vkGetGeneratedCommandsMemoryRequirementsEXT)gdpa(dev, "vkGetGeneratedCommandsMemoryRequirementsEXT");
@@ -1512,6 +1527,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_NV_optical_flow extension commands
     table->GetPhysicalDeviceOpticalFlowImageFormatsNV = (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV)gpa(inst, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV");
+
+    // ---- VK_NV_cooperative_vector extension commands
+    table->GetPhysicalDeviceCooperativeVectorPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeVectorPropertiesNV");
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
@@ -3057,6 +3075,10 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetFramebufferTilePropertiesQCOM")) return (void *)table->GetFramebufferTilePropertiesQCOM;
     if (!strcmp(name, "GetDynamicRenderingTilePropertiesQCOM")) return (void *)table->GetDynamicRenderingTilePropertiesQCOM;
 
+    // ---- VK_NV_cooperative_vector extension commands
+    if (!strcmp(name, "ConvertCooperativeVectorMatrixNV")) return (void *)table->ConvertCooperativeVectorMatrixNV;
+    if (!strcmp(name, "CmdConvertCooperativeVectorMatrixNV")) return (void *)table->CmdConvertCooperativeVectorMatrixNV;
+
     // ---- VK_NV_low_latency2 extension commands
     if (!strcmp(name, "SetLatencySleepModeNV")) return (void *)table->SetLatencySleepModeNV;
     if (!strcmp(name, "LatencySleepNV")) return (void *)table->LatencySleepNV;
@@ -3071,6 +3093,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     if (!strcmp(name, "GetScreenBufferPropertiesQNX")) return (void *)table->GetScreenBufferPropertiesQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_cluster_acceleration_structure extension commands
+    if (!strcmp(name, "GetClusterAccelerationStructureBuildSizesNV")) return (void *)table->GetClusterAccelerationStructureBuildSizesNV;
+    if (!strcmp(name, "CmdBuildClusterAccelerationStructureIndirectNV")) return (void *)table->CmdBuildClusterAccelerationStructureIndirectNV;
+
+    // ---- VK_NV_partitioned_acceleration_structure extension commands
+    if (!strcmp(name, "GetPartitionedAccelerationStructuresBuildSizesNV")) return (void *)table->GetPartitionedAccelerationStructuresBuildSizesNV;
+    if (!strcmp(name, "CmdBuildPartitionedAccelerationStructuresNV")) return (void *)table->CmdBuildPartitionedAccelerationStructuresNV;
 
     // ---- VK_EXT_device_generated_commands extension commands
     if (!strcmp(name, "GetGeneratedCommandsMemoryRequirementsEXT")) return (void *)table->GetGeneratedCommandsMemoryRequirementsEXT;
@@ -3384,6 +3414,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_NV_optical_flow extension commands
     if (!strcmp(name, "GetPhysicalDeviceOpticalFlowImageFormatsNV")) return (void *)table->GetPhysicalDeviceOpticalFlowImageFormatsNV;
+
+    // ---- VK_NV_cooperative_vector extension commands
+    if (!strcmp(name, "GetPhysicalDeviceCooperativeVectorPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeVectorPropertiesNV;
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     if (!strcmp(name, "GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
@@ -9581,6 +9614,66 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 }
 
 
+// ---- VK_NV_cooperative_vector extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeVectorPropertiesNV*            pProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceCooperativeVectorPropertiesNV: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceCooperativeVectorPropertiesNV-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceCooperativeVectorPropertiesNV(unwrapped_phys_dev, pPropertyCount, pProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeVectorPropertiesNV(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeVectorPropertiesNV*            pProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceCooperativeVectorPropertiesNV) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCooperativeVectorPropertiesNV");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.GetPhysicalDeviceCooperativeVectorPropertiesNV(phys_dev_term->phys_dev, pPropertyCount, pProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ConvertCooperativeVectorMatrixNV(
+    VkDevice                                    device,
+    const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkConvertCooperativeVectorMatrixNV: Invalid device "
+                   "[VUID-vkConvertCooperativeVectorMatrixNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->ConvertCooperativeVectorMatrixNV(device, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdConvertCooperativeVectorMatrixNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    infoCount,
+    const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdConvertCooperativeVectorMatrixNV: Invalid commandBuffer "
+                   "[VUID-vkCmdConvertCooperativeVectorMatrixNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos);
+}
+
+
 // ---- VK_NV_low_latency2 extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(
@@ -9687,6 +9780,66 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(
 }
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+// ---- VK_NV_cluster_acceleration_structure extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(
+    VkDevice                                    device,
+    const VkClusterAccelerationStructureInputInfoNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetClusterAccelerationStructureBuildSizesNV: Invalid device "
+                   "[VUID-vkGetClusterAccelerationStructureBuildSizesNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBuildClusterAccelerationStructureIndirectNV: Invalid commandBuffer "
+                   "[VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos);
+}
+
+
+// ---- VK_NV_partitioned_acceleration_structure extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL GetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice                                    device,
+    const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPartitionedAccelerationStructuresBuildSizesNV: Invalid device "
+                   "[VUID-vkGetPartitionedAccelerationStructuresBuildSizesNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer                             commandBuffer,
+    const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBuildPartitionedAccelerationStructuresNV: Invalid commandBuffer "
+                   "[VUID-vkCmdBuildPartitionedAccelerationStructuresNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo);
+}
+
 
 // ---- VK_EXT_device_generated_commands extension trampoline/terminators
 
@@ -12199,6 +12352,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_NV_cooperative_vector extension commands
+    if (!strcmp("vkGetPhysicalDeviceCooperativeVectorPropertiesNV", name)) {
+        *addr = (void *)GetPhysicalDeviceCooperativeVectorPropertiesNV;
+        return true;
+    }
+    if (!strcmp("vkConvertCooperativeVectorMatrixNV", name)) {
+        *addr = (void *)ConvertCooperativeVectorMatrixNV;
+        return true;
+    }
+    if (!strcmp("vkCmdConvertCooperativeVectorMatrixNV", name)) {
+        *addr = (void *)CmdConvertCooperativeVectorMatrixNV;
+        return true;
+    }
+
     // ---- VK_NV_low_latency2 extension commands
     if (!strcmp("vkSetLatencySleepModeNV", name)) {
         *addr = (void *)SetLatencySleepModeNV;
@@ -12234,6 +12401,26 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_cluster_acceleration_structure extension commands
+    if (!strcmp("vkGetClusterAccelerationStructureBuildSizesNV", name)) {
+        *addr = (void *)GetClusterAccelerationStructureBuildSizesNV;
+        return true;
+    }
+    if (!strcmp("vkCmdBuildClusterAccelerationStructureIndirectNV", name)) {
+        *addr = (void *)CmdBuildClusterAccelerationStructureIndirectNV;
+        return true;
+    }
+
+    // ---- VK_NV_partitioned_acceleration_structure extension commands
+    if (!strcmp("vkGetPartitionedAccelerationStructuresBuildSizesNV", name)) {
+        *addr = (void *)GetPartitionedAccelerationStructuresBuildSizesNV;
+        return true;
+    }
+    if (!strcmp("vkCmdBuildPartitionedAccelerationStructuresNV", name)) {
+        *addr = (void *)CmdBuildPartitionedAccelerationStructuresNV;
+        return true;
+    }
 
     // ---- VK_EXT_device_generated_commands extension commands
     if (!strcmp("vkGetGeneratedCommandsMemoryRequirementsEXT", name)) {
@@ -12795,6 +12982,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_NV_optical_flow extension commands
     .GetPhysicalDeviceOpticalFlowImageFormatsNV = terminator_GetPhysicalDeviceOpticalFlowImageFormatsNV,
+
+    // ---- VK_NV_cooperative_vector extension commands
+    .GetPhysicalDeviceCooperativeVectorPropertiesNV = terminator_GetPhysicalDeviceCooperativeVectorPropertiesNV,
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     .GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = terminator_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV,
