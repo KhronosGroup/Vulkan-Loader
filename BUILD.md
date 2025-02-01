@@ -81,7 +81,7 @@ indicated by *install_dir*:
 ## Build Requirements
 
 1. `C99` capable compiler
-2. `CMake` version 3.17.2 or greater
+2. `CMake` version 3.22.1 or greater
 3. `Git`
 
 ### Test Requirements
@@ -271,7 +271,7 @@ These variables should be set using the `-D` option when invoking CMake to gener
     - [2019](https://www.visualstudio.com/vs/older-downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
-- [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-win64-x64.zip) is recommended.
+- [CMake 3.22.1](https://cmake.org/files/v3.22.1/cmake-3.22.1-win64-x64.zip) is recommended.
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
   - [Git for Windows](http://git-scm.com/download/win) is a popular solution
@@ -382,7 +382,7 @@ This repository has been built and tested on the two most recent Ubuntu LTS
 versions, although earlier versions may work.
 It is be straightforward to adapt this repository to other Linux distributions.
 
-[CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.tar.gz) is recommended.
+[CMake 3.22.1](https://cmake.org/files/v3.22.1/cmake-3.22.1-Linux-x86_64.tar.gz) is recommended.
 
 #### Required Package List
 
@@ -561,7 +561,7 @@ Clone the Vulkan-Loader repository:
 
 ### MacOS build
 
-[CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Darwin-x86_64.tar.gz) is recommended.
+[CMake 3.22.1](https://cmake.org/files/v3.22.1/cmake-3.22.1-Darwin-x86_64.tar.gz) is recommended.
 
 #### Building with the Unix Makefiles Generator
 
