@@ -23,11 +23,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Make sure tests uses the dynamic runtime instead
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
-# For MSVC/Windows, replace /GR with an empty string, this prevents warnings of /GR being overriden by /GR-
-# Newer CMake versions (3.20) have better solutions for this through policy - using the old
-# way while waiting for when updating can occur
-string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-
 if (IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}/googletest")
     set(BUILD_GTEST ON)
     set(BUILD_GMOCK OFF)

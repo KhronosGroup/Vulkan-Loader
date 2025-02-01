@@ -56,7 +56,7 @@ jobs:
               if: ${{ matrix.os == 'ubuntu-20.04' }}
               uses: lukka/get-cmake@latest
               with:
-                cmakeVersion: 3.17.2
+                cmakeVersion: 3.22.1
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             # This is to combat a bug when using 6.6 linux kernels with thread/address sanitizer
@@ -115,7 +115,7 @@ jobs:
                 python-version: '3.11'
             - uses: lukka/get-cmake@latest
               with:
-                cmakeVersion: 3.17.2
+                cmakeVersion: 3.22.1
             - name: Enable 32 bit
               run: sudo dpkg --add-architecture i386
             - run: sudo apt-get update
@@ -152,7 +152,7 @@ jobs:
                 python-version: '3.11'
             - uses: lukka/get-cmake@latest
               with:
-                cmakeVersion: 3.17.2
+                cmakeVersion: 3.22.1
             - name: Enable 32 bit
               run: sudo dpkg --add-architecture i386
             - run: sudo apt-get update
