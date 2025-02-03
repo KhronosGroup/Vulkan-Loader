@@ -161,8 +161,9 @@ VkResult parse_layer_configurations(const struct loader_instance* inst, cJSON* s
     VkResult res = VK_SUCCESS;
 
     cJSON* layer_configurations = loader_cJSON_GetObjectItem(settings_object, "layers");
+    // If the layers object isn't present, return early with success to allow the settings file to still apply
     if (NULL == layer_configurations) {
-        return VK_ERROR_INITIALIZATION_FAILED;
+        return VK_SUCCESS;
     }
 
     uint32_t layer_configurations_count = loader_cJSON_GetArraySize(layer_configurations);
