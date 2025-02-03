@@ -3813,9 +3813,9 @@ TEST(AppPackageDiscovery, AppPackageDrivers) {
 }
 TEST(AppPackageDiscovery, AppPackageLayers) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2)));
+    env.add_icd(TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2))).add_physical_device({});
 
-    const char* layer_name = "test_package_layer";
+    const char* layer_name = "VK_LAYER_test_package_layer";
     env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name(layer_name)
                                                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -3826,14 +3826,30 @@ TEST(AppPackageDiscovery, AppPackageLayers) {
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 
-    {
-        VkLayerProperties layer_props{};
-        uint32_t layer_count = 0;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, NULL));
-        ASSERT_EQ(layer_count, 1);
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceLayerProperties(&layer_count, &layer_props));
-        ASSERT_TRUE(string_eq(layer_name, layer_props.layerName));
-    }
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1U);
+    ASSERT_EQ(layers.size(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
+}
+
+TEST(AppPackageDiscovery, AppPackageICDAndLayers) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2}.set_discovery_type(ManifestDiscoveryType::windows_app_package))
+        .add_physical_device({});
+
+    const char* layer_name = "VK_LAYER_test_package_layer";
+    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                          .set_disable_environment("DISABLE_ME")),
+                                            "test_package_layer.json")
+                               .set_discovery_type(ManifestDiscoveryType::windows_app_package));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1U);
+    ASSERT_EQ(layers.size(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
 }
 
 // Make sure that stale layer manifests (path to nonexistant file) which have the same name as real manifests don't cause the real
