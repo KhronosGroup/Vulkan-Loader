@@ -2891,9 +2891,13 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
         // Otherwise, try to read in individual layers
         cJSON *layer_node = loader_cJSON_GetObjectItem(json, "layer");
         if (layer_node == NULL) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "loader_add_layer_properties: Can not find 'layer' object in manifest JSON file %s.  Skipping this file.",
-                       filename);
+            // Don't warn if this happens to be an ICD manifest
+            if (loader_cJSON_GetObjectItem(json, "ICD") == NULL) {
+                loader_log(
+                    inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                    "loader_add_layer_properties: Can not find 'layer' object in manifest JSON file %s.  Skipping this file.",
+                    filename);
+            }
             goto out;
         }
         // Loop through all "layer" objects in the file to get a count of them
@@ -3609,8 +3613,12 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 
     cJSON *itemICD = loader_cJSON_GetObjectItem(icd_manifest_json, "ICD");
     if (itemICD == NULL) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
-                   "loader_parse_icd_manifest: Can not find \'ICD\' object in ICD JSON file %s. Skipping ICD JSON", file_str);
+        // Don't warn if this happens to be a layer manifest file
+        if (loader_cJSON_GetObjectItem(icd_manifest_json, "layer") == NULL &&
+            loader_cJSON_GetObjectItem(icd_manifest_json, "layers") == NULL) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                       "loader_parse_icd_manifest: Can not find \'ICD\' object in ICD JSON file %s. Skipping ICD JSON", file_str);
+        }
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
