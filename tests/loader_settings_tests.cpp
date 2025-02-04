@@ -2377,25 +2377,27 @@ TEST(SettingsFile, StderrLogFilters) {
                 LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("on"))));
 
     std::string expected_output_verbose;
-    expected_output_verbose += "DEBUG:             Layer Configurations count = 2\n";
-    expected_output_verbose += "DEBUG:             ---- Layer Configuration [0] ----\n";
-    expected_output_verbose += std::string("DEBUG:             Name: ") + explicit_layer_name + "\n";
-    expected_output_verbose += "DEBUG:             Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
-    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
-    expected_output_verbose += "DEBUG:             Control: on\n";
-    expected_output_verbose += "DEBUG:             ---- Layer Configuration [1] ----\n";
-    expected_output_verbose += "DEBUG:             Name: VK_LAYER_missing\n";
-    expected_output_verbose += "DEBUG:             Path: /road/to/nowhere\n";
-    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
-    expected_output_verbose += "DEBUG:             Control: on\n";
-    expected_output_verbose += "DEBUG:             ---------------------------------\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Configurations count = 2\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          ---- Layer Configuration [0] ----\n";
+    expected_output_verbose += std::string("[Vulkan Loader] DEBUG:          Name: ") + explicit_layer_name + "\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Type: Explicit\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: on\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          ---- Layer Configuration [1] ----\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Name: VK_LAYER_missing\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: /road/to/nowhere\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Type: Explicit\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: on\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          ---------------------------------\n";
 
-    std::string expected_output_info = std::string("INFO:              ") + get_settings_location_log_message(env) + "\n";
+    std::string expected_output_info =
+        std::string("[Vulkan Loader] INFO:           ") + get_settings_location_log_message(env) + "\n";
 
-    std::string expected_output_warning = "WARNING:           Layer name " + std::string(explicit_layer_name) +
+    std::string expected_output_warning = "[Vulkan Loader] WARNING:        Layer name " + std::string(explicit_layer_name) +
                                           " does not conform to naming standard (Policy #LLP_LAYER_3)\n";
 
-    std::string expected_output_error = "ERROR:             loader_get_json: Failed to open JSON file /road/to/nowhere\n";
+    std::string expected_output_error =
+        "[Vulkan Loader] ERROR:          loader_get_json: Failed to open JSON file /road/to/nowhere\n";
 
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"all"};
     env.update_loader_settings(env.loader_settings);
@@ -2403,9 +2405,9 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_TRUE(
-            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: ERROR | "
-                                           "WARNING | INFO | DEBUG | PERF | DRIVER | LAYER\n"));
+        ASSERT_TRUE(env.platform_shim->find_in_log(
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error: ERROR | "
+            "WARNING | INFO | DEBUG | PERF | DRIVER | LAYER\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2420,8 +2422,9 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_TRUE(env.platform_shim->find_in_log(
-            "DEBUG:             Loader Settings Filters for Logging to Standard Error: ERROR | WARNING | INFO | DEBUG\n"));
+        ASSERT_TRUE(
+            env.platform_shim->find_in_log("[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard "
+                                           "Error: ERROR | WARNING | INFO | DEBUG\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2437,7 +2440,7 @@ TEST(SettingsFile, StderrLogFilters) {
         inst.CheckCreate();
 
         ASSERT_TRUE(env.platform_shim->find_in_log(
-            "DEBUG:             Loader Settings Filters for Logging to Standard Error: WARNING | INFO | DEBUG\n"));
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error: WARNING | INFO | DEBUG\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2452,8 +2455,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_TRUE(
-            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: DEBUG\n"));
+        ASSERT_TRUE(env.platform_shim->find_in_log(
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error: DEBUG\n"));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2468,8 +2471,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_FALSE(
-            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: INFO\n"));
+        ASSERT_FALSE(env.platform_shim->find_in_log(
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error: INFO\n"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2484,8 +2487,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_FALSE(
-            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: WARNING\n"));
+        ASSERT_FALSE(env.platform_shim->find_in_log(
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error: WARNING\n"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_TRUE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2500,8 +2503,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_FALSE(
-            env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error: ERROR\n"));
+        ASSERT_FALSE(env.platform_shim->find_in_log(
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error: ERROR\n"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2516,7 +2519,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_FALSE(env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error:"));
+        ASSERT_FALSE(env.platform_shim->find_in_log(
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error:"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2531,7 +2535,8 @@ TEST(SettingsFile, StderrLogFilters) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        ASSERT_FALSE(env.platform_shim->find_in_log("DEBUG:             Loader Settings Filters for Logging to Standard Error:"));
+        ASSERT_FALSE(env.platform_shim->find_in_log(
+            "[Vulkan Loader] DEBUG:          Loader Settings Filters for Logging to Standard Error:"));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_verbose));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_info));
         ASSERT_FALSE(env.platform_shim->find_in_log(expected_output_warning));
@@ -2653,25 +2658,27 @@ TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
     env.update_loader_settings(env.loader_settings);
 
     std::string expected_output_verbose;
-    expected_output_verbose += "DEBUG:             Layer Configurations count = 2\n";
-    expected_output_verbose += "DEBUG:             ---- Layer Configuration [0] ----\n";
-    expected_output_verbose += std::string("DEBUG:             Name: ") + explicit_layer_name + "\n";
-    expected_output_verbose += "DEBUG:             Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
-    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
-    expected_output_verbose += "DEBUG:             Control: auto\n";
-    expected_output_verbose += "DEBUG:             ---- Layer Configuration [1] ----\n";
-    expected_output_verbose += "DEBUG:             Name: VK_LAYER_missing\n";
-    expected_output_verbose += "DEBUG:             Path: /road/to/nowhere\n";
-    expected_output_verbose += "DEBUG:             Layer Type: Explicit\n";
-    expected_output_verbose += "DEBUG:             Control: auto\n";
-    expected_output_verbose += "DEBUG:             ---------------------------------\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Configurations count = 2\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          ---- Layer Configuration [0] ----\n";
+    expected_output_verbose += std::string("[Vulkan Loader] DEBUG:          Name: ") + explicit_layer_name + "\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: " + env.get_shimmed_layer_manifest_path().string() + "\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Type: Explicit\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: auto\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          ---- Layer Configuration [1] ----\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Name: VK_LAYER_missing\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: /road/to/nowhere\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Type: Explicit\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: auto\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          ---------------------------------\n";
 
-    std::string expected_output_info = std::string("INFO:              ") + get_settings_location_log_message(env) + "\n";
+    std::string expected_output_info =
+        std::string("[Vulkan Loader] INFO:           ") + get_settings_location_log_message(env) + "\n";
 
     std::string expected_output_warning =
-        "WARNING:           Layer name Regular_TestLayer1 does not conform to naming standard (Policy #LLP_LAYER_3)\n";
+        "[Vulkan Loader] WARNING:        Layer name Regular_TestLayer1 does not conform to naming standard (Policy #LLP_LAYER_3)\n";
 
-    std::string expected_output_error = "ERROR:             loader_get_json: Failed to open JSON file /road/to/nowhere\n";
+    std::string expected_output_error =
+        "[Vulkan Loader] ERROR:          loader_get_json: Failed to open JSON file /road/to/nowhere\n";
 
     env.platform_shim->clear_logs();
     {
