@@ -172,7 +172,7 @@ message will show for each driver that has been ignored.
 This message will look like the following:
 
 ```
-WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
+[Vulkan Loader] WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
 ```
 
 If no drivers are found with a manifest filename that matches any of the
@@ -190,7 +190,7 @@ will show for each driver that has been forcibly disabled.
 This message will look like the following:
 
 ```
-WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
+[Vulkan Loader] WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
 ```
 
 If no drivers are found with a manifest filename that matches any of the
