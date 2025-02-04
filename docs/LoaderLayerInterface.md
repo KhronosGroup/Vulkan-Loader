@@ -486,7 +486,7 @@ will show for each layer that has been forced on.
 This message will look like the following:
 
 ```
-WARNING | LAYER:  Layer "VK_LAYER_LUNARG_wrap_objects" force enabled due to env var 'VK_LOADER_LAYERS_ENABLE'
+[Vulkan Loader] WARNING | LAYER:  Layer "VK_LAYER_LUNARG_wrap_objects" force enabled due to env var 'VK_LOADER_LAYERS_ENABLE'
 ```
 
 #### Layer Disable Filtering
@@ -508,7 +508,7 @@ will show for each layer that has been forcibly disabled.
 This message will look like the following:
 
 ```
-WARNING | LAYER:  Layer "VK_LAYER_LUNARG_wrap_objects" disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'
+[Vulkan Loader] WARNING | LAYER:  Layer "VK_LAYER_LUNARG_wrap_objects" disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'
 ```
 
 #### Layer Special Case Disable

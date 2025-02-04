@@ -99,57 +99,59 @@ For example, the output of the loader looking for implicit layers may look like
 the following:
 
 ```
-LAYER: Searching for layer manifest files
-LAYER:  In following locations:
-LAYER:   /home/${USER}/.config/vulkan/implicit_layer.d
-LAYER:   /etc/xdg/vulkan/implicit_layer.d
-LAYER:   /usr/local/etc/vulkan/implicit_layer.d
-LAYER:   /etc/vulkan/implicit_layer.d
-LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d
-LAYER:   /home/${USER}/.local/share/flatpak/exports/share/vulkan/implicit_layer.d
-LAYER:   /var/lib/flatpak/exports/share/vulkan/implicit_layer.d
-LAYER:   /usr/local/share/vulkan/implicit_layer.d
-LAYER:   /usr/share/vulkan/implicit_layer.d
-LAYER:  Found the following files:
-LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/renderdoc_capture.json
-LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamfossilize_i386.json
-LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamfossilize_x86_64.json
-LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamoverlay_i386.json
-LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamoverlay_x86_64.json
-LAYER:   /usr/share/vulkan/implicit_layer.d/nvidia_layers.json
-LAYER:   /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
+[Vulkan Loader] LAYER: Searching for implicit layer manifest files
+[Vulkan Loader] LAYER:  In following locations:
+[Vulkan Loader] LAYER:   /home/${USER}/.config/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /etc/xdg/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /usr/local/etc/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /etc/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /home/${USER}/.local/share/flatpak/exports/share/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /var/lib/flatpak/exports/share/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /usr/local/share/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:   /usr/share/vulkan/implicit_layer.d
+[Vulkan Loader] LAYER:  Found the following files:
+[Vulkan Loader] LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/renderdoc_capture.json
+[Vulkan Loader] LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamfossilize_i386.json
+[Vulkan Loader] LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamfossilize_x86_64.json
+[Vulkan Loader] LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamoverlay_i386.json
+[Vulkan Loader] LAYER:   /home/${USER}/.local/share/vulkan/implicit_layer.d/steamoverlay_x86_64.json
+[Vulkan Loader] LAYER:   /usr/share/vulkan/implicit_layer.d/nvidia_layers.json
+[Vulkan Loader] LAYER:   /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
 ```
 
 Then, the loading of layer libraries is reported similar to this:
 
 ```
-LAYER | DEBUG: Loading layer library libVkLayer_khronos_validation.so
-LAYER | INFO: Insert instance layer VK_LAYER_KHRONOS_validation (libVkLayer_khronos_validation.so)
-LAYER | DEBUG: Loading layer library libVkLayer_MESA_device_select.so
-LAYER | INFO: Insert instance layer VK_LAYER_MESA_device_select (libVkLayer_MESA_device_select.so)
+[Vulkan Loader] DEBUG | LAYER : Loading layer library libVkLayer_khronos_validation.so
+[Vulkan Loader] INFO | LAYER : Insert instance layer VK_LAYER_KHRONOS_validation (libVkLayer_khronos_validation.so)
+[Vulkan Loader] DEBUG | LAYER : Loading layer library libVkLayer_MESA_device_select.so
+[Vulkan Loader] INFO | LAYER : Insert instance layer VK_LAYER_MESA_device_select (libVkLayer_MESA_device_select.so)
 ```
 
 Finally, when the Vulkan instance is created, you can see the full instance
 call-chain from a functional standpoint with output like this:
 
 ```
-LAYER: vkCreateInstance layer callstack setup to:
-LAYER:  <Application>
-LAYER:    ||
-LAYER:  <Loader>
-LAYER:    ||
-LAYER:  VK_LAYER_MESA_device_select
-LAYER:      Type: Implicit
-LAYER:         Disable Env Var:  NODEVICE_SELECT
-LAYER:      Manifest: /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
-LAYER:      Library:  libVkLayer_MESA_device_select.so
-LAYER:    ||
-LAYER:  VK_LAYER_KHRONOS_validation
-LAYER:      Type: Explicit
-LAYER:      Manifest: /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
-LAYER:      Library:  libVkLayer_khronos_validation.so
-LAYER:    ||
-LAYER:  <Drivers>
+[Vulkan Loader] LAYER: vkCreateInstance layer callstack setup to:
+[Vulkan Loader] LAYER:  <Application>
+[Vulkan Loader] LAYER:    ||
+[Vulkan Loader] LAYER:  <Loader>
+[Vulkan Loader] LAYER:    ||
+[Vulkan Loader] LAYER:  VK_LAYER_MESA_device_select
+[Vulkan Loader] LAYER:      Type: Implicit
+[Vulkan Loader] LAYER:      Enabled By: Implicit Layer
+[Vulkan Loader] LAYER:         Disable Env Var:  NODEVICE_SELECT
+[Vulkan Loader] LAYER:      Manifest: /usr/share/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
+[Vulkan Loader] LAYER:      Library:  libVkLayer_MESA_device_select.so
+[Vulkan Loader] LAYER:    ||
+[Vulkan Loader] LAYER:  VK_LAYER_KHRONOS_validation
+[Vulkan Loader] LAYER:      Type: Explicit
+[Vulkan Loader] LAYER:      Enabled By: By the Application
+[Vulkan Loader] LAYER:      Manifest: /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
+[Vulkan Loader] LAYER:      Library:  libVkLayer_khronos_validation.so
+[Vulkan Loader] LAYER:    ||
+[Vulkan Loader] LAYER:  <Drivers>
 ```
 
 In this scenario, two layers were used (the same two that were loaded earlier):
@@ -186,9 +188,9 @@ This will disable all implicit layers and the loader will report any disabled
 layers to the logging output when layer logging is enabled in the following way:
 
 ```
-WARNING | LAYER:  Implicit layer "VK_LAYER_MESA_device_select" forced disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'.
-WARNING | LAYER:  Implicit layer "VK_LAYER_AMD_switchable_graphics_64" forced disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'.
-WARNING | LAYER:  Implicit layer "VK_LAYER_Twitch_Overlay" forced disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'.
+[Vulkan Loader] WARNING | LAYER:  Implicit layer "VK_LAYER_MESA_device_select" forced disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'.
+[Vulkan Loader] WARNING | LAYER:  Implicit layer "VK_LAYER_AMD_switchable_graphics_64" forced disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'.
+[Vulkan Loader] WARNING | LAYER:  Implicit layer "VK_LAYER_Twitch_Overlay" forced disabled because name matches filter of env var 'VK_LOADER_LAYERS_DISABLE'.
 ```
 
 ### Selectively Re-enable Layers
@@ -283,34 +285,34 @@ look like the following (NOTE: additional spaces have been removed from the
 output for easier reading):
 
 ```
-DRIVER: Searching for driver manifest files
-DRIVER:    In following folders:
-DRIVER:       /home/$(USER)/.config/vulkan/icd.d
-DRIVER:       /etc/xdg/vulkan/icd.d
-DRIVER:       /etc/vulkan/icd.d
-DRIVER:       /home/$(USER)/.local/share/vulkan/icd.d
-DRIVER:       /home/$(USER)/.local/share/flatpak/exports/share/vulkan/icd.d
-DRIVER:       /var/lib/flatpak/exports/share/vulkan/icd.d
-DRIVER:       /usr/local/share/vulkan/icd.d
-DRIVER:       /usr/share/vulkan/icd.d
-DRIVER:    Found the following files:
-DRIVER:       /usr/share/vulkan/icd.d/intel_icd.x86_64.json
-DRIVER:       /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
-DRIVER:       /usr/share/vulkan/icd.d/radeon_icd.x86_64.json
-DRIVER:       /usr/share/vulkan/icd.d/lvp_icd.i686.json
-DRIVER:       /usr/share/vulkan/icd.d/radeon_icd.i686.json
-DRIVER:       /usr/share/vulkan/icd.d/intel_icd.i686.json
-DRIVER:       /usr/share/vulkan/icd.d/nvidia_icd.json
-DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/intel_icd.x86_64.json, version "1.0.0"
-DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/lvp_icd.x86_64.json, version "1.0.0"
-DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/radeon_icd.x86_64.json, version "1.0.0"
-DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/lvp_icd.i686.json, version "1.0.0"
-DRIVER: Requested driver /usr/lib/libvulkan_lvp.so was wrong bit-type. Ignoring this JSON
-DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/radeon_icd.i686.json, version "1.0.0"
-DRIVER: Requested driver /usr/lib/libvulkan_radeon.so was wrong bit-type. Ignoring this JSON
-DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/intel_icd.i686.json, version "1.0.0"
-DRIVER: Requested driver /usr/lib/libvulkan_intel.so was wrong bit-type. Ignoring this JSON
-DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/nvidia_icd.json, version "1.0.0"
+[Vulkan Loader] DRIVER: Searching for driver manifest files
+[Vulkan Loader] DRIVER:    In following folders:
+[Vulkan Loader] DRIVER:       /home/$(USER)/.config/vulkan/icd.d
+[Vulkan Loader] DRIVER:       /etc/xdg/vulkan/icd.d
+[Vulkan Loader] DRIVER:       /etc/vulkan/icd.d
+[Vulkan Loader] DRIVER:       /home/$(USER)/.local/share/vulkan/icd.d
+[Vulkan Loader] DRIVER:       /home/$(USER)/.local/share/flatpak/exports/share/vulkan/icd.d
+[Vulkan Loader] DRIVER:       /var/lib/flatpak/exports/share/vulkan/icd.d
+[Vulkan Loader] DRIVER:       /usr/local/share/vulkan/icd.d
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d
+[Vulkan Loader] DRIVER:    Found the following files:
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d/intel_icd.x86_64.json
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d/radeon_icd.x86_64.json
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d/lvp_icd.i686.json
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d/radeon_icd.i686.json
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d/intel_icd.i686.json
+[Vulkan Loader] DRIVER:       /usr/share/vulkan/icd.d/nvidia_icd.json
+[Vulkan Loader] DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/intel_icd.x86_64.json, version "1.0.0"
+[Vulkan Loader] DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/lvp_icd.x86_64.json, version "1.0.0"
+[Vulkan Loader] DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/radeon_icd.x86_64.json, version "1.0.0"
+[Vulkan Loader] DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/lvp_icd.i686.json, version "1.0.0"
+[Vulkan Loader] DRIVER: Requested driver /usr/lib/libvulkan_lvp.so was wrong bit-type. Ignoring this JSON
+[Vulkan Loader] DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/radeon_icd.i686.json, version "1.0.0"
+[Vulkan Loader] DRIVER: Requested driver /usr/lib/libvulkan_radeon.so was wrong bit-type. Ignoring this JSON
+[Vulkan Loader] DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/intel_icd.i686.json, version "1.0.0"
+[Vulkan Loader] DRIVER: Requested driver /usr/lib/libvulkan_intel.so was wrong bit-type. Ignoring this JSON
+[Vulkan Loader] DRIVER: Found ICD manifest file /usr/share/vulkan/icd.d/nvidia_icd.json, version "1.0.0"
 ```
 
 Then when the application selects the device to use, you will see the Vulkan
@@ -318,13 +320,13 @@ device call chain reported in the following way (NOTE: additional spaces have
 been removed from the output for easier reading):
 
 ```
-DRIVER: vkCreateDevice layer callstack setup to:
-DRIVER:    <Application>
-DRIVER:      ||
-DRIVER:    <Loader>
-DRIVER:      ||
-DRIVER:    <Device>
-DRIVER:        Using "Intel(R) UHD Graphics 630 (CFL GT2)" with driver: "/usr/lib64/libvulkan_intel.so"
+[Vulkan Loader] DRIVER: vkCreateDevice layer callstack setup to:
+[Vulkan Loader] DRIVER:    <Application>
+[Vulkan Loader] DRIVER:      ||
+[Vulkan Loader] DRIVER:    <Loader>
+[Vulkan Loader] DRIVER:      ||
+[Vulkan Loader] DRIVER:    <Device>
+[Vulkan Loader] DRIVER:        Using "Intel(R) UHD Graphics 630 (CFL GT2)" with driver: "/usr/lib64/libvulkan_intel.so"
 ```
 
 
@@ -351,8 +353,8 @@ The loader outputs messages like the following when the environment variables
 are used:
 
 ```
-WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
-WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
+[Vulkan Loader] WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
+[Vulkan Loader] WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
 ```
 
 For more info on how to use the filtering environment variables, refer to the
