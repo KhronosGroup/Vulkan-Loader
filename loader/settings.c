@@ -279,14 +279,13 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Using layer configurations found in loader settings from %s",
                settings->settings_file_path);
 
-    char cmd_line_msg[64];
+    char cmd_line_msg[64] = {0};
     size_t cmd_line_size = sizeof(cmd_line_msg);
-    size_t num_used = 0;
 
     cmd_line_msg[0] = '\0';
 
-    generate_debug_flag_str(settings->debug_level, cmd_line_size, cmd_line_msg, &num_used);
-    if (num_used > 0) {
+    generate_debug_flag_str(settings->debug_level, cmd_line_size, cmd_line_msg);
+    if (strlen(cmd_line_msg)) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Loader Settings Filters for Logging to Standard Error: %s", cmd_line_msg);
     }
 
