@@ -305,6 +305,17 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
     loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "---------------------------------");
 }
 
+void log_global_settings() {
+    loader_platform_thread_lock_mutex(&global_loader_settings_lock);
+    if (global_loader_settings.settings_active) {
+        log_settings(NULL, &global_loader_settings);
+    } else {
+        loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0,
+                   "No valid vk_loader_settings.json file found, no loader settings will be active");
+    }
+    loader_platform_thread_unlock_mutex(&global_loader_settings_lock);
+}
+
 // Loads the vk_loader_settings.json file
 // Returns VK_SUCCESS if it was found & was successfully parsed. Otherwise, it returns VK_ERROR_INITIALIZATION_FAILED if it
 // wasn't found or failed to parse, and returns VK_ERROR_OUT_OF_HOST_MEMORY if it was unable to allocate enough memory.
@@ -316,16 +327,12 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 #if defined(WIN32)
     res = windows_get_loader_settings_file_path(inst, &settings_file_path);
     if (res != VK_SUCCESS) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                   "No valid vk_loader_settings.json file found, no loader settings will be active");
         goto out;
     }
 
 #elif COMMON_UNIX_PLATFORMS
     res = get_unix_settings_path(inst, &settings_file_path);
     if (res != VK_SUCCESS) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                   "No valid vk_loader_settings.json file found, no loader settings will be active");
         goto out;
     }
 #else
@@ -489,12 +496,17 @@ TEST_FUNCTION_EXPORT VkResult update_global_loader_settings(void) {
     loader_settings settings = {0};
     VkResult res = get_loader_settings(NULL, &settings);
     loader_platform_thread_lock_mutex(&global_loader_settings_lock);
-
-    free_loader_settings(NULL, &global_loader_settings);
-    if (res == VK_SUCCESS) {
-        if (!check_if_settings_are_equal(&settings, &global_loader_settings)) {
-            log_settings(NULL, &settings);
-        }
+    if (res != VK_SUCCESS) {
+        free_loader_settings(NULL, &settings);
+        // If we failed to get the global loader settings file, unset the current loader settings
+        free_loader_settings(NULL, &global_loader_settings);
+        memset(&global_loader_settings, 0, sizeof(loader_settings));
+    } else if (check_if_settings_are_equal(&settings, &global_loader_settings)) {
+        // If we successfully got the new global loader settings, but is identical to old settings, return after cleaning up
+        free_loader_settings(NULL, &settings);
+    } else {
+        // Replace the current global loader settings with the new ones, setting the debug level if there are any debug filters set
+        free_loader_settings(NULL, &global_loader_settings);
 
         memcpy(&global_loader_settings, &settings, sizeof(loader_settings));
         if (global_loader_settings.settings_active && global_loader_settings.debug_level > 0) {
