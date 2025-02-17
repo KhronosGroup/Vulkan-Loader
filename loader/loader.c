@@ -2003,7 +2003,7 @@ void loader_initialize(void) {
 #endif
 }
 
-void loader_release() {
+void loader_release(void) {
     // Guarantee release of the preloaded ICD libraries. This may have already been called in vkDestroyInstance.
     loader_unload_preloaded_icds();
 
