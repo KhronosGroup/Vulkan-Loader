@@ -1975,6 +1975,8 @@ void loader_initialize(void) {
 
     // initialize logging
     loader_init_global_debug_level();
+    update_global_loader_settings();
+
 #if defined(_WIN32)
     windows_initialization();
 #endif
@@ -1998,6 +2000,9 @@ void loader_initialize(void) {
 #if defined(LOADER_USE_UNSAFE_FILE_SEARCH)
     loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: unsafe searching is enabled");
 #endif
+
+    log_global_settings();
+
 #if defined(_WIN32)
     return TRUE;
 #endif
