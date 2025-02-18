@@ -1109,14 +1109,14 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     requires_terminator = 1
                     always_use_param_name = False
                     surface_type_to_replace = 'VkSurfaceKHR'
-                    surface_name_replacement = 'icd_term->surface_list[icd_surface->surface_index]'
+                    surface_name_replacement = 'unwrapped_surface'
                 if param.type == 'VkPhysicalDeviceSurfaceInfo2KHR':
                     has_surface = 1
                     surface_var_name = param.name + '->surface'
                     requires_terminator = 1
                     update_structure_surface = 1
                     update_structure_string = '        VkPhysicalDeviceSurfaceInfo2KHR info_copy = *pSurfaceInfo;\n'
-                    update_structure_string += '        info_copy.surface = icd_term->surface_list[icd_surface->surface_index];\n'
+                    update_structure_string += '        info_copy.surface = unwrapped_surface;\n'
                     always_use_param_name = False
                     surface_type_to_replace = 'VkPhysicalDeviceSurfaceInfo2KHR'
                     surface_name_replacement = '&info_copy'
@@ -1277,11 +1277,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     funcs += '    }\n'
 
                     if has_surface == 1:
-                        funcs += '    VkIcdSurface *icd_surface = NULL;\n'
-                        funcs += f'    if (NULL != {surface_var_name}) {{\n'
-                        funcs += f'        icd_surface = (VkIcdSurface *)(uintptr_t)({surface_var_name});\n'
-                        funcs += '    }\n'
-                        funcs += '    if (NULL != icd_surface && NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) && icd_term->surface_list[icd_surface->surface_index]) {\n'
+                        funcs += f'    VkSurfaceKHR unwrapped_surface = {surface_var_name};\n'
+                        funcs += '    VkResult unwrap_res = wsi_unwrap_icd_surface(icd_term, &unwrapped_surface);\n'
+                        funcs += '    if (unwrap_res == VK_SUCCESS) {\n'
 
                         # If there's a structure with a surface, we need to update its internals with the correct surface for the ICD
                         if update_structure_surface == 1:
@@ -1363,10 +1361,9 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         funcs += '    // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.\n'
                         funcs += f'    }} else if ({debug_struct_name}->objectType == {surf_check}) {{\n'
                         funcs += '        if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {\n'
-                        funcs += f'            VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t){debug_struct_name}->{member_name};\n'
-                        funcs += '            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)\n'
-                        funcs += '                && icd_term->surface_list.list[icd_surface->surface_index]) {\n'
-                        funcs += f'                {local_struct}.{member_name} = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];\n'
+                        funcs += f'            VkSurfaceKHR surface = (VkSurfaceKHR)(uintptr_t){debug_struct_name}->{member_name};\n'
+                        funcs += '            if (wsi_unwrap_icd_surface(icd_term, &surface) == VK_SUCCESS) {\n'
+                        funcs += f'                {local_struct}.{member_name} = (uint64_t)surface;\n'
                         funcs += '            }\n'
                         funcs += '        }\n'
                         funcs += '    // If this is an instance we have to replace it with the proper one for the next call.\n'
@@ -1398,7 +1395,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                         if param.type == 'VkPhysicalDevice':
                             funcs += 'phys_dev_term->phys_dev'
                         elif param.type == 'VkSurfaceKHR':
-                            funcs += 'icd_term->surface_list[icd_surface->surface_index]'
+                            funcs += 'unwrapped_surface'
                         elif ('DebugMarkerSetObject' in ext_cmd.name or 'SetDebugUtilsObject' in ext_cmd.name) and param.name == 'pNameInfo':
                             funcs += '&local_name_info'
                         elif ('DebugMarkerSetObject' in ext_cmd.name or 'SetDebugUtilsObject' in ext_cmd.name) and param.name == 'pTagInfo':
