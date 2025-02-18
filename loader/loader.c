@@ -72,6 +72,13 @@
 #include "loader_linux.h"
 #endif  // LOADER_ENABLE_LINUX_SORT
 
+#if defined(__Fuchsia__)
+#include <fcntl.h>
+
+#include "loader_fuchsia.h"
+#include "loader_extensions_fuchsia.h"
+#endif
+
 // Generated file containing all the extension data
 #include "vk_loader_extensions.c"
 
@@ -1796,6 +1803,11 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
         goto out;
     }
 
+#if defined(__Fuchsia__)
+    loader_initialize_icd_services_fuchsia(handle);
+#endif
+
+    // Get and settle on an ICD interface version
     // Try to load the driver's exported vk_icdNegotiateLoaderICDInterfaceVersion
     fp_negotiate_icd_version = loader_platform_get_proc_address(handle, "vk_icdNegotiateLoaderICDInterfaceVersion");
 
@@ -1979,6 +1991,9 @@ void loader_initialize(void) {
     windows_initialization();
 #endif
 
+#if defined(__Fuchsia__)
+    fuchsia_initialize();
+#endif
     loader_api_version version = loader_make_full_version(VK_HEADER_VERSION_COMPLETE);
     loader_log(NULL, VULKAN_LOADER_INFO_BIT, 0, "Vulkan Loader Version %d.%d.%d", version.major, version.minor, version.patch);
 
@@ -2003,9 +2018,13 @@ void loader_initialize(void) {
 #endif
 }
 
-void loader_release(void) {
+void loader_release() {
     // Guarantee release of the preloaded ICD libraries. This may have already been called in vkDestroyInstance.
     loader_unload_preloaded_icds();
+
+#if defined(__Fuchsia__)
+    fuchsia_teardown();
+#endif
 
     // release mutexes
     teardown_global_loader_settings();
@@ -2351,6 +2370,9 @@ void remove_all_non_valid_override_layers(struct loader_instance *inst, struct l
         struct loader_layer_properties *props = &instance_layers->list[i];
         if (strcmp(props->info.layerName, VK_OVERRIDE_LAYER_NAME) == 0) {
             if (props->app_key_paths.count > 0) {  // not the global layer
+
+// cur_path is unset on Fuchsia, so app_key_path is not supported.
+#if !defined(__Fuchsia__)
                 for (uint32_t j = 0; j < props->app_key_paths.count; j++) {
                     if (strcmp(props->app_key_paths.list[j], cur_path) == 0) {
                         if (!found_active_override_layer) {
@@ -2367,6 +2389,7 @@ void remove_all_non_valid_override_layers(struct loader_instance *inst, struct l
                         }
                     }
                 }
+#endif
                 if (!found_active_override_layer) {
                     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                                "--Override layer found but not used because app \'%s\' is not in \'app_keys\' list!", cur_path);
@@ -3015,12 +3038,21 @@ out:
 
 // Add any files found in the search_path.  If any path in the search path points to a specific JSON, attempt to
 // only open that one JSON.  Otherwise, if the path is a folder, search the folder for JSON files.
-VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files,
-                        bool use_first_found_manifest) {
+//
+// If `parent_dir_fd` is >= 0, it specifies the opened fd of the parent of
+// `search_path`. Otherwise it's ignored.
+//
+// Non-negative `parent_dir_fd` is currently only supported on Fuchsia.
+VkResult add_data_files(const struct loader_instance *inst, int parent_dir_fd, char *search_path,
+                        struct loader_string_list *out_files, bool use_first_found_manifest) {
     VkResult vk_result = VK_SUCCESS;
     char full_path[2048];
 #if !defined(_WIN32)
     char temp_path[2048];
+#endif
+#if !defined(__Fuchsia__)
+    (void)(parent_dir_fd);  // Suppress unused argument checks
+    assert((parent_dir_fd < 0) && "Non-negative parent_dir_fd is not supported on this platform");
 #endif
 
     // Now, parse the paths
@@ -3066,7 +3098,15 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
                 break;
             }
         } else {  // Otherwise, treat it as a directory
-            DIR *dir_stream = loader_opendir(inst, cur_file);
+            DIR *dir_stream = NULL;
+#ifdef __Fuchsia__
+            assert(parent_dir_fd >= 0);
+            int new_dir_fd = openat(parent_dir_fd, cur_file, O_DIRECTORY);
+            dir_stream = fdopendir(new_dir_fd);
+#else
+            assert((parent_dir_fd < 0) && "Non-negative parent_dir_fd is not supported on this platform");
+            dir_stream = loader_opendir(inst, cur_file);
+#endif  // __Fuchsia__
             if (NULL == dir_stream) {
                 continue;
             }
@@ -3126,9 +3166,10 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     char *cur_path_ptr = NULL;
     bool use_first_found_manifest = false;
 #if COMMON_UNIX_PLATFORMS
-    const char *relative_location = NULL;  // Only used on unix platforms
-    size_t rel_size = 0;                   // unused in windows, dont declare so no compiler warnings are generated
+    char *relative_location = NULL;  // Only used on unix platforms
+    size_t rel_size = 0;             // unused in windows, dont declare so no compiler warnings are generated
 #endif
+    int parent_dir_fd = -1;
 
 #if defined(_WIN32)
     char *package_path = NULL;
@@ -3250,6 +3291,15 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     } else if (override_env != NULL) {
         override_path = override_env;
     }
+
+#if defined(__Fuchsia__)
+    if (!override_path && manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
+        parent_dir_fd = get_manifest_fs_fd();
+        if (parent_dir_fd >= 0) {
+            override_path = ".";
+        }
+    }
+#endif
 
     // Add two by default for NULL terminator and one path separator on end (just in case)
     search_path_size = 2;
@@ -3440,7 +3490,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files(inst, search_path, out_files, use_first_found_manifest);
+    vk_result = add_data_files(inst, parent_dir_fd, search_path, out_files, use_first_found_manifest);
 
     if (log_flags != 0 && out_files->count > 0) {
         loader_log(inst, log_flags, 0, "   Found the following files:");
@@ -3564,8 +3614,13 @@ struct ICDManifestInfo {
 
 // Takes a json file, opens, reads, and parses an ICD Manifest out of it.
 // Should only return VK_SUCCESS, VK_ERROR_INCOMPATIBLE_DRIVER, or VK_ERROR_OUT_OF_HOST_MEMORY
-VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *file_str, struct ICDManifestInfo *icd,
-                                   bool *skipped_portability_drivers) {
+//
+// If `parent_dir_fd` is >= 0, it specifies the fd of the opened directory where
+// `file_str` is located. Otherwise it's ignored.
+//
+// Non-negative `parent_dir_fd` is currently only supported on Fuchsia.
+VkResult loader_parse_icd_manifest(const struct loader_instance *inst, int parent_dir_fd, char *file_str,
+                                   struct ICDManifestInfo *icd, bool *skipped_portability_drivers) {
     VkResult res = VK_SUCCESS;
     cJSON *icd_manifest_json = NULL;
 
@@ -3573,7 +3628,10 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
         goto out;
     }
 
-    res = loader_get_json(inst, file_str, &icd_manifest_json);
+#if !defined(__Fuchsia__)
+    assert((parent_dir_fd < 0) && "Non-negative parent_dir_fd is not supported on this platform");
+#endif
+    res = loader_get_json(inst, parent_dir_fd, file_str, &icd_manifest_json);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         goto out;
     }
@@ -3771,9 +3829,14 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
     memset(icd_details, 0, sizeof(struct ICDManifestInfo) * manifest_files.count);
 
     for (uint32_t i = 0; i < manifest_files.count; i++) {
+        int parent_dir_fd = -1;
+#if defined(__Fuchsia__)
+        parent_dir_fd = get_manifest_fs_fd();
+#endif
         VkResult icd_res = VK_SUCCESS;
 
-        icd_res = loader_parse_icd_manifest(inst, manifest_files.list[i], &icd_details[i], skipped_portability_drivers);
+        icd_res =
+            loader_parse_icd_manifest(inst, parent_dir_fd, manifest_files.list[i], &icd_details[i], skipped_portability_drivers);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_res) {
             res = icd_res;
             goto out;
@@ -3875,7 +3938,7 @@ VkResult loader_parse_instance_layers(struct loader_instance *inst, enum loader_
 
         // Parse file into JSON struct
         cJSON *json = NULL;
-        VkResult local_res = loader_get_json(inst, file_str, &json);
+        VkResult local_res = loader_get_json(inst, -1, file_str, &json);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
@@ -5214,7 +5277,8 @@ VkResult loader_validate_layers(const struct loader_instance *inst, const uint32
         prop = loader_find_layer_property(ppEnabledLayerNames[i], list);
         if (NULL == prop) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "loader_validate_layers: Layer %d does not exist in the list of available layers", i);
+                       "loader_validate_layers: Layer at index %d (%s) does not exist in the list of available layers", i,
+                       ppEnabledLayerNames[i]);
             return VK_ERROR_LAYER_NOT_PRESENT;
         }
         if (inst->settings.settings_active && prop->settings_control_value != LOADER_SETTINGS_LAYER_CONTROL_ON &&

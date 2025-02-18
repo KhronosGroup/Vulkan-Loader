@@ -332,7 +332,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 #warning "Unsupported platform - must specify platform specific location for vk_loader_settings.json"
 #endif
 
-    res = loader_get_json(inst, settings_file_path, &json);
+    res = loader_get_json(inst, /*parent_dir_fd=*/-1, settings_file_path, &json);
     // Make sure sure the top level json value is an object
     if (res != VK_SUCCESS || NULL == json || json->type != cJSON_Object) {
         goto out;
@@ -594,7 +594,7 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
         }
 
         cJSON* json = NULL;
-        VkResult local_res = loader_get_json(inst, layer_config->path, &json);
+        VkResult local_res = loader_get_json(inst, /*parent_dir_fd=*/-1, layer_config->path, &json);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;

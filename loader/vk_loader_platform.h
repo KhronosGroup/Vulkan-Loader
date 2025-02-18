@@ -353,7 +353,14 @@ static inline char *loader_platform_executable_path(char *buffer, size_t size) {
 
     return buffer;
 }
-#elif defined(__Fuchsia__) || defined(__OpenBSD__)
+#elif defined(__Fuchsia__)
+static inline char *loader_platform_executable_path(char *buffer, size_t size) {
+    if (size < 1) return NULL;
+    // Fuchsia doesn't support getting the executable path. The blank path should match no layers.
+    buffer[0] = '\0';
+    return buffer;
+}
+#elif defined(__OpenBSD__)
 static inline char *loader_platform_executable_path(char *buffer, size_t size) { return NULL; }
 #elif defined(__QNX__)
 
@@ -421,7 +428,11 @@ static inline const char *loader_platform_open_library_error(const char *libPath
 }
 static inline void loader_platform_close_library(loader_platform_dl_handle library) {
     if (!loader_disable_dynamic_library_unloading) {
+#if defined(__Fuchsia__)
+        dlclose_fuchsia(library);
+#else
         dlclose(library);
+#endif
     } else {
         (void)library;
     }

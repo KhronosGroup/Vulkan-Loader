@@ -49,7 +49,7 @@ config("vulkan_internal_config") {
   }
   if (is_fuchsia) {
     defines += [
-      "SYSCONFDIR=\"/config\"",
+      "SYSCONFDIR=\"/vulkan-loader-configuration\"",
       "EXTRASYSCONFDIR=\"/pkg/data\"",
     ]
   }
@@ -73,9 +73,7 @@ config("vulkan_loader_config") {
     "loader/generated",
     "loader",
   ]
-  defines = [
-    "LOADER_USE_UNSAFE_FILE_SEARCH=1",
-  ]
+  defines = [ "LOADER_USE_UNSAFE_FILE_SEARCH=1" ]
 
   if (is_win) {
     cflags = [ "/wd4201" ]
@@ -86,6 +84,9 @@ config("vulkan_loader_config") {
       "HAVE_SECURE_GETENV",
       "LOADER_ENABLE_LINUX_SORT",
     ]
+  }
+  if (is_fuchsia || is_linux || is_chromeos) {
+    defines += [ "HAVE_ALLOCA_H" ]
   }
 }
 
@@ -98,18 +99,15 @@ if (!is_android) {
     library_type = "static_library"
   }
   support_unknown_function_handling = false
-  if (defined(ar_path) && ar_path != "" && !is_win && (current_cpu == "arm64" || current_cpu == "x86_64")) {
+  if (defined(ar_path) && ar_path != "" && !is_win &&
+      (current_cpu == "arm64" || current_cpu == "x86_64")) {
     support_unknown_function_handling = true
     static_library("asm_offset") {
       sources = [ "loader/asm_offset.c" ]
-      deps = [
-        "$vulkan_headers_dir:vulkan_headers",
-      ]
+      deps = [ "$vulkan_headers_dir:vulkan_headers" ]
 
       if (is_fuchsia) {
-        deps += [
-          ":dlopen_fuchsia",
-        ]
+        deps += [ ":dlopen_fuchsia" ]
       }
 
       # Output raw assembly instead of compiled object file. The assembly will be included as a member of the output ar file.
@@ -147,9 +145,7 @@ if (!is_android) {
   if (is_win) {
     action("gen_loader_rc") {
       script = "scripts/generate_loader_rc.py"
-      inputs = [
-        "loader/loader.rc",
-      ]
+      inputs = [ "loader/loader.rc" ]
       args = [
         rebase_path("loader/loader.rc", root_build_dir),
         rebase_path("$target_gen_dir/loader.rc", root_build_dir),
@@ -170,6 +166,7 @@ if (!is_android) {
       "loader/cJSON.h",
       "loader/debug_utils.c",
       "loader/debug_utils.h",
+
       # Should only be linked when assembler is used
       # "loader/dev_ext_trampoline.c",
       "loader/extension_manual.c",
@@ -177,17 +174,18 @@ if (!is_android) {
       "loader/generated/vk_layer_dispatch_table.h",
       "loader/generated/vk_loader_extensions.h",
       "loader/generated/vk_object_types.h",
-      "loader/gpa_helper.h",
       "loader/gpa_helper.c",
+      "loader/gpa_helper.h",
+      "loader/loader.c",
+      "loader/loader.h",
       "loader/loader_common.h",
       "loader/loader_environment.c",
       "loader/loader_environment.h",
-      "loader/loader.c",
-      "loader/loader.h",
       "loader/loader_json.c",
       "loader/loader_json.h",
       "loader/log.c",
       "loader/log.h",
+
       # Should only be linked when assembler is used
       # "loader/phys_dev_ext.c",
       "loader/settings.c",
@@ -195,8 +193,8 @@ if (!is_android) {
       "loader/stack_allocation.h",
       "loader/terminator.c",
       "loader/trampoline.c",
-      "loader/unknown_function_handling.h",
       "loader/unknown_function_handling.c",
+      "loader/unknown_function_handling.h",
       "loader/vk_loader_layer.h",
       "loader/vk_loader_platform.h",
       "loader/wsi.c",
@@ -221,11 +219,11 @@ if (!is_android) {
     deps = []
     if (is_win) {
       sources += [
+        "$target_gen_dir/loader.rc",
         "loader/dirent_on_windows.c",
         "loader/dirent_on_windows.h",
         "loader/loader_windows.c",
         "loader/loader_windows.h",
-        "$target_gen_dir/loader.rc",
         "loader/vulkan-1.def",
       ]
       if (!is_clang) {
@@ -270,18 +268,40 @@ if (!is_android) {
 
     if (is_fuchsia) {
       category = "partner"
+      sdk_name = "vulkan"
+
+      symbols_api = "vulkan.ifs"
 
       # The Vulkan loader's interface is defined by standard Khronos vulkan headers
       # which can be obtained separately from the loader implementation itself.
       no_headers = true
 
-      deps += [
-        ":dlopen_fuchsia",
-        "//sdk/lib/fdio",
+      sources += [
+        "loader/dlopen_fuchsia.cc",
+        "loader/dlopen_fuchsia.h",
+        "loader/loader_extensions_fuchsia.cc",
+        "loader/loader_extensions_fuchsia.h",
+        "loader/loader_fuchsia.h",
+        "loader/loader_fuchsia_service.cc",
+        "loader/loader_fuchsia_service.h",
       ]
 
-      runtime_deps = [ "//sdk/lib/fdio:fdio_sdk" ]
+      deps += [
+        "//sdk/fidl/fuchsia.io:fuchsia.io_cpp",
+        "//sdk/fidl/fuchsia.vulkan.loader:fuchsia.vulkan.loader_cpp",
+        "//sdk/lib/component/incoming/cpp",
+        "//sdk/lib/fdio",
+      ]
+      include_dirs = [ "$target_gen_dir" ]
+
+      runtime_deps = [
+        "//sdk/lib/fdio:fdio_sdk",
+        "//zircon/system/ulib/trace-engine:trace-engine_sdk",
+      ]
+
+      libcxx_linkage = "static"
     }
+
     if (support_unknown_function_handling) {
       if (current_cpu == "arm64") {
         sources += [ "loader/unknown_ext_chain_gas_aarch.S" ]
@@ -291,7 +311,7 @@ if (!is_android) {
         assert(false, "Unexpected CPU $current_cpu")
       }
 
-      defines += ["UNKNOWN_FUNCTIONS_SUPPORTED=1"]
+      defines += [ "UNKNOWN_FUNCTIONS_SUPPORTED=1" ]
       deps += [ ":gen_defines" ]
       include_dirs = [ "$target_gen_dir" ]
     }
@@ -299,21 +319,9 @@ if (!is_android) {
 }
 
 if (is_fuchsia) {
-  source_set("dlopen_fuchsia") {
-    sources = [
-      "loader/dlopen_fuchsia.c",
-      "loader/dlopen_fuchsia.h",
-    ]
-
-    deps = [
-      "//sdk/fidl/fuchsia.vulkan.loader:fuchsia.vulkan.loader_c_client",
-      "//sdk/lib/fdio",
-    ]
-  }
-
   sdk_documentation("vulkan_license") {
     name = "vulkan_license"
-    category = "public"
+    category = "partner"
 
     files = [
       {

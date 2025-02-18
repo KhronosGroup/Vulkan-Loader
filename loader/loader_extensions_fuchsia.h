@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2018 Google Inc.
+ * Copyright (C) 2025 Fuchsia Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,20 @@
  * limitations under the License.
  *
  */
-#ifndef LOADER_DLOPEN_FUCHSIA_H_
-#define LOADER_DLOPEN_FUCHSIA_H_
 
-#include <stdbool.h>
+#ifndef LOADER_LOADER_EXTENSIONS_FUCHSIA_H_
+#define LOADER_LOADER_EXTENSIONS_FUCHSIA_H_
+
+#include "vk_loader_platform.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif  // __cplusplus
+#endif
 
-// If not |driver|, then the request is to load a layer.
-void *dlopen_fuchsia(const char *name, int mode, bool driver);
-const char *dlerror_fuchsia(void);
-void dlclose_fuchsia(void *dso);
+void loader_initialize_icd_services_fuchsia(loader_platform_dl_handle handle);
 
 #ifdef __cplusplus
 }
-#endif  // __cplusplus
+#endif
 
-#endif  // LOADER_DLOPEN_FUCHSIA_H_
+#endif  // LOADER_LOADER_EXTENSIONS_FUCHSIA_H_
