@@ -81,8 +81,11 @@ config("vulkan_loader_config") {
     cflags = [ "/wd4201" ]
   }
   if (is_linux || is_chromeos) {
-    # assume secure_getenv() is available
     defines += [
+      # Enables `readlink()` and `strtok_r()`.
+      "_GNU_SOURCE",
+
+      # assume secure_getenv() is available
       "HAVE_SECURE_GETENV",
       "LOADER_ENABLE_LINUX_SORT",
     ]
