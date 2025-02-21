@@ -33,20 +33,6 @@
 #pragma once
 
 // Must include gtest first to guard against Xlib colliding due to redefinitions of "None" and "Bool"
-
-#if defined(_MSC_VER)
-#pragma warning(push)
-/*
-    MSVC warnings 4251 and 4275 have to do with potential dll-interface mismatch
-    between library (gtest) and users. Since we build the gtest library
-    as part of the test build we know that the dll-interface will match and
-    can disable these warnings.
- */
-#pragma warning(disable : 4251)
-#pragma warning(disable : 4275)
-#endif
-
-// GTest and Xlib collide due to redefinitions of "None" and "Bool"
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
 #pragma push_macro("None")
 #pragma push_macro("Bool")
@@ -477,6 +463,50 @@ VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
 
+namespace fs {
+
+int create_folder(std::filesystem::path const& path);
+int delete_folder(std::filesystem::path const& folder);
+
+class FolderManager {
+   public:
+    explicit FolderManager(std::filesystem::path root_path, std::string name) noexcept;
+    ~FolderManager() noexcept;
+    FolderManager(FolderManager const&) = delete;
+    FolderManager& operator=(FolderManager const&) = delete;
+    FolderManager(FolderManager&& other) noexcept;
+    FolderManager& operator=(FolderManager&& other) noexcept;
+
+    // Add a manifest to the folder
+    std::filesystem::path write_manifest(std::filesystem::path const& name, std::string const& contents);
+
+    // close file handle, delete file, remove `name` from managed file list.
+    void remove(std::filesystem::path const& name);
+
+    // Remove all contents in the path
+    void clear() const noexcept;
+
+    // copy file into this folder with name `new_name`. Returns the full path of the file that was copied
+    std::filesystem::path copy_file(std::filesystem::path const& file, std::filesystem::path const& new_name);
+
+    // location of the managed folder
+    std::filesystem::path location() const { return folder; }
+
+    std::vector<std::filesystem::path> get_files() const;
+
+    // Create a symlink in this folder to target with the filename set to link_name
+    std::filesystem::path add_symlink(std::filesystem::path const& target, std::filesystem::path const& link_name);
+
+   private:
+    bool actually_created = false;
+    std::filesystem::path folder;
+    std::vector<std::filesystem::path> added_files;
+
+    void insert_file_to_tracking(std::filesystem::path const& name);
+    void check_if_first_use();
+};
+}  // namespace fs
+
 struct LoaderSettingsLayerConfiguration {
     BUILDER_VALUE(std::string, name)
     BUILDER_VALUE(std::filesystem::path, path)
@@ -515,7 +545,7 @@ struct LoaderSettings {
 struct FrameworkEnvironment;  // forward declaration
 
 struct PlatformShimWrapper {
-    PlatformShimWrapper(std::vector<fs::FolderManager>* folders, const char* log_filter) noexcept;
+    PlatformShimWrapper(GetFoldersFunc get_folders_by_name_function, const char* log_filter) noexcept;
     ~PlatformShimWrapper() noexcept;
     PlatformShimWrapper(PlatformShimWrapper const&) = delete;
     PlatformShimWrapper& operator=(PlatformShimWrapper const&) = delete;
@@ -684,6 +714,8 @@ struct FrameworkEnvironment {
 
     FrameworkSettings settings;
 
+    fs::FolderManager test_folder;
+
     // Query the global extensions
     // Optional: use layer_name to query the extensions of a specific layer
     std::vector<VkExtensionProperties> GetInstanceExtensions(uint32_t count, const char* layer_name = nullptr);
@@ -693,11 +725,11 @@ struct FrameworkEnvironment {
     PlatformShimWrapper platform_shim;
     std::vector<fs::FolderManager> folders;
 
-    DebugUtilsLogger debug_log;
-    VulkanFunctions vulkan_functions;
-
     std::vector<TestICDHandle> icds;
     std::vector<TestLayerHandle> layers;
+
+    DebugUtilsLogger debug_log;
+    VulkanFunctions vulkan_functions;
 
     EnvVarWrapper env_var_vk_icd_filenames{"VK_DRIVER_FILES"};
     EnvVarWrapper add_env_var_vk_icd_filenames{"VK_ADD_DRIVER_FILES"};
