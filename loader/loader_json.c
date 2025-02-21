@@ -44,8 +44,10 @@
 #endif
 
 #ifdef _WIN32
-static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, size_t *out_len,
-                                        char **out_buff) {
+static VkResult loader_read_entire_file(const struct loader_instance *inst, int parent_dir_fd, const char *filename,
+                                        size_t *out_len, char **out_buff) {
+    (void)(parent_dir_fd);  // Suppress unused argument checks
+    assert(parent_dir_fd < 0);
     HANDLE file_handle = INVALID_HANDLE_VALUE;
     DWORD len = 0, read_len = 0;
     VkResult res = VK_SUCCESS;
@@ -92,13 +94,27 @@ out:
     return res;
 }
 #elif COMMON_UNIX_PLATFORMS
-static VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, size_t *out_len,
-                                        char **out_buff) {
+// If `parent_dir_fd` is >= 0, it specifies the fd of the opened directory where
+// `filename` is located. Otherwise, `parent_dir_fd` is ignored.
+static VkResult loader_read_entire_file(const struct loader_instance *inst, int parent_dir_fd, const char *filename,
+                                        size_t *out_len, char **out_buff) {
     FILE *file = NULL;
     struct stat stats = {0};
     VkResult res = VK_SUCCESS;
 
+#if defined(__Fuchsia__)
+    int file_fd = openat(parent_dir_fd, filename, O_RDONLY);
+    if (file_fd < 0) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "loader_get_json: Failed to open JSON file \"%s\"", filename);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+    file = fdopen(file_fd, "rb");
+#else
+    (void)(parent_dir_fd);  // Suppress unused argument checks
+    assert((parent_dir_fd < 0) && "Non-negative parent_dir_fd is not supported on this platform");
     file = fopen(filename, "rb");
+#endif
     if (NULL == file) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
         res = VK_ERROR_INITIALIZATION_FAILED;
@@ -131,12 +147,14 @@ out:
 }
 #else
 #warning fopen not available on this platform
-VkResult loader_read_entire_file(const struct loader_instance *inst, const char *filename, size_t *out_len, char **out_buff) {
+VkResult loader_read_entire_file(const struct loader_instance *inst, int parent_dir_fd, const char *filename, size_t *out_len,
+                                 char **out_buff) {
     return VK_ERROR_INITIALIZATION_FAILED;
 }
 #endif
 
-TEST_FUNCTION_EXPORT VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json) {
+TEST_FUNCTION_EXPORT VkResult loader_get_json(const struct loader_instance *inst, int parent_dir_fd, const char *filename,
+                                              cJSON **json) {
     char *json_buf = NULL;
     VkResult res = VK_SUCCESS;
 
@@ -144,7 +162,7 @@ TEST_FUNCTION_EXPORT VkResult loader_get_json(const struct loader_instance *inst
 
     size_t json_len = 0;
     *json = NULL;
-    res = loader_read_entire_file(inst, filename, &json_len, &json_buf);
+    res = loader_read_entire_file(inst, parent_dir_fd, filename, &json_len, &json_buf);
     if (VK_SUCCESS != res) {
         goto out;
     }

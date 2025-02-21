@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2018 Google Inc.
+ * Copyright (c) 2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,26 @@
  * limitations under the License.
  *
  */
-#ifndef LOADER_DLOPEN_FUCHSIA_H_
-#define LOADER_DLOPEN_FUCHSIA_H_
 
-#include <stdbool.h>
+#ifndef LOADER_LOADER_FUCHSIA_H_
+#define LOADER_LOADER_FUCHSIA_H_
 
 #ifdef __cplusplus
 extern "C" {
-#endif  // __cplusplus
+#endif  // _cplusplus
 
-// If not |driver|, then the request is to load a layer.
-void *dlopen_fuchsia(const char *name, int mode, bool driver);
-const char *dlerror_fuchsia(void);
-void dlclose_fuchsia(void *dso);
+// Returns a file descriptor with a directory FD for the loader manifest file
+// system. May return -1 if the loader doesn't support ConnectToManifestFs.
+int get_manifest_fs_fd(void);
+
+// Called on loader shared library construction.
+void fuchsia_initialize(void);
+
+// Called on loader shared library destruction.
+void fuchsia_teardown(void);
 
 #ifdef __cplusplus
 }
-#endif  // __cplusplus
+#endif  // _cplusplus
 
-#endif  // LOADER_DLOPEN_FUCHSIA_H_
+#endif  // LOADER_LOADER_FUCHSIA_H_
