@@ -871,69 +871,72 @@ std::vector<VkLayerProperties> FrameworkEnvironment::GetLayerProperties(uint32_t
 }
 
 template <typename CreationFunc, typename CreateInfo>
-VkResult create_surface_helper(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface, const char* load_func_name) {
+VkResult create_surface_helper(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface, const char* load_func_name,
+                               VkStructureType stype) {
     CreationFunc pfn_CreateSurface = functions->load(inst, load_func_name);
     if (!pfn_CreateSurface) return VK_ERROR_EXTENSION_NOT_PRESENT;
-    CreateInfo surf_create_info{};
+    CreateInfo surf_create_info{stype};
     return pfn_CreateSurface(inst, &surf_create_info, nullptr, &surface);
 }
 VkResult create_surface(VulkanFunctions* functions, VkInstance inst, VkSurfaceKHR& surface,
                         [[maybe_unused]] const char* api_selection) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    return create_surface_helper<PFN_vkCreateAndroidSurfaceKHR, VkAndroidSurfaceCreateInfoKHR>(functions, inst, surface,
-                                                                                               "vkCreateAndroidSurfaceKHR");
+    return create_surface_helper<PFN_vkCreateAndroidSurfaceKHR, VkAndroidSurfaceCreateInfoKHR>(
+        functions, inst, surface, "vkCreateAndroidSurfaceKHR", VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR);
 #elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-    return create_surface_helper<PFN_vkCreateDirectFBSurfaceEXT, VkDirectFBSurfaceCreateInfoEXT>(functions, inst, surface,
-                                                                                                 "vkCreateDirectFBSurfaceEXT");
+    return create_surface_helper<PFN_vkCreateDirectFBSurfaceEXT, VkDirectFBSurfaceCreateInfoEXT>(
+        functions, inst, surface, "vkCreateDirectFBSurfaceEXT", VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT);
 #elif defined(VK_USE_PLATFORM_FUCHSIA)
     return create_surface_helper<PFN_vkCreateImagePipeSurfaceFUCHSIA, VkImagePipeSurfaceCreateInfoFUCHSIA>(
-        functions, inst, surface, "vkCreateImagePipeSurfaceFUCHSIA");
+        functions, inst, surface, "vkCreateImagePipeSurfaceFUCHSIA", VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA);
 #elif defined(VK_USE_PLATFORM_GGP)
     return create_surface_helper<PFN__vkCreateStreamDescriptorSurfaceGGP, VkStreamDescriptorSurfaceCreateInfoGGP>(
-        functions, inst, surface, "vkCreateStreamDescriptorSurfaceGGP");
+        functions, inst, surface, "vkCreateStreamDescriptorSurfaceGGP",
+        VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP);
 #elif defined(VK_USE_PLATFORM_IOS_MVK)
-    return create_surface_helper<PFN_vkCreateIOSSurfaceMVK, VkIOSSurfaceCreateInfoMVK>(functions, inst, surface,
-                                                                                       "vkCreateIOSSurfaceMVK");
+    return create_surface_helper<PFN_vkCreateIOSSurfaceMVK, VkIOSSurfaceCreateInfoMVK>(
+        functions, inst, surface, "vkCreateIOSSurfaceMVK", VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK);
 #elif defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
     if (api_selection != nullptr && string_eq(api_selection, "VK_USE_PLATFORM_MACOS_MVK"))
-        return create_surface_helper<PFN_vkCreateMacOSSurfaceMVK, VkMacOSSurfaceCreateInfoMVK>(functions, inst, surface,
-                                                                                               "vkCreateMacOSSurfaceMVK");
+        return create_surface_helper<PFN_vkCreateMacOSSurfaceMVK, VkMacOSSurfaceCreateInfoMVK>(
+            functions, inst, surface, "vkCreateMacOSSurfaceMVK", VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK);
 #endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     if (api_selection == nullptr || (api_selection != nullptr && string_eq(api_selection, "VK_USE_PLATFORM_METAL_EXT")))
-        return create_surface_helper<PFN_vkCreateMetalSurfaceEXT, VkMetalSurfaceCreateInfoEXT>(functions, inst, surface,
-                                                                                               "vkCreateMetalSurfaceEXT");
+        return create_surface_helper<PFN_vkCreateMetalSurfaceEXT, VkMetalSurfaceCreateInfoEXT>(
+            functions, inst, surface, "vkCreateMetalSurfaceEXT", VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT);
 #endif
     return VK_ERROR_NOT_PERMITTED_KHR;
 #elif defined(VK_USE_PLATFORM_SCREEN_QNX)
-    return create_surface_helper<PFN_vkCreateScreenSurfaceQNX, VkScreenSurfaceCreateInfoQNX>(functions, inst, surface,
-                                                                                             "vkCreateScreenSurfaceQNX");
+    return create_surface_helper<PFN_vkCreateScreenSurfaceQNX, VkScreenSurfaceCreateInfoQNX>(
+        functions, inst, surface, "vkCreateScreenSurfaceQNX", VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX);
 #elif defined(VK_USE_PLATFORM_VI_NN)
-    return create_surface_helper<PFN_vkCreateViSurfaceNN, VkViSurfaceCreateInfoNN>(functions, inst, surface, "vkCreateViSurfaceNN");
+    return create_surface_helper<PFN_vkCreateViSurfaceNN, VkViSurfaceCreateInfoNN>(functions, inst, surface, "vkCreateViSurfaceNN",
+                                                                                   VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN);
 #elif defined(VK_USE_PLATFORM_WIN32_KHR)
-    return create_surface_helper<PFN_vkCreateWin32SurfaceKHR, VkWin32SurfaceCreateInfoKHR>(functions, inst, surface,
-                                                                                           "vkCreateWin32SurfaceKHR");
+    return create_surface_helper<PFN_vkCreateWin32SurfaceKHR, VkWin32SurfaceCreateInfoKHR>(
+        functions, inst, surface, "vkCreateWin32SurfaceKHR", VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR);
 #elif defined(VK_USE_PLATFORM_XCB_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_WAYLAND_KHR)
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     if (string_eq(api_selection, "VK_USE_PLATFORM_XLIB_KHR"))
-        return create_surface_helper<PFN_vkCreateXlibSurfaceKHR, VkXlibSurfaceCreateInfoKHR>(functions, inst, surface,
-                                                                                             "vkCreateXlibSurfaceKHR");
+        return create_surface_helper<PFN_vkCreateXlibSurfaceKHR, VkXlibSurfaceCreateInfoKHR>(
+            functions, inst, surface, "vkCreateXlibSurfaceKHR", VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR);
 #endif
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     if (string_eq(api_selection, "VK_USE_PLATFORM_WAYLAND_KHR"))
-        return create_surface_helper<PFN_vkCreateWaylandSurfaceKHR, VkWaylandSurfaceCreateInfoKHR>(functions, inst, surface,
-                                                                                                   "vkCreateWaylandSurfaceKHR");
+        return create_surface_helper<PFN_vkCreateWaylandSurfaceKHR, VkWaylandSurfaceCreateInfoKHR>(
+            functions, inst, surface, "vkCreateWaylandSurfaceKHR", VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR);
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (api_selection == nullptr || string_eq(api_selection, "VK_USE_PLATFORM_XCB_KHR"))
-        return create_surface_helper<PFN_vkCreateXcbSurfaceKHR, VkXcbSurfaceCreateInfoKHR>(functions, inst, surface,
-                                                                                           "vkCreateXcbSurfaceKHR");
+        return create_surface_helper<PFN_vkCreateXcbSurfaceKHR, VkXcbSurfaceCreateInfoKHR>(
+            functions, inst, surface, "vkCreateXcbSurfaceKHR", VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR);
 #endif
     return VK_ERROR_NOT_PERMITTED_KHR;
 #else
     return create_surface_helper<PFN_vkCreateDisplayPlaneSurfaceKHR, VkDisplaySurfaceCreateInfoKHR>(
-        functions, inst, surface, "vkCreateDisplayPlaneSurfaceKHR");
+        functions, inst, surface, "vkCreateDisplayPlaneSurfaceKHR", VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR);
 #endif
 }
 VkResult create_surface(InstWrapper& inst, VkSurfaceKHR& surface, const char* api_selection) {

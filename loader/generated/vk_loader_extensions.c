@@ -5338,10 +5338,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
     // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
     } else if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
-            VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->object;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_tag_info.object = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            VkSurfaceKHR surface = (VkSurfaceKHR)(uintptr_t)pTagInfo->object;
+            if (wsi_unwrap_icd_surface(icd_term, &surface) == VK_SUCCESS) {
+                local_tag_info.object = (uint64_t)surface;
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -5397,10 +5396,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
     // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
     } else if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
-            VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->object;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_name_info.object = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            VkSurfaceKHR surface = (VkSurfaceKHR)(uintptr_t)pNameInfo->object;
+            if (wsi_unwrap_icd_surface(icd_term, &surface) == VK_SUCCESS) {
+                local_name_info.object = (uint64_t)surface;
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -6001,10 +5999,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
     // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
     } else if (pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
-            VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->objectHandle;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_name_info.objectHandle = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            VkSurfaceKHR surface = (VkSurfaceKHR)(uintptr_t)pNameInfo->objectHandle;
+            if (wsi_unwrap_icd_surface(icd_term, &surface) == VK_SUCCESS) {
+                local_name_info.objectHandle = (uint64_t)surface;
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -6064,10 +6061,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
     // If this is a KHR_surface, and the ICD has created its own, we have to replace it with the proper one for the next call.
     } else if (pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
-            VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->objectHandle;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_tag_info.objectHandle = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            VkSurfaceKHR surface = (VkSurfaceKHR)(uintptr_t)pTagInfo->objectHandle;
+            if (wsi_unwrap_icd_surface(icd_term, &surface) == VK_SUCCESS) {
+                local_tag_info.objectHandle = (uint64_t)surface;
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
