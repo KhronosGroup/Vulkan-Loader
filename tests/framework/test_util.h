@@ -31,7 +31,6 @@
  * All the standard library includes and main platform specific includes
  * Dll export macro
  * Manifest ICD & Layer structs
- * FolderManager - manages the contents of a folder, cleaning up when needed
  * per-platform library loading - mirrors the vk_loader_platform
  * LibraryWrapper - RAII wrapper for a library
  * DispatchableHandle - RAII wrapper for vulkan dispatchable handle objects
@@ -43,11 +42,11 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <iostream>
 #include <ostream>
 #include <string>
 #include <vector>
-#include <unordered_map>
 #include <filesystem>
 
 #include <cassert>
@@ -112,6 +111,8 @@ std::string widen(const std::string& utf8);
 #endif
 
 #include "json_writer.h"
+
+using GetFoldersFunc = std::function<std::vector<std::filesystem::path>(const char*)>;
 
 // get_env_var() - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
 //     env-var
@@ -194,46 +195,6 @@ const long ERROR_REMOVEDIRECTORY_FAILED = 10544;  // chosen at random, attempts 
 const char* win_api_error_str(LSTATUS status);
 void print_error_message(LSTATUS status, const char* function_name, std::string optional_message = "");
 #endif
-
-struct ManifestICD;    // forward declaration for FolderManager::write
-struct ManifestLayer;  // forward declaration for FolderManager::write
-
-namespace fs {
-
-int create_folder(std::filesystem::path const& path);
-int delete_folder(std::filesystem::path const& folder);
-
-class FolderManager {
-   public:
-    explicit FolderManager(std::filesystem::path root_path, std::string name) noexcept;
-    ~FolderManager() noexcept;
-    FolderManager(FolderManager const&) = delete;
-    FolderManager& operator=(FolderManager const&) = delete;
-    FolderManager(FolderManager&& other) noexcept;
-    FolderManager& operator=(FolderManager&& other) noexcept;
-
-    // Add a manifest to the folder
-    std::filesystem::path write_manifest(std::filesystem::path const& name, std::string const& contents);
-
-    // Add an already existing file to the manager, so it will be cleaned up automatically
-    void add_existing_file(std::filesystem::path const& file_name);
-
-    // close file handle, delete file, remove `name` from managed file list.
-    void remove(std::filesystem::path const& name);
-
-    // copy file into this folder with name `new_name`. Returns the full path of the file that was copied
-    std::filesystem::path copy_file(std::filesystem::path const& file, std::filesystem::path const& new_name);
-
-    // location of the managed folder
-    std::filesystem::path location() const { return folder; }
-
-    std::vector<std::filesystem::path> get_files() const { return files; }
-
-   private:
-    std::filesystem::path folder;
-    std::vector<std::filesystem::path> files;
-};
-}  // namespace fs
 
 // copy the contents of a std::string into a char array and add a null terminator at the end
 // src - std::string to read from
