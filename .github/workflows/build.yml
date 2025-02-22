@@ -72,7 +72,7 @@ jobs:
                 -D CMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
                 -D CMAKE_C_COMPILER=${{ matrix.compiler.cc }}
             - run: cmake --build build
-            - run: ctest --output-on-failure --test-dir build/
+            - run: ctest --parallel --output-on-failure --test-dir build/
             - run: cmake --install build --prefix /tmp
 
     codegen:
@@ -100,7 +100,7 @@ jobs:
                 -D CMAKE_CXX_COMPILER=clang++
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
-            - run: ctest --output-on-failure -E UnknownFunction --test-dir build/
+            - run: ctest --parallel --output-on-failure -E UnknownFunction --test-dir build/
 
     linux-32:
         needs: codegen
@@ -138,7 +138,7 @@ jobs:
                 PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
-            - run: ctest --output-on-failure --test-dir build/
+            - run: ctest --parallel --output-on-failure --test-dir build/
 
     linux-32-no-asm:
         needs: codegen
@@ -172,7 +172,7 @@ jobs:
                 # https://gitlab.kitware.com/cmake/cmake/-/issues/25317
                 PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
             - run: cmake --build build
-            - run: ctest --output-on-failure -E UnknownFunction --test-dir build/
+            - run: ctest --parallel --output-on-failure -E UnknownFunction --test-dir build/
 
     windows_vs:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
@@ -193,7 +193,7 @@ jobs:
                 -D BUILD_WERROR=ON
             - run: cmake --build build/ --config ${{matrix.config}}
             - run: cmake --install build --prefix build/install --config ${{matrix.config}}
-            - run: ctest --output-on-failure -C ${{matrix.config}} --test-dir build/
+            - run: ctest --parallel --output-on-failure -C ${{matrix.config}} --test-dir build/
 
     windows_vs-no-asm:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
@@ -213,7 +213,7 @@ jobs:
                 -A ${{ matrix.arch }} `
                 -D BUILD_WERROR=ON
             - run: cmake --build build/ --config Release
-            - run: ctest --output-on-failure -C Release -E UnknownFunction --test-dir build/
+            - run: ctest --parallel --output-on-failure -C Release -E UnknownFunction --test-dir build/
 
     # Test both clang and clang-cl (Chromium project uses clang-cl)
     windows_clang:
@@ -237,7 +237,7 @@ jobs:
               -D BUILD_TESTS=ON `
               -G Ninja
           - run: cmake --build build/
-          - run: ctest --output-on-failure --test-dir build/
+          - run: ctest --parallel --output-on-failure --test-dir build/
           - run: cmake --install build --prefix build/install
 
     mac:
@@ -268,7 +268,7 @@ jobs:
                 LDFLAGS: -Wl,-fatal_warnings
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
-            - run: ctest --output-on-failure --test-dir build/
+            - run: ctest --parallel --output-on-failure --test-dir build/
 
     apple-cross-compile:
       # Mac is 10x expensive to run on GitHub machines, so only run if we know something else passed as well
@@ -330,7 +330,7 @@ jobs:
               env:
                 LDFLAGS: -Wl,-fatal_warnings
             - run: cmake --build build --config Release
-            - run: ctest --output-on-failure --build-config Release -E UnknownFunction --test-dir build/
+            - run: ctest --parallel --output-on-failure --build-config Release -E UnknownFunction --test-dir build/
             - run: cmake --install build --config Release --prefix /tmp
             - name: Verify Universal Binary
               if: ${{ matrix.static == 'OFF' }}
