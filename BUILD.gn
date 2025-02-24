@@ -77,8 +77,9 @@ config("vulkan_loader_config") {
     "LOADER_USE_UNSAFE_FILE_SEARCH=1",
   ]
 
+  cflags = []
   if (is_win) {
-    cflags = [ "/wd4201" ]
+    cflags += [ "/wd4201" ]
   }
   if (is_linux || is_chromeos) {
     defines += [
@@ -89,6 +90,18 @@ config("vulkan_loader_config") {
       "HAVE_SECURE_GETENV",
       "LOADER_ENABLE_LINUX_SORT",
     ]
+  }
+  if (is_clang) {
+    # Vulkan-Hpp uses `vk::PFN_...` function pointer types, which are different
+    # from the C-styled `PFN_...` function pointers.
+    # 
+    # These types are guaranteed to be identical during Vulkan-Hpp compile time.
+    # However, UBsan's function sanitizer treats them as different types and
+    # triggers a runtime error when these functions are called.
+    #
+    # Thus, we need to disable the function sanitizer so that Vulkan
+    # applications created using Vulkan-Hpp can run correctly.
+    cflags += [ "-fno-sanitize=function" ]
   }
 }
 
