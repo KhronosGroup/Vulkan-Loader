@@ -2,9 +2,9 @@
 // See loader_extension_generator.py for modifications
 
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2021-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * Copyright (c) 2023-2023 RasterGrid Kft.
  *
@@ -22,6 +22,7 @@
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Mark Young <marky@lunarg.com>
+ * Author: Charles Giessen <charles@lunarg.com>
  */
 
 // clang-format off
@@ -858,7 +859,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdCopyAccelerationStructureNV CmdCopyAccelerationStructureNV;
     PFN_vkCmdTraceRaysNV CmdTraceRaysNV;
     PFN_vkCreateRayTracingPipelinesNV CreateRayTracingPipelinesNV;
+
+    // ---- VK_KHR_ray_tracing_pipeline extension commands
     PFN_vkGetRayTracingShaderGroupHandlesKHR GetRayTracingShaderGroupHandlesKHR;
+
+    // ---- VK_NV_ray_tracing extension commands
     PFN_vkGetRayTracingShaderGroupHandlesNV GetRayTracingShaderGroupHandlesNV;
     PFN_vkGetAccelerationStructureHandleNV GetAccelerationStructureHandleNV;
     PFN_vkCmdWriteAccelerationStructuresPropertiesNV CmdWriteAccelerationStructuresPropertiesNV;

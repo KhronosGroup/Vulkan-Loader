@@ -2,9 +2,9 @@
 // See loader_extension_generator.py for modifications
 
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2021-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * Copyright (c) 2023-2023 RasterGrid Kft.
  *
@@ -22,6 +22,7 @@
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Mark Young <marky@lunarg.com>
+ * Author: Charles Giessen <charles@lunarg.com>
  */
 
 // clang-format off
@@ -896,7 +897,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdCopyAccelerationStructureNV = (PFN_vkCmdCopyAccelerationStructureNV)gdpa(dev, "vkCmdCopyAccelerationStructureNV");
     table->CmdTraceRaysNV = (PFN_vkCmdTraceRaysNV)gdpa(dev, "vkCmdTraceRaysNV");
     table->CreateRayTracingPipelinesNV = (PFN_vkCreateRayTracingPipelinesNV)gdpa(dev, "vkCreateRayTracingPipelinesNV");
+
+    // ---- VK_KHR_ray_tracing_pipeline extension commands
     table->GetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)gdpa(dev, "vkGetRayTracingShaderGroupHandlesKHR");
+
+    // ---- VK_NV_ray_tracing extension commands
     table->GetRayTracingShaderGroupHandlesNV = (PFN_vkGetRayTracingShaderGroupHandlesNV)gdpa(dev, "vkGetRayTracingShaderGroupHandlesNV");
     table->GetAccelerationStructureHandleNV = (PFN_vkGetAccelerationStructureHandleNV)gdpa(dev, "vkGetAccelerationStructureHandleNV");
     table->CmdWriteAccelerationStructuresPropertiesNV = (PFN_vkCmdWriteAccelerationStructuresPropertiesNV)gdpa(dev, "vkCmdWriteAccelerationStructuresPropertiesNV");
@@ -1540,19 +1545,23 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 void init_extension_device_proc_terminator_dispatch(struct loader_device *dev) {
     struct loader_device_terminator_dispatch* dispatch = &dev->loader_dispatch.extension_terminator_dispatch;
     PFN_vkGetDeviceProcAddr gpda = (PFN_vkGetDeviceProcAddr)dev->phys_dev_term->this_icd_term->dispatch.GetDeviceProcAddr;
+
     // ---- VK_KHR_swapchain extension commands
     if (dev->driver_extensions.khr_swapchain_enabled)
        dispatch->CreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)gpda(dev->icd_device, "vkCreateSwapchainKHR");
     if (dev->driver_extensions.khr_swapchain_enabled)
        dispatch->GetDeviceGroupSurfacePresentModesKHR = (PFN_vkGetDeviceGroupSurfacePresentModesKHR)gpda(dev->icd_device, "vkGetDeviceGroupSurfacePresentModesKHR");
+
     // ---- VK_KHR_display_swapchain extension commands
     if (dev->driver_extensions.khr_display_swapchain_enabled)
        dispatch->CreateSharedSwapchainsKHR = (PFN_vkCreateSharedSwapchainsKHR)gpda(dev->icd_device, "vkCreateSharedSwapchainsKHR");
+
     // ---- VK_EXT_debug_marker extension commands
     if (dev->driver_extensions.ext_debug_marker_enabled)
        dispatch->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gpda(dev->icd_device, "vkDebugMarkerSetObjectTagEXT");
     if (dev->driver_extensions.ext_debug_marker_enabled)
        dispatch->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)gpda(dev->icd_device, "vkDebugMarkerSetObjectNameEXT");
+
     // ---- VK_EXT_debug_utils extension commands
     if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->SetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)gpda(dev->icd_device, "vkSetDebugUtilsObjectNameEXT");
@@ -1571,6 +1580,7 @@ void init_extension_device_proc_terminator_dispatch(struct loader_device *dev) {
     if (dev->driver_extensions.ext_debug_utils_enabled)
        dispatch->CmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT)gpda(dev->icd_device, "vkCmdInsertDebugUtilsLabelEXT");
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
+
     // ---- VK_EXT_full_screen_exclusive extension commands
     if (dev->driver_extensions.ext_full_screen_exclusive_enabled && (dev->driver_extensions.khr_device_group_enabled || dev->driver_extensions.version_1_1_enabled))
        dispatch->GetDeviceGroupSurfacePresentModes2EXT = (PFN_vkGetDeviceGroupSurfacePresentModes2EXT)gpda(dev->icd_device, "vkGetDeviceGroupSurfacePresentModes2EXT");
@@ -1579,6 +1589,7 @@ void init_extension_device_proc_terminator_dispatch(struct loader_device *dev) {
 
 // These are prototypes for functions that need their trampoline called in all circumstances.
 // They are used in loader_lookup_device_dispatch_table but are defined afterwards.
+
     // ---- VK_EXT_debug_marker extension commands
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
@@ -1586,6 +1597,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectNameInfoEXT*       pNameInfo);
+
     // ---- VK_EXT_debug_utils extension commands
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
@@ -2778,7 +2790,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdCopyAccelerationStructureNV")) return (void *)table->CmdCopyAccelerationStructureNV;
     if (!strcmp(name, "CmdTraceRaysNV")) return (void *)table->CmdTraceRaysNV;
     if (!strcmp(name, "CreateRayTracingPipelinesNV")) return (void *)table->CreateRayTracingPipelinesNV;
+
+    // ---- VK_KHR_ray_tracing_pipeline extension commands
     if (!strcmp(name, "GetRayTracingShaderGroupHandlesKHR")) return (void *)table->GetRayTracingShaderGroupHandlesKHR;
+
+    // ---- VK_NV_ray_tracing extension commands
     if (!strcmp(name, "GetRayTracingShaderGroupHandlesNV")) return (void *)table->GetRayTracingShaderGroupHandlesNV;
     if (!strcmp(name, "GetAccelerationStructureHandleNV")) return (void *)table->GetAccelerationStructureHandleNV;
     if (!strcmp(name, "CmdWriteAccelerationStructuresPropertiesNV")) return (void *)table->CmdWriteAccelerationStructuresPropertiesNV;
@@ -6709,6 +6725,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
     return disp->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
 }
 
+
+// ---- VK_KHR_ray_tracing_pipeline extension trampoline/terminators
+
 VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesKHR(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
@@ -6725,6 +6744,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesKHR(
     }
     return disp->GetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
+
+
+// ---- VK_NV_ray_tracing extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesNV(
     VkDevice                                    device,
@@ -11463,10 +11485,14 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)CreateRayTracingPipelinesNV;
         return true;
     }
+
+    // ---- VK_KHR_ray_tracing_pipeline extension commands
     if (!strcmp("vkGetRayTracingShaderGroupHandlesKHR", name)) {
         *addr = (void *)GetRayTracingShaderGroupHandlesKHR;
         return true;
     }
+
+    // ---- VK_NV_ray_tracing extension commands
     if (!strcmp("vkGetRayTracingShaderGroupHandlesNV", name)) {
         *addr = (void *)GetRayTracingShaderGroupHandlesNV;
         return true;
@@ -13002,6 +13028,9 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
                                                   VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+                                                  VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_ANDROID_KHR
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
                                                   VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_WIN32_KHR
