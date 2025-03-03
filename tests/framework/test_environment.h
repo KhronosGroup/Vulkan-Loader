@@ -478,10 +478,10 @@ void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogg
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
 
 struct LoaderSettingsLayerConfiguration {
-    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, name, {})
-    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::filesystem::path, path, {})
-    BUILDER_VALUE(LoaderSettingsLayerConfiguration, std::string, control, {})
-    BUILDER_VALUE(LoaderSettingsLayerConfiguration, bool, treat_as_implicit_manifest, false)
+    BUILDER_VALUE(std::string, name)
+    BUILDER_VALUE(std::filesystem::path, path)
+    BUILDER_VALUE(std::string, control)
+    BUILDER_VALUE(bool, treat_as_implicit_manifest)
 };
 inline bool operator==(LoaderSettingsLayerConfiguration const& a, LoaderSettingsLayerConfiguration const& b) {
     return a.name == b.name && a.path == b.path && a.control == b.control &&
@@ -497,19 +497,19 @@ inline bool operator>=(LoaderSettingsLayerConfiguration const& a, LoaderSettings
 
 // Log files and their associated filter
 struct LoaderLogConfiguration {
-    BUILDER_VECTOR(LoaderLogConfiguration, std::string, destinations, destination)
-    BUILDER_VECTOR(LoaderLogConfiguration, std::string, filters, filter)
+    BUILDER_VECTOR(std::string, destinations, destination)
+    BUILDER_VECTOR(std::string, filters, filter)
 };
 struct AppSpecificSettings {
-    BUILDER_VECTOR(AppSpecificSettings, std::string, app_keys, app_key)
-    BUILDER_VECTOR(AppSpecificSettings, LoaderSettingsLayerConfiguration, layer_configurations, layer_configuration)
-    BUILDER_VECTOR(AppSpecificSettings, std::string, stderr_log, stderr_log_filter)
-    BUILDER_VECTOR(AppSpecificSettings, LoaderLogConfiguration, log_configurations, log_configuration)
+    BUILDER_VECTOR(std::string, app_keys, app_key)
+    BUILDER_VECTOR(LoaderSettingsLayerConfiguration, layer_configurations, layer_configuration)
+    BUILDER_VECTOR(std::string, stderr_log, stderr_log_filter)
+    BUILDER_VECTOR(LoaderLogConfiguration, log_configurations, log_configuration)
 };
 
 struct LoaderSettings {
-    BUILDER_VALUE(LoaderSettings, ManifestVersion, file_format_version, {})
-    BUILDER_VECTOR(LoaderSettings, AppSpecificSettings, app_specific_settings, app_specific_setting);
+    BUILDER_VALUE(ManifestVersion, file_format_version)
+    BUILDER_VECTOR(AppSpecificSettings, app_specific_settings, app_specific_setting);
 };
 
 struct FrameworkEnvironment;  // forward declaration
@@ -589,27 +589,27 @@ struct TestICDDetails {
     TestICDDetails(std::filesystem::path icd_binary_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
         icd_manifest.set_lib_path(icd_binary_path).set_api_version(api_version);
     }
-    BUILDER_VALUE(TestICDDetails, ManifestICD, icd_manifest, {});
-    BUILDER_VALUE(TestICDDetails, std::filesystem::path, json_name, "test_icd");
+    BUILDER_VALUE(ManifestICD, icd_manifest);
+    BUILDER_VALUE_WITH_DEFAULT(std::filesystem::path, json_name, "test_icd");
     // Uses the json_name without modification - default is to append _1 in the json file to distinguish drivers
-    BUILDER_VALUE(TestICDDetails, bool, disable_icd_inc, false);
-    BUILDER_VALUE(TestICDDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
-    BUILDER_VALUE(TestICDDetails, bool, is_fake, false);
+    BUILDER_VALUE(bool, disable_icd_inc);
+    BUILDER_VALUE_WITH_DEFAULT(ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
+    BUILDER_VALUE(bool, is_fake);
     // If discovery type is env-var, is_dir controls whether to use the path to the file or folder the manifest is in
-    BUILDER_VALUE(TestICDDetails, bool, is_dir, false);
-    BUILDER_VALUE(TestICDDetails, LibraryPathType, library_path_type, LibraryPathType::absolute);
+    BUILDER_VALUE(bool, is_dir);
+    BUILDER_VALUE_WITH_DEFAULT(LibraryPathType, library_path_type, LibraryPathType::absolute);
 };
 
 struct TestLayerDetails {
     TestLayerDetails(ManifestLayer layer_manifest, const std::string& json_name) noexcept
         : layer_manifest(layer_manifest), json_name(json_name) {}
-    BUILDER_VALUE(TestLayerDetails, ManifestLayer, layer_manifest, {});
-    BUILDER_VALUE(TestLayerDetails, std::string, json_name, "test_layer");
-    BUILDER_VALUE(TestLayerDetails, ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
-    BUILDER_VALUE(TestLayerDetails, bool, is_fake, false);
+    BUILDER_VALUE(ManifestLayer, layer_manifest);
+    BUILDER_VALUE_WITH_DEFAULT(std::string, json_name, "test_layer");
+    BUILDER_VALUE_WITH_DEFAULT(ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
+    BUILDER_VALUE(bool, is_fake);
     // If discovery type is env-var, is_dir controls whether to use the path to the file or folder the manifest is in
-    BUILDER_VALUE(TestLayerDetails, bool, is_dir, true);
-    BUILDER_VALUE(TestLayerDetails, LibraryPathType, library_path_type, LibraryPathType::absolute);
+    BUILDER_VALUE_WITH_DEFAULT(bool, is_dir, true);
+    BUILDER_VALUE_WITH_DEFAULT(LibraryPathType, library_path_type, LibraryPathType::absolute);
 };
 
 // Locations manifests can go in the test framework
@@ -632,10 +632,10 @@ enum class ManifestLocation {
 };
 
 struct FrameworkSettings {
-    BUILDER_VALUE(FrameworkSettings, const char*, log_filter, "all");
-    BUILDER_VALUE(FrameworkSettings, bool, enable_default_search_paths, true);
-    BUILDER_VALUE(FrameworkSettings, LoaderSettings, loader_settings, {});
-    BUILDER_VALUE(FrameworkSettings, bool, secure_loader_settings, false);
+    BUILDER_VALUE_WITH_DEFAULT(const char*, log_filter, "all");
+    BUILDER_VALUE_WITH_DEFAULT(bool, enable_default_search_paths, true);
+    BUILDER_VALUE(LoaderSettings, loader_settings);
+    BUILDER_VALUE(bool, secure_loader_settings);
 };
 
 struct FrameworkEnvironment {
