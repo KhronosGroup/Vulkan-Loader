@@ -41,7 +41,7 @@ jobs:
             matrix:
                 compiler: [ {cc: gcc, cxx: g++}, {cc: clang, cxx: clang++} ]
                 config: [ Debug, Release ]
-                os: [ ubuntu-20.04, ubuntu-22.04 ]
+                os: [ ubuntu-22.04, ubuntu-24.04 ]
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-python@v5
@@ -53,7 +53,7 @@ jobs:
               # practice to try and support them so they don't have to install
               # the CMake tarball. Ideally the minimum we use matches what the default
               # package provided by Ubuntu via APT.
-              if: ${{ matrix.os == 'ubuntu-20.04' }}
+              if: ${{ matrix.os == 'ubuntu-22.04' }}
               uses: lukka/get-cmake@latest
               with:
                 cmakeVersion: 3.22.1
@@ -84,7 +84,7 @@ jobs:
 
     linux-no-asm:
         needs: codegen
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v4
             - run: sudo apt update
@@ -104,7 +104,7 @@ jobs:
 
     linux-32:
         needs: codegen
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         strategy:
             matrix:
                 config: [ Debug, Release ]
@@ -122,7 +122,7 @@ jobs:
             - run: |
                 sudo apt install --yes --no-install-recommends \
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
-                libwayland-dev:i386 libxrandr-dev:i386
+                libwayland-dev:i386 libxrandr-dev:i386 pkg-config:i386
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
@@ -144,7 +144,7 @@ jobs:
 
     linux-32-no-asm:
         needs: codegen
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-python@v5
@@ -159,7 +159,7 @@ jobs:
             - run: |
                 sudo apt install --yes --no-install-recommends \
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
-                libwayland-dev:i386 libxrandr-dev:i386
+                libwayland-dev:i386 libxrandr-dev:i386 pkg-config:i386
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
