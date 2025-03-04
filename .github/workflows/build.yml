@@ -122,7 +122,7 @@ jobs:
             - run: |
                 sudo apt install --yes --no-install-recommends \
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
-                libwayland-dev:i386 libxrandr-dev:i386 pkg-config:i386
+                libwayland-dev:i386 libxrandr-dev:i386
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
@@ -130,17 +130,15 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D SYSCONFDIR=/etc/not_vulkan \
-                -D PKG_CONFIG_EXECUTABLE=/usr/bin/i686-linux-gnu-pkg-config \
+                -D CMAKE_CXX_FLAGS=-m32 \
+                -D CMAKE_C_FLAGS=-m32 \
                 -G Ninja
               env:
-                CFLAGS: -m32
-                CXXFLAGS: -m32
-                LDFLAGS: -m32
-                ASFLAGS: --32
+                # https://gitlab.kitware.com/cmake/cmake/-/issues/25317
+                PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
-            - run: ctest --output-on-failure
-              working-directory: build/
+            - run: ctest --output-on-failure --test-dir build/
 
     linux-32-no-asm:
         needs: codegen
@@ -159,7 +157,7 @@ jobs:
             - run: |
                 sudo apt install --yes --no-install-recommends \
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
-                libwayland-dev:i386 libxrandr-dev:i386 pkg-config:i386
+                libwayland-dev:i386 libxrandr-dev:i386
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
@@ -167,16 +165,14 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
-                -D PKG_CONFIG_EXECUTABLE=/usr/bin/i686-linux-gnu-pkg-config \
+                -D CMAKE_CXX_FLAGS=-m32 \
+                -D CMAKE_C_FLAGS=-m32 \
                 -G Ninja
               env:
-                CFLAGS: -m32
-                CXXFLAGS: -m32
-                LDFLAGS: -m32
-                ASFLAGS: --32
+                # https://gitlab.kitware.com/cmake/cmake/-/issues/25317
+                PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
             - run: cmake --build build
-            - run: ctest --output-on-failure -E UnknownFunction
-              working-directory: build/
+            - run: ctest --output-on-failure -E UnknownFunction --test-dir build/
 
     windows_vs:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
