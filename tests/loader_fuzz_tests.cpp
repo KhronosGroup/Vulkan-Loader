@@ -85,7 +85,7 @@ void execute_json_load_fuzzer(std::string const& filename) {
     FrameworkEnvironment env{};
 
     cJSON* json = NULL;
-    loader_get_json(NULL, filename.c_str(), &json);
+    loader_get_json(NULL, /*parent_dir_fd=*/-1, filename.c_str(), &json);
 
     if (json == NULL) {
         return;

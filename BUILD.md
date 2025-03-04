@@ -604,7 +604,7 @@ Fuchsia uses the project's GN build system to integrate with the Fuchsia platfor
 ### SDK Symbols
 
 The Vulkan Loader is a component of the Fuchsia SDK, so it must explicitly declare its exported symbols in
-the file vulkan.symbols.api; see [SDK](https://fuchsia.dev/fuchsia-src/development/sdk).
+the file vulkan.ifs; see [SDK](https://fuchsia.dev/fuchsia-src/development/sdk).
 
 ## Building on QNX
 
