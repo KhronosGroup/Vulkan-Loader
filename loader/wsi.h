@@ -75,6 +75,9 @@ typedef struct {
     uint32_t entire_size;          // Size of entire VkIcdSurface
     uint32_t surface_index;        // This surface's index into each drivers list of created surfaces
 
+    bool callbacks_valid;             // Need to store if a VkAllocationCallbacks pointer was used.
+    VkAllocationCallbacks callbacks;  // Storage for the callbacks
+
     // The create info parameters captured by the union in VkIcdSurface are insufficient, as they do not
     // capture every single parameter from the create info (e.g. flags that did not have any flags defined
     // at the time) and they also cannot capture extension structures, so we are including a separate
@@ -83,6 +86,7 @@ typedef struct {
     // structures is rather limited (there is only a single display surface creation structure extension
     // at the time of writing).
     uint8_t *create_info;
+
 } VkIcdSurface;
 
 VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *surface);
