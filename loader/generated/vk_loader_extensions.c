@@ -1007,12 +1007,24 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)gdpa(dev, "vkGetPrivateDataEXT");
 
     // ---- VK_NV_cuda_kernel_launch extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CreateCudaModuleNV = (PFN_vkCreateCudaModuleNV)gdpa(dev, "vkCreateCudaModuleNV");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->GetCudaModuleCacheNV = (PFN_vkGetCudaModuleCacheNV)gdpa(dev, "vkGetCudaModuleCacheNV");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CreateCudaFunctionNV = (PFN_vkCreateCudaFunctionNV)gdpa(dev, "vkCreateCudaFunctionNV");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->DestroyCudaModuleNV = (PFN_vkDestroyCudaModuleNV)gdpa(dev, "vkDestroyCudaModuleNV");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->DestroyCudaFunctionNV = (PFN_vkDestroyCudaFunctionNV)gdpa(dev, "vkDestroyCudaFunctionNV");
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CmdCudaLaunchKernelNV = (PFN_vkCmdCudaLaunchKernelNV)gdpa(dev, "vkCmdCudaLaunchKernelNV");
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
@@ -2900,12 +2912,24 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetPrivateDataEXT")) return (void *)table->GetPrivateDataEXT;
 
     // ---- VK_NV_cuda_kernel_launch extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "CreateCudaModuleNV")) return (void *)table->CreateCudaModuleNV;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "GetCudaModuleCacheNV")) return (void *)table->GetCudaModuleCacheNV;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "CreateCudaFunctionNV")) return (void *)table->CreateCudaFunctionNV;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "DestroyCudaModuleNV")) return (void *)table->DestroyCudaModuleNV;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "DestroyCudaFunctionNV")) return (void *)table->DestroyCudaFunctionNV;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "CmdCudaLaunchKernelNV")) return (void *)table->CmdCudaLaunchKernelNV;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
@@ -7822,6 +7846,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 
 // ---- VK_NV_cuda_kernel_launch extension trampoline/terminators
 
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(
     VkDevice                                    device,
     const VkCudaModuleCreateInfoNV*             pCreateInfo,
@@ -7837,6 +7862,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(
     return disp->CreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule);
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR VkResult VKAPI_CALL GetCudaModuleCacheNV(
     VkDevice                                    device,
     VkCudaModuleNV                              module,
@@ -7852,6 +7879,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCudaModuleCacheNV(
     return disp->GetCudaModuleCacheNV(device, module, pCacheSize, pCacheData);
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR VkResult VKAPI_CALL CreateCudaFunctionNV(
     VkDevice                                    device,
     const VkCudaFunctionCreateInfoNV*           pCreateInfo,
@@ -7867,6 +7896,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaFunctionNV(
     return disp->CreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction);
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR void VKAPI_CALL DestroyCudaModuleNV(
     VkDevice                                    device,
     VkCudaModuleNV                              module,
@@ -7881,6 +7912,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyCudaModuleNV(
     disp->DestroyCudaModuleNV(device, module, pAllocator);
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR void VKAPI_CALL DestroyCudaFunctionNV(
     VkDevice                                    device,
     VkCudaFunctionNV                            function,
@@ -7895,6 +7928,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyCudaFunctionNV(
     disp->DestroyCudaFunctionNV(device, function, pAllocator);
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(
     VkCommandBuffer                             commandBuffer,
     const VkCudaLaunchInfoNV*                   pLaunchInfo) {
@@ -7908,6 +7943,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(
     disp->CmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo);
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 // ---- VK_EXT_metal_objects extension trampoline/terminators
 
@@ -11823,30 +11859,42 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 
     // ---- VK_NV_cuda_kernel_launch extension commands
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkCreateCudaModuleNV", name)) {
         *addr = (void *)CreateCudaModuleNV;
         return true;
     }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkGetCudaModuleCacheNV", name)) {
         *addr = (void *)GetCudaModuleCacheNV;
         return true;
     }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkCreateCudaFunctionNV", name)) {
         *addr = (void *)CreateCudaFunctionNV;
         return true;
     }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkDestroyCudaModuleNV", name)) {
         *addr = (void *)DestroyCudaModuleNV;
         return true;
     }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkDestroyCudaFunctionNV", name)) {
         *addr = (void *)DestroyCudaFunctionNV;
         return true;
     }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkCmdCudaLaunchKernelNV", name)) {
         *addr = (void *)CmdCudaLaunchKernelNV;
         return true;
     }
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
