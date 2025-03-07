@@ -605,12 +605,24 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->DestroyPrivateDataSlotEXT = (PFN_vkDestroyPrivateDataSlotEXT)gpa(device, "vkDestroyPrivateDataSlotEXT");
     table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)gpa(device, "vkSetPrivateDataEXT");
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)gpa(device, "vkGetPrivateDataEXT");
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CreateCudaModuleNV = (PFN_vkCreateCudaModuleNV)gpa(device, "vkCreateCudaModuleNV");
+#endif  // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->GetCudaModuleCacheNV = (PFN_vkGetCudaModuleCacheNV)gpa(device, "vkGetCudaModuleCacheNV");
+#endif  // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CreateCudaFunctionNV = (PFN_vkCreateCudaFunctionNV)gpa(device, "vkCreateCudaFunctionNV");
+#endif  // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->DestroyCudaModuleNV = (PFN_vkDestroyCudaModuleNV)gpa(device, "vkDestroyCudaModuleNV");
+#endif  // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->DestroyCudaFunctionNV = (PFN_vkDestroyCudaFunctionNV)gpa(device, "vkDestroyCudaFunctionNV");
+#endif  // VK_ENABLE_BETA_EXTENSIONS
+#if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CmdCudaLaunchKernelNV = (PFN_vkCmdCudaLaunchKernelNV)gpa(device, "vkCmdCudaLaunchKernelNV");
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gpa(device, "vkExportMetalObjectsEXT");
 #endif  // VK_USE_PLATFORM_METAL_EXT
