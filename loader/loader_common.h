@@ -379,8 +379,6 @@ struct loader_instance {
     loader_settings settings;
 
     bool portability_enumeration_enabled;
-    bool portability_enumeration_flag_bit_set;
-    bool portability_enumeration_extension_enabled;
 
     bool create_terminator_invalid_extension;
     bool supports_get_dev_prop_2;
