@@ -483,6 +483,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     VkInstance created_instance = VK_NULL_HANDLE;
     VkResult res = VK_ERROR_INITIALIZATION_FAILED;
     VkInstanceCreateInfo ici = {0};
+    bool portability_enumeration_flag_bit_set = false;
+    bool portability_enumeration_extension_enabled = false;
     struct loader_envvar_all_filters layer_filters = {0};
 
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
@@ -561,18 +563,19 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
 
     // Check the VkInstanceCreateInfoFlags wether to allow the portability enumeration flag
     if ((pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR) == 1) {
-        ptr_instance->portability_enumeration_flag_bit_set = true;
+        portability_enumeration_flag_bit_set = true;
     }
-    // Make sure the extension has been enabled
+    // Make sure the portability extension extension has been enabled before enabling portability driver enumeration
     if (pCreateInfo->ppEnabledExtensionNames) {
         for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0) {
-                ptr_instance->portability_enumeration_extension_enabled = true;
-                if (ptr_instance->portability_enumeration_flag_bit_set) {
+                portability_enumeration_extension_enabled = true;
+                if (portability_enumeration_flag_bit_set) {
                     ptr_instance->portability_enumeration_enabled = true;
                     loader_log(ptr_instance, VULKAN_LOADER_INFO_BIT, 0,
                                "Portability enumeration bit was set, enumerating portability drivers.");
                 }
+                break;
             }
         }
     }
@@ -622,14 +625,13 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     if (ptr_instance->icd_tramp_list.count == 0) {
         // No drivers found
         if (skipped_portability_drivers) {
-            if (ptr_instance->portability_enumeration_extension_enabled && !ptr_instance->portability_enumeration_flag_bit_set) {
+            if (portability_enumeration_extension_enabled && !portability_enumeration_flag_bit_set) {
                 loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                            "vkCreateInstance: Found drivers that contain devices which support the portability subset, but "
                            "the instance does not enumerate portability drivers! Applications that wish to enumerate portability "
                            "drivers must set the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit in the VkInstanceCreateInfo "
                            "flags.");
-            } else if (ptr_instance->portability_enumeration_flag_bit_set &&
-                       !ptr_instance->portability_enumeration_extension_enabled) {
+            } else if (portability_enumeration_flag_bit_set && !portability_enumeration_extension_enabled) {
                 loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                            "VkInstanceCreateInfo: If flags has the VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR bit set, the "
                            "list of enabled extensions in ppEnabledExtensionNames must contain VK_KHR_portability_enumeration "
