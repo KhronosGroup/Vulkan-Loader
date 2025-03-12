@@ -254,10 +254,12 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev);
 // the appropriate information for any instance extensions we know about.
 bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr);
 
+struct loader_instance_extension_enable_list; // Forward declaration
+
 // Extension interception for vkCreateInstance function, so we can properly
 // detect and enable any instance extension information for extensions we know
 // about.
-void extensions_create_instance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo);
+void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *const * extension_list, struct loader_instance_extension_enable_list* enables);
 
 // Extension interception for vkGetDeviceProcAddr function, so we can return
 // an appropriate terminator if this is one of those few device commands requiring
@@ -361,11 +363,13 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     # Create the extension enable union
     def OutputIcdExtensionEnableUnion(self, out):
 
-        out.append( 'struct loader_instance_extension_enables {\n')
+        out.append( 'struct loader_instance_extension_enable_list {\n')
         for extension in self.instance_extensions:
-            if len(extension.commands) == 0 or extension.name in WSI_EXT_NAMES:
-                continue
+            if extension.protect:
+                out.append(f'#if defined({extension.protect})\n')
             out.append( f'    uint8_t {extension.name[3:].lower()};\n')
+            if extension.protect:
+                out.append(f'#endif // defined({extension.protect})\n')
 
         out.append( '};\n\n')
 
@@ -1182,7 +1186,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
             if len(command.extensions) > 0 and command.extensions[0].instance:
                 out.append( f'    if (!strcmp("{command.name}", name)) {{\n')
-                out.append( '        *addr = (ptr_instance->enabled_known_extensions.')
+                out.append( '        *addr = (ptr_instance->enabled_extensions.')
                 out.append( command.extensions[0].name[3:].lower())
                 out.append( ' == 1)\n')
                 out.append( f'                     ? (void *){base_name}\n')
@@ -1207,15 +1211,12 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
     # Create the extension name init function
     def InstantExtensionCreate(self, out):
 
-        out.append( '// A function that can be used to query enabled extensions during a vkCreateInstance call\n')
-        out.append( 'void extensions_create_instance(struct loader_instance *ptr_instance, const VkInstanceCreateInfo *pCreateInfo) {\n')
-        out.append( '    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {\n')
+        out.append( '// Used to keep track of all enabled instance extensions\n')
+        out.append( 'void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *const * extension_list, struct loader_instance_extension_enable_list* enables) {\n')
+        out.append( '    for (uint32_t i = 0; i < extension_count; i++) {\n')
         e = ''
         cur_extension_name = ''
-        for extension in [x for x in self.vk.extensions.values() if x.instance and len(x.commands) > 0]:
-            if extension.name in WSI_EXT_NAMES or extension.name in AVOID_EXT_NAMES or extension.name in AVOID_CMD_NAMES:
-                continue
-
+        for extension in self.instance_extensions:
             if extension.name != cur_extension_name:
                 out.append( f'\n    // ---- {extension.name} extension commands\n')
                 cur_extension_name = extension.name
@@ -1223,18 +1224,14 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
             if extension.protect is not None:
                 out.append( f'#if defined({extension.protect})\n')
 
-            out.append(f'        {e}if (0 == strcmp(pCreateInfo->ppEnabledExtensionNames[i], ')
-            e = '} else '
+            out.append(f'        {e}if (0 == strcmp(extension_list[i], ')
 
-            out.append( extension.nameString + ')) {\n')
-            out.append( '            ptr_instance->enabled_known_extensions.')
-            out.append( extension.name[3:].lower())
-            out.append( ' = 1;\n')
+            out.append( f'{extension.nameString})) {{ enables->{extension.name[3:].lower()} = 1; }}\n')
 
             if extension.protect is not None:
                 out.append( f'#endif // {extension.protect}\n')
+            e = 'else '
 
-        out.append( '        }\n')
         out.append( '    }\n')
         out.append( '}\n\n')
 
