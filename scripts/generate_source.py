@@ -72,30 +72,34 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
     from base_generator import (SetTargetApiName, SetMergedApiNames)
     SetTargetApiName(api)
 
+    # Generated directory and dispatch table helper file name may be API specific (e.g. Vulkan SC)
+    generated_directory = 'loader/generated'
+    dispatch_table_helper_filename = 'vk_dispatch_table_helper.h'
+
     generators.update({
         'vk_layer_dispatch_table.h': {
             'generator' : LoaderExtensionGenerator,
-            'genCombined': True,
-            'directory' : 'loader/generated',
+            'genCombined': False,
+            'directory' : generated_directory,
         },
         'vk_loader_extensions.c': {
             'generator' : LoaderExtensionGenerator,
-            'genCombined': True,
-            'directory' : 'loader/generated',
+            'genCombined': False,
+            'directory' : generated_directory,
         },
         'vk_loader_extensions.h': {
             'generator' : LoaderExtensionGenerator,
-            'genCombined': True,
-            'directory' : 'loader/generated',
+            'genCombined': False,
+            'directory' : generated_directory,
         },
         'vk_object_types.h': {
             'generator' : HelperFileGenerator,
             'genCombined': True,
-            'directory' : 'loader/generated',
+            'directory' : generated_directory,
         },
-        'vk_dispatch_table_helper.h': {
+        f'{dispatch_table_helper_filename}': {
             'generator' : DispatchTableHelperGenerator,
-            'genCombined': True,
+            'genCombined': False,
             'directory' : 'tests/framework/layer',
         }
     })
