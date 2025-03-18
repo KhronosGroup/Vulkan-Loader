@@ -26,6 +26,7 @@
 import re
 import os
 from base_generator import BaseGenerator
+from vulkan_object import Version
 
 WSI_EXT_NAMES = ['VK_KHR_surface',
                  'VK_KHR_display',
@@ -102,6 +103,41 @@ SHARED_ALIASES = {
 PRE_INSTANCE_FUNCTIONS = ['vkEnumerateInstanceExtensionProperties',
                           'vkEnumerateInstanceLayerProperties',
                           'vkEnumerateInstanceVersion']
+
+# This class is a container for any source code, data, or other behavior that is necessary to
+# customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
+# all of these API-specific interfaces and their use in the generator script are part of the
+# contract between this repository and its downstream users. Changing or removing any of these
+# interfaces or their use in the generator script will have downstream effects and thus
+# should be avoided unless absolutely necessary.
+class APISpecific:
+    @staticmethod
+    def getApiVersionDisplayName(targetApiName: str, name: str) -> str:
+        match targetApiName:
+            case 'vulkan':
+                api_name = 'Vulkan'
+
+        version_number = name[name.find('_VERSION_') + len('_VERSION_'):].replace('_', '.')
+        return f'{api_name} {version_number}'
+
+    @staticmethod
+    def getFirstVersionName(targetApiName: str) -> str:
+        match targetApiName:
+            case 'vulkan':
+                return 'VK_VERSION_1_0'
+
+    # This handles the dependency across versions of APIs, even across API variants
+    # (e.g. maps VK_VERSION_1_2 to VKSC_VERSION_1_0 for Vulkan SC).
+    # This handles the lack of proper support for the "depends" attribute of <feature> tags in the XML.
+    @staticmethod
+    def getEffectiveVersionName(targetApiName: str, version: Version) -> str:
+        if version is None:
+            return APISpecific.getFirstVersionName(targetApiName)
+
+        match targetApiName:
+            case 'vulkan':
+                return version.name
+
 
 class LoaderExtensionGenerator(BaseGenerator):
     def __init__(self):
@@ -224,14 +260,13 @@ class LoaderExtensionGenerator(BaseGenerator):
         return expr
 
     def DescribeBlock(self, command, current_block, out, custom_commands_string = ' commands', indent = '    '):
-        if command.extensions != current_block and command.version != current_block:
-            if command.version is None and len(command.extensions) == 0: # special case for 1.0
-                out.append(f'\n{indent}// ---- Core Vulkan 1.0{custom_commands_string}\n')
-                return None
-            elif command.version is not None:
-                if command.version != current_block:
-                    out.append(f"\n{indent}// ---- Core Vulkan 1.{command.version.name.split('_')[-1]}{custom_commands_string}\n")
-                return command.version
+        effective_version_name = APISpecific.getEffectiveVersionName(self.targetApiName, command.version)
+        if command.extensions != current_block and effective_version_name != current_block:
+            if effective_version_name and len(command.extensions) == 0:
+                # Entry points that have an effective version in the target API
+                api_version_display_name = APISpecific.getApiVersionDisplayName(self.targetApiName, effective_version_name)
+                out.append(f"\n{indent}// ---- Core {api_version_display_name}{custom_commands_string}\n")
+                return effective_version_name
             else:
                 # don't repeat unless the first extension is different (while rest can vary)
                 if not isinstance(current_block, list) or current_block[0] != command.extensions[0]:
@@ -503,7 +538,8 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
             if command.protect is not None:
                 out.append( f'#if defined({command.protect})\n')
 
-            if command.version is None and len(command.extensions) == 0:
+            effective_version_name = APISpecific.getEffectiveVersionName(self.targetApiName, command.version)
+            if effective_version_name == APISpecific.getFirstVersionName(self.targetApiName) and len(command.extensions) == 0:
                 # The Core Vulkan code will be wrapped in a feature called VK_VERSION_#_#
                 # For example: VK_VERSION_1_0 wraps the core 1.0 Vulkan functionality
                 out.append(f'    LOOKUP_REQUIRED_GIPA({command.name[2:]});\n')
@@ -711,7 +747,9 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                         current_block = self.DescribeBlock(command, current_block, out)
                         if len(command.extensions) == 0:
                             if cur_type == 'device':
-                                version_check = f"        if (dev->should_ignore_device_commands_from_newer_version && api_version < {command.version.nameApi if command.version else 'VK_API_VERSION_1_0'}) return NULL;\n"
+                                effective_version_name = APISpecific.getEffectiveVersionName(self.targetApiName, command.version)
+                                api_version = effective_version_name.replace('_VERSION_', '_API_VERSION_')
+                                version_check = f"        if (dev->should_ignore_device_commands_from_newer_version && api_version < {api_version}) return NULL;\n"
                             else:
                                 version_check = ''
 
