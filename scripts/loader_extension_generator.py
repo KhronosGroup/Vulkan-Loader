@@ -123,7 +123,7 @@ class LoaderExtensionGenerator(BaseGenerator):
 
         if self.filename == 'vk_loader_extensions.h':
             self.print_vk_loader_extensions_h(out)
-        elif self.filename == 'vk_loader_extensions.c':
+        elif  self.filename == 'vk_loader_extensions.c' or self.filename == 'vk_loader_extensions.c.inc':
             self.print_vk_loader_extensions_c(out)
         elif self.filename == 'vk_layer_dispatch_table.h':
             self.print_vk_layer_dispatch_table(out)
@@ -230,12 +230,12 @@ class LoaderExtensionGenerator(BaseGenerator):
                 return None
             elif command.version is not None:
                 if command.version != current_block:
-                    out.append(f'\n{indent}// ---- Core Vulkan 1.{command.version.name.split("_")[-1]}{custom_commands_string}\n')
+                    out.append(f"\n{indent}// ---- Core Vulkan 1.{command.version.name.split('_')[-1]}{custom_commands_string}\n")
                 return command.version
             else:
                 # don't repeat unless the first extension is different (while rest can vary)
                 if not isinstance(current_block, list) or current_block[0].name != command.extensions[0].name:
-                    out.append(f'\n{indent}// ---- {command.extensions[0].name if len(command.extensions) > 0 else ""} extension{custom_commands_string}\n')
+                    out.append(f"\n{indent}// ---- {command.extensions[0].name if len(command.extensions) > 0 else ''} extension{custom_commands_string}\n")
                 return command.extensions
         else:
             return current_block
@@ -707,7 +707,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                         current_block = self.DescribeBlock(command, current_block, out)
                         if len(command.extensions) == 0:
                             if cur_type == 'device':
-                                version_check = f'        if (dev->should_ignore_device_commands_from_newer_version && api_version < {command.version.nameApi if command.version else "VK_API_VERSION_1_0"}) return NULL;\n'
+                                version_check = f"        if (dev->should_ignore_device_commands_from_newer_version && api_version < {command.version.nameApi if command.version else 'VK_API_VERSION_1_0'}) return NULL;\n"
                             else:
                                 version_check = ''
 
@@ -1345,4 +1345,3 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
             if extension.protect is not None:
                 out.append( f'#endif // {extension.protect}\n')
         out.append( '                                                  NULL };\n')
-
