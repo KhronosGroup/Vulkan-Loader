@@ -37,7 +37,7 @@ from xml.etree import ElementTree
 # the Registry has been imported. Yes this is awkward, but it was the least awkward way to make --verify work.
 generators = {}
 
-def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targetFilter: str, caching: bool):
+def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targetFilter: str, flatOutput: bool):
 
     try:
         common_codegen.RunShellCmd(f'clang-format --version')
@@ -130,7 +130,12 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
         else:
             SetMergedApiNames(None)
 
-        outDirectory = os.path.abspath(os.path.join(directory, generators[target]['directory']))
+        # For people who want to generate all the files in a single director
+        if flatOutput:
+            outDirectory = os.path.abspath(os.path.join(directory))
+        else:
+            outDirectory = os.path.abspath(os.path.join(directory, generators[target]['directory']))
+
         options = BaseGeneratorOptions(
             customFileName  = target,
             customDirectory = outDirectory)
@@ -155,7 +160,7 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
         reg.apiGen()
 
         # Run clang-format on the file
-        if has_clang_format:
+        if has_clang_format and styleFile:
             common_codegen.RunShellCmd(f'clang-format -i --style=file:{styleFile} {os.path.join(outDirectory, target)}')
 
 
@@ -182,7 +187,7 @@ def main(argv):
     group.add_argument('--target', nargs='+', help='only generate file names passed in')
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
-    group.add_argument('--no-caching', action='store_true', help='Do not try to cache generator objects')
+    group.add_argument('-o', action='store', dest='directory', help='Create target and related files in specified directory')
     args = parser.parse_args(argv)
 
     repo_dir = common_codegen.repo_relative('.')
@@ -210,12 +215,13 @@ def main(argv):
         temp_obj = tempfile.TemporaryDirectory(prefix='loader_codegen_')
         temp_dir = temp_obj.name
         gen_dir = temp_dir
+    elif args.directory:
+        gen_dir = args.directory
     else:
         # generate directly in the repo
         gen_dir = repo_dir
 
-    caching = not args.no_caching
-    RunGenerators(api=args.api,registry=registry, directory=gen_dir, styleFile=style_file, targetFilter=args.target, caching=caching)
+    RunGenerators(api=args.api,registry=registry, directory=gen_dir, styleFile=style_file, targetFilter=args.target, flatOutput=False)
 
     # optional post-generation steps
     if args.verify:
