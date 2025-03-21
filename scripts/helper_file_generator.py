@@ -118,6 +118,7 @@ class HelperFileGenerator(BaseGenerator):
 
         # Create a list with the needed information so that when we print, we print in the exact same order, as we are printing arrays where external code may index into it
         object_types = []
+        object_type_aliases = {}
         enum_num = 1 # start at one since the zero place is manually printed with the UNKNOWN value
         for handle in self.vk.handles.values():
             debug_report_object_name = self.convert_to_VK_DEBUG_REPORT_OBJECT_TYPE(handle.name)
@@ -126,7 +127,8 @@ class HelperFileGenerator(BaseGenerator):
             else:
                 object_types.append((f'{handle.name[2:]}', enum_num, 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'))
             enum_num += 1
-
+            if len(handle.aliases) > 0:
+                object_type_aliases[handle.name] = handle.aliases
 
         out.append('// Object Type enum for validation layer internal object handling\n')
         out.append('typedef enum VulkanObjectType {\n')
@@ -135,11 +137,10 @@ class HelperFileGenerator(BaseGenerator):
             out.append(f'    kVulkanObjectType{name} = {number},\n')
         out.append(f'    kVulkanObjectTypeMax = {enum_num},\n')
 
-        # Hardcode the alises as Vulkan Object lacks this information currently
         out.append('    // Aliases for backwards compatibilty of "promoted" types\n')
-        out.append('    kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,\n')
-        out.append('    kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,\n')
-        out.append('    kVulkanObjectTypePrivateDataSlotEXT = kVulkanObjectTypePrivateDataSlot,\n')
+        for name, aliases in object_type_aliases.items():
+            for alias in aliases:
+                out.append(f'    kVulkanObjectType{alias[2:]} = kVulkanObjectType{name[2:]},\n')
 
         out.append('} VulkanObjectType;\n')
         out.append('\n')
