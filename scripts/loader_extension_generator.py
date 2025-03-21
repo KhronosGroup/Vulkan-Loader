@@ -123,7 +123,7 @@ class LoaderExtensionGenerator(BaseGenerator):
 
         if self.filename == 'vk_loader_extensions.h':
             self.print_vk_loader_extensions_h(out)
-        elif  self.filename == 'vk_loader_extensions.c' or self.filename == 'vk_loader_extensions.c.inc':
+        elif self.filename == 'vk_loader_extensions.c':
             self.print_vk_loader_extensions_c(out)
         elif self.filename == 'vk_layer_dispatch_table.h':
             self.print_vk_layer_dispatch_table(out)
