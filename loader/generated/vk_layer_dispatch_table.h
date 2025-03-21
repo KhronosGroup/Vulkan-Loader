@@ -1218,6 +1218,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetMemoryMetalHandlePropertiesEXT GetMemoryMetalHandlePropertiesEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+    // ---- VK_EXT_fragment_density_map_offset extension commands
+    PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
+
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
