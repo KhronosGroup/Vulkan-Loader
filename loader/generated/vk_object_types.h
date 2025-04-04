@@ -90,9 +90,10 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeMicromapEXT = 49,
     kVulkanObjectTypeOpticalFlowSessionNV = 50,
     kVulkanObjectTypeShaderEXT = 51,
-    kVulkanObjectTypeIndirectExecutionSetEXT = 52,
-    kVulkanObjectTypeIndirectCommandsLayoutEXT = 53,
-    kVulkanObjectTypeMax = 54,
+    kVulkanObjectTypeExternalComputeQueueNV = 52,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 53,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 54,
+    kVulkanObjectTypeMax = 55,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
@@ -153,6 +154,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "MicromapEXT",
     "OpticalFlowSessionNV",
     "ShaderEXT",
+    "ExternalComputeQueueNV",
     "IndirectExecutionSetEXT",
     "IndirectCommandsLayoutEXT",
 };
@@ -211,6 +213,7 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeMicromapEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeShaderEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeExternalComputeQueueNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectExecutionSetEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutEXT
 };
@@ -269,6 +272,7 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_MICROMAP_EXT,   // kVulkanObjectTypeMicromapEXT
     VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_OBJECT_TYPE_SHADER_EXT,   // kVulkanObjectTypeShaderEXT
+    VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV,   // kVulkanObjectTypeExternalComputeQueueNV
     VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT,   // kVulkanObjectTypeIndirectExecutionSetEXT
     VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutEXT
 };

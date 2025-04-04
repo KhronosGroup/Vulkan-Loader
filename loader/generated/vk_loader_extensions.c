@@ -1026,6 +1026,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdCudaLaunchKernelNV = (PFN_vkCmdCudaLaunchKernelNV)gdpa(dev, "vkCmdCudaLaunchKernelNV");
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+    // ---- VK_QCOM_tile_shading extension commands
+    table->CmdDispatchTileQCOM = (PFN_vkCmdDispatchTileQCOM)gdpa(dev, "vkCmdDispatchTileQCOM");
+    table->CmdBeginPerTileExecutionQCOM = (PFN_vkCmdBeginPerTileExecutionQCOM)gdpa(dev, "vkCmdBeginPerTileExecutionQCOM");
+    table->CmdEndPerTileExecutionQCOM = (PFN_vkCmdEndPerTileExecutionQCOM)gdpa(dev, "vkCmdEndPerTileExecutionQCOM");
+
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gdpa(dev, "vkExportMetalObjectsEXT");
@@ -1228,6 +1233,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)gdpa(dev, "vkGetScreenBufferPropertiesQNX");
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_external_compute_queue extension commands
+    table->CreateExternalComputeQueueNV = (PFN_vkCreateExternalComputeQueueNV)gdpa(dev, "vkCreateExternalComputeQueueNV");
+    table->DestroyExternalComputeQueueNV = (PFN_vkDestroyExternalComputeQueueNV)gdpa(dev, "vkDestroyExternalComputeQueueNV");
+    table->GetExternalComputeQueueDataNV = (PFN_vkGetExternalComputeQueueDataNV)gdpa(dev, "vkGetExternalComputeQueueDataNV");
 
     // ---- VK_NV_cluster_acceleration_structure extension commands
     table->GetClusterAccelerationStructureBuildSizesNV = (PFN_vkGetClusterAccelerationStructureBuildSizesNV)gdpa(dev, "vkGetClusterAccelerationStructureBuildSizesNV");
@@ -2934,6 +2944,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdCudaLaunchKernelNV")) return (void *)table->CmdCudaLaunchKernelNV;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+    // ---- VK_QCOM_tile_shading extension commands
+    if (!strcmp(name, "CmdDispatchTileQCOM")) return (void *)table->CmdDispatchTileQCOM;
+    if (!strcmp(name, "CmdBeginPerTileExecutionQCOM")) return (void *)table->CmdBeginPerTileExecutionQCOM;
+    if (!strcmp(name, "CmdEndPerTileExecutionQCOM")) return (void *)table->CmdEndPerTileExecutionQCOM;
+
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     if (!strcmp(name, "ExportMetalObjectsEXT")) return (void *)table->ExportMetalObjectsEXT;
@@ -3136,6 +3151,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     if (!strcmp(name, "GetScreenBufferPropertiesQNX")) return (void *)table->GetScreenBufferPropertiesQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_external_compute_queue extension commands
+    if (!strcmp(name, "CreateExternalComputeQueueNV")) return (void *)table->CreateExternalComputeQueueNV;
+    if (!strcmp(name, "DestroyExternalComputeQueueNV")) return (void *)table->DestroyExternalComputeQueueNV;
+    if (!strcmp(name, "GetExternalComputeQueueDataNV")) return (void *)table->GetExternalComputeQueueDataNV;
 
     // ---- VK_NV_cluster_acceleration_structure extension commands
     if (!strcmp(name, "GetClusterAccelerationStructureBuildSizesNV")) return (void *)table->GetClusterAccelerationStructureBuildSizesNV;
@@ -7951,6 +7971,47 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+// ---- VK_QCOM_tile_shading extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(
+    VkCommandBuffer                             commandBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDispatchTileQCOM: Invalid commandBuffer "
+                   "[VUID-vkCmdDispatchTileQCOM-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDispatchTileQCOM(commandBuffer);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginPerTileExecutionQCOM(
+    VkCommandBuffer                             commandBuffer,
+    const VkPerTileBeginInfoQCOM*               pPerTileBeginInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBeginPerTileExecutionQCOM: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginPerTileExecutionQCOM-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(
+    VkCommandBuffer                             commandBuffer,
+    const VkPerTileEndInfoQCOM*                 pPerTileEndInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdEndPerTileExecutionQCOM: Invalid commandBuffer "
+                   "[VUID-vkCmdEndPerTileExecutionQCOM-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo);
+}
+
+
 // ---- VK_EXT_metal_objects extension trampoline/terminators
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
@@ -9840,6 +9901,52 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(
 }
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+// ---- VK_NV_external_compute_queue extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(
+    VkDevice                                    device,
+    const VkExternalComputeQueueCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkExternalComputeQueueNV*                   pExternalQueue) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateExternalComputeQueueNV: Invalid device "
+                   "[VUID-vkCreateExternalComputeQueueNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyExternalComputeQueueNV(
+    VkDevice                                    device,
+    VkExternalComputeQueueNV                    externalQueue,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkDestroyExternalComputeQueueNV: Invalid device "
+                   "[VUID-vkDestroyExternalComputeQueueNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->DestroyExternalComputeQueueNV(device, externalQueue, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetExternalComputeQueueDataNV(
+    VkExternalComputeQueueNV                    externalQueue,
+    VkExternalComputeQueueDataParamsNV*         params,
+    void*                                       pData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(externalQueue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetExternalComputeQueueDataNV: Invalid externalQueue "
+                   "[VUID-vkGetExternalComputeQueueDataNV-externalQueue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetExternalComputeQueueDataNV(externalQueue, params, pData);
+}
+
 
 // ---- VK_NV_cluster_acceleration_structure extension trampoline/terminators
 
@@ -11918,6 +12025,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+    // ---- VK_QCOM_tile_shading extension commands
+    if (!strcmp("vkCmdDispatchTileQCOM", name)) {
+        *addr = (void *)CmdDispatchTileQCOM;
+        return true;
+    }
+    if (!strcmp("vkCmdBeginPerTileExecutionQCOM", name)) {
+        *addr = (void *)CmdBeginPerTileExecutionQCOM;
+        return true;
+    }
+    if (!strcmp("vkCmdEndPerTileExecutionQCOM", name)) {
+        *addr = (void *)CmdEndPerTileExecutionQCOM;
+        return true;
+    }
+
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     if (!strcmp("vkExportMetalObjectsEXT", name)) {
@@ -12493,6 +12614,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_NV_external_compute_queue extension commands
+    if (!strcmp("vkCreateExternalComputeQueueNV", name)) {
+        *addr = (void *)CreateExternalComputeQueueNV;
+        return true;
+    }
+    if (!strcmp("vkDestroyExternalComputeQueueNV", name)) {
+        *addr = (void *)DestroyExternalComputeQueueNV;
+        return true;
+    }
+    if (!strcmp("vkGetExternalComputeQueueDataNV", name)) {
+        *addr = (void *)GetExternalComputeQueueDataNV;
+        return true;
+    }
 
     // ---- VK_NV_cluster_acceleration_structure extension commands
     if (!strcmp("vkGetClusterAccelerationStructureBuildSizesNV", name)) {
