@@ -253,7 +253,6 @@ jobs:
             - uses: actions/setup-python@v5
               with:
                 python-version: '3.11'
-            - uses: lukka/get-cmake@latest
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
@@ -283,7 +282,6 @@ jobs:
           - uses: actions/setup-python@v5
             with:
               python-version: '3.11'
-          - uses: lukka/get-cmake@latest
           - run: |
               cmake -S . -B build \
               -D CMAKE_SYSTEM_NAME=${{ matrix.CMAKE_SYSTEM_NAME }} \
@@ -317,7 +315,6 @@ jobs:
             - uses: actions/setup-python@v5
               with:
                 python-version: '3.11'
-            - uses: lukka/get-cmake@latest
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
@@ -357,7 +354,6 @@ jobs:
         - uses: actions/setup-python@v5
           with:
             python-version: '3.11'
-        - uses: lukka/get-cmake@latest
         - name: Setup uasm
           run: |
             C:/msys64/usr/bin/pacman -Sy --noconfirm --needed mingw-w64-x86_64-uasm
@@ -385,7 +381,6 @@ jobs:
         - uses: actions/setup-python@v5
           with:
             python-version: '3.11'
-        - uses: lukka/get-cmake@latest
         - run: |
             cmake -S. -B build \
             -D UPDATE_DEPS=ON \
@@ -408,7 +403,6 @@ jobs:
         - uses: actions/setup-python@v5
           with:
             python-version: '3.11'
-        - uses: lukka/get-cmake@latest
         # Make sure this doesn't fail even without explicitly setting '-D USE_MASM=OFF' and without uasm
         - run: |
             cmake -S. -B build \
@@ -428,7 +422,6 @@ jobs:
           shell: bash
       steps:
         - uses: actions/checkout@v4
-        - uses: lukka/get-cmake@latest
         - run: |
             cmake -S. -B build \
             -D UPDATE_DEPS=ON \
