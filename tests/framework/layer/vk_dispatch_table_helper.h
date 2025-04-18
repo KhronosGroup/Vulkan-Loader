@@ -805,6 +805,7 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)gpa(device, "vkGetScreenBufferPropertiesQNX");
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    table->CmdBindTileMemoryQCOM = (PFN_vkCmdBindTileMemoryQCOM)gpa(device, "vkCmdBindTileMemoryQCOM");
     table->CreateExternalComputeQueueNV = (PFN_vkCreateExternalComputeQueueNV)gpa(device, "vkCreateExternalComputeQueueNV");
     table->DestroyExternalComputeQueueNV = (PFN_vkDestroyExternalComputeQueueNV)gpa(device, "vkDestroyExternalComputeQueueNV");
     table->GetExternalComputeQueueDataNV = (PFN_vkGetExternalComputeQueueDataNV)gpa(device, "vkGetExternalComputeQueueDataNV");
