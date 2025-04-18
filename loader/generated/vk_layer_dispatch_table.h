@@ -1196,6 +1196,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+    // ---- VK_QCOM_tile_memory_heap extension commands
+    PFN_vkCmdBindTileMemoryQCOM CmdBindTileMemoryQCOM;
+
     // ---- VK_NV_external_compute_queue extension commands
     PFN_vkCreateExternalComputeQueueNV CreateExternalComputeQueueNV;
     PFN_vkDestroyExternalComputeQueueNV DestroyExternalComputeQueueNV;

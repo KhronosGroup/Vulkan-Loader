@@ -1234,6 +1234,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)gdpa(dev, "vkGetScreenBufferPropertiesQNX");
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+    // ---- VK_QCOM_tile_memory_heap extension commands
+    table->CmdBindTileMemoryQCOM = (PFN_vkCmdBindTileMemoryQCOM)gdpa(dev, "vkCmdBindTileMemoryQCOM");
+
     // ---- VK_NV_external_compute_queue extension commands
     table->CreateExternalComputeQueueNV = (PFN_vkCreateExternalComputeQueueNV)gdpa(dev, "vkCreateExternalComputeQueueNV");
     table->DestroyExternalComputeQueueNV = (PFN_vkDestroyExternalComputeQueueNV)gdpa(dev, "vkDestroyExternalComputeQueueNV");
@@ -3151,6 +3154,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     if (!strcmp(name, "GetScreenBufferPropertiesQNX")) return (void *)table->GetScreenBufferPropertiesQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_QCOM_tile_memory_heap extension commands
+    if (!strcmp(name, "CmdBindTileMemoryQCOM")) return (void *)table->CmdBindTileMemoryQCOM;
 
     // ---- VK_NV_external_compute_queue extension commands
     if (!strcmp(name, "CreateExternalComputeQueueNV")) return (void *)table->CreateExternalComputeQueueNV;
@@ -9902,6 +9908,22 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+// ---- VK_QCOM_tile_memory_heap extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdBindTileMemoryQCOM(
+    VkCommandBuffer                             commandBuffer,
+    const VkTileMemoryBindInfoQCOM*             pTileMemoryBindInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBindTileMemoryQCOM: Invalid commandBuffer "
+                   "[VUID-vkCmdBindTileMemoryQCOM-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo);
+}
+
+
 // ---- VK_NV_external_compute_queue extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(
@@ -12614,6 +12636,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+    // ---- VK_QCOM_tile_memory_heap extension commands
+    if (!strcmp("vkCmdBindTileMemoryQCOM", name)) {
+        *addr = (void *)CmdBindTileMemoryQCOM;
+        return true;
+    }
 
     // ---- VK_NV_external_compute_queue extension commands
     if (!strcmp("vkCreateExternalComputeQueueNV", name)) {
