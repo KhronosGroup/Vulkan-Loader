@@ -305,14 +305,13 @@ VkResult create_string_list(const struct loader_instance *inst, uint32_t allocat
     return VK_SUCCESS;
 }
 
-VkResult append_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str) {
-    assert(string_list && str);
+VkResult incrase_str_capacity_by_at_least_one(const struct loader_instance *inst, struct loader_string_list *string_list) {
+    assert(string_list);
     if (string_list->allocated_count == 0) {
         string_list->allocated_count = 32;
         string_list->list =
             loader_instance_heap_calloc(inst, sizeof(char *) * string_list->allocated_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == string_list->list) {
-            loader_instance_heap_free(inst, str);  // Must clean up in case of failure
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
     } else if (string_list->count + 1 > string_list->allocated_count) {
@@ -320,12 +319,35 @@ VkResult append_str_to_string_list(const struct loader_instance *inst, struct lo
         string_list->list = loader_instance_heap_realloc(inst, string_list->list, sizeof(char *) * string_list->allocated_count,
                                                          sizeof(char *) * new_allocated_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == string_list->list) {
-            loader_instance_heap_free(inst, str);  // Must clean up in case of failure
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
         string_list->allocated_count *= 2;
     }
+    return VK_SUCCESS;
+}
+
+VkResult append_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str) {
+    assert(string_list && str);
+    VkResult res = incrase_str_capacity_by_at_least_one(inst, string_list);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        loader_instance_heap_free(inst, str);  // Must clean up in case of failure
+        return res;
+    }
     string_list->list[string_list->count++] = str;
+    return VK_SUCCESS;
+}
+
+VkResult prepend_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str) {
+    assert(string_list && str);
+    VkResult res = incrase_str_capacity_by_at_least_one(inst, string_list);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        loader_instance_heap_free(inst, str);  // Must clean up in case of failure
+        return res;
+    }
+    // Shift everything down one
+    void *ptr_to_list = memmove(string_list->list + 1, string_list->list, sizeof(char *) * string_list->count);
+    if (ptr_to_list) string_list->list[0] = str;  // Write new string to start of list
+    string_list->count++;
     return VK_SUCCESS;
 }
 
@@ -339,6 +361,18 @@ VkResult copy_str_to_string_list(const struct loader_instance *inst, struct load
     loader_strncpy(new_str, sizeof(char *) * str_len + 1, str, str_len);
     new_str[str_len] = '\0';
     return append_str_to_string_list(inst, string_list, new_str);
+}
+
+VkResult copy_str_to_start_of_string_list(const struct loader_instance *inst, struct loader_string_list *string_list,
+                                          const char *str, size_t str_len) {
+    assert(string_list && str);
+    char *new_str = loader_instance_heap_calloc(inst, sizeof(char *) * str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == new_str) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    loader_strncpy(new_str, sizeof(char *) * str_len + 1, str, str_len);
+    new_str[str_len] = '\0';
+    return prepend_str_to_string_list(inst, string_list, new_str);
 }
 
 void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list) {
@@ -3002,10 +3036,8 @@ void copy_data_file_info(const char *cur_path, const char *relative_path, size_t
     }
 }
 
-// If the file found is a manifest file name, add it to the out_files manifest list.
+// If the file found is a manifest file name, add it to the end of out_files manifest list.
 VkResult add_if_manifest_file(const struct loader_instance *inst, const char *file_name, struct loader_string_list *out_files) {
-    VkResult vk_result = VK_SUCCESS;
-
     assert(NULL != file_name && "add_if_manifest_file: Received NULL pointer for file_name");
     assert(NULL != out_files && "add_if_manifest_file: Received NULL pointer for out_files");
 
@@ -3014,15 +3046,26 @@ VkResult add_if_manifest_file(const struct loader_instance *inst, const char *fi
     const char *name_suffix = file_name + name_len - 5;
     if (!is_json(name_suffix, name_len)) {
         // Use incomplete to indicate invalid name, but to keep going.
-        vk_result = VK_INCOMPLETE;
-        goto out;
+        return VK_INCOMPLETE;
     }
 
-    vk_result = copy_str_to_string_list(inst, out_files, file_name, name_len);
+    return copy_str_to_string_list(inst, out_files, file_name, name_len);
+}
 
-out:
+// If the file found is a manifest file name, add it to the start of the out_files manifest list.
+VkResult prepend_if_manifest_file(const struct loader_instance *inst, const char *file_name, struct loader_string_list *out_files) {
+    assert(NULL != file_name && "prepend_if_manifest_file: Received NULL pointer for file_name");
+    assert(NULL != out_files && "prepend_if_manifest_file: Received NULL pointer for out_files");
 
-    return vk_result;
+    // Look for files ending with ".json" suffix
+    size_t name_len = strlen(file_name);
+    const char *name_suffix = file_name + name_len - 5;
+    if (!is_json(name_suffix, name_len)) {
+        // Use incomplete to indicate invalid name, but to keep going.
+        return VK_INCOMPLETE;
+    }
+
+    return copy_str_to_start_of_string_list(inst, out_files, file_name, name_len);
 }
 
 // Add any files found in the search_path.  If any path in the search path points to a specific JSON, attempt to
