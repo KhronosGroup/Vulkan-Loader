@@ -3018,3 +3018,112 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         EXPECT_TRUE(env.platform_shim->find_in_log("Insert instance layer \"VK_LAYER_add_env_var_implicit_layer\""));
     }
 }
+
+// additional drivers being provided by settings file
+TEST(SettingsFile, AdditionalDrivers) {
+    FrameworkEnvironment env{};
+    const char* regular_driver_name = "regular";
+    const char* settings_driver_name = "settings";
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name).finish());
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}.add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(1))));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto pds = inst.GetPhysDevs();
+    ASSERT_EQ(pds.size(), 2U);
+    VkPhysicalDeviceProperties props1{}, props2{};
+    inst.functions->vkGetPhysicalDeviceProperties(pds.at(0), &props1);
+    inst.functions->vkGetPhysicalDeviceProperties(pds.at(1), &props2);
+    ASSERT_TRUE(string_eq(props1.deviceName, regular_driver_name));
+    ASSERT_TRUE(string_eq(props2.deviceName, settings_driver_name));
+}
+// settings file provided drivers replacing system found drivers
+TEST(SettingsFile, ExclusiveAdditionalDrivers) {
+    FrameworkEnvironment env{};
+    const char* regular_driver_name = "regular";
+    const char* settings_driver_name = "settings";
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name).finish());
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}.set_use_additional_drivers_exclusively(true).add_driver_configuration(
+            LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(1))));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto pds = inst.GetPhysDevs();
+    ASSERT_EQ(pds.size(), 1U);
+    VkPhysicalDeviceProperties props1{};
+    inst.functions->vkGetPhysicalDeviceProperties(pds.at(0), &props1);
+    ASSERT_TRUE(string_eq(props1.deviceName, settings_driver_name));
+}
+// settings file provided drivers + VK_LOADER_DRIVERS_SELECT
+TEST(SettingsFile, AdditionalDriversReplacesVK_LOADER_DRIVERS_SELECT) {
+    FrameworkEnvironment env{};
+    const char* regular_driver_name = "regular";
+    const char* settings_driver_name = "settings";
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name).finish());
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}.add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(1))));
+    env.update_loader_settings(env.loader_settings);
+
+    {
+        EnvVarWrapper VK_LOADER_DRIVERS_SELECT{"VK_LOADER_DRIVERS_SELECT",
+                                               std::string("*") + env.get_icd_manifest_path(0).stem().string() + std::string("*")};
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto pds = inst.GetPhysDevs();
+        ASSERT_EQ(pds.size(), 1U);
+        VkPhysicalDeviceProperties props1{};
+        inst.functions->vkGetPhysicalDeviceProperties(pds.at(0), &props1);
+        ASSERT_TRUE(string_eq(props1.deviceName, regular_driver_name));
+    }
+    {
+        EnvVarWrapper VK_LOADER_DRIVERS_SELECT{"VK_LOADER_DRIVERS_SELECT",
+                                               std::string("*") + env.get_icd_manifest_path(1).stem().string() + std::string("*")};
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto pds = inst.GetPhysDevs();
+        ASSERT_EQ(pds.size(), 1U);
+        VkPhysicalDeviceProperties props1{};
+        inst.functions->vkGetPhysicalDeviceProperties(pds.at(0), &props1);
+        ASSERT_TRUE(string_eq(props1.deviceName, settings_driver_name));
+    }
+    env.loader_settings.app_specific_settings.at(0).set_use_additional_drivers_exclusively(true);
+    env.update_loader_settings(env.loader_settings);
+    {
+        EnvVarWrapper VK_LOADER_DRIVERS_SELECT{"VK_LOADER_DRIVERS_SELECT",
+                                               std::string("*") + env.get_icd_manifest_path(0).stem().string() + std::string("*")};
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+    }
+    {
+        EnvVarWrapper VK_LOADER_DRIVERS_SELECT{"VK_LOADER_DRIVERS_SELECT",
+                                               std::string("*") + env.get_icd_manifest_path(1).stem().string() + std::string("*")};
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto pds = inst.GetPhysDevs();
+        ASSERT_EQ(pds.size(), 1U);
+        VkPhysicalDeviceProperties props1{};
+        inst.functions->vkGetPhysicalDeviceProperties(pds.at(0), &props1);
+        ASSERT_TRUE(string_eq(props1.deviceName, settings_driver_name));
+    }
+}
+// settings file provided drivers + VK_LOADER_DRIVERS_DISABLE
+
+TEST(SettingsFile, AdditionalDriversReplacesVK_LOADER_DRIVERS_DISABLE) {
+    // TODO
+}

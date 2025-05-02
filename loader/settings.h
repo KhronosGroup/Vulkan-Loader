@@ -34,6 +34,7 @@
 
 struct loader_instance;
 struct loader_layer_list;
+struct loader_string_list;
 struct loader_pointer_layer_list;
 struct loader_envvar_all_filters;
 typedef struct log_configuration log_configuration;
@@ -61,6 +62,10 @@ typedef struct loader_settings_layer_configuration {
 
 } loader_settings_layer_configuration;
 
+typedef struct loader_settings_driver_configuration {
+    char* path;
+} loader_settings_driver_configuration;
+
 typedef struct loader_settings {
     bool settings_active;
     bool has_unordered_layer_location;
@@ -68,6 +73,10 @@ typedef struct loader_settings {
 
     uint32_t layer_configuration_count;
     loader_settings_layer_configuration* layer_configurations;
+
+    bool use_additional_drivers_exclusively;
+    uint32_t additional_driver_count;
+    loader_settings_driver_configuration* additional_drivers;
 
     char* settings_file_path;
 } loader_settings;
@@ -112,3 +121,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
                                              const struct loader_layer_list* instance_layers,
                                              struct loader_pointer_layer_list* target_layer_list,
                                              struct loader_pointer_layer_list* activated_layer_list);
+
+// Add any drivers that the loader settings file contains to the out_files list. If the use_additional_drivers_exclusively field is
+// true, clear the out_files list before adding any additional drivers
+VkResult loader_settings_get_additional_driver_files(const struct loader_instance* inst, struct loader_string_list* out_files);

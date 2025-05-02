@@ -3818,6 +3818,12 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         goto out;
     }
 
+    // Add any drivers provided by the loader settings file
+    res = loader_settings_get_additional_driver_files(inst, &manifest_files);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
+
     icd_details = loader_stack_alloc(sizeof(struct ICDManifestInfo) * manifest_files.count);
     if (NULL == icd_details) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;

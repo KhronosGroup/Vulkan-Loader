@@ -687,11 +687,11 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
             case (ManifestDiscoveryType::unsecured_generic):
                 platform_shim->add_unsecured_manifest(ManifestCategory::icd, icds.back().manifest_path);
                 break;
-            case (ManifestDiscoveryType::null_dir):
-            case (ManifestDiscoveryType::none):
-                break;
             case (ManifestDiscoveryType::windows_app_package):
                 platform_shim->set_app_package_path(folder.location());
+                break;
+            case (ManifestDiscoveryType::null_dir):
+            case (ManifestDiscoveryType::none):
                 break;
         }
     }
@@ -903,6 +903,16 @@ std::string get_loader_settings_file_contents(const LoaderSettings& loader_setti
                     writer.AddString(filter);
                 }
                 writer.EndArray();
+                writer.EndObject();
+            }
+            writer.EndArray();
+        }
+        if (!setting.driver_configurations.empty()) {
+            writer.AddKeyedBool("use_additional_drivers_exclusively", setting.use_additional_drivers_exclusively);
+            writer.StartKeyedArray("additional_drivers");
+            for (const auto& driver : setting.driver_configurations) {
+                writer.StartObject();
+                writer.AddKeyedString("path", driver.path);
                 writer.EndObject();
             }
             writer.EndArray();
