@@ -80,6 +80,7 @@ struct PhysicalDevice {
 
     DispatchableHandle<VkPhysicalDevice> vk_physical_device;
     BUILDER_VALUE(std::string, deviceName)
+    BUILDER_VALUE(VulkanUUID, deviceUUID)
     BUILDER_VALUE(VkPhysicalDeviceProperties, properties)
     BUILDER_VALUE(VkPhysicalDeviceFeatures, features)
     BUILDER_VALUE(VkPhysicalDeviceMemoryProperties, memory_properties)

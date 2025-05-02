@@ -3257,12 +3257,14 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
     switch (manifest_type) {
         case LOADER_DATA_FILE_MANIFEST_DRIVER:
-            override_env = loader_secure_getenv(VK_DRIVER_FILES_ENV_VAR, inst);
-            if (NULL == override_env) {
-                // Not there, so fall back to the old name
-                override_env = loader_secure_getenv(VK_ICD_FILENAMES_ENV_VAR, inst);
+            if (loader_settings_should_use_driver_environment_variables(inst)) {
+                override_env = loader_secure_getenv(VK_DRIVER_FILES_ENV_VAR, inst);
+                if (NULL == override_env) {
+                    // Not there, so fall back to the old name
+                    override_env = loader_secure_getenv(VK_ICD_FILENAMES_ENV_VAR, inst);
+                }
+                additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
             }
-            additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
 #if COMMON_UNIX_PLATFORMS
             relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
 #endif
@@ -3802,18 +3804,26 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         goto out;
     }
 
-    // Parse the filter environment variables to determine if we have any special behavior
-    res = parse_generic_filter_environment_var(inst, VK_DRIVERS_SELECT_ENV_VAR, &select_filter);
-    if (VK_SUCCESS != res) {
-        goto out;
-    }
-    res = parse_generic_filter_environment_var(inst, VK_DRIVERS_DISABLE_ENV_VAR, &disable_filter);
-    if (VK_SUCCESS != res) {
-        goto out;
+    if (loader_settings_should_use_driver_environment_variables(inst)) {
+        // Parse the filter environment variables to determine if we have any special behavior
+        res = parse_generic_filter_environment_var(inst, VK_DRIVERS_SELECT_ENV_VAR, &select_filter);
+        if (VK_SUCCESS != res) {
+            goto out;
+        }
+        res = parse_generic_filter_environment_var(inst, VK_DRIVERS_DISABLE_ENV_VAR, &disable_filter);
+        if (VK_SUCCESS != res) {
+            goto out;
+        }
     }
 
     // Get a list of manifest files for ICDs
     res = loader_get_data_files(inst, LOADER_DATA_FILE_MANIFEST_DRIVER, NULL, &manifest_files);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
+
+    // Add any drivers provided by the loader settings file
+    res = loader_settings_get_additional_driver_files(inst, &manifest_files);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -5460,10 +5470,10 @@ VkResult loader_validate_device_extensions(struct loader_instance *this_instance
 // All named terminator_<Vulkan API name>
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkInstance *pInstance) {
-    struct loader_icd_term *icd_term;
-    VkExtensionProperties *prop;
+    struct loader_icd_term *icd_term = NULL;
+    VkExtensionProperties *prop = NULL;
     char **filtered_extension_names = NULL;
-    VkInstanceCreateInfo icd_create_info;
+    VkInstanceCreateInfo icd_create_info = {0};
     VkResult res = VK_SUCCESS;
     bool one_icd_successful = false;
 
@@ -5651,7 +5661,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         }
 
         // Create an instance, substituting the version to 1.0 if necessary
-        VkApplicationInfo icd_app_info;
+        VkApplicationInfo icd_app_info = {0};
         const uint32_t api_variant = 0;
         const uint32_t api_version_1_0 = VK_API_VERSION_1_0;
         uint32_t icd_version_nopatch =
@@ -5668,6 +5678,25 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             icd_app_info.apiVersion = icd_version;
             icd_create_info.pApplicationInfo = &icd_app_info;
         }
+
+        // If the settings file has device_configurations, we need to raise the ApiVersion drivers use to 1.1 if the driver
+        // supports 1.1 or higher. This allows 1.0 apps to use the device_configurations without the app having to set its own
+        // ApiVersion to 1.1 on its own.
+        if (ptr_instance->settings.settings_active && ptr_instance->settings.device_configuration_count > 0 &&
+            icd_version >= VK_API_VERSION_1_1 && requested_version < VK_API_VERSION_1_1) {
+            if (NULL != pCreateInfo->pApplicationInfo) {
+                memcpy(&icd_app_info, pCreateInfo->pApplicationInfo, sizeof(VkApplicationInfo));
+            }
+            icd_app_info.apiVersion = VK_API_VERSION_1_1;
+            icd_create_info.pApplicationInfo = &icd_app_info;
+
+            loader_log(
+                ptr_instance, VULKAN_LOADER_INFO_BIT, 0,
+                "terminator_CreateInstance: Raising the VkApplicationInfo::apiVersion from 1.0 to 1.1 on driver \"%s\" so that "
+                "the loader settings file is able to use this driver in the device_configuration selection logic.",
+                icd_term->scanned_icd->lib_name);
+        }
+
         icd_result =
             ptr_instance->icd_tramp_list.scanned_list[i].CreateInstance(&icd_create_info, pAllocator, &(icd_term->instance));
         if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_result) {
@@ -6781,26 +6810,131 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDevices(VkInstance in
         goto out;
     }
 
-    uint32_t copy_count = inst->phys_dev_count_term;
-    if (NULL != pPhysicalDevices) {
-        if (copy_count > *pPhysicalDeviceCount) {
-            copy_count = *pPhysicalDeviceCount;
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                       "terminator_EnumeratePhysicalDevices : Trimming device count from %d to %d.", inst->phys_dev_count_term,
-                       copy_count);
-            res = VK_INCOMPLETE;
+    if (inst->settings.settings_active && inst->settings.device_configuration_count > 0) {
+        // Use settings file device_configurations if present
+        if (NULL == pPhysicalDevices) {
+            // take the minimum of the settings configurations count and number of terminators
+            *pPhysicalDeviceCount = (inst->settings.device_configuration_count < inst->phys_dev_count_term)
+                                        ? inst->settings.device_configuration_count
+                                        : inst->phys_dev_count_term;
+        } else {
+            res = loader_apply_settings_device_configurations(inst, pPhysicalDeviceCount, pPhysicalDevices);
+        }
+    } else {
+        // Otherwise just copy the physical devices up normally and pass it up the chain
+        uint32_t copy_count = inst->phys_dev_count_term;
+        if (NULL != pPhysicalDevices) {
+            if (copy_count > *pPhysicalDeviceCount) {
+                copy_count = *pPhysicalDeviceCount;
+                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                           "terminator_EnumeratePhysicalDevices : Trimming device count from %d to %d.", inst->phys_dev_count_term,
+                           copy_count);
+                res = VK_INCOMPLETE;
+            }
+
+            for (uint32_t i = 0; i < copy_count; i++) {
+                pPhysicalDevices[i] = (VkPhysicalDevice)inst->phys_devs_term[i];
+            }
         }
 
-        for (uint32_t i = 0; i < copy_count; i++) {
-            pPhysicalDevices[i] = (VkPhysicalDevice)inst->phys_devs_term[i];
-        }
+        *pPhysicalDeviceCount = copy_count;
     }
-
-    *pPhysicalDeviceCount = copy_count;
 
 out:
 
     return res;
+}
+
+// Apply the device_configurations in the settings file to the output VkPhysicalDeviceList.
+// That means looking up each VkPhysicalDevice's deviceUUID, filtering using that, and putting them in the order of
+// device_configurations in the settings file.
+VkResult loader_apply_settings_device_configurations(struct loader_instance *inst, uint32_t *pPhysicalDeviceCount,
+                                                     VkPhysicalDevice *pPhysicalDevices) {
+    bool *pd_supports_11 = loader_stack_alloc(inst->phys_dev_count_term * sizeof(bool));
+    if (NULL == pd_supports_11) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    memset(pd_supports_11, 0, inst->phys_dev_count_term * sizeof(bool));
+
+    VkPhysicalDeviceProperties *pd_props = loader_stack_alloc(inst->phys_dev_count_term * sizeof(VkPhysicalDeviceProperties));
+    if (NULL == pd_props) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    memset(pd_props, 0, inst->phys_dev_count_term * sizeof(VkPhysicalDeviceProperties));
+
+    VkPhysicalDeviceVulkan11Properties *pd_vulkan_11_props =
+        loader_stack_alloc(inst->phys_dev_count_term * sizeof(VkPhysicalDeviceVulkan11Properties));
+    if (NULL == pd_vulkan_11_props) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    memset(pd_vulkan_11_props, 0, inst->phys_dev_count_term * sizeof(VkPhysicalDeviceVulkan11Properties));
+
+    for (uint32_t i = 0; i < inst->phys_dev_count_term; i++) {
+        pd_vulkan_11_props[i].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+
+        inst->phys_devs_term[i]->this_icd_term->dispatch.GetPhysicalDeviceProperties(inst->phys_devs_term[i]->phys_dev,
+                                                                                     &pd_props[i]);
+        if (pd_props[i].apiVersion >= VK_API_VERSION_1_1) {
+            pd_supports_11[i] = true;
+            VkPhysicalDeviceProperties2 props2 = {0};
+            props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            props2.pNext = (void *)&pd_vulkan_11_props[i];
+            if (inst->phys_devs_term[i]->this_icd_term->dispatch.GetPhysicalDeviceProperties2) {
+                inst->phys_devs_term[i]->this_icd_term->dispatch.GetPhysicalDeviceProperties2(inst->phys_devs_term[i]->phys_dev,
+                                                                                              &props2);
+            }
+        }
+    }
+
+    // Loop over the setting's device configurations, find each VkPhysicalDevice which matches the deviceUUID given, add to the
+    // pPhysicalDevices output list.
+    uint32_t written_output_index = 0;
+
+    for (uint32_t i = 0; i < inst->settings.device_configuration_count; i++) {
+        uint8_t *current_deviceUUID = inst->settings.device_configurations[i].deviceUUID;
+        bool configuration_found = false;
+        for (uint32_t j = 0; j < inst->phys_dev_count_term; j++) {
+            // Don't compare deviceUUID's if they have nothing, since we require deviceUUID's to effectively sort them.
+            if (!pd_supports_11[j]) {
+                continue;
+            }
+            if (memcmp(current_deviceUUID, pd_vulkan_11_props[j].deviceUUID, sizeof(uint8_t) * VK_UUID_SIZE) == 0) {
+                configuration_found = true;
+                // Catch when there are more device_configurations than space available in the output
+                if (written_output_index >= *pPhysicalDeviceCount) {
+                    *pPhysicalDeviceCount = written_output_index;  // write out how many were written
+                    return VK_INCOMPLETE;
+                }
+                pPhysicalDevices[written_output_index++] = (VkPhysicalDevice)inst->phys_devs_term[j];
+                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Insert VkPhysicalDevice \"%s\" to the pPhysicalDevices list",
+                           pd_props[j].deviceName);
+                break;
+            }
+        }
+        if (!configuration_found) {
+            uint8_t *id = current_deviceUUID;
+            // Log that this configuration was missing.
+            if (inst->settings.device_configurations[i].deviceName[0] != '\0') {
+                loader_log(
+                    inst, VULKAN_LOADER_WARN_BIT, 0,
+                    "loader_apply_settings_device_configurations: settings file contained device_configuration which does not "
+                    "appear in the enumerated VkPhysicalDevices. Missing VkPhysicalDevice with deviceName: \"%s\" and deviceUUID: "
+                    "%x%x%x%x-%x%x-%x%x-%x%x-%x%x%x%x%x%x",
+                    inst->settings.device_configurations[i].deviceName, id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7],
+                    id[8], id[9], id[10], id[11], id[12], id[13], id[14], id[15]);
+            } else {
+                loader_log(
+                    inst, VULKAN_LOADER_WARN_BIT, 0,
+                    "loader_apply_settings_device_configurations: settings file contained device_configuration which does not "
+                    "appear in the enumerated VkPhysicalDevices. Missing VkPhysicalDevice with deviceUUID: "
+                    "%x%x%x%x-%x%x-%x%x-%x%x-%x%x%x%x%x%x",
+                    id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7], id[8], id[9], id[10], id[11], id[12], id[13], id[14],
+                    id[15]);
+            }
+        }
+    }
+    *pPhysicalDeviceCount = written_output_index;  // update with how many were written
+    return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
