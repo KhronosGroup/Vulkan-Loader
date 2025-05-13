@@ -72,6 +72,7 @@ class DispatchTableHelperGenerator(BaseGenerator):
 
     # Create a dispatch table from the corresponding table_type and append it to out
     def OutputDispatchTableHelper(self, out: list, table_type: str):
+        out.append('    // clang-format off\n')
         if table_type == 'device':
             out.append('static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable *table, PFN_vkGetDeviceProcAddr gpa) {\n')
             out.append('    memset(table, 0, sizeof(*table));\n')
@@ -99,4 +100,5 @@ class DispatchTableHelperGenerator(BaseGenerator):
                 out.append( f'    table->{command_name[2:]} = (PFN_{command_name})gpa({table_type}, "{command_name}");\n')
             if command.protect is not None:
                 out.append( f'#endif  // {command.protect}\n')
+        out.append('    // clang-format on\n')
         out.append('}')
