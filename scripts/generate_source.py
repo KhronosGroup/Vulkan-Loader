@@ -201,13 +201,6 @@ def main(argv):
 
     # Need pass style file incase running with --verify and it can't find the file automatically in the temp directory
     style_file = os.path.join(repo_dir, '.clang-format')
-    if common_codegen.IsGHA() and args.verify:
-        # Have found that sometimes (~5%) the 20.04 Ubuntu machines have clang-format v11 but we need v14 to
-        # use a dedicated style_file location. For these case there we can survive just skipping the verify check
-        stdout = subprocess.check_output(['clang-format', '--version']).decode("utf-8")
-        version = stdout[stdout.index('version') + 8:][:2]
-        if int(version) < 14:
-            return 0 # Success
 
     # get directory where generators will run
     if args.verify or args.incremental:
