@@ -63,9 +63,9 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
         sys.exit(1) # Return without call stack so easy to spot error
 
     from base_generator import BaseGeneratorOptions
-    from dispatch_table_helper_generator import DispatchTableHelperGenerator
-    from helper_file_generator import HelperFileGenerator
-    from loader_extension_generator import LoaderExtensionGenerator
+    from generators.dispatch_table_helper_generator import DispatchTableHelperGenerator
+    from generators.helper_file_generator import HelperFileGenerator
+    from generators.loader_extension_generator import LoaderExtensionGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
@@ -100,7 +100,7 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
         f'{dispatch_table_helper_filename}': {
             'generator' : DispatchTableHelperGenerator,
             'genCombined': False,
-            'directory' : 'tests/framework/layer',
+            'directory' : 'tests/framework/layer/generated',
         }
     })
 
@@ -167,13 +167,7 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
 def main(argv):
 
     # files to exclude from --verify check
-    verify_exclude = ['layer_util.h',
-                      'export_definitions',
-                      'test_layer.h',
-                      'test_layer.cpp',
-                      'wrap_objects.cpp',
-                      'CMakeLists.txt',
-                      ]
+    verify_exclude = [] # None currently
 
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
