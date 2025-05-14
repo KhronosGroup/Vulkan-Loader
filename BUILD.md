@@ -10,6 +10,7 @@ Instructions for building this repository on Linux, Windows, and MacOS.
   - [Repository Content](#repository-content)
     - [Installed Files](#installed-files)
   - [Build Requirements](#build-requirements)
+    - [Building with Code Generation Requirements](#building-with-code-generation-requirements)
     - [Test Requirements](#test-requirements)
   - [Repository Set-Up](#repository-set-up)
     - [Display Drivers](#display-drivers)
@@ -83,6 +84,12 @@ indicated by *install_dir*:
 1. `C99` capable compiler
 2. `CMake` version 3.22.1 or greater
 3. `Git`
+
+### Building with Code Generation Requirements
+
+1. `Python 3.11`
+2. `clang-format` version 14 or higher
+   * Only required when submitting changes
 
 ### Test Requirements
 
@@ -224,6 +231,11 @@ to CMake, as shown below.
 cmake -S . -B build -D LOADER_CODEGEN=ON
 cmake --build . --target loader_codegen
 ```
+
+`clang-format` is run on generated code files so that the generator scripts do
+not need format their output manually.
+If `clang-format` is not available when running code generation, a warning will
+be issued but does not stop code generation from occuring.
 
 ### Build Options
 
