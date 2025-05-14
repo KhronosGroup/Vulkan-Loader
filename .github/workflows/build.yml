@@ -344,6 +344,7 @@ jobs:
 
     mingw:
       # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
+      if: false # Disabled due to issues with msys2 making CMake unable to find a working compiler
       needs: linux-no-asm
       runs-on: windows-2022
       defaults:
