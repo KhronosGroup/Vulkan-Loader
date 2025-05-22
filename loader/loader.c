@@ -241,7 +241,9 @@ VKAPI_ATTR VkResult VKAPI_CALL vkSetDeviceDispatch(VkDevice device, void *object
     if (NULL == icd_term || NULL == dev) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-    loader_set_dispatch(object, &dev->loader_dispatch);
+    if (object) {
+        loader_set_dispatch(object, &dev->loader_dispatch);
+    }
     return VK_SUCCESS;
 }
 
@@ -6082,10 +6084,17 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     }
 
     *pDevice = dev->icd_device;
-    loader_add_logical_device(icd_term, dev);
 
-    // Init dispatch pointer in new device object
-    loader_init_dispatch(*pDevice, &dev->loader_dispatch);
+    if (dev->icd_device != VK_NULL_HANDLE) {
+        loader_add_logical_device(icd_term, dev);
+
+        // Init dispatch pointer in new device object
+        loader_init_dispatch(*pDevice, &dev->loader_dispatch);
+    } else {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                   "terminator_CreateDevice: ICD %s returned VK_NULL_HANDLE in vkCreateDevice call",
+                   icd_term->scanned_icd->lib_name);
+    }
 
 out:
     if (NULL != icd_exts.list) {
