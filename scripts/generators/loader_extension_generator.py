@@ -234,8 +234,8 @@ class LoaderExtensionGenerator(BaseGenerator):
                 return command.version
             else:
                 # don't repeat unless the first extension is different (while rest can vary)
-                if not isinstance(current_block, list) or current_block[0].name != command.extensions[0].name:
-                    out.append(f"\n{indent}// ---- {command.extensions[0].name if len(command.extensions) > 0 else ''} extension{custom_commands_string}\n")
+                if not isinstance(current_block, list) or current_block[0] != command.extensions[0]:
+                    out.append(f"\n{indent}// ---- {command.extensions[0] if len(command.extensions) > 0 else ''} extension{custom_commands_string}\n")
                 return command.extensions
         else:
             return current_block
@@ -597,7 +597,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     if x == 1:
                         if base_name == 'GetDeviceProcAddr':
                             out.append('    table->GetDeviceProcAddr = gdpa;\n')
-                        elif len(command.extensions) > 0 and command.extensions[0].instance:
+                        elif len(command.extensions) > 0 and self.vk.extensions[command.extensions[0]].instance:
                             out.append(f'    table->{base_name} = (PFN_{command.name})gipa(inst, "{command.name}");\n')
                         else:
                             out.append(f'    table->{base_name} = (PFN_{command.name})gdpa(dev, "{command.name}");\n')
@@ -631,10 +631,10 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                 if command.name == 'vkGetDeviceGroupSurfacePresentModes2EXT': # command.extensions[0].depends in [x for x in self.vk.commands.values() if x.device]:
                     # Hardcode the dependency expression as vulkan_object.py doesn't expose this information
                     dep_expr = self.ConvertDependencyExpression('VK_KHR_device_group,VK_VERSION_1_1', lambda ext_name: f'dev->driver_extensions.{ext_name[3:].lower()}_enabled')
-                    out.append(f'    if (dev->driver_extensions.{command.extensions[0].name[3:].lower()}_enabled && ({dep_expr}))\n')
+                    out.append(f'    if (dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled && ({dep_expr}))\n')
                     out.append(f'       dispatch->{command.name[2:]} = (PFN_{(command.name)})gpda(dev->icd_device, "{(command.name)}");\n')
                 else:
-                    out.append(f'    if (dev->driver_extensions.{command.extensions[0].name[3:].lower()}_enabled)\n')
+                    out.append(f'    if (dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled)\n')
                     out.append(f'       dispatch->{command.name[2:]} = (PFN_{(command.name)})gpda(dev->icd_device, "{(command.name)}");\n')
 
                 if command.protect is not None:
@@ -730,9 +730,9 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                         out.append(f'    if (!strcmp(name, "{base_name}")) ')
                         if command.name in DEVICE_CMDS_MUST_USE_TRAMP:
                             if version_check != '':
-                                out.append(f'{{\n{version_check}        return dev->layer_extensions.{command.extensions[0].name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n    }}\n')
+                                out.append(f'{{\n{version_check}        return dev->layer_extensions.{command.extensions[0][3:].lower()}_enabled ? (void *){base_name} : NULL;\n    }}\n')
                             else:
-                                out.append(f'return dev->layer_extensions.{command.extensions[0].name[3:].lower()}_enabled ? (void *){base_name} : NULL;\n')
+                                out.append(f'return dev->layer_extensions.{command.extensions[0][3:].lower()}_enabled ? (void *){base_name} : NULL;\n')
 
                         else:
                             if version_check != '':
@@ -782,8 +782,8 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
         current_block = ''
         for command in [x for x in self.vk.commands.values() if x.extensions]:
-            if (command.extensions[0].name in WSI_EXT_NAMES or
-                command.extensions[0].name in AVOID_EXT_NAMES or
+            if (command.extensions[0] in WSI_EXT_NAMES or
+                command.extensions[0] in AVOID_EXT_NAMES or
                 command.name in AVOID_CMD_NAMES or
                 command.name in manual_ext_commands):
                 continue
@@ -932,7 +932,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     out.append('        local_tag_info.objectHandle = (uint64_t)(uintptr_t)instance->instance;\n')
                     out.append('    }\n')
 
-                if command.extensions[0].name in NULL_CHECK_EXT_NAMES:
+                if command.extensions[0] in NULL_CHECK_EXT_NAMES:
                     out.append('    if (disp->' + base_name + ' != NULL) {\n')
                     out.append('    ')
                 out.append(return_prefix)
@@ -957,7 +957,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
                     count += 1
                 out.append(');\n')
-                if command.extensions[0].name in NULL_CHECK_EXT_NAMES:
+                if command.extensions[0] in NULL_CHECK_EXT_NAMES:
                     if command.returnType != 'void':
                         out.append('    } else {\n')
                         out.append('        return VK_SUCCESS;\n')
@@ -971,7 +971,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     out.append('    if (NULL == icd_term->dispatch.')
                     out.append(base_name)
                     out.append(') {\n')
-                    fatal_error_bit = '' if has_return_type and (len(command.extensions) == 0 or command.extensions[0].instance) else 'VULKAN_LOADER_FATAL_ERROR_BIT | '
+                    fatal_error_bit = '' if has_return_type and (len(command.extensions) == 0 or self.vk.extensions[command.extensions[0]].instance) else 'VULKAN_LOADER_FATAL_ERROR_BIT | '
                     out.append(f'        loader_log(icd_term->this_instance, {fatal_error_bit}VULKAN_LOADER_ERROR_BIT, 0,\n')
                     out.append('                   "ICD associated with VkPhysicalDevice does not support ')
                     out.append(base_name)
@@ -979,7 +979,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
                     # If this is an instance function taking a physical device (i.e. pre Vulkan 1.1), we need to behave and not crash so return an
                     # error here.
-                    if has_return_type and (len(command.extensions) == 0 or command.extensions[0].instance):
+                    if has_return_type and (len(command.extensions) == 0 or self.vk.extensions[command.extensions[0]].instance):
                         out.append('        return VK_ERROR_EXTENSION_NOT_PRESENT;\n')
                     else:
                         out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
@@ -1045,10 +1045,10 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
                     out.append('    }\n')
                     out.append('#error("Not implemented. Likely needs to be manually generated!");\n')
-                elif command.extensions[0].name in ['VK_EXT_debug_utils', 'VK_EXT_debug_marker']:
+                elif command.extensions[0] in ['VK_EXT_debug_utils', 'VK_EXT_debug_marker']:
                     if command.name in ['vkDebugMarkerSetObjectNameEXT', 'vkDebugMarkerSetObjectTagEXT', 'vkSetDebugUtilsObjectNameEXT' , 'vkSetDebugUtilsObjectTagEXT']:
 
-                        is_debug_utils = command.extensions[0].name == "VK_EXT_debug_utils"
+                        is_debug_utils = command.extensions[0] == "VK_EXT_debug_utils"
                         debug_struct_name = command.params[1].name
                         local_struct = 'local_name_info' if 'ObjectName' in command.name else 'local_tag_info'
                         member_name = 'objectHandle' if is_debug_utils else 'object'
@@ -1086,7 +1086,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     else:
                         out.append(f'    struct loader_dev_dispatch_table *dispatch_table = loader_get_dev_dispatch({command.params[0].name});\n')
                         out.append('    if (NULL == dispatch_table) {\n')
-                        out.append(f'        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{command.extensions[0].name}: Invalid device handle");\n')
+                        out.append(f'        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "{command.extensions[0]}: Invalid device handle");\n')
                         out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
                         out.append('    }\n')
                         out.append('    // Only call down if the device supports the function\n')
@@ -1132,7 +1132,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                 out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
                 out.append('    }\n')
 
-                if command.extensions[0].name in NULL_CHECK_EXT_NAMES:
+                if command.extensions[0] in NULL_CHECK_EXT_NAMES:
                     out.append('    if (disp->' + base_name + ' != NULL) {\n')
                     out.append('    ')
                 out.append(return_prefix)
@@ -1146,7 +1146,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     out.append(param.name)
                     count += 1
                 out.append(');\n')
-                if command.extensions[0].name in NULL_CHECK_EXT_NAMES:
+                if command.extensions[0] in NULL_CHECK_EXT_NAMES:
                     if command.returnType != 'void':
                         out.append('    } else {\n')
                         out.append('        return VK_SUCCESS;\n')
@@ -1169,14 +1169,14 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
         for command in [x for x in self.vk.commands.values() if x.extensions]:
             if (command.version or
-                command.extensions[0].name in WSI_EXT_NAMES or
-                command.extensions[0].name in AVOID_EXT_NAMES or
+                command.extensions[0] in WSI_EXT_NAMES or
+                command.extensions[0] in AVOID_EXT_NAMES or
                 command.name in AVOID_CMD_NAMES ):
                 continue
 
-            if command.extensions[0].name != cur_extension_name:
-                out.append( f'\n    // ---- {command.extensions[0].name} extension commands\n')
-                cur_extension_name = command.extensions[0].name
+            if command.extensions[0] != cur_extension_name:
+                out.append( f'\n    // ---- {command.extensions[0]} extension commands\n')
+                cur_extension_name = command.extensions[0]
 
             if command.protect is not None:
                 out.append( f'#if defined({command.protect})\n')
@@ -1184,10 +1184,10 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
             #base_name = command.name[2:]
             base_name = SHARED_ALIASES[command.name] if command.name in SHARED_ALIASES else command.name[2:]
 
-            if len(command.extensions) > 0 and command.extensions[0].instance:
+            if len(command.extensions) > 0 and self.vk.extensions[command.extensions[0]].instance:
                 out.append( f'    if (!strcmp("{command.name}", name)) {{\n')
                 out.append( '        *addr = (ptr_instance->enabled_extensions.')
-                out.append( command.extensions[0].name[3:].lower())
+                out.append( command.extensions[0][3:].lower())
                 out.append( ' == 1)\n')
                 out.append( f'                     ? (void *){base_name}\n')
                 out.append( '                     : NULL;\n')
@@ -1260,18 +1260,18 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     last_protect = command.protect
                     if command.protect is not None:
                         out.append(f'#if defined({command.protect})\n')
-                    if last_ext != command.extensions[0].name:
-                        out.append(f'    // ---- {command.extensions[0].name} extension commands\n')
-                        last_ext = command.extensions[0].name
+                    if last_ext != command.extensions[0]:
+                        out.append(f'    // ---- {command.extensions[0]} extension commands\n')
+                        last_ext = command.extensions[0]
 
                 out.append(f'    if (!strcmp(name, "{command.name[2:]}")) {{\n')
                 out.append('        *found_name = true;\n')
                 if command.name == 'vkGetDeviceGroupSurfacePresentModes2EXT': # command.extensions[0].depends in [x for x in self.vk.commands.values() if x.device]:
                     # Hardcode the dependency expression as vulkan_object.py doesn't expose this information
                     dep_expr = self.ConvertDependencyExpression('VK_KHR_device_group,VK_VERSION_1_1', lambda ext_name: f'dev->driver_extensions.{ext_name[3:].lower()}_enabled')
-                    out.append(f'        return (dev->driver_extensions.{command.extensions[0].name[3:].lower()}_enabled && ({dep_expr})) ?\n')
+                    out.append(f'        return (dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled && ({dep_expr})) ?\n')
                 else:
-                    out.append(f'        return dev->driver_extensions.{command.extensions[0].name[3:].lower()}_enabled ?\n')
+                    out.append(f'        return dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled ?\n')
                 out.append(f'            (PFN_vkVoidFunction)terminator_{(command.name[2:])} : NULL;\n')
                 out.append('    }\n')
 
