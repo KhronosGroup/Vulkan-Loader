@@ -7980,7 +7980,8 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(
 // ---- VK_QCOM_tile_shading extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(
-    VkCommandBuffer                             commandBuffer) {
+    VkCommandBuffer                             commandBuffer,
+    const VkDispatchTileInfoQCOM*               pDispatchTileInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -7988,7 +7989,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(
                    "[VUID-vkCmdDispatchTileQCOM-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->CmdDispatchTileQCOM(commandBuffer);
+    disp->CmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginPerTileExecutionQCOM(
