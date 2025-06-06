@@ -289,6 +289,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScreenPresentationSupportQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+    // ---- VK_ARM_tensors extension commands
+    PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM GetPhysicalDeviceExternalTensorPropertiesARM;
+
     // ---- VK_NV_optical_flow extension commands
     PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
 
@@ -706,6 +709,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
     PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
     PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
+
+    // ---- VK_KHR_present_wait2 extension commands
+    PFN_vkWaitForPresent2KHR WaitForPresent2KHR;
 
     // ---- VK_KHR_pipeline_binary extension commands
     PFN_vkCreatePipelineBinariesKHR CreatePipelineBinariesKHR;
@@ -1152,6 +1158,18 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetShadingRateImageEnableNV CmdSetShadingRateImageEnableNV;
     PFN_vkCmdSetRepresentativeFragmentTestEnableNV CmdSetRepresentativeFragmentTestEnableNV;
     PFN_vkCmdSetCoverageReductionModeNV CmdSetCoverageReductionModeNV;
+
+    // ---- VK_ARM_tensors extension commands
+    PFN_vkCreateTensorARM CreateTensorARM;
+    PFN_vkDestroyTensorARM DestroyTensorARM;
+    PFN_vkCreateTensorViewARM CreateTensorViewARM;
+    PFN_vkDestroyTensorViewARM DestroyTensorViewARM;
+    PFN_vkGetTensorMemoryRequirementsARM GetTensorMemoryRequirementsARM;
+    PFN_vkBindTensorMemoryARM BindTensorMemoryARM;
+    PFN_vkGetDeviceTensorMemoryRequirementsARM GetDeviceTensorMemoryRequirementsARM;
+    PFN_vkCmdCopyTensorARM CmdCopyTensorARM;
+    PFN_vkGetTensorOpaqueCaptureDescriptorDataARM GetTensorOpaqueCaptureDescriptorDataARM;
+    PFN_vkGetTensorViewOpaqueCaptureDescriptorDataARM GetTensorViewOpaqueCaptureDescriptorDataARM;
 
     // ---- VK_EXT_shader_module_identifier extension commands
     PFN_vkGetShaderModuleIdentifierEXT GetShaderModuleIdentifierEXT;

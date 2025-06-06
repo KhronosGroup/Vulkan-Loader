@@ -355,6 +355,7 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->GetRenderingAreaGranularityKHR = (PFN_vkGetRenderingAreaGranularityKHR)gpa(device, "vkGetRenderingAreaGranularityKHR");
     table->GetDeviceImageSubresourceLayoutKHR = (PFN_vkGetDeviceImageSubresourceLayoutKHR)gpa(device, "vkGetDeviceImageSubresourceLayoutKHR");
     table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gpa(device, "vkGetImageSubresourceLayout2KHR");
+    table->WaitForPresent2KHR = (PFN_vkWaitForPresent2KHR)gpa(device, "vkWaitForPresent2KHR");
     table->CreatePipelineBinariesKHR = (PFN_vkCreatePipelineBinariesKHR)gpa(device, "vkCreatePipelineBinariesKHR");
     table->DestroyPipelineBinaryKHR = (PFN_vkDestroyPipelineBinaryKHR)gpa(device, "vkDestroyPipelineBinaryKHR");
     table->GetPipelineKeyKHR = (PFN_vkGetPipelineKeyKHR)gpa(device, "vkGetPipelineKeyKHR");
@@ -661,6 +662,16 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->CmdSetShadingRateImageEnableNV = (PFN_vkCmdSetShadingRateImageEnableNV)gpa(device, "vkCmdSetShadingRateImageEnableNV");
     table->CmdSetRepresentativeFragmentTestEnableNV = (PFN_vkCmdSetRepresentativeFragmentTestEnableNV)gpa(device, "vkCmdSetRepresentativeFragmentTestEnableNV");
     table->CmdSetCoverageReductionModeNV = (PFN_vkCmdSetCoverageReductionModeNV)gpa(device, "vkCmdSetCoverageReductionModeNV");
+    table->CreateTensorARM = (PFN_vkCreateTensorARM)gpa(device, "vkCreateTensorARM");
+    table->DestroyTensorARM = (PFN_vkDestroyTensorARM)gpa(device, "vkDestroyTensorARM");
+    table->CreateTensorViewARM = (PFN_vkCreateTensorViewARM)gpa(device, "vkCreateTensorViewARM");
+    table->DestroyTensorViewARM = (PFN_vkDestroyTensorViewARM)gpa(device, "vkDestroyTensorViewARM");
+    table->GetTensorMemoryRequirementsARM = (PFN_vkGetTensorMemoryRequirementsARM)gpa(device, "vkGetTensorMemoryRequirementsARM");
+    table->BindTensorMemoryARM = (PFN_vkBindTensorMemoryARM)gpa(device, "vkBindTensorMemoryARM");
+    table->GetDeviceTensorMemoryRequirementsARM = (PFN_vkGetDeviceTensorMemoryRequirementsARM)gpa(device, "vkGetDeviceTensorMemoryRequirementsARM");
+    table->CmdCopyTensorARM = (PFN_vkCmdCopyTensorARM)gpa(device, "vkCmdCopyTensorARM");
+    table->GetTensorOpaqueCaptureDescriptorDataARM = (PFN_vkGetTensorOpaqueCaptureDescriptorDataARM)gpa(device, "vkGetTensorOpaqueCaptureDescriptorDataARM");
+    table->GetTensorViewOpaqueCaptureDescriptorDataARM = (PFN_vkGetTensorViewOpaqueCaptureDescriptorDataARM)gpa(device, "vkGetTensorViewOpaqueCaptureDescriptorDataARM");
     table->GetShaderModuleIdentifierEXT = (PFN_vkGetShaderModuleIdentifierEXT)gpa(device, "vkGetShaderModuleIdentifierEXT");
     table->GetShaderModuleCreateInfoIdentifierEXT = (PFN_vkGetShaderModuleCreateInfoIdentifierEXT)gpa(device, "vkGetShaderModuleCreateInfoIdentifierEXT");
     table->CreateOpticalFlowSessionNV = (PFN_vkCreateOpticalFlowSessionNV)gpa(device, "vkCreateOpticalFlowSessionNV");
@@ -899,6 +910,7 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     table->GetPhysicalDeviceScreenPresentationSupportQNX = (PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX)gpa(instance, "vkGetPhysicalDeviceScreenPresentationSupportQNX");
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    table->GetPhysicalDeviceExternalTensorPropertiesARM = (PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM)gpa(instance, "vkGetPhysicalDeviceExternalTensorPropertiesARM");
     table->GetPhysicalDeviceOpticalFlowImageFormatsNV = (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV)gpa(instance, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV");
     table->GetPhysicalDeviceCooperativeVectorPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV)gpa(instance, "vkGetPhysicalDeviceCooperativeVectorPropertiesNV");
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
