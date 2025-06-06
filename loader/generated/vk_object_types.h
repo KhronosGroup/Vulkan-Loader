@@ -88,12 +88,14 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeAccelerationStructureKHR = 47,
     kVulkanObjectTypeBufferCollectionFUCHSIA = 48,
     kVulkanObjectTypeMicromapEXT = 49,
-    kVulkanObjectTypeOpticalFlowSessionNV = 50,
-    kVulkanObjectTypeShaderEXT = 51,
-    kVulkanObjectTypeExternalComputeQueueNV = 52,
-    kVulkanObjectTypeIndirectExecutionSetEXT = 53,
-    kVulkanObjectTypeIndirectCommandsLayoutEXT = 54,
-    kVulkanObjectTypeMax = 55,
+    kVulkanObjectTypeTensorARM = 50,
+    kVulkanObjectTypeTensorViewARM = 51,
+    kVulkanObjectTypeOpticalFlowSessionNV = 52,
+    kVulkanObjectTypeShaderEXT = 53,
+    kVulkanObjectTypeExternalComputeQueueNV = 54,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 55,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 56,
+    kVulkanObjectTypeMax = 57,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
@@ -152,6 +154,8 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "AccelerationStructureKHR",
     "BufferCollectionFUCHSIA",
     "MicromapEXT",
+    "TensorARM",
+    "TensorViewARM",
     "OpticalFlowSessionNV",
     "ShaderEXT",
     "ExternalComputeQueueNV",
@@ -211,6 +215,8 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeMicromapEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeTensorARM
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeTensorViewARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeShaderEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeExternalComputeQueueNV
@@ -270,6 +276,8 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_OBJECT_TYPE_MICROMAP_EXT,   // kVulkanObjectTypeMicromapEXT
+    VK_OBJECT_TYPE_TENSOR_ARM,   // kVulkanObjectTypeTensorARM
+    VK_OBJECT_TYPE_TENSOR_VIEW_ARM,   // kVulkanObjectTypeTensorViewARM
     VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_OBJECT_TYPE_SHADER_EXT,   // kVulkanObjectTypeShaderEXT
     VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV,   // kVulkanObjectTypeExternalComputeQueueNV
