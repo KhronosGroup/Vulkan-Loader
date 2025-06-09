@@ -382,7 +382,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceSupportKHR(VkP
 
     VkResult res = wsi_unwrap_icd_surface(icd_term, &surface);
     if (res != VK_SUCCESS) {
-        return res;
+        // set pSupported to false as this driver doesn't support WSI functionality
+        *pSupported = false;
+        return VK_SUCCESS;
     }
 
     return icd_term->dispatch.GetPhysicalDeviceSurfaceSupportKHR(phys_dev_term->phys_dev, queueFamilyIndex, surface, pSupported);
