@@ -934,7 +934,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModes2EXT(V
                                                                                uint32_t* pPresentModeCount,
                                                                                VkPresentModeKHR* pPresentModes) {
     if (pSurfaceInfo->surface != VK_NULL_HANDLE) {
-        if (!is_valid_surface(surface)) {
+        if (!is_valid_surface(pSurfaceInfo->surface)) {
             assert(false && "Surface not found during GetPhysicalDeviceSurfacePresentModesKHR query!");
             return VK_ERROR_UNKNOWN;
         }
