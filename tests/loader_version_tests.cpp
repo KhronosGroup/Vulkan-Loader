@@ -994,20 +994,24 @@ void CheckDirectDriverLoading(FrameworkEnvironment& env, std::vector<DriverInfo>
     // We have to iterate through the driver lists backwards because the loader *prepends* icd's, so the last found ICD is found
     // first in the driver list
     uint32_t driver_index = 0;
-    for (size_t i = normal_drivers.size() - 1; i == 0; i--) {
-        if (normal_drivers.at(i).expect_to_find) {
-            VkPhysicalDeviceProperties props{};
-            inst.functions->vkGetPhysicalDeviceProperties(phys_devs.at(driver_index), &props);
-            ASSERT_EQ(props.driverVersion, normal_drivers.at(i).driver_version);
-            driver_index++;
+    if (!normal_drivers.empty()) {
+        for (int i = normal_drivers.size() - 1; i >= 0; i--) {
+            if (!exclusive && normal_drivers.at(i).expect_to_find) {
+                VkPhysicalDeviceProperties props{};
+                inst.functions->vkGetPhysicalDeviceProperties(phys_devs.at(driver_index), &props);
+                ASSERT_EQ(props.driverVersion, normal_drivers.at(i).driver_version);
+                driver_index++;
+            }
         }
     }
-    for (size_t i = direct_drivers.size() - 1; i == 0; i--) {
-        if (direct_drivers.at(i).expect_to_find) {
-            VkPhysicalDeviceProperties props{};
-            inst.functions->vkGetPhysicalDeviceProperties(phys_devs.at(driver_index), &props);
-            ASSERT_EQ(props.driverVersion, direct_drivers.at(i).driver_version);
-            driver_index++;
+    if (!direct_drivers.empty()) {
+        for (int i = direct_drivers.size() - 1; i >= 0; i--) {
+            if (direct_drivers.at(i).expect_to_find) {
+                VkPhysicalDeviceProperties props{};
+                inst.functions->vkGetPhysicalDeviceProperties(phys_devs.at(driver_index), &props);
+                ASSERT_EQ(props.driverVersion, direct_drivers.at(i).driver_version);
+                driver_index++;
+            }
         }
     }
 }
