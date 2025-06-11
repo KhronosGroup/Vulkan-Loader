@@ -1768,9 +1768,14 @@ struct loader_icd_term *loader_icd_add(struct loader_instance *ptr_inst, const s
     icd_term->scanned_icd = scanned_icd;
     icd_term->this_instance = ptr_inst;
 
-    // Prepend to the list
-    icd_term->next = ptr_inst->icd_terms;
-    ptr_inst->icd_terms = icd_term;
+    // Append to the list
+    struct loader_icd_term *prev = ptr_inst->icd_terms;
+    if (prev == NULL) {
+        ptr_inst->icd_terms = icd_term;
+    } else {
+        while (prev->next) prev = prev->next;
+        prev->next = icd_term;
+    }
     ptr_inst->icd_terms_count++;
 
     return icd_term;
