@@ -3069,8 +3069,8 @@ TEST(SettingsFile, AdditionalDrivers) {
     VkPhysicalDeviceProperties props1{}, props2{};
     inst.functions->vkGetPhysicalDeviceProperties(pds.at(0), &props1);
     inst.functions->vkGetPhysicalDeviceProperties(pds.at(1), &props2);
-    ASSERT_TRUE(string_eq(props1.deviceName, regular_driver_name));
-    ASSERT_TRUE(string_eq(props2.deviceName, settings_driver_name));
+    ASSERT_TRUE(string_eq(props1.deviceName, settings_driver_name));
+    ASSERT_TRUE(string_eq(props2.deviceName, regular_driver_name));
 }
 // settings file provided drivers replacing system found drivers
 TEST(SettingsFile, ExclusiveAdditionalDrivers) {
