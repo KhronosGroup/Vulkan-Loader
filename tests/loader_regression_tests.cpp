@@ -3208,31 +3208,31 @@ TEST(SortedPhysicalDevices, DevicesSortedDisabled) {
     ASSERT_EQ(VK_SUCCESS, instance->vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data()));
     ASSERT_EQ(device_count, max_phys_devs);
 
-    // make sure the order is what we started with - but its a bit wonky due to the loader reading physical devices "backwards"
+    // make sure the order is what we started with
     VkPhysicalDeviceProperties props{};
     instance->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
-    ASSERT_STREQ(props.deviceName, "pd5");
-
-    instance->vkGetPhysicalDeviceProperties(physical_devices[1], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-    ASSERT_STREQ(props.deviceName, "pd3");
-
-    instance->vkGetPhysicalDeviceProperties(physical_devices[2], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-    ASSERT_STREQ(props.deviceName, "pd4");
-
-    instance->vkGetPhysicalDeviceProperties(physical_devices[3], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
-    ASSERT_STREQ(props.deviceName, "pd2");
-
-    instance->vkGetPhysicalDeviceProperties(physical_devices[4], &props);
     ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
     ASSERT_STREQ(props.deviceName, "pd0");
 
-    instance->vkGetPhysicalDeviceProperties(physical_devices[5], &props);
+    instance->vkGetPhysicalDeviceProperties(physical_devices[1], &props);
     ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
     ASSERT_STREQ(props.deviceName, "pd1");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[2], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
+    ASSERT_STREQ(props.deviceName, "pd2");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[3], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd3");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[4], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd4");
+
+    instance->vkGetPhysicalDeviceProperties(physical_devices[5], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
+    ASSERT_STREQ(props.deviceName, "pd5");
 
     // Make sure if we call enumerate again, the information is the same
     std::array<VkPhysicalDevice, max_phys_devs> physical_devices_again;
@@ -3534,39 +3534,40 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, physical_device_groups.data()));
     ASSERT_EQ(group_count, max_phys_dev_groups);
 
-    // make sure the order is what we started with - but its a bit wonky due to the loader reading physical devices "backwards"
+    // make sure the order is what we started with
     VkPhysicalDeviceProperties props{};
+
     inst->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
-    ASSERT_STREQ(props.deviceName, "pd7");
-
-    inst->vkGetPhysicalDeviceProperties(physical_devices[1], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-    ASSERT_STREQ(props.deviceName, "pd4");
-
-    inst->vkGetPhysicalDeviceProperties(physical_devices[2], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-    ASSERT_STREQ(props.deviceName, "pd5");
-
-    inst->vkGetPhysicalDeviceProperties(physical_devices[3], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-    ASSERT_STREQ(props.deviceName, "pd6");
-
-    inst->vkGetPhysicalDeviceProperties(physical_devices[4], &props);
-    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
-    ASSERT_STREQ(props.deviceName, "pd3");
-
-    inst->vkGetPhysicalDeviceProperties(physical_devices[5], &props);
     ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
     ASSERT_STREQ(props.deviceName, "pd0");
 
-    inst->vkGetPhysicalDeviceProperties(physical_devices[6], &props);
+    inst->vkGetPhysicalDeviceProperties(physical_devices[1], &props);
     ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
     ASSERT_STREQ(props.deviceName, "pd1");
 
-    inst->vkGetPhysicalDeviceProperties(physical_devices[7], &props);
+    inst->vkGetPhysicalDeviceProperties(physical_devices[2], &props);
     ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
     ASSERT_STREQ(props.deviceName, "pd2");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[3], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
+    ASSERT_STREQ(props.deviceName, "pd3");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[4], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd4");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[5], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd5");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[6], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_STREQ(props.deviceName, "pd6");
+
+    inst->vkGetPhysicalDeviceProperties(physical_devices[7], &props);
+    ASSERT_EQ(props.deviceType, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
+    ASSERT_STREQ(props.deviceName, "pd7");
 
     // Make sure if we call enumerate again, the information is the same
     std::array<VkPhysicalDeviceGroupProperties, max_phys_dev_groups> physical_device_groups_again{};
@@ -4295,10 +4296,10 @@ TEST(EnumerateAdapterPhysicalDevices, SameAdapterLUID_reordered) {
 
     // Physical devices are enumerated:
     // a) first in the order of LUIDs showing up in DXGIAdapter list
-    // b) then in the reverse order to the drivers insertion into the test framework
+    // b) then in the order to the drivers insertion into the test framework
     add_dxgi_adapter(env, "physical_device_2", LUID{10, 100}, 2);
-    add_dxgi_adapter(env, "physical_device_1", LUID{20, 200}, 1);
     add_dxgi_adapter(env, "physical_device_0", LUID{10, 100}, 2);
+    add_dxgi_adapter(env, "physical_device_1", LUID{20, 200}, 1);
 
     {
         uint32_t returned_physical_count = 0;
