@@ -298,6 +298,11 @@ typedef struct VkLayerInstanceDispatchTable_ {
     // ---- VK_NV_cooperative_vector extension commands
     PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV GetPhysicalDeviceCooperativeVectorPropertiesNV;
 
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_NV_cooperative_matrix2 extension commands
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 } VkLayerInstanceDispatchTable;

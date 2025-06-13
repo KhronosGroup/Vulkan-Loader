@@ -486,6 +486,11 @@ struct loader_icd_term_dispatch {
     // ---- VK_NV_cooperative_vector extension commands
     PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV GetPhysicalDeviceCooperativeVectorPropertiesNV;
 
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_NV_cooperative_matrix2 extension commands
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 };
@@ -559,6 +564,9 @@ struct loader_instance_extension_enable_list {
     uint8_t lunarg_direct_driver_loading;
     uint8_t ext_layer_settings;
     uint8_t nv_display_stereo;
+#if defined(VK_USE_PLATFORM_OHOS)
+    uint8_t ohos_surface;
+#endif // defined(VK_USE_PLATFORM_OHOS)
 };
 
 // Functions that required a terminator need to have a separate dispatch table which contains their corresponding

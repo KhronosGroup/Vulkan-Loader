@@ -319,6 +319,11 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     // ---- VK_NV_cooperative_vector extension commands
     LOOKUP_GIPA(GetPhysicalDeviceCooperativeVectorPropertiesNV);
 
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    LOOKUP_GIPA(CreateSurfaceOHOS);
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_NV_cooperative_matrix2 extension commands
     LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV);
 
@@ -1584,6 +1589,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_NV_cooperative_vector extension commands
     table->GetPhysicalDeviceCooperativeVectorPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeVectorPropertiesNV");
+
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    table->CreateSurfaceOHOS = (PFN_vkCreateSurfaceOHOS)gpa(inst, "vkCreateSurfaceOHOS");
+#endif // VK_USE_PLATFORM_OHOS
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
@@ -3528,6 +3538,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_NV_cooperative_vector extension commands
     if (!strcmp(name, "GetPhysicalDeviceCooperativeVectorPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeVectorPropertiesNV;
+
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    if (!strcmp(name, "CreateSurfaceOHOS")) return (void *)table->CreateSurfaceOHOS;
+#endif // VK_USE_PLATFORM_OHOS
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     if (!strcmp(name, "GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
@@ -10394,6 +10409,42 @@ VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(
 }
 
 
+// ---- VK_OHOS_surface extension trampoline/terminators
+
+#if defined(VK_USE_PLATFORM_OHOS)
+VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(
+    VkInstance                                  instance,
+    const VkSurfaceCreateInfoOHOS*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+    struct loader_instance *inst = loader_get_instance(instance);
+    if (NULL == inst) {
+        loader_log(
+            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            "vkCreateSurfaceOHOS: Invalid instance [VUID-vkCreateSurfaceOHOS-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+#error("Not implemented. Likely needs to be manually generated!");
+    return inst->disp->CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSurfaceOHOS(
+    VkInstance                                  instance,
+    const VkSurfaceCreateInfoOHOS*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+    struct loader_instance *inst = loader_get_instance(instance);
+    if (NULL == inst) {
+        loader_log(
+            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            "vkCreateSurfaceOHOS: Invalid instance [VUID-vkCreateSurfaceOHOS-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+#error("Not implemented. Likely needs to be manually generated!");
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+
 // ---- VK_NV_cooperative_matrix2 extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
@@ -12998,6 +13049,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    if (!strcmp("vkCreateSurfaceOHOS", name)) {
+        *addr = (ptr_instance->enabled_extensions.ohos_surface == 1)
+                     ? (void *)CreateSurfaceOHOS
+                     : NULL;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_NV_cooperative_matrix2 extension commands
     if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV", name)) {
         *addr = (void *)GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
@@ -13283,6 +13344,11 @@ void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *
 
     // ---- VK_NV_display_stereo extension commands
         else if (0 == strcmp(extension_list[i], VK_NV_DISPLAY_STEREO_EXTENSION_NAME)) { enables->nv_display_stereo = 1; }
+
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+        else if (0 == strcmp(extension_list[i], VK_OHOS_SURFACE_EXTENSION_NAME)) { enables->ohos_surface = 1; }
+#endif // VK_USE_PLATFORM_OHOS
     }
 }
 
@@ -13634,6 +13700,11 @@ const VkLayerInstanceDispatchTable instance_disp = {
     // ---- VK_NV_cooperative_vector extension commands
     .GetPhysicalDeviceCooperativeVectorPropertiesNV = terminator_GetPhysicalDeviceCooperativeVectorPropertiesNV,
 
+    // ---- VK_OHOS_surface extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    .CreateSurfaceOHOS = terminator_CreateSurfaceOHOS,
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_NV_cooperative_matrix2 extension commands
     .GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = terminator_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV,
 };
@@ -13711,5 +13782,8 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME,
                                                   VK_EXT_LAYER_SETTINGS_EXTENSION_NAME,
                                                   VK_NV_DISPLAY_STEREO_EXTENSION_NAME,
+#if defined(VK_USE_PLATFORM_OHOS)
+                                                  VK_OHOS_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_OHOS
                                                   NULL };
 // clang-format on
