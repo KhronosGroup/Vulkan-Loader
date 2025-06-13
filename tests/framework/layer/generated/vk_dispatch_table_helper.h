@@ -913,6 +913,9 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     table->GetPhysicalDeviceExternalTensorPropertiesARM = (PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM)gpa(instance, "vkGetPhysicalDeviceExternalTensorPropertiesARM");
     table->GetPhysicalDeviceOpticalFlowImageFormatsNV = (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV)gpa(instance, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV");
     table->GetPhysicalDeviceCooperativeVectorPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV)gpa(instance, "vkGetPhysicalDeviceCooperativeVectorPropertiesNV");
+#if defined(VK_USE_PLATFORM_OHOS)
+    table->CreateSurfaceOHOS = (PFN_vkCreateSurfaceOHOS)gpa(instance, "vkCreateSurfaceOHOS");
+#endif  // VK_USE_PLATFORM_OHOS
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
     // clang-format on
 }
