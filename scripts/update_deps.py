@@ -375,7 +375,7 @@ class GoodRepo(object):
         for retry in range(retries):
             make_or_exist_dirs(self.repo_dir)
             try:
-                command_output(['git', 'clone', self.url, '.'], self.repo_dir)
+                command_output(['git', 'clone', '--filter=tree:0', self.url, '.'], self.repo_dir)
                 # If we get here, we didn't raise an error
                 return
             except RuntimeError as e:
