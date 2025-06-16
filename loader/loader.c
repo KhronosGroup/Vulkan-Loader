@@ -3705,9 +3705,8 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 
     char *library_arch_str = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(itemICD, "library_arch"));
     if (library_arch_str != NULL) {
-        // cJSON includes the quotes by default, so we need to look for those here
-        if ((strncmp(library_arch_str, "32", 4) == 0 && sizeof(void *) != 4) ||
-            (strncmp(library_arch_str, "64", 4) == 0 && sizeof(void *) != 8)) {
+        if ((strncmp(library_arch_str, "32", 2) == 0 && sizeof(void *) != 4) ||
+            (strncmp(library_arch_str, "64", 2) == 0 && sizeof(void *) != 8)) {
             loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
                        "loader_parse_icd_manifest: Driver library architecture doesn't match the current running "
                        "architecture, skipping this driver");
