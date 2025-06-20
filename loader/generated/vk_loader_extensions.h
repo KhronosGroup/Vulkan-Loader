@@ -486,6 +486,10 @@ struct loader_icd_term_dispatch {
     // ---- VK_NV_cooperative_vector extension commands
     PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV GetPhysicalDeviceCooperativeVectorPropertiesNV;
 
+    // ---- VK_ARM_data_graph extension commands
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
+
     // ---- VK_OHOS_surface extension commands
 #if defined(VK_USE_PLATFORM_OHOS)
     PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
